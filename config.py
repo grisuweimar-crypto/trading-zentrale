@@ -2,12 +2,19 @@ import os
 import json
 from dotenv import load_dotenv
 
-# Lädt lokal die .env Datei (falls vorhanden)
 load_dotenv()
 
-def get_secret(key, default=None):
-    """Holt Daten aus Umgebungsvariablen (GitHub Secrets oder .env)"""
-    return os.getenv(key, default)
+# Wir nehmen das Secret "GOOGLE_CREDENTIALS" von GitHub
+creds_raw = os.getenv("GOOGLE_CREDENTIALS")
+
+if creds_raw:
+    try:
+        # Wir speichern es intern unter einem einheitlichen Namen
+        GOOGLE_SHEETS_JSON = json.loads(creds_raw)
+    except:
+        GOOGLE_SHEETS_JSON = {}
+else:
+    GOOGLE_SHEETS_JSON = {}
 
 # 1. Telegram Daten
 TELEGRAM_TOKEN = get_secret("TELEGRAM_TOKEN")
