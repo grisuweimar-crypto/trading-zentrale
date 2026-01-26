@@ -1,71 +1,54 @@
 import pandas as pd
 import yfinance as yf
 from cloud.repository import TradingRepository
-from market.yahoo import get_price_data
+from market.yahoo import get_ticker_symbol, get_price_data
 from market.scoring import calculate_total_score
+from market.elliott import detect_elliott_wave
 from market.forex import get_usd_eur_rate
 from alerts.telegram import send_summary
 
 def run_scanner():
-    print("🚀 TRADING SCANNER V36 - UNIVERSAL FORMAT FIX")
+    print("🚀 TRADING SCANNER - MARKET ANALYSIS ONLY")
     repo = TradingRepository()
     df_wl = repo.load_watchlist()
     fx_rate = get_usd_eur_rate()
 
-    # 1. WATCHLIST SCAN (Preise direkt von Yahoo - immer sicher)
+    # 1. REINER MARKT-SCAN (Verlässt sich NICHT auf deine Depot-Daten)
+    print(f"🔭 Scanne {len(df_wl)} Aktien auf Elliott-Wellen-Signale...")
     for idx, row in df_wl.iterrows():
-        symbol = row.get('Ticker')
+        symbol = row.get('Ticker') or get_ticker_symbol(row)
         hist = get_price_data(symbol)
+        
         if hist is not None:
+            ticker_obj = yf.Ticker(symbol)
+            # Preis in EUR umrechnen
             price = float(hist['Close'].iloc[-1])
-            if "US" in str(row.get('ISIN', '')): price *= fx_rate
+            if ticker_obj.info.get('currency') == 'USD':
+                price *= fx_rate
+            
+            # Signale berechnen
             df_wl.at[idx, 'Akt. Kurs [€]'] = price
+            df_wl.at[idx, 'Elliott_Signal'] = detect_elliott_wave(hist)
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
-
-    # 2. PORTFOLIO: DIE MATHE-GEWALT
-    print("📊 Berechne Portfolio...")
-    total_value = 0.0
-
-    def clean_to_real_value(val_str, ref_str):
-        """Entfernt allen Format-Müll und gleicht Ziffern mit dem Kaufwert ab."""
-        def get_digits(x):
-            return "".join(c for c in str(x) if c.isdigit())
-        
-        digits_val = get_digits(val_str)
-        digits_ref = get_digits(ref_str)
-        
-        if not digits_val or not digits_ref: return 0.0
-        
-        num_val = float(digits_val)
-        num_ref = float(digits_ref)
-        
-        # Wir skalieren den Wert so lange, bis er im Bereich 
-        # von 10% bis 1000% des Kaufwerts liegt.
-        # Beispiel: 6811 (Wert) vs 5892 (Kaufwert) -> passt.
-        # Beispiel: 681100 (Wert) vs 5892 (Kaufwert) -> 6811.00
-        while num_val > num_ref * 10 and num_val > 500: # 500€ Cap für Plausibilität
-            num_val /= 10.0
             
-        # Falls durch falsche Skalierung zu klein:
-        while num_val < num_ref * 0.01 and num_val < 1:
-            num_val *= 10.0
-            
-        return num_val / 100.0 if num_ref > 100 else num_val # Meist 2 Dezimalstellen
+            print(f"✅ {row.get('Name', 'Aktie')} analysiert.")
 
-    # Berechnung
-    for tab_func in [repo.load_import_aktien, repo.load_import_krypto]:
-        df = tab_func()
-        if df.empty: continue
-        for _, row in df.iterrows():
-            # Wir erzwingen die Logik: Wert muss zum Kaufwert passen!
-            val = clean_to_real_value(row.get('Wert'), row.get('Kaufwert'))
-            total_value += val
-            print(f"🔹 {row.get('Name')}: {val:.2f} €")
+    # 2. SPEICHERN & SENDEN (Nur die Watchlist)
+    repo.save_watchlist(df_wl)
+    
+    print("📤 Sende Top-Signale an Telegram...")
+    try:
+        # Wir filtern die Top 5 nach deinem Scoring-System
+        df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
+        top_picks = df_wl.nlargest(5, 'Score')
+        
+        # Wir senden 0.0 als Depotwert, da wir ihn nicht mehr berechnen
+        send_summary(top_picks, 0.0) 
+        print("✅ Bericht erfolgreich versendet.")
+    except Exception as e:
+        print(f"❌ Fehler: {e}")
 
-    total_value = round(total_value, 2)
-    repo.save_history(total_value)
-    send_summary(df_wl.nlargest(5, 'Score'), total_value)
-    print(f"🏁 Fertig! Depotwert: {total_value} €")
+    print("🏁 Markt-Update abgeschlossen.")
 
 if __name__ == "__main__":
     run_scanner()
