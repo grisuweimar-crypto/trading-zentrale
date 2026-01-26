@@ -77,31 +77,32 @@ def run_scanner():
     total_value = 0.0
     for idx, row in df_pf.iterrows():
         symbol = row.get('Symbol')
-        # Sicherstellen, dass Anzahl eine saubere Zahl ist
-        anzahl = str(row.get('Anzahl')).replace(',', '.')
-        anzahl = pd.to_numeric(anzahl, errors='coerce') or 0.0
+        
+        # 1. Anzahl bereinigen (Komma zu Punkt)
+        anzahl_raw = str(row.get('Anzahl', '0')).replace(',', '.')
+        anzahl = pd.to_numeric(anzahl_raw, errors='coerce') or 0.0
         
         current_price = 0.0
+        # 2. Versuche Live-Kurs von Yahoo (Sicherste Quelle)
         if pd.notna(symbol) and symbol != "":
             p_data = get_price_data(symbol)
             if p_data is not None:
                 current_price = float(p_data['Close'].iloc[-1])
                 df_pf.at[idx, 'Akt. Kurs [€]'] = current_price
         
-        # Fallback & Sanity Check: Wenn der Kurs aus dem Sheet kommt
+        # 3. Fallback: Falls Yahoo scheitert, Sheet-Kurs bereinigen
         if current_price == 0.0:
-            raw_val = str(row.get('Akt. Kurs [€]')).replace('.', '').replace(',', '.')
+            # Entferne alle Punkte (Tausender) und mache Komma zum Punkt (Dezimal)
+            raw_val = str(row.get('Akt. Kurs [€]', '0')).replace('.', '').replace(',', '.')
             current_price = pd.to_numeric(raw_val, errors='coerce') or 0.0
             
-            # Korrektur für "verschluckte" Kommas (z.B. 13654 -> 13.65)
-            # Wenn der Preis über 5000 ist und es nicht Bitcoin/Ethereum ist
-            if current_price > 5000 and "BTC" not in str(symbol) and "ETH" not in str(symbol):
-                current_price = current_price / 1000 # Verschiebung um 3 Stellen
+            # Sicherheitscheck: Wenn der Kurs > 1000 ist (und kein Krypto), ist ein Komma verrutscht
+            if current_price > 1000 and not any(k in str(symbol) for k in ['BTC', 'ETH', 'SOL', 'XRP']):
+                current_price = current_price / 100 # Korrigiert z.B. 6041 zu 60.41
         
         total_value += (anzahl * current_price)
 
-    # --- 3. SCHRITT: HISTORIE & UPLOAD ---
-    # Hier runden wir auf 2 Nachkommastellen
+    # --- 3. SCHRITT: FINALE & TELEGRAM ---
     total_value = round(total_value, 2)
     repo.save_history(total_value) 
     repo.save_watchlist(df_wl)
