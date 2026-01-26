@@ -46,3 +46,17 @@ class TradingRepository:
             print(f"✅ Historie aktualisiert: {total_value:.2f} €")
         except Exception as e:
             print(f"❌ Fehler beim Historie-Update: {e}")
+            
+    def load_import_data(self) -> pd.DataFrame:
+        """
+        Lädt die Rohdaten aus dem Tab 'Broker_Import'.
+        Wichtig: Hier liegen die Aktien- und Krypto-Exporte von Zero.
+        """
+        try:
+            ws = self.sheet.worksheet("Broker_Import")
+            data = ws.get_all_records()
+            return pd.DataFrame(data)
+        except Exception as e:
+            print(f"⚠️ Fehler beim Laden von Broker_Import: {e}")
+            # Falls das Tab nicht existiert oder leer ist, geben wir ein leeres Tab zurück
+            return pd.DataFrame()
