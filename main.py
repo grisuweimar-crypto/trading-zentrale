@@ -10,8 +10,53 @@ from market.forex import get_usd_eur_rate, convert_to_eur
 import config
 from alerts.telegram import send_summary
 
+# --- DETERMINISTISCHE KORREKTUR-FUNKTION ---
+def get_logical_quantity(row):
+    """Erzwingt eine logische Stückzahl durch Skalierungs-Abgleich."""
+    def to_float(x):
+        if pd.isna(x): return None
+        s = str(x).replace('€', '').replace(' ', '').replace('"', '')
+        if ',' in s and '.' in s:
+            if s.rfind('.') < s.rfind(','): s = s.replace('.', '').replace(',', '.')
+            else: s = s.replace(',', '')
+        elif ',' in s: s = s.replace(',', '.')
+        try: return float(s)
+        except: return None
+
+    raw_qty   = to_float(row.get("Anzahl"))
+    raw_price = to_float(row.get("Kaufkurs"))
+    raw_value = to_float(row.get("Kaufwert"))
+
+    if raw_price is None or raw_value is None or raw_price <= 0:
+        return raw_qty if raw_qty else 0.0
+
+    # Teste Skalierungsfaktoren (10er Potenzen)
+    SCALE_FACTORS = [1, 10, 100, 1000, 10000, 100000, 1000000]
+    best_candidate = raw_qty
+    best_score = float("inf")
+
+    for v_scale in SCALE_FACTORS:
+        for p_scale in SCALE_FACTORS:
+            value = raw_value / v_scale
+            price = raw_price / p_scale
+            if price <= 0: continue
+            
+            qty = value / price
+            # Realismus-Check (Aktien/Krypto meist < 1 Mio Stück)
+            if qty <= 0 or qty > 1000000: continue
+
+            # Score: Bevorzuge kleine Skalierung und Nähe zum Original
+            score = abs(v_scale - 1) * 0.1 + abs(p_scale - 1) * 0.1
+            if raw_qty: score += abs(qty - raw_qty) / max(raw_qty, 1)
+            
+            if score < best_score:
+                best_score = score
+                best_candidate = qty
+
+    return round(best_candidate, 6)
+
 def run_scanner():
-    print("🚀 TRADING SCANNER V29 - ULTRA-SAFE MODE")
+    print("🚀 TRADING SCANNER V30 - DETERMINISTIC MATH MODE")
     repo = TradingRepository()
     df_wl = repo.load_watchlist()
     fx_rate = get_usd_eur_rate()
@@ -19,7 +64,7 @@ def run_scanner():
     # 1. WATCHLIST SCAN
     print(f"🔭 Scanne {len(df_wl)} Aktien...")
     for idx, row in df_wl.iterrows():
-        symbol = row.get('Ticker') if pd.notna(row.get('Ticker')) and row.get('Ticker') != "" else get_ticker_symbol(row)
+        symbol = row.get('Ticker') or get_ticker_symbol(row)
         hist = get_price_data(symbol)
         if hist is not None:
             ticker_obj = yf.Ticker(symbol)
@@ -29,58 +74,38 @@ def run_scanner():
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
             print(f"✅ {row.get('Name', 'Aktie')} bewertet.")
 
-    # 2. PORTFOLIO-BERECHNUNG MIT RATIO-FAILSAFE
-    print("📊 Berechne Portfolio mit mathematischem Plausibilitäts-Check...")
+    # 2. PORTFOLIO-BERECHNUNG (Mathematisch erzwungen)
+    print("📊 Berechne Portfolio via Ratio-Failsafe...")
     total_value = 0.0
-
-    def get_safe_anzahl(row):
-        """Findet die echte Anzahl durch Abgleich von Kaufkurs und Kaufwert."""
-        def clean(v):
-            if pd.isna(v): return 0.0
-            s = "".join(c for c in str(v) if c.isdigit())
-            return float(s) if s else 0.0
-
-        A_raw = clean(row.get('Anzahl'))
-        K_raw = clean(row.get('Kaufkurs'))
-        W_raw = clean(row.get('Kaufwert'))
-
-        if W_raw == 0 or K_raw == 0: return 0.0
-
-        # Wir berechnen den Faktor: (Roh-Anzahl * Roh-Kurs) / Roh-Wert
-        # Dieser Faktor ist bei Fehlern immer eine Potenz von 10 (100, 1000, 1000000)
-        ratio = (A_raw * K_raw) / (W_raw * 1000000) # Normierung auf große Zahlen
-        
-        # Wir finden die richtige Skalierung (die Anzahl, die am besten zum Kaufwert passt)
-        # Echte_Anzahl = Kaufwert / Kaufkurs (beide vorher grob gesäubert)
-        kauf_val_clean = W_raw
-        while kauf_val_clean > 1000: kauf_val_clean /= 10.0 # Annahme: Position < 1000€
-        
-        kauf_kurs_clean = K_raw
-        # Wir skalieren den Kurs so lange, bis er im Bereich 0.1 bis 1000 liegt
-        while kauf_kurs_clean > 2000: kauf_kurs_clean /= 10.0
-        
-        return kauf_val_clean / kauf_kurs_clean if kauf_kurs_clean > 0 else 0.0
-
-    # Berechnung
-    for tab in [repo.load_import_aktien(), repo.load_import_krypto()]:
-        if not tab.empty:
-            for _, row in tab.iterrows():
-                # Echte Anzahl berechnen
-                anzahl = get_safe_anzahl(row)
+    
+    # Import-Tabs laden
+    tabs = [
+        (repo.load_import_aktien(), False), 
+        (repo.load_import_krypto(), True)
+    ]
+    
+    for df, is_krypto in tabs:
+        if not df.empty:
+            for _, row in df.iterrows():
+                # Die "mündige" Anzahl berechnen
+                anzahl = get_logical_quantity(row)
                 
-                # Aktuellen Kurs holen
-                name = str(row.get('Name'))
-                symbol = row.get('ISIN') or row.get('Symbol') or name
-                hist = get_price_data(symbol)
+                # Live-Kurs für die Bewertung
+                lookup = row.get('ISIN') if not is_krypto else row.get('Symbol')
+                if not lookup or pd.isna(lookup): lookup = row.get('Name')
                 
+                # Krypto-Ticker fixen (z.B. BTC -> BTC-EUR)
+                if is_krypto and "-" not in str(lookup): lookup = f"{lookup}-EUR"
+                
+                hist = get_price_data(lookup)
                 if hist is not None:
                     price = float(hist['Close'].iloc[-1])
-                    ticker_obj = yf.Ticker(symbol)
+                    ticker_obj = yf.Ticker(lookup)
                     if ticker_obj.info.get('currency') == 'USD': price *= fx_rate
                     
                     pos_wert = anzahl * price
                     total_value += pos_wert
-                    print(f"🔹 {name}: {anzahl:.4f} Stk. * {price:.2f}€ = {pos_wert:.2f}€")
+                    print(f"🔹 {row.get('Name')}: {anzahl:.4f} Stk. * {price:.2f}€ = {pos_wert:.2f}€")
 
     total_value = round(total_value, 2)
 
@@ -88,7 +113,7 @@ def run_scanner():
     repo.save_history(total_value) 
     repo.save_watchlist(df_wl)
     
-    print(f"📤 Sende Bericht... Realer Depotwert: {total_value} €")
+    print(f"📤 Sende Bericht... Realwert: {total_value} €")
     try:
         df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
         send_summary(df_wl.nlargest(5, 'Score'), total_value) 
