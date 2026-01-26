@@ -70,48 +70,53 @@ def run_scanner():
     # <--- HIER IST DER WATCHLIST-SCAN ZU ENDE! --->
     # Alles was jetzt kommt, passiert nur EINMAL nach dem Scan.
 
+    # --- 2. SCHRITT: PORTFOLIO-UPDATE ---
     print("📊 Berechne Portfolio-Performance...")
     df_pf = repo.load_portfolio()
-
-    # Wir berechnen den Gesamtwert LIVE mit echten Kursen, um Phantasiezahlen zu vermeiden
+    
     total_value = 0.0
     for idx, row in df_pf.iterrows():
         symbol = row.get('Symbol')
-        # Sicherstellen, dass Anzahl eine Zahl ist
-        anzahl = pd.to_numeric(row.get('Anzahl'), errors='coerce') or 0.0
+        # Sicherstellen, dass Anzahl eine saubere Zahl ist
+        anzahl = str(row.get('Anzahl')).replace(',', '.')
+        anzahl = pd.to_numeric(anzahl, errors='coerce') or 0.0
         
+        current_price = 0.0
         if pd.notna(symbol) and symbol != "":
-            # Wir holen den Kurs frisch von Yahoo, damit die Kommastellen (Punkte) stimmen!
             p_data = get_price_data(symbol)
             if p_data is not None:
                 current_price = float(p_data['Close'].iloc[-1])
                 df_pf.at[idx, 'Akt. Kurs [€]'] = current_price
-                total_value += (anzahl * current_price)
-            else:
-                # Fallback: Falls Yahoo nichts findet, nehmen wir den Wert aus dem Sheet
-                # Aber wir teilen durch 100, falls er keine Kommastellen hat (z.B. 13654 -> 136.54)
-                val = pd.to_numeric(row.get('Akt. Kurs [€]'), errors='coerce') or 0.0
-                if val > 5000: val = val / 100 # Notbremse für Phantasiezahlen
-                total_value += (anzahl * val)
+        
+        # Fallback & Sanity Check: Wenn der Kurs aus dem Sheet kommt
+        if current_price == 0.0:
+            raw_val = str(row.get('Akt. Kurs [€]')).replace('.', '').replace(',', '.')
+            current_price = pd.to_numeric(raw_val, errors='coerce') or 0.0
+            
+            # Korrektur für "verschluckte" Kommas (z.B. 13654 -> 13.65)
+            # Wenn der Preis über 5000 ist und es nicht Bitcoin/Ethereum ist
+            if current_price > 5000 and "BTC" not in str(symbol) and "ETH" not in str(symbol):
+                current_price = current_price / 1000 # Verschiebung um 3 Stellen
+        
+        total_value += (anzahl * current_price)
 
-    # Historie speichern (Depotwert in die Liste eintragen)
+    # --- 3. SCHRITT: HISTORIE & UPLOAD ---
+    # Hier runden wir auf 2 Nachkommastellen
+    total_value = round(total_value, 2)
     repo.save_history(total_value) 
-
-    # 4. Der Moment der Wahrheit: Upload & Telegram
-    print("💾 Synchronisiere Daten mit Google Sheets...")
     repo.save_watchlist(df_wl)
-    repo.save_portfolio(df_pf) # Portfolio mit korrigierten Kursen speichern
+    repo.save_portfolio(df_pf)
     
+    # --- 4. SCHRITT: TELEGRAM ---
     print("📤 Sende Bericht an Telegram...")
     try:
         df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
         top_5 = df_wl.nlargest(5, 'Score')
-        # REPARATUR: Wir senden jetzt Top 5 UND den Depotwert
         send_summary(top_5, total_value) 
     except Exception as e:
         print(f"❌ Fehler beim Telegram-Aufruf: {e}")
 
-    print(f"🏁 Cloud-Update abgeschlossen. Depotwert: {total_value:.2f} €")
+    print(f"🏁 Cloud-Update abgeschlossen. Realer Depotwert: {total_value:.2f} €")
 
 if __name__ == "__main__":
     run_scanner()
