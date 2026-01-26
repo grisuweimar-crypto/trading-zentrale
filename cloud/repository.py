@@ -41,7 +41,8 @@ class TradingRepository:
     def save_history(self, total_value):
         try:
             ws = self.sheet.worksheet("Historie")
-            zeitpunkt = datetime.now().strftime("%d.%m.%Y %H:%M")
-            ws.append_row([zeitpunkt, round(float(total_value), 2)])
+            zeitstempel = datetime.now().strftime("%d.%m.%Y %H:%M")
+            ws.append_row([zeitstempel, round(float(total_value), 2)])
+            print(f"✅ Historie aktualisiert: {total_value:.2f} €")
         except Exception as e:
-            print(f"❌ Fehler beim Historie-Speichern: {e}")
+            print(f"❌ Fehler beim Historie-Update: {e}")

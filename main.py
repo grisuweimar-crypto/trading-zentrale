@@ -71,35 +71,43 @@ def run_scanner():
     # Alles was jetzt kommt, passiert nur EINMAL nach dem Scan.
 
     print("📊 Berechne Portfolio-Performance...")
-    df_pf = repo.load_portfolio() 
+    df_pf = repo.load_portfolio()
 
-    # Wir berechnen den Gesamtwert und die Tages-Performance
-    # Sicherstellen, dass Zahlen auch Zahlen sind
-    df_pf['Anzahl'] = pd.to_numeric(df_pf['Anzahl'], errors='coerce').fillna(0)
-    df_pf['Akt. Kurs [€]'] = pd.to_numeric(df_pf['Akt. Kurs [€]'], errors='coerce').fillna(0)
-    
-    total_value = (df_pf['Anzahl'] * df_pf['Akt. Kurs [€]']).sum()
+    # Wir berechnen den Gesamtwert LIVE mit echten Kursen, um Phantasiezahlen zu vermeiden
+    total_value = 0.0
+    for idx, row in df_pf.iterrows():
+        symbol = row.get('Symbol')
+        # Sicherstellen, dass Anzahl eine Zahl ist
+        anzahl = pd.to_numeric(row.get('Anzahl'), errors='coerce') or 0.0
+        
+        if pd.notna(symbol) and symbol != "":
+            # Wir holen den Kurs frisch von Yahoo, damit die Kommastellen (Punkte) stimmen!
+            p_data = get_price_data(symbol)
+            if p_data is not None:
+                current_price = float(p_data['Close'].iloc[-1])
+                df_pf.at[idx, 'Akt. Kurs [€]'] = current_price
+                total_value += (anzahl * current_price)
+            else:
+                # Fallback: Falls Yahoo nichts findet, nehmen wir den Wert aus dem Sheet
+                # Aber wir teilen durch 100, falls er keine Kommastellen hat (z.B. 13654 -> 136.54)
+                val = pd.to_numeric(row.get('Akt. Kurs [€]'), errors='coerce') or 0.0
+                if val > 5000: val = val / 100 # Notbremse für Phantasiezahlen
+                total_value += (anzahl * val)
 
-    # Historie schreiben (für das Historie-Tab)
+    # Historie speichern (Depotwert in die Liste eintragen)
     repo.save_history(total_value) 
-
-    # Top Performer aus dem Depot finden
-    df_pf['Perf_1d'] = 0.0 # Platzhalter für spätere Berechnung
-    depot_gainers = df_pf.nlargest(2, 'G/V %') if 'G/V %' in df_pf.columns else pd.DataFrame()
 
     # 4. Der Moment der Wahrheit: Upload & Telegram
     print("💾 Synchronisiere Daten mit Google Sheets...")
     repo.save_watchlist(df_wl)
-    # Portfolio auch speichern, falls Kurse aktualisiert wurden
-    if hasattr(repo, 'save_portfolio'):
-        repo.save_portfolio(df_pf)
+    repo.save_portfolio(df_pf) # Portfolio mit korrigierten Kursen speichern
     
     print("📤 Sende Bericht an Telegram...")
     try:
         df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
         top_5 = df_wl.nlargest(5, 'Score')
-        # Wir geben den Gesamtwert an den Bericht weiter
-        send_summary(top_5, total_value)
+        # REPARATUR: Wir senden jetzt Top 5 UND den Depotwert
+        send_summary(top_5, total_value) 
     except Exception as e:
         print(f"❌ Fehler beim Telegram-Aufruf: {e}")
 
