@@ -23,12 +23,44 @@ def run_scanner():
 
     print(f"🔭 Scanne {len(df_wl)} Aktien...")
 
-    for idx, row in df_wl.iterrows():
-        symbol = get_ticker_symbol(row)
-        hist = get_price_data(symbol)
+    # --- 1. SCHRITT: WECHSELKURS LADEN (VOR DER SCHLEIFE) ---
+fx_rate = get_usd_eur_rate()
+print(f"💱 Aktueller Wechselkurs USD/EUR: {fx_rate:.4f}")
+
+print(f"🔭 Scanne {len(df_wl)} Aktien...")
+
+for idx, row in df_wl.iterrows():
+    # --- 2. SCHRITT: TICKER LOGIK (DIE STELLE!) ---
+    # Wir prüfen erst die neue Spalte 'Ticker', sonst ISIN
+    symbol = row.get('Ticker') if pd.notna(row.get('Ticker')) and row.get('Ticker') != "" else get_ticker_symbol(row)
+    
+    hist = get_price_data(symbol)
+    
+    if hist is not None:
+        ticker_obj = yf.Ticker(symbol)
         
-        if hist is not None:
-            ticker = yf.Ticker(symbol)
+        # Rohpreis von Yahoo (kann USD oder EUR sein)
+        raw_price = float(hist['Close'].iloc[-1])
+        
+        # Währung abfragen
+        try:
+            currency = ticker_obj.info.get('currency', 'EUR')
+        except:
+            currency = 'EUR' # Fallback
+            
+        # --- 3. SCHRITT: DIE KONVERTIERUNG ---
+        if currency == 'USD':
+            price_eur = convert_to_eur(raw_price, fx_rate)
+            print(f"🔄 {symbol}: {raw_price:.2f} USD -> {price_eur:.2f} EUR")
+        else:
+            price_eur = raw_price
+
+        # Jetzt den bereinigten Euro-Preis ins DataFrame schreiben
+        df_wl.at[idx, 'Akt. Kurs [€]'] = price_eur
+        
+        # --- AB HIER GEHT DEIN BESTEHENDES SCORING WEITER ---
+        df_wl.at[idx, 'MC_Chance'] = float(calculate_probability(hist))
+        # ... usw.
             
             # 1. Kurs & MC Chance
             df_wl.at[idx, 'Akt. Kurs [€]'] = float(hist['Close'].iloc[-1])
