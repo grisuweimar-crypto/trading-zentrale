@@ -6,7 +6,7 @@ from market.montecarlo import calculate_probability
 from market.fundamental import get_fundamental_data
 from market.scoring import calculate_total_score
 from market.elliott import detect_elliott_wave
-from market.forex import get_usd_eur_rate, convert_to_eur # Wichtig!
+from market.forex import get_usd_eur_rate, convert_to_eur 
 import config
 from alerts.telegram import send_summary
 
@@ -27,6 +27,7 @@ def run_scanner():
     print(f"💱 Aktueller Wechselkurs USD/EUR: {fx_rate:.4f}")
     print(f"🔭 Scanne {len(df_wl)} Aktien...")
 
+    # START DER WATCHLIST-SCHLEIFE
     for idx, row in df_wl.iterrows():
         # --- 2. SCHRITT: TICKER LOGIK ---
         symbol = row.get('Ticker') if pd.notna(row.get('Ticker')) and row.get('Ticker') != "" else get_ticker_symbol(row)
@@ -61,29 +62,48 @@ def run_scanner():
                 if key in df_wl.columns:
                     df_wl.at[idx, key] = val
             
-            # 3. Das Finale Scoring (DEIN SYSTEM)
+            # Das Finale Scoring
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
             
             print(f"✅ {row.get('Name', 'Aktie')} ({symbol}) bewertet.")
+    
+    # <--- HIER IST DER WATCHLIST-SCAN ZU ENDE! --->
+    # Alles was jetzt kommt, passiert nur EINMAL nach dem Scan.
+
+    print("📊 Berechne Portfolio-Performance...")
+    df_pf = repo.load_portfolio() 
+
+    # Wir berechnen den Gesamtwert und die Tages-Performance
+    # Sicherstellen, dass Zahlen auch Zahlen sind
+    df_pf['Anzahl'] = pd.to_numeric(df_pf['Anzahl'], errors='coerce').fillna(0)
+    df_pf['Akt. Kurs [€]'] = pd.to_numeric(df_pf['Akt. Kurs [€]'], errors='coerce').fillna(0)
+    
+    total_value = (df_pf['Anzahl'] * df_pf['Akt. Kurs [€]']).sum()
+
+    # Historie schreiben (für das Historie-Tab)
+    repo.save_history(total_value) 
+
+    # Top Performer aus dem Depot finden
+    df_pf['Perf_1d'] = 0.0 # Platzhalter für spätere Berechnung
+    depot_gainers = df_pf.nlargest(2, 'G/V %') if 'G/V %' in df_pf.columns else pd.DataFrame()
 
     # 4. Der Moment der Wahrheit: Upload & Telegram
     print("💾 Synchronisiere Daten mit Google Sheets...")
     repo.save_watchlist(df_wl)
+    # Portfolio auch speichern, falls Kurse aktualisiert wurden
+    if hasattr(repo, 'save_portfolio'):
+        repo.save_portfolio(df_pf)
     
-    print("📤 Sende Top 5 Ergebnisse an Telegram...")
+    print("📤 Sende Bericht an Telegram...")
     try:
-        # NEU: Sicherstellen, dass 'Score' eine Zahl ist (behebt den Dtype-Fehler)
         df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
-        
-        # Jetzt die Top 5 filtern
         top_5 = df_wl.nlargest(5, 'Score')
-        send_summary(top_5)
+        # Wir geben den Gesamtwert an den Bericht weiter
+        send_summary(top_5, total_value)
     except Exception as e:
         print(f"❌ Fehler beim Telegram-Aufruf: {e}")
 
-    print("🏁 Cloud-Update abgeschlossen. Dein Dashboard ist nun aktuell!")
+    print(f"🏁 Cloud-Update abgeschlossen. Depotwert: {total_value:.2f} €")
 
 if __name__ == "__main__":
-    # Wir rufen NUR noch die Hauptfunktion auf. 
-    # Alles andere (Scannen, Google-Sync, Telegram) wird darin gesteuert.
     run_scanner()

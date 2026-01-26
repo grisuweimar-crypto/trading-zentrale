@@ -1,6 +1,7 @@
 import pandas as pd
 from cloud.auth import get_gspread_client
 from config import GOOGLE_SHEET_NAME
+from datetime import datetime
 
 class TradingRepository:
 
@@ -35,3 +36,12 @@ class TradingRepository:
         ws.update(
             [df.columns.tolist()] + df.fillna("").astype(str).values.tolist()
         )
+
+    # REPARATUR: Diese Funktion fehlte für das Historie-Tab
+    def save_history(self, total_value):
+        try:
+            ws = self.sheet.worksheet("Historie")
+            zeitpunkt = datetime.now().strftime("%d.%m.%Y %H:%M")
+            ws.append_row([zeitpunkt, round(float(total_value), 2)])
+        except Exception as e:
+            print(f"❌ Fehler beim Historie-Speichern: {e}")
