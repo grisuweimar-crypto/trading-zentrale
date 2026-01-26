@@ -1,15 +1,22 @@
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import config # Wir importieren die ganze Config
+import os
+import json
+from google.oauth2 import service_account
 
-def get_gspread_client():
-    # Wir greifen auf die Variable zu, die wir gerade in config.py angelegt haben
-    creds_dict = config.GOOGLE_SHEETS_JSON
+def get_credentials():
+    # WIR SUCHEN JETZT NUR NOCH NACH DEINEM NAMEN
+    creds_json = os.environ.get('GOOGLE_CREDENTIALS')
     
-    if not creds_dict:
-        raise ValueError("❌ Fehler: GOOGLE_SHEETS_JSON ist leer. Check deine Secrets!")
+    if not creds_json:
+        # Fehlermeldung angepasst auf deinen Secret-Namen
+        raise ValueError("❌ Fehler: Das Secret 'GOOGLE_CREDENTIALS' ist leer oder nicht gesetzt!")
 
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    client = gspread.authorize(creds)
-    return client
+    try:
+        # Versuche die Anmeldedaten zu laden
+        info = json.loads(creds_json)
+        return service_account.Credentials.from_service_account_info(
+            info, 
+            scopes=['https://www.googleapis.com/auth/spreadsheets', 
+                    'https://www.googleapis.com/auth/drive']
+        )
+    except Exception as e:
+        raise ValueError(f"❌ Fehler beim Parsen der GOOGLE_CREDENTIALS: {e}")
