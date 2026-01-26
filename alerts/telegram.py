@@ -1,25 +1,34 @@
 import requests
-import config
 
-def send_summary(top_stocks, total_value=0):
-    token = config.TELEGRAM_TOKEN
-    chat_id = config.TELEGRAM_CHAT_ID
-    
-    # Header mit Depotwert
-    msg = f"🏦 **DEPOT-STATUS**\n"
-    msg += f"Gesamtwert: **{total_value:,.2f} €**\n"
-    msg += "------------------------------------------\n\n"
-    
-    msg += "🔥 **TOP SCANNER SIGNALE:**\n"
-    for i, (idx, row) in enumerate(top_stocks.head(3).iterrows()):
-        emoji = ["🥇", "🥈", "🥉"][i]
-        msg += f"{emoji} **{row['Name']}**\n"
-        msg += f"   Score: `{int(row['Score'])}` | Kurs: {row['Akt. Kurs [€]']:.2f}€\n\n"
-    
-    msg += "🏁 _Cloud-Dashboard ist aktuell!_"
+# Deine Telegram-Daten (Trag hier deine echten Daten ein!)
+TOKEN = "DEIN_BOT_TOKEN"
+CHAT_ID = "DEINE_CHAT_ID"
 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
+def send_signal(ticker, elliott_data, score):
+    """
+    Verschickt ein Signal an deinen Telegram-Bot.
+    """
     try:
-        requests.post(url, data={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"})
+        message = (
+            f"🚀 *NEUES SIGNAL: {ticker}*\n\n"
+            f"📊 Score: {score}/120\n"
+            f"📈 Signal: {elliott_data.get('signal', 'Warten')}\n"
+            f"🎯 Ziel: {elliott_data.get('target', 0)} €\n"
+            f"💰 Einstieg: {elliott_data.get('entry', 0)} €\n"
+        )
+        
+        url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+        payload = {
+            "chat_id": CHAT_ID,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+        
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print(f"📲 Telegram Nachricht für {ticker} gesendet!")
+        else:
+            print(f"⚠️ Telegram Fehler: {response.text}")
+            
     except Exception as e:
-        print(f"❌ Telegram-Sende-Fehler: {e}")
+        print(f"❌ Telegram Fehler bei {ticker}: {e}")

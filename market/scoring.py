@@ -1,29 +1,26 @@
 import pandas as pd
 
-def calculate_total_score(row):
+def calculate_final_score(ticker, elliott_data, fundamental_data, monte_carlo_data):
     """
-    Das objektive Bewertungssystem. 
-    Startet bei 0 und bewertet rein nach Datenlage.
-    Maximaler theoretischer Score: ~120 Punkte (bei extremen Top-Werten).
+    DEINE LOGIK: Das objektive Bewertungssystem.
+    Nimmt die Daten aus den Modulen und berechnet den Score.
     """
     score = 0.0
 
     # 1. MONTE CARLO CHANCE (Max 20 Punkte)
-    # Wer eine 100% Chance hat, bekommt 20 Punkte.
-    mc_chance = float(row.get('MC_Chance', 0) or 0)
+    # Wir holen die 'probability' aus dem monte_carlo_data Paket
+    mc_chance = float(monte_carlo_data.get('probability', 0) or 0)
     score += (mc_chance / 100) * 20
 
     # 2. UPSIDE / KURSZIEL (Max 15 Punkte)
-    # Wir werten eine Upside von 30% als "perfekt" (15 Pkt).
-    upside = float(row.get('Upside', 0) or 0)
+    upside = float(fundamental_data.get('upside', 0) or 0)
     if upside > 0:
         score += min((upside / 30) * 15, 15)
     elif upside < -10:
-        score -= 10  # Malus bei hohem Risiko nach unten
+        score -= 10  
 
     # 3. KGV / PE RATIO (Max 15 Punkte)
-    # Je niedriger das KGV (solange > 0), desto besser.
-    pe = float(row.get('PE', 0) or 0)
+    pe = float(fundamental_data.get('pe', 0) or 0)
     if 0 < pe <= 15:
         score += 15
     elif 15 < pe <= 25:
@@ -31,23 +28,21 @@ def calculate_total_score(row):
     elif 25 < pe <= 40:
         score += 5
     elif pe > 60:
-        score -= 15 # Überbewertet
+        score -= 15 
 
     # 4. WACHSTUM (Max 10 Punkte)
-    # 20% Wachstum oder mehr gibt die volle Punktzahl.
-    growth = float(row.get('Wachstum', 0) or 0)
+    growth = float(fundamental_data.get('growth', 0) or 0)
     score += min((growth / 20) * 10, 10)
 
     # 5. MARGE (Max 10 Punkte)
-    # Profitabilität ist wichtig.
-    marge = float(row.get('Marge', 0) or 0)
+    marge = float(fundamental_data.get('margin', 0) or 0)
     if marge > 20:
         score += 10
     elif marge > 5:
         score += 5
 
     # 6. ANALYSTEN-BEWERTUNG (Max 10 Punkte)
-    rec = str(row.get('AnalystRec', 'none')).lower()
+    rec = str(fundamental_data.get('recommendation', 'none')).lower()
     if 'strong_buy' in rec:
         score += 10
     elif 'buy' in rec:
@@ -56,20 +51,18 @@ def calculate_total_score(row):
         score += 2
 
     # 7. ELLIOTT WAVE TURBO (Max 20 Punkte)
-    # Das ist dein automatischer Scanner-Bonus.
-    elliott = str(row.get('Elliott_Signal', '')).upper()
+    elliott = str(elliott_data.get('signal', '')).upper()
     if "JETZT KAUFEN" in elliott or "BUY" in elliott:
         score += 20
     elif "WARTEN" in elliott:
         score += 5
 
-    # 8. ZIELZONEN-BONUS (Der "Kauf-Alarm")
-    # Liegt der Kurs in deiner Zielzone? (+20 Punkte)
-    # Wir vergleichen "Akt. Kurs [€]" mit "Zielzone [€]"
+    # 8. ZIELZONEN-BONUS (Max 20 Punkte)
+    # Wir nehmen hier die Daten aus der Elliott-Analyse
     try:
-        current = float(row.get('Akt. Kurs [€]', 0) or 0)
-        target_zone = float(row.get('Zielzone [€]', 0) or 0)
-        if target_zone > 0 and current <= target_zone * 1.05: # Innerhalb oder max 5% drüber
+        current = float(elliott_data.get('current_price', 0) or 0)
+        target_zone = float(elliott_data.get('entry', 0) or 0)
+        if target_zone > 0 and current <= target_zone * 1.05:
             score += 20
     except:
         pass

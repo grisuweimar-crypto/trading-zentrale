@@ -1,38 +1,21 @@
 import pandas as pd
-from cloud.auth import get_gspread_client
-from config import GOOGLE_SHEET_NAME
-from datetime import datetime
+import os
 
 class TradingRepository:
     def __init__(self):
-        self.client = get_gspread_client()
-        self.sheet = self.client.open(GOOGLE_SHEET_NAME)
+        # Wir definieren nur noch den Namen der lokalen Datei
+        self.filename = 'watchlist.csv'
 
-    def load_watchlist(self) -> pd.DataFrame:
-        ws = self.sheet.worksheet("Watchlist")
-        return pd.DataFrame(ws.get_all_records())
+    def load_watchlist(self):
+        # Schaut nach, ob die CSV da ist, sonst erstellt sie eine leere
+        if os.path.exists(self.filename):
+            print(f"📂 Lade lokale Daten aus {self.filename}")
+            return pd.read_csv(self.filename)
+        else:
+            print("⚠️ watchlist.csv nicht gefunden, erstelle neues Grundgerüst.")
+            return pd.DataFrame(columns=['Ticker', 'Name', 'Akt. Kurs [€]', 'Score', 'Elliott-Signal'])
 
-    def save_watchlist(self, df: pd.DataFrame):
-        ws = self.sheet.worksheet("Watchlist")
-        ws.clear()
-        ws.update([df.columns.tolist()] + df.fillna("").astype(str).values.tolist())
-
-    def save_history(self, total_value):
-        try:
-            ws = self.sheet.worksheet("Historie")
-            zeitstempel = datetime.now().strftime("%d.%m.%Y %H:%M")
-            ws.append_row([zeitstempel, float(total_value)])
-        except Exception as e:
-            print(f"❌ Historie-Fehler: {e}")
-
-    def load_import_aktien(self) -> pd.DataFrame:
-        try:
-            ws = self.sheet.worksheet("Import_Aktien")
-            return pd.DataFrame(ws.get_all_records())
-        except: return pd.DataFrame()
-
-    def load_import_krypto(self) -> pd.DataFrame:
-        try:
-            ws = self.sheet.worksheet("Import_Krypto")
-            return pd.DataFrame(ws.get_all_records())
-        except: return pd.DataFrame()
+    def save_watchlist(self, df):
+        # Speichert alles lokal. KEIN Google-Login nötig!
+        df.to_csv(self.filename, index=False)
+        print(f"✅ Erfolgreich lokal gespeichert in {self.filename}")

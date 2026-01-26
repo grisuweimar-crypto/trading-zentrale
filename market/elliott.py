@@ -1,18 +1,19 @@
 import numpy as np
+import pandas as pd
 
-def detect_elliott_wave(hist):
+def calculate_elliott(hist):
     """
-    Professionelle Elliott-Wellen-Analyse mit Fibonacci-Zielen.
-    Berechnet Einstieg (unten) und Ausstieg (oben).
+    Deine professionelle Elliott-Wellen-Analyse.
+    Gibt ein Dictionary zurück, das direkt in die CSV geschrieben werden kann.
     """
     if hist is None or len(hist) < 50:
-        return {"signal": "Datenmangel", "entry_zone": "-", "target": 0}
+        return {"signal": "Datenmangel", "entry": 0, "target": 0, "score": 0}
 
     close = hist['Close'].values
     highs = hist['High'].values
     lows = hist['Low'].values
     
-    # 1. Pivot-Erkennung (Suche nach markanten Hochs/Tiefs)
+    # Pivot-Erkennung
     def find_pivots(n=5):
         pivots = []
         for i in range(n, len(close) - n):
@@ -25,36 +26,29 @@ def detect_elliott_wave(hist):
         return pivots
 
     p = find_pivots()
-    if len(p) < 3: return {"signal": "Seitwärts", "entry_zone": "-", "target": 0}
+    if len(p) < 3: 
+        return {"signal": "Seitwärts", "entry": 0, "target": 0, "score": 20}
 
-    # BULLISCHES MUSTER: Welle 1 (Auf), Welle 2 (Ab) -> Welle 3 (Ziel oben)
-    # Wir suchen: Letztes Tief (L1) -> Letztes Hoch (H1) -> Korrektur (L2)
+    # Bullisches Muster Analyse
     if p[-2][0] == 'H' and p[-1][0] == 'L':
-        w1_start = 0
-        for i in range(len(p)-2, -1, -1):
-            if p[i][0] == 'L':
-                w1_start = p[i][2]
-                break
-        
-        w1_end = p[-2][2] # Hoch von Welle 1
-        w2_end = p[-1][2] # Aktuelles Tief von Welle 2
+        w1_start = p[-3][2] if len(p) >= 3 else lows[0]
+        w1_end = p[-2][2] 
+        w2_end = p[-1][2] 
         move_w1 = w1_end - w1_start
         
         if move_w1 > 0:
             retrace = (w1_end - w2_end) / move_w1
             
-            # Einstiegszone (unten): 50% bis 78.6% Retracement
             if 0.45 <= retrace <= 0.85:
-                # AUSSTIEGSZONE (oben): Welle 3 Ziel = 161.8% Extension
                 target_w3 = w2_end + (move_w1 * 1.618)
-                entry_high = w1_end - (move_w1 * 0.50)
-                entry_low = w1_end - (move_w1 * 0.786)
+                entry_level = w1_end - (move_w1 * 0.618) # Der ideale Einstieg
+                score = round((1 - abs(retrace - 0.618)) * 100, 1)
                 
                 return {
                     "signal": "BUY",
-                    "entry_zone": f"{entry_low:.2f} - {entry_high:.2f}",
+                    "entry": round(entry_level, 2),
                     "target": round(target_w3, 2),
-                    "confidence": round((1 - abs(retrace - 0.618)) * 100, 1)
+                    "score": score
                 }
 
-    return {"signal": "Warten", "entry_zone": "-", "target": 0}
+    return {"signal": "Warten", "entry": 0, "target": 0, "score": 30}

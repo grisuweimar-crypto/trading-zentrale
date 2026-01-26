@@ -1,12 +1,32 @@
 import numpy as np
-import pandas as pd
 
-def calculate_probability(history: pd.DataFrame, days=30, simulations=500):
-    """Deine Monte-Carlo Logik."""
+def run_monte_carlo(hist, days=30, simulations=100):
+    """
+    Berechnet die Wahrscheinlichkeit, dass der Kurs in 30 Tagen höher steht.
+    """
+    if hist is None or len(hist) < 20:
+        return {"probability": 0}
+
     try:
-        returns = history['Close'].pct_change().dropna()
-        sims = np.random.normal(returns.mean(), returns.std(), (days, simulations))
-        final_prices = (1 + sims).cumprod(axis=0)[-1] * history['Close'].iloc[-1]
-        return float(np.mean(final_prices > history['Close'].iloc[-1]) * 100)
-    except:
-        return 0.0
+        # Log-Returns berechnen
+        returns = np.log(1 + hist['Close'].pct_change())
+        mu = returns.mean()
+        sigma = returns.std()
+        
+        last_price = hist['Close'].iloc[-1]
+        results = []
+        
+        for _ in range(simulations):
+            # Simulation der Preisbewegung
+            prices = [last_price]
+            for _ in range(days):
+                prices.append(prices[-1] * np.exp(mu + sigma * np.random.standard_normal()))
+            results.append(prices[-1])
+        
+        # Wie viele Pfade enden über dem aktuellen Preis?
+        prob = (np.sum(np.array(results) > last_price) / simulations) * 100
+        return {"probability": round(prob, 1)}
+        
+    except Exception as e:
+        print(f"Monte Carlo Fehler: {e}")
+        return {"probability": 0}

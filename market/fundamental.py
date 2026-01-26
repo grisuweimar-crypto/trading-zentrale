@@ -1,38 +1,31 @@
-def get_fundamental_data(ticker_obj):
+import yfinance as yf
+
+def get_fundamental_data(ticker):
     """
-    Sammelt alle fundamentalen Kriterien von Yahoo Finance in einem Rutsch.
-    Gibt ein Dictionary zurück, das direkt vom Scoring-Modul gelesen werden kann.
+    Holt fundamentale Kennzahlen für das Scoring.
     """
     try:
-        # Einmaliger Zugriff auf die Info-API (spart Zeit)
-        info = ticker_obj.info
+        # Hier lag der Fehler: Wir müssen yf.Ticker(ticker) nutzen!
+        stock = yf.Ticker(ticker)
+        info = stock.info
         
-        # Hilfsfunktion für die Upside-Berechnung
-        current_price = info.get('currentPrice')
-        target_price = info.get('targetMedianPrice')
-        upside = 0.0
-        if current_price and target_price:
-            upside = round(((target_price - current_price) / current_price) * 100, 2)
-
-        # Daten-Paket schnüren
+        # Sicherstellen, dass wir Werte haben, sonst 0 setzen
         data = {
-            'PE': info.get('trailingPE') or info.get('forwardPE') or 0.0,
-            'DivRendite': round((info.get('dividendYield') or 0.0) * 100, 2),
-            'Wachstum': round((info.get('earningsQuarterlyGrowth') or 0.0) * 100, 2),
-            'Marge': round((info.get('profitMargins') or 0.0) * 100, 2),
-            'Debt': info.get('debtToEquity') or 0.0,
-            'AnalystRec': info.get('recommendationKey', 'none'),
-            'Upside': upside,
-            'Beta': info.get('beta') or 1.0  # Beta von 1.0 als neutraler Standard
+            "upside": 0,
+            "pe": info.get('forwardPE', 0) or 0,
+            "growth": info.get('revenueGrowth', 0) or 0,
+            "margin": info.get('profitMargins', 0) or 0,
+            "recommendation": info.get('recommendationKey', 'none')
         }
         
+        # Einfache Upside-Berechnung (Target Price vs Current)
+        target = info.get('targetMeanPrice')
+        current = info.get('currentPrice')
+        if target and current:
+            data["upside"] = round(((target / current) - 1) * 100, 2)
+            
         return data
 
     except Exception as e:
-        print(f"⚠️ Fehler beim Abrufen der Fundamentaldaten: {e}")
-        # Rückgabe von Standardwerten bei Fehlern, damit der Scanner nicht stoppt
-        return {
-            'PE': 0.0, 'DivRendite': 0.0, 'Wachstum': 0.0, 
-            'Marge': 0.0, 'Debt': 0.0, 'AnalystRec': 'none', 
-            'Upside': 0.0, 'Beta': 1.0
-        }
+        # Falls Yahoo blockt, liefern wir neutrale Werte zurück
+        return {"upside": 0, "pe": 0, "growth": 0, "margin": 0, "recommendation": "none"}
