@@ -84,4 +84,6 @@ def run_scanner():
     print("🏁 Cloud-Update abgeschlossen. Dein Dashboard ist nun aktuell!")
 
 if __name__ == "__main__":
+    # Wir rufen NUR noch die Hauptfunktion auf. 
+    # Alles andere (Scannen, Google-Sync, Telegram) wird darin gesteuert.
     run_scanner()
