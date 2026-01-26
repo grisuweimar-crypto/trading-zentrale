@@ -32,53 +32,41 @@ def run_scanner():
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
             print(f"✅ {row.get('Name', 'Aktie')} bewertet.")
 
-    # 2. PORTFOLIO-BERECHNUNG (Die Perplexity Plausibilitäts-Sicherung)
-    print("📊 Berechne Portfolio mit Live-Kurs Plausibilitäts-Check...")
+    # --- 2. SCHRITT: PORTFOLIO MIT DOPPELTER SICHERUNG ---
+    print("📊 Berechne Portfolio (Realitäts-Check aktiv)...")
     total_value = 0.0
 
-    def get_plausible_value(sheet_val, symbol, anzahl, fx_rate):
-        # Rohwert aus Sheet säubern
+    def clean_and_validate(raw_wert, kaufwert, symbol):
+        # 1. Grundreinigung
         try:
-            s = str(sheet_val).replace('.', '').replace(',', '.')
-            val_sheet = float(s)
+            s = str(raw_wert).replace('.', '').replace(',', '.')
+            val = float(s)
+            
+            s_kauf = str(kaufwert).replace('.', '').replace(',', '.')
+            kauf = float(s_kauf)
         except: return 0.0
 
-        # Erwartungswert berechnen (Anzahl * Live-Kurs)
-        p_data = get_price_data(symbol)
-        if p_data is None: return val_sheet # Fallback
-        
-        live_price = float(p_data['Close'].iloc[-1])
-        # Währungskorrektur für US-Aktien im Depot
-        ticker_obj = yf.Ticker(symbol)
-        if ticker_obj.info.get('currency') == 'USD':
-            live_price *= fx_rate
-        
-        expected = anzahl * live_price
-        
-        # PLAUSIBILITÄTS-CHECK:
-        # Wenn der Sheet-Wert ca. 100x höher ist als erwartet -> durch 100 teilen
-        if val_sheet > expected * 50: # Faktor 50 als Sicherheitspuffer
-            print(f"⚠️ Korrektur: {symbol} Wert von {val_sheet} auf {val_sheet/100} gesenkt (100x Fehler).")
-            return val_sheet / 100
-        return val_sheet
+        # 2. DER 100x DETEKTOR (Vergleich mit Kaufwert)
+        # Wenn der Wert 50-mal höher ist als der Kaufwert (unwahrscheinlich bei deinen Titeln)
+        # ODER wenn der Wert über 1000€ liegt (bei deinem aktuellen Depot unmöglich)
+        if (kauf > 0 and val > kauf * 50) or (val > 1000 and "BTC" not in str(symbol)):
+            return val / 100.0
+            
+        return val
 
-    # Summe Aktien
+    # Aktien-Summe
     df_a = repo.load_import_aktien()
     if not df_a.empty:
         for _, row in df_a.iterrows():
-            sym = row.get('ISIN') or row.get('Name') # ISIN funktioniert oft direkt bei Yahoo
-            anz_str = str(row.get('Anzahl', '0')).replace(',', '.')
-            anz = float(pd.to_numeric(anz_str, errors='coerce') or 0.0)
-            total_value += get_plausible_value(row.get('Wert'), sym, anz, fx_rate)
+            total_value += clean_and_validate(row.get('Wert'), row.get('Kaufwert'), row.get('ISIN'))
+        print("✅ Aktien plausibilisiert.")
 
-    # Summe Krypto
+    # Krypto-Summe
     df_k = repo.load_import_krypto()
     if not df_k.empty:
         for _, row in df_k.iterrows():
-            sym = row.get('Symbol') # z.B. BTC-EUR
-            anz_str = str(row.get('Anzahl', '0')).replace(',', '.')
-            anz = float(pd.to_numeric(anz_str, errors='coerce') or 0.0)
-            total_value += get_plausible_value(row.get('Wert'), sym, anz, 1.0)
+            total_value += clean_and_validate(row.get('Wert'), row.get('Kaufwert'), row.get('Name'))
+        print("✅ Krypto plausibilisiert.")
 
     total_value = round(total_value, 2)
 
