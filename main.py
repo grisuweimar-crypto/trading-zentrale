@@ -28,30 +28,31 @@ def run_scanner():
             df_wl.at[idx, 'Akt. Kurs [€]'] = price_eur
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
 
-    # --- 2. SCHRITT: PORTFOLIO AUS BROKER_IMPORT (Der Fix) ---
-    print("📊 Berechne Portfolio aus Broker_Import Tab...")
-    # Nutzt die load_import_data Methode, die wir in repository.py erstellt haben
-    df_import = repo.load_import_data()
+    # --- 2. SCHRITT: PORTFOLIO AUS ZWEI REITERN ---
+    print("📊 Berechne Portfolio aus getrennten Import-Tabs...")
     
     total_value = 0.0
-    if not df_import.empty:
-        for idx, row in df_import.iterrows():
-            # Wir nehmen die Spalte 'Wert', da Zero hier die Summe pro Position liefert
-            raw_wert = str(row.get('Wert', '0'))
-            
-            # REINIGUNG: Tausender-Punkt weg, Komma zu Punkt
-            # Macht aus "1.365,40" -> "1365.40"
-            clean_wert = raw_wert.replace('.', '').replace(',', '.')
-            
-            try:
-                # Wichtig: Explizit in Zahl (float) umwandeln BEVOR gerechnet wird!
-                val = float(pd.to_numeric(clean_wert, errors='coerce') or 0.0)
-                total_value += val
-            except:
-                continue
-        print(f"✅ Depot-Summe erfolgreich berechnet.")
-    else:
-        print("⚠️ Broker_Import Tab ist leer oder konnte nicht gelesen werden!")
+    
+    # 1. Aktien berechnen
+    df_a = repo.load_import_aktien()
+    if not df_a.empty:
+        for val in df_a['Wert']:
+            clean = str(val).replace('.', '').replace(',', '.')
+            num = pd.to_numeric(clean, errors='coerce')
+            if pd.notna(num): total_value += float(num)
+        print(f"✅ Aktien-Wert addiert.")
+
+    # 2. Krypto berechnen
+    df_k = repo.load_import_krypto()
+    if not df_k.empty:
+        for val in df_k['Wert']:
+            clean = str(val).replace('.', '').replace(',', '.')
+            num = pd.to_numeric(clean, errors='coerce')
+            if pd.notna(num): total_value += float(num)
+        print(f"✅ Krypto-Wert addiert.")
+
+    total_value = round(total_value, 2)
+    # --- WEITER MIT SPEICHERN & TELEGRAM ---
 
     # --- 3. SCHRITT: SPEICHERN & TELEGRAM ---
     total_value = round(total_value, 2)
