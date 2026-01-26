@@ -50,10 +50,17 @@ def run_scanner():
     # 4. Der Moment der Wahrheit: Upload
     print("💾 Synchronisiere Daten mit Google Sheets...")
     repo.save_watchlist(df_wl)
-    top_5 = df_wl.nlargest(5, 'Score')
     
+    # --- DIESE ZEILEN MÜSSEN EINGERÜCKT SEIN (8 Leerzeichen) ---
     print("📤 Sende Top 5 Ergebnisse an Telegram...")
-    send_summary(top_5)
+    try:
+        from alerts.telegram import send_summary
+        top_5 = df_wl.nlargest(5, 'Score')
+        send_summary(top_5)
+    except Exception as e:
+        print(f"❌ Fehler beim Telegram-Aufruf: {e}")
+    # ---------------------------------------------------------
+
     print("🏁 Cloud-Update abgeschlossen. Dein Dashboard ist nun aktuell!")
     
     # Ganz am Ende der main.py
