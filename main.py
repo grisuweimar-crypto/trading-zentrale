@@ -11,21 +11,12 @@ import config
 from alerts.telegram import send_summary
 
 def run_scanner():
-    print("🚀 TRADING SCANNER V27 - CLOUD SYNC AKTIVIERT")
+    print("🚀 TRADING SCANNER V27 - BROKER-IMPORT MODUS")
     repo = TradingRepository()
     df_wl = repo.load_watchlist()
     
-    # Spalten sicherstellen
-    expected_cols = ['Akt. Kurs [€]', 'PE', 'DivRendite', 'Wachstum', 'Marge', 
-                     'Upside', 'Beta', 'AnalystRec', 'MC_Chance', 'Elliott_Signal', 'Score']
-    for col in expected_cols:
-        if col not in df_wl.columns:
-            df_wl[col] = 0.0
-
+    # 1. Watchlist Scan (Deine bewährte Logik)
     fx_rate = get_usd_eur_rate()
-    print(f"💱 Kurs: 1 USD = {fx_rate:.4f} EUR")
-
-    # 1. Watchlist Scan
     for idx, row in df_wl.iterrows():
         symbol = row.get('Ticker') if pd.notna(row.get('Ticker')) and row.get('Ticker') != "" else get_ticker_symbol(row)
         hist = get_price_data(symbol)
@@ -34,55 +25,47 @@ def run_scanner():
             raw_price = float(hist['Close'].iloc[-1])
             currency = ticker_obj.info.get('currency', 'EUR')
             price_eur = convert_to_eur(raw_price, fx_rate) if currency == 'USD' else raw_price
-
             df_wl.at[idx, 'Akt. Kurs [€]'] = price_eur
-            df_wl.at[idx, 'MC_Chance'] = float(calculate_probability(hist))
-            df_wl.at[idx, 'Elliott_Signal'] = detect_elliott_wave(hist)
-            
-            fund_data = get_fundamental_data(ticker_obj)
-            for key, val in fund_data.items():
-                if key in df_wl.columns: df_wl.at[idx, key] = val
-            
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
-            print(f"✅ {row.get('Name', 'Aktie')} ({symbol}) bewertet.")
 
-    # --- 2. SCHRITT: PORTFOLIO-LOGIK (Radikale Reinigung) ---
-    print("📊 Berechne Portfolio-Performance...")
-    df_pf = repo.load_portfolio()
+    # --- 2. SCHRITT: PORTFOLIO AUS BROKER_IMPORT (Der Fix) ---
+    print("📊 Berechne Portfolio aus Broker_Import Tab...")
+    # Nutzt die load_import_data Methode, die wir in repository.py erstellt haben
+    df_import = repo.load_import_data()
     
     total_value = 0.0
-    for idx, row in df_pf.iterrows():
-        # Wir lesen ALLES als String ein, um volle Kontrolle zu haben
-        anzahl_str = str(row.get('Anzahl', '0')).replace('.', '').replace(',', '.')
-        kurs_str = str(row.get('Akt. Kurs [€]', '0')).replace('.', '').replace(',', '.')
-        
-        # Umwandlung in echte Python-Zahlen
-        try:
-            anzahl = float(anzahl_str)
-            current_price = float(kurs_str)
+    if not df_import.empty:
+        for idx, row in df_import.iterrows():
+            # Wir nehmen die Spalte 'Wert', da Zero hier die Summe pro Position liefert
+            raw_wert = str(row.get('Wert', '0'))
             
-            # Sicherheits-Check: Wenn der Kurs durch falsche Punkte zu hoch ist
-            # Beispiel: 1.365,40 wurde zu 136540.0 -> wir rücken das Komma zurecht.
-            if current_price > 10000 and "BTC" not in str(row.get('Symbol')):
-                current_price = current_price / 100 
-                
-            total_value += (anzahl * current_price)
-        except:
-            continue
+            # REINIGUNG: Tausender-Punkt weg, Komma zu Punkt
+            # Macht aus "1.365,40" -> "1365.40"
+            clean_wert = raw_wert.replace('.', '').replace(',', '.')
+            
+            try:
+                # Wichtig: Explizit in Zahl (float) umwandeln BEVOR gerechnet wird!
+                val = float(pd.to_numeric(clean_wert, errors='coerce') or 0.0)
+                total_value += val
+            except:
+                continue
+        print(f"✅ Depot-Summe erfolgreich berechnet.")
+    else:
+        print("⚠️ Broker_Import Tab ist leer oder konnte nicht gelesen werden!")
 
     # --- 3. SCHRITT: SPEICHERN & TELEGRAM ---
     total_value = round(total_value, 2)
     repo.save_history(total_value) 
+    repo.save_watchlist(df_wl)
     
-    print(f"📤 Sende Bericht... Realwert: {total_value} €")
-    # Hier rufen wir Telegram auf
+    print(f"📤 Sende Bericht an Telegram... (Depotwert: {total_value} €)")
     try:
         df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
         send_summary(df_wl.nlargest(5, 'Score'), total_value) 
     except Exception as e:
         print(f"❌ Telegram-Fehler: {e}")
 
-    print(f"🏁 Update fertig. Depot: {total_value:.2f} €")
+    print(f"🏁 Update abgeschlossen. Realwert: {total_value:.2f} €")
 
 if __name__ == "__main__":
     run_scanner()
