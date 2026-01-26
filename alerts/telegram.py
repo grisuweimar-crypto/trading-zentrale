@@ -1,25 +1,39 @@
 import requests
 import config
 
-def send_summary(top_stocks, message_header="🚀 SCANNER TOP CHANCEN"):
-    """Sendet eine formatierte Liste der besten Aktien an Telegram."""
-    if not top_stocks:
+def send_summary(df_top):
+    """Erhält die Top-Aktien als DataFrame und versendet sie."""
+    if df_top.empty:
+        print("⚠️ Telegram: Keine Daten zum Versenden vorhanden.")
         return
 
-    msg = f"*{message_header}*\n\n"
-    for _, stock in top_stocks.iterrows():
-        msg += f"✅ *{stock['Name']}*\n"
-        msg += f"   Score: {stock['Score']:.1f} | Chance: {stock['MC_Chance']:.1f}%\n"
-        msg += f"   Signal: {stock.get('Elliott_Signal', 'N/A')}\n\n"
+    # Nachrichtenkopf
+    message = "🚀 **Trading Scanner V27 - Top Signale**\n"
+    message += "Währung: **EURO (€)**\n\n"
 
+    # Zeilenweise die Aktien aus dem DataFrame auslesen
+    for _, row in df_top.iterrows():
+        name = row.get('Name', 'Unbekannt')
+        score = row.get('Score', 0)
+        kurs = row.get('Akt. Kurs [€]', 0)
+        
+        message += f"🔹 **{name}**\n"
+        message += f"   Score: {score:.1f}\n"
+        message += f"   Kurs: {kurs:.2f} €\n\n"
+
+    # Versand über die Telegram API
     url = f"https://api.telegram.org/bot{config.TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": config.TELEGRAM_CHAT_ID,
-        "text": msg,
+        "text": message,
         "parse_mode": "Markdown"
     }
-    
+
     try:
-        requests.post(url, data=payload, timeout=10)
+        response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            print("✅ Telegram: Nachricht erfolgreich gesendet.")
+        else:
+            print(f"❌ Telegram-Fehler: {response.text}")
     except Exception as e:
-        print(f"❌ Telegram Fehler: {e}")
+        print(f"❌ Kritischer Fehler beim Telegram-Versand: {e}")

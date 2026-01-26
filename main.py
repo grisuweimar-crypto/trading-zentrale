@@ -7,6 +7,7 @@ from market.fundamental import get_fundamental_data
 from market.scoring import calculate_total_score
 from market.elliott import detect_elliott_wave
 import config
+from alerts.telegram import send_summary
 
 def run_scanner():
     print("🚀 TRADING SCANNER V27 - CLOUD SYNC AKTIVIERT")
@@ -49,7 +50,22 @@ def run_scanner():
     # 4. Der Moment der Wahrheit: Upload
     print("💾 Synchronisiere Daten mit Google Sheets...")
     repo.save_watchlist(df_wl)
+    top_5 = df_wl.nlargest(5, 'Score')
+    
+    print("📤 Sende Top 5 Ergebnisse an Telegram...")
+    send_summary(top_5)
     print("🏁 Cloud-Update abgeschlossen. Dein Dashboard ist nun aktuell!")
+    
+    # Ganz am Ende der main.py
+if __name__ == "__main__":
+    # ... dein bisheriger Scan-Code ...
+    
+    # Der entscheidende Aufruf:
+    if 'top_5' in locals() or 'top_5' in globals():
+        from alerts.telegram_bot import send_summary
+        send_summary(top_5) # Hier wird die Nachricht abgeschickt!
+    else:
+        print("⚠️ Keine Top 5 Liste zum Versenden gefunden.")
 
 if __name__ == "__main__":
     run_scanner()
