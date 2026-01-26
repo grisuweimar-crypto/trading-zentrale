@@ -1,54 +1,60 @@
 import pandas as pd
-import yfinance as yf
 from cloud.repository import TradingRepository
-from market.yahoo import get_ticker_symbol, get_price_data
+from market.yahoo import get_price_data
 from market.scoring import calculate_total_score
-from market.elliott import detect_elliott_wave
 from market.forex import get_usd_eur_rate
+from market.elliott import detect_elliott_wave  # <--- HIER IMPORTIEREN
+from utils.sanitizer import get_logical_value
 from alerts.telegram import send_summary
 
 def run_scanner():
-    print("🚀 TRADING SCANNER - MARKET ANALYSIS ONLY")
+    print("🚀 SCANNER AKTIV - MODULARE STRUKTUR")
     repo = TradingRepository()
-    df_wl = repo.load_watchlist()
     fx_rate = get_usd_eur_rate()
+    
+    # --- TEIL 1: WATCHLIST (Markt-Analyse & Elliott) ---
+    df_wl = repo.load_watchlist()
+    print(f"🔭 Scanne {len(df_wl)} Werte auf Elliott-Muster...")
 
-    # 1. REINER MARKT-SCAN (Verlässt sich NICHT auf deine Depot-Daten)
-    print(f"🔭 Scanne {len(df_wl)} Aktien auf Elliott-Wellen-Signale...")
     for idx, row in df_wl.iterrows():
-        symbol = row.get('Ticker') or get_ticker_symbol(row)
-        hist = get_price_data(symbol)
+        ticker = row.get('Ticker')
+        hist = get_price_data(ticker)
         
         if hist is not None:
-            ticker_obj = yf.Ticker(symbol)
-            # Preis in EUR umrechnen
-            price = float(hist['Close'].iloc[-1])
-            if ticker_obj.info.get('currency') == 'USD':
-                price *= fx_rate
+            # 1. ELLIOTT LOGIK AUFRUFEN
+            # Diese Funktion berechnet jetzt Entry (unten) und Target (oben)
+            elliott_res = detect_elliott_wave(hist)
             
-            # Signale berechnen
-            df_wl.at[idx, 'Akt. Kurs [€]'] = price
-            df_wl.at[idx, 'Elliott_Signal'] = detect_elliott_wave(hist)
+            # 2. DATEN IN DEINE SPALTEN SCHREIBEN
+            # Wir füllen exakt die Spalten, die du in deinem Sheet hast
+            df_wl.at[idx, 'Elliott-Signal'] = elliott_res['signal']
+            df_wl.at[idx, 'Auto-Ausstieg 161%'] = elliott_res['target']
+            
+            # Den Einstiegs-Bereich (unten) splitten oder als Range eintragen
+            df_wl.at[idx, 'Elliott-Einstieg'] = elliott_res['entry_zone']
+            
+            # 3. SCORE BERECHNEN
+            # Wir übergeben die neue Zeile (inkl. Elliott-Signal) an das Scoring
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
             
-            print(f"✅ {row.get('Name', 'Aktie')} analysiert.")
+            if "BUY" in str(elliott_res['signal']):
+                print(f"🎯 SIGNAL: {row.get('Name')} | Ziel: {elliott_res['target']}€")
 
-    # 2. SPEICHERN & SENDEN (Nur die Watchlist)
+    # --- TEIL 2: PORTFOLIO (Dein stabiler Teil) ---
+    total_value = 0.0
+    for df_p in [repo.load_import_aktien(), repo.load_import_krypto()]:
+        if not df_p.empty:
+            for _, row_p in df_p.iterrows():
+                total_value += get_logical_value(row_p.get('Wert'), row_p.get('Kaufwert'))
+
+    # --- TEIL 3: ABSCHLUSS & SPEICHERN ---
+    # Hier werden alle Elliott-Marken zurück in dein Google Sheet geschrieben!
     repo.save_watchlist(df_wl)
+    repo.save_history(total_value)
     
-    print("📤 Sende Top-Signale an Telegram...")
-    try:
-        # Wir filtern die Top 5 nach deinem Scoring-System
-        df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
-        top_picks = df_wl.nlargest(5, 'Score')
-        
-        # Wir senden 0.0 als Depotwert, da wir ihn nicht mehr berechnen
-        send_summary(top_picks, 0.0) 
-        print("✅ Bericht erfolgreich versendet.")
-    except Exception as e:
-        print(f"❌ Fehler: {e}")
-
-    print("🏁 Markt-Update abgeschlossen.")
+    # Telegram Bericht
+    send_summary(df_wl.nlargest(5, 'Score'), total_value)
+    print(f"🏁 Fertig. Depot: {total_value} €")
 
 if __name__ == "__main__":
     run_scanner()
