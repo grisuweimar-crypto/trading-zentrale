@@ -51,10 +51,14 @@ class TradingRepository:
         try:
             ws = self.sheet.worksheet("Import_Aktien")
             return pd.DataFrame(ws.get_all_records())
-        except: return pd.DataFrame()
+        except Exception as e:
+            print(f"⚠️ Import_Aktien nicht gefunden: {e}")
+            return pd.DataFrame()
 
     def load_import_krypto(self) -> pd.DataFrame:
         try:
             ws = self.sheet.worksheet("Import_Krypto")
             return pd.DataFrame(ws.get_all_records())
-        except: return pd.DataFrame()
+        except Exception as e:
+            print(f"⚠️ Import_Krypto nicht gefunden: {e}")
+            return pd.DataFrame()

@@ -28,34 +28,53 @@ def run_scanner():
             df_wl.at[idx, 'Akt. Kurs [€]'] = price_eur
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
 
-    # --- 2. SCHRITT: PORTFOLIO AUS ZWEI REITERN ---
+    # --- 2. SCHRITT: PORTFOLIO-BERECHNUNG (Zwei-Reiter-Modus) ---
     print("📊 Berechne Portfolio aus getrennten Import-Tabs...")
-    
     total_value = 0.0
-    
-    # 1. Aktien berechnen
+
+    def smart_clean(v):
+        """Bereinigt Zahlen-Strings sicher und erkennt Punkt/Komma korrekt."""
+        s = str(v).strip().replace('€', '').replace('%', '').strip()
+        if not s or s.lower() == 'nan':
+            return 0.0
+        
+        # Logik für Zero-Exporte: Punkt ist oft Dezimaltrenner (68.11)
+        # Wir prüfen, ob ein Punkt vorhanden ist und kein Komma
+        if '.' in s and ',' not in s:
+            # Punkt bleibt Punkt (Dezimalzeichen)
+            pass
+        elif ',' in s and '.' in s:
+            # Deutsches Format: 1.365,40 -> Punkt weg, Komma zu Punkt
+            s = s.replace('.', '').replace(',', '.')
+        elif ',' in s:
+            # Einfaches Komma: 68,11 -> 68.11
+            s = s.replace(',', '.')
+            
+        try:
+            return float(s)
+        except:
+            return 0.0
+
+    # 1. Aktien aus Reiter 'Import_Aktien'
     df_a = repo.load_import_aktien()
-    if not df_a.empty:
-        for val in df_a['Wert']:
-            clean = str(val).replace('.', '').replace(',', '.')
-            num = pd.to_numeric(clean, errors='coerce')
-            if pd.notna(num): total_value += float(num)
-        print(f"✅ Aktien-Wert addiert.")
+    if not df_a.empty and 'Wert' in df_a.columns:
+        for v in df_a['Wert']:
+            val = smart_clean(v)
+            total_value += val
+        print(f"✅ Aktien-Wert erfolgreich addiert.")
 
-    # 2. Krypto berechnen
+    # 2. Krypto aus Reiter 'Import_Krypto'
     df_k = repo.load_import_krypto()
-    if not df_k.empty:
-        for val in df_k['Wert']:
-            clean = str(val).replace('.', '').replace(',', '.')
-            num = pd.to_numeric(clean, errors='coerce')
-            if pd.notna(num): total_value += float(num)
-        print(f"✅ Krypto-Wert addiert.")
+    if not df_k.empty and 'Wert' in df_k.columns:
+        for v in df_k['Wert']:
+            val = smart_clean(v)
+            total_value += val
+        print(f"✅ Krypto-Wert erfolgreich addiert.")
 
+    # Gesamtwert runden
     total_value = round(total_value, 2)
-    # --- WEITER MIT SPEICHERN & TELEGRAM ---
-
+    
     # --- 3. SCHRITT: SPEICHERN & TELEGRAM ---
-    total_value = round(total_value, 2)
     repo.save_history(total_value) 
     repo.save_watchlist(df_wl)
     
