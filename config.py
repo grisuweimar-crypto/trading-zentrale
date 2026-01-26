@@ -15,7 +15,7 @@ TELEGRAM_CHAT_ID = get_secret("TELEGRAM_CHAT_ID")
 
 # 2. Google Credentials
 # GitHub Secrets speichert das JSON oft als einen langen String
-creds_raw = get_secret("GOOGLE_SHEET_CREDENTIALS")
+creds_raw = get_secret("GOOGLE_CREDENTIALS")
 
 if creds_raw:
     try:
