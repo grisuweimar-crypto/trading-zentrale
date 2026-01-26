@@ -1,0 +1,55 @@
+import pandas as pd
+import yfinance as yf
+from cloud.repository import TradingRepository
+from market.yahoo import get_ticker_symbol, get_price_data
+from market.montecarlo import calculate_probability
+from market.fundamental import get_fundamental_data
+from market.scoring import calculate_total_score
+from market.elliott import detect_elliott_wave
+import config
+
+def run_scanner():
+    print("🚀 TRADING SCANNER V27 - CLOUD SYNC AKTIVIERT")
+    repo = TradingRepository()
+    df_wl = repo.load_watchlist()
+    
+    # Sicherstellen, dass alle nötigen Spalten existieren (verhindert Fehler)
+    expected_cols = ['Akt. Kurs [€]', 'PE', 'DivRendite', 'Wachstum', 'Marge', 
+                     'Upside', 'Beta', 'AnalystRec', 'MC_Chance', 'Elliott_Signal', 'Score']
+    for col in expected_cols:
+        if col not in df_wl.columns:
+            df_wl[col] = 0.0
+
+    print(f"🔭 Scanne {len(df_wl)} Aktien...")
+
+    for idx, row in df_wl.iterrows():
+        symbol = get_ticker_symbol(row)
+        hist = get_price_data(symbol)
+        
+        if hist is not None:
+            ticker = yf.Ticker(symbol)
+            
+            # 1. Kurs & MC Chance
+            df_wl.at[idx, 'Akt. Kurs [€]'] = float(hist['Close'].iloc[-1])
+            df_wl.at[idx, 'MC_Chance'] = float(calculate_probability(hist))
+            
+            # 2. Elliott & Fundamentales
+            df_wl.at[idx, 'Elliott_Signal'] = detect_elliott_wave(hist)
+            fund_data = get_fundamental_data(ticker)
+            
+            # Alle Kennzahlen in das DataFrame schreiben
+            for key, val in fund_data.items():
+                df_wl.at[idx, key] = val
+            
+            # 3. Das Finale Scoring (alle 9 Kategorien fließen ein)
+            df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
+            
+            print(f"✅ {row.get('Name', 'Aktie')} ({symbol}) bewertet.")
+
+    # 4. Der Moment der Wahrheit: Upload
+    print("💾 Synchronisiere Daten mit Google Sheets...")
+    repo.save_watchlist(df_wl)
+    print("🏁 Cloud-Update abgeschlossen. Dein Dashboard ist nun aktuell!")
+
+if __name__ == "__main__":
+    run_scanner()

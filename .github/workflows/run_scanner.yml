@@ -1,0 +1,30 @@
+name: Trading Scanner Autopilot
+
+on:
+  schedule:
+    - cron: '0 21 * * *' # Läuft jeden Tag um 21:00 Uhr UTC
+  workflow_dispatch: # Erlaubt manuelles Starten per Klick
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v3
+
+      - name: Python installieren
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Pakete installieren
+        run: |
+          pip install -r requirements.txt
+
+      - name: Scanner ausführen
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_SHEET_CREDENTIALS: ${{ secrets.GOOGLE_SHEET_CREDENTIALS }}
+          GOOGLE_SHEET_NAME: "Trading_Zentrale_Cloud"
+        run: python main.py
