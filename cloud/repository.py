@@ -4,28 +4,16 @@ from config import GOOGLE_SHEET_NAME
 from datetime import datetime
 
 class TradingRepository:
-
     def __init__(self):
         self.client = get_gspread_client()
         self.sheet = self.client.open(GOOGLE_SHEET_NAME)
 
     def load_watchlist(self) -> pd.DataFrame:
         ws = self.sheet.worksheet("Watchlist")
-        data = ws.get_all_records()
-        return pd.DataFrame(data)
-
-    def load_portfolio(self) -> pd.DataFrame:
-        ws = self.sheet.worksheet("Portfolio")
-        data = ws.get_all_records()
-        return pd.DataFrame(data)
+        return pd.DataFrame(ws.get_all_records())
 
     def save_watchlist(self, df: pd.DataFrame):
         ws = self.sheet.worksheet("Watchlist")
-        ws.clear()
-        ws.update([df.columns.tolist()] + df.fillna("").astype(str).values.tolist())
-
-    def save_portfolio(self, df: pd.DataFrame):
-        ws = self.sheet.worksheet("Portfolio")
         ws.clear()
         ws.update([df.columns.tolist()] + df.fillna("").astype(str).values.tolist())
 
@@ -37,7 +25,6 @@ class TradingRepository:
         except Exception as e:
             print(f"❌ Historie-Fehler: {e}")
 
-    # --- DIE ZWEI WICHTIGEN NEUEN FUNKTIONEN ---
     def load_import_aktien(self) -> pd.DataFrame:
         try:
             ws = self.sheet.worksheet("Import_Aktien")
