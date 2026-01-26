@@ -15,109 +15,83 @@ def run_scanner():
     repo = TradingRepository()
     df_wl = repo.load_watchlist()
     
-    # Sicherstellen, dass alle nötigen Spalten existieren
+    # Spalten sicherstellen
     expected_cols = ['Akt. Kurs [€]', 'PE', 'DivRendite', 'Wachstum', 'Marge', 
                      'Upside', 'Beta', 'AnalystRec', 'MC_Chance', 'Elliott_Signal', 'Score']
     for col in expected_cols:
         if col not in df_wl.columns:
             df_wl[col] = 0.0
 
-    # --- 1. SCHRITT: WECHSELKURS LADEN ---
     fx_rate = get_usd_eur_rate()
-    print(f"💱 Aktueller Wechselkurs USD/EUR: {fx_rate:.4f}")
-    print(f"🔭 Scanne {len(df_wl)} Aktien...")
+    print(f"💱 Kurs: 1 USD = {fx_rate:.4f} EUR")
 
-    # START DER WATCHLIST-SCHLEIFE
+    # 1. Watchlist Scan
     for idx, row in df_wl.iterrows():
-        # --- 2. SCHRITT: TICKER LOGIK ---
         symbol = row.get('Ticker') if pd.notna(row.get('Ticker')) and row.get('Ticker') != "" else get_ticker_symbol(row)
-        
         hist = get_price_data(symbol)
-        
         if hist is not None:
             ticker_obj = yf.Ticker(symbol)
             raw_price = float(hist['Close'].iloc[-1])
-            
-            # Währung abfragen
-            try:
-                currency = ticker_obj.info.get('currency', 'EUR')
-            except:
-                currency = 'EUR'
-                
-            # --- 3. SCHRITT: DIE KONVERTIERUNG ---
-            if currency == 'USD':
-                price_eur = convert_to_eur(raw_price, fx_rate)
-                print(f"🔄 {symbol}: {raw_price:.2f} USD -> {price_eur:.2f} EUR")
-            else:
-                price_eur = raw_price
+            currency = ticker_obj.info.get('currency', 'EUR')
+            price_eur = convert_to_eur(raw_price, fx_rate) if currency == 'USD' else raw_price
 
-            # Daten ins DataFrame schreiben
             df_wl.at[idx, 'Akt. Kurs [€]'] = price_eur
             df_wl.at[idx, 'MC_Chance'] = float(calculate_probability(hist))
             df_wl.at[idx, 'Elliott_Signal'] = detect_elliott_wave(hist)
             
-            # Fundamentaldaten
             fund_data = get_fundamental_data(ticker_obj)
             for key, val in fund_data.items():
-                if key in df_wl.columns:
-                    df_wl.at[idx, key] = val
+                if key in df_wl.columns: df_wl.at[idx, key] = val
             
-            # Das Finale Scoring
             df_wl.at[idx, 'Score'] = calculate_total_score(df_wl.loc[idx])
-            
             print(f"✅ {row.get('Name', 'Aktie')} ({symbol}) bewertet.")
-    
-    # <--- HIER IST DER WATCHLIST-SCAN ZU ENDE! --->
-    # Alles was jetzt kommt, passiert nur EINMAL nach dem Scan.
 
-    # --- 2. SCHRITT: PORTFOLIO-UPDATE ---
+    # 2. Portfolio & Realwert-Check
     print("📊 Berechne Portfolio-Performance...")
     df_pf = repo.load_portfolio()
+
+    # FORCE CASTING: Wir zwingen die Spalten auf Float, um den Fehler im Log zu beheben
+    df_pf['Akt. Kurs [€]'] = df_pf['Akt. Kurs [€]'].astype(object) 
     
     total_value = 0.0
     for idx, row in df_pf.iterrows():
         symbol = row.get('Symbol')
         
-        # 1. Anzahl bereinigen (Komma zu Punkt)
-        anzahl_raw = str(row.get('Anzahl', '0')).replace(',', '.')
-        anzahl = pd.to_numeric(anzahl_raw, errors='coerce') or 0.0
+        # Radikale Zahlen-Säuberung für Anzahl
+        anz_str = str(row.get('Anzahl', '0')).replace(',', '.')
+        anzahl = pd.to_numeric(anz_str, errors='coerce') or 0.0
         
         current_price = 0.0
-        # 2. Versuche Live-Kurs von Yahoo (Sicherste Quelle)
         if pd.notna(symbol) and symbol != "":
             p_data = get_price_data(symbol)
             if p_data is not None:
                 current_price = float(p_data['Close'].iloc[-1])
-                df_pf.at[idx, 'Akt. Kurs [€]'] = current_price
         
-        # 3. Fallback: Falls Yahoo scheitert, Sheet-Kurs bereinigen
+        # Falls kein Live-Kurs, nehmen wir den aus dem Sheet, aber bereinigt
         if current_price == 0.0:
-            # Entferne alle Punkte (Tausender) und mache Komma zum Punkt (Dezimal)
-            raw_val = str(row.get('Akt. Kurs [€]', '0')).replace('.', '').replace(',', '.')
-            current_price = pd.to_numeric(raw_val, errors='coerce') or 0.0
-            
-            # Sicherheitscheck: Wenn der Kurs > 1000 ist (und kein Krypto), ist ein Komma verrutscht
-            if current_price > 1000 and not any(k in str(symbol) for k in ['BTC', 'ETH', 'SOL', 'XRP']):
-                current_price = current_price / 100 # Korrigiert z.B. 6041 zu 60.41
-        
+            kurs_str = str(row.get('Akt. Kurs [€]', '0')).replace(',', '.')
+            current_price = pd.to_numeric(kurs_str, errors='coerce') or 0.0
+            # Sanity Check: Ein Kurs von > 100.000 ist (außer Krypto) ein Formatfehler
+            if current_price > 100000 and "BTC" not in str(symbol):
+                current_price /= 1000
+
+        df_pf.at[idx, 'Akt. Kurs [€]'] = current_price
         total_value += (anzahl * current_price)
 
-    # --- 3. SCHRITT: FINALE & TELEGRAM ---
+    # 3. Speichern & Telegram
     total_value = round(total_value, 2)
     repo.save_history(total_value) 
     repo.save_watchlist(df_wl)
     repo.save_portfolio(df_pf)
     
-    # --- 4. SCHRITT: TELEGRAM ---
-    print("📤 Sende Bericht an Telegram...")
+    print(f"📤 Sende Bericht... Realwert: {total_value} €")
     try:
         df_wl['Score'] = pd.to_numeric(df_wl['Score'], errors='coerce').fillna(0)
-        top_5 = df_wl.nlargest(5, 'Score')
-        send_summary(top_5, total_value) 
+        send_summary(df_wl.nlargest(5, 'Score'), total_value) 
     except Exception as e:
-        print(f"❌ Fehler beim Telegram-Aufruf: {e}")
+        print(f"❌ Telegram-Fehler: {e}")
 
-    print(f"🏁 Cloud-Update abgeschlossen. Realer Depotwert: {total_value:.2f} €")
+    print(f"🏁 Update fertig. Depot: {total_value:.2f} €")
 
 if __name__ == "__main__":
     run_scanner()
