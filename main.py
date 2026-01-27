@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import sys
 import time
+from utils.dashboard_gen import generate_dashboard
 
 # Pfade für Thonny sicherstellen
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -75,6 +76,16 @@ def main():
     # 3. SPEICHERN & FINISH
     final_df = pd.DataFrame(results)
     repo.save_watchlist(final_df)
+    print("🏁 SCAN BEENDET. Alle Module erfolgreich ausgeführt!")
+    
+    # --- HIER PASSIERT DIE MAGIE ---
+    try:
+        print("🏗️ Erstelle Dashboard...")
+        generate_dashboard() # Diese Funktion aus deinem utils-Ordner aufrufen
+        print("📊 Dashboard index.html wurde generiert!")
+    except Exception as e:
+        print(f"⚠️ Dashboard konnte nicht erstellt werden: {e}")
+
     print("🏁 SCAN BEENDET. Alle Module erfolgreich ausgeführt!")
 
 if __name__ == "__main__":
