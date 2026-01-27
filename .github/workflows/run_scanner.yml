@@ -2,8 +2,11 @@ name: Trading Scanner Autopilot
 
 on:
   schedule:
-    - cron: '0 21 * * *' # Läuft jeden Tag um 21:00 Uhr UTC
+    - cron: '0 16 * * *' # Läuft jeden Tag um 21:00 Uhr UTC
   workflow_dispatch: # Erlaubt manuelles Starten per Klick
+
+permissions:
+  contents: write # WICHTIG: Erlaubt dem Workflow, Dateien zu speichern
 
 jobs:
   build:
@@ -23,9 +26,16 @@ jobs:
 
       - name: Scanner ausführen
         env:
-          # LINKS steht der Name, den Python in config.py sucht
-          # RECHTS steht der Name, wie das Secret im GitHub-Tresor heißt
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python main.py
+
+      - name: Ergebnisse speichern (Commit & Push)
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add watchlist.csv index.html
+          # Nur committen, wenn sich wirklich was geändert hat
+          git commit -m "📊 Automatisches Update: Dashboard & Watchlist [skip ci]" || echo "Keine Änderungen zum Speichern"
+          git push

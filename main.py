@@ -47,7 +47,18 @@ def main():
             monte_carlo = run_monte_carlo(hist)
             score = calculate_final_score(ticker, elliott, fundamentals, monte_carlo)
             
-            row['Akt. Kurs [€]'] = round(hist['Close'].iloc[-1], 2)
+            # --- NEU: 24H PERFORMANCE BERECHNUNG ---
+            # Wir nutzen die geladenen Historien-Daten (hist)
+            current_price = hist['Close'].iloc[-1]
+            if len(hist) > 1:
+                previous_close = hist['Close'].iloc[-2]
+                perf_pct = ((current_price - previous_close) / previous_close) * 100
+            else:
+                perf_pct = 0.0
+            # ----------------------------------------
+            
+            row['Akt. Kurs [€]'] = round(current_price, 2)
+            row['Perf %'] = round(perf_pct, 2) # Speichern für das Dashboard
             row['Score'] = score
             row['Elliott-Signal'] = elliott.get('signal', 'Warten')
             row['Elliott-Ausstieg'] = elliott.get('target', 0)
