@@ -3,10 +3,11 @@ import os
 import sys
 import time
 
-# Pfad-Fix für den Hub
+# --- PFAD-FIX FÜR DEN HUB ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(BASE_DIR)
-sys.path.append(os.path.join(BASE_DIR, 'utils')) # Explizit utils hinzufügen
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+# ----------------------------
 
 from cloud.repository import TradingRepository
 from market.yahoo import get_price_data
