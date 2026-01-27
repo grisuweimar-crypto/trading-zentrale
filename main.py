@@ -3,17 +3,10 @@ import os
 import sys
 import time
 
-# --- DER ULTIMATIVE PFAD-FIX FÜR DEN HUB ---
+# --- PFAD-FIX FÜR DEN HUB (ROOT-EBENE) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
-
-# Wir stellen sicher, dass Unterordner als Module erkannt werden
-for folder in ['cloud', 'market', 'alerts', 'utils']:
-    full_path = os.path.join(BASE_DIR, folder)
-    if os.path.exists(full_path) and full_path not in sys.path:
-        sys.path.append(full_path)
-# -------------------------------------------
 
 from cloud.repository import TradingRepository
 from market.yahoo import get_price_data
@@ -23,7 +16,7 @@ from market.montecarlo import run_monte_carlo
 from market.scoring import calculate_final_score
 from alerts.telegram import send_signal
 # DASHBOARD IMPORT
-from utils.dashboard_gen import generate_dashboard
+from dashboard_gen import generate_dashboard
 
 def main():
     print("🚀 TRADING-ZENTRALE: AKTIVIERE SCAN...")
