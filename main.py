@@ -3,11 +3,17 @@ import os
 import sys
 import time
 
-# --- PFAD-FIX FÜR DEN HUB ---
+# --- DER ULTIMATIVE PFAD-FIX FÜR DEN HUB ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.append(BASE_DIR)
-# ----------------------------
+
+# Wir stellen sicher, dass Unterordner als Module erkannt werden
+for folder in ['cloud', 'market', 'alerts', 'utils']:
+    full_path = os.path.join(BASE_DIR, folder)
+    if os.path.exists(full_path) and full_path not in sys.path:
+        sys.path.append(full_path)
+# -------------------------------------------
 
 from cloud.repository import TradingRepository
 from market.yahoo import get_price_data
