@@ -1,11 +1,13 @@
 import yfinance as yf
+import requests
+
 
 def get_fundamental_data(ticker):
     """
-    Holt fundamentale Kennzahlen für das Scoring.
+    Holt fundamentale Kennzahlen für das Scoring mit Session-Header.
     """
     try:
-        # Hier lag der Fehler: Wir müssen yf.Ticker(ticker) nutzen!
+        # Hier wird die session an den Ticker übergeben
         stock = yf.Ticker(ticker)
         info = stock.info
         
@@ -15,7 +17,8 @@ def get_fundamental_data(ticker):
             "pe": info.get('forwardPE', 0) or 0,
             "growth": info.get('revenueGrowth', 0) or 0,
             "margin": info.get('profitMargins', 0) or 0,
-            "recommendation": info.get('recommendationKey', 'none')
+            "recommendation": info.get('recommendationKey', 'none'),
+            "sector": info.get('sector', 'Andere') # Sektor für das Master-Scoring sichern
         }
         
         # Einfache Upside-Berechnung (Target Price vs Current)
@@ -28,4 +31,5 @@ def get_fundamental_data(ticker):
 
     except Exception as e:
         # Falls Yahoo blockt, liefern wir neutrale Werte zurück
-        return {"upside": 0, "pe": 0, "growth": 0, "margin": 0, "recommendation": "none"}
+        print(f"⚠️ Yahoo-Fundamentaldaten-Fehler bei {ticker}: {e}")
+        return {"upside": 0, "pe": 0, "growth": 0, "margin": 0, "recommendation": "none", "sector": "Andere"}

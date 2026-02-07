@@ -1,6 +1,6 @@
 import numpy as np
 
-def run_monte_carlo(hist, days=30, simulations=100):
+def run_monte_carlo(hist, days=30, simulations=1000):
     """
     Berechnet die Wahrscheinlichkeit, dass der Kurs in 30 Tagen höher steht.
     """
