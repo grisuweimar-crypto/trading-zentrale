@@ -302,15 +302,19 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             /* Info overlay */
             #infoOverlay {{
                 position: fixed;
-                top: 100px;
+                top: 50%;
                 left: 50%;
-                transform: translateX(-50%);
+                transform: translate(-50%, -50%);
                 width: 92%;
                 max-width: 1100px;
-                z-index: 80;
+                max-height: 85vh; /* Begrenzt die Höhe auf 85% des Bildschirms */
+                overflow-y: auto; /* Aktiviert das Scrollen innerhalb des Fensters */
+                z-index: 100;
                 box-shadow: 0 10px 40px rgba(0,0,0,0.6);
                 border-radius: 12px;
                 display: none;
+                -webkit-overflow-scrolling: touch; /* Flüssiges Scrollen für Handys */
+                background: var(--info-bg); /* Sicherstellen, dass Hintergrund steht */
             }}
             #infoOverlay.open {{ display: block; }}
             .info-overlay-inner {{ background: var(--info-bg); color: var(--info-text); padding: 18px; border: 1px solid var(--info-accent); border-radius: 12px; }}
@@ -515,7 +519,10 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     if (!o) return;
                     o.classList.add('open');
                     o.setAttribute('aria-hidden', 'false');
-                    document.body.style.overflow = 'hidden';
+                    // Nur den Hintergrund sperren, wenn wir NICHT auf dem Handy sind
+                    if (window.innerWidth > 768) {{
+                        document.body.style.overflow = 'hidden';
+                    }}
                 }}
                 function closeInfo() {{
                     var o = document.getElementById('infoOverlay');
@@ -528,8 +535,8 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             </script>
 
             <!-- Tabelle -->
-            <div class="glass rounded-3xl shadow-2xl border-none flex flex-col" style="max-height: 75vh;">
-                <div class="table-container overflow-y-auto no-scrollbar rounded-3xl" style="max-height: calc(100vh - 260px);">
+            <div class="glass rounded-3xl shadow-2xl border-none flex flex-col">
+                <div class="table-container overflow-x-auto rounded-3xl" style="width: 100%; max-width: 100vw;">
                     <table class="w-full text-left border-collapse" id="mainTable">
                         <thead class="bg-slate-900/95 border-b border-slate-700 sticky top-0 z-30 backdrop-blur-md">
                             <tr class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
