@@ -252,11 +252,16 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 margin-top: 10px;
                 border-radius: 1rem;
                 background: rgba(15, 23, 42, 0.5);
+            #mainTable {{
+                width: 100%; /* Am PC nutzt sie den verfügbaren Platz */
+                table-layout: auto !important;
             }}
 
-            #mainTable {{
-                min-width: 1100px; /* Zwingt die Tabelle auf dem Handy breit zu bleiben */
-                table-layout: auto !important;
+            /* Nur auf mobilen Geräten erzwingen wir die Breite zum Wischen */
+            @media (max-width: 1023px) {{
+                #mainTable {{
+                    min-width: 1100px; 
+                }}
             }}
             .tooltip {{ visibility: hidden; opacity: 0; transition: opacity 0.18s; position: absolute; z-index: 99999; pointer-events: none; }}
             .has-tooltip:hover .tooltip, .has-tooltip:active .tooltip {{ visibility: visible; opacity: 1; }}
