@@ -364,6 +364,51 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
     color: #d1d5db;
   }}
 
+  /* === NEU FÜR DEIN HTML (nicht überschreiben!) === */
+.info-overlay-inner {{
+  background: var(--info-bg);
+  color: var(--info-text);
+  padding: 1.5rem;
+  max-width: 95vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid var(--info-accent);
+  margin: 2rem auto;
+}}
+
+.info-panels {{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}}
+
+@media(min-width:768px) {{
+  .info-panels {{
+    grid-template-columns: repeat(3, 1fr);
+  }}
+}}
+
+.close-btn {{
+  position: absolute !important;
+  right: 1rem;
+  top: 1rem;
+  background: rgba(239,68,68,0.2);
+  border: none;
+  color: #f87171;
+  font-size: 24px;
+  font-weight: 800;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}}
+
             #infoOverlay.open {{ 
                 display: block !important; 
             }}
