@@ -214,6 +214,50 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             }}
             body {{ background: var(--bg); color: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }}
             .glass {{ background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); }}
+            /* Desktop: Header bleibt oben kleben */
+            @media (min-width: 1024px) {
+                .sticky-header {
+                    position: sticky;
+                    top: 0;
+                    z-index: 50;
+                    background: var(--bg);
+                    padding-bottom: 1rem;
+                }
+            }
+
+            /* Handy: Header scrollt mit, damit Platz für die Tabelle ist */
+            @media (max-width: 1023px) {
+                .sticky-header {
+                    position: relative !important;
+                    margin-bottom: 1rem;
+                }
+                .filter-container {
+                    display: flex;
+                    flex-wrap: wrap !important;
+                    gap: 6px !important;
+                    padding: 10px 0;
+                }
+                .sector-btn {
+                    padding: 6px 10px !important;
+                    font-size: 10px !important;
+                }
+                h1 { font-size: 1.5rem !important; }
+            }
+
+            /* Der entscheidende Container für das seitliche Wischen */
+            .table-container {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-top: 10px;
+                border-radius: 1rem;
+                background: rgba(15, 23, 42, 0.5);
+            }
+
+            #mainTable {
+                min-width: 1100px; /* Zwingt die Tabelle auf dem Handy breit zu bleiben */
+                table-layout: auto !important;
+            }
             .tooltip {{ visibility: hidden; opacity: 0; transition: opacity 0.18s; position: absolute; z-index: 99999; pointer-events: none; }}
             .has-tooltip:hover .tooltip, .has-tooltip:active .tooltip {{ visibility: visible; opacity: 1; }}
             th {{ cursor: pointer; transition: color 0.15s; }}
@@ -389,7 +433,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             </div>
 
             <!-- Filter (Sticky) -->
-            <div class="mb-4" style="position: sticky; top: 0; z-index: 40; background: linear-gradient(to bottom, #020617 0%, #020617 95%, rgba(2,6,23,0) 100%); padding-bottom: 8px;">
+            <div class="mb-4 sticky-header">
                 <p class="text-xs font-bold text-slate-300 mb-2">Nach Sektor filtern:</p>
                 <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding-bottom:6px;">
                     {filter_buttons_html}
@@ -485,7 +529,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
 
             <!-- Tabelle -->
             <div class="glass rounded-3xl shadow-2xl border-none flex flex-col" style="max-height: 75vh;">
-                <div class="overflow-y-auto overflow-x-hidden no-scrollbar rounded-3xl" style="max-height: calc(100vh - 260px);">
+                <div class="table-container overflow-y-auto no-scrollbar rounded-3xl" style="max-height: calc(100vh - 260px);">
                     <table class="w-full text-left border-collapse" id="mainTable">
                         <thead class="bg-slate-900/95 border-b border-slate-700 sticky top-0 z-30 backdrop-blur-md">
                             <tr class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
@@ -503,6 +547,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800">
+                        
     """
     
     for idx, row in df.iterrows():
@@ -1027,16 +1072,17 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 }});
 
                 rows.forEach(row => tbody.appendChild(row));
-            }}
+            }
             </script>
-
         </div>
     </body>
     </html>
     """
+
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_template)
     print(f"✅ Dashboard erstellt: {output_path}")
 
 if __name__ == "__main__":
     generate_dashboard()
+
