@@ -241,7 +241,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     padding: 6px 10px !important;
                     font-size: 10px !important;
                 }}
-                h1 { font-size: 1.5rem !important; }}
+                h1 {{ font-size: 1.5rem !important; }}
             }}
 
             /* Der entscheidende Container für das seitliche Wischen */
