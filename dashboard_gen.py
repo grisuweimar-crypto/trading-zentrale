@@ -215,49 +215,49 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             body {{ background: var(--bg); color: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }}
             .glass {{ background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); }}
             /* Desktop: Header bleibt oben kleben */
-            @media (min-width: 1024px) {
-                .sticky-header {
+            @media (min-width: 1024px) {{
+                .sticky-header {{
                     position: sticky;
                     top: 0;
                     z-index: 50;
                     background: var(--bg);
                     padding-bottom: 1rem;
-                }
-            }
+                }}
+            }}
 
             /* Handy: Header scrollt mit, damit Platz für die Tabelle ist */
-            @media (max-width: 1023px) {
-                .sticky-header {
+            @media (max-width: 1023px) {{
+                .sticky-header {{
                     position: relative !important;
                     margin-bottom: 1rem;
-                }
-                .filter-container {
+                }}
+                .filter-container {{
                     display: flex;
                     flex-wrap: wrap !important;
                     gap: 6px !important;
                     padding: 10px 0;
-                }
-                .sector-btn {
+                }}
+                .sector-btn {{
                     padding: 6px 10px !important;
                     font-size: 10px !important;
-                }
-                h1 { font-size: 1.5rem !important; }
-            }
+                }}
+                h1 { font-size: 1.5rem !important; }}
+            }}
 
             /* Der entscheidende Container für das seitliche Wischen */
-            .table-container {
+            .table-container {{
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 margin-top: 10px;
                 border-radius: 1rem;
                 background: rgba(15, 23, 42, 0.5);
-            }
+            }}
 
-            #mainTable {
+            #mainTable {{
                 min-width: 1100px; /* Zwingt die Tabelle auf dem Handy breit zu bleiben */
                 table-layout: auto !important;
-            }
+            }}
             .tooltip {{ visibility: hidden; opacity: 0; transition: opacity 0.18s; position: absolute; z-index: 99999; pointer-events: none; }}
             .has-tooltip:hover .tooltip, .has-tooltip:active .tooltip {{ visibility: visible; opacity: 1; }}
             th {{ cursor: pointer; transition: color 0.15s; }}
