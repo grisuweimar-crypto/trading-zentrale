@@ -99,6 +99,37 @@ def calculate_final_score(ticker, elliott_data, fundamental_data, monte_carlo_da
         score += 10
     elif marge_norm > CONFIG['margin_mid']:
         score += 5
+
+    # === QUALITÄTS-FILTER (ROE + DEBT + DIVIDENDE) ===
+    # ROE: Kapitalrendite (>15% = stark)
+    try:
+        roe = float(fundamental_data.get('roe', 0) or 0) * 100  # Dezimal -> %
+    except Exception:
+        roe = 0.0
+    if roe > 15:
+        score += min((roe / 25) * 6, 6)  # Max 6 Punkte
+    elif roe < 5:
+        score -= 2
+
+    # DEBT/EQUITY: Verschuldung
+    try:
+        debt_eq = float(fundamental_data.get('debt_to_equity', 100) or 100) / 100.0
+    except Exception:
+        debt_eq = 1.0
+    if debt_eq < 0.5:
+        score += 4
+    elif debt_eq > 2.0:
+        score -= 4
+
+    # DIVIDENDE: Nur Bonus bei guter ROE
+    try:
+        div_yield = float(fundamental_data.get('div_rendite', 0) or 0) * 100
+    except Exception:
+        div_yield = 0.0
+    if div_yield > 3.0 and roe > 10:
+        score += 3
+    elif div_yield > 1.5 and roe > 5:
+        score += 2
     
     # 5. ANALYSTEN (konfiguriert)
     rec = str(fundamental_data.get('recommendation', 'none')).lower()
