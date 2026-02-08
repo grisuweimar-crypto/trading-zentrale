@@ -1072,7 +1072,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 }});
 
                 rows.forEach(row => tbody.appendChild(row));
-            }
+            }}
             </script>
         </div>
     </body>
