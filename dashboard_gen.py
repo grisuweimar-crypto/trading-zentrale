@@ -312,14 +312,19 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 transform: translate(-50%, -50%);
                 width: 92%;
                 max-width: 1100px;
-                max-height: 85vh; /* Begrenzt die Höhe auf 85% des Bildschirms */
-                overflow-y: auto; /* Aktiviert das Scrollen innerhalb des Fensters */
+                max-height: 85vh;
+                overflow-y: auto;
                 z-index: 100;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+                background: #0f172a;
+                border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 10px 40px rgba(0,0,0,0.8);
                 border-radius: 12px;
-                display: none;
-                -webkit-overflow-scrolling: touch; /* Flüssiges Scrollen für Handys */
-                background: var(--info-bg); /* Sicherstellen, dass Hintergrund steht */
+                display: none; /* DAS HIER MUSS REIN, DAMIT ES ZU IST */
+                -webkit-overflow-scrolling: touch;
+            }}
+
+            #infoOverlay.open {{ 
+                display: block !important; 
             }}
             #infoOverlay.open {{ display: block; }}
             .info-overlay-inner {{ background: var(--info-bg); color: var(--info-text); padding: 18px; border: 1px solid var(--info-accent); border-radius: 12px; }}
