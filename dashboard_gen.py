@@ -518,28 +518,29 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     </div>
                 </div>
             </div>
-            <<script>
+            <script>
                 function openInfo() {{
-                    var o = document.getElementById('infoOverlay');
+                    const o = document.getElementById('infoOverlay');
                     if (!o) return;
                     o.classList.add('open');
                     o.setAttribute('aria-hidden', 'false');
-                    
-                    if (window.innerWidth > 768) {{
+                    // Hintergrund-Scrollen nur auf großen Bildschirmen sperren
+                    if (window.innerWidth > 1024) {{
                         document.body.style.overflow = 'hidden';
                     }}
                 }}
 
                 function closeInfo() {{
-                    var o = document.getElementById('infoOverlay');
+                    const o = document.getElementById('infoOverlay');
                     if (!o) return;
                     o.classList.remove('open');
                     o.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
                 }}
 
-                document.addEventListener('keydown', function(e) {{ 
-                    if (e.key === 'Escape') closeInfo(); 
+                // Schließen mit der ESC-Taste
+                document.addEventListener('keydown', function(e) {{
+                    if (e.key === 'Escape') closeInfo();
                 }});
             </script>
 
