@@ -3,6 +3,8 @@ import os
 import sys
 import time
 import json
+import logging
+import traceback
 
 # --- PFAD-FIX FÜR DEN HUB (ROOT-EBENE) ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -22,40 +24,40 @@ from dashboard_gen import generate_dashboard
 from market.crv import calculate_crv
 
 def main():
-    print("🚀 TRADING-ZENTRALE: AKTIVIERE SCAN...")
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+    logger = logging.getLogger(__name__)
+
+    logger.info("🚀 TRADING-ZENTRALE: AKTIVIERE SCAN...")
     repo = TradingRepository()
     df = repo.load_watchlist()
     
     if df.empty:
-        print("❌ FEHLER: watchlist.csv leer.")
+        logger.error("❌ FEHLER: watchlist.csv leer.")
         return
     
-    # --- Spalten-Initialisierung vor der Schleife (dtype-safe) ---
-    # Text-Spalten auf object dtype
-    text_cols = ['Elliott-Signal', 'Elliott-Einstieg', 'Elliott-Ausstieg', 'Zyklus-Status', 'Yahoo', 'Währung', 'Radar Vector']
-    for col in text_cols:
-        if col not in df.columns:
-            df[col] = pd.NA
-        else:
-            df[col] = df[col].astype('object')
-    
-    # Numerische Spalten auf float64 (außer wenn leer, dann benutzerdefiniert)
+    # --- Spalten-Initialisierung: Nur numerische Spalten as float, Rest natural ---
     numeric_cols = [
         'Akt. Kurs', 'Perf %', 'Score', 'CRV', 'MC-Chance', 'Zyklus %',
         'ROE %', 'Debt/Equity', 'Div. Rendite %', 'FCF', 'Enterprise Value', 'Revenue',
-        'FCF Yield %', 'Growth %', 'Margin %', 'Rule of 40', 'Current Ratio', 'Institutional Ownership %'
+        'FCF Yield %', 'Growth %', 'Margin %', 'Rule of 40', 'Current Ratio', 'Institutional Ownership %',
+        'Elliott-Einstieg', 'Elliott-Ausstieg', 'PE'
     ]
     for col in numeric_cols:
-        if col not in df.columns:
-            df[col] = pd.NA
-        else:
+        if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
     
-    # Initialisiere Zyklus-Spalten (falls nicht vorhanden oder fehlerhaft)
-    df['Zyklus %'] = df['Zyklus %'].fillna(50.0)
-    df['Zyklus-Status'] = df['Zyklus-Status'].fillna('neutral').astype('object')
+    # Initialisiere Zyklus-Spalten (falls nicht vorhanden)
+    if 'Zyklus %' not in df.columns:
+        df['Zyklus %'] = 50.0
+    else:
+        df['Zyklus %'] = pd.to_numeric(df['Zyklus %'], errors='coerce').fillna(50.0)
+    
+    if 'Zyklus-Status' not in df.columns:
+        df['Zyklus-Status'] = 'neutral'
+    else:
+        df['Zyklus-Status'] = df['Zyklus-Status'].fillna('neutral')
 
-    print(f"📊 Analyse von {len(df)} Werten gestartet...")
+    logger.info(f"📊 Analyse von {len(df)} Werten gestartet...")
     
     # Dubletten-Schutz: Set der bereits verarbeiteten Ticker/Symbole
     processed_symbols = set()
@@ -73,15 +75,16 @@ def main():
         # Dubletten-Schutz: Überspringe, wenn bereits gescannt
         symbol_key = symbol_for_yahoo.upper()
         if symbol_key in processed_symbols:
-            print(f"⏭️  [{(index+1)}/{(len(df))}] {ticker} bereits gescannt, überspringe...")
+            logger.debug(f"⏭️  [{(index+1)}/{(len(df))}] {ticker} bereits gescannt, überspringe...")
             continue
         processed_symbols.add(symbol_key)
 
-        print(f"🔍 [{(index+1)}/{(len(df))}] Scanne {ticker}...")
+        logger.info(f"🔍 [{(index+1)}/{(len(df))}] Scanne {ticker}...")
 
         try:
             hist = get_price_data(symbol_for_yahoo)
             if hist is None or hist.empty:
+                logger.warning(f"Kein Preishistorie für {symbol_for_yahoo} (Ticker {ticker}), überspringe.")
                 continue
 
             # --- ZYKLUS BERECHNEN ---
@@ -122,7 +125,8 @@ def main():
                 df.loc[index, 'Score'] = float(final_calculated_score)
                 df.loc[index, 'CRV'] = float(crv_value)
             except Exception as e:
-                print(f"⚠️ Warnung bei Zuweisung für {ticker}: {e}")
+                logger.warning(f"⚠️ Warnung bei Zuweisung für {ticker}: {e}")
+                logger.debug(traceback.format_exc())
             # Fundamentale Kennzahlen (für CSV & Dashboard)
             try:
                 roe_pct = round(float(fundamentals.get('roe', 0) or 0) * 100, 2)
@@ -223,38 +227,50 @@ def main():
                 df.loc[index, 'Elliott-Einstieg'] = float(elliott.get('entry', 0))
                 df.loc[index, 'Elliott-Ausstieg'] = float(elliott.get('target', 0))
                 df.loc[index, 'MC-Chance'] = float(monte_carlo.get('probability', 0))
+                df.loc[index, 'PE'] = float(pe_val) if pe_val else 0.0
                 # --- ZYKLUS-SPALTE ---
                 df.loc[index, 'Zyklus %'] = float(round(cycle_value, 1))
                 df.loc[index, 'Zyklus-Status'] = str(cycle_status)
             except Exception as e:
-                print(f"⚠️ Warnung bei Fundamental-Zuweisung für {ticker}: {e}")
+                logger.warning(f"⚠️ Warnung bei Fundamental-Zuweisung für {ticker}: {e}")
+                logger.debug(traceback.format_exc())
             
             
 
             # 6. TELEGRAM (Nutzt jetzt die Variable von oben)
             # Wir prüfen das Signal direkt aus den Elliott-Daten
             if elliott.get('signal') == "BUY" and final_calculated_score > 75:
-                send_signal(ticker, elliott, final_calculated_score, name=stock_name, currency=currency_code)
-                print(f"📲 Telegram-Alarm für {stock_name} raus (Score: {final_calculated_score})!")
+                try:
+                    send_signal(ticker, elliott, final_calculated_score, name=stock_name, currency=currency_code)
+                    logger.info(f"📲 Telegram-Alarm für {stock_name} raus (Score: {final_calculated_score})!")
+                except Exception as e:
+                    logger.warning(f"Fehler beim Senden von Telegram für {ticker}: {e}")
+                    logger.debug(traceback.format_exc())
 
             time.sleep(0.5)
 
         except Exception as e:
-            print(f"❌ Fehler bei {ticker}: {e}")
+            logger.exception(f"❌ Fehler bei {ticker}: {e}")
             
 
     # SPEICHERN
     final_df = df
     repo.save_watchlist(final_df)
     
-    # DASHBOARD GENERIEREN
+    # DASHBOARD GENERIEREN (AUCH WENN SCAN FEHLGESCHLAGEN)
     try:
-        print("🏗️ Erstelle Dashboard...")
-        generate_dashboard() 
+        logger.info("🏗️ Erstelle Dashboard...")
+        generate_dashboard()
     except Exception as e:
-        print(f"⚠️ Dashboard-Fehler: {e}")
+        logger.warning(f"⚠️ Dashboard-Fehler: {e}")
+        logger.debug(traceback.format_exc())
+        # Fallback: Versuche trotzdem zu Generieren
+        try:
+            generate_dashboard()
+        except Exception:
+            logger.debug("Dashboard-Fallback fehlgeschlagen.")
 
-    print("🏁 SCAN BEENDET. Alle Module erfolgreich ausgeführt!")
+    logger.info("🏁 SCAN BEENDET. Scan abgeschlossen.")
 
 if __name__ == "__main__":
     main()

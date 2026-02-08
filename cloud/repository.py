@@ -1,5 +1,8 @@
 import pandas as pd
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TradingRepository:
     def __init__(self):
@@ -9,11 +12,11 @@ class TradingRepository:
     def load_watchlist(self):
         # Schaut nach, ob die CSV da ist, sonst erstellt sie eine leere
         if os.path.exists(self.filename):
-            print(f"📂 Lade lokale Daten aus {self.filename}")
+            logger.info(f"Lade lokale Daten aus {self.filename}")
             # Lade CSV ohne erzwungene dtypes, um Konflikte zu vermeiden
             df = pd.read_csv(self.filename, dtype=str, na_filter=True)
             # Konvertiere Spalten zu besseren Typen wo sinnvoll
-            numeric_cols = ['Akt. Kurs','Perf %','Score','CRV','Elliott-Einstieg','Elliott-Ausstieg','MC-Chance',
+            numeric_cols = ['Akt. Kurs','Perf %','Score','CRV','MC-Chance',
                            'Zyklus %','ROE %','Debt/Equity','Div. Rendite %','FCF','Enterprise Value','Revenue',
                            'FCF Yield %','Growth %','Margin %','Rule of 40','Current Ratio','Institutional Ownership %']
             for col in numeric_cols:
@@ -34,7 +37,7 @@ class TradingRepository:
                         df[col] = ''
             return df
         else:
-            print("⚠️ watchlist.csv nicht gefunden, erstelle neues Grundgerüst.")
+            logger.warning(f"watchlist.csv nicht gefunden, erstelle neues Grundgerüst.")
             # Leeres DataFrame mit standardisierten Spalten
             cols = ['Ticker', 'Name', 'Yahoo', 'Akt. Kurs', 'Währung', 'Perf %', 'Score', 'CRV', 'Elliott-Signal', 'Elliott-Einstieg', 'Elliott-Ausstieg', 'MC-Chance', 'Zyklus %', 'Zyklus-Status', 'ROE %', 'Debt/Equity', 'Div. Rendite %']
             return pd.DataFrame(columns=cols)
@@ -46,8 +49,8 @@ class TradingRepository:
             'Ticker','Name','Yahoo','Akt. Kurs','Währung','Perf %','Score','CRV',
             'Elliott-Signal','Elliott-Einstieg','Elliott-Ausstieg','MC-Chance','Zyklus %','Zyklus-Status',
             'ROE %','Debt/Equity','Div. Rendite %','FCF','Enterprise Value','Revenue','FCF Yield %',
-            'Growth %','Margin %','Rule of 40','Current Ratio','Institutional Ownership %','Radar Vector'
+            'Growth %','Margin %','Rule of 40','Current Ratio','Institutional Ownership %','Radar Vector','PE'
         ]
         cols_to_write = [c for c in canonical if c in df.columns] + [c for c in df.columns if c not in canonical]
         df.to_csv(self.filename, index=False, columns=cols_to_write)
-        print(f"✅ Erfolgreich lokal gespeichert in {self.filename}")
+        logger.info(f"Erfolgreich lokal gespeichert in {self.filename}")

@@ -2,9 +2,11 @@ import pandas as pd
 import datetime
 import re
 import json
+import logging
 
-# Dein Sektor-Konzept (Watchlist Master 2026): feste Säulen mit Emojis, keine Duplikate.
-# Reihenfolge = Reihenfolge der Filter-Buttons.
+logger = logging.getLogger(__name__)
+
+# Sektor-Konfiguration
 DISPLAY_SEKTOREN = [
     ("automation", "Automation & Robotik 🤖"),
     ("ki_chips", "KI, Chips & Cloud 🧠"),
@@ -24,180 +26,138 @@ DISPLAY_SEKTOREN = [
 DISPLAY_BY_KEY = dict(DISPLAY_SEKTOREN)
 
 def _norm(s):
-    """Sektor-String für Abgleich: Klein, ohne Emojis."""
+    """Sektor-String normalisieren."""
     if s is None or (isinstance(s, float) and pd.isna(s)):
         return ""
     s = str(s).strip().upper()
-    s = re.sub(r"[^\w\s&/-]", "", s)  # Emojis/Sonderzeichen raus
+    s = re.sub(r"[^\w\s&/-]", "", s)
     return s.replace(" ", "")
 
 def normalize_sektor(row):
-    """
-    Ordnet einen Watchlist-Eintrag (Sektor, Name, Ticker) einer festen Säule zu.
-    Rückgabe: (key, display_name) für Filter und Tabelle.
-    """
+    """Ordnet Watchlist-Eintrag einer Sektor-Säule zu."""
     sektor_raw = row.get("Sektor", "")
     name = str(row.get("Name", "") or "").upper()
     ticker = str(row.get("Ticker", "") or "").upper()
     s = _norm(sektor_raw)
 
-    # Krypto: Core (BTC, ETH) vs Satelliten (SOL, ADA, DOGE, XRP, Coinbase etc.)
-    if "BITCOIN" in name or "BTC" in ticker or (s and "KRYPTO" in s and "BITCOIN" in name):
+    # Krypto Core vs Satelliten
+    if "BITCOIN" in name or "BTC" in ticker:
         return "krypto_core", DISPLAY_BY_KEY["krypto_core"]
     if "ETHEREUM" in name or "ETH" in ticker:
         return "krypto_core", DISPLAY_BY_KEY["krypto_core"]
-    if any(x in s for x in ["KRYPTO", "Krypto"]) or any(x in ticker for x in ["SOL", "ADA", "DOGE", "XRP", "COIN"]):
+    if any(x in s for x in ["KRYPTO"]) or any(x in ticker for x in ["SOL", "ADA", "DOGE", "XRP"]):
         return "krypto_sat", DISPLAY_BY_KEY["krypto_sat"]
 
-    # Infra & Versorger (z. B. Korea Electric Power)
-    if "KOREA" in name or "ELECTRIC" in name and "POWER" in name or "KEP" in ticker:
+    # Infra
+    if "KOREA" in name or ("ELECTRIC" in name and "POWER" in name) or "KEP" in ticker:
         return "infra", DISPLAY_BY_KEY["infra"]
     if "VERSORGER" in s or "INFRA" in s:
         return "infra", DISPLAY_BY_KEY["infra"]
 
-    # Experimente & High Risk (Fluence, Largo, Quantumscape, Reliance, Solvay etc.)
-    if "EXPERIMENTE" in s or "Experimente" in str(sektor_raw):
-        return "experimente", DISPLAY_BY_KEY["experimente"]
-    if "FLUENCE" in name or "LARGO" in name or "QUANTUMSCAPE" in name or "SOLVAY" in name:
-        return "experimente", DISPLAY_BY_KEY["experimente"]
-    if "INDUSTRIE" in s and "AUTO" in s:
+    # Experimente
+    if "EXPERIMENTE" in s or any(x in name for x in ["FLUENCE", "LARGO", "SOLVAY"]):
         return "experimente", DISPLAY_BY_KEY["experimente"]
 
-    # Säule 1: Automation & Robotik (Hardware, Robotik)
-    if "HARDWARE" in s or "ROBOTIK" in s or "AUTOMATION" in s or "COGNEX" in name or "FANUC" in name or "YASKAWA" in name or "AUTOSTORE" in name or "ABB" in name or "TERADYNE" in name or "KEYENCE" in name or "ROCKWELL" in name or "UBTECH" in name:
+    # Automation
+    if "HARDWARE" in s or "ROBOTIK" in s or any(x in name for x in ["COGNEX", "FANUC", "ABB"]):
         return "automation", DISPLAY_BY_KEY["automation"]
 
-    # Säule 2: KI, Chips & Cloud (Gehirn, Tech, E-Commerce wie Amazon)
-    if "GEHIRN" in s or "TECH" in s or "SOFTWARE" in s or "E-Commerce" in str(sektor_raw) or "ECOM" in s:
+    # KI & Chips
+    if "GEHIRN" in s or "TECH" in s or "SOFTWARE" in s:
         return "ki_chips", DISPLAY_BY_KEY["ki_chips"]
-    if "ASML" in name or "ALPHABET" in name or "AMAZON" in name or "INFINEON" in name or "SAP" in name or "MICROSOFT" in name or "NVidia" in name or "ORACLE" in name or "PALANTIR" in name or "SNOWFLAKE" in name or "TAIWAN SEMICON" in name or "TENCENT" in name or "BAIDU" in name or "ON SEMICON" in name or "MICRON" in name or "NXP" in name:
+    if any(x in name for x in ["ASML", "ALPHABET", "AMAZON", "MICROSOFT", "NVIDIA"]):
         return "ki_chips", DISPLAY_BY_KEY["ki_chips"]
 
-    # Säule 3: Energie & Speicher (ohne Versorger)
+    # Energie
     if "ENERGIE" in s or "ENERGY" in s:
         return "energie", DISPLAY_BY_KEY["energie"]
-    if "CAMECO" in name or "EXON" in name or "EXXON" in name or "FIRST SOLAR" in name or "CATL" in name or "OCCIDENTAL" in name or "CHEVRON" in name or "SAMSUNG SDI" in name or "SIEMENS ENERGY" in name or "PETROCHINA" in name or "YELLOW CAKE" in name or "ALBEMARLE" in name:
+    if any(x in name for x in ["CAMECO", "EXXON", "CHEVRON"]):
         return "energie", DISPLAY_BY_KEY["energie"]
 
-    # Säule 4: Metalle & Rohstoffe (Fundament, Recycling, Mining ohne Edelmetalle)
-    if "FUNDAMENT" in s or "RECYCLING" in s or "ROHSTOFFE" in s:
-        return "metalle", DISPLAY_BY_KEY["metalle"]
-    if "FREEPORT" in name or "AURUBIS" in name or "CONSTELLIUM" in name or "VALE" in name or "POSCO" in name or "ZIJIN" in name or "UMICORE" in name:
-        return "metalle", DISPLAY_BY_KEY["metalle"]
-    if "MINING" in s and "EDELMETALLE" not in s:
+    # Metalle
+    if "FUNDAMENT" in s or "RECYCLING" in s:
         return "metalle", DISPLAY_BY_KEY["metalle"]
 
-    # Gold & Silber (Edelmetalle)
-    if "EDELMETALLE" in s or "GOLD" in s or "SILBER" in s or "SILVER" in name or "GOLD" in name or "AGNICO" in name or "ALAMOS" in name or "HECLA" in name or "FIRST MAJESTIC" in name or "BARRICK" in name or "NEWMONT" in name or "PAN AM" in name or "FRESNILLO" in name:
+    # Gold & Silber
+    if "EDELMETALLE" in s or "GOLD" in s or "SILBER" in s:
         return "gold_silber", DISPLAY_BY_KEY["gold_silber"]
 
-    # Konsum & Marken
-    if "KONSUM" in s or "LIFESTYLE" in s or "CAMPBELL" in name or "LUCKIN" in name or "LVMH" in name or "NESTLE" in name or "NIKE" in name or "PERNOD" in name or "MINISO" in name or "UNDER ARMOUR" in name or "COCA" in name or "PEPSI" in name or "PROCTER" in name or "PHILIP MORRIS" in name or "INGREDION" in name:
+    # Konsum
+    if "KONSUM" in s or any(x in name for x in ["NESTLE", "NIKE", "COCA"]):
         return "konsum", DISPLAY_BY_KEY["konsum"]
 
-    # Finanzen & Zahlungsverkehr
-    if "FINANZEN" in s or "FINTECH" in s or "FINANCE" in s:
-        return "finanzen", DISPLAY_BY_KEY["finanzen"]
-    if "ALLIANZ" in name or "DEUTSCHE BANK" in name or "BLOCK" in name or "COINBASE" in name or "MASTERCARD" in name or "PAYPAL" in name or "BLACKROCK" in name or "NERDWALLET" in name:
+    # Finanzen
+    if "FINANZEN" in s or "FINTECH" in s:
         return "finanzen", DISPLAY_BY_KEY["finanzen"]
 
-    # Gesundheit & Biotech
-    if "PHARMA" in s or "GESUNDHEIT" in s or "HEALTH" in s:
-        return "gesundheit", DISPLAY_BY_KEY["gesundheit"]
-    if "BAYER" in name or "FRESEN" in name or "CENTENE" in name or "INCYTE" in name or "ORGANON" in name or "PFIZER" in name or "UNITEDHEALTH" in name or "NOVO" in name or "INTUITIVE" in name or "STRYKER" in name or "JOHNSON" in name or "ABBOTT" in name:
+    # Gesundheit
+    if "PHARMA" in s or "GESUNDHEIT" in s:
         return "gesundheit", DISPLAY_BY_KEY["gesundheit"]
 
-    # Medien & Digitales
-    if "MEDIEN" in s or "DIGITALES" in s or "DIGITAL" in s:
-        return "medien", DISPLAY_BY_KEY["medien"]
-    if "NETFLIX" in name or "SPOTIFY" in name or "LUMEN" in name or "TAKKT" in name or "ZETA" in name:
+    # Medien
+    if "MEDIEN" in s or any(x in name for x in ["NETFLIX", "SPOTIFY"]):
         return "medien", DISPLAY_BY_KEY["medien"]
 
-    if not s or s in ("0", "NAN"):
-        return "andere", DISPLAY_BY_KEY["andere"]
     return "andere", DISPLAY_BY_KEY["andere"]
 
 def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
-        print(f"❌ Fehler: {e}")
+        logger.error(f"Fehler beim Lesen von {csv_path}: {e}")
         return
 
-    # Sektoren auf feste Säulen mappen (keine Duplikate, einheitliche Anzeige)
+    # Sektor-Mapping
     out = df.apply(normalize_sektor, axis=1)
     df["Sektor_Key"] = [o[0] for o in out]
     df["Sektor"] = [o[1] for o in out]
 
     def get_empfehlung(row, display_currency="€"):
-        """
-        Eine klare Empfehlung: Was tun + welcher Einstieg (theoretisch).
-        »Einstieg ab X« = Kauf beim Bruch dieses Niveaus, nicht zum aktuellen Kurs.
-        »nur bei Korrektur« = nur wenn Kurs schon über Einstieg liegt (nicht nachkaufen am Hoch).
-        """
+        """Empfehlung basierend auf Score, Signal, Zyklus."""
         score = float(row.get('Score', 0))
         signal = str(row.get('Elliott-Signal', '')).upper()
         cycle = float(row.get('Zyklus %', 50))
         e_entry = row.get('Elliott-Einstieg', 0)
         e_entry = float(e_entry) if e_entry else 0
-        current_price = float(row.get('Akt. Kurs', 0) or row.get('Akt. Kurs [€]', 0) or 0)
-        entry_line = f"Einstieg ab {e_entry:.2f} {display_currency}" if e_entry > 0 else "–"
 
         if signal != "BUY":
-            return {
-                "badge": "Kein Setup",
-                "badge_class": "bg-slate-700 text-slate-400 border border-slate-600",
-                "line2": "Kein Elliott-Setup",
-                "entry_line": "–",
-            }
+            return {"badge": "Kein Setup", "badge_class": "bg-slate-700 text-slate-400 border border-slate-600", "line2": "–"}
 
-        # BUY: Einstieg nur beim Bruch von e_entry
         if cycle <= 20 and score >= 95:
-            badge, badge_class = "Starkes Setup", "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+            return {"badge": "Starkes Setup", "badge_class": "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40", "line2": f"ab {e_entry:.2f} {display_currency}"}
         elif cycle <= 40 and score >= 75:
-            badge, badge_class = "Setup ok", "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+            return {"badge": "Setup ok", "badge_class": "bg-amber-500/20 text-amber-400 border border-amber-500/40", "line2": f"ab {e_entry:.2f} {display_currency}"}
         elif cycle > 60:
-            badge, badge_class = "Vorsicht: Zyklus hoch", "bg-rose-500/20 text-rose-400 border border-rose-500/40"
-            # "nur bei Korrektur" nur, wenn Kurs schon über Einstieg liegt (nicht nachkaufen). Liegt Kurs darunter, reicht "Einstieg ab X".
-            if e_entry > 0 and current_price >= e_entry:
-                entry_line = f"Einstieg ab {e_entry:.2f} {display_currency} (nur bei Korrektur)"
-            elif e_entry > 0:
-                entry_line = f"Einstieg ab {e_entry:.2f} {display_currency}"
-            else:
-                entry_line = "Zyklus hoch – nur bei Korrektur"
-        elif score >= 60:
-            badge, badge_class = "Beobachten", "bg-slate-500/20 text-slate-300 border border-slate-500/40"
+            return {"badge": "Vorsicht: Hoch", "badge_class": "bg-rose-500/20 text-rose-400 border border-rose-500/40", "line2": "nur Korrektur"}
         else:
-            badge, badge_class = "Beobachten", "bg-slate-500/20 text-slate-300 border border-slate-500/40"
+            return {"badge": "Beobachten", "badge_class": "bg-slate-500/20 text-slate-300 border border-slate-500/40", "line2": "–"}
 
-        return {
-            "badge": badge,
-            "badge_class": badge_class,
-            "line2": entry_line,
-            "entry_line": entry_line,
-        }
+    # Sektor-Farben
+    sector_colors = {
+        'ki_chips': '#3b82f6', 'gold_silber': '#f59e0b', 'energie': '#f97316',
+        'konsum': '#0ea5a4', 'finanzen': '#ef4444', 'gesundheit': '#8b5cf6',
+        'automation': '#06b6d4', 'metalle': '#64748b', 'infra': '#10b981',
+        'krypto_core': '#8b5cf6', 'krypto_sat': '#8b5cf6', 'experimente': '#ec4899',
+        'medien': '#06b6d4', 'andere': '#475569'
+    }
 
-    # Filter-Buttons: feste Reihenfolge (DISPLAY_SEKTOREN), nur vorhandene Keys, Filter nach Key (keine Duplikate)
+    # Filter-Buttons
     present_keys = set(df["Sektor_Key"].unique())
-    filter_buttons_html = '<button onclick="filterSektor(\'Alle\')" class="px-4 py-2 rounded-full glass text-xs font-bold hover:bg-emerald-600 transition whitespace-nowrap flex-shrink-0">Alle</button>\n'
+    neutral = sector_colors.get('andere', '#475569')
+    filter_buttons_html = f'<button onclick="filterSektor(\'Alle\')" class="px-4 py-2 rounded-full text-xs font-bold sector-btn" style="border:2px solid {neutral}; color:#f1f5f9; background:transparent;">Alle</button>\n'
     for key, label in DISPLAY_SEKTOREN:
         if key in present_keys:
-            # Key für Filter nutzen (escaping: Key enthält keine Anführungszeichen)
-            filter_buttons_html += f'                    <button onclick="filterSektor(\'{key}\')" class="px-4 py-2 rounded-full glass text-xs font-bold hover:bg-emerald-600 transition whitespace-nowrap flex-shrink-0">{label}</button>\n'
-    # Kurzhinweis für die Empfehlung
-    hinweis_html = """
-    <p class="text-xs text-slate-500 italic">
-        <strong class="text-slate-400">»Einstieg ab X«</strong> = Kauf beim Bruch dieses Niveaus (Elliott), nicht zwingend zum aktuellen Kurs.
-    </p>
-    """
+            color = sector_colors.get(key, neutral)
+            filter_buttons_html += f'                    <button onclick="filterSektor(\'{key}\')" class="px-4 py-2 rounded-full text-xs font-bold sector-btn" style="border:2px solid {color}; color:#f1f5f9; background:transparent;" data-sektor="{key}">{label}</button>\n'
 
     df = df.sort_values(by='Score', ascending=False)
-    # --- Benchmark (Durchschnitts-Vektoren) ---
-    # Parse Radar Vector JSON per Zeile, fallbacks handled
+    
+    # Benchmark-Berechnung
     sector_sums = {}
     sector_counts = {}
     overall_sum = [0.0, 0.0, 0.0, 0.0, 0.0]
     total_count = 0
+    
     for _, r in df.iterrows():
         rv = r.get('Radar Vector', '')
         if not rv:
@@ -208,9 +168,11 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             continue
         if not isinstance(vec, (list, tuple)) or len(vec) != 5:
             continue
+        
         total_count += 1
         for i in range(5):
             overall_sum[i] += float(vec[i] or 0)
+        
         sk = r.get('Sektor_Key', 'andere')
         if sk not in sector_sums:
             sector_sums[sk] = [0.0, 0.0, 0.0, 0.0, 0.0]
@@ -227,26 +189,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
 
     timestamp = datetime.datetime.now().strftime('%d.%m.%Y um %H:%M:%S')
     
-    # Sektor-Farben für Legende und Styling
-    sector_colors = {
-        'ki_chips': '#3b82f6',
-        'gold_silber': '#f59e0b',
-        'energie': '#f97316',
-        'konsum': '#0ea5a4',
-        'finanzen': '#ef4444',
-        'gesundheit': '#8b5cf6',
-        'automation': '#06b6d4',
-        'metalle': '#64748b',
-        'andere': '#475569'
-    }
-    
-    # Legende-HTML: Sektor-Farben mit Labels
-    sector_legend_html = '<div class="flex flex-wrap gap-3 text-xs">\n'
-    for display_key, display_label in DISPLAY_SEKTOREN:
-        color = sector_colors.get(display_key, '#475569')
-        sector_legend_html += f'        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded" style="background-color:{color}"></span><span class="text-slate-400">{display_label}</span></div>\n'
-    sector_legend_html += '</div>'
-    
+    logger.info("Dashboard-Generierung gestartet...")
     
     html_template = f"""
     <!DOCTYPE html>
@@ -256,6 +199,7 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Trading-Zentrale Ultimate</title>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <style>
             :root {{
@@ -263,7 +207,10 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 --muted: #94a3b8;
                 --emerald: #10b981;
                 --ki-blue: #3b82f6;
-                --gold: #f59e0b;
+                --gold: #ffd700;
+                --info-bg: #1e293b;
+                --info-accent: #334155;
+                --info-text: #cbd5e1;
             }}
             body {{ background: var(--bg); color: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }}
             .glass {{ background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.06); }}
@@ -272,117 +219,296 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             th {{ cursor: pointer; transition: color 0.15s; }}
             th:hover {{ color: var(--emerald) !important; }}
             .no-scrollbar::-webkit-scrollbar {{ display: none; }}
-            /* Ensure tooltips are not clipped by containers */
-            .overflow-y-auto, .overflow-x-auto {{ overflow: visible !important; }}
-            /* Row hover polish */
+            .overflow-y-auto {{ overflow-y: auto; }}
+            .overflow-x-hidden {{ overflow-x: hidden; }}
             tr:hover {{ background: rgba(255,255,255,0.03); }}
-            .sector-badge {{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:middle }}
-            /* Radar Tooltip Styling */
-            .radar-tooltip {{ background: rgba(0,0,0,0.95) !important; border: 2px solid rgba(16,185,129,0.4); box-shadow: 0 0 30px rgba(16,185,129,0.2) !important; }}
-            .radar-tooltip canvas {{ display: block; border-radius: 8px; margin: 8px 0; }}
-            .radar-legend {{ font-size: 9px; color: #94a3b8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }}
+            
+            /* Tiles (3x5 Grid für 15-Faktor-Matrix) */
+            .tiles-grid {{ display: grid; grid-template-columns: repeat(5, 10px); grid-auto-rows: 10px; gap: 6px; justify-items: center; align-items: center; margin-top: 8px; }}
+            .tile {{ width: 10px; height: 10px; border-radius: 2px; cursor: help; }}
+            .tile.green {{ background: #10b981; }}
+            .tile.red {{ background: #ef4444; }}
+            .tile.gray {{ background: #374151; }}
+            
+            /* Monospace für numerische Spalten */
+            .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }}
+            
+            /* Table layout */
+            table {{ table-layout: fixed; width: 100%; border-collapse: collapse; }}
+            th, td {{ padding: 8px 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+            @media(min-width:1024px) {{ th, td {{ padding: 10px 12px; }} }}
+
+            /* Radar Tooltip */
+            .radar-tooltip {{ 
+                background: rgba(0,0,0,0.95) !important; 
+                border: 2px solid rgba(16,185,129,0.4); 
+                box-shadow: 0 0 30px rgba(16,185,129,0.2) !important; 
+                z-index: 99999 !important;
+            }}
+            .radar-container {{
+                width: 240px;
+                height: 240px;
+                position: relative;
+                margin: 8px auto 12px;
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 8px;
+                background: rgba(0,0,0,0.3);
+            }}
+            
+            /* Info overlay */
+            #infoOverlay {{
+                position: fixed;
+                top: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 92%;
+                max-width: 1100px;
+                z-index: 80;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+                border-radius: 12px;
+                display: none;
+            }}
+            #infoOverlay.open {{ display: block; }}
+            .info-overlay-inner {{ background: var(--info-bg); color: var(--info-text); padding: 18px; border: 1px solid var(--info-accent); border-radius: 12px; }}
+            .info-panels {{ display: grid; grid-template-columns: 1fr; gap: 12px; }}
+            @media(min-width:768px) {{ .info-panels {{ grid-template-columns: repeat(3, 1fr); }}}}
+            .info-panel {{ background: transparent; padding: 12px; border-radius: 8px; }}
+            .info-panel h3 {{ margin: 0 0 6px 0; font-weight: 800; color: #cbd5e1; }}
+            .info-panel p {{ color: #cbd5e1; line-height: 1.5; margin-bottom: 8px; }}
+            .info-pill {{ background: var(--info-accent); color: #f1f5f9; padding: 8px 12px; border-radius: 999px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s; }}
+            .info-pill:hover {{ background: #475569; box-shadow: 0 6px 16px rgba(0,0,0,0.4); }}
+            .close-btn {{ position: absolute; right: 14px; top: 14px; background: transparent; border: none; color: #cbd5e1; font-weight: 800; cursor: pointer; font-size: 16px; }}
+            .radar-fallback {{
+                font-size: 10px;
+                color: #94a3b8;
+                font-family: monospace;
+                line-height: 1.6;
+                padding: 8px;
+                background: rgba(0,0,0,0.3);
+                border-radius: 6px;
+                border: 1px solid rgba(255,255,255,0.1);
+                display: none;
+            }}
+            
+            /* Hover-Cards für Asset und Score */
+            .card-hover {{
+                visibility: hidden;
+                opacity: 0;
+                transition: opacity 0.2s, visibility 0.2s;
+                position: absolute;
+                z-index: 9999;
+                pointer-events: none;
+            }}
+            .cell-with-card {{
+                position: relative;
+            }}
+            .cell-with-card:hover .card-hover {{
+                visibility: visible;
+                opacity: 1;
+                pointer-events: auto;
+            }}
+            .detail-card {{
+                background: var(--info-bg);
+                border: 2px solid var(--info-accent);
+                border-radius: 12px;
+                padding: 14px;
+                color: var(--info-text);
+                font-size: 11px;
+                line-height: 1.6;
+                box-shadow: 0 12px 32px rgba(0,0,0,0.8);
+                white-space: normal;
+                max-width: 300px;
+                word-wrap: break-word;
+            }}
+            
+            /* Info-Icon Styling */
+            .info-icon {{
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                background: #334155;
+                border: 1px solid #475569;
+                border-radius: 50%;
+                color: #cbd5e1;
+                font-weight: bold;
+                cursor: help;
+                transition: all 0.2s;
+                font-size: 12px;
+            }}
+            .info-icon:hover {{
+                background: #475569;
+                border-color: #64748b;
+                color: #f1f5f9;
+                box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+            }}
+            
+            /* Globales Tooltip Element */
+            #global-tooltip {{
+                position: absolute;
+                z-index: 9999;
+                display: none;
+                background: var(--info-bg);
+                border: 2px solid var(--info-accent);
+                border-radius: 12px;
+                padding: 14px;
+                color: var(--info-text);
+                font-size: 11px;
+                line-height: 1.6;
+                box-shadow: 0 12px 32px rgba(0,0,0,0.8);
+                white-space: normal;
+                max-width: 400px;
+                word-wrap: break-word;
+                pointer-events: none;
+            }}
+            #global-tooltip.visible {{
+                display: block;
+                pointer-events: auto;
+            }}
         </style>
     </head>
     <body class="p-4 md:p-8">
         <div class="max-w-7xl mx-auto">
-            <!-- Hauptüberschrift oben -->
+            <!-- Header -->
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <h1 class="text-4xl font-black text-white tracking-tighter uppercase order-first">
-                    Trading<span class="text-emerald-500 underline decoration-2">Zentrale</span>
+                <h1 class="text-4xl font-black text-white tracking-tighter uppercase order-first flex items-center gap-4">
+                    <i class="fa-solid fa-chart-line text-3xl" style="color:#06b6d4; text-shadow:0 0 18px rgba(6,182,212,0.45)"></i>
+                    <span>Trading-Zentrale <span class="text-emerald-500">Ultimate</span></span>
                 </h1>
                 <div class="text-right text-sm text-slate-400">
-                    <p class="text-xs text-slate-500 font-mono tracking-widest uppercase">Live Terminal v4.0</p>
+                    <p class="text-xs text-slate-500 font-mono tracking-widest uppercase">Live Terminal v5.0</p>
                     <p class="text-sm text-slate-300 italic">{timestamp}</p>
                 </div>
             </div>
 
-            <!-- Projektbeschreibung: einklappbar -->
-            <details class="mb-4 group">
-                <summary class="cursor-pointer glass rounded-2xl p-6 border-l-4 border-emerald-500 mb-4">
-                    <h2 class="text-xl font-extrabold text-white inline">📋 System-Beschreibung</h2>
-                    <span class="ml-2 text-slate-400 text-sm">(Klick zum Erweitern)</span>
-                </summary>
-                <div class="glass rounded-2xl p-6 border-l-4 border-emerald-500 mb-4">
-                    <p class="text-sm text-slate-300">Dieses Multi-Faktor-System kombiniert Technik (Elliott & Zyklus), statistische Wahrscheinlichkeiten (Monte Carlo), fundamentale Kennzahlen (Wachstum, ROE, Verschuldung, Bewertung) und CRV-Analyse zu einer kompakten Entscheidungsgrundlage. Jedes Asset zeigt im Hover ein Radar mit fünf Dimensionen: Wachstum, Rentabilität, Sicherheit, Technik und Bewertung — mit Benchmark-Vergleich zur Sektor-Durchschnitt.</p>
-                    <div class="text-xs text-slate-400 mt-4 space-y-1">
-                        <strong class="text-slate-300">Radar-Achsen erklärt:</strong>
-                        <div>• <strong>Sicherheit</strong> = 1 / Debt-to-Equity (geringe Verschuldung → höher)</div>
-                        <div>• <strong>Technik</strong> = Zyklus (niedriger Zyklus% → besser) + Elliott-Setup-Bonus</div>
-                        <div>• <strong>Bewertung</strong> = Upside korrigiert um PE-Malus</div>
-                    </div>
-                </div>
-            </details>
-
-            <!-- Disclaimer: permanent sichtbar -->
-            <div class="glass rounded-xl p-4 mb-6 border-l-4 border-rose-500">
-                <p class="text-sm text-rose-300 font-bold">⚠️ <strong>Wichtig:</strong> Private Nutzung — keine Anlageberatung. Experimentelles System; eigene Due Diligence erforderlich.</p>
+            <!-- Disclaimer -->
+            <div style="background:#0f0f1e; border:3px solid #ff8c00; border-radius:12px; padding:16px; margin-bottom:24px; box-shadow: 0 0 20px rgba(255,140,0,0.3);">
+                <p style="color:#ff8c00; font-size:16px; font-weight:900; margin:0; text-transform:uppercase; letter-spacing:1px;">⚠️ Private Nutzung — Keine Anlageberatung</p>
+                <p style="color:#cbd5e1; font-size:13px; margin:8px 0 0 0; line-height:1.6;">Experimentelles System ohne Gewährleistung. Diese Analysen stellen <strong>KEINE ANLAGEEMPFEHLUNG</strong> dar.</p>
             </div>
 
-            <!-- Sektor-Legende -->
-            <div class="glass rounded-xl p-4 mb-6">
-                <p class="text-xs font-bold text-slate-300 mb-2">Sektor-Farbschema (linker Rand der Zeilen):</p>
-                {sector_legend_html}
-            </div>
-            
-            <!-- Filter-Buttons (horizontal scrollbar) -->
-            <div class="mb-6" style="position: sticky; top: 0; z-index: 40; background: linear-gradient(to bottom, #020617 0%, #020617 95%, rgba(2,6,23,0) 100%); padding-bottom: 8px;">
+            <!-- Filter (Sticky) -->
+            <div class="mb-4" style="position: sticky; top: 0; z-index: 40; background: linear-gradient(to bottom, #020617 0%, #020617 95%, rgba(2,6,23,0) 100%); padding-bottom: 8px;">
                 <p class="text-xs font-bold text-slate-300 mb-2">Nach Sektor filtern:</p>
-                <div style="display: flex; overflow-x: auto; overflow-y: hidden; white-space: nowrap; gap: 10px; padding-bottom: 8px; scrollbar-width: thin; scroll-behavior: smooth;">
+                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding-bottom:6px;">
                     {filter_buttons_html}
                 </div>
             </div>
 
-            <!-- Infos und Suche -->
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-                <details class="group">
-                    <summary class="list-none cursor-pointer glass inline-block px-4 py-2 rounded-lg text-[10px] font-bold text-slate-500 hover:text-emerald-400 transition uppercase tracking-widest">
-                        <i class="fa-solid fa-circle-info mr-2"></i> So bewerte ich
-                    </summary>
-                    <div class="mt-4 glass rounded-2xl p-6 border-l-4 border-emerald-500 w-full overflow-hidden">
-                        <h3 class="text-lg font-black mb-3 text-emerald-400">Scoring-Logik</h3>
-                        <ul class="text-sm text-slate-400 space-y-2 list-disc list-inside">
-                            <li><strong class="text-slate-300">Empfehlung:</strong> Elliott-Setup (BUY = Welle-2-Korrektur) + Score + Zyklus. »Starkes Setup« = viele Faktoren sprechen für Einstieg – aber erst <strong>beim Bruch des angezeigten Niveaus</strong>, nicht zum aktuellen Kurs.</li>
-                            <li><strong class="text-slate-300">Einstieg (theoretisch):</strong> Preis, ab dem das Elliott-Setup bestätigt ist (Bruch des Wellen-Hochs). Darunter = warten.</li>
-                            <li><strong class="text-slate-300">Score:</strong> Technik (Elliott, Monte-Carlo) + Fundamental (KGV, Marge, Analysten) + CRV. Hoher Score = gutes Setup, kein direkter Kaufbefehl.</li>
-                            <li><strong class="text-slate-300">Zyklus %:</strong> 0–20 = zyklisches Tief (gutes Timing), 80–100 = zyklisches Hoch (Vorsicht).</li>
-                            <li><strong class="text-slate-300">CRV:</strong> Chance-Risiko-Verhältnis (Ziel vs. 10%-Stop). &gt;2 = gut, &lt;1 = schlecht.</li>
-                        </ul>
-                    </div>
-                </details>
+            <!-- Suche + Info-Pills -->
+            <div class="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2 mb-6">
                 <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Ticker oder Name..." 
-                       class="glass rounded-xl px-5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full md:w-64">
+                       class="glass rounded-xl px-5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 md:flex-none md:w-64">
+                <div class="flex flex-wrap gap-2">
+                    <button style="background:#1e293b; color:#f1f5f9; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition:all 0.2s; border:none; white-space:nowrap;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'" onclick="openInfo()">📋 System <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(i)</span></button>
+                    <button style="background:#1e293b; color:#f1f5f9; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition:all 0.2s; border:none; white-space:nowrap;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'" onclick="openInfo()">⚙️ Logik <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(i)</span></button>
+                    <button style="background:#1e293b; color:#f1f5f9; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3); transition:all 0.2s; border:none; white-space:nowrap;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'" onclick="openInfo()">🎯 Kacheln <span style="font-size:10px; color:#94a3b8; margin-left:4px;">(i)</span></button>
+                </div>
             </div>
 
+            <!-- Floating Info Overlay -->
+            <div id="infoOverlay" role="dialog" aria-hidden="true">
+                <div class="info-overlay-inner">
+                    <button class="close-btn" aria-label="Schließen" onclick="closeInfo()">✕</button>
+                    <div class="info-panels">
+                        <div class="info-panel">
+                            <h3>📋 Mein System</h3>
+                            <p><strong>Ich basiere auf einer 15-Faktor-Matrix:</strong></p>
+                            <p>Ich kombiniere <strong>Elliott-Wellen-Analyse</strong> mit <strong>fundamentalen Daten</strong> (ROE, Marge, KGV, Verschuldung) und <strong>Monte-Carlo-Simulation</strong>. Jeder Faktor wird als Kachel bewertet: Grün = erfüllt, Rot = nicht erfüllt, Grau = neutral/undefiniert.</p>
+                            <p><strong>Meine Kernlogik:</strong> Ich filtere auf Werte, die sowohl technisch als auch fundamental stark sind. Mein Elliott-Setup muss bestätigt sein (BUY-Signal + Kurs unter Target). Mein Score wird durch ROE, Marge, CRV und Monte-Carlo geprägt.</p>
+                            <p><strong>Mein Ziel:</strong> Ich suche Konvergenz-Setups mit hohem Risiko-Reward (CRV ≥ 2.0) und multiplen bestätigenden Signalen.</p>
+                        </div>
+                        <div class="info-panel">
+                            <h3>⚙️ Meine Bewertungslogik</h3>
+                            <p><strong>Wie ich Kandidaten bewerte:</strong></p>
+                            <p><strong>1. Meine fundamentale Basis (K1–K5):</strong> Ich prüfe KGV (sektor-abhängig), Gewinnmarge (&gt;5% = Qualität), ROE (&gt;15% = stark), Verschuldung (D/E &lt;0.5 = sauber) und Dividenden-Qualität.</p>
+                            <p><strong>2. Mein Wachstumspotenzial (K6–K10):</strong> Monte-Carlo &gt;70%, Upside zum Target, Wachstum YoY (&gt;10%), Analysten-Rating und Sektoren-Bonusse.</p>
+                            <p><strong>3. Mein Timing + CRV (K11–K15):</strong> Elliott-Setup (gültiges BUY, Kurs 2% unter Target), Target-Entfernung, CRV-Basis (≥2.0) und CRV-Top (≥3.0) für maximale Rewards.</p>
+                        </div>
+                        <div class="info-panel">
+                            <h3>🎯 Meine 15-Kachel-Matrix</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                <div>
+                                    <p class="font-bold" style="color:#cbd5e1;">🔍 Substanz</p>
+                                    <ul class="text-sm" style="color:#cbd5e1;">
+                                        <li><strong>K1: KGV</strong> – sektor-abhängig</li>
+                                        <li><strong>K2: Marge</strong> – &gt;5% oder &gt;20%</li>
+                                        <li><strong>K3: ROE</strong> – &gt;15% zeigt Kraft</li>
+                                        <li><strong>K4: Verschuldung</strong> – D/E &lt;0.5</li>
+                                        <li><strong>K5: Dividenden</strong> – nur mit ROE&gt;10%</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p class="font-bold" style="color:#cbd5e1;">📈 Potenzial</p>
+                                    <ul class="text-sm" style="color:#cbd5e1;">
+                                        <li><strong>K6: Monte Carlo</strong> – &gt;70%</li>
+                                        <li><strong>K7: Upside</strong> – zum Target</li>
+                                        <li><strong>K8: Wachstum</strong> – &gt;10% YoY</li>
+                                        <li><strong>K9: Analysten</strong> – Strong Buy/Buy</li>
+                                        <li><strong>K10: Sektor</strong> – Krypto/Energie/KI</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p class="font-bold" style="color:#cbd5e1;">⏱️ Timing</p>
+                                    <ul class="text-sm" style="color:#cbd5e1;">
+                                        <li><strong>K11: Elliott</strong> – BUY, &lt;2% zur Target</li>
+                                        <li><strong>K12: Distanz</strong> – min 2% bis Target</li>
+                                        <li><strong>K13: CRV-Basis</strong> – ≥2.0</li>
+                                        <li><strong>K14: CRV-Top</strong> – ≥3.0</li>
+                                        <li><strong>K15: Konfluenz</strong> – mehrere Signale</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="text-xs" style="color:#94a3b8; margin-top:12px;">Farben: Grün = erfüllt · Rot = nicht erfüllt · Grau = neutral</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                function openInfo() {{
+                    var o = document.getElementById('infoOverlay');
+                    if (!o) return;
+                    o.classList.add('open');
+                    o.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
+                }}
+                function closeInfo() {{
+                    var o = document.getElementById('infoOverlay');
+                    if (!o) return;
+                    o.classList.remove('open');
+                    o.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                }}
+                document.addEventListener('keydown', function(e){{ if (e.key === 'Escape') closeInfo(); }});
+            </script>
+
+            <!-- Tabelle -->
             <div class="glass rounded-3xl shadow-2xl border-none flex flex-col" style="max-height: 75vh;">
-                <div class="overflow-y-auto overflow-x-auto no-scrollbar rounded-3xl" style="overflow:visible;">
+                <div class="overflow-y-auto overflow-x-hidden no-scrollbar rounded-3xl" style="max-height: calc(100vh - 260px);">
                     <table class="w-full text-left border-collapse" id="mainTable">
                         <thead class="bg-slate-900/95 border-b border-slate-700 sticky top-0 z-30 backdrop-blur-md">
                             <tr class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
                                 <th class="px-6 py-5" onclick="sortTable(0)">Asset <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
+                                <th class="px-3 py-5 text-center" style="width:40px;">Info</th>
                                 <th class="px-6 py-5" onclick="sortTable(1)">Sektor <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
                                 <th class="px-6 py-5 text-right" onclick="sortTable(2)">ROE <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
-                                <th class="px-6 py-5 text-right" onclick="sortTable(3)">Debt/Equity <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
-                                <th class="px-6 py-5 text-right" onclick="sortTable(4)">Dividende % <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
-                                <th class="px-6 py-5 text-right font-black" onclick="sortTable(5)">Kurs · Einstieg <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
+                                <th class="px-6 py-5 text-right" onclick="sortTable(3)">Debt/Eq <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
+                                <th class="px-6 py-5 text-right" onclick="sortTable(4)">Div % <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
+                                <th class="px-6 py-5 text-right font-black" onclick="sortTable(5)">Kurs <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
                                 <th class="px-6 py-5 text-center font-bold text-emerald-400" onclick="sortTable(6)">Empfehlung</th>
                                 <th class="px-6 py-5 text-right" onclick="sortTable(7)">CRV <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
-                                <th class="px-6 py-5 text-right" onclick="sortTable(8)">Zyklus % <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
+                                <th class="px-6 py-5 text-right" onclick="sortTable(8)">Zyklus <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
                                 <th class="px-6 py-5 text-right" onclick="sortTable(9)">Score <i class="fa-solid fa-sort ml-1 opacity-30"></i></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800">
     """
-
-    for _, row in df.iterrows():
-        # --- 1. DATEN-VORBEREITUNG ---
+    
+    for idx, row in df.iterrows():
         score = row.get('Score', 0)
         crv = float(row.get('CRV', 0.0))
-        mc_chance = float(row.get('MC-Chance', 0))
-        e_entry = row.get('Elliott-Einstieg', 0)
-        e_exit = row.get('Elliott-Ausstieg', 0)
-        e_entry_f = float(e_entry) if e_entry else 0
         ticker = str(row.get('Ticker', '')).strip()
-        # Yahoo-Link: gespeichertes Yahoo-Symbol nutzen, dann landet man direkt auf der richtigen Aktie (kein ISIN)
         yh = row.get('Yahoo')
         link_symbol = (str(yh).strip() if yh is not None and not (isinstance(yh, float) and pd.isna(yh)) and str(yh).strip() else '') or ticker
 
@@ -391,273 +517,474 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
         display_currency = currency_map.get(raw_currency, raw_currency)
 
         emp = get_empfehlung(row, display_currency)
-        is_buy = row['Elliott-Signal'] == "BUY"
-
-        # Punkte für Score-Tooltip
-        p_elliott = 20 if is_buy else 0
-        p_stats = round((mc_chance / 100) * 20, 1)
-        p_crv = 0
-        if is_buy:
-            if crv >= 3.0: p_crv = 15
-            elif crv >= 2.0: p_crv = 10
-            elif crv < 1.0 and crv > 0: p_crv = -20
-        p_konfluenz = 15 if (mc_chance > 70 and is_buy) else 0
         sektor_key = row.get('Sektor_Key', 'andere')
-        # Radar JSON (optional, may be empty string)
+        sektor_name = row.get('Sektor', 'Andere')
+        
+        # Radar-Daten
         radar_json = row.get('Radar Vector', '')
-        sektor_clean = str(row.get('Sektor', '')).upper()
-        is_krypto_asset = 'KRYPTO' in sektor_clean or any(x in ticker for x in ['BTC', 'ETH', 'SOL', 'XRP', 'ADA', 'DOGE'])
-        p_krypto = 15 if is_krypto_asset else 0
+        if not radar_json:
+            radar_json = json.dumps([0, 0, 0, 0, 0])
+        
+        radar_vector_str = radar_json.replace('"', '\\"')
+        
+        # Fallback-Text
+        fallback_text = "–"
+        try:
+            rv = json.loads(radar_json)
+            if len(rv) == 5:
+                fallback_text = f"W:{rv[0]:.0f} R:{rv[1]:.0f} S:{rv[2]:.0f} T:{rv[3]:.0f} B:{rv[4]:.0f}"
+        except:
+            pass
+
         row_color = sector_colors.get(sektor_key, '#475569')
-        p_fund_total = round(max(0, float(score) - p_elliott - p_stats - p_crv - p_konfluenz - p_krypto), 1)
 
         perf = float(row.get('Perf %', 0.0))
         perf_icon = "↑" if perf > 0 else "↓" if perf < 0 else "→"
         perf_color = "text-emerald-400 font-bold" if perf > 0 else "text-rose-500 font-bold" if perf < 0 else "text-slate-500"
         crv_color = "text-emerald-400 font-bold" if crv >= 2.0 else ("text-rose-500 font-bold" if crv < 1.0 and crv > 0 else "text-slate-400")
 
-        # Kurs-Spalte: Akt. Kurs + theoretischer Einstieg
-        einstieg_zeile = f"Einstieg ab {e_entry_f:.2f} {display_currency}" if e_entry_f > 0 else "–"
+        # === 15-KACHEL-MATRIX IN PYTHON GENERIEREN ===
+        def parse_num(val):
+            """Hilfsfunktion zum Parsen von Zahlenwerten"""
+            if val is None or (isinstance(val, float) and pd.isna(val)):
+                return None
+            try:
+                return float(val)
+            except:
+                return None
+        
+        pe_val = parse_num(row.get('PE', 0))
+        margin_val = parse_num(row.get('Margin %', 0))
+        roe_val = parse_num(row.get('ROE %', 0))
+        debt_val = parse_num(row.get('Debt/Equity', 2))
+        div_val = parse_num(row.get('Div. Rendite %', 0))
+        mc_val = parse_num(row.get('MC-Chance', 0))
+        growth_val = parse_num(row.get('Growth %', 0))
+        crv_val = parse_num(row.get('CRV', 0))
+        signal = str(row.get('Elliott-Signal', 'Warten')).upper()
+        target = parse_num(row.get('Elliott-Ausstieg', 0))
+        current_price_val = parse_num(row.get('Akt. Kurs', 0))
+        
+        # Variablen für data-Attribute
+        mc_chance_val = row.get('MC-Chance', 0)
+        ell_target = row.get('Elliott-Ausstieg', 0)
+        ell_entry = row.get('Elliott-Entry', 0)
+        rec_val = row.get('Elliott-Signal', 'Warten')
+        
+        # Tile-Logik: 15 Kacheln pro Faktor
+        tiles = []
+        
+        # K1: KGV-Check (sektor-abhängig)
+        if pe_val is None:
+            tiles.append(0)  # Gray
+        elif sektor_key in ['ki_chips', 'automation', 'medien']:
+            tiles.append(1 if pe_val <= 45 else (-1 if pe_val > 80 else 0))
+        elif sektor_key in ['metalle', 'gold_silber']:
+            tiles.append(1 if pe_val <= 20 else (-1 if pe_val > 35 else 0))
+        else:
+            tiles.append(1 if pe_val <= 28 else (-1 if pe_val > 80 else 0))
+        
+        # K2: Marge (>5% = erfüllt)
+        if margin_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if margin_val > 5 else -1)
+        
+        # K3: ROE (>15% = erfüllt)
+        if roe_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if roe_val > 15 else (-1 if roe_val < 5 else 0))
+        
+        # K4: Verschuldung D/E (<0.5 = erfüllt)
+        if debt_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if debt_val < 0.5 else (-1 if debt_val > 2.0 else 0))
+        
+        # K5: Dividenden (>1.5% mit ROE>10 = erfüllt)
+        if div_val is None or roe_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if (div_val > 1.5 and roe_val > 10) else -1)
+        
+        # K6: Monte Carlo (>70% = erfüllt)
+        if mc_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if mc_val > 70 else (-1 if mc_val < 30 else 0))
+        
+        # K7: Upside (Target vs Current)
+        if target is None or current_price_val is None or current_price_val <= 0:
+            tiles.append(0)
+        else:
+            upside = ((target - current_price_val) / current_price_val) * 100
+            tiles.append(1 if upside > 0 else -1)
+        
+        # K8: Wachstum (>10% = erfüllt)
+        if growth_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if growth_val > 10 else -1)
+        
+        # K9: Analysten (BUY/Strong Buy = erfüllt)
+        emp_badge = str(row.get('Empfehlung', '')).lower()
+        tiles.append(1 if ('buy' in emp_badge or 'stark' in emp_badge) else (-1 if 'beob' in emp_badge or 'hold' in emp_badge else 0))
+        
+        # K10: Sektor-Bonus (Krypto, Energie, KI = erfüllt)
+        bonus_sectors = ['krypto_core', 'energie', 'ki_chips', 'automation']
+        tiles.append(1 if sektor_key in bonus_sectors else 0)
+        
+        # K11: Elliott BUY Signal (BUY + Kurs <2% unter Target)
+        if signal == 'BUY' and target and current_price_val and current_price_val > 0:
+            if current_price_val < (target * 0.98):
+                tiles.append(1)
+            else:
+                tiles.append(0)
+        else:
+            tiles.append(0)
+        
+        # K12: Target-Distanz (>=2% = erfüllt)
+        if target and current_price_val and current_price_val > 0:
+            dist = ((target - current_price_val) / current_price_val) * 100
+            tiles.append(1 if dist >= 2 else -1)
+        else:
+            tiles.append(0)
+        
+        # K13: CRV-Basis (>=2.0 = erfüllt)
+        if crv_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if crv_val >= 2.0 else (-1 if crv_val < 1.0 else 0))
+        
+        # K14: CRV-Top (>=3.0 = erfüllt)
+        if crv_val is None:
+            tiles.append(0)
+        else:
+            tiles.append(1 if crv_val >= 3.0 else -1)
+        
+        # K15: Konfluenz (>=5 grüne Tiles = erfüllt)
+        green_count = sum(1 for t in tiles if t == 1)
+        tiles.append(1 if green_count >= 5 else 0)
+        
+        # Generiere Tiles-HTML
+        tile_labels = ['KGV-Check', 'Marge', 'ROE', 'Verschuldung', 'Dividenden', 'Monte Carlo', 'Upside', 'Wachstum', 'Analysten', 'Sektor-Bonus', 'Elliott', 'Target-Distanz', 'CRV-Basis', 'CRV-Top', 'Konfluenz']
+        tiles_html = '<div class="tiles-grid" style="display: grid; grid-template-columns: repeat(5, 10px); gap: 6px; margin-top: 8px;">'
+        for idx, tile_val in enumerate(tiles):
+            if tile_val == 1:
+                color = "#10b981"  # Green
+            elif tile_val == -1:
+                color = "#ef4444"  # Red
+            else:
+                color = "#374151"  # Gray
+            label = tile_labels[idx] if idx < len(tile_labels) else f"K{idx+1}"
+            tiles_html += f'<div class="tile" style="width: 10px; height: 10px; background: {color}; border-radius: 2px; cursor: help;" title="{label}"></div>'
+        tiles_html += '</div>'
 
-        # Asset-Tooltip: Akt. Kurs vs Einstieg (theoretisch)
-        asset_tooltip = f"""
-            <div class='tooltip glass p-4 rounded-xl text-[11px] w-56 shadow-2xl -mt-12 left-0 pointer-events-none'>
-                <p class='font-bold text-emerald-400 mb-1 border-b border-white/10 pb-1'>{row['Name']}</p>
-                <div class='flex justify-between mt-2'><span>Akt. Kurs:</span><span class='text-slate-300 font-mono'>{row.get('Akt. Kurs', 0)} {display_currency}</span></div>
-                <div class='flex justify-between'><span>Einstieg (theoretisch):</span><span class='text-amber-400 font-mono'>{"ab " + str(round(e_entry_f, 2)) + " " + display_currency if e_entry_f > 0 else "–"}</span></div>
-                <div class='flex justify-between'><span>Kursziel:</span><span class='text-emerald-400 font-mono font-bold'>{e_exit} {display_currency}</span></div>
-                <div class='flex justify-between mt-1'><span>Wahrsch. 30d:</span><span class='text-blue-400 font-bold'>{mc_chance}%</span></div>
-                <div class='flex justify-between mt-1'><span>ROE:</span><span class='text-slate-300 font-mono'>{row.get('ROE %', '–')}%</span></div>
-                <div class='flex justify-between'><span>Debt/Equity:</span><span class='text-slate-300 font-mono'>{row.get('Debt/Equity', '–')}</span></div>
-                <div class='flex justify-between'><span>Div. Rendite:</span><span class='text-slate-300 font-mono'>{row.get('Div. Rendite %', 0)}%</span></div>
-                <div class='flex justify-between'><span>FCF Yield:</span><span class='text-slate-300 font-mono'>{row.get('FCF Yield %', 0)}%</span></div>
-                <div class='flex justify-between'><span>Rule of 40:</span><span class='text-slate-300 font-mono'>{row.get('Rule of 40', '–')}</span></div>
-                <div class='flex justify-between'><span>Current Ratio:</span><span class='text-slate-300 font-mono'>{row.get('Current Ratio', '–')}</span></div>
-                <div class='flex justify-between'><span>Inst. Besitz:</span><span class='text-slate-300 font-mono'>{row.get('Institutional Ownership %', 0)}%</span></div>
-                <div class='mt-2 pt-1 border-t border-white/10 italic text-slate-500 text-[9px] text-center'>Klick für Yahoo</div>
-            </div>
-        """
+        # Score-Tooltip - ENTFERNT (schwarzer Kasten)
+        score_tooltip = ""
 
-        score_tooltip = f"""
-            <div class='tooltip radar-tooltip p-4 rounded-xl text-[11px] w-64 shadow-2xl -mt-40 -ml-24 pointer-events-none'>
-                <p class='font-bold border-b border-white/10 mb-2 pb-1 text-emerald-400 text-center uppercase tracking-widest'>📊 Radar & Punkte</p>
-                
-                <!-- Radar Canvas (eindeutige ID) -->
-                <canvas id="radar-canvas-{ticker}" class="radar-chart-canvas" data-radar='{radar_json}' data-sektor='{sektor_key}' style="width:100%; height:160px; display:block; margin-bottom:8px; border: 1px solid rgba(255,255,255,0.1); border-radius:8px; background:rgba(0,0,0,0.3);"></canvas>
-                
-                <!-- Punkte-Breakdown -->
-                <p class='text-xs font-bold text-slate-400 mb-1 mt-2'>Punkte:</p>
-                <div class='flex justify-between text-[10px]'><span>Technik:</span><span class='font-mono {"text-emerald-400" if p_elliott > 0 else "text-slate-500"}'>{p_elliott}/20</span></div>
-                <div class='flex justify-between text-[10px]'><span>Statistik:</span><span class='font-mono text-blue-400'>{p_stats}/20</span></div>
-                <div class='flex justify-between text-[10px]'><span>Fundamental:</span><span class='font-mono text-slate-300'>{p_fund_total}/50</span></div>
-                <div class='border-t border-white/10 mt-2 pt-2 space-y-1'>
-                    <div class='flex justify-between text-[10px]'><span>CRV:</span><span class='font-mono {"text-emerald-400" if p_crv > 0 else ("text-rose-500" if p_crv < 0 else "text-slate-600")}'>{"+" if p_crv > 0 else ""}{p_crv}</span></div>
-                    <div class='flex justify-between text-[10px]'><span>Konfluenz:</span><span class='font-mono {"text-amber-400" if p_konfluenz > 0 else "text-slate-600"}'>{p_konfluenz}</span></div>
-                    <div class='flex justify-between text-[10px]'><span>Krypto:</span><span class='font-mono {"text-blue-400" if p_krypto > 0 else "text-slate-600"}'>{p_krypto}</span></div>
-                </div>
-            </div>
-        """
+        # Asset-Details Card mit allen Infos + 15-Faktoren
+        tile_status_list = []
+        for idx, (label, tile_val) in enumerate(zip(tile_labels, tiles)):
+            status_icon = '✓' if tile_val == 1 else '✗' if tile_val == -1 else '–'
+            status_color = '#10b981' if tile_val == 1 else '#ef4444' if tile_val == -1 else '#94a3b8'
+            tile_status_list.append(f'<div style="font-size:10px; margin:2px 0;"><span style="color:{status_color}">{status_icon}</span> <strong>K{idx+1}</strong>: {label}</div>')
+        
+        tile_status_html = '\n'.join(tile_status_list)
+        
+        # Info-Daten als JSON für das data-info Attribut
+        info_data = {
+            'name': row['Name'],
+            'ticker': ticker,
+            'sektor': sektor_name,
+            'kurs': row.get('Akt. Kurs', '–'),
+            'currency': display_currency,
+            'score': score,
+            'factors': tile_status_list
+        }
+        # JSON mit ensure_ascii=False für Unicode-Support, dann HTML-escape für Attribute-Kontext
+        info_json = json.dumps(info_data, ensure_ascii=False)
+        info_json_escaped = info_json.replace("'", "&apos;").replace('"', "&quot;")
 
         html_template += f"""
-                    <tr class="hover:bg-white/[0.02] transition group sektor-row" data-sektor="{row['Sektor_Key']}" style="border-left:4px solid {row_color};">
-                        <td class="px-6 py-5 relative has-tooltip cursor-default">
-                            {asset_tooltip}
+                <tr class="hover:bg-white/[0.02] transition group sektor-row" data-sektor="{row['Sektor_Key']}" data-radar='{radar_vector_str}' data-sektor-key='{sektor_key}' data-mc='{mc_chance_val}' data-target='{ell_target}' data-entry='{ell_entry}' data-margin='{margin_val}' data-growth='{growth_val}' data-pe='{pe_val}' data-rec='{rec_val}' style="border-left:4px solid {row_color};">
+                        <td class="px-6 py-5 relative">
                             <div class="flex flex-col relative z-20">
-                                <a href="https://finance.yahoo.com/quote/{link_symbol}" target="_blank" rel="noopener noreferrer"
-                                   class="font-bold text-slate-100 hover:text-emerald-400 transition cursor-pointer block">{row['Name']}</a>
+                                <a href="https://finance.yahoo.com/quote/{link_symbol}" target="_blank" rel="noopener noreferrer" class="font-bold text-slate-100 hover:text-emerald-400 transition cursor-pointer block">{row['Name']}</a>
                                 <span class="text-[10px] font-mono text-slate-500 uppercase">{ticker}</span>
                             </div>
                         </td>
-                        <td class="px-6 py-5 text-xs text-slate-400 font-medium italic">{row['Sektor']}</td>
-                        <td class="px-6 py-5 text-right font-mono">{row.get('ROE %', '–')}</td>
-                        <td class="px-6 py-5 text-right font-mono">{row.get('Debt/Equity', '–')}</td>
-                        <td class="px-6 py-5 text-right font-mono">{row.get('Div. Rendite %', '–')}</td>
+                        <td class="px-3 py-5 text-center">
+                            <span class="info-icon cursor-pointer text-slate-400 hover:text-amber-400 transition-colors" 
+                                  data-info='{info_json_escaped}' title="Faktor-Details">ⓘ</span>
+                        </td>
+                        <td class="px-6 py-5 text-xs text-slate-400">{row['Sektor']}</td>
+                        <td class="px-6 py-5 text-right font-mono text-sm">{row.get('ROE %', '–')}</td>
+                        <td class="px-6 py-5 text-right font-mono text-sm">{row.get('Debt/Equity', '–')}</td>
+                        <td class="px-6 py-5 text-right font-mono text-sm">{row.get('Div. Rendite %', '–')}</td>
                         <td class="px-6 py-5 text-right font-mono">
                             <div class="flex flex-col items-end gap-0.5">
                                 <span class="text-sm font-bold text-slate-200">{row.get('Akt. Kurs', 0)} {display_currency}</span>
-                                <span class="text-[10px] text-slate-500">{einstieg_zeile}</span>
-                                <span class="{perf_color} text-[10px]">{perf_icon} {abs(perf)}%</span>
+                                <span class="{perf_color} text-[10px]">{perf_icon} {abs(perf):.1f}%</span>
                             </div>
                         </td>
                         <td class="px-6 py-5 text-center">
-                            <div class="flex flex-col gap-1 items-center">
-                                <span class="{emp['badge_class']} px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-tighter">{emp['badge']}</span>
-                                <span class="text-[10px] text-slate-500">{emp['line2']}</span>
-                            </div>
+                            <span class="{emp['badge_class']} px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-tighter">{emp['badge']}</span>
                         </td>
-                        <td class="px-6 py-5 text-right font-mono {crv_color}">{crv}</td>
-                        <td class="px-6 py-5 text-right font-mono text-blue-400">{row.get('Zyklus %', 50.0)}</td>
-                        <td class="px-6 py-5 text-right relative has-tooltip cursor-help" onmouseover="initRadarChart('radar-canvas-{ticker}', '{sektor_key}')">
-                            {score_tooltip}
+                        <td class="px-6 py-5 text-right font-mono text-sm {crv_color}">{crv:.2f}</td>
+                        <td class="px-6 py-5 text-right font-mono text-sm text-blue-400">{row.get('Zyklus %', 50.0):.0f}</td>
+                        <td class="px-6 py-5 text-right relative has-tooltip cursor-help cell-with-card">
                             <span class="text-lg font-black text-white">{score}</span>
                             <div class="w-8 h-1 bg-slate-700 rounded-full ml-auto mt-1 overflow-hidden">
                                 <div class="bg-emerald-500 h-full" style="width: {(float(score)/145)*100}%"></div>
                             </div>
+                            {tiles_html}
                         </td>
                     </tr>
         """
 
-    html_template += """
+    html_template += f"""
                         </tbody>
                     </table>
                 </div>
             </div>
             
+            <!-- Global Tooltip Element (einzeln für alle Info-Icons) -->
+            <div id="global-tooltip" class="detail-card" style="display: none; position: absolute; z-index: 10000; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; color: #cbd5e1; font-size: 11px; line-height: 1.6; max-width: 380px; max-height: 70vh; overflow-y: auto;"></div>
+
             <script>
-            // --- Benchmark Daten (vom Server eingefügt) ---
             const BENCHMARK_GLOBAL = {json.dumps(overall_avg)};
             const BENCHMARK_BY_SECTOR = {json.dumps(sector_avgs)};
-
-            // Lazy-load Chart.js
-            let chartLibLoaded = false;
-            window.addEventListener('load', () => {
-                if (typeof Chart === 'undefined') {
-                    const s = document.createElement('script');
-                    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
-                    s.async = true;
-                    s.onload = () => {
-                        chartLibLoaded = true;
-                        console.info('✓ Chart.js loaded');
-                    };
-                    document.head.appendChild(s);
-                } else {
-                    chartLibLoaded = true;
-                }
-            });
-
-            // Speichere alle Chart-Instanzen
             const radarCharts = {{}};
+            let apexChartsLoaded = false;
 
-            // Radar Chart in Tooltip zeichnen
-            function initRadarChart(canvasId, sectorKey) {{
-                // DOM-Check: Canvas-Element vorhanden?
-                const canvas = document.getElementById(canvasId);
-                if (!canvas) {{
-                    console.warn('Canvas nicht gefunden: ' + canvasId);
+            // Global Tooltip State
+            let stickyTooltip = null;
+            
+            // Hilfsfunktion: Tooltip aktualisieren und positionieren
+            function updateTooltip(icon, data) {{
+                const tooltip = document.getElementById('global-tooltip');
+                
+                // Baue Tooltip-HTML aus JSON-Daten
+                let factorHtml = '';
+                if (data.factors && Array.isArray(data.factors)) {{
+                    factorHtml = data.factors.join('');
+                }}
+                
+                tooltip.innerHTML = `
+                    <p style="font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; margin-bottom: 6px; color: #f1f5f9;">
+                        📋 ${{data.name}} (${{data.ticker}})
+                    </p>
+                    <p style="margin: 3px 0;"><strong>Sektor:</strong> ${{data.sektor}}</p>
+                    <p style="margin: 3px 0;"><strong>Kurs:</strong> ${{data.kurs}} ${{data.currency}}</p>
+                    <p style="margin: 3px 0;"><strong>Score:</strong> ${{data.score}}</p>
+                    <p style="font-weight: bold; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px; margin-top: 6px;">15-Faktoren:</p>
+                    <div style="margin-top: 3px; font-size: 10px;">
+                        ${{factorHtml}}
+                    </div>
+                `;
+                
+                // Intelligente Positionierung
+                const rect = icon.getBoundingClientRect();
+                const tooltipHeight = tooltip.offsetHeight || 300; // Fallback wenn noch nicht gemessen
+                const viewportHeight = window.innerHeight;
+                const spaceBelow = viewportHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                
+                tooltip.style.left = (rect.left + window.scrollX) + 'px';
+                
+                // Wenn unten wenig Platz: öffne oben
+                if (spaceBelow < tooltipHeight + 16 && spaceAbove > tooltipHeight + 16) {{
+                    tooltip.style.top = (rect.top + window.scrollY - tooltipHeight - 8) + 'px';
+                }} else {{
+                    tooltip.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+                }}
+                
+                tooltip.style.display = 'block';
+            }}
+            
+            // Click-Handler: Toggle Sticky Mode
+            document.addEventListener('click', function(e) {{
+                if (e.target.classList.contains('info-icon')) {{
+                    try {{
+                        const infoJson = e.target.getAttribute('data-info');
+                        if (!infoJson) return;
+                        
+                        const data = JSON.parse(infoJson);
+                        
+                        // Toggle sticky state
+                        if (stickyTooltip === e.target) {{
+                            stickyTooltip = null; // Unfreeze
+                            document.getElementById('global-tooltip').style.display = 'none';
+                        }} else {{
+                            stickyTooltip = e.target; // Freeze at this icon
+                            updateTooltip(e.target, data);
+                            e.target.style.opacity = '1';
+                            e.target.style.color = '#fbbf24'; // Highlight bei sticky
+                        }}
+                    }} catch (err) {{
+                        console.error('Sticky Toggle Error:', err);
+                    }}
+                }}
+            }});
+            
+            // Hover-Handler: Update nur wenn NICHT sticky
+            document.addEventListener('mouseover', function(e) {{
+                if (e.target.classList.contains('info-icon') && stickyTooltip === null) {{
+                    try {{
+                        const infoJson = e.target.getAttribute('data-info');
+                        if (!infoJson) return;
+                        
+                        const data = JSON.parse(infoJson);
+                        updateTooltip(e.target, data);
+                    }} catch (err) {{
+                        console.error('Tooltip Error:', err);
+                    }}
+                }}
+            }});
+            
+            // Verstecke Tooltip beim Mauszeiger weg (nur wenn NICHT sticky)
+            document.addEventListener('mouseout', function(e) {{
+                if (e.target.classList.contains('info-icon') && stickyTooltip === null) {{
+                    const tooltip = document.getElementById('global-tooltip');
+                    setTimeout(() => {{
+                        if (!tooltip.matches(':hover')) {{
+                            tooltip.style.display = 'none';
+                        }}
+                    }}, 100);
+                }}
+            }});
+            
+            // Verstecke Tooltip wenn Maus tooltip verlässt und nicht sticky
+            document.addEventListener('mouseout', function(e) {{
+                const tooltip = document.getElementById('global-tooltip');
+                if (tooltip && e.target === tooltip && stickyTooltip === null) {{
+                    setTimeout(() => {{
+                        tooltip.style.display = 'none';
+                    }}, 100);
+                }}
+            }});
+            
+            // ESC-Taste zum Entsperren
+            document.addEventListener('keydown', function(e) {{
+                if (e.key === 'Escape' && stickyTooltip !== null) {{
+                    stickyTooltip.style.color = ''; // Reset Farbe
+                    stickyTooltip = null;
+                    document.getElementById('global-tooltip').style.display = 'none';
+                }}
+            }});
+
+            window.addEventListener('load', () => {{
+                if (typeof ApexCharts !== 'undefined') {{
+                    apexChartsLoaded = true;
+                    console.info('✓ ApexCharts ready');
+                }} else {{
+                    console.warn('⚠ ApexCharts nicht geladen');
+                }}
+            }});
+
+            function showFallback(radar_id, fallback_id) {{
+                const radarDiv = document.getElementById(radar_id);
+                const fallbackDiv = document.getElementById(fallback_id);
+                if (radarDiv) radarDiv.style.display = 'none';
+                if (fallbackDiv) fallbackDiv.style.display = 'block';
+            }}
+
+            function drawRadar(radar_id, fallback_id) {{
+                const radarDiv = document.getElementById(radar_id);
+                const fallbackDiv = document.getElementById(fallback_id);
+                if (!radarDiv) return;
+
+                if (!apexChartsLoaded || typeof ApexCharts === 'undefined') {{
+                    showFallback(radar_id, fallback_id);
                     return;
                 }}
 
-                // Radar-Daten aus Canvas-Attributen lesen
-                const radarJsonStr = canvas.getAttribute('data-radar');
+                const tr = radarDiv.closest('tr');
+                if (!tr) {{
+                    showFallback(radar_id, fallback_id);
+                    return;
+                }}
+
+                const radarJsonStr = tr.getAttribute('data-radar');
+                const sectorKey = tr.getAttribute('data-sektor-key');
+
                 if (!radarJsonStr) {{
-                    console.warn('Keine Radar-Daten für ' + canvasId);
+                    showFallback(radar_id, fallback_id);
                     return;
                 }}
 
-                // JSON.parse mit Try-Catch
                 let radarVector;
                 try {{
                     radarVector = JSON.parse(radarJsonStr);
                 }} catch (e) {{
-                    console.error('JSON-Parse error für ' + canvasId + ':', e);
+                    console.error('JSON-Parse Fehler:', e);
+                    showFallback(radar_id, fallback_id);
                     return;
                 }}
 
-                // Validierung: muss Array mit 5 Elementen sein
                 if (!Array.isArray(radarVector) || radarVector.length !== 5) {{
-                    console.warn('Ungültige Radar-Vektoren-Länge:', radarVector);
+                    showFallback(radar_id, fallback_id);
                     return;
                 }}
 
-                // Chart.js-Verfügbarkeit prüfen
-                if (!chartLibLoaded || typeof Chart === 'undefined') {{
-                    console.warn('Chart.js noch nicht geladen. Retry...');
-                    setTimeout(() => initRadarChart(canvasId, sectorKey), 200);
-                    return;
-                }}
-
-                // Alten Chart zerstören, um Memory-Leaks zu vermeiden
-                if (radarCharts[canvasId]) {{
-                    radarCharts[canvasId].destroy();
-                    delete radarCharts[canvasId];
-                }}
-
-                // Benchmark wählen: Sektor oder Global
                 const benchmark = (sectorKey && BENCHMARK_BY_SECTOR[sectorKey]) 
                     ? BENCHMARK_BY_SECTOR[sectorKey] 
                     : BENCHMARK_GLOBAL;
 
-                const labels = ['Wachstum', 'Rentabilität', 'Sicherheit', 'Technik', 'Bewertung'];
+                if (radarCharts[radar_id]) {{
+                    radarCharts[radar_id].destroy();
+                }}
 
-                // Neuer Chart
-                const ctx = canvas.getContext('2d');
-                radarCharts[canvasId] = new Chart(ctx, {{
-                    type: 'radar',
-                    data: {{
-                        labels: labels,
-                        datasets: [
-                            {{
-                                label: 'Benchmark',
-                                data: benchmark || [0, 0, 0, 0, 0],
-                                backgroundColor: 'rgba(107, 114, 128, 0.08)',
-                                borderColor: 'rgba(107, 114, 128, 0.5)',
-                                borderWidth: 1.5,
-                                pointRadius: 2,
-                                pointBackgroundColor: 'rgba(107, 114, 128, 0.5)'
-                            }},
-                            {{
-                                label: 'Asset',
-                                data: radarVector,
-                                backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                                borderColor: 'rgba(255, 215, 0, 1)',
-                                borderWidth: 2.5,
-                                pointRadius: 3.5,
-                                pointBackgroundColor: 'rgba(255, 215, 0, 0.8)',
-                                pointHoverRadius: 4.5
-                            }}
-                        ]
-                    }},
-                    options: {{
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        scales: {{
-                            r: {{
-                                beginAtZero: true,
-                                max: 100,
-                                grid: {{
-                                    color: 'rgba(255, 255, 255, 0.08)',
-                                    drawBorder: true
-                                }},
-                                angleLines: {{
-                                    color: 'rgba(255, 255, 255, 0.05)'
-                                }},
-                                pointLabels: {{
-                                    color: '#cbd5e1',
-                                    font: {{size: 9, weight: 'bold'}},
-                                    padding: 6
-                                }},
-                                ticks: {{
-                                    color: 'rgba(148, 163, 184, 0.6)',
-                                    font: {{size: 8}},
-                                    stepSize: 25
-                                }}
-                            }}
+                try {{
+                    radarCharts[radar_id] = new ApexCharts(radarDiv, {{
+                        series: [
+                            {{ name: 'Asset', data: radarVector }},
+                            {{ name: 'Benchmark', data: benchmark || [0, 0, 0, 0, 0] }}
+                        ],
+                        chart: {{
+                            type: 'radar',
+                            height: 240,
+                            toolbar: {{ show: false }},
+                            animations: {{ enabled: true }}
                         }},
-                        plugins: {{
-                            legend: {{
-                                display: true,
-                                position: 'bottom',
-                                labels: {{
-                                    color: '#cbd5e1',
-                                    boxWidth: 10,
-                                    boxHeight: 4,
-                                    padding: 6,
-                                    font: {{size: 8}}
-                                }}
-                            }},
-                            tooltip: {{
-                                backgroundColor: 'rgba(0, 0, 0, 0.95)',
-                                titleColor: '#10b981',
-                                bodyColor: '#cbd5e1',
-                                borderColor: 'rgba(148, 163, 184, 0.4)',
-                                borderWidth: 1,
-                                padding: 6,
-                                titleFont: {{size: 9}},
-                                bodyFont: {{size: 8}}
-                            }}
+                        xaxis: {{
+                            categories: ['Wachstum', 'Rentabilität', 'Sicherheit', 'Technik', 'Bewertung']
+                        }},
+                        yaxis: {{
+                            min: 0,
+                            max: 100,
+                            tickAmount: 4
+                        }},
+                        colors: ['#ffd700', '#6b7280'],
+                        stroke: {{
+                            width: [2.5, 1.5]
+                        }},
+                        fill: {{
+                            opacity: [0.25, 0.1]
+                        }},
+                        markers: {{
+                            size: [4, 2],
+                            colors: ['#ffd700', '#6b7280']
+                        }},
+                        legend: {{
+                            show: true,
+                            fontSize: 9,
+                            position: 'bottom'
+                        }},
+                        tooltip: {{
+                            enabled: true,
+                            theme: 'dark'
                         }}
-                    }}
-                }});
+                    }});
+                    radarCharts[radar_id].render();
+                    
+                    if (fallbackDiv) fallbackDiv.style.display = 'none';
+                }} catch (e) {{
+                    console.error('ApexCharts Fehler:', e);
+                    showFallback(radar_id, fallback_id);
+                }}
             }}
 
             function filterTable() {{
@@ -680,8 +1007,6 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 const table = document.getElementById("mainTable");
                 const tbody = table.tBodies[0];
                 const rows = Array.from(tbody.rows);
-
-                // Sortierrichtung togglen
                 const currentDir = table.getAttribute("data-sort-dir") || "desc";
                 const dir = currentDir === "asc" ? "desc" : "asc";
                 table.setAttribute("data-sort-dir", dir);
@@ -690,14 +1015,12 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     let x = a.cells[n].innerText.trim();
                     let y = b.cells[n].innerText.trim();
 
-                    // 🔢 NUMERISCHE SPALTEN
                     if (n === 2 || n === 3 || n === 4 || n === 5 || n === 7 || n === 8 || n === 9) {{
                         const xNum = parseFloat(x.replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0;
                         const yNum = parseFloat(y.replace(/[^0-9,.-]/g, '').replace(',', '.')) || 0;
                         return dir === "asc" ? xNum - yNum : yNum - xNum;
                     }}
 
-                    // 🔤 TEXT-SPALTEN
                     return dir === "asc"
                         ? x.localeCompare(y, 'de', {{ sensitivity: 'base' }})
                         : y.localeCompare(x, 'de', {{ sensitivity: 'base' }});
@@ -705,14 +1028,15 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
 
                 rows.forEach(row => tbody.appendChild(row));
             }}
-
             </script>
+
         </div>
     </body>
     </html>
     """
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_template)
+    print(f"✅ Dashboard erstellt: {output_path}")
 
 if __name__ == "__main__":
     generate_dashboard()
