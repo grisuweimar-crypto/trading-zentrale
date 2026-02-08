@@ -518,17 +518,18 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     </div>
                 </div>
             </div>
-            <script>
+            <<script>
                 function openInfo() {{
                     var o = document.getElementById('infoOverlay');
                     if (!o) return;
                     o.classList.add('open');
                     o.setAttribute('aria-hidden', 'false');
-                    // Nur den Hintergrund sperren, wenn wir NICHT auf dem Handy sind
+                    
                     if (window.innerWidth > 768) {{
                         document.body.style.overflow = 'hidden';
                     }}
                 }}
+
                 function closeInfo() {{
                     var o = document.getElementById('infoOverlay');
                     if (!o) return;
@@ -536,7 +537,10 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     o.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
                 }}
-                document.addEventListener('keydown', function(e){{ if (e.key === 'Escape') closeInfo(); }});
+
+                document.addEventListener('keydown', function(e) {{ 
+                    if (e.key === 'Escape') closeInfo(); 
+                }});
             </script>
 
             <!-- Tabelle -->
