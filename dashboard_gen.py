@@ -309,20 +309,11 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 border: 1px solid rgba(255,255,255,0.1);
                 box-shadow: 0 10px 40px rgba(0,0,0,0.8);
                 border-radius: 12px;
-                display: none !important;
+                display: none;
+                visibility: hidden;
+                opacity: 0;
                 -webkit-overflow-scrolling: touch;
-            }}
-
-            #infoOverlay.open {{ 
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-            }}
-            
-            #infoOverlay:not(.open) {{
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
+                transition: opacity 0.2s ease-in-out;
             }}
             .info-overlay-inner {{ background: var(--info-bg); color: var(--info-text); padding: 18px; border: 1px solid var(--info-accent); border-radius: 12px; }}
             .info-panels {{ display: grid; grid-template-columns: 1fr; gap: 12px; }}
@@ -523,10 +514,9 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     const o = document.getElementById('infoOverlay');
                     const b = document.getElementById('infoBackdrop');
                     if (!o || !b) return;
-                    o.classList.add('open');
-                    o.style.display = 'block !important';
-                    o.style.visibility = 'visible !important';
-                    o.style.opacity = '1 !important';
+                    o.style.display = 'block';
+                    o.style.visibility = 'visible';
+                    o.style.opacity = '1';
                     b.style.display = 'block';
                     o.setAttribute('aria-hidden', 'false');
                     // Hintergrund-Scrollen nur auf großen Bildschirmen sperren
@@ -539,10 +529,9 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                     const o = document.getElementById('infoOverlay');
                     const b = document.getElementById('infoBackdrop');
                     if (!o || !b) return;
-                    o.classList.remove('open');
-                    o.style.display = 'none !important';
-                    o.style.visibility = 'hidden !important';
-                    o.style.opacity = '0 !important';
+                    o.style.display = 'none';
+                    o.style.visibility = 'hidden';
+                    o.style.opacity = '0';
                     b.style.display = 'none';
                     o.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
