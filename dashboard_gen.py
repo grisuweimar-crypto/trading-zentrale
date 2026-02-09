@@ -314,7 +314,9 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             }}
 
             #infoOverlay.open {{ 
-                display: block !important; 
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }}
             
             #infoOverlay:not(.open) {{
