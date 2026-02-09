@@ -319,12 +319,19 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 border: 1px solid rgba(255,255,255,0.1);
                 box-shadow: 0 10px 40px rgba(0,0,0,0.8);
                 border-radius: 12px;
-                display: none; /* DAS HIER MUSS REIN, DAMIT ES ZU IST */
+                display: none !important;
                 -webkit-overflow-scrolling: touch;
             }}
 
             #infoOverlay.open {{ 
                 display: block !important; 
+            }}
+            
+            /* Zusätzliche Sicherstellung, dass das Overlay versteckt ist */
+            #infoOverlay:not(.open) {{
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
             }}
             .info-overlay-inner {{ background: var(--info-bg); color: var(--info-text); padding: 18px; border: 1px solid var(--info-accent); border-radius: 12px; }}
             .info-panels {{ display: grid; grid-template-columns: 1fr; gap: 12px; }}
