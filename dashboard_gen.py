@@ -302,117 +302,30 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                 border: 1px solid rgba(255,255,255,0.1);
                 border-radius: 8px;
                 background: rgba(0,0,0,0.3);
-            /* Info-Overlay grundlegend versteckt */
-  #infoOverlay {{
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.80);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }}
-
-  /* Sichtbar, wenn .open gesetzt wird */
-  #infoOverlay.open {{
-    display: flex !important;
-  }}
-
-  #infoOverlay .info-content {{
-    background: #020617;
-    color: #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 1.25rem 1rem;
-    width: 100%;
-    max-width: 480px;
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(148, 163, 184, 0.4);
-
-    /* Mobile Scrollbarkeit */
-    max-height: 85vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }}
-
-  #infoOverlay .info-header {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-  }}
-
-  #infoOverlay .info-title {{
-    font-size: 1rem;
-    font-weight: 600;
-    color: #e5e7eb;
-  }}
-
-  #infoOverlay .info-close {{
-    border: none;
-    background: transparent;
-    color: #9ca3af;
-    cursor: pointer;
-    font-size: 1.2rem;
-    line-height: 1;
-    padding: 0.25rem 0.5rem;
-  }}
-
-  #infoOverlay .info-body {{
-    font-size: 0.85rem;
-    line-height: 1.4;
-    color: #d1d5db;
-  }}
-
-  /* === NEU FÜR DEIN HTML (nicht überschreiben!) === */
-.info-overlay-inner {{
-  background: var(--info-bg);
-  color: var(--info-text);
-  padding: 1.5rem;
-  max-width: 95vw;
-  max-height: 85vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-  border-radius: 12px;
-  border: 1px solid var(--info-accent);
-  margin: 2rem auto;
-}}
-
-.info-panels {{
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}}
-
-@media(min-width:768px) {{
-  .info-panels {{
-    grid-template-columns: repeat(3, 1fr);
-  }}
-}}
-
-.close-btn {{
-  position: absolute !important;
-  right: 1rem;
-  top: 1rem;
-  background: rgba(239,68,68,0.2);
-  border: none;
-  color: #f87171;
-  font-size: 24px;
-  font-weight: 800;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-}}
+            }}
+            
+            /* Info overlay */
+            #infoOverlay {{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 92%;
+                max-width: 1100px;
+                max-height: 85vh;
+                overflow-y: auto;
+                z-index: 9999;
+                background: #0f172a;
+                border: 1px solid rgba(255,255,255,0.1);
+                box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+                border-radius: 12px;
+                display: none; /* DAS HIER MUSS REIN, DAMIT ES ZU IST */
+                -webkit-overflow-scrolling: touch;
+            }}
 
             #infoOverlay.open {{ 
                 display: block !important; 
             }}
-            #infoOverlay.open {{ display: block; }}
             .info-overlay-inner {{ background: var(--info-bg); color: var(--info-text); padding: 18px; border: 1px solid var(--info-accent); border-radius: 12px; }}
             .info-panels {{ display: grid; grid-template-columns: 1fr; gap: 12px; }}
             @media(min-width:768px) {{ .info-panels {{ grid-template-columns: repeat(3, 1fr); }}}}
@@ -552,8 +465,10 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
             </div>
 
             <!-- Floating Info Overlay -->
-            <div id="infoOverlay">
+            <div id="infoBackdrop" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; display: none;" onclick="closeInfo()"></div>
+            <div id="infoOverlay" role="dialog" aria-hidden="true">
                 <div class="info-overlay-inner">
+                    <button class="close-btn" aria-label="Schließen" onclick="closeInfo()">✕</button>
                     <div class="info-panels">
                         <div class="info-panel">
                             <h3>📋 Mein System</h3>
@@ -606,14 +521,15 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
                             <p class="text-xs" style="color:#94a3b8; margin-top:12px;">Farben: Grün = erfüllt · Rot = nicht erfüllt · Grau = neutral</p>
                         </div>
                     </div>
-                    <button class="close-btn" aria-label="Schließen" onclick="closeInfo()">×</button>
                 </div>
             </div>
             <script>
                 function openInfo() {{
                     const o = document.getElementById('infoOverlay');
-                    if (!o) return;
+                    const b = document.getElementById('infoBackdrop');
+                    if (!o || !b) return;
                     o.classList.add('open');
+                    b.style.display = 'block';
                     o.setAttribute('aria-hidden', 'false');
                     // Hintergrund-Scrollen nur auf großen Bildschirmen sperren
                     if (window.innerWidth > 1024) {{
@@ -623,8 +539,10 @@ def generate_dashboard(csv_path='watchlist.csv', output_path='index.html'):
 
                 function closeInfo() {{
                     const o = document.getElementById('infoOverlay');
-                    if (!o) return;
+                    const b = document.getElementById('infoBackdrop');
+                    if (!o || !b) return;
                     o.classList.remove('open');
+                    b.style.display = 'none';
                     o.setAttribute('aria-hidden', 'true');
                     document.body.style.overflow = '';
                 }}
