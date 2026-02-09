@@ -1,5 +1,5 @@
 
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html lang="de">
     <head>
         <meta charset="UTF-8">
@@ -249,7 +249,7 @@
                 </h1>
                 <div class="text-right text-sm text-slate-400">
                     <p class="text-xs text-slate-500 font-mono tracking-widest uppercase">Live Terminal v5.0</p>
-                    <p class="text-sm text-slate-300 italic">09.02.2026 um 06:48:33</p>
+                    <p class="text-sm text-slate-300 italic">09.02.2026 um 06:56:57</p>
                 </div>
             </div>
 
