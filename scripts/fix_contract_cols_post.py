@@ -1,9 +1,24 @@
 ﻿from pathlib import Path
 import pandas as pd
 
-P = Path("artifacts/watchlist/watchlist_ALL.csv")
-if not P.exists():
-    raise SystemExit(f"❌ missing: {P}")
+# Mögliche watchlist-Dateien, die run_daily erzeugen könnte
+possible_files = [
+    Path("artifacts/watchlist/watchlist_ALL.csv"),
+    Path("artifacts/watchlist/watchlist_CORE.csv"),
+    Path("artifacts/watchlist/watchlist_full.csv"),
+    Path("artifacts/watchlist/watchlist.csv")
+]
+
+# Finde die erste existierende Datei
+P = None
+for file_path in possible_files:
+    if file_path.exists():
+        P = file_path
+        print(f"📁 Found watchlist: {P}")
+        break
+
+if P is None:
+    raise SystemExit("❌ No watchlist file found (tried ALL, CORE, full, watchlist.csv)")
 
 df = pd.read_csv(P, dtype=str, keep_default_na=False)
 
