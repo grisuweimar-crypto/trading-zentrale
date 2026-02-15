@@ -1,0 +1,23 @@
+# Scanner_vNext briefing configuration
+
+# Which CSV to read from artifacts/watchlist/
+# Options: ALL | CORE | FULL  (or a direct filename like watchlist_ALL.csv)
+source_csv: ALL
+
+# Top-N values to include in the briefing
+top_n: 3
+
+# Language (currently only "de" is used)
+language: de
+
+# Optional AI enhancement (Stage B)
+# Default OFF so tests/pipeline never depend on API availability.
+enable_ai: false
+ai_provider: openai
+
+# OpenAI model for the Responses API (only used if enable_ai=true)
+# You can also override via environment variable OPENAI_MODEL.
+ai_model: gpt-4o-mini
+
+# Output directory (must be under artifacts/)
+output_dir: artifacts/reports
