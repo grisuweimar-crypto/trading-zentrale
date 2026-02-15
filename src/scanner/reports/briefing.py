@@ -620,6 +620,41 @@ def render_briefing_txt(briefing: dict[str, Any]) -> str:
     lines.append(f"Top {n} – Warum diese Werte oben stehen (aus vorhandenen Feldern abgeleitet)")
     lines.append("—" * 72)
 
+    def _short_why(it: dict) -> str:
+        # Nimm 1–2 stärkste Gründe + Flags, keine neue Berechnung
+        sym = it.get("symbol") or "—"
+        score = it.get("score")
+        sp = it.get("score_pctl")
+        rb = it.get("risk_bucket")
+        trend_ok = it.get("trend_ok")
+        liq_ok = it.get("liq_ok")
+        reasons = it.get("reasons") or []
+
+        # 1–2 Gründe als "Treiber"
+        treiber = "; ".join([str(x) for x in reasons[:2] if str(x).strip()])
+
+        bits = []
+        if score is not None:
+            bits.append(f"Score {float(score):.2f}")
+        if sp is not None:
+            bits.append(f"Pctl {float(sp):.0f}%")
+        if rb is not None:
+            bits.append(f"RiskB {rb}/4")
+        if trend_ok is True:
+            bits.append("Trend OK")
+        if liq_ok is True:
+            bits.append("Liq OK")
+
+        head = f"{sym}: " + " | ".join(bits) if bits else f"{sym}:"
+        return f"{head} — Treiber: {treiber}." if treiber else f"{head}"
+
+    lines.append("")
+    lines.append("Top 3 – Kurzbegründung (pseudo-KI, deterministisch)")
+    for i, it in enumerate(items[:3], 1):
+        lines.append(f" {i}) {_short_why(it)}")
+    lines.append("")
+    lines.append("—" * 72)
+
     for i, it in enumerate(items, 1):
         sym = it.get("symbol") or "—"
         name = it.get("name") or ""

@@ -318,6 +318,25 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .briefingText { margin: 0; padding: 10px; border-radius: 10px; border: 1px solid rgba(148,163,184,.12); background: rgba(15,23,42,.55); white-space: pre-wrap; max-height: 300px; overflow: auto; font-family: inherit; line-height: 1.55; font-size: 10px; }
     @media (min-width: 980px) { .briefingText { max-height: 520px; } }
 
+    /* Briefing: Newlines + Bullets IMMER erhalten */
+    #briefingText, #briefingBody, .briefing-body, [data-briefing] {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+
+    /* Mobile: Panels/Drawer/Modals dürfen nicht über den Viewport schießen */
+    * { box-sizing: border-box; }
+    html, body { max-width: 100%; overflow-x: hidden; }
+
+    @media (max-width: 680px) {
+      .modal, .drawer, .panel, dialog, [role="dialog"] {
+        width: 96vw !important;
+        max-width: 96vw !important;
+      }
+    }
+
     .controls { display: grid; grid-template-columns: 220px 1fr 220px 220px auto; gap: 12px; padding: 14px; align-items: center; }
     .controls label { font-size: 12px; color: var(--muted); }
     select, input { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 10px; outline: none; }
@@ -1093,6 +1112,39 @@ if (elHeatMode) {
     }
     function normStr(v) {
       return (v ?? '').toString().trim();
+    }
+
+    // HTML-Listen-Konvertierung für Briefing (bessere Mobile Darstellung)
+    function briefingToHtml(text){
+      const lines = (text || "").split(/\\r?\\n/);
+      let out = "";
+      let inUl = false;
+
+      const closeUl = ()=>{ if(inUl){ out += "</ul>"; inUl=false; } };
+
+      for(const raw of lines){
+        const line = raw.replace(/\\s+$/,"");
+        if(!line){ closeUl(); out += "<div class='spacer'></div>"; continue; }
+
+        const m = line.match(/^\\s*-\\s+(.*)$/);
+        if(m){
+          if(!inUl){ out += "<ul>"; inUl=true; }
+          out += `<li>${String(m[1]).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</li>`;
+          continue;
+        }
+
+        closeUl();
+
+        if(/^\\d+\\)\\s/.test(line)){
+          out += `<h4 class="briefing-asset">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</h4>`;
+        } else if(/^(Gründe|Risiken\\/Flags|Nächste Checks|Kontext-Hinweise)/.test(line)){
+          out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c).replace(/:$/,"")}</div>`;
+        } else {
+          out += `<p>${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</p>`;
+        }
+      }
+      closeUl();
+      return out;
     }
 
 // ---- disclaimer (UI-only) ----
@@ -2314,7 +2366,7 @@ function renderMarketContext(rows) {
     }
     if (elBriefing) {
       const t = normStr((BRIEFING || {}).text);
-      elBriefing.textContent = t || '— (noch kein Briefing generiert)';
+      elBriefing.innerHTML = briefingToHtml(t) || '— (noch kein Briefing generiert)';
     }
     refresh();
     try { document.documentElement.dataset.jsok = '1'; } catch (e) {}
