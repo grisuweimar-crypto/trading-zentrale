@@ -255,16 +255,16 @@ def build_watchlist_outputs() -> None:
 
         # name / sector/category markers
         nm = _col("Name").str.lower()
-        mask = mask | nm.str.contains(r"\b(crypto|krypto|kryptow)\w*\b", regex=True, na=False)
+        mask = mask | nm.str.contains(r"\b(?:crypto|krypto|kryptow)\w*\b", regex=True, na=False)
         sec = _col("Sector").str.lower()
-        mask = mask | sec.str.contains(r"\b(crypto|krypto)\b", regex=True, na=False)
+        mask = mask | sec.str.contains(r"\b(?:crypto|krypto)\b", regex=True, na=False)
         cat = _col("Sektor").str.lower()
-        mask = mask | cat.str.contains(r"\b(crypto|krypto)\b", regex=True, na=False)
+        mask = mask | cat.str.contains(r"\b(?:crypto|krypto)\b", regex=True, na=False)
         return mask
 
     # Prefer canonical `is_crypto` if already present on df
     if "is_crypto" in df.columns:
-        crypto_mask = df["is_crypto"].fillna(False).astype(bool)
+        crypto_mask = df["is_crypto"].fillna(False).infer_objects(copy=False).astype(bool)
     else:
         crypto_mask = _crypto_or_heuristic(df_scored_raw).reindex(df.index, fill_value=False).astype(bool)
 
