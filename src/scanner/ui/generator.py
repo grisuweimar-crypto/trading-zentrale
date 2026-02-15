@@ -466,6 +466,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .sig.warn { border-color: rgba(251,191,36,.25); color: #fde68a; background: rgba(251,191,36,.08); }
     .sig.bad  { border-color: rgba(251,113,133,.25); color: #fecdd3; background: rgba(251,113,133,.08); }
     .sig.blue { border-color: rgba(96,165,250,.25); color: #bfdbfe; background: rgba(96,165,250,.08); }
+    .sig.grad.good { background: linear-gradient(90deg, rgba(52,211,153,.18), rgba(52,211,153,.06)); }
+    .sig.grad.blue { background: linear-gradient(90deg, rgba(96,165,250,.18), rgba(96,165,250,.06)); }
+    .sig.grad.warn { background: linear-gradient(90deg, rgba(251,191,36,.20), rgba(251,191,36,.06)); }
+    .sig.grad.bad  { background: linear-gradient(90deg, rgba(251,113,133,.18), rgba(251,113,133,.06)); }
 
     /* Bucket matrix (Score × Risk) */
     .matrixPanel { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
@@ -636,12 +640,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         </ul>
         <div class="title" style="margin-top:10px;">Signal‑Codes (privat)</div>
         <ul>
-          <li><b>R5</b> = Top Setup</li>
-          <li><b>R4</b> = Good Setup</li>
-          <li><b>R3</b> = Neutral</li>
-          <li><b>R2</b> = Weak</li>
-          <li><b>R1</b> = Low Priority</li>
-          <li><b>R0</b> = Avoid (z.B. AVOID_CRYPTO_BEAR)</li>
+          <li><b>R5</b> = <span class="sig good grad">Top Setup</span></li>
+          <li><b>R4</b> = <span class="sig good grad">Good Setup</span></li>
+          <li><b>R3</b> = <span class="sig blue grad">Neutral</span></li>
+          <li><b>R2</b> = <span class="sig warn grad">Weak</span></li>
+          <li><b>R1</b> = <span class="sig bad grad">Low Priority</span></li>
+          <li><b>R0</b> = <span class="sig warn grad">Avoid</span> (z.B. AVOID_CRYPTO_BEAR)</li>
         </ul>
       </div>
 
@@ -2619,12 +2623,12 @@ python -m scanner.ui.generator</pre>
       <h2>4) Empfehlungscode (R0–R5)</h2>
       <p>Im Dashboard erscheint im Score‑Bereich ein privater Code <b>R0–R5</b>. Das ist <b>kein Trading‑Signal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
       <ul>
-        <li><b>R0</b>: AVOID‑Zeilen (score_status beginnt mit <code>AVOID_</code>)</li>
-        <li><b>R5</b>: Score‑Perzentil ≥ 90 <i>und</i> Trend OK <i>und</i> Liquidity OK</li>
-        <li><b>R4</b>: Score‑Perzentil ≥ 75 <i>und</i> Liquidity OK</li>
-        <li><b>R3</b>: Score‑Perzentil ≥ 45</li>
-        <li><b>R2</b>: Score‑Perzentil ≥ 20</li>
-        <li><b>R1</b>: Rest</li>
+        <li><b>R0</b>: <span class="sig warn grad">Avoid</span> (score_status beginnt mit <code>AVOID_</code>)</li>
+        <li><b>R5</b>: <span class="sig good grad">Top Setup</span> (Score-Perzentil >= 90 <i>und</i> Trend OK <i>und</i> Liquidity OK)</li>
+        <li><b>R4</b>: <span class="sig good grad">Good Setup</span> (Score-Perzentil >= 75 <i>und</i> Liquidity OK)</li>
+        <li><b>R3</b>: <span class="sig blue grad">Neutral</span> (Score-Perzentil >= 45)</li>
+        <li><b>R2</b>: <span class="sig warn grad">Weak</span> (Score-Perzentil >= 20)</li>
+        <li><b>R1</b>: <span class="sig bad grad">Low Priority</span> (Rest)</li>
       </ul>
       <p class="tag">Technik: das UI berechnet das Score‑Perzentil aus allen Zeilen der geladenen Tabelle.</p>
     </div>
