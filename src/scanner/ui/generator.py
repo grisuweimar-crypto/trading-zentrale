@@ -326,6 +326,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       line-height: 1.35;
     }
 
+    /* Bullet-Styles bombensicher machen */
+    .briefingText ul { margin: 6px 0 10px 18px; padding-left: 14px; list-style: disc; }
+    .briefingText li { margin: 4px 0; }
+    .briefing-asset { margin: 10px 0 6px; font-weight: 700; }
+    .briefing-label { margin: 10px 0 6px; opacity: .9; font-weight: 700; }
+
     /* Mobile: Panels/Drawer/Modals dürfen nicht über den Viewport schießen */
     * { box-sizing: border-box; }
     html, body { max-width: 100%; overflow-x: hidden; }

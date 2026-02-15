@@ -340,7 +340,7 @@ def enrich_watchlist_with_yahoo(
         auto_adjust=True,
         group_by="column",
         threads=True,
-        progress=False,
+        progress=True,  # Enable progress logging
     )
 
     # Benchmark features
