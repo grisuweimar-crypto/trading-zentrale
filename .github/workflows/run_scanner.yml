@@ -33,6 +33,7 @@ jobs:
           SCANNER_FETCH_YAHOO: '1'
         run: |
           python -m scanner.app.run_daily
+  python scripts/fix_contract_cols_post.py
 
       - name: Briefing erzeugen (deterministic)
         env:
