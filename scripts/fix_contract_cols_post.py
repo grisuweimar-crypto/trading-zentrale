@@ -66,8 +66,7 @@ print("🔧 Checking trend_ok column...")
 if "trend_ok" not in df.columns:
     print("   ❌ trend_ok missing, adding...")
     if "Trend200" in df.columns:
-        df["trend_ok"] = to_num("Trend200", 1.0).ge(1.0)
-        print("   ✅ Added trend_ok from Trend200")
+        df["trend_ok"] = to_num("Trend200", 0.0).gt(0.0)
     else:
         df["trend_ok"] = True
         print("   ✅ Added default trend_ok = True")
@@ -79,11 +78,11 @@ print("🔧 Checking liquidity_ok column...")
 if "liquidity_ok" not in df.columns:
     print("   ❌ liquidity_ok missing, adding...")
     if "DollarVolume" in df.columns:
-        df["liquidity_ok"] = to_num("DollarVolume", 0.0).gt(0.0)
-        print("   ✅ Added liquidity_ok from DollarVolume")
+        df["liquidity_ok"] = to_num("DollarVolume", 0.0).ge(5_000_000)
+        print("   ✅ Added liquidity_ok from DollarVolume (≥5M)")
     elif "AvgVolume" in df.columns:
-        df["liquidity_ok"] = to_num("AvgVolume", 0.0).gt(0.0)
-        print("   ✅ Added liquidity_ok from AvgVolume")
+        df["liquidity_ok"] = to_num("AvgVolume", 0.0).ge(200_000)
+        print("   ✅ Added liquidity_ok from AvgVolume (≥200K)")
     else:
         df["liquidity_ok"] = True
         print("   ✅ Added default liquidity_ok = True")
