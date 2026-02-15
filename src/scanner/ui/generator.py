@@ -636,11 +636,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         </ul>
         <div class="title" style="margin-top:10px;">Signal‑Codes (privat)</div>
         <ul>
-          <li><b>R5</b> = Strong Buy</li>
-          <li><b>R4</b> = Buy</li>
-          <li><b>R3</b> = Hold</li>
-          <li><b>R2</b> = Reduce</li>
-          <li><b>R1</b> = Sell</li>
+          <li><b>R5</b> = Top Setup</li>
+          <li><b>R4</b> = Good Setup</li>
+          <li><b>R3</b> = Neutral</li>
+          <li><b>R2</b> = Weak</li>
+          <li><b>R1</b> = Low Priority</li>
           <li><b>R0</b> = Avoid (z.B. AVOID_CRYPTO_BEAR)</li>
         </ul>
       </div>
@@ -1844,6 +1844,12 @@ function perfPct(r) {
   );
 }
 
+function fmtRatioPct(v) {
+  const n = asNum(v);
+  if (n === null) return '—';
+  return `${(n * 100).toFixed(2)}%`;
+}
+
 function fmtPct(v) {
   if (v === null || v === undefined || !Number.isFinite(v)) return '—';
   const s = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
@@ -2118,15 +2124,16 @@ function renderMarketContext(rows) {
       const opt = [
         ['Price', r.price],
         ['Currency', curr],
-        ['Perf %', r.perf_pct],
+        ['Perf %', fmtPct(asNum(r.perf_pct) ?? asNum(r["Perf %"]))],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],
         ['MC Chance', r.mc_chance],
         ['Elliott', r.elliott_signal],
         ['CycleStatus', r.cycle_status],
         ['DollarVolume', r.dollar_volume],
-        ['Volatility', r.volatility],
-        ['MaxDrawdown', r.max_drawdown],
+        ['Volatility', fmtRatioPct(r.volatility)],
+        ['MaxDrawdown', fmtRatioPct(r.max_drawdown)],
+        ['Trend200', fmtRatioPct(r.trend200)],
         ['MarketDate', r.market_date],
       ];
       for (const [k, v] of opt) {

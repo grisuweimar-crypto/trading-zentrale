@@ -31,10 +31,12 @@ jobs:
           TELEGRAM_ENABLED: '0'
           # Ensure Yahoo market data refresh happens on every scheduled run.
           SCANNER_FETCH_YAHOO: '1'
-        run: python -m scanner.app.run_daily
+        run: |
+          python -m scanner.app.run_daily
 
       - name: Fix UI contract cols
-        run: python scripts/fix_contract_cols_post.py
+        run: |
+          python scripts/fix_contract_cols_post.py
 
       - name: Briefing erzeugen (deterministic)
         env:
@@ -42,15 +44,16 @@ jobs:
         run: |
           python scripts/generate_briefing.py
 
+      - name: Quality Gates (watchlist contract)
+        run: |
+          python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_ALL.csv
+          python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_CORE.csv
+
       - name: UI generieren
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python -m scanner.ui.generator
-
-      - name: Quality Gates (light)
-        run: |
-          python scripts/validate_contract.py
 
       - name: Ergebnisse speichern (Commit & Push)
         run: |
@@ -59,6 +62,3 @@ jobs:
           git add artifacts/ || true
           git commit -m "📊 Autopilot: artifacts update [skip ci]" || echo "Keine Änderungen zum Speichern"
           git push
-
-# ci-retrigger 2026-02-15T19:13:23
-

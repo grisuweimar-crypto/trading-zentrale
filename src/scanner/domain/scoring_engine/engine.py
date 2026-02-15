@@ -28,7 +28,14 @@ from scanner.domain.scoring_engine.quality.confidence import compute_confidence
 
 def _is_crypto_identifier(s: str) -> bool:
     t = str(s).upper()
-    return t.endswith("-USD") or t in {"BTC-USD", "ETH-USD"} or "CRYPTO" in t
+    if "CRYPTO" in t:
+        return True
+    if "-" in t:
+        base, quote = t.rsplit("-", 1)
+        crypto_quotes = {"USD", "EUR", "USDT", "USDC", "GBP", "CHF", "BTC", "ETH"}
+        if quote in crypto_quotes and len(base) >= 2:
+            return True
+    return t.endswith("-USD") or t in {"BTC-USD", "ETH-USD"}
 
 
 def _infer_asset_class(identifier: str) -> str:
@@ -213,6 +220,12 @@ def calculate_scores_v6_from_row(
                 "margin",
                 "relative_strength",
                 "trend_200dma",
+            ],
+            "CONFIDENCE_MOMENTUM_FACTORS": [
+                "relative_strength",
+                "trend_200dma",
+                "rs3m",
+                "trend200",
             ],
             "CONFIDENCE_RISK_FACTORS": [
                 "volatility",

@@ -268,7 +268,15 @@ def _is_crypto_row(row: pd.Series) -> bool:
                 return True
     ys = _norm_str(row.get("yahoo_symbol")) or _norm_str(row.get("YahooSymbol"))
     tk = _norm_str(row.get("ticker")) or _norm_str(row.get("Ticker"))
-    return ys.upper().endswith("-USD") or tk.upper().endswith("-USD")
+    for s in (ys, tk):
+        u = s.upper()
+        if u.endswith("-USD"):
+            return True
+        if "-" in u:
+            base, quote = u.rsplit("-", 1)
+            if quote in {"USD", "EUR", "USDT", "USDC", "GBP", "CHF", "BTC", "ETH"} and len(base) >= 2:
+                return True
+    return False
 
 
 def _rec_code(score_status: str, score_pctl: float | None, trend_ok: bool | None, liq_ok: bool | None) -> str:
@@ -380,8 +388,13 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
 
     # sort by score desc; stable fallbacks
     cand["__conf__"] = _num_series(cand, c_conf)
-    cand["__perf__"] = _num_series(cand, c_perf)
-    cand = cand.sort_values(by=["__score__", "__conf__", "__perf__"], ascending=[False, False, False], kind="mergesort")
+    c_name = _first_col(cand, ["name", "Name", "ticker_display", "ticker", "Ticker", "symbol", "Symbol"])
+    cand["__name__"] = (
+        cand[c_name].fillna("").astype(str).str.strip().str.lower()
+        if c_name and c_name in cand.columns
+        else ""
+    )
+    cand = cand.sort_values(by=["__score__", "__conf__", "__name__"], ascending=[False, False, True], kind="mergesort")
 
     top_n = max(1, min(50, int(top_n)))
     top_df = cand.head(top_n)

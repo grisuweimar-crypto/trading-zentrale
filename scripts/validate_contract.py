@@ -10,7 +10,7 @@ Usage
 
 Options
 -------
-  --csv       Which CSV to validate (default: watchlist_CORE.csv)
+  --csv       Which CSV to validate (default: watchlist_ALL.csv)
   --contract  Which contract JSON to use (default: configs/watchlist_contract.json)
   --strict-optional  Treat missing optional columns as errors
 
@@ -31,7 +31,7 @@ from scanner.data.schema.contract import validate_csv
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default=r"artifacts/watchlist/watchlist_CORE.csv")
+    ap.add_argument("--csv", default=r"artifacts/watchlist/watchlist_ALL.csv")
     ap.add_argument("--contract", default=r"configs/watchlist_contract.json")
     ap.add_argument("--strict-optional", action="store_true")
     args = ap.parse_args()
