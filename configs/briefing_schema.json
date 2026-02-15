@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Scanner_vNext briefing.json",
+  "type": "object",
+  "required": ["meta", "top"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "generated_at",
+        "date",
+        "source_csv",
+        "universe_count",
+        "scored_count",
+        "top_n"
+      ],
+      "properties": {
+        "schema_version": {"type": "integer"},
+        "generated_at": {"type": "string"},
+        "date": {"type": "string"},
+        "language": {"type": "string"},
+        "source_csv": {"type": "string"},
+        "universe_count": {"type": "integer"},
+        "scored_count": {"type": "integer"},
+        "top_n": {"type": "integer"},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "top": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["symbol", "name", "score", "r_code", "reasons", "risks", "next_checks"],
+        "properties": {
+          "symbol": {"type": "string"},
+          "isin": {"type": "string"},
+          "yahoo": {"type": "string"},
+          "name": {"type": "string"},
+          "score": {"type": ["number", "null"]},
+          "score_pctl": {"type": ["number", "null"]},
+          "r_code": {"type": "string"},
+          "trend_ok": {"type": ["boolean", "null"]},
+          "liq_ok": {"type": ["boolean", "null"]},
+          "risk_bucket": {"type": ["integer", "null"]},
+          "risk_pctl": {"type": ["number", "null"]},
+          "score_bucket": {"type": "integer"},
+          "cluster": {"type": "string"},
+          "pillar_primary": {"type": "string"},
+          "bucket_type": {"type": "string"},
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "risks": {"type": "array", "items": {"type": "string"}},
+          "next_checks": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

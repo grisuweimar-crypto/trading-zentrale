@@ -1,41 +1,59 @@
-name: Trading Scanner Autopilot
+name: Scanner_vNext Autopilot
 
 on:
   schedule:
-    - cron: '0 16 * * *' # Läuft jeden Tag um 21:00 Uhr UTC
-  workflow_dispatch: # Erlaubt manuelles Starten per Klick
+    - cron: '0 16 * * *' # täglich 16:00 UTC (17/18 Uhr Berlin je nach DST)
+  workflow_dispatch:
 
 permissions:
-  contents: write # WICHTIG: Erlaubt dem Workflow, Dateien zu speichern
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Python installieren
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Pakete installieren
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          python -m pip install -e .
 
-      - name: Scanner ausführen
+      - name: Scanner ausführen (run_daily)
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python main.py
+          TELEGRAM_ENABLED: '0'
+          # Ensure Yahoo market data refresh happens on every scheduled run.
+          SCANNER_FETCH_YAHOO: '1'
+        run: |
+          python -m scanner.app.run_daily
+
+      - name: Briefing erzeugen (deterministic)
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python scripts/generate_briefing.py
+
+      - name: UI generieren
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python -m scanner.ui.generator
+
+      - name: Quality Gates (light)
+        run: |
+          python scripts/validate_contract.py
 
       - name: Ergebnisse speichern (Commit & Push)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          git add watchlist.csv index.html
-          # Nur committen, wenn sich wirklich was geändert hat
-          git commit -m "📊 Automatisches Update: Dashboard & Watchlist [skip ci]" || echo "Keine Änderungen zum Speichern"
+          git add artifacts/ || true
+          git commit -m "📊 Autopilot: artifacts update [skip ci]" || echo "Keine Änderungen zum Speichern"
           git push

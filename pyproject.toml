@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scanner-vnext"
+version = "0.0.1"
+requires-python = ">=3.10"
+
+# Runtime dependencies needed for the quality gates and core pipeline.
+# Keep this list in sync with requirements.txt.
+dependencies = [
+  "pandas>=2.0",
+  "numpy>=1.23",
+  "requests>=2.31",
+  "python-dotenv>=1.0",
+  "PyYAML>=6.0",
+  # Pin to 0.2.x to keep dependency footprint small and avoid pulling in
+  # optional websocket stacks that can be annoying in some environments.
+  "yfinance>=0.2.36,<1.0",
+  "gspread>=5.12",
+  "google-auth>=2.0",
+  "oauth2client>=4.1.3",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

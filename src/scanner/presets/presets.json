@@ -1,0 +1,135 @@
+{
+  "ALL": {
+    "description": "Alles sichtbar (inkl. Concept2/Playground)",
+    "filters": [],
+    "sort": [
+      "trend_ok:desc",
+      "liquidity_ok:desc",
+      "score:desc",
+      "confidence:desc",
+      "cycle:asc"
+    ],
+    "limit": 200
+  },
+  "CORE": {
+    "description": "Core-Übersicht (ohne Concept2/Playground)",
+    "filters": [
+      {
+        "field": "bucket_type",
+        "not_in": [
+          "concept2",
+          "playground"
+        ],
+        "on_missing": "skip"
+      }
+    ],
+    "sort": [
+      "trend_ok:desc",
+      "liquidity_ok:desc",
+      "score:desc",
+      "confidence:desc",
+      "cycle:asc"
+    ],
+    "limit": 200
+  },
+  "SCORED": {
+    "description": "Nur bewertete Werte (Score > 0)",
+    "filters": [
+      {
+        "field": "score",
+        "min": 0.0001,
+        "on_missing": "skip"
+      }
+    ],
+    "sort": [
+      "trend_ok:desc",
+      "liquidity_ok:desc",
+      "score:desc",
+      "confidence:desc",
+      "cycle:asc"
+    ],
+    "limit": 200
+  },
+  "TOP": {
+    "description": "Top-Auswahl (streng)",
+    "filters": [
+      {
+        "field": "score",
+        "min": 34,
+        "on_missing": "skip"
+      },
+      {
+        "field": "trend_ok",
+        "eq": true,
+        "on_missing": "skip"
+      },
+      {
+        "field": "liquidity_ok",
+        "eq": true,
+        "on_missing": "skip"
+      }
+    ],
+    "sort": [
+      "score:desc",
+      "confidence:desc",
+      "cycle:asc"
+    ],
+    "limit": 60
+  },
+  "TOP_RELAXED": {
+    "description": "Top-Auswahl (entspannt)",
+    "filters": [
+      {
+        "field": "score",
+        "min": 30,
+        "on_missing": "skip"
+      },
+      {
+        "field": "liquidity_ok",
+        "eq": true,
+        "on_missing": "skip"
+      }
+    ],
+    "sort": [
+      "score:desc",
+      "confidence:desc",
+      "cycle:asc"
+    ],
+    "limit": 100
+  },
+  "AVOID": {
+    "description": "Vermeiden (Score==0 / Crypto-Bear)",
+    "filters": [
+      {
+        "field": "score_status",
+        "in": [
+          "AVOID",
+          "AVOID_CRYPTO_BEAR"
+        ],
+        "on_missing": "skip"
+      }
+    ],
+    "sort": [
+      "score:asc",
+      "cycle:desc"
+    ],
+    "limit": 200
+  },
+  "BROKEN": {
+    "description": "Auffällige Zeilen (NA/ERROR)",
+    "filters": [
+      {
+        "field": "score_status",
+        "in": [
+          "NA",
+          "ERROR"
+        ],
+        "on_missing": "skip"
+      }
+    ],
+    "sort": [
+      "ticker:asc"
+    ],
+    "limit": 200
+  }
+}

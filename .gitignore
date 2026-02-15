@@ -1,0 +1,25 @@
+﻿# secrets / local
+.env
+.venv/
+
+# python caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# packaging/build outputs
+*.egg-info/
+build/
+dist/
+
+# windows noise
+*.lnk
+*.xlsx
+Thumbs.db
+desktop.ini
+
+# artifacts: keep dashboard+watchlist+reports, but never commit logs
+artifacts/logs/
+artifacts/reports/calibration_report_*.csv

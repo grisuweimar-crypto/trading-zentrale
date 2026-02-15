@@ -1,0 +1,195 @@
+{
+  "version": 1,
+  "description": "UI data contract for Scanner_vNext watchlist outputs (vNext). The UI may rely on these fields existing with the expected types.",
+  "applies_to": [
+    "artifacts/watchlist/watchlist_full.csv",
+    "artifacts/watchlist/watchlist_CORE.csv",
+    "artifacts/watchlist/watchlist_SCORED.csv",
+    "artifacts/watchlist/watchlist_TOP.csv",
+    "artifacts/watchlist/watchlist_TOP_RELAXED.csv",
+    "artifacts/watchlist/watchlist_AVOID.csv",
+    "artifacts/watchlist/watchlist_BROKEN.csv"
+  ],
+  "required_columns": {
+    "ticker": {
+      "type": "string",
+      "min_len": 1
+    },
+    "name": {
+      "type": "string",
+      "min_len": 1
+    },
+    "score": {
+      "type": "number",
+      "min": 0.0,
+      "max": 100.0
+    },
+    "cycle": {
+      "type": "number",
+      "min": 0.0,
+      "max": 100.0
+    },
+    "confidence": {
+      "type": "number",
+      "min": 0.0,
+      "max": 100.0
+    },
+    "trend_ok": {
+      "type": "bool"
+    },
+    "liquidity_ok": {
+      "type": "bool"
+    },
+    "is_crypto": {
+      "type": "bool"
+    },
+    "score_status": {
+      "type": "string",
+      "allowed": [
+        "OK",
+        "AVOID",
+        "AVOID_CRYPTO_BEAR",
+        "NA",
+        "ERROR"
+      ],
+      "min_len": 1
+    }
+  },
+  "optional_columns": {
+    "asset_id": {
+      "type": "string",
+      "allow_null": true
+    },
+    "symbol": {
+      "type": "string",
+      "allow_null": true
+    },
+    "yahoo_symbol": {
+      "type": "string",
+      "allow_null": true
+    },
+    "ticker_display": {
+      "type": "string",
+      "allow_null": true
+    },
+    "isin": {
+      "type": "string",
+      "allow_null": true
+    },
+    "crypto_base": {
+      "type": "string",
+      "allow_null": true
+    },
+    "quote_currency": {
+      "type": "string",
+      "allow_null": true
+    },
+    "sector": {
+      "type": "string",
+      "allow_null": true
+    },
+    "category": {
+      "type": "string",
+      "allow_null": true
+    },
+    "industry": {
+      "type": "string",
+      "allow_null": true
+    },
+    "country": {
+      "type": "string",
+      "allow_null": true
+    },
+    "currency": {
+      "type": "string",
+      "allow_null": true
+    },
+    "price": {
+      "type": "number",
+      "allow_null": true
+    },
+    "price_eur": {
+      "type": "number",
+      "allow_null": true
+    },
+    "perf_pct": {
+      "type": "number",
+      "allow_null": true
+    },
+    "crv": {
+      "type": "number",
+      "allow_null": true
+    },
+    "mc_chance": {
+      "type": "number",
+      "allow_null": true
+    },
+    "rs3m": {
+      "type": "number",
+      "allow_null": true
+    },
+    "trend200": {
+      "type": "number",
+      "allow_null": true
+    },
+    "sma200": {
+      "type": "number",
+      "allow_null": true
+    },
+    "volatility": {
+      "type": "number",
+      "allow_null": true
+    },
+    "downside_dev": {
+      "type": "number",
+      "allow_null": true
+    },
+    "max_drawdown": {
+      "type": "number",
+      "allow_null": true
+    },
+    "avg_volume": {
+      "type": "number",
+      "allow_null": true
+    },
+    "dollar_volume": {
+      "type": "number",
+      "allow_null": true
+    },
+    "market_date": {
+      "type": "string",
+      "allow_null": true
+    },
+    "cluster_official": {
+      "type": "string",
+      "allow_null": true
+    },
+    "pillar_primary": {
+      "type": "string",
+      "allow_null": true
+    },
+    "bucket_type": {
+      "type": "string",
+      "allow_null": true
+    },
+    "pillar_confidence": {
+      "type": "number",
+      "allow_null": true
+    },
+    "pillar_reason": {
+      "type": "string",
+      "allow_null": true
+    },
+    "pillar_tags": {
+      "type": "string",
+      "allow_null": true
+    }
+  },
+  "row_rules": [
+    {
+      "name": "score_status_matches_score_and_asset_class",
+      "severity": "error",
+      "description": "If score==0 then score_status must be AVOID (non-crypto) or AVOID_CRYPTO_BEAR (crypto). If score>0 then score_status must be OK (unless NA/ERROR)."
+    }
+  ]
+}
