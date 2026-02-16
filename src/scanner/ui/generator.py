@@ -62,6 +62,7 @@ DEFAULT_COLUMNS = [
     # scores / signals
     "score",
     "confidence",
+    "diversification_penalty",
     "crv",
     "mc_chance",
     "elliott_signal",
@@ -695,6 +696,8 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     <div class="marketCard" id="breadthCard">
       <div class="marketCardTitle">Breadth</div>
       <div id="breadthBox">—</div>
+      <div id="diversBox" class="muted small" style="margin-top:8px;">—</div>
+      <div id="qualityBox" class="muted small" style="margin-top:8px;">—</div>
     </div>
     <div class="marketCard" id="moversCard">
       <div class="marketCardTitle">Movers</div>
@@ -831,6 +834,8 @@ const elMarketPanel = document.getElementById('marketPanel');
 const elMarketBody = document.getElementById('marketBody');
 const btnMarketToggle = document.getElementById('marketToggle');
 const elBreadthBox = document.getElementById('breadthBox');
+const elDiversBox = document.getElementById('diversBox');
+const elQualityBox = document.getElementById('qualityBox');
 const elMoversUp = document.getElementById('moversUp');
 const elMoversDown = document.getElementById('moversDown');
 const elHeatmap = document.getElementById('heatmap');
@@ -1860,6 +1865,18 @@ function fmtPct(v) {
   return s;
 }
 
+function quantile(sortedVals, q) {
+  if (!Array.isArray(sortedVals) || !sortedVals.length) return null;
+  if (sortedVals.length === 1) return sortedVals[0];
+  const qq = Math.max(0, Math.min(1, Number(q) || 0));
+  const pos = (sortedVals.length - 1) * qq;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sortedVals[lo];
+  const w = pos - lo;
+  return sortedVals[lo] * (1 - w) + sortedVals[hi] * w;
+}
+
 function renderBreadth(rows) {
   if (!elBreadthBox) return;
   let adv = 0, dec = 0, flat = 0, miss = 0;
@@ -1887,6 +1904,100 @@ function renderBreadth(rows) {
     <div class="muted small">Basis: <span class="mono">perf_pct / Perf %</span> (nur Anzeige/Context).</div>
   `;
   elBreadthBox.innerHTML = row;
+}
+
+function renderDiversification(rows) {
+  if (!elDiversBox) return;
+  const vals = (rows || []).map(r => asNum(r.diversification_penalty)).filter(v => v !== null);
+  if (!vals.length) {
+    elDiversBox.innerHTML = `<div class="muted">Diversifikation: keine Penalty-Daten im aktuellen CSV.</div>`;
+    return;
+  }
+
+  const s = vals.slice().sort((a, b) => a - b);
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const med = s[Math.floor(s.length / 2)];
+  const hi = vals.filter(v => v >= 6).length;
+  const lo = vals.filter(v => v <= 2).length;
+
+  const sectorCounts = {};
+  for (const r of rows || []) {
+    const p = asNum(r.diversification_penalty);
+    if (p === null || p < 6) continue;
+    const sec = normStr(r.cluster_official) || normStr(r.sector) || normStr(r.Sector) || 'n/a';
+    sectorCounts[sec] = (sectorCounts[sec] || 0) + 1;
+  }
+  const topSec = Object.entries(sectorCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
+  const secInfo = topSec.length
+    ? `Top Crowding: ${topSec.map(([k, v]) => `${esc(k)} (${v})`).join(' · ')}`
+    : 'Top Crowding: —';
+
+  elDiversBox.innerHTML = `
+    <div class="breadthRow">
+      ${chip(`Div Ø ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
+      ${chip(`Median ${med.toFixed(2)}`, med >= 4 ? 'warn' : 'blue')}
+      ${chip(`High ${hi}`, hi ? 'bad' : 'blue')}
+      ${chip(`Low ${lo}`, lo ? 'good' : 'blue')}
+    </div>
+    <div class="muted small">${secInfo}</div>
+  `;
+}
+
+function renderQualityPanel(rows) {
+  if (!elQualityBox) return;
+  const n = Array.isArray(rows) ? rows.length : 0;
+  if (!n) {
+    elQualityBox.innerHTML = `<div class="muted">Preset-Qualität: keine Daten.</div>`;
+    return;
+  }
+
+  const scores = rows.map(r => asNum(r.score)).filter(v => v !== null).sort((a, b) => a - b);
+  const confs = rows.map(r => asNum(r.confidence)).filter(v => v !== null).sort((a, b) => a - b);
+
+  const scoreMed = quantile(scores, 0.5);
+  const scoreQ1 = quantile(scores, 0.25);
+  const scoreQ3 = quantile(scores, 0.75);
+  const scoreIqr = (scoreQ1 !== null && scoreQ3 !== null) ? (scoreQ3 - scoreQ1) : null;
+
+  const confMed = quantile(confs, 0.5);
+  const confQ1 = quantile(confs, 0.25);
+  const confQ3 = quantile(confs, 0.75);
+  const confIqr = (confQ1 !== null && confQ3 !== null) ? (confQ3 - confQ1) : null;
+
+  let trendOk = 0;
+  let liqOk = 0;
+  let topPctl = 0;
+  let pctlDen = 0;
+  for (const r of rows) {
+    if (asBool(r.trend_ok) === true) trendOk++;
+    if (asBool(r.liquidity_ok) === true) liqOk++;
+    const p = asNum(r.score_pctl);
+    if (p !== null) {
+      pctlDen++;
+      if (p >= 90) topPctl++;
+    }
+  }
+
+  const trendShare = trendOk / n;
+  const liqShare = liqOk / n;
+  const topShare = pctlDen ? (topPctl / pctlDen) : 0;
+
+  elQualityBox.innerHTML = `
+    <div class="marketCardTitle" style="margin-top:2px;">Preset Quality</div>
+    <div class="breadthRow">
+      ${chip(`Score Med ${scoreMed === null ? '—' : scoreMed.toFixed(1)}`, (scoreMed !== null && scoreMed >= 34) ? 'good' : 'blue')}
+      ${chip(`Score IQR ${scoreIqr === null ? '—' : scoreIqr.toFixed(1)}`, (scoreIqr !== null && scoreIqr >= 10) ? 'good' : 'warn')}
+      ${chip(`Conf Med ${confMed === null ? '—' : confMed.toFixed(1)}`, (confMed !== null && confMed >= 60) ? 'good' : 'warn')}
+      ${chip(`Conf IQR ${confIqr === null ? '—' : confIqr.toFixed(1)}`, (confIqr !== null && confIqr >= 12) ? 'blue' : 'warn')}
+    </div>
+    <div class="breadthRow">
+      ${chip(`Trend OK ${fmtRatioPct(trendShare)}`, trendShare >= 0.7 ? 'good' : (trendShare >= 0.45 ? 'blue' : 'warn'))}
+      ${chip(`Liq OK ${fmtRatioPct(liqShare)}`, liqShare >= 0.7 ? 'good' : (liqShare >= 0.45 ? 'blue' : 'warn'))}
+      ${chip(`Top Pctl ${fmtRatioPct(topShare)}`, topShare >= 0.25 ? 'good' : (topShare >= 0.1 ? 'blue' : 'warn'))}
+      ${chip(`N ${n}`, 'blue')}
+    </div>
+    <div class="muted small">Basis: aktives Preset (vor Suche/Quick/Matrix); Top Pctl = Anteil mit Score-Perzentil >= 90.</div>
+  `;
 }
 
 function renderMovers(rows) {
@@ -1974,9 +2085,11 @@ function renderHeatmap(rows) {
   `;
 }
 
-function renderMarketContext(rows) {
+function renderMarketContext(rows, presetRows) {
   if (!elMarketPanel) return;
   renderBreadth(rows);
+  renderDiversification(rows);
+  renderQualityPanel(presetRows || rows);
   renderMovers(rows);
   renderHeatmap(rows);
 }
@@ -2129,6 +2242,7 @@ function renderMarketContext(rows) {
         ['Price', r.price],
         ['Currency', curr],
         ['Perf %', fmtPct(asNum(r.perf_pct) ?? asNum(r["Perf %"]))],
+        ['DiversPenalty', (asNum(r.diversification_penalty) ?? 0).toFixed(2)],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],
         ['MC Chance', r.mc_chance],
@@ -2154,6 +2268,8 @@ function renderMarketContext(rows) {
       if (status === 'ERROR') why.push('Scoring hat einen Fehler gemeldet (ScoreError).');
       if (asBool(r.trend_ok) === false) why.push('Trend-Filter: trend_ok=false.');
       if (asBool(r.liquidity_ok) === false) why.push('Liquidity-Filter: liquidity_ok=false.');
+      const dpen = asNum(r.diversification_penalty);
+      if (dpen !== null && dpen >= 6) why.push(`Diversifikations-Penalty hoch (${dpen.toFixed(2)}): Setup ist im aktuellen Universum eher klumpig.`);
       if (why.length === 0) why.push('Noch kein detaillierter Factor-Breakdown (kommt in Phase B3).');
 
       drawerBody.innerHTML = `
@@ -2197,7 +2313,7 @@ function renderMarketContext(rows) {
 
       // matrix counts always reflect the current (pre-matrix) universe (after cluster filter)
       renderMatrix(rows);
-      renderMarketContext(rows);
+      renderMarketContext(rows, presetRows);
 
       // matrix filter (if active)
       rows = applyMatrixFilter(rows);

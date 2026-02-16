@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import os
 import shutil
+from datetime import datetime, timezone
 import pandas as pd
 
 from scanner.data.io.paths import artifacts_dir, project_root
@@ -108,6 +109,284 @@ def _find_input_watchlist() -> Path:
         f"- {p1}\n- {p2}"
     )
 
+
+def _norm_str(v) -> str:
+    if v is None:
+        return ""
+    try:
+        if pd.isna(v):
+            return ""
+    except Exception:
+        pass
+    return str(v).strip()
+
+
+def _as_num(v) -> float | None:
+    try:
+        if v is None or pd.isna(v):
+            return None
+        x = float(v)
+        return x if pd.notna(x) else None
+    except Exception:
+        return None
+
+
+def _as_bool(v) -> bool:
+    if isinstance(v, bool):
+        return v
+    n = _as_num(v)
+    if n is not None:
+        return n != 0.0
+    s = _norm_str(v).lower()
+    if not s:
+        return False
+    return s in {"1", "true", "yes", "y", "ok", "t"}
+
+
+def _first_existing_col(df: pd.DataFrame, names: list[str]) -> str | None:
+    for n in names:
+        if n in df.columns:
+            return n
+    return None
+
+
+def _percentile_rank(sorted_vals: list[float], v: float | None) -> float | None:
+    if v is None or not sorted_vals:
+        return None
+    if len(sorted_vals) == 1:
+        return 100.0
+    import bisect
+    idx = bisect.bisect_right(sorted_vals, v) - 1
+    idx = max(0, min(len(sorted_vals) - 1, idx))
+    return (idx / (len(sorted_vals) - 1)) * 100.0
+
+
+def _rec_code(score_status: str, score_pctl: float | None, trend_ok: bool, liq_ok: bool) -> str:
+    st = _norm_str(score_status).upper()
+    if st in {"NA", "ERROR"}:
+        return "R?"
+    if st.startswith("AVOID"):
+        return "R0"
+    p = score_pctl
+    if p is not None and p >= 90 and trend_ok and liq_ok:
+        return "R5"
+    if p is not None and p >= 75 and liq_ok:
+        return "R4"
+    if p is not None and p >= 45:
+        return "R3"
+    if p is not None and p >= 20:
+        return "R2"
+    return "R1"
+
+
+def _build_state_snapshot(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if out.empty:
+        return pd.DataFrame(
+            columns=[
+                "asset_key",
+                "ticker",
+                "name",
+                "score_status",
+                "market_regime",
+                "confidence",
+                "score",
+                "score_pctl",
+                "r_code",
+            ]
+        )
+
+    # stable identity fallback chain
+    key = pd.Series("", index=out.index, dtype="string")
+    for c in ("asset_id", "ticker", "ticker_display", "yahoo_symbol", "symbol", "isin", "Ticker"):
+        if c in out.columns:
+            s = out[c].astype("string").fillna("").str.strip()
+            key = key.where(key.ne(""), s)
+    key = key.where(key.ne(""), pd.Series(out.index.astype(str), index=out.index, dtype="string"))
+
+    score = pd.to_numeric(out["score"], errors="coerce") if "score" in out.columns else pd.Series([pd.NA] * len(out), index=out.index)
+    conf = pd.to_numeric(out["confidence"], errors="coerce") if "confidence" in out.columns else pd.Series([pd.NA] * len(out), index=out.index)
+    trend = out["trend_ok"].map(_as_bool) if "trend_ok" in out.columns else pd.Series(False, index=out.index)
+    liq = out["liquidity_ok"].map(_as_bool) if "liquidity_ok" in out.columns else pd.Series(False, index=out.index)
+    status = out["score_status"].fillna("").astype(str) if "score_status" in out.columns else pd.Series("", index=out.index, dtype="string")
+
+    regime_col = _first_existing_col(out, ["market_regime", "ScoreMarketRegime", "regime"])
+    regime = out[regime_col].fillna("").astype(str) if regime_col else pd.Series("", index=out.index, dtype="string")
+
+    sorted_scores = [float(x) for x in score.dropna().tolist()]
+    sorted_scores.sort()
+
+    pctl = []
+    rcodes = []
+    for i in out.index:
+        sv = _as_num(score.loc[i])
+        sp = _percentile_rank(sorted_scores, sv)
+        pctl.append(sp)
+        rcodes.append(_rec_code(str(status.loc[i]), sp, bool(trend.loc[i]), bool(liq.loc[i])))
+
+    snap = pd.DataFrame(
+        {
+            "asset_key": key.astype(str),
+            "ticker": out["ticker"].astype("string").fillna("").astype(str) if "ticker" in out.columns else "",
+            "name": out["name"].astype("string").fillna("").astype(str) if "name" in out.columns else "",
+            "score_status": status.astype(str),
+            "market_regime": regime.astype(str),
+            "confidence": conf,
+            "score": score,
+            "score_pctl": pctl,
+            "r_code": rcodes,
+        },
+        index=out.index,
+    )
+
+    snap = snap.drop_duplicates(subset=["asset_key"], keep="first").reset_index(drop=True)
+    return snap
+
+
+def _state_change_alerts(
+    *,
+    df: pd.DataFrame,
+    reports_dir: Path,
+    confidence_threshold: float,
+    send_telegram: bool,
+) -> dict:
+    current = _build_state_snapshot(df)
+    snap_path = reports_dir / "state_snapshot.csv"
+    events_path = reports_dir / "state_change_alerts.csv"
+    txt_path = reports_dir / "state_change_alerts.txt"
+
+    prev = pd.DataFrame()
+    if snap_path.exists():
+        try:
+            prev = pd.read_csv(snap_path)
+        except Exception:
+            prev = pd.DataFrame()
+
+    events: list[dict] = []
+    if not prev.empty:
+        prev_map = {}
+        for _, r in prev.iterrows():
+            k = _norm_str(r.get("asset_key"))
+            if k:
+                prev_map[k] = r
+
+        for _, cur in current.iterrows():
+            k = _norm_str(cur.get("asset_key"))
+            if not k or k not in prev_map:
+                continue
+            old = prev_map[k]
+
+            old_rc = _norm_str(old.get("r_code")).upper()
+            new_rc = _norm_str(cur.get("r_code")).upper()
+            old_st = _norm_str(old.get("score_status")).upper()
+            new_st = _norm_str(cur.get("score_status")).upper()
+            old_rg = _norm_str(old.get("market_regime")).lower()
+            new_rg = _norm_str(cur.get("market_regime")).lower()
+            old_cf = _as_num(old.get("confidence"))
+            new_cf = _as_num(cur.get("confidence"))
+            ticker = _norm_str(cur.get("ticker")) or _norm_str(cur.get("asset_key"))
+            name = _norm_str(cur.get("name"))
+
+            if old_rc and new_rc and old_rc != new_rc:
+                events.append(
+                    {
+                        "asset_key": k,
+                        "ticker": ticker,
+                        "name": name,
+                        "event": "R_CODE_CHANGE",
+                        "old_value": old_rc,
+                        "new_value": new_rc,
+                    }
+                )
+
+            if (not old_st.startswith("AVOID")) and new_st.startswith("AVOID"):
+                events.append(
+                    {
+                        "asset_key": k,
+                        "ticker": ticker,
+                        "name": name,
+                        "event": "STATUS_TO_AVOID",
+                        "old_value": old_st or "-",
+                        "new_value": new_st,
+                    }
+                )
+
+            if old_rg and new_rg and old_rg != new_rg:
+                events.append(
+                    {
+                        "asset_key": k,
+                        "ticker": ticker,
+                        "name": name,
+                        "event": "REGIME_CHANGE",
+                        "old_value": old_rg,
+                        "new_value": new_rg,
+                    }
+                )
+
+            if old_cf is not None and new_cf is not None and old_cf >= confidence_threshold and new_cf < confidence_threshold:
+                events.append(
+                    {
+                        "asset_key": k,
+                        "ticker": ticker,
+                        "name": name,
+                        "event": "CONFIDENCE_DROP_BELOW",
+                        "old_value": f"{old_cf:.2f}",
+                        "new_value": f"{new_cf:.2f}",
+                    }
+                )
+
+    events_df = pd.DataFrame(events, columns=["asset_key", "ticker", "name", "event", "old_value", "new_value"])
+    to_csv_safely(events_df, events_path, index=False)
+
+    now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    lines = [
+        "Scanner_vNext - State Change Alerts",
+        "=" * 36,
+        f"generated_at_utc: {now_iso}",
+        f"confidence_threshold: {confidence_threshold:.2f}",
+        f"events: {len(events_df)}",
+    ]
+    if events_df.empty:
+        lines.append("")
+        lines.append("Keine Zustandswechsel seit dem letzten Snapshot.")
+    else:
+        lines.append("")
+        lines.append("Events")
+        for _, r in events_df.iterrows():
+            lines.append(f"- {r['ticker']} | {r['event']} | {r['old_value']} -> {r['new_value']}")
+    txt_path.write_text("\n".join(lines), encoding="utf-8")
+
+    # persist current snapshot for next run
+    to_csv_safely(current, snap_path, index=False)
+
+    sent = False
+    if send_telegram and len(events_df) > 0:
+        try:
+            from scanner.alerts.telegram import send_message
+
+            top = events_df.head(12)
+            msg_lines = [
+                "Scanner_vNext - State Changes",
+                f"Events: {len(events_df)}",
+                f"Threshold (confidence): {confidence_threshold:.1f}",
+                "",
+            ]
+            for _, r in top.iterrows():
+                msg_lines.append(f"- {r['ticker']}: {r['event']} ({r['old_value']} -> {r['new_value']})")
+            if len(events_df) > len(top):
+                msg_lines.append(f"... +{len(events_df) - len(top)} weitere")
+            sent = bool(send_message("\n".join(msg_lines)))
+        except Exception as e:
+            print(f"⚠️ State-change Telegram skipped: {e}")
+
+    return {
+        "events": int(len(events_df)),
+        "snapshot_path": str(snap_path),
+        "events_csv": str(events_path),
+        "events_txt": str(txt_path),
+        "telegram_sent": bool(sent),
+    }
+
 def build_watchlist_outputs() -> None:
     print(f"Scanner_vNext {__version__} (build {__build__})")
     src = _find_input_watchlist()
@@ -162,6 +441,48 @@ def build_watchlist_outputs() -> None:
 
     # 4) Canonical + Derived erzeugen (für Presets + UI)
     df = canonicalize_df(df_scored_raw)
+
+    # --- CONTRACT FALLBACKS (UI requires these columns) ---
+    def _coerce_float(s, default=50.0):
+        try:
+            return pd.to_numeric(s, errors="coerce").fillna(default)
+        except Exception:
+            return pd.Series([default] * len(df))
+
+    # cycle
+    if "cycle" not in df.columns:
+        if "Zyklus %" in df.columns:
+            df["cycle"] = _coerce_float(df["Zyklus %"], default=50.0)
+        elif "Zyklus" in df.columns:
+            df["cycle"] = _coerce_float(df["Zyklus"], default=50.0)
+        else:
+            df["cycle"] = 50.0
+
+    # trend_ok
+    if "trend_ok" not in df.columns:
+        if "Trend200" in df.columns:
+            # accept 1/0, True/False, strings
+            v = df["Trend200"]
+            if v.dtype == "bool":
+                df["trend_ok"] = v.fillna(True)
+            else:
+                vv = pd.to_numeric(v, errors="coerce")
+                df["trend_ok"] = vv.fillna(1).astype(float).ge(1.0)
+        else:
+            df["trend_ok"] = True
+
+    # liquidity_ok
+    if "liquidity_ok" not in df.columns:
+        if "DollarVolume" in df.columns:
+            dv = pd.to_numeric(df["DollarVolume"], errors="coerce").fillna(0.0)
+            # super conservative: anything > 0 counts as liquid enough if we don't have better data
+            df["liquidity_ok"] = dv.gt(0.0)
+        elif "AvgVolume" in df.columns:
+            av = pd.to_numeric(df["AvgVolume"], errors="coerce").fillna(0.0)
+            df["liquidity_ok"] = av.gt(0.0)
+        else:
+            df["liquidity_ok"] = True
+    # --- END CONTRACT FALLBACKS ---
 
     # 4b) Deduplicate universe (common when watchlist.csv was maintained with mixed IDs)
     # We dedupe on canonical asset_id (prefer rows with higher score) and keep indices aligned
@@ -310,6 +631,7 @@ def build_watchlist_outputs() -> None:
         "opportunity_score",
         "risk_score",
         "confidence",
+        "diversification_penalty",
         "cycle",
         "trend200",
         "trend_ok",
@@ -335,12 +657,11 @@ def build_watchlist_outputs() -> None:
             obj = health_df["is_crypto"]
             if isinstance(obj, pd.DataFrame):
                 obj = obj.iloc[:, 0] if obj.shape[1] else pd.Series(False, index=health_df.index)
-            s_bool = obj.fillna(False)
-            if s_bool.dtype == bool:
-                crypto_mask_h = s_bool.astype(bool)
+            if obj.dtype == bool:
+                crypto_mask_h = obj.fillna(False).infer_objects(copy=False).astype(bool)
             else:
                 # accept common truthy strings/numbers
-                st = s_bool.astype(str).str.strip().str.lower()
+                st = obj.astype("string").fillna("").str.strip().str.lower()
                 crypto_mask_h = st.isin({"1", "true", "t", "yes", "y"})
         else:
             crypto_mask_h = _crypto_or_heuristic(health_df).astype(bool)
@@ -357,6 +678,28 @@ def build_watchlist_outputs() -> None:
     health_df = health_df.loc[:, [c for c in (present + ["ScoreStatus", "IsCrypto"]) if c in health_df.columns]]
     health_path = reports_dir / "score_health.csv"
     to_csv_safely(health_df, health_path, index=False)
+
+    # --- STATE-CHANGE ALERTS (delta vs previous run; low-noise operational triggers) ---
+    try:
+        conf_thr = float(os.getenv("SCANNER_ALERT_CONFIDENCE_THRESHOLD", "50").strip() or "50")
+    except Exception:
+        conf_thr = 50.0
+    send_state_alerts = os.getenv("SCANNER_ALERT_TELEGRAM", "0").strip().lower() in {"1", "true", "yes", "on"}
+    try:
+        alert_report = _state_change_alerts(
+            df=df,
+            reports_dir=reports_dir,
+            confidence_threshold=conf_thr,
+            send_telegram=send_state_alerts,
+        )
+        print(
+            "State alerts: "
+            f"{alert_report.get('events', 0)} events | "
+            f"csv={alert_report.get('events_csv')} | "
+            f"snapshot={alert_report.get('snapshot_path')}"
+        )
+    except Exception as e:
+        print(f"⚠️ State alerts skipped: {e}")
 
     # Optional debug exports
     write_debug = os.getenv("SCANNER_WRITE_SCORE_DEBUG", "0").strip() in {"1", "true", "yes"}

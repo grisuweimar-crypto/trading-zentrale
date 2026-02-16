@@ -343,6 +343,7 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
     c_cycle = _first_col(df, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])  # pct-ish
     c_perf = _first_col(df, ["perf_pct", "Perf %", "Perf%", "perf"])  # daily %
     c_conf = _first_col(df, ["confidence", "Confidence", "ConfidenceScore"])
+    c_div = _first_col(df, ["diversification_penalty", "ScoreDiversificationPenalty"])
 
     c_cluster = _first_col(df, ["cluster_official", "Cluster", "Sektor", "sector", "Sector"])
     c_pillar = _first_col(df, ["pillar_primary", "Saeule", "Säule", "Pillar"])
@@ -462,6 +463,11 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
             conf_f = float(conf) if conf is not None and not (isinstance(conf, float) and pd.isna(conf)) else None
         except Exception:
             conf_f = None
+        dpen = None if c_div is None else r.get(c_div)
+        try:
+            dpen_f = float(dpen) if dpen is not None and not (isinstance(dpen, float) and pd.isna(dpen)) else None
+        except Exception:
+            dpen_f = None
 
         cluster = _norm_str(r.get(c_cluster)) if c_cluster and c_cluster in r.index else ""
         pillar = _norm_str(r.get(c_pillar)) if c_pillar and c_pillar in r.index else ""
@@ -496,6 +502,12 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
 
         if conf_f is not None:
             reasons.append(f"Confidence: {conf_f:.1f} (Daten-/Konfluenz‑Hinweis).")
+
+        if dpen_f is not None:
+            if dpen_f >= 6:
+                risks.append(f"Diversifikation: Penalty {dpen_f:.2f} (erhoehtes Klumpenrisiko).")
+            elif dpen_f <= 2:
+                reasons.append(f"Diversifikation: Penalty {dpen_f:.2f} (breiteres Setup).")
 
         if cycle_f is not None:
             reasons.append(f"Zyklus: {cycle_f:.1f}% (≈50 neutral).")
@@ -581,6 +593,7 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
             "risk_bucket": risk_bucket,
             "risk_pctl": rp,
             "score_bucket": score_bucket,
+            "diversification_penalty": dpen_f,
             "cluster": cluster,
             "pillar_primary": pillar,
             "bucket_type": bucket_type,

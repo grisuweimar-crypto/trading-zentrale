@@ -24,6 +24,7 @@ from scanner.domain.scoring_engine.factors.universe_csv import (
 )
 from scanner.domain.scoring_engine.factors.map_from_csv import build_raw_from_csv_row
 from scanner.domain.scoring_engine.quality.confidence import compute_confidence
+from scanner.domain.scoring_engine.quality.diversification import compute_diversification_penalty
 
 
 def _is_crypto_identifier(s: str) -> bool:
@@ -182,6 +183,24 @@ def calculate_scores_v6_from_row(
             risk_weight=reg["risk_w"],
         )
 
+        # ---- Diversification penalty (cross-sectional crowding) ----
+        diversification_config = {
+            "DIVERS_CAT_START_SHARE": 0.18,
+            "DIVERS_CAT_CAP_SHARE": 0.45,
+            "DIVERS_CAT_MAX_PENALTY": 8.0,
+            "DIVERS_CRYPTO_START_SHARE": 0.25,
+            "DIVERS_CRYPTO_CAP_SHARE": 0.45,
+            "DIVERS_CRYPTO_MAX_PENALTY": 2.0,
+            "DIVERS_MAX_TOTAL_PENALTY": 10.0,
+        }
+        divers = compute_diversification_penalty(row, universe.df, reg["asset_class"], diversification_config)
+        base_score = float(result["final_score"])
+        adjusted_score = max(0.0, min(100.0, base_score - float(divers["penalty_points"])))
+        result["final_score"] = round(adjusted_score, 2)
+        result["score"] = result["final_score"]
+        result["diversification_penalty"] = float(divers["penalty_points"])
+        result["diversification_breakdown"] = divers
+
         # Meta enrichment
         result["meta"].update(
             {
@@ -189,6 +208,8 @@ def calculate_scores_v6_from_row(
                 "market_trend200": reg["market_trend200"],
                 "market_benchmark": reg["market_benchmark"],
                 "asset_class": reg["asset_class"],
+                "base_score_before_diversification": round(base_score, 2),
+                "diversification_penalty": float(divers["penalty_points"]),
             }
         )
 

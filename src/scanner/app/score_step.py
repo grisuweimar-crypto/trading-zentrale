@@ -91,6 +91,8 @@ def apply_scoring(df_raw: pd.DataFrame, *, universe_csv_path: Optional[str] = No
     conf_list = []
     conf_label_list = []
     conf_breakdown_list = []
+    divers_penalty_list = []
+    divers_breakdown_list = []
     err_list = []
 
     # meta (helps diagnose 0-scores)
@@ -116,6 +118,8 @@ def apply_scoring(df_raw: pd.DataFrame, *, universe_csv_path: Optional[str] = No
             conf_list.append(pd.NA)
             conf_label_list.append(pd.NA)
             conf_breakdown_list.append(pd.NA)
+            divers_penalty_list.append(pd.NA)
+            divers_breakdown_list.append(pd.NA)
             err_list.append(res["error"])
 
             regime_list.append(pd.NA)
@@ -140,6 +144,13 @@ def apply_scoring(df_raw: pd.DataFrame, *, universe_csv_path: Optional[str] = No
             conf_breakdown_list.append(json.dumps(bd, ensure_ascii=False))
         except Exception:
             conf_breakdown_list.append(str(bd))
+
+        divers_penalty_list.append(res.get("diversification_penalty", pd.NA))
+        dbr = res.get("diversification_breakdown", {})
+        try:
+            divers_breakdown_list.append(json.dumps(dbr, ensure_ascii=False))
+        except Exception:
+            divers_breakdown_list.append(str(dbr))
 
         err_list.append("")
 
@@ -170,6 +181,8 @@ def apply_scoring(df_raw: pd.DataFrame, *, universe_csv_path: Optional[str] = No
     out["ConfidenceScore"] = pd.to_numeric(pd.Series(conf_list), errors="coerce")
     out["ConfidenceLabel"] = pd.Series(conf_label_list, dtype="string")
     out["ConfidenceBreakdown"] = pd.Series(conf_breakdown_list, dtype="string")
+    out["ScoreDiversificationPenalty"] = pd.to_numeric(pd.Series(divers_penalty_list), errors="coerce")
+    out["ScoreDiversificationBreakdown"] = pd.Series(divers_breakdown_list, dtype="string")
 
     out["ScoreError"] = pd.Series(err_list, dtype="string")
 
