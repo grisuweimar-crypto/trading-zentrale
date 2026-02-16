@@ -1,7 +1,7 @@
 {
   "meta": {
     "briefing_version": "v2",
-    "generated_utc": "2026-02-16T16:37:55.010905Z",
+    "generated_utc": "2026-02-16T16:39:14.634767Z",
     "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "preset": "ALL",
     "filters": {
@@ -40,7 +40,7 @@
       "symbol": "WPM.TO",
       "name": "WHEATON PREC.",
       "isin": "CA9628791027",
-      "score": 44.35,
+      "score": 44.4,
       "score_percentile": 100.0,
       "risk_bucket": 2,
       "risk_buckets_total": 4,
@@ -111,7 +111,7 @@
       "symbol": "AEM",
       "name": "AGNICO EAGLE",
       "isin": "CA0084741085",
-      "score": 43.73,
+      "score": 43.75,
       "score_percentile": 99.28571428571429,
       "risk_bucket": 3,
       "risk_buckets_total": 4,
@@ -182,7 +182,7 @@
       "symbol": "FRES.L",
       "name": "FRESNILLO PLC",
       "isin": "GB00B2QPKJ12",
-      "score": 43.66,
+      "score": 43.68,
       "score_percentile": 98.57142857142858,
       "risk_bucket": 3,
       "risk_buckets_total": 4,
@@ -219,7 +219,7 @@
           "id": "anomaly_extreme_perf",
           "severity": "alert",
           "label": "Sehr auffaellige Perf %",
-          "value": "+387.21%",
+          "value": "+386.95%",
           "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
           "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
         }
@@ -270,8 +270,8 @@
       ]
     },
     "build_info": {
-      "git_sha": "6bc4a96",
-      "ui_sha": "6bc4a96",
+      "git_sha": "f271704",
+      "ui_sha": "f271704",
       "pipeline": "run_daily -> validate -> briefing -> ui"
     }
   }
