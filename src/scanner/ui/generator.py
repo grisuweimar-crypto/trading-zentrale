@@ -2684,13 +2684,15 @@ def _render_help_html(*, version: str, build: str) -> str:
     :root{{--bg:#0b1020;--card:#0f172a;--border:rgba(148,163,184,.18);--muted:#94a3b8;--text:#e2e8f0;--accent:#60a5fa;}}
     *{{box-sizing:border-box}}
     body{{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}}
-    .wrap{{max-width:960px;margin:0 auto;padding:16px}}
+    .wrap{{max-width:980px;margin:0 auto;padding:16px}}
     .card{{background:rgba(15,23,42,.84);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}}
     .meta{{color:var(--muted);font-size:12px}}
     a{{color:var(--accent);text-decoration:none}}
     details{{border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px 0;background:rgba(2,6,23,.4)}}
     summary{{cursor:pointer;font-weight:700}}
     code{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}}
+    ul{{margin:8px 0 8px 18px}}
+    p{{line-height:1.45}}
   </style>
 </head>
 <body>
@@ -2698,54 +2700,54 @@ def _render_help_html(*, version: str, build: str) -> str:
     <div class="card">
       <h1 style="margin:0 0 6px 0">Scanner_vNext - Hilfe</h1>
       <div class="meta">version {version} - build {build} - <a href="index.html">zurueck zum Dashboard</a></div>
-      <p><b>Privates Research-Dashboard.</b> Keine Anlageberatung. Inhalte koennen unvollstaendig oder fehlerhaft sein.</p>
+      <p><b>Was ist das?</b> Ein privates Research-Dashboard fuer Watchlist-Entscheidungen. Es sortiert Werte nach Datenlage, Trend, Liquiditaet und Risiko - als Arbeitsgrundlage, nicht als Kaufsignal.</p>
+      <p><b>Wichtig:</b> Keine Anlageberatung. Die Labels helfen dir beim Priorisieren, ersetzen aber keine eigene Pruefung.</p>
     </div>
 
     <div class="card">
       <h2 style="margin:0 0 8px 0">60 Sekunden: So nutzt du das Dashboard</h2>
       <ol>
-        <li>Preset waehlen (z.B. ALL, CORE, TOP).</li>
-        <li>Suche und Quick-Filter setzen.</li>
-        <li>Bucket-Matrix anklicken fuer Fokus.</li>
-        <li>Drawer oeffnen fuer Detailpruefung.</li>
+        <li>Preset waehlen (ALL, CORE, TOP...), dann Suche/Filter setzen.</li>
+        <li>Score + Confidence zusammen lesen, nicht isoliert.</li>
+        <li>Mit Bucket-Matrix auf passende Score/Risk-Zonen fokussieren.</li>
+        <li>Bei Kandidaten den Drawer oeffnen und Details pruefen.</li>
       </ol>
     </div>
 
     <details open>
-      <summary>Glossar (kurz)</summary>
-      <p><b>Score</b>: internes Ranking. <b>Confidence</b>: Qualitaet/Konfluenz. <b>R0-R5</b>: Workflow-Code, kein Kaufsignal.</p>
-      <p><b>trend_ok / liquidity_ok</b>: Mindestfilter. <b>score_status</b>: OK/AVOID/NA.</p>
-    </details>
-
-    <details open>
-      <summary>Bucket-Matrix</summary>
-      <p>X-Achse = Score, Y-Achse = Risk. Klick auf ein Feld aktiviert einen zusaetzlichen Filter.</p>
-    </details>
-
-    <details open>
-      <summary>Market Context</summary>
-      <p>Nur Kontext, kein Einfluss auf Scoring.</p>
+      <summary>Wie lese ich die Hauptspalten?</summary>
       <ul>
-        <li><b>Breadth</b>: Anzahl Gewinner/Verlierer im aktuellen gefilterten Universe.</li>
-        <li><b>Movers</b>: staerkste Auf- und Abbewegungen.</li>
+        <li><b>Score</b>: relative Einordnung im aktuellen Universe.</li>
+        <li><b>Conf(idence)</b>: Qualitaet/Konfluenz der Datengrundlage.</li>
+        <li><b>Trend / Liq</b>: Mindestbedingungen (Trend intakt? genug Liquiditaet?).</li>
+        <li><b>Status</b>: OK / AVOID / NA als schneller Warnhinweis.</li>
+      </ul>
+    </details>
+
+    <details open>
+      <summary>Was bedeuten R0-R5?</summary>
+      <p>R0-R5 sind interne Workflow-Codes fuer Priorisierung. Sie sind <b>keine</b> Kauf-/Verkaufsempfehlung.</p>
+      <ul>
+        <li><b>R5/R4</b>: hohe Prioritaet fuer weitere Pruefung.</li>
+        <li><b>R3</b>: neutral beobachten.</li>
+        <li><b>R2/R1</b>: niedrige Prioritaet.</li>
+        <li><b>R0</b>: vermeiden (z.B. AVOID-Status).</li>
+      </ul>
+    </details>
+
+    <details open>
+      <summary>Market Context: Wozu ist das gut?</summary>
+      <ul>
+        <li><b>Breadth</b>: zeigt, ob das Umfeld breit positiv/negativ ist.</li>
+        <li><b>Movers</b>: staerkste Gewinner/Verlierer im aktuellen Filter.</li>
         <li><b>Heatmap</b>: Verteilung nach Cluster/Saeule und Score-Buckets.</li>
-        <li><b>Preset-Qualitaet</b>: Median/IQR fuer Score/Confidence plus Trend/Liq-Anteile.</li>
       </ul>
+      <p>Alles in diesem Block ist <b>Kontext</b> und veraendert den Score nicht.</p>
     </details>
 
     <details>
-      <summary>Pipeline (Future-Me)</summary>
-      <p><code>python -m scanner.app.run_daily</code> erstellt Watchlist/Reports.<br/>
-      <code>python -m scanner.ui.generator</code> erzeugt <code>artifacts/ui/index.html</code>.</p>
-    </details>
-
-    <details>
-      <summary>Troubleshooting</summary>
-      <ul>
-        <li>Wenn UI leer ist: zuerst <code>run_daily</code>, dann <code>ui.generator</code>.</li>
-        <li>Wenn Texte komisch aussehen: UI neu generieren und Browser-Cache leeren.</li>
-        <li>Wenn Contract-Error: <code>python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_ALL.csv</code>.</li>
-      </ul>
+      <summary>Kurze Projektbeschreibung</summary>
+      <p>Scanner_vNext kombiniert Watchlist-Daten, Regime-Logik und UI-Filter in einem taeglichen Workflow. Ziel ist nicht, Entscheidungen zu automatisieren, sondern sie konsistenter und nachvollziehbarer zu machen. Das Dashboard soll dir zeigen: Was ist heute relevant, was ist riskant, was braucht mehr Pruefung.</p>
     </details>
   </main>
 </body>
