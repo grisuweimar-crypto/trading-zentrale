@@ -1196,13 +1196,13 @@ if (elHeatMode) {
     function asBool(v) {
       if (v === true || v === false) return v;
       if (v === 1 || v === 0) return !!v;
-      const s = (v  '').toString().trim().toLowerCase();
+      const s = (v ?? '').toString().trim().toLowerCase();
       if (['true','t','yes','y','1'].includes(s)) return true;
       if (['false','f','no','n','0'].includes(s)) return false;
       return null;
     }
     function normStr(v) {
-      return (v  '').toString().trim();
+      return (v ?? '').toString().trim();
     }
 
     // HTML-Listen-Konvertierung fÃ¼r Briefing (bessere Mobile Darstellung)
@@ -1567,7 +1567,7 @@ function applyPillarFilter(rows) {
     }
 
     function esc(v) {
-      return (v  '').toString()
+      return (v ?? '').toString()
         .replaceAll('&','&amp;')
         .replaceAll('<','&lt;')
         .replaceAll('>','&gt;')
