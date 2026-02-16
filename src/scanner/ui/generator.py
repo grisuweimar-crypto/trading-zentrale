@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 """Static UI generator (Phase B2 MVP).
 
@@ -31,6 +31,9 @@ from scanner.data.io.paths import project_root
 from scanner.data.schema.contract import validate_csv
 from scanner.presets.load import load_presets
 from scanner.data.io.paths import artifacts_dir
+
+TRUE_SET = {"true", "t", "yes", "y", "1"}
+FALSE_SET = {"false", "f", "no", "n", "0"}
 
 
 DEFAULT_COLUMNS = [
@@ -108,6 +111,21 @@ def _to_json_records(df: pd.DataFrame) -> list[dict[str, Any]]:
                 except Exception:
                     row[k] = str(v)
         out.append(row)
+    return out
+
+
+def _coerce_bool_series(s: pd.Series) -> pd.Series:
+    if pd.api.types.is_bool_dtype(s):
+        return s.astype("boolean")
+    if pd.api.types.is_numeric_dtype(s):
+        out = pd.Series(pd.NA, index=s.index, dtype="boolean")
+        out[s == 1] = True
+        out[s == 0] = False
+        return out
+    ss = s.astype("string").str.strip().str.lower()
+    out = pd.Series(pd.NA, index=s.index, dtype="boolean")
+    out[ss.isin(TRUE_SET)] = True
+    out[ss.isin(FALSE_SET)] = False
     return out
 
 
@@ -196,6 +214,11 @@ def build_ui(
     for c in ("ticker", "ticker_display", "yahoo_symbol", "YahooSymbol", "symbol", "name", "sector", "country", "currency", "score_status"):
         if c in df.columns:
             df[c] = df[c].astype("string").fillna("").str.strip()
+
+    # Failsafe: ensure bool fields are real booleans before JSON export.
+    for c in ("trend_ok", "liquidity_ok", "is_crypto"):
+        if c in df.columns:
+            df[c] = _coerce_bool_series(df[c]).fillna(False).astype(bool)
 
     data_records = _to_json_records(df)
     fallback_tbody_html = _render_fallback_tbody(df)

@@ -26,6 +26,7 @@ from datetime import datetime, timezone
 import math
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -157,6 +158,14 @@ def _safe_float(x: Any) -> float | None:
         return v
     except Exception:
         return None
+
+
+def _failure_reason(symbol: str, base_reason: str) -> str:
+    s = str(symbol or "").strip().upper()
+    reason = str(base_reason)
+    if s == "NESN.SE":
+        reason += " Yahoo suffix likely wrong (e.g. NESN.SW for Nestlé on SIX)."
+    return reason
 
 
 def _series_from_download(dl: pd.DataFrame, ticker: str) -> tuple[pd.Series | None, pd.Series | None]:
@@ -340,7 +349,7 @@ def enrich_watchlist_with_yahoo(
         auto_adjust=True,
         group_by="column",
         threads=True,
-        progress=True,  # Enable progress logging
+        progress=False,
     )
 
     # Benchmark features
@@ -363,6 +372,7 @@ def enrich_watchlist_with_yahoo(
 
     fetched = 0
     failed = 0
+    failed_rows: list[dict[str, Any]] = []
 
     # Per-row enrichment (keep previous values on failures)
     for idx, sym in zip(out.index, row_symbols):
@@ -371,6 +381,17 @@ def enrich_watchlist_with_yahoo(
         close, vol = _series_from_download(dl, sym)
         if close is None or close.dropna().empty:
             failed += 1
+            row = out.loc[idx]
+            failed_rows.append(
+                {
+                    "symbol": str(sym),
+                    "reason": _failure_reason(sym, "close/volume history missing or empty"),
+                    "row_ticker": str(row.get("Ticker", "") or ""),
+                    "name": str(row.get("Name", "") or ""),
+                    "yahoo_symbol": str(row.get("YahooSymbol", "") or ""),
+                    "isin": str(row.get("ISIN", "") or ""),
+                }
+            )
             continue
 
         # Choose benchmark for RS: stocks vs crypto pairs
@@ -378,6 +399,17 @@ def enrich_watchlist_with_yahoo(
         feats = _compute_features(close, vol, benchmark_close=bench)
         if not feats:
             failed += 1
+            row = out.loc[idx]
+            failed_rows.append(
+                {
+                    "symbol": str(sym),
+                    "reason": _failure_reason(sym, "insufficient bars for feature computation"),
+                    "row_ticker": str(row.get("Ticker", "") or ""),
+                    "name": str(row.get("Name", "") or ""),
+                    "yahoo_symbol": str(row.get("YahooSymbol", "") or ""),
+                    "isin": str(row.get("ISIN", "") or ""),
+                }
+            )
             continue
 
         for k, v in feats.items():
@@ -386,6 +418,23 @@ def enrich_watchlist_with_yahoo(
             out.at[idx, k] = v
 
         fetched += 1
+
+    # Optional failure report (no pipeline failure; old values already kept)
+    rep_path = Path("artifacts") / "reports" / "yahoo_failed_symbols.csv"
+    if failed_rows:
+        rep_path.parent.mkdir(parents=True, exist_ok=True)
+        failed_df = pd.DataFrame(
+            failed_rows,
+            columns=["symbol", "reason", "row_ticker", "name", "yahoo_symbol", "isin"],
+        )
+        failed_df.to_csv(rep_path, index=False, encoding="utf-8")
+        print(f"[WARN] Yahoo failures: {len(failed_rows)} symbols (see {rep_path.as_posix()})")
+    else:
+        try:
+            if rep_path.exists():
+                rep_path.unlink()
+        except Exception:
+            pass
 
     rep = YahooEnrichReport(
         enabled=True,
