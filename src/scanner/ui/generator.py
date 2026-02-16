@@ -412,7 +412,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     /* Bullet-Styles bombensicher machen */
     .briefingText ul { margin: 6px 0 10px 18px; padding-left: 14px; list-style: disc; }
     .briefingText li { margin: 4px 0; }
-    .briefing-asset { margin: 10px 0 6px; font-weight: 700; }
+    .briefing-asset {
+      margin: 10px 0 6px;
+      font-weight: 700;
+      border-left: 2px solid rgba(96,165,250,.45);
+      padding-left: 8px;
+      color: #dbeafe;
+      background: rgba(96,165,250,.06);
+      border-radius: 6px;
+    }
     .briefing-label { margin: 10px 0 6px; opacity: .9; font-weight: 700; }
 
     /* Mobile: Panels/Drawer/Modals dÃ¼rfen nicht Ã¼ber den Viewport schieÃŸen */
