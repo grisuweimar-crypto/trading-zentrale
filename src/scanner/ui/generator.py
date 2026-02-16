@@ -589,7 +589,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .marketHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .marketHead select { width: auto; min-width: 170px; padding: 8px 10px; border-radius: 10px; }
 .marketGrid { display:grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 980px) { .marketGrid { grid-template-columns: 1fr 1fr; align-items: stretch; } }
+@media (min-width: 980px) { .marketGrid { grid-template-columns: 1fr 1fr 1.2fr; align-items: stretch; } }
 
 .marketCard { border: 1px solid rgba(148,163,184,.15); background: rgba(15,23,42,.35); border-radius: 12px; padding: 10px; }
 .marketCardTitle { font-weight: 700; margin-bottom: 8px; }
@@ -603,6 +603,14 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .moversItem .val.pos { color: var(--good); }
 .moversItem .val.neg { color: var(--bad); }
 .moversItem .val.flat { color: var(--muted); }
+.moversMeta { color: var(--muted); font-size: 10px; margin-left: 6px; }
+
+.placeholderCard {
+  border: 1px dashed rgba(96,165,250,.35);
+  background: linear-gradient(180deg, rgba(96,165,250,.08), rgba(96,165,250,.03));
+}
+.placeholderList { margin: 6px 0 0 16px; padding: 0; }
+.placeholderList li { margin: 6px 0; color: #cbd5e1; font-size: 12px; }
 
 .heatMatrixPanel { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
 .heatMatrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
@@ -796,14 +804,24 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Tagesbewegung (1D) im aktuellen Universe.">Movers</div>
       <div class="moversGrid">
         <div>
-          <div class="muted small">Top â†‘</div>
+          <div class="muted small">Top (1D up)</div>
           <div id="moversUp" class="moversList">â€”</div>
         </div>
         <div>
-          <div class="muted small">Weak â†“</div>
+          <div class="muted small">Weak (1D down)</div>
           <div id="moversDown" class="moversList">â€”</div>
         </div>
       </div>
+    </div>
+    <div class="marketCard placeholderCard" id="ideasCard">
+      <div class="marketCardTitle" title="Freier Platzhalter fuer zusaetzliche Module.">Ideas Dock</div>
+      <div class="muted small">Freie Flaeche fuer dein naechstes Modul. Vorschlaege:</div>
+      <ul class="placeholderList">
+        <li>Portfolio-Live-Block (Gewichtung, P/L, Exposure)</li>
+        <li>Event-Kalender (Earnings, Makro, Termine)</li>
+        <li>Signal-Historie (State-Changes je Asset)</li>
+        <li>Watchlist-Notizen (manuelle Thesen / TODOs)</li>
+      </ul>
     </div>
   </div>
 </div>
@@ -2124,18 +2142,19 @@ function renderMovers(rows) {
 
   const arr = [];
   for (const r of rows || []) {
-    const p = perf1dPct(r);
-    if (p === null) continue;
-    arr.push({r, p});
+    const p1d = perf1dPct(r);
+    if (p1d === null) continue;
+    const p1y = perf1yPct(r);
+    arr.push({r, p1d, p1y});
   }
   if (!arr.length) {
-    elMoversUp.innerHTML = `<span class="muted">â€”</span>`;
-    elMoversDown.innerHTML = `<span class="muted">â€”</span>`;
+    elMoversUp.innerHTML = `<span class="muted">-</span>`;
+    elMoversDown.innerHTML = `<span class="muted">-</span>`;
     return;
   }
 
-  const up = arr.slice().sort((a,b) => b.p - a.p).filter(x => x.p > 0).slice(0, 8);
-  const dn = arr.slice().sort((a,b) => a.p - b.p).filter(x => x.p < 0).slice(0, 8);
+  const up = arr.slice().sort((a,b) => b.p1d - a.p1d).filter(x => x.p1d > 0).slice(0, 8);
+  const dn = arr.slice().sort((a,b) => a.p1d - b.p1d).filter(x => x.p1d < 0).slice(0, 8);
 
   function itemHtml(x) {
     const r = x.r;
@@ -2143,12 +2162,13 @@ function renderMovers(rows) {
     const yh = pickYahooSymbol(r) || sym;
     const href = yahooHref(yh);
     const s = href ? `<a class="yf sym" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` : `<span class="sym">${esc(sym)}</span>`;
-    const cls = x.p > 0 ? 'pos' : (x.p < 0 ? 'neg' : 'flat');
-    return `<div class="moversItem"><span class="sym">${s}</span><span class="val ${cls}">${esc(fmtPct(x.p))}</span></div>`;
+    const cls = x.p1d > 0 ? 'pos' : (x.p1d < 0 ? 'neg' : 'flat');
+    const y1 = (x.p1y === null || x.p1y === undefined || !Number.isFinite(x.p1y)) ? '1Y n/a' : `1Y ${fmtPct(x.p1y)}`;
+    return `<div class="moversItem"><span class="sym">${s}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}">${esc('1D ' + fmtPct(x.p1d))}</span></div>`;
   }
 
-  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
-  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
+  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">-</span>`;
+  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">-</span>`;
 }
 
 function renderHeatmap(rows) {
