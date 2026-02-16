@@ -36,6 +36,47 @@ from scanner.data.io.paths import artifacts_dir
 TRUE_SET = {"true", "t", "yes", "y", "1"}
 FALSE_SET = {"false", "f", "no", "n", "0"}
 
+_MOJIBAKE_MAP = {
+    "ÃƒÅ“": "Ue",
+    "Ãœ": "Ue",
+    "Ã„": "Ae",
+    "Ã–": "Oe",
+    "Ã¼": "ue",
+    "Ã¤": "ae",
+    "Ã¶": "oe",
+    "ÃŸ": "ss",
+    "Ã©": "e",
+    "Ã¨": "e",
+    "Ã¡": "a",
+    "Ã ": "a",
+    "Ã±": "n",
+    "â€”": "-",
+    "â€“": "-",
+    "â€‘": "-",
+    "â†’": "->",
+    "â†‘": "^",
+    "â†“": "v",
+    "â€¢": "*",
+    "â–²": "^",
+    "â–¼": "v",
+    "âœ•": "x",
+    "Â·": " - ",
+    "Ã‚Â·": " - ",
+    "â€¦": "...",
+    "Ă—": "x",
+    "â€ž": "\"",
+    "â€œ": "\"",
+    "â€": "\"",
+}
+
+
+def _demojibake(text: str) -> str:
+    """Repair known mojibake sequences in generated HTML."""
+    fixed = text
+    for bad, good in _MOJIBAKE_MAP.items():
+        fixed = fixed.replace(bad, good)
+    return fixed
+
 
 DEFAULT_COLUMNS = [
     # identity
@@ -1229,15 +1270,15 @@ if (elHeatMode) {
         if(/^\\d+\\)\\s/.test(line)){
           out += '<h4 class="briefing-asset">' + briefingEscape(line) + '</h4>';
         } else {
-          const marker = line
-            .toLowerCase()
+          const headingKey = line
             .normalize('NFD')
-            .replace(/[\\u0300-\\u036f]/g, '');
+            .replace(/[\\u0300-\\u036f]/g, '')
+            .toLowerCase();
           if (
-            marker.startsWith('grunde') ||
-            marker.startsWith('risiken/flags') ||
-            marker.startsWith('nachste checks') ||
-            marker.startsWith('kontext-hinweise')
+            headingKey.startsWith('grunde') ||
+            headingKey.startsWith('risiken/flags') ||
+            headingKey.startsWith('nachste checks') ||
+            headingKey.startsWith('kontext-hinweise')
           ) {
             out += '<div class="briefing-label">' + briefingEscape(line).replace(/:$/, "") + '</div>';
           } else {
