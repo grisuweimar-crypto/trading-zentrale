@@ -1,7 +1,7 @@
 {
   "meta": {
     "briefing_version": "v2",
-    "generated_utc": "2026-02-16T15:57:40.504094Z",
+    "generated_utc": "2026-02-16T16:08:01.896063Z",
     "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "preset": "ALL",
     "filters": {
@@ -40,7 +40,7 @@
       "symbol": "WPM.TO",
       "name": "WHEATON PREC.",
       "isin": "CA9628791027",
-      "score": 44.4,
+      "score": 44.32,
       "score_percentile": 100.0,
       "risk_bucket": 2,
       "risk_buckets_total": 4,
@@ -111,7 +111,7 @@
       "symbol": "AEM",
       "name": "AGNICO EAGLE",
       "isin": "CA0084741085",
-      "score": 43.73,
+      "score": 43.77,
       "score_percentile": 99.28571428571429,
       "risk_bucket": 3,
       "risk_buckets_total": 4,
@@ -119,7 +119,7 @@
       "quality": {
         "trend_ok": true,
         "liq_ok": true,
-        "confidence": 86.7,
+        "confidence": 86.8,
         "status": "OK"
       },
       "headline": "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence).",
@@ -182,7 +182,7 @@
       "symbol": "FRES.L",
       "name": "FRESNILLO PLC",
       "isin": "GB00B2QPKJ12",
-      "score": 43.69,
+      "score": 43.68,
       "score_percentile": 98.57142857142858,
       "risk_bucket": 3,
       "risk_buckets_total": 4,
@@ -219,7 +219,7 @@
           "id": "anomaly_extreme_perf",
           "severity": "alert",
           "label": "Sehr auffaellige Perf %",
-          "value": "+386.95%",
+          "value": "+386.44%",
           "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
           "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
         }
@@ -270,8 +270,8 @@
       ]
     },
     "build_info": {
-      "git_sha": "4bb7d3b",
-      "ui_sha": "4bb7d3b",
+      "git_sha": "5470b94",
+      "ui_sha": "5470b94",
       "pipeline": "run_daily -> validate -> briefing -> ui"
     }
   }
