@@ -581,7 +581,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .marketHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .marketHead select { width: auto; min-width: 170px; padding: 8px 10px; border-radius: 10px; }
 .marketGrid { display:grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 980px) { .marketGrid { grid-template-columns: 1fr 1fr 1.2fr; align-items: stretch; } }
+@media (min-width: 980px) { .marketGrid { grid-template-columns: 1fr 1fr; align-items: stretch; } }
 
 .marketCard { border: 1px solid rgba(148,163,184,.15); background: rgba(15,23,42,.35); border-radius: 12px; padding: 10px; }
 .marketCardTitle { font-weight: 700; margin-bottom: 8px; }
@@ -596,14 +596,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .moversItem .val.neg { color: var(--bad); }
 .moversItem .val.flat { color: var(--muted); }
 
-.heatWrap { overflow:auto; }
-.heatTbl { width: 100%; border-collapse: collapse; font-size: 11px; }
-.heatTbl th, .heatTbl td { border: 1px solid rgba(36,50,68,.40); padding: 6px 6px; }
-.heatTbl th { background: rgba(15,23,42,.55); color: #cbd5e1; position: sticky; top: 0; z-index: 2; }
-.heatTbl th:first-child { left: 0; z-index: 3; }
-.heatTbl td:first-child { position: sticky; left: 0; background: rgba(11,15,20,.96); z-index: 1; white-space: nowrap; }
-.heatCell { text-align: center; font-family: var(--mono); }
-.heatCell.zero { color: rgba(148,163,184,.55); }
+.heatMatrixPanel { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.heatMatrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.heatMatrixHead select { width: auto; min-width: 170px; padding: 8px 10px; border-radius: 10px; }
+.heatMatrixGrid { display: grid; grid-template-columns: 84px repeat(5, 1fr); gap: 4px; }
+.heatCellGrid { background: rgba(148,163,184,.06); border: 1px solid rgba(148,163,184,.15); border-radius: 9px; min-height: 28px; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 11px; }
+.heatCellGrid.zero { opacity: .55; }
 
     /* KPI chips are clickable quick-filters */
     button.chip { appearance: none; -webkit-appearance: none; border: 1px solid rgba(148,163,184,.15); background: var(--chip); color: inherit; font: inherit; }
@@ -741,6 +739,20 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             </div>
             <div class="matrixGrid" id="matrix"></div>
             <div class="matrixNote" id="matrixNote">â€”</div>
+            <div class="heatMatrixPanel" id="heatMatrixPanel">
+              <div class="heatMatrixHead">
+                <div>
+                  <div class="matrixTitle" title="Verteilung der Werte nach Kategorie und Score-Buckets.">Heatmap</div>
+                  <div class="muted small">Direktvergleich je Score-Bucket im gleichen Matrix-Stil.</div>
+                </div>
+                <select id="heatMode" title="Heatmap-Modus">
+                  <option value="pillar">Heatmap: Saeulen</option>
+                  <option value="cluster">Heatmap: Cluster</option>
+                </select>
+              </div>
+              <div id="heatmap" class="heatMatrixGrid">-</div>
+              <div id="heatmapNote" class="matrixNote">-</div>
+            </div>
           </div>
 
           <div class="briefingBox" id="briefingBox" title="Kurz-Erklaerung zu den Top-Werten aus vorhandenen Feldern, ohne Einfluss auf das Scoring.">
@@ -762,10 +774,6 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
-      <select id="heatMode" title="Heatmap-Modus">
-        <option value="pillar">Heatmap: SÃ¤ulen</option>
-        <option value="cluster">Heatmap: Cluster</option>
-      </select>
       <button type="button" class="btn" id="marketToggle" title="Market Context ein-/ausblenden">Ausblenden</button>
     </div>
   </div>
@@ -788,10 +796,6 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div id="moversDown" class="moversList">â€”</div>
         </div>
       </div>
-    </div>
-    <div class="marketCard" id="heatCard">
-      <div class="marketCardTitle" title="Verteilung der Werte nach Cluster/Saeule und Score-Buckets.">Heatmap</div>
-      <div id="heatmap" class="heatWrap">â€”</div>
     </div>
   </div>
 </div>
@@ -916,6 +920,7 @@ const elQualityBox = document.getElementById('qualityBox');
 const elMoversUp = document.getElementById('moversUp');
 const elMoversDown = document.getElementById('moversDown');
 const elHeatmap = document.getElementById('heatmap');
+const elHeatmapNote = document.getElementById('heatmapNote');
 const elHeatMode = document.getElementById('heatMode');
 
 
@@ -1487,15 +1492,18 @@ function applyPillarFilter(rows) {
       const parts = [];
       if (p1d !== null && p1d !== undefined && Number.isFinite(p1d)) {
         const dir1 = (p1d > 0) ? 'pos' : (p1d < 0) ? 'neg' : 'flat';
-        const arrow1 = (p1d > 0) ? '+' : (p1d < 0) ? '-' : '=';
-        parts.push(`<div class="sub chg ${dir1}" title="Tagesbewegung (1D)">${arrow1} 1D ${p1d.toFixed(2)}%</div>`);
+        const s1 = (p1d >= 0 ? '+' : '') + p1d.toFixed(2) + '%';
+        parts.push(`<div class="sub chg ${dir1}" title="Tagesbewegung (1D)">1D: ${s1}</div>`);
+      } else {
+        parts.push(`<div class="sub muted" title="Tagesbewegung (1D)">1D: n/a</div>`);
       }
       if (p1y !== null && p1y !== undefined && Number.isFinite(p1y)) {
         const dir2 = (p1y > 0) ? 'pos' : (p1y < 0) ? 'neg' : 'flat';
-        const arrow2 = (p1y > 0) ? '+' : (p1y < 0) ? '-' : '=';
-        parts.push(`<div class="sub chg ${dir2}" title="Performance (1Y)">${arrow2} 1Y ${p1y.toFixed(2)}%</div>`);
+        const s2 = (p1y >= 0 ? '+' : '') + p1y.toFixed(2) + '%';
+        parts.push(`<div class="sub chg ${dir2}" title="Performance (1Y)">1Y: ${s2}</div>`);
+      } else {
+        parts.push(`<div class="sub muted" title="Performance (1Y)">1Y: n/a</div>`);
       }
-      if (!parts.length) return '<div class="sub muted">-</div>';
       return parts.join('');
     }
 
@@ -1946,7 +1954,7 @@ function parsePct(v) {
 
 function perf1dPct(r) {
   return parsePct(
-    r.perf_1d_pct ?? r['Perf 1D %'] ?? r.perf_1d ?? r.perf1d ?? r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct
+    r.perf_1d_pct ?? r['Perf 1D %'] ?? r.perf_1d ?? r.perf1d ?? r['Change %'] ?? r.change_pct ?? r.changePercent
   );
 }
 
@@ -2138,8 +2146,8 @@ function renderMovers(rows) {
 function renderHeatmap(rows) {
   if (!elHeatmap) return;
   const fn = (heatMode === 'cluster') ? clusterLabel : pillarLabel;
+  const kindLabel = (heatMode === 'cluster') ? 'Cluster' : 'Saeule';
 
-  // counts[cat][sb] -> number
   const m = new Map();
   for (const r of rows || []) {
     const cat = (fn(r) || '').toString().trim();
@@ -2148,12 +2156,13 @@ function renderHeatmap(rows) {
     if (!m.has(cat)) m.set(cat, [0,0,0,0,0]);
     m.get(cat)[sb] += 1;
   }
+
   if (!m.size) {
-    elHeatmap.innerHTML = `<div class="muted">Keine Daten fÃ¼r Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    elHeatmap.innerHTML = `<div class="muted">Keine Daten fuer Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    if (elHeatmapNote) elHeatmapNote.textContent = '-';
     return;
   }
 
-  // choose top categories
   const all = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
   all.sort((a,b) => b.tot - a.tot || a.k.localeCompare(b.k));
   const limit = (heatMode === 'cluster') ? 8 : 6;
@@ -2163,29 +2172,29 @@ function renderHeatmap(rows) {
   for (const x of top) for (const v of x.arr) vmax = Math.max(vmax, v);
 
   const hdr = Array.from({length:5}, (_,sb) => scoreBucketText(sb).range);
-  const th = hdr.map(h => `<th class="heatCell">${esc(h)}</th>`).join('');
+  const parts = [];
+  parts.push(`<div class="matrixAxis" title="Achsen: Kategorie (y) x Score (x)"><div class="lbl">${kindLabel} v</div><div class="hint">Score -></div></div>`);
+  for (let sb = 0; sb < 5; sb++) {
+    const s = scoreBucketText(sb);
+    parts.push(`<div class="matrixLabel" title="Score-Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
+  }
 
-  const rowsHtml = top.map(x => {
-    const tds = x.arr.map((v, sb) => {
-      const zero = v === 0 ? ' zero' : '';
+  for (const x of top) {
+    parts.push(`<div class="matrixLabel" title="${kindLabel}"><div class="lbl">${esc(x.k)}</div><div class="hint">N ${x.tot}</div></div>`);
+    for (let sb = 0; sb < 5; sb++) {
+      const v = x.arr[sb] || 0;
       const rel = vmax ? (v / vmax) : 0;
-      const alpha = 0.06 + rel * 0.28; // subtle
-      const hue = 205; // blue-ish
-      const bg = `background: hsla(${hue}, 70%, 50%, ${alpha});`;
-      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} Â· Score ${esc(hdr[sb])} = ${v}">${v ? v : 'Â·'}</td>`;
-    }).join('');
-    return `<tr><td class="mono">${esc(x.k)}</td>${tds}</tr>`;
-  }).join('');
+      const alpha = 0.08 + rel * 0.30;
+      const bg = `background: hsla(205, 72%, 50%, ${alpha});`;
+      const zero = v === 0 ? ' zero' : '';
+      parts.push(`<div class="heatCellGrid${zero}" style="${bg}" title="${esc(x.k)} | Score ${esc(hdr[sb])} = ${v}">${v ? v : '-'}</div>`);
+    }
+  }
 
-  elHeatmap.innerHTML = `
-    <div class="heatWrap">
-      <table class="heatTbl">
-        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'SÃ¤ule'}</th>${th}</tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Scoreâ€‘Bucket (Top ${limit} nach HÃ¤ufigkeit).</div>
-    </div>
-  `;
+  elHeatmap.innerHTML = parts.join('');
+  if (elHeatmapNote) {
+    elHeatmapNote.textContent = `Zahl = Anzahl Werte pro Score-Bucket (Top ${limit} nach Haeufigkeit).`;
+  }
 }
 
 function renderMarketContext(rows, presetRows) {
