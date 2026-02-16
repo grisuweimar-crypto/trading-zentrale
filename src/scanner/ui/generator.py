@@ -1194,10 +1194,21 @@ if (elHeatMode) {
 
         if(/^\\d+\\)\\s/.test(line)){
           out += '<h4 class="briefing-asset">' + briefingEscape(line) + '</h4>';
-        } else if(/^(Gr????nde|Risiken\\/Flags|N????chste Checks|Kontext-Hinweise)/.test(line)){
-          out += '<div class="briefing-label">' + briefingEscape(line).replace(/:$/, "") + '</div>';
         } else {
-          out += '<p>' + briefingEscape(line) + '</p>';
+          const marker = line
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\\u0300-\\u036f]/g, '');
+          if (
+            marker.startsWith('grunde') ||
+            marker.startsWith('risiken/flags') ||
+            marker.startsWith('nachste checks') ||
+            marker.startsWith('kontext-hinweise')
+          ) {
+            out += '<div class="briefing-label">' + briefingEscape(line).replace(/:$/, "") + '</div>';
+          } else {
+            out += '<p>' + briefingEscape(line) + '</p>';
+          }
         }
       }
       closeUl();
