@@ -170,6 +170,52 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
     return "".join(rows)
 
 
+_MOJIBAKE_MAP: dict[str, str] = {
+    "â€”": "—",
+    "â€“": "–",
+    "â€¦": "…",
+    "â€‘": "‑",
+    "â†’": "→",
+    "â†“": "↓",
+    "â†‘": "↑",
+    "Â·": "·",
+    "Ãœ": "Ü",
+    "Ã„": "Ä",
+    "Ã–": "Ö",
+    "ÃŸ": "ß",
+    "Ã¼": "ü",
+    "Ã¤": "ä",
+    "Ã¶": "ö",
+    "GewÃ¤hr": "Gewähr",
+    "SÃ¤ule": "Säule",
+    "SÃ¤ulen": "Säulen",
+    "zurÃ¼ck": "zurück",
+    "Ãœbersicht": "Übersicht",
+    "WÃ¤hrung": "Währung",
+    "SchlieÃŸen": "Schließen",
+    "lÃ¶schen": "löschen",
+    "ErklÃ¤rung": "Erklärung",
+    "zusÃ¤tzlich": "zusätzlich",
+    "fÃ¼r": "für",
+    "Ã¼ber": "über",
+    "hÃ¶her": "höher",
+    "LiquiditÃ¤t": "Liquidität",
+    "Ã–ffne": "Öffne",
+    "\u00c3\u2014": "×",
+    "\u00e2\u0153\u2022": "✕",
+    "\u00e2\u2013\u00b2": "▲",
+    "\u00e2\u2013\u00bc": "▼",
+    "\u00e2\u20ac\u00a2": "•",
+    "\u00c3\u02dc": "Ø",
+}
+
+
+def _demojibake(s: str) -> str:
+    for bad, good in _MOJIBAKE_MAP.items():
+        s = s.replace(bad, good)
+    return s
+
+
 def build_ui(
     *,
     csv_path: str | Path,
@@ -255,12 +301,12 @@ def build_ui(
     )
 
     out_html.parent.mkdir(parents=True, exist_ok=True)
-    out_html.write_text(html, encoding="utf-8")
+    out_html.write_text(_demojibake(html), encoding="utf-8")
 
     # Help / project description page (static)
     help_path = out_html.parent / "help.html"
     help_html = _render_help_html(version=__version__, build=__build__)
-    help_path.write_text(help_html, encoding="utf-8")
+    help_path.write_text(_demojibake(help_html), encoding="utf-8")
 
     return out_html
 
@@ -614,7 +660,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext â€” Research Dashboard</h1>
-        <div class="meta">version __VERSION__ ? build __BUILD__ ? sha __SHA____BRANCH_LABEL__ ? <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version __VERSION__ · build __BUILD__ · sha __SHA____BRANCH_LABEL__ · <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="build-sha" content="149413f"/>
-  <title>Scanner_vNext â€” Research Dashboard</title>
+  <meta name="build-sha" content="local"/>
+  <title>Scanner_vNext — Research Dashboard</title>
   <style>
     :root {
       --bg: #0b0f14;
@@ -64,7 +64,7 @@
     .briefing-asset { margin: 10px 0 6px; font-weight: 700; }
     .briefing-label { margin: 10px 0 6px; opacity: .9; font-weight: 700; }
 
-    /* Mobile: Panels/Drawer/Modals dÃ¼rfen nicht Ã¼ber den Viewport schieÃŸen */
+    /* Mobile: Panels/Drawer/Modals dürfen nicht über den Viewport schießen */
     * { box-sizing: border-box; }
     html, body { max-width: 100%; overflow-x: hidden; }
 
@@ -203,7 +203,7 @@
     .sig.grad.warn { background: linear-gradient(90deg, rgba(251,191,36,.20), rgba(251,191,36,.06)); }
     .sig.grad.bad  { background: linear-gradient(90deg, rgba(251,113,133,.18), rgba(251,113,133,.06)); }
 
-    /* Bucket matrix (Score Ã— Risk) */
+    /* Bucket matrix (Score × Risk) */
     .matrixPanel { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
     .matrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 12px; margin-bottom: 10px; }
     .matrixTitle { font-weight: 700; }
@@ -307,19 +307,19 @@
     }
   </style>
 </head>
-<body data-build-sha="149413f" data-build-branch="main">
+<body data-build-sha="local" data-build-branch="">
   <header>
     <div class="wrap">
       <div class="title">
-        <h1>Scanner_vNext â€” Research Dashboard</h1>
-        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha 149413f | branch main ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
+        <h1>Scanner_vNext — Research Dashboard</h1>
+        <div class="meta">version 0.0.1-v7 · build 2026-02-13 · sha local · <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
 
   <div class="wrap">
     <div class="disclaimer" id="disclaimer">
-      <div class="txt"><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine GewÃ¤hr. Nutzung auf eigene Verantwortung.</div>
+      <div class="txt"><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Gewähr. Nutzung auf eigene Verantwortung.</div>
       <button type="button" class="btn" id="discOk" title="Hinweis ausblenden">Verstanden</button>
     </div>
     <div id="jsErrorBanner" class="jsError"></div>
@@ -328,32 +328,32 @@
       <div class="controls">
         <div>
           <label for="preset">Preset</label>
-          <select id="preset"><option value="ALL">Alle Werte (ALL) â€” Alles sichtbar (inkl. Concept2/Playground)</option>
-<option value="CORE">Ãœbersicht (CORE) â€” Core-Übersicht (ohne Concept2/Playground)</option>
-<option value="AVOID">Vermeiden (AVOID) â€” Vermeiden (Score==0 / Crypto-Bear)</option>
-<option value="BROKEN">Fehler/NA (BROKEN) â€” Auffällige Zeilen (NA/ERROR)</option>
-<option value="SCORED">Bewertet (SCORED) â€” Nur bewertete Werte (Score &gt; 0)</option>
-<option value="TOP">Top (TOP) â€” Top-Auswahl (streng)</option>
-<option value="TOP_RELAXED">Top (entspannt) (TOP_RELAXED) â€” Top-Auswahl (entspannt)</option></select>
+          <select id="preset"><option value="ALL">Alle Werte (ALL) — Alles sichtbar (inkl. Concept2/Playground)</option>
+<option value="CORE">Übersicht (CORE) — Core-Übersicht (ohne Concept2/Playground)</option>
+<option value="AVOID">Vermeiden (AVOID) — Vermeiden (Score==0 / Crypto-Bear)</option>
+<option value="BROKEN">Fehler/NA (BROKEN) — Auffällige Zeilen (NA/ERROR)</option>
+<option value="SCORED">Bewertet (SCORED) — Nur bewertete Werte (Score &gt; 0)</option>
+<option value="TOP">Top (TOP) — Top-Auswahl (streng)</option>
+<option value="TOP_RELAXED">Top (entspannt) (TOP_RELAXED) — Top-Auswahl (entspannt)</option></select>
         </div>
         <div>
-          <label for="search">Suche (Symbol/Name/Kategorie/Landâ€¦)</label>
-          <input id="search" placeholder="z.B. NVDA, Gold, Deutschland, Kryptoâ€¦"/>
+          <label for="search">Suche (Symbol/Name/Kategorie/Land…)</label>
+          <input id="search" placeholder="z.B. NVDA, Gold, Deutschland, Krypto…"/>
         </div>
         <div>
           <label for="clusterSel">Cluster/Sektor</label>
           <select id="clusterSel"><option value="">Alle</option></select>
         </div>
         <div>
-          <label for="pillarSel">SÃ¤ule (5â€‘SÃ¤ulen/Playground)</label>
+          <label for="pillarSel">Säule (5‑Säulen/Playground)</label>
           <select id="pillarSel"><option value="">Alle</option></select>
         </div>
-        <div class="count" id="count">â€”</div>
+        <div class="count" id="count">—</div>
       </div>
 
-      <div class="kpis" id="kpis">â€”</div>
-      <div class="pillars" id="pillars">â€”</div>
-      <div class="clusters" id="clusters">â€”</div>
+      <div class="kpis" id="kpis">—</div>
+      <div class="pillars" id="pillars">—</div>
+      <div class="clusters" id="clusters">—</div>
 
       <div class="filters" id="filters">
         <button type="button" class="fbtn active" data-f="hideAvoid" title="AVOID-Zeilen ausblenden (score_status beginnt mit AVOID_)">AVOID ausblenden</button>
@@ -363,20 +363,20 @@
         <span class="fsep"></span>
         <button type="button" class="fbtn" data-f="onlyStock" title="Nur Aktien (is_crypto = false)">Aktien</button>
         <button type="button" class="fbtn" data-f="onlyCrypto" title="Nur Krypto (is_crypto = true)">Krypto</button>
-        <button type="button" class="fbtn" data-f="resetSort" title="Nur Sort-Override lÃ¶schen (Preset-Sort bleibt)">Sortierung zurÃ¼ck</button>
-        <button type="button" class="fbtn" data-f="reset" title="Alles zurÃ¼cksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
-        <button type="button" class="hintbtn" id="infoFlow" aria-haspopup="dialog" aria-expanded="false" title="ErklÃ¤rung anzeigen"><span class="i">i</span>Preset â†’ Quick-Filter</button>
+        <button type="button" class="fbtn" data-f="resetSort" title="Nur Sort-Override löschen (Preset-Sort bleibt)">Sortierung zurück</button>
+        <button type="button" class="fbtn" data-f="reset" title="Alles zurücksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
+        <button type="button" class="hintbtn" id="infoFlow" aria-haspopup="dialog" aria-expanded="false" title="Erklärung anzeigen"><span class="i">i</span>Preset → Quick-Filter</button>
       </div>
 
       <div class="popover" id="infoPopover" role="dialog" aria-modal="false" aria-hidden="true">
-        <button type="button" class="btn close" id="infoClose" title="SchlieÃŸen">âœ•</button>
+        <button type="button" class="btn close" id="infoClose" title="Schließen">✕</button>
         <div class="title">Wie wirken Preset, Suche und Quick-Filter?</div>
         <ul>
-          <li><b>Preset</b> filtert und sortiert zuerst (View-Layer, verÃ¤ndert kein Scoring).</li>
-          <li>Danach wirkt die <b>Suche</b> (Ticker/Name/Kategorie/Landâ€¦).</li>
+          <li><b>Preset</b> filtert und sortiert zuerst (View-Layer, verändert kein Scoring).</li>
+          <li>Danach wirkt die <b>Suche</b> (Ticker/Name/Kategorie/Land…).</li>
           <li>Zuletzt greifen die <b>Quick-Filter</b> (z.B. Trend OK, Liq OK, Nur OK).</li>
         </ul>
-        <div class="title" style="margin-top:10px;">Signalâ€‘Codes (privat)</div>
+        <div class="title" style="margin-top:10px;">Signal‑Codes (privat)</div>
         <ul>
           <li><b>R5</b> = <span class="sig good grad">Top Setup</span></li>
           <li><b>R4</b> = <span class="sig good grad">Good Setup</span></li>
@@ -392,15 +392,15 @@
           <div>
             <div class="matrixHead">
               <div>
-                <div class="matrixTitle">Bucketâ€‘Matrix (Score Ã— Risk)</div>
-                <div class="muted small">Klick auf ein Feld = Matrixâ€‘Filter (zusÃ¤tzlich zu Preset/Suche/Quickâ€‘Filter).</div>
+                <div class="matrixTitle">Bucket‑Matrix (Score × Risk)</div>
+                <div class="muted small">Klick auf ein Feld = Matrix‑Filter (zusätzlich zu Preset/Suche/Quick‑Filter).</div>
               </div>
               <div style="display:flex; gap:8px; align-items:center;">
-                <button type="button" class="btn" id="matrixClear" title="Matrixâ€‘Filter zurÃ¼cksetzen">Matrix zurÃ¼ck</button>
+                <button type="button" class="btn" id="matrixClear" title="Matrix‑Filter zurücksetzen">Matrix zurück</button>
               </div>
             </div>
             <div class="matrixGrid" id="matrix"></div>
-            <div class="matrixNote" id="matrixNote">â€”</div>
+            <div class="matrixNote" id="matrixNote">—</div>
           </div>
 
           <div class="briefingBox" id="briefingBox">
@@ -408,8 +408,8 @@
               <div class="matrixTitle">Briefing</div>
               <button type="button" class="btn" id="briefingToggle" title="Briefing ein-/ausblenden">Ausblenden</button>
             </div>
-            <div class="muted small">Privat/experimentell Â· keine Anlageberatung Â· ohne Einfluss aufs Scoring.</div>
-            <div id="briefingText" class="briefingText">â€”</div>
+            <div class="muted small">Privat/experimentell · keine Anlageberatung · ohne Einfluss aufs Scoring.</div>
+            <div id="briefingText" class="briefingText">—</div>
           </div>
         </div>
       </div>
@@ -419,11 +419,11 @@
   <div class="marketHead">
     <div>
       <div class="matrixTitle">Market Context</div>
-      <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
+      <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) · Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/Säule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
       <select id="heatMode" title="Heatmap-Modus">
-        <option value="pillar">Heatmap: SÃ¤ulen</option>
+        <option value="pillar">Heatmap: Säulen</option>
         <option value="cluster">Heatmap: Cluster</option>
       </select>
       <button type="button" class="btn" id="marketToggle" title="Market Context ein-/ausblenden">Ausblenden</button>
@@ -432,26 +432,26 @@
   <div id="marketBody" class="marketGrid">
     <div class="marketCard" id="breadthCard">
       <div class="marketCardTitle">Breadth</div>
-      <div id="breadthBox">â€”</div>
-      <div id="diversBox" class="muted small" style="margin-top:8px;">â€”</div>
-      <div id="qualityBox" class="muted small" style="margin-top:8px;">â€”</div>
+      <div id="breadthBox">—</div>
+      <div id="diversBox" class="muted small" style="margin-top:8px;">—</div>
+      <div id="qualityBox" class="muted small" style="margin-top:8px;">—</div>
     </div>
     <div class="marketCard" id="moversCard">
       <div class="marketCardTitle">Movers</div>
       <div class="moversGrid">
         <div>
-          <div class="muted small">Top â†‘</div>
-          <div id="moversUp" class="moversList">â€”</div>
+          <div class="muted small">Top ↑</div>
+          <div id="moversUp" class="moversList">—</div>
         </div>
         <div>
-          <div class="muted small">Weak â†“</div>
-          <div id="moversDown" class="moversList">â€”</div>
+          <div class="muted small">Weak ↓</div>
+          <div id="moversDown" class="moversList">—</div>
         </div>
       </div>
     </div>
     <div class="marketCard" id="heatCard">
       <div class="marketCardTitle">Heatmap</div>
-      <div id="heatmap" class="heatWrap">â€”</div>
+      <div id="heatmap" class="heatWrap">—</div>
     </div>
   </div>
 </div>
@@ -472,14 +472,14 @@
           </colgroup>
           <thead>
             <tr>
-              <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
-              <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
-              <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
-              <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
+              <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-Währung">Symbol/ISIN</th>
+              <th data-k="name" title="Name + Kategorie/Land/Währung">Name</th>
+              <th data-k="price" class="right" title="Aktueller Kurs (Originalwährung) + Tagesänderung (Perf %)">Kurs</th>
+              <th data-k="score" class="right" title="Gesamtscore (höher = besser)">Score</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
-              <th data-k="liquidity_ok" title="LiquiditÃ¤ts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
+              <th data-k="liquidity_ok" title="Liquiditäts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
               <th data-k="score_status" title="OK / AVOID / AVOID_CRYPTO_BEAR / NA / ERROR">Status</th>
               <th data-k="is_crypto" class="hide-sm" title="Assetklasse">Art</th>
             </tr>
@@ -489,8 +489,8 @@
       </div>
 
       <div class="footer">
-        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung Â· <span class="kbd">Esc</span> = Suche leeren</div>
-        <div class="mono" id="sortHint">â€”</div>
+        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung · <span class="kbd">Esc</span> = Suche leeren</div>
+        <div class="mono" id="sortHint">—</div>
       </div>
     </div>
   </div>
@@ -499,12 +499,12 @@
     <div class="drawer panel" role="dialog" aria-modal="true" aria-label="Why Score">
       <div class="drawer-head">
         <div>
-          <div id="drawerTitle" style="font-weight:700;">â€”</div>
-          <div id="drawerSub" class="muted small">â€”</div>
+          <div id="drawerTitle" style="font-weight:700;">—</div>
+          <div id="drawerSub" class="muted small">—</div>
         </div>
         <div class="drawer-actions">
           <div id="drawerActions"></div>
-          <button class="btn" id="drawerClose">SchlieÃŸen</button>
+          <button class="btn" id="drawerClose">Schließen</button>
         </div>
       </div>
       <div class="drawer-body" id="drawerBody"></div>
@@ -528,17 +528,17 @@
     window.__showJsError = show;
     window.addEventListener('error', (ev) => {
       const m = (ev && (ev.message || (ev.error && ev.error.message))) ? (ev.message || ev.error.message) : 'Unbekannter Fehler';
-      show('UIâ€‘Fehler (JS): ' + m);
+      show('UI‑Fehler (JS): ' + m);
     });
     window.addEventListener('unhandledrejection', (ev) => {
       const r = ev && ev.reason;
       const m = (r && r.message) ? r.message : String(r);
-      show('UIâ€‘Fehler (Promise): ' + m);
+      show('UI‑Fehler (Promise): ' + m);
     });
     // If the main UI never sets jsok, show a helpful message (covers parse errors)
     setTimeout(() => {
       const ok = document.documentElement && document.documentElement.dataset && document.documentElement.dataset.jsok;
-      if (!ok) show('UI konnte nicht initialisiert werden (JS lÃ¤dt nicht). Ã–ffne die Konsole (F12) fÃ¼r Details.');
+      if (!ok) show('UI konnte nicht initialisiert werden (JS lädt nicht). Öffne die Konsole (F12) für Details.');
     }, 700);
   })();
   </script>
@@ -588,7 +588,7 @@ const elHeatMode = document.getElementById('heatMode');
     const drawerBody = document.getElementById('drawerBody');
     const drawerActions = document.getElementById('drawerActions');
 
-    // Flow info popover (Preset â†’ Quick-Filter)
+    // Flow info popover (Preset → Quick-Filter)
     const infoFlow = document.getElementById('infoFlow');
     const infoPopover = document.getElementById('infoPopover');
     const infoClose = document.getElementById('infoClose');
@@ -615,7 +615,7 @@ const elHeatMode = document.getElementById('heatMode');
     let activePreset = 'ALL';
     let userSort = null; // {k, dir} dir: 'asc'|'desc'
     let clusterPick = ''; // Cluster/Sektor filter (string)
-    let pillarPick = '';  // SÃ¤ulen-Filter (string; private metadata)
+    let pillarPick = '';  // Säulen-Filter (string; private metadata)
 
 // Market Context UI state (passive)
 let marketVisible = true;
@@ -638,7 +638,7 @@ let heatMode = 'pillar'; // 'pillar' | 'cluster'
       onlyCrypto: false,
     };
 
-    // Bucket-matrix filter (Score Ã— Risk)
+    // Bucket-matrix filter (Score × Risk)
     let matrix = { sb: null, rb: null };
     const DEFAULT_MATRIX = { sb: null, rb: null };
 
@@ -740,7 +740,7 @@ function resetAll() {
       refresh();
     }
 
-    // ---- info popover (Preset â†’ Quick-Filter) ----
+    // ---- info popover (Preset → Quick-Filter) ----
     function closeInfoPopover() {
       if (!infoPopover) return;
       infoPopover.classList.remove('show');
@@ -866,7 +866,7 @@ if (elHeatMode) {
       return (v ?? '').toString().trim();
     }
 
-    // HTML-Listen-Konvertierung fÃ¼r Briefing (bessere Mobile Darstellung)
+    // HTML-Listen-Konvertierung für Briefing (bessere Mobile Darstellung)
     function briefingEscape(v){
       return String(v)
         .replace(/&/g, "&amp;")
@@ -979,14 +979,14 @@ function renderClusterChips(counts) {
   const active = clusterPick || '';
   let html = '<span class="label">Cluster:</span>';
   if (active) {
-    html += `<button type="button" class="chip kpi warn active" data-clr="1" title="Cluster-Filter lÃ¶schen">âœ• ${esc(active)}</button>`;
+    html += `<button type="button" class="chip kpi warn active" data-clr="1" title="Cluster-Filter löschen">✕ ${esc(active)}</button>`;
   }
   for (const x of top) {
     const isOn = active && x.k === active;
     const kind = isOn ? 'warn active' : 'blue';
     html += `<button type="button" class="chip kpi ${kind}" data-cl="${esc(x.k)}" title="Filter: nur Cluster ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
-  if (!top.length) html += '<span class="muted">â€”</span>';
+  if (!top.length) html += '<span class="muted">—</span>';
   elClusters.innerHTML = html;
 }
 
@@ -996,7 +996,7 @@ function applyClusterFilter(rows) {
   return (rows || []).filter(r => clusterLabel(r) === sel);
 }
 
-// ---- 5â€‘SÃ¤ulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
+// ---- 5‑Säulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
 const PILLAR_ORDER = ['Gehirn','Hardware','Energie','Fundament','Recycling','Playground'];
 
 function _derivePillarFromLegacy(catRaw) {
@@ -1011,9 +1011,9 @@ function _derivePillarFromLegacy(catRaw) {
   if (s.includes('energie') || s.includes('uran')) return 'Energie';
   if (s.includes('fundament')) return 'Fundament';
   if (s.includes('recycling') || s.includes('urban mining') || s.includes('urban-mining')) return 'Recycling';
-  // legacy mining buckets â†’ Fundament
+  // legacy mining buckets → Fundament
   if (s.includes('mining') || s.includes('mine') || s.includes('edelmetall') || s.includes('metall') || s.includes('rohstoff')) return 'Fundament';
-  // ambiguous tech buckets â†’ Gehirn (default), hardware-specific keywords â†’ Hardware
+  // ambiguous tech buckets → Gehirn (default), hardware-specific keywords → Hardware
   if (s.includes('robot') || s.includes('automation') || s.includes('sensor') || s.includes('vision') || s.includes('machine')) return 'Hardware';
   if (s.includes('software') || s.includes('internet') || s.includes('ki') || s.includes('ai') || s.includes('data') || s.includes('cloud') || s.includes('chip') || s.includes('semiconductor')) return 'Gehirn';
   return '';
@@ -1062,15 +1062,15 @@ function renderPillarOptions(counts) {
 function renderPillarChips(counts) {
   if (!elPillars) return;
   const active = pillarPick || '';
-  let html = '<span class="label">SÃ¤ulen:</span>';
+  let html = '<span class="label">Säulen:</span>';
   if (active) {
-    html += `<button type="button" class="chip kpi warn active" data-pr="1" title="SÃ¤ulen-Filter lÃ¶schen">âœ• ${esc(active)}</button>`;
+    html += `<button type="button" class="chip kpi warn active" data-pr="1" title="Säulen-Filter löschen">✕ ${esc(active)}</button>`;
   }
   for (const x of (counts || [])) {
     const isOn = active && x.k === active;
     const kind = isOn ? 'warn active' : 'blue';
     const dis = (x.v || 0) <= 0 ? 'disabled aria-disabled="true"' : '';
-    html += `<button type="button" class="chip kpi ${kind}" data-p="${esc(x.k)}" ${dis} title="Filter: nur SÃ¤ule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
+    html += `<button type="button" class="chip kpi ${kind}" data-p="${esc(x.k)}" ${dis} title="Filter: nur Säule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
   elPillars.innerHTML = html;
 }
@@ -1129,7 +1129,7 @@ function applyPillarFilter(rows) {
     function bucketRange(i) {
       const a = i * 20;
       const b = (i === 4) ? 100 : (i + 1) * 20;
-      return `${a}â€“${b}`;
+      return `${a}–${b}`;
     }
     function scoreBucketText(i) {
       return { range: bucketRange(i), hint: 'Score' };
@@ -1141,7 +1141,7 @@ function applyPillarFilter(rows) {
 
 
     function fmtPrice(n) {
-      if (n === null || n === undefined) return 'â€”';
+      if (n === null || n === undefined) return '—';
       const ax = Math.abs(n);
       let maxFrac = 2;
       if (ax < 1) maxFrac = 4;
@@ -1154,9 +1154,9 @@ function applyPillarFilter(rows) {
     }
 
     function perfLine(p) {
-      if (p === null || p === undefined) return '<div class="sub muted">â€”</div>';
+      if (p === null || p === undefined) return '<div class="sub muted">—</div>';
       const dir = (p > 0) ? 'pos' : (p < 0) ? 'neg' : 'flat';
-      const arrow = (p > 0) ? 'â–²' : (p < 0) ? 'â–¼' : 'â€¢';
+      const arrow = (p > 0) ? '▲' : (p < 0) ? '▼' : '•';
       return `<div class="sub chg ${dir}">${arrow} ${p.toFixed(2)}%</div>`;
     }
 
@@ -1217,7 +1217,7 @@ function applyPillarFilter(rows) {
         if (pair && pair.includes('-')) return pair.split('-')[0];
         const s = normStr(r.symbol) || normStr(r.Symbol);
         if (s && !looksLikeISIN(s)) return s;
-        return pair || pickDisplayTicker(r) || 'â€”';
+        return pair || pickDisplayTicker(r) || '—';
       }
       const s = normStr(r.symbol) || normStr(r.Symbol);
       if (s && !looksLikeISIN(s)) return s;
@@ -1227,7 +1227,7 @@ function applyPillarFilter(rows) {
       if (yh && !looksLikeISIN(yh)) return yh;
       const t = normStr(r.ticker);
       if (t && !looksLikeISIN(t)) return t;
-      return 'â€”';
+      return '—';
     }
 
 
@@ -1278,7 +1278,7 @@ function applyPillarFilter(rows) {
     function scoreCell(r) {
       const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
-      const sig = rec ? `<span class="sig ${rec.cls}" title="Signalâ€‘Code">${esc(rec.code)}</span>` : '';
+      const sig = rec ? `<span class="sig ${rec.cls}" title="Signal‑Code">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
     }
 
@@ -1391,7 +1391,7 @@ function applyPillarFilter(rows) {
       if (!q) return rows;
       const tokens = q.split(/\s+/).filter(Boolean);
       return rows.filter(r => {
-        const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["WÃ¤hrung"], r.quote_currency, r.score_status]
+        const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["Währung"], r.quote_currency, r.score_status]
           .map(normStr).join(' ').toLowerCase();
         return tokens.every(t => hay.includes(t));
       });
@@ -1429,7 +1429,7 @@ function applyPillarFilter(rows) {
       // KPI chips double as quick filters (intuitive). Preset applies first, then search, then quick filters.
       elKpis.innerHTML =
         `<span class="label">KPI</span>`
-        + kpiChip(`Sichtbar ${v.total}/${a.total}`, 'blue', 'Sichtbar nach Preset â†’ Suche â†’ Quick-Filter / Gesamt', '', false)
+        + kpiChip(`Sichtbar ${v.total}/${a.total}`, 'blue', 'Sichtbar nach Preset → Suche → Quick-Filter / Gesamt', '', false)
         + kpiChip(`OK ${v.ok}`, 'good', 'Filter: nur score_status == OK', 'ok', !!quick.onlyOK)
         + kpiChip(`AVOID ${v.avoid}`, 'warn', 'Filter: nur score_status beginnt mit AVOID_', 'avoid', !!quick.onlyAvoid)
         + kpiChip(`NA ${v.na}`, 'bad', 'Filter: nur score_status == NA', 'na', !!quick.onlyNA)
@@ -1539,15 +1539,15 @@ function applyQuickFilters(rows) {
 
       const parts = [];
       // header row: Score buckets (x). Corner shows axis directions.
-      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y) Ã— Score (x)"><div class="lbl">Risk â†“</div><div class="hint">Score â†’</div></div>`);
+      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y) × Score (x)"><div class="lbl">Risk ↓</div><div class="hint">Score →</div></div>`);
       for (let sb = 0; sb < 5; sb++) {
         const s = scoreBucketText(sb);
-        parts.push(`<div class="matrixLabel" title="Scoreâ€‘Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="Score‑Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
       }
 
       for (let rb = 0; rb < 5; rb++) {
         const rtxt = riskBucketText(rb);
-        parts.push(`<div class="matrixLabel" title="Riskâ€‘Bucket (Perzentil; hÃ¶her = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="Risk‑Bucket (Perzentil; höher = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
         for (let sb = 0; sb < 5; sb++) {
           const c = counts[rb][sb] || 0;
           const active = (matrix && matrix.sb === sb && matrix.rb === rb) ? 'active' : '';
@@ -1563,13 +1563,13 @@ function applyQuickFilters(rows) {
           const s = scoreBucketText(sb);
           const rr = riskBucketText(rb);
 
-          parts.push(`<div class="cell ${active} ${zero}" ${st} data-sb="${sb}" data-rb="${rb}" title="Score ${esc(s.range)} Â· Risk ${esc(rr.hint)}">${c ? `<span class="cnt">${c}</span>` : `<span class="cnt">Â·</span>`}</div>`);
+          parts.push(`<div class="cell ${active} ${zero}" ${st} data-sb="${sb}" data-rb="${rb}" title="Score ${esc(s.range)} · Risk ${esc(rr.hint)}">${c ? `<span class="cnt">${c}</span>` : `<span class="cnt">·</span>`}</div>`);
         }
       }
 
       elMatrix.innerHTML = parts.join('');
 
-      // Click â†’ toggle matrix filter
+      // Click → toggle matrix filter
       elMatrix.querySelectorAll('.cell').forEach(cell => {
         cell.addEventListener('click', () => {
           if (cell.classList.contains('zero')) return;
@@ -1588,8 +1588,8 @@ function applyQuickFilters(rows) {
       const sb = (matrix && matrix.sb !== undefined) ? matrix.sb : null;
       const rb = (matrix && matrix.rb !== undefined) ? matrix.rb : null;
       if (elMatrixNote) {
-        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Riskâ€‘Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Riskâ€‘Proxy fehlt (keine Riskâ€‘Spalten im CSV)';
-        const sel = (sb !== null && rb !== null) ? ` Â· aktiv: Score ${bucketRange(sb)} Ã— ${riskBucketText(rb).hint}` : '';
+        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Risk‑Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Risk‑Proxy fehlt (keine Risk‑Spalten im CSV)';
+        const sel = (sb !== null && rb !== null) ? ` · aktiv: Score ${bucketRange(sb)} × ${riskBucketText(rb).hint}` : '';
         elMatrixNote.textContent = metric + sel;
       }
     }
@@ -1613,12 +1613,12 @@ function perfPct(r) {
 
 function fmtRatioPct(v) {
   const n = asNum(v);
-  if (n === null) return 'â€”';
+  if (n === null) return '—';
   return `${(n * 100).toFixed(2)}%`;
 }
 
 function fmtPct(v) {
-  if (v === null || v === undefined || !Number.isFinite(v)) return 'â€”';
+  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
   const s = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
   return s;
 }
@@ -1647,7 +1647,7 @@ function renderBreadth(rows) {
   }
   const tot = adv + dec + flat;
   if (!tot) {
-    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare TagesÃ¤nderung (Perf %) im aktuellen Universe.</div>`;
+    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare Tagesänderung (Perf %) im aktuellen Universe.</div>`;
     return;
   }
   const pct = (x) => (tot ? Math.round((x / tot) * 100) : 0);
@@ -1687,12 +1687,12 @@ function renderDiversification(rows) {
   }
   const topSec = Object.entries(sectorCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
   const secInfo = topSec.length
-    ? `Top Crowding: ${topSec.map(([k, v]) => `${esc(k)} (${v})`).join(' Â· ')}`
-    : 'Top Crowding: â€”';
+    ? `Top Crowding: ${topSec.map(([k, v]) => `${esc(k)} (${v})`).join(' · ')}`
+    : 'Top Crowding: —';
 
   elDiversBox.innerHTML = `
     <div class="breadthRow">
-      ${chip(`Div Ã˜ ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
+      ${chip(`Div Ø ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
       ${chip(`Median ${med.toFixed(2)}`, med >= 4 ? 'warn' : 'blue')}
       ${chip(`High ${hi}`, hi ? 'bad' : 'blue')}
       ${chip(`Low ${lo}`, lo ? 'good' : 'blue')}
@@ -1705,7 +1705,7 @@ function renderQualityPanel(rows) {
   if (!elQualityBox) return;
   const n = Array.isArray(rows) ? rows.length : 0;
   if (!n) {
-    elQualityBox.innerHTML = `<div class="muted">Preset-QualitÃ¤t: keine Daten.</div>`;
+    elQualityBox.innerHTML = `<div class="muted">Preset-Qualität: keine Daten.</div>`;
     return;
   }
 
@@ -1743,10 +1743,10 @@ function renderQualityPanel(rows) {
   elQualityBox.innerHTML = `
     <div class="marketCardTitle" style="margin-top:2px;">Preset Quality</div>
     <div class="breadthRow">
-      ${chip(`Score Med ${scoreMed === null ? 'â€”' : scoreMed.toFixed(1)}`, (scoreMed !== null && scoreMed >= 34) ? 'good' : 'blue')}
-      ${chip(`Score IQR ${scoreIqr === null ? 'â€”' : scoreIqr.toFixed(1)}`, (scoreIqr !== null && scoreIqr >= 10) ? 'good' : 'warn')}
-      ${chip(`Conf Med ${confMed === null ? 'â€”' : confMed.toFixed(1)}`, (confMed !== null && confMed >= 60) ? 'good' : 'warn')}
-      ${chip(`Conf IQR ${confIqr === null ? 'â€”' : confIqr.toFixed(1)}`, (confIqr !== null && confIqr >= 12) ? 'blue' : 'warn')}
+      ${chip(`Score Med ${scoreMed === null ? '—' : scoreMed.toFixed(1)}`, (scoreMed !== null && scoreMed >= 34) ? 'good' : 'blue')}
+      ${chip(`Score IQR ${scoreIqr === null ? '—' : scoreIqr.toFixed(1)}`, (scoreIqr !== null && scoreIqr >= 10) ? 'good' : 'warn')}
+      ${chip(`Conf Med ${confMed === null ? '—' : confMed.toFixed(1)}`, (confMed !== null && confMed >= 60) ? 'good' : 'warn')}
+      ${chip(`Conf IQR ${confIqr === null ? '—' : confIqr.toFixed(1)}`, (confIqr !== null && confIqr >= 12) ? 'blue' : 'warn')}
     </div>
     <div class="breadthRow">
       ${chip(`Trend OK ${fmtRatioPct(trendShare)}`, trendShare >= 0.7 ? 'good' : (trendShare >= 0.45 ? 'blue' : 'warn'))}
@@ -1768,8 +1768,8 @@ function renderMovers(rows) {
     arr.push({r, p});
   }
   if (!arr.length) {
-    elMoversUp.innerHTML = `<span class="muted">â€”</span>`;
-    elMoversDown.innerHTML = `<span class="muted">â€”</span>`;
+    elMoversUp.innerHTML = `<span class="muted">—</span>`;
+    elMoversDown.innerHTML = `<span class="muted">—</span>`;
     return;
   }
 
@@ -1786,8 +1786,8 @@ function renderMovers(rows) {
     return `<div class="moversItem"><span class="sym">${s}</span><span class="val ${cls}">${esc(fmtPct(x.p))}</span></div>`;
   }
 
-  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
-  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
+  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">—</span>`;
+  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">—</span>`;
 }
 
 function renderHeatmap(rows) {
@@ -1804,7 +1804,7 @@ function renderHeatmap(rows) {
     m.get(cat)[sb] += 1;
   }
   if (!m.size) {
-    elHeatmap.innerHTML = `<div class="muted">Keine Daten fÃ¼r Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    elHeatmap.innerHTML = `<div class="muted">Keine Daten für Heatmap (keine Kategorie im aktuellen Universe).</div>`;
     return;
   }
 
@@ -1827,7 +1827,7 @@ function renderHeatmap(rows) {
       const alpha = 0.06 + rel * 0.28; // subtle
       const hue = 205; // blue-ish
       const bg = `background: hsla(${hue}, 70%, 50%, ${alpha});`;
-      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} Â· Score ${esc(hdr[sb])} = ${v}">${v ? v : 'Â·'}</td>`;
+      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} · Score ${esc(hdr[sb])} = ${v}">${v ? v : '·'}</td>`;
     }).join('');
     return `<tr><td class="mono">${esc(x.k)}</td>${tds}</tr>`;
   }).join('');
@@ -1835,10 +1835,10 @@ function renderHeatmap(rows) {
   elHeatmap.innerHTML = `
     <div class="heatWrap">
       <table class="heatTbl">
-        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'SÃ¤ule'}</th>${th}</tr></thead>
+        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'Säule'}</th>${th}</tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Scoreâ€‘Bucket (Top ${limit} nach HÃ¤ufigkeit).</div>
+      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Score‑Bucket (Top ${limit} nach Häufigkeit).</div>
     </div>
   `;
 }
@@ -1870,13 +1870,13 @@ function renderMarketContext(rows, presetRows) {
         const isinRaw = normStr(r.isin);
         const isin = (!isC) ? (isinRaw || (looksLikeISIN(tRaw) ? tRaw : '')) : '';
 
-        const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["WÃ¤hrung"]);
-        const currChip = curr ? `<span class="tinychip" title="WÃ¤hrung">${esc(curr)}</span>` : '';
+        const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["Währung"]);
+        const currChip = curr ? `<span class="tinychip" title="Währung">${esc(curr)}</span>` : '';
 
         const main = href ? `<a class="yf" href="${href}" target="_blank" rel="noopener">${esc(disp)}</a>` : esc(disp);
         // subline for the left "Symbol/ISIN" cell: for crypto show the Yahoo pair (e.g. BTC-USD),
         // for stocks show ISIN. Use a distinct variable name so we don't collide with other "sub" vars.
-        const subTicker = isC ? (yh || 'â€”') : (isin || 'â€”');
+        const subTicker = isC ? (yh || '—') : (isin || '—');
         const subLabel = isC ? 'YahooSymbol' : 'ISIN';
         const subLine = `<div class="sub mono" title="${subLabel}">${esc(subTicker)}</div>`;
         const tCell = `<div class="tickerCell"><div class="tickerMain">${main}${currChip}</div>${subLine}</div>`;
@@ -1887,7 +1887,7 @@ function renderMarketContext(rows, presetRows) {
         const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
         const industryOfficial = normStr(r.industry) || normStr(r.Industry) || normStr(r.cluster_official);
 
-        // Private pillars (5-sÃ¤ulen + playground) are metadata only (never affect scoring)
+        // Private pillars (5-säulen + playground) are metadata only (never affect scoring)
         // Use UI fallback derivation so older universes still show the concept.
         const pillar = pillarLabel(r);
         const bucketType = normStr(r.bucket_type);
@@ -1908,14 +1908,14 @@ function renderMarketContext(rows, presetRows) {
         const ctry = normStr(r.country);
         const subParts = [];
         if (taxLabel) subParts.push(`<span title="${esc(taxTitle)}">${esc(taxLabel)}</span>`);
-        if (pillar) subParts.push(`<span class="muted" title="SÃ¤ule (privat, Metadaten)">SÃ¤ule: ${esc(pillar)}</span>`);
+        if (pillar) subParts.push(`<span class="muted" title="Säule (privat, Metadaten)">Säule: ${esc(pillar)}</span>`);
         if (bucketType && bucketType !== 'pillar' && bucketType !== 'none') subParts.push(`<span class="muted" title="Bucket-Type (privat)">(${esc(bucketType)})</span>`);
         if (ctry) subParts.push(esc(ctry));
-        const subName = subParts.join(' Â· ');
+        const subName = subParts.join(' · ');
 
         const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
         const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
-        const priceMain = (price === null) ? 'â€”' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
+        const priceMain = (price === null) ? '—' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
         const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
 
         const trend = asBool(r.trend_ok) ? chip('OK', 'good') : chip('NO', 'bad');
@@ -1943,7 +1943,7 @@ function renderMarketContext(rows, presetRows) {
           <td class="hide-sm right mono">${(asNum(r.cycle) ?? 0).toFixed(0)}%</td>
           <td>${trend}</td>
           <td>${liq}</td>
-          <td>${chip(status || 'â€”', statusKind)}</td>
+          <td>${chip(status || '—', statusKind)}</td>
           <td class="hide-sm">${cls}</td>
         `;
 
@@ -1970,26 +1970,26 @@ function renderMarketContext(rows, presetRows) {
     function openDrawer(r) {
       const t = pickDisplayTicker(r) || normStr(r.ticker);
       const n = normStr(r.name);
-      drawerTitle.textContent = `${t} â€” ${n}`.trim();
+      drawerTitle.textContent = `${t} — ${n}`.trim();
       const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
       const categoryManual = normStr(r.category) || normStr(r.Sektor) || normStr(r.Kategorie);
       const cat = asBool(r.is_crypto) ? 'Krypto' : (categoryManual ? `Cluster: ${categoryManual}` : (sectorOfficial || ''));
-      const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["WÃ¤hrung"]);
-      const sub = [cat, normStr(r.country), curr, normStr(r.isin)].filter(Boolean).join(' Â· ');
+      const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["Währung"]);
+      const sub = [cat, normStr(r.country), curr, normStr(r.isin)].filter(Boolean).join(' · ');
       drawerSub.textContent = sub || '';
 
       // Quick action: open on Yahoo Finance if we can determine a valid symbol
       if (drawerActions) {
         const sym = pickYahooSymbol(r);
         const href = yahooHref(sym);
-        drawerActions.innerHTML = href ? `<a class="btn" href="${href}" target="_blank" rel="noopener" title="Auf Yahoo Finance Ã¶ffnen">Yahoo</a>` : '';
+        drawerActions.innerHTML = href ? `<a class="btn" href="${href}" target="_blank" rel="noopener" title="Auf Yahoo Finance öffnen">Yahoo</a>` : '';
       }
 
       const items = [
         ['Score', (asNum(r.score) ?? 0).toFixed(2)],
         ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
         ['Cycle', `${(asNum(r.cycle) ?? 0).toFixed(0)}%`],
-        ['ScoreStatus', normStr(r.score_status) || 'â€”'],
+        ['ScoreStatus', normStr(r.score_status) || '—'],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
         ['AssetClass', asBool(r.is_crypto) ? 'Krypto' : 'Aktie'],
@@ -2020,9 +2020,9 @@ function renderMarketContext(rows, presetRows) {
       const status = normStr(r.score_status);
       const why = [];
       if (status === 'OK') why.push('Score>0 & keine harten Filter verletzt.');
-      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend â†’ Score=0 (bewusstes Avoid).');
-      if (status === 'AVOID') why.push('Score==0 â†’ Avoid (non-crypto).');
-      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten â†’ NA.');
+      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend → Score=0 (bewusstes Avoid).');
+      if (status === 'AVOID') why.push('Score==0 → Avoid (non-crypto).');
+      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten → NA.');
       if (status === 'ERROR') why.push('Scoring hat einen Fehler gemeldet (ScoreError).');
       if (asBool(r.trend_ok) === false) why.push('Trend-Filter: trend_ok=false.');
       if (asBool(r.liquidity_ok) === false) why.push('Liquidity-Filter: liquidity_ok=false.');
@@ -2060,7 +2060,7 @@ function renderMarketContext(rows, presetRows) {
       renderClusterOptions(cc);
       renderClusterChips(cc);
 
-      // pillar counts (5-sÃ¤ulen + playground) reflect the same universe
+      // pillar counts (5-säulen + playground) reflect the same universe
       const pc = computePillarCounts(rowsSQ);
       renderPillarOptions(pc);
       renderPillarChips(pc);
@@ -2095,7 +2095,7 @@ function renderMarketContext(rows, presetRows) {
       if (pillarPick) f.push(`pillar:${pillarPick}`);
       if (pillarPick) f.push(`pillar:${pillarPick}`);
 
-      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  Â·  filters: ${f.join(',')}` : '');
+      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  ·  filters: ${f.join(',')}` : '');
       if (btnMatrixClear) btnMatrixClear.disabled = !(matrix && matrix.sb !== null && matrix.rb !== null);
 
       const override = userSort ? ` | override: ${userSort.k}:${userSort.dir}` : '';
@@ -2104,7 +2104,7 @@ function renderMarketContext(rows, presetRows) {
 
     // ---- init ----
     const PRESET_LABELS = {
-      CORE: 'Ãœbersicht',
+      CORE: 'Übersicht',
       SCORED: 'Bewertet',
       TOP: 'Top',
       TOP_RELAXED: 'Top (entspannt)',
@@ -2126,7 +2126,7 @@ function renderMarketContext(rows, presetRows) {
         const opt = document.createElement('option');
         opt.value = n;
         const desc = (PRESETS[n].description || '').toString();
-        opt.textContent = `${presetLabel(n)} (${n})` + (desc ? ` â€” ${desc}` : '');
+        opt.textContent = `${presetLabel(n)} (${n})` + (desc ? ` — ${desc}` : '');
         elPreset.appendChild(opt);
       }
       elPreset.value = activePreset;
@@ -2257,7 +2257,7 @@ function renderMarketContext(rows, presetRows) {
     }
     if (elBriefing) {
       const t = normStr((BRIEFING || {}).text);
-      elBriefing.innerHTML = briefingToHtml(t) || 'â€” (noch kein Briefing generiert)';
+      elBriefing.innerHTML = briefingToHtml(t) || '— (noch kein Briefing generiert)';
     }
     refresh();
     try { document.documentElement.dataset.jsok = '1'; } catch (e) {}
@@ -2316,10 +2316,10 @@ function renderMarketContext(rows, presetRows) {
     } catch (err) {
       const msg = (err && err.message) ? err.message : String(err);
       const el = document.getElementById('count');
-      if (window.__showJsError) window.__showJsError('UIâ€‘Fehler (JS): ' + msg);
+      if (window.__showJsError) window.__showJsError('UI‑Fehler (JS): ' + msg);
       if (el) el.textContent = `JS error: ${msg}`;
       const k = document.getElementById('kpis');
-      if (k) k.textContent = 'JS error â€“ siehe Konsole';
+      if (k) k.textContent = 'JS error – siehe Konsole';
       try { console.error(err); } catch(e) {}
     }
   })();
