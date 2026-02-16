@@ -22,7 +22,6 @@ import argparse
 import html
 import json
 import os
-import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -80,8 +79,6 @@ def _clean_ui_text(text: str) -> str:
     out = text
     for bad, good in _BROKEN_TEXT_MAP.items():
         out = out.replace(bad, good)
-    # Final fallback: force ASCII-safe output so mojibake cannot leak into UI.
-    out = unicodedata.normalize("NFKD", out).encode("ascii", errors="ignore").decode("ascii")
     return out
 
 
@@ -107,7 +104,11 @@ DEFAULT_COLUMNS = [
     "Akt. Kurs",
     "price_eur",
     "perf_pct",
+    "perf_1d_pct",
+    "perf_1y_pct",
     "Perf %",
+    "Perf 1D %",
+    "Perf 1Y %",
     "rs3m",
     "trend200",
     "sma200",
@@ -411,7 +412,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     /* Bullet-Styles bombensicher machen */
     .briefingText ul { margin: 6px 0 10px 18px; padding-left: 14px; list-style: disc; }
     .briefingText li { margin: 4px 0; }
-    .briefing-asset { margin: 10px 0 6px; font-weight: 700; }
+    .briefing-asset {
+      margin: 10px 0 6px;
+      font-weight: 700;
+      border-left: 2px solid rgba(96,165,250,.45);
+      padding-left: 8px;
+      color: #dbeafe;
+      background: rgba(96,165,250,.06);
+      border-radius: 6px;
+    }
     .briefing-label { margin: 10px 0 6px; opacity: .9; font-weight: 700; }
 
     /* Mobile: Panels/Drawer/Modals dÃ¼rfen nicht Ã¼ber den Viewport schieÃŸen */
@@ -594,15 +603,21 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .moversItem .val.pos { color: var(--good); }
 .moversItem .val.neg { color: var(--bad); }
 .moversItem .val.flat { color: var(--muted); }
+.moversMeta { color: var(--muted); font-size: 10px; margin-left: 6px; }
 
-.heatWrap { overflow:auto; }
-.heatTbl { width: 100%; border-collapse: collapse; font-size: 11px; }
-.heatTbl th, .heatTbl td { border: 1px solid rgba(36,50,68,.40); padding: 6px 6px; }
-.heatTbl th { background: rgba(15,23,42,.55); color: #cbd5e1; position: sticky; top: 0; z-index: 2; }
-.heatTbl th:first-child { left: 0; z-index: 3; }
-.heatTbl td:first-child { position: sticky; left: 0; background: rgba(11,15,20,.96); z-index: 1; white-space: nowrap; }
-.heatCell { text-align: center; font-family: var(--mono); }
-.heatCell.zero { color: rgba(148,163,184,.55); }
+.placeholderCard {
+  border: 1px dashed rgba(96,165,250,.35);
+  background: linear-gradient(180deg, rgba(96,165,250,.08), rgba(96,165,250,.03));
+}
+.placeholderList { margin: 6px 0 0 16px; padding: 0; }
+.placeholderList li { margin: 6px 0; color: #cbd5e1; font-size: 12px; }
+
+.heatMatrixPanel { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.heatMatrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.heatMatrixHead select { width: auto; min-width: 170px; padding: 8px 10px; border-radius: 10px; }
+.heatMatrixGrid { display: grid; grid-template-columns: 84px repeat(5, 1fr); gap: 4px; }
+.heatCellGrid { background: rgba(148,163,184,.06); border: 1px solid rgba(148,163,184,.15); border-radius: 9px; min-height: 28px; display:flex; align-items:center; justify-content:center; font-family: var(--mono); font-size: 11px; }
+.heatCellGrid.zero { opacity: .55; }
 
     /* KPI chips are clickable quick-filters */
     button.chip { appearance: none; -webkit-appearance: none; border: 1px solid rgba(148,163,184,.15); background: var(--chip); color: inherit; font: inherit; }
@@ -740,6 +755,20 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             </div>
             <div class="matrixGrid" id="matrix"></div>
             <div class="matrixNote" id="matrixNote">â€”</div>
+            <div class="heatMatrixPanel" id="heatMatrixPanel">
+              <div class="heatMatrixHead">
+                <div>
+                  <div class="matrixTitle" title="Verteilung der Werte nach Kategorie und Score-Buckets.">Heatmap</div>
+                  <div class="muted small">Direktvergleich je Score-Bucket im gleichen Matrix-Stil.</div>
+                </div>
+                <select id="heatMode" title="Heatmap-Modus">
+                  <option value="pillar">Heatmap: Saeulen</option>
+                  <option value="cluster">Heatmap: Cluster</option>
+                </select>
+              </div>
+              <div id="heatmap" class="heatMatrixGrid">-</div>
+              <div id="heatmapNote" class="matrixNote">-</div>
+            </div>
           </div>
 
           <div class="briefingBox" id="briefingBox" title="Kurz-Erklaerung zu den Top-Werten aus vorhandenen Feldern, ohne Einfluss auf das Scoring.">
@@ -761,10 +790,6 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
-      <select id="heatMode" title="Heatmap-Modus">
-        <option value="pillar">Heatmap: SÃ¤ulen</option>
-        <option value="cluster">Heatmap: Cluster</option>
-      </select>
       <button type="button" class="btn" id="marketToggle" title="Market Context ein-/ausblenden">Ausblenden</button>
     </div>
   </div>
@@ -776,21 +801,27 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       <div id="qualityBox" class="muted small" style="margin-top:8px;">â€”</div>
     </div>
     <div class="marketCard" id="moversCard">
-      <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Perf % im aktuellen Universe.">Movers</div>
+      <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Tagesbewegung (1D) im aktuellen Universe.">Movers</div>
       <div class="moversGrid">
         <div>
-          <div class="muted small">Top â†‘</div>
+          <div class="muted small">Top (1D up)</div>
           <div id="moversUp" class="moversList">â€”</div>
         </div>
         <div>
-          <div class="muted small">Weak â†“</div>
+          <div class="muted small">Weak (1D down)</div>
           <div id="moversDown" class="moversList">â€”</div>
         </div>
       </div>
     </div>
-    <div class="marketCard" id="heatCard">
-      <div class="marketCardTitle" title="Verteilung der Werte nach Cluster/Saeule und Score-Buckets.">Heatmap</div>
-      <div id="heatmap" class="heatWrap">â€”</div>
+    <div class="marketCard placeholderCard" id="ideasCard">
+      <div class="marketCardTitle" title="Freier Platzhalter fuer zusaetzliche Module.">Ideas Dock</div>
+      <div class="muted small">Freie Flaeche fuer dein naechstes Modul. Vorschlaege:</div>
+      <ul class="placeholderList">
+        <li>Portfolio-Live-Block (Gewichtung, P/L, Exposure)</li>
+        <li>Event-Kalender (Earnings, Makro, Termine)</li>
+        <li>Signal-Historie (State-Changes je Asset)</li>
+        <li>Watchlist-Notizen (manuelle Thesen / TODOs)</li>
+      </ul>
     </div>
   </div>
 </div>
@@ -813,7 +844,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <tr>
               <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
               <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
-              <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
+              <th data-k="price" class="right" title="Aktueller Kurs (Originalwaehrung) + Tagesbewegung (1D) und Performance (1Y)">Kurs</th>
               <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
@@ -915,6 +946,7 @@ const elQualityBox = document.getElementById('qualityBox');
 const elMoversUp = document.getElementById('moversUp');
 const elMoversDown = document.getElementById('moversDown');
 const elHeatmap = document.getElementById('heatmap');
+const elHeatmapNote = document.getElementById('heatmapNote');
 const elHeatMode = document.getElementById('heatMode');
 
 
@@ -1482,11 +1514,23 @@ function applyPillarFilter(rows) {
       }
     }
 
-    function perfLine(p) {
-      if (p === null || p === undefined) return '<div class="sub muted">â€”</div>';
-      const dir = (p > 0) ? 'pos' : (p < 0) ? 'neg' : 'flat';
-      const arrow = (p > 0) ? 'â–²' : (p < 0) ? 'â–¼' : 'â€¢';
-      return `<div class="sub chg ${dir}">${arrow} ${p.toFixed(2)}%</div>`;
+    function perfLines(p1d, p1y) {
+      const parts = [];
+      if (p1d !== null && p1d !== undefined && Number.isFinite(p1d)) {
+        const dir1 = (p1d > 0) ? 'pos' : (p1d < 0) ? 'neg' : 'flat';
+        const s1 = (p1d >= 0 ? '+' : '') + p1d.toFixed(2) + '%';
+        parts.push(`<div class="sub chg ${dir1}" title="Tagesbewegung (1D)">1D: ${s1}</div>`);
+      } else {
+        parts.push(`<div class="sub muted" title="Tagesbewegung (1D)">1D: n/a</div>`);
+      }
+      if (p1y !== null && p1y !== undefined && Number.isFinite(p1y)) {
+        const dir2 = (p1y > 0) ? 'pos' : (p1y < 0) ? 'neg' : 'flat';
+        const s2 = (p1y >= 0 ? '+' : '') + p1y.toFixed(2) + '%';
+        parts.push(`<div class="sub chg ${dir2}" title="Performance (1Y)">1Y: ${s2}</div>`);
+      } else {
+        parts.push(`<div class="sub muted" title="Performance (1Y)">1Y: n/a</div>`);
+      }
+      return parts.join('');
     }
 
     function looksLikeISIN(s) {
@@ -1934,9 +1978,15 @@ function parsePct(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-function perfPct(r) {
+function perf1dPct(r) {
   return parsePct(
-    r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct
+    r.perf_1d_pct ?? r['Perf 1D %'] ?? r.perf_1d ?? r.perf1d ?? r['Change %'] ?? r.change_pct ?? r.changePercent
+  );
+}
+
+function perf1yPct(r) {
+  return parsePct(
+    r.perf_1y_pct ?? r['Perf 1Y %'] ?? r.perf_1y ?? r.perf1y ?? r.perf_pct ?? r['Perf %']
   );
 }
 
@@ -1968,7 +2018,7 @@ function renderBreadth(rows) {
   if (!elBreadthBox) return;
   let adv = 0, dec = 0, flat = 0, miss = 0;
   for (const r of rows || []) {
-    const p = perfPct(r);
+    const p = perf1dPct(r);
     if (p === null) { miss++; continue; }
     if (p > 0) adv++;
     else if (p < 0) dec++;
@@ -1976,7 +2026,7 @@ function renderBreadth(rows) {
   }
   const tot = adv + dec + flat;
   if (!tot) {
-    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare TagesÃ¤nderung (Perf %) im aktuellen Universe.</div>`;
+    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare Tagesbewegung (1D) im aktuellen Universe.</div>`;
     return;
   }
   const pct = (x) => (tot ? Math.round((x / tot) * 100) : 0);
@@ -1988,7 +2038,7 @@ function renderBreadth(rows) {
       ${chip(`Flat ${flat}`, flat ? 'blue' : 'blue')}
       ${miss ? chip(`n/a ${miss}`, 'warn') : ''}
     </div>
-    <div class="muted small">Basis: <span class="mono">perf_pct / Perf %</span> (nur Anzeige/Context).</div>
+    <div class="muted small">Basis: <span class="mono">perf_1d_pct / Perf 1D %</span> (Fallback: perf_pct / Perf %; nur Anzeige/Context).</div>
   `;
   elBreadthBox.innerHTML = row;
 }
@@ -2092,18 +2142,19 @@ function renderMovers(rows) {
 
   const arr = [];
   for (const r of rows || []) {
-    const p = perfPct(r);
-    if (p === null) continue;
-    arr.push({r, p});
+    const p1d = perf1dPct(r);
+    if (p1d === null) continue;
+    const p1y = perf1yPct(r);
+    arr.push({r, p1d, p1y});
   }
   if (!arr.length) {
-    elMoversUp.innerHTML = `<span class="muted">â€”</span>`;
-    elMoversDown.innerHTML = `<span class="muted">â€”</span>`;
+    elMoversUp.innerHTML = `<span class="muted">-</span>`;
+    elMoversDown.innerHTML = `<span class="muted">-</span>`;
     return;
   }
 
-  const up = arr.slice().sort((a,b) => b.p - a.p).filter(x => x.p > 0).slice(0, 8);
-  const dn = arr.slice().sort((a,b) => a.p - b.p).filter(x => x.p < 0).slice(0, 8);
+  const up = arr.slice().sort((a,b) => b.p1d - a.p1d).filter(x => x.p1d > 0).slice(0, 8);
+  const dn = arr.slice().sort((a,b) => a.p1d - b.p1d).filter(x => x.p1d < 0).slice(0, 8);
 
   function itemHtml(x) {
     const r = x.r;
@@ -2111,19 +2162,20 @@ function renderMovers(rows) {
     const yh = pickYahooSymbol(r) || sym;
     const href = yahooHref(yh);
     const s = href ? `<a class="yf sym" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` : `<span class="sym">${esc(sym)}</span>`;
-    const cls = x.p > 0 ? 'pos' : (x.p < 0 ? 'neg' : 'flat');
-    return `<div class="moversItem"><span class="sym">${s}</span><span class="val ${cls}">${esc(fmtPct(x.p))}</span></div>`;
+    const cls = x.p1d > 0 ? 'pos' : (x.p1d < 0 ? 'neg' : 'flat');
+    const y1 = (x.p1y === null || x.p1y === undefined || !Number.isFinite(x.p1y)) ? '1Y n/a' : `1Y ${fmtPct(x.p1y)}`;
+    return `<div class="moversItem"><span class="sym">${s}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}">${esc('1D ' + fmtPct(x.p1d))}</span></div>`;
   }
 
-  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
-  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
+  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">-</span>`;
+  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">-</span>`;
 }
 
 function renderHeatmap(rows) {
   if (!elHeatmap) return;
   const fn = (heatMode === 'cluster') ? clusterLabel : pillarLabel;
+  const kindLabel = (heatMode === 'cluster') ? 'Cluster' : 'Saeule';
 
-  // counts[cat][sb] -> number
   const m = new Map();
   for (const r of rows || []) {
     const cat = (fn(r) || '').toString().trim();
@@ -2132,12 +2184,13 @@ function renderHeatmap(rows) {
     if (!m.has(cat)) m.set(cat, [0,0,0,0,0]);
     m.get(cat)[sb] += 1;
   }
+
   if (!m.size) {
-    elHeatmap.innerHTML = `<div class="muted">Keine Daten fÃ¼r Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    elHeatmap.innerHTML = `<div class="muted">Keine Daten fuer Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    if (elHeatmapNote) elHeatmapNote.textContent = '-';
     return;
   }
 
-  // choose top categories
   const all = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
   all.sort((a,b) => b.tot - a.tot || a.k.localeCompare(b.k));
   const limit = (heatMode === 'cluster') ? 8 : 6;
@@ -2147,29 +2200,29 @@ function renderHeatmap(rows) {
   for (const x of top) for (const v of x.arr) vmax = Math.max(vmax, v);
 
   const hdr = Array.from({length:5}, (_,sb) => scoreBucketText(sb).range);
-  const th = hdr.map(h => `<th class="heatCell">${esc(h)}</th>`).join('');
+  const parts = [];
+  parts.push(`<div class="matrixAxis" title="Achsen: Kategorie (y) x Score (x)"><div class="lbl">${kindLabel} v</div><div class="hint">Score -></div></div>`);
+  for (let sb = 0; sb < 5; sb++) {
+    const s = scoreBucketText(sb);
+    parts.push(`<div class="matrixLabel" title="Score-Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
+  }
 
-  const rowsHtml = top.map(x => {
-    const tds = x.arr.map((v, sb) => {
-      const zero = v === 0 ? ' zero' : '';
+  for (const x of top) {
+    parts.push(`<div class="matrixLabel" title="${kindLabel}"><div class="lbl">${esc(x.k)}</div><div class="hint">N ${x.tot}</div></div>`);
+    for (let sb = 0; sb < 5; sb++) {
+      const v = x.arr[sb] || 0;
       const rel = vmax ? (v / vmax) : 0;
-      const alpha = 0.06 + rel * 0.28; // subtle
-      const hue = 205; // blue-ish
-      const bg = `background: hsla(${hue}, 70%, 50%, ${alpha});`;
-      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} Â· Score ${esc(hdr[sb])} = ${v}">${v ? v : 'Â·'}</td>`;
-    }).join('');
-    return `<tr><td class="mono">${esc(x.k)}</td>${tds}</tr>`;
-  }).join('');
+      const alpha = 0.08 + rel * 0.30;
+      const bg = `background: hsla(205, 72%, 50%, ${alpha});`;
+      const zero = v === 0 ? ' zero' : '';
+      parts.push(`<div class="heatCellGrid${zero}" style="${bg}" title="${esc(x.k)} | Score ${esc(hdr[sb])} = ${v}">${v ? v : '-'}</div>`);
+    }
+  }
 
-  elHeatmap.innerHTML = `
-    <div class="heatWrap">
-      <table class="heatTbl">
-        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'SÃ¤ule'}</th>${th}</tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Scoreâ€‘Bucket (Top ${limit} nach HÃ¤ufigkeit).</div>
-    </div>
-  `;
+  elHeatmap.innerHTML = parts.join('');
+  if (elHeatmapNote) {
+    elHeatmapNote.textContent = `Zahl = Anzahl Werte pro Score-Bucket (Top ${limit} nach Haeufigkeit).`;
+  }
 }
 
 function renderMarketContext(rows, presetRows) {
@@ -2243,9 +2296,10 @@ function renderMarketContext(rows, presetRows) {
         const subName = subParts.join(' Â· ');
 
         const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
-        const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
+        const perf1d = perf1dPct(r);
+        const perf1y = perf1yPct(r);
         const priceMain = (price === null) ? 'â€”' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
-        const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
+        const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLines(perf1d, perf1y)}</div>`;
 
         const trend = asBool(r.trend_ok) ? chip('OK', 'good') : chip('NO', 'bad');
         const liq = asBool(r.liquidity_ok) ? chip('OK', 'good') : chip('LOW', 'warn');
@@ -2328,7 +2382,8 @@ function renderMarketContext(rows, presetRows) {
       const opt = [
         ['Price', r.price],
         ['Currency', curr],
-        ['Perf %', fmtPct(asNum(r.perf_pct) ?? asNum(r["Perf %"]))],
+        ['Tagesbewegung (1D)', fmtPct(perf1dPct(r))],
+        ['Performance (1Y)', fmtPct(perf1yPct(r))],
         ['DiversPenalty', (asNum(r.diversification_penalty) ?? 0).toFixed(2)],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],
