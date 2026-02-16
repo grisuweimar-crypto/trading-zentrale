@@ -36,6 +36,9 @@ ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
 # Common crypto quote suffixes used on Yahoo (keep small + conservative)
 CRYPTO_QUOTES = {"USD", "EUR", "USDT", "USDC", "BTC", "ETH", "GBP", "JPY", "CHF", "AUD", "CAD"}
+ISIN_OVERRIDES = {"CH0038863350": "NESN.SW"}
+NAME_OVERRIDES = {"NESTLE": "NESN.SW"}
+SYMBOL_ALIASES = {"NESN.SE": "NESN.SW"}
 
 
 def should_fetch_yahoo() -> bool:
@@ -114,9 +117,10 @@ def _classify_regime(trend200: float | None) -> str:
     return "bull"
 
 
-def _pick_symbol(row: pd.Series) -> str:
+def _pick_symbol(row: pd.Series) -> tuple[str, str]:
     # Prefer explicit YahooSymbol; then Yahoo; then Symbol; then Ticker.
-    for c in ("YahooSymbol", "Yahoo", "Symbol", "Ticker"):
+    # Accept snake_case aliases as fallback.
+    for c in ("YahooSymbol", "yahoo_symbol", "Yahoo", "yahoo", "Symbol", "symbol", "Ticker", "ticker"):
         if c in row.index:
             v = row.get(c)
             if v is None:
@@ -127,8 +131,25 @@ def _pick_symbol(row: pd.Series) -> str:
             # If it looks like an ISIN, skip (that's not a tradable Yahoo symbol)
             if ISIN_RE.match(s.upper()):
                 continue
-            return s
-    return ""
+            return s, c
+    return "", ""
+
+
+def _apply_symbol_override(row: pd.Series, picked_symbol: str, picked_from: str) -> tuple[str, str]:
+    isin = str(row.get("ISIN", "") or row.get("isin", "") or "").strip().upper()
+    if isin in ISIN_OVERRIDES:
+        return ISIN_OVERRIDES[isin], "override:isin"
+
+    name_u = str(row.get("Name", "") or row.get("name", "") or "").strip().upper()
+    for pat, sym in NAME_OVERRIDES.items():
+        if pat and pat in name_u:
+            return sym, "override:name"
+
+    alias = SYMBOL_ALIASES.get(str(picked_symbol).strip().upper())
+    if alias:
+        return alias, "alias:symbol"
+
+    return picked_symbol, picked_from
 
 
 def _looks_like_crypto_pair(sym: str) -> bool:
@@ -328,14 +349,48 @@ def enrich_watchlist_with_yahoo(
 
     symbols: list[str] = []
     row_symbols: list[str] = []
+    row_picked: list[str] = []
+    row_sources: list[str] = []
+    row_context: list[dict[str, str]] = []
+
+    def _first_str(r: pd.Series, keys: tuple[str, ...]) -> str:
+        for k in keys:
+            if k not in r.index:
+                continue
+            v = r.get(k)
+            if v is None:
+                continue
+            s = str(v).strip()
+            if not s or s.lower() == "nan":
+                continue
+            return s
+        return ""
+
     for _, row in out.iterrows():
-        sym = _pick_symbol(row)
+        picked_sym, picked_from = _pick_symbol(row)
+        sym, src = _apply_symbol_override(row, picked_sym, picked_from)
+        # Final normalization for known aliases.
+        sym = SYMBOL_ALIASES.get(str(sym).strip().upper(), str(sym).strip())
         row_symbols.append(sym)
+        row_picked.append(picked_sym)
+        row_sources.append(src)
+        row_context.append(
+            {
+                "row_ticker": _first_str(row, ("Ticker", "ticker")),
+                "row_symbol": _first_str(row, ("Symbol", "symbol")),
+                "row_yahoo": _first_str(row, ("Yahoo", "yahoo")),
+                "row_yahoosymbol": _first_str(row, ("YahooSymbol", "yahoo_symbol")),
+                "name": _first_str(row, ("Name", "name")),
+                "isin": _first_str(row, ("ISIN", "isin")).upper(),
+                "picked_symbol": str(picked_sym or ""),
+                "picked_from_raw": str(picked_from or ""),
+            }
+        )
         if sym:
             symbols.append(sym)
 
     # Deduplicate symbols for download
-    symbols_u = sorted({s for s in symbols if s})
+    symbols_u = sorted({SYMBOL_ALIASES.get(str(s).strip().upper(), str(s).strip()) for s in symbols if str(s).strip()})
     tickers_total = len(symbols_u)
 
     # Always include benchmarks
@@ -373,42 +428,87 @@ def enrich_watchlist_with_yahoo(
     fetched = 0
     failed = 0
     failed_rows: list[dict[str, Any]] = []
+    success_symbols: set[str] = set()
 
     # Per-row enrichment (keep previous values on failures)
-    for idx, sym in zip(out.index, row_symbols):
+    for idx, sym, picked_sym, picked_from, ctx in zip(out.index, row_symbols, row_picked, row_sources, row_context):
         if not sym:
             continue
+        # Persist deterministic corrections so future snapshots self-heal.
+        if sym and "YahooSymbol" in out.columns and str(out.at[idx, "YahooSymbol"] or "").strip() != sym:
+            out.at[idx, "YahooSymbol"] = sym
+        if sym and "yahoo_symbol" in out.columns and str(out.at[idx, "yahoo_symbol"] or "").strip() != sym:
+            out.at[idx, "yahoo_symbol"] = sym
         close, vol = _series_from_download(dl, sym)
+        used_symbol = sym
+        used_from = picked_from
+        # Optional self-heal for legacy Nestlé suffix if a bad .SE symbol slipped through.
+        if (close is None or close.dropna().empty) and sym.upper() == "NESN.SE":
+            alt = "NESN.SW"
+            c2, v2 = _series_from_download(dl, alt)
+            if c2 is not None and not c2.dropna().empty:
+                close, vol = c2, v2
+                used_symbol = alt
+                used_from = f"{picked_from}|fallback:nesn.se->sw"
+                if "YahooSymbol" in out.columns:
+                    out.at[idx, "YahooSymbol"] = alt
+
         if close is None or close.dropna().empty:
             failed += 1
-            row = out.loc[idx]
+            did_retry = int(used_symbol != sym)
             failed_rows.append(
                 {
                     "symbol": str(sym),
+                    "attempted_symbol": str(sym),
+                    "resolved_symbol": str(used_symbol),
+                    "did_retry": did_retry,
+                    "final_status": "failed",
                     "reason": _failure_reason(sym, "close/volume history missing or empty"),
-                    "row_ticker": str(row.get("Ticker", "") or ""),
-                    "name": str(row.get("Name", "") or ""),
-                    "yahoo_symbol": str(row.get("YahooSymbol", "") or ""),
-                    "isin": str(row.get("ISIN", "") or ""),
+                    "picked_from": used_from,
+                    "picked_symbol": ctx.get("picked_symbol", ""),
+                    "picked_from_raw": ctx.get("picked_from_raw", ""),
+                    "row_ticker": ctx.get("row_ticker", ""),
+                    "row_symbol": ctx.get("row_symbol", ""),
+                    "row_yahoo": ctx.get("row_yahoo", ""),
+                    "row_yahoosymbol": ctx.get("row_yahoosymbol", ""),
+                    "name": ctx.get("name", ""),
+                    "isin": ctx.get("isin", ""),
                 }
+            )
+            print(
+                f"[WARN] Yahoo fail: symbol={sym} picked_from={used_from} "
+                f"ticker={ctx.get('row_ticker','')} yahoosymbol={ctx.get('row_yahoosymbol','')} isin={ctx.get('isin','')}"
             )
             continue
 
         # Choose benchmark for RS: stocks vs crypto pairs
-        bench = b_crypto_close if _looks_like_crypto_pair(sym) else b_stock_close
+        bench = b_crypto_close if _looks_like_crypto_pair(used_symbol) else b_stock_close
         feats = _compute_features(close, vol, benchmark_close=bench)
         if not feats:
             failed += 1
-            row = out.loc[idx]
+            did_retry = int(used_symbol != sym)
             failed_rows.append(
                 {
-                    "symbol": str(sym),
+                    "symbol": str(used_symbol),
+                    "attempted_symbol": str(sym),
+                    "resolved_symbol": str(used_symbol),
+                    "did_retry": did_retry,
+                    "final_status": "failed",
                     "reason": _failure_reason(sym, "insufficient bars for feature computation"),
-                    "row_ticker": str(row.get("Ticker", "") or ""),
-                    "name": str(row.get("Name", "") or ""),
-                    "yahoo_symbol": str(row.get("YahooSymbol", "") or ""),
-                    "isin": str(row.get("ISIN", "") or ""),
+                    "picked_from": used_from,
+                    "picked_symbol": ctx.get("picked_symbol", ""),
+                    "picked_from_raw": ctx.get("picked_from_raw", ""),
+                    "row_ticker": ctx.get("row_ticker", ""),
+                    "row_symbol": ctx.get("row_symbol", ""),
+                    "row_yahoo": ctx.get("row_yahoo", ""),
+                    "row_yahoosymbol": ctx.get("row_yahoosymbol", ""),
+                    "name": ctx.get("name", ""),
+                    "isin": ctx.get("isin", ""),
                 }
+            )
+            print(
+                f"[WARN] Yahoo fail: symbol={used_symbol} picked_from={used_from} "
+                f"ticker={ctx.get('row_ticker','')} yahoosymbol={ctx.get('row_yahoosymbol','')} isin={ctx.get('isin','')}"
             )
             continue
 
@@ -418,6 +518,7 @@ def enrich_watchlist_with_yahoo(
             out.at[idx, k] = v
 
         fetched += 1
+        success_symbols.add(str(used_symbol))
 
     # Optional failure report (no pipeline failure; old values already kept)
     rep_path = Path("artifacts") / "reports" / "yahoo_failed_symbols.csv"
@@ -425,7 +526,23 @@ def enrich_watchlist_with_yahoo(
         rep_path.parent.mkdir(parents=True, exist_ok=True)
         failed_df = pd.DataFrame(
             failed_rows,
-            columns=["symbol", "reason", "row_ticker", "name", "yahoo_symbol", "isin"],
+            columns=[
+                "symbol",
+                "attempted_symbol",
+                "resolved_symbol",
+                "did_retry",
+                "final_status",
+                "reason",
+                "picked_from",
+                "picked_symbol",
+                "picked_from_raw",
+                "row_ticker",
+                "row_symbol",
+                "row_yahoo",
+                "row_yahoosymbol",
+                "name",
+                "isin",
+            ],
         )
         failed_df.to_csv(rep_path, index=False, encoding="utf-8")
         print(f"[WARN] Yahoo failures: {len(failed_rows)} symbols (see {rep_path.as_posix()})")
@@ -435,6 +552,14 @@ def enrich_watchlist_with_yahoo(
                 rep_path.unlink()
         except Exception:
             pass
+
+    attempted_u = len(symbols_u)
+    ok_u = len({s for s in success_symbols if s})
+    failed_u = max(0, attempted_u - ok_u)
+    msg = f"[INFO] Yahoo: attempted={attempted_u} ok={ok_u} failed={failed_u}"
+    if failed_u:
+        msg += f" (see {rep_path.as_posix()})"
+    print(msg)
 
     rep = YahooEnrichReport(
         enabled=True,
