@@ -170,6 +170,40 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
     return "".join(rows)
 
 
+_MOJIBAKE_MAP: dict[str, str] = {
+    # UTF-8 bytes mis-decoded as cp1252/latin-1 sequences.
+    "ÃƒÂ¼": "ü",
+    "ÃƒÂ¤": "ä",
+    "ÃƒÂ¶": "ö",
+    "ÃƒÅ¸": "ß",
+    "ÃƒÅ“": "Ü",
+    "Ãƒâ€ž": "Ä",
+    "Ãƒâ€“": "Ö",
+    "Ã¢â‚¬â€": "—",
+    "Ã¢â‚¬â€œ": "–",
+    "Ã¢â‚¬â€˜": "‑",
+    "Ã¢â‚¬â€™": "’",
+    "Ã¢â‚¬Å¾": "„",
+    "Ã¢â‚¬Å“": "“",
+    "Ã¢â‚¬\u009d": "”",
+    "Ã¢â‚¬Â¦": "…",
+    "Ã‚Â·": "·",
+    "Ã‚ ": " ",
+    "Ã¢â€ â€™": "→",
+    "Ã¢â€¡â€˜": "⇑",
+}
+
+
+def _demojibake(s: str) -> str:
+    """Fix common mojibake sequences in generated HTML/help text.
+
+    Conservative map-based replacements only.
+    """
+    for bad, good in _MOJIBAKE_MAP.items():
+        s = s.replace(bad, good)
+    return s
+
+
 def build_ui(
     *,
     csv_path: str | Path,
@@ -255,12 +289,12 @@ def build_ui(
     )
 
     out_html.parent.mkdir(parents=True, exist_ok=True)
-    out_html.write_text(html, encoding="utf-8")
+    out_html.write_text(_demojibake(html), encoding="utf-8")
 
     # Help / project description page (static)
     help_path = out_html.parent / "help.html"
     help_html = _render_help_html(version=__version__, build=__build__)
-    help_path.write_text(help_html, encoding="utf-8")
+    help_path.write_text(_demojibake(help_html), encoding="utf-8")
 
     return out_html
 
