@@ -655,7 +655,6 @@ def render_briefing_txt(briefing: dict[str, Any]) -> str:
 
     date_str = _norm_str(meta.get("date")) or "-"
     generated_utc = _norm_str(meta.get("generated_utc")) or "-"
-    source_csv = _norm_str(meta.get("source_csv")) or "-"
     u = meta.get("universe") or {}
     universe_total = u.get("total", "-")
     universe_scored = u.get("scored", "-")
@@ -665,7 +664,6 @@ def render_briefing_txt(briefing: dict[str, Any]) -> str:
     lines.append(_norm_str(meta.get("disclaimer")) or "Privat/experimentell - keine Anlageberatung - keine Empfehlung.")
     lines.append("")
     lines.append(f"Datum: {date_str} | Generiert (UTC): {generated_utc}")
-    lines.append(f"Quelle: {source_csv}")
     lines.append(f"Universe: {universe_total} | Scored: {universe_scored}")
     lines.append("")
     lines.append("So nutzt du das (30 Sekunden):")

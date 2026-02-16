@@ -37,6 +37,38 @@ TRUE_SET = {"true", "t", "yes", "y", "1"}
 FALSE_SET = {"false", "f", "no", "n", "0"}
 
 _BROKEN_TEXT_MAP = {
+    # common UTF-8/CP1252 mojibake sequences observed in generated UI text
+    "Ã¢â‚¬â€": "-",
+    "Ã¢â‚¬â€˜": "-",
+    "Ã¢â‚¬â€œ": "-",
+    "Ã‚Â·": " | ",
+    "Ãƒâ€”": "x",
+    "ÃƒÅ“": "Ue",
+    "ÃƒÂœ": "Ue",
+    "ÃƒÂ–": "Oe",
+    "ÃƒÂ„": "Ae",
+    "ÃƒÂ¤": "ae",
+    "ÃƒÂ¶": "oe",
+    "ÃƒÂ¼": "ue",
+    "ÃƒÅ¸": "ss",
+    "Ã—": "x",
+    "Ãœ": "Ue",
+    "Ã–": "Oe",
+    "Ã„": "Ae",
+    "Ã¤": "ae",
+    "Ã¶": "oe",
+    "Ã¼": "ue",
+    "ÃŸ": "ss",
+    "Ã-": "Oe",
+    "â€”": "-",
+    "â€“": "-",
+    "â€‘": "-",
+    "â†’": "->",
+    "â†“": "v",
+    "âœ•": "x",
+    "Â·": " | ",
+    "Ø": "O",
+    "Ã‚": "",
     "\u00c3\u00bc": "ue",
     "\u00c3\u00b6": "oe",
     "\u00c3\u00a4": "ae",
@@ -422,6 +454,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       border-radius: 6px;
     }
     .briefing-label { margin: 10px 0 6px; opacity: .9; font-weight: 700; }
+    .briefing-asset.top3 { border-left-color: rgba(251,191,36,.55); background: rgba(251,191,36,.08); }
 
     /* Mobile: Panels/Drawer/Modals dÃ¼rfen nicht Ã¼ber den Viewport schieÃŸen */
     * { box-sizing: border-box; }
@@ -562,7 +595,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .sig.grad.warn { background: linear-gradient(90deg, rgba(251,191,36,.20), rgba(251,191,36,.06)); }
     .sig.grad.bad  { background: linear-gradient(90deg, rgba(251,113,133,.18), rgba(251,113,133,.06)); }
 
-    /* Bucket matrix (Score Ã— Risk) */
+    /* Bucket matrix (Score x Risk) */
     .matrixPanel { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
     .matrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 12px; margin-bottom: 10px; }
     .matrixTitle { font-weight: 700; }
@@ -605,10 +638,6 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .moversItem .val.flat { color: var(--muted); }
 .moversMeta { color: var(--muted); font-size: 10px; margin-left: 6px; }
 
-.placeholderCard {
-  border: 1px dashed rgba(96,165,250,.35);
-  background: linear-gradient(180deg, rgba(96,165,250,.08), rgba(96,165,250,.03));
-}
 .placeholderList { margin: 6px 0 0 16px; padding: 0; }
 .placeholderList li { margin: 6px 0; color: #cbd5e1; font-size: 12px; }
 
@@ -746,7 +775,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div>
             <div class="matrixHead">
               <div>
-                <div class="matrixTitle">Bucketâ€‘Matrix (Score Ã— Risk)</div>
+                <div class="matrixTitle">Bucket-Matrix (Score x Risk)</div>
                 <div class="muted small">Klick auf ein Feld = Matrixâ€‘Filter (zusÃ¤tzlich zu Preset/Suche/Quickâ€‘Filter).</div>
               </div>
               <div style="display:flex; gap:8px; align-items:center;">
@@ -759,7 +788,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <div class="heatMatrixHead">
                 <div>
                   <div class="matrixTitle" title="Verteilung der Werte nach Kategorie und Score-Buckets.">Heatmap</div>
-                  <div class="muted small">Direktvergleich je Score-Bucket im gleichen Matrix-Stil.</div>
+                  <div class="muted small">Verteilung nach Score-Buckets.</div>
                 </div>
                 <select id="heatMode" title="Heatmap-Modus">
                   <option value="pillar">Heatmap: Saeulen</option>
@@ -804,16 +833,16 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Tagesbewegung (1D) im aktuellen Universe.">Movers</div>
       <div class="moversGrid">
         <div>
-          <div class="muted small">Top (1D up)</div>
+          <div class="muted small">Top</div>
           <div id="moversUp" class="moversList">â€”</div>
         </div>
         <div>
-          <div class="muted small">Weak (1D down)</div>
+          <div class="muted small">Weak</div>
           <div id="moversDown" class="moversList">â€”</div>
         </div>
       </div>
     </div>
-    <div class="marketCard placeholderCard" id="ideasCard">
+    <div class="marketCard" id="ideasCard">
       <div class="marketCardTitle" title="Freier Platzhalter fuer zusaetzliche Module.">Ideas Dock</div>
       <div class="muted small">Freie Flaeche fuer dein naechstes Modul. Vorschlaege:</div>
       <ul class="placeholderList">
@@ -1009,7 +1038,7 @@ let heatMode = 'pillar'; // 'pillar' | 'cluster'
       onlyCrypto: false,
     };
 
-    // Bucket-matrix filter (Score Ã— Risk)
+    // Bucket-matrix filter (Score x Risk)
     let matrix = { sb: null, rb: null };
     const DEFAULT_MATRIX = { sb: null, rb: null };
 
@@ -1242,12 +1271,14 @@ if (elHeatMode) {
       const lines = (text || "").split(/\\r?\\n/);
       let out = "";
       let inUl = false;
+      let assetCount = 0;
 
       const closeUl = ()=>{ if(inUl){ out += "</ul>"; inUl=false; } };
 
       for(const raw of lines){
         const line = raw.replace(/\\s+$/,"");
         if(!line){ closeUl(); out += "<div class='spacer'></div>"; continue; }
+        if (/^\\s*quelle\\s*:/i.test(line)) { continue; }
 
         const m = line.match(/^\\s*-\\s+(.*)$/);
         if(m){
@@ -1258,8 +1289,10 @@ if (elHeatMode) {
 
         closeUl();
 
-        if(/^\\d+\\)\\s/.test(line)){
-          out += `<h4 class="briefing-asset">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c))}</h4>`;
+        if(/^(?:#\\d+\\s|\\d+\\)\\s)/.test(line)){
+          assetCount += 1;
+          const assetCls = assetCount <= 3 ? "briefing-asset top3" : "briefing-asset";
+          out += `<h4 class="${assetCls}">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c))}</h4>`;
         } else {
           const marker = line
             .toLowerCase()
@@ -1961,8 +1994,8 @@ function applyQuickFilters(rows) {
       const sb = (matrix && matrix.sb !== undefined) ? matrix.sb : null;
       const rb = (matrix && matrix.rb !== undefined) ? matrix.rb : null;
       if (elMatrixNote) {
-        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Riskâ€‘Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Riskâ€‘Proxy fehlt (keine Riskâ€‘Spalten im CSV)';
-        const sel = (sb !== null && rb !== null) ? ` Â· aktiv: Score ${bucketRange(sb)} Ã— ${riskBucketText(rb).hint}` : '';
+        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Risk-Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Risk-Proxy fehlt (keine Risk-Spalten im CSV)';
+        const sel = (sb !== null && rb !== null) ? ` | aktiv: Score ${bucketRange(sb)} x ${riskBucketText(rb).hint}` : '';
         elMatrixNote.textContent = metric + sel;
       }
     }
@@ -1980,7 +2013,7 @@ function parsePct(v) {
 
 function perf1dPct(r) {
   return parsePct(
-    r.perf_1d_pct ?? r['Perf 1D %'] ?? r.perf_1d ?? r.perf1d ?? r['Change %'] ?? r.change_pct ?? r.changePercent
+    r.perf_1d_pct ?? r['Perf 1D %'] ?? r.perf_1d ?? r.perf1d ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.perf_pct ?? r['Perf %']
   );
 }
 
@@ -2071,7 +2104,7 @@ function renderDiversification(rows) {
 
   elDiversBox.innerHTML = `
     <div class="breadthRow">
-      ${chip(`Div Ã˜ ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
+      ${chip(`Div Avg ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
       ${chip(`Median ${med.toFixed(2)}`, med >= 4 ? 'warn' : 'blue')}
       ${chip(`High ${hi}`, hi ? 'bad' : 'blue')}
       ${chip(`Low ${lo}`, lo ? 'good' : 'blue')}
@@ -2143,9 +2176,10 @@ function renderMovers(rows) {
   const arr = [];
   for (const r of rows || []) {
     const p1d = perf1dPct(r);
-    if (p1d === null) continue;
     const p1y = perf1yPct(r);
-    arr.push({r, p1d, p1y});
+    const rank = (p1d !== null) ? p1d : p1y;
+    if (rank === null) continue;
+    arr.push({r, p1d, p1y, rank});
   }
   if (!arr.length) {
     elMoversUp.innerHTML = `<span class="muted">-</span>`;
@@ -2153,8 +2187,8 @@ function renderMovers(rows) {
     return;
   }
 
-  const up = arr.slice().sort((a,b) => b.p1d - a.p1d).filter(x => x.p1d > 0).slice(0, 8);
-  const dn = arr.slice().sort((a,b) => a.p1d - b.p1d).filter(x => x.p1d < 0).slice(0, 8);
+  const up = arr.slice().sort((a,b) => b.rank - a.rank).filter(x => x.rank > 0).slice(0, 8);
+  const dn = arr.slice().sort((a,b) => a.rank - b.rank).filter(x => x.rank < 0).slice(0, 8);
 
   function itemHtml(x) {
     const r = x.r;
@@ -2162,9 +2196,10 @@ function renderMovers(rows) {
     const yh = pickYahooSymbol(r) || sym;
     const href = yahooHref(yh);
     const s = href ? `<a class="yf sym" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` : `<span class="sym">${esc(sym)}</span>`;
-    const cls = x.p1d > 0 ? 'pos' : (x.p1d < 0 ? 'neg' : 'flat');
+    const cls = x.rank > 0 ? 'pos' : (x.rank < 0 ? 'neg' : 'flat');
+    const d1 = (x.p1d === null || x.p1d === undefined || !Number.isFinite(x.p1d)) ? '1D n/a' : `1D ${fmtPct(x.p1d)}`;
     const y1 = (x.p1y === null || x.p1y === undefined || !Number.isFinite(x.p1y)) ? '1Y n/a' : `1Y ${fmtPct(x.p1y)}`;
-    return `<div class="moversItem"><span class="sym">${s}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}">${esc('1D ' + fmtPct(x.p1d))}</span></div>`;
+    return `<div class="moversItem"><span class="sym">${s}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}">${esc(d1)}</span></div>`;
   }
 
   elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">-</span>`;
