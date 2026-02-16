@@ -1,8 +1,8 @@
 {
   "meta": {
     "briefing_version": "v2",
-    "generated_utc": "2026-02-16T14:41:17.858743Z",
-    "source_csv": "C:/Users/CW/Aktien_Scanner_Projekt/Scanner_vNext_git/artifacts/watchlist/watchlist_ALL.csv",
+    "generated_utc": "2026-02-16T14:43:38.194802Z",
+    "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "preset": "ALL",
     "filters": {
       "query": "",
@@ -219,7 +219,7 @@
           "id": "anomaly_extreme_perf",
           "severity": "alert",
           "label": "Sehr auffaellige Perf %",
-          "value": "+381.09%",
+          "value": "+381.85%",
           "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
           "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
         }
@@ -270,8 +270,8 @@
       ]
     },
     "build_info": {
-      "git_sha": "local",
-      "ui_sha": "local",
+      "git_sha": "9d3a9a5",
+      "ui_sha": "9d3a9a5",
       "pipeline": "run_daily -> validate -> briefing -> ui"
     }
   }
