@@ -742,9 +742,9 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <div class="matrixNote" id="matrixNote">â€”</div>
           </div>
 
-          <div class="briefingBox" id="briefingBox">
+          <div class="briefingBox" id="briefingBox" title="Kurz-Erklaerung zu den Top-Werten aus vorhandenen Feldern, ohne Einfluss auf das Scoring.">
             <div class="briefHead">
-              <div class="matrixTitle">Briefing</div>
+              <div class="matrixTitle" title="Deterministische Zusammenfassung der aktuellen Top-Werte.">Briefing</div>
               <button type="button" class="btn" id="briefingToggle" title="Briefing ein-/ausblenden">Ausblenden</button>
             </div>
             <div class="muted small">Privat/experimentell Â· keine Anlageberatung Â· ohne Einfluss aufs Scoring.</div>
@@ -754,10 +754,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
 
 
-<div class="marketPanel" id="marketPanel">
+<div class="marketPanel" id="marketPanel" title="Marktumfeld aus deinem aktuellen Universe - nur Kontext, kein Score-Einfluss.">
   <div class="marketHead">
     <div>
-      <div class="matrixTitle">Market Context</div>
+      <div class="matrixTitle" title="Passiver Markt-Kontext aus den aktuell sichtbaren Werten.">Market Context</div>
       <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
@@ -770,13 +770,13 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   </div>
   <div id="marketBody" class="marketGrid">
     <div class="marketCard" id="breadthCard">
-      <div class="marketCardTitle">Breadth</div>
+      <div class="marketCardTitle" title="Marktbreite: Anteil Gewinner, Verlierer und neutrale Werte im aktuellen Universe.">Breadth</div>
       <div id="breadthBox">â€”</div>
       <div id="diversBox" class="muted small" style="margin-top:8px;">â€”</div>
       <div id="qualityBox" class="muted small" style="margin-top:8px;">â€”</div>
     </div>
     <div class="marketCard" id="moversCard">
-      <div class="marketCardTitle">Movers</div>
+      <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Perf % im aktuellen Universe.">Movers</div>
       <div class="moversGrid">
         <div>
           <div class="muted small">Top â†‘</div>
@@ -789,7 +789,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
     </div>
     <div class="marketCard" id="heatCard">
-      <div class="marketCardTitle">Heatmap</div>
+      <div class="marketCardTitle" title="Verteilung der Werte nach Cluster/Saeule und Score-Buckets.">Heatmap</div>
       <div id="heatmap" class="heatWrap">â€”</div>
     </div>
   </div>
