@@ -430,9 +430,14 @@ def enrich_watchlist_with_yahoo(
 
         if close is None or close.dropna().empty:
             failed += 1
+            did_retry = int(used_symbol != sym)
             failed_rows.append(
                 {
                     "symbol": str(sym),
+                    "attempted_symbol": str(sym),
+                    "resolved_symbol": str(used_symbol),
+                    "did_retry": did_retry,
+                    "final_status": "failed",
                     "reason": _failure_reason(sym, "close/volume history missing or empty"),
                     "picked_from": used_from,
                     "row_ticker": ctx["row_ticker"],
@@ -455,9 +460,14 @@ def enrich_watchlist_with_yahoo(
         feats = _compute_features(close, vol, benchmark_close=bench)
         if not feats:
             failed += 1
+            did_retry = int(used_symbol != sym)
             failed_rows.append(
                 {
                     "symbol": str(used_symbol),
+                    "attempted_symbol": str(sym),
+                    "resolved_symbol": str(used_symbol),
+                    "did_retry": did_retry,
+                    "final_status": "failed",
                     "reason": _failure_reason(sym, "insufficient bars for feature computation"),
                     "picked_from": used_from,
                     "row_ticker": ctx["row_ticker"],
@@ -490,6 +500,10 @@ def enrich_watchlist_with_yahoo(
             failed_rows,
             columns=[
                 "symbol",
+                "attempted_symbol",
+                "resolved_symbol",
+                "did_retry",
+                "final_status",
                 "reason",
                 "picked_from",
                 "row_ticker",

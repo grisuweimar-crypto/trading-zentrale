@@ -21,6 +21,7 @@ Output
 import argparse
 import html
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -265,9 +266,17 @@ def build_ui(
 
 
 def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any], source_csv: str, version: str, build: str, briefing_text: str, briefing_source: str, fallback_tbody_html: str) -> str:
-    data_json = json.dumps(data_records, ensure_ascii=False)
-    presets_json = json.dumps(presets, ensure_ascii=False)
-    briefing_json = json.dumps({"text": briefing_text, "source": briefing_source}, ensure_ascii=False)
+    def _json_for_script(obj: Any) -> str:
+        s = json.dumps(obj, ensure_ascii=False)
+        return s.replace("</script", "<\\/script").replace("</SCRIPT", "<\\/SCRIPT")
+
+    data_json = _json_for_script(data_records)
+    presets_json = _json_for_script(presets)
+    briefing_json = _json_for_script({"text": briefing_text, "source": briefing_source})
+    sha = (os.getenv("GITHUB_SHA") or "local").strip()
+    sha_short = sha[:7] if sha and sha.lower() != "local" else "local"
+    branch = (os.getenv("GITHUB_REF_NAME") or "").strip()
+    branch_label = f" | branch {branch}" if branch else ""
 
     # Server-side preset <option> fallback (so UI isn't empty if JS fails)
     preset_labels = {
@@ -296,6 +305,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="build-sha" content="__SHA__"/>
   <title>Scanner_vNext â€” Research Dashboard</title>
   <style>
     :root {
@@ -599,12 +609,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     }
   </style>
 </head>
-<body>
+<body data-build-sha="__SHA__" data-build-branch="__BRANCH__">
   <header>
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext â€” Research Dashboard</h1>
-        <div class="meta">version __VERSION__ Â· build __BUILD__ Â· <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version __VERSION__ ? build __BUILD__ ? sha __SHA____BRANCH_LABEL__ ? <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
@@ -2602,6 +2612,9 @@ function renderMarketContext(rows, presetRows) {
         .replace("__FALLBACK_TBODY__", fallback_tbody_html)
         .replace("__VERSION__", str(version))
         .replace("__BUILD__", str(build))
+        .replace("__SHA__", sha_short)
+        .replace("__BRANCH__", branch)
+        .replace("__BRANCH_LABEL__", branch_label)
         .replace("__SOURCE_CSV__", str(source_csv))
     )
 

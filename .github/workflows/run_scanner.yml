@@ -1,15 +1,22 @@
-name: Scanner_vNext Autopilot
+﻿name: Scanner_vNext Autopilot
 
 on:
   schedule:
-    - cron: '0 16 * * *' # täglich 16:00 UTC (17/18 Uhr Berlin je nach DST)
+    - cron: '0 16 * * *' # daily 16:00 UTC
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/run_scanner.yml'
+      - 'src/**'
+      - 'scripts/**'
+      - 'configs/**'
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, 'Autopilot: artifacts update')
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
@@ -25,11 +32,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .
 
-      - name: Scanner ausführen (run_daily)
+      - name: Scanner ausfuehren (run_daily)
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           TELEGRAM_ENABLED: '0'
-          # Ensure Yahoo market data refresh happens on every scheduled run.
           SCANNER_FETCH_YAHOO: '1'
         run: |
           python -m scanner.app.run_daily
@@ -60,5 +66,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
           git add artifacts/ || true
-          git commit -m "📊 Autopilot: artifacts update [skip ci]" || echo "Keine Änderungen zum Speichern"
+          git commit -m "Autopilot: artifacts update [skip ci]" || echo "Keine Aenderungen zum Speichern"
           git push
