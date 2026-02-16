@@ -1,8 +1,8 @@
 {
   "meta": {
     "briefing_version": "v2",
-    "generated_utc": "2026-02-16T15:02:16.987407Z",
-    "source_csv": "C:/Users/CW/Aktien_Scanner_Projekt/Scanner_vNext_git/artifacts/watchlist/watchlist_ALL.csv",
+    "generated_utc": "2026-02-16T15:03:44.689090Z",
+    "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "preset": "ALL",
     "filters": {
       "query": "",
@@ -40,7 +40,7 @@
       "symbol": "WPM.TO",
       "name": "WHEATON PREC.",
       "isin": "CA9628791027",
-      "score": 44.37,
+      "score": 44.34,
       "score_percentile": 100.0,
       "risk_bucket": 2,
       "risk_buckets_total": 4,
@@ -101,7 +101,7 @@
         "code": "R5",
         "cycle_pct": 38.5,
         "regime": "bull",
-        "trend200_proxy": 0.055348418995397,
+        "trend200_proxy": 0.0553484204910741,
         "risk_percentile": 37.142857142857146,
         "diversification_penalty": 0.79
       }
@@ -111,7 +111,7 @@
       "symbol": "AEM",
       "name": "AGNICO EAGLE",
       "isin": "CA0084741085",
-      "score": 43.75,
+      "score": 43.73,
       "score_percentile": 99.28571428571429,
       "risk_bucket": 3,
       "risk_buckets_total": 4,
@@ -172,7 +172,7 @@
         "code": "R5",
         "cycle_pct": 50.1,
         "regime": "bull",
-        "trend200_proxy": 0.055348418995397,
+        "trend200_proxy": 0.0553484204910741,
         "risk_percentile": 41.42857142857143,
         "diversification_penalty": 0.79
       }
@@ -219,7 +219,7 @@
           "id": "anomaly_extreme_perf",
           "severity": "alert",
           "label": "Sehr auffaellige Perf %",
-          "value": "+382.62%",
+          "value": "+383.64%",
           "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
           "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
         }
@@ -243,8 +243,8 @@
         "code": "R5",
         "cycle_pct": 21.4,
         "regime": "bull",
-        "trend200_proxy": 0.055348418995397,
-        "risk_percentile": 52.142857142857146,
+        "trend200_proxy": 0.0553484204910741,
+        "risk_percentile": 51.42857142857142,
         "diversification_penalty": 0.79
       }
     }
@@ -270,8 +270,8 @@
       ]
     },
     "build_info": {
-      "git_sha": "local",
-      "ui_sha": "local",
+      "git_sha": "0aa9bde",
+      "ui_sha": "0aa9bde",
       "pipeline": "run_daily -> validate -> briefing -> ui"
     }
   }
