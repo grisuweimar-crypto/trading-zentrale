@@ -1,4 +1,4 @@
-"""Generate a watchlist briefing (Stage A deterministic + optional Stage B AI).
+﻿"""Generate a watchlist briefing (Stage A deterministic + optional Stage B AI).
 
 Outputs (always under artifacts/):
   - artifacts/reports/briefing.json
@@ -63,7 +63,7 @@ def main() -> int:
     briefing = build_briefing_from_csv(csv_path, top_n=top_n, language=cfg.language)
     ok, errs = validate_briefing_json(briefing)
     if not ok:
-        print("❌ briefing.json validation failed:")
+        print("[FAIL] briefing.json validation failed:")
         for e in errs:
             print("  -", e)
         return 2
@@ -79,14 +79,14 @@ def main() -> int:
     if enable_ai and cfg.ai_provider.lower() == "openai":
         try:
             ai_text = generate_ai_briefing_text(briefing, model=cfg.ai_model)
-            print(f"🤖 AI briefing generated (model={cfg.ai_model}).")
+            print(f"[OK] AI briefing generated (model={cfg.ai_model}).")
         except Exception as e:
             # Never break the pipeline: Stage A is the truth.
-            print(f"⚠️ AI enhancement skipped: {e}")
+            print(f"[WARN] AI enhancement skipped: {e}")
             ai_text = None
 
     out = write_briefing_outputs(briefing=briefing, output_dir=out_dir, write_ai=bool(ai_text), ai_text=ai_text)
-    print("✅ Briefing outputs:")
+    print("[OK] Briefing outputs:")
     for k, p in out.items():
         print(f"  - {k}: {p.as_posix()}")
     return 0

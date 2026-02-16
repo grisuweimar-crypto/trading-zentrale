@@ -1631,7 +1631,7 @@ function applyPillarFilter(rows) {
     function applySearch(rows, q) {
       q = (q || '').trim().toLowerCase();
       if (!q) return rows;
-      const tokens = q.split(/\s+/).filter(Boolean);
+      const tokens = q.split(/\\s+/).filter(Boolean);
       return rows.filter(r => {
         const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["WÃ¤hrung"], r.quote_currency, r.score_status]
           .map(normStr).join(' ').toLowerCase();
@@ -1842,7 +1842,7 @@ function parsePct(v) {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   let s = String(v).trim();
   if (!s) return null;
-  s = s.replace('%','').replace(/\s+/g,'').replace(',', '.');
+  s = s.replace('%','').replace(/\\s+/g,'').replace(',', '.');
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
