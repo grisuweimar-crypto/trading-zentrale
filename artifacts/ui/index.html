@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="build-sha" content="d4d4ad7"/>
+  <meta name="build-sha" content="local"/>
   <title>Scanner_vNext  -  Research Dashboard</title>
   <style>
     :root {
@@ -307,12 +307,12 @@
     }
   </style>
 </head>
-<body data-build-sha="d4d4ad7" data-build-branch="main">
+<body data-build-sha="local" data-build-branch="">
   <header>
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext  -  Research Dashboard</h1>
-        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha d4d4ad7 | branch main ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha local ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
@@ -1592,7 +1592,7 @@ function parsePct(v) {
 
 function perfPct(r) {
   return parsePct(
-    r.perf_pct  r['Perf %']  r['Change %']  r.change_pct  r.changePercent  r.PerfPct
+    r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct
   );
 }
 
@@ -1898,8 +1898,8 @@ function renderMarketContext(rows, presetRows) {
         if (ctry) subParts.push(esc(ctry));
         const subName = subParts.join('  -  ');
 
-        const price = asNum(r.price)  asNum(r["Akt. Kurs"]);
-        const perf = asNum(r.perf_pct)  asNum(r["Perf %"]);
+        const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
+        const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
         const priceMain = (price === null) ? ' - ' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
         const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
 
@@ -1984,7 +1984,7 @@ function renderMarketContext(rows, presetRows) {
       const opt = [
         ['Price', r.price],
         ['Currency', curr],
-        ['Perf %', fmtPct(asNum(r.perf_pct)  asNum(r["Perf %"]))],
+        ['Perf %', fmtPct(asNum(r.perf_pct) ?? asNum(r["Perf %"]))],
         ['DiversPenalty', (asNum(r.diversification_penalty) ?? 0).toFixed(2)],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],

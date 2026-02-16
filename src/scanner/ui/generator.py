@@ -1936,7 +1936,7 @@ function parsePct(v) {
 
 function perfPct(r) {
   return parsePct(
-    r.perf_pct  r['Perf %']  r['Change %']  r.change_pct  r.changePercent  r.PerfPct
+    r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct
   );
 }
 
@@ -2242,8 +2242,8 @@ function renderMarketContext(rows, presetRows) {
         if (ctry) subParts.push(esc(ctry));
         const subName = subParts.join(' Â· ');
 
-        const price = asNum(r.price)  asNum(r["Akt. Kurs"]);
-        const perf = asNum(r.perf_pct)  asNum(r["Perf %"]);
+        const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
+        const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
         const priceMain = (price === null) ? 'â€”' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
         const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
 
@@ -2328,7 +2328,7 @@ function renderMarketContext(rows, presetRows) {
       const opt = [
         ['Price', r.price],
         ['Currency', curr],
-        ['Perf %', fmtPct(asNum(r.perf_pct)  asNum(r["Perf %"]))],
+        ['Perf %', fmtPct(asNum(r.perf_pct) ?? asNum(r["Perf %"]))],
         ['DiversPenalty', (asNum(r.diversification_penalty) ?? 0).toFixed(2)],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],
@@ -2692,7 +2692,7 @@ def _render_help_html(*, version: str, build: str) -> str:
     summary{{cursor:pointer;font-weight:700}}
     code{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}}
     ul{{margin:8px 0 8px 18px}}
-    p{{line-height:1.45}}
+    p{{line-height:1.5}}
   </style>
 </head>
 <body>
@@ -2700,54 +2700,58 @@ def _render_help_html(*, version: str, build: str) -> str:
     <div class="card">
       <h1 style="margin:0 0 6px 0">Scanner_vNext - Hilfe</h1>
       <div class="meta">version {version} - build {build} - <a href="index.html">zurueck zum Dashboard</a></div>
-      <p><b>Was ist das?</b> Ein privates Research-Dashboard fuer Watchlist-Entscheidungen. Es sortiert Werte nach Datenlage, Trend, Liquiditaet und Risiko - als Arbeitsgrundlage, nicht als Kaufsignal.</p>
-      <p><b>Wichtig:</b> Keine Anlageberatung. Die Labels helfen dir beim Priorisieren, ersetzen aber keine eigene Pruefung.</p>
+      <p><b>Was ist das?</b> Scanner_vNext ist ein Research-Dashboard fuer Watchlist-Analyse. Die Anzeige kombiniert Rangfolge (Score), Datenqualitaet (Confidence), Filterstatus und Marktkontext in einer kompakten Ansicht.</p>
+      <p><b>Wichtig:</b> Die Inhalte sind Analyse- und Priorisierungsinformationen. Die Darstellung ist kein Handelsaufruf und keine Anlageberatung.</p>
     </div>
 
     <div class="card">
       <h2 style="margin:0 0 8px 0">60 Sekunden: So nutzt du das Dashboard</h2>
       <ol>
-        <li>Preset waehlen (ALL, CORE, TOP...), dann Suche/Filter setzen.</li>
-        <li>Score + Confidence zusammen lesen, nicht isoliert.</li>
-        <li>Mit Bucket-Matrix auf passende Score/Risk-Zonen fokussieren.</li>
-        <li>Bei Kandidaten den Drawer oeffnen und Details pruefen.</li>
+        <li>Preset waehlen (ALL, CORE, TOP...), danach Suche und Quick-Filter setzen.</li>
+        <li>Score, Confidence, Trend und Liq gemeinsam lesen.</li>
+        <li>Bucket-Matrix fuer Score/Risk-Fokus verwenden.</li>
+        <li>Details im Drawer pruefen und mit Market Context einordnen.</li>
       </ol>
     </div>
 
     <details open>
       <summary>Wie lese ich die Hauptspalten?</summary>
+      <p>Die Hauptspalten bilden drei Ebenen ab: Rangfolge, Qualitaet und Filterstatus.</p>
       <ul>
-        <li><b>Score</b>: relative Einordnung im aktuellen Universe.</li>
-        <li><b>Conf(idence)</b>: Qualitaet/Konfluenz der Datengrundlage.</li>
-        <li><b>Trend / Liq</b>: Mindestbedingungen (Trend intakt? genug Liquiditaet?).</li>
-        <li><b>Status</b>: OK / AVOID / NA als schneller Warnhinweis.</li>
+        <li><b>Score</b>: relative Rangfolge im aktuell geladenen Universe. Ein hoher Wert bedeutet eine starke Position innerhalb der aktuellen Vergleichsmenge.</li>
+        <li><b>Confidence</b>: Stabilitaet der Daten- und Signalbasis. Hohe Werte stehen fuer konsistentere Rahmenbedingungen.</li>
+        <li><b>Trend / Liq</b>: einfache Plausibilitaetsfilter. Trend prueft Trendlage, Liq prueft Handelbarkeit/Volumennahe.</li>
+        <li><b>Status</b>: kompakter Arbeitsstatus. <code>OK</code> = normal, <code>AVOID</code> = meiden, <code>NA</code> = unvollstaendig.</li>
       </ul>
+      <p>Einzelwerte sollten nicht isoliert interpretiert werden. Aussagekraft entsteht aus der Kombination der Spalten.</p>
     </details>
 
     <details open>
       <summary>Was bedeuten R0-R5?</summary>
-      <p>R0-R5 sind interne Workflow-Codes fuer Priorisierung. Sie sind <b>keine</b> Kauf-/Verkaufsempfehlung.</p>
+      <p>R0-R5 sind neutrale Workflow-Codes fuer die interne Priorisierung. Sie sind keine Kauf-/Verkaufssignale.</p>
       <ul>
-        <li><b>R5/R4</b>: hohe Prioritaet fuer weitere Pruefung.</li>
-        <li><b>R3</b>: neutral beobachten.</li>
+        <li><b>R5/R4</b>: hohe Prioritaet fuer vertiefte Analyse.</li>
+        <li><b>R3</b>: neutraler Beobachtungsstatus.</li>
         <li><b>R2/R1</b>: niedrige Prioritaet.</li>
-        <li><b>R0</b>: vermeiden (z.B. AVOID-Status).</li>
+        <li><b>R0</b>: Ausschluss-/Vermeidungsstatus (z.B. AVOID).</li>
       </ul>
+      <p>Der Code verdichtet mehrere Informationen zu einem schnellen Arbeitslabel. Er ersetzt keine Detailpruefung.</p>
     </details>
 
     <details open>
       <summary>Market Context: Wozu ist das gut?</summary>
+      <p>Der Market-Context-Block ergaenzt die Einzeltitelansicht um den Zustand des aktuell gefilterten Gesamtuniversums.</p>
       <ul>
-        <li><b>Breadth</b>: zeigt, ob das Umfeld breit positiv/negativ ist.</li>
-        <li><b>Movers</b>: staerkste Gewinner/Verlierer im aktuellen Filter.</li>
-        <li><b>Heatmap</b>: Verteilung nach Cluster/Saeule und Score-Buckets.</li>
+        <li><b>Breadth</b>: Verteilung von Gewinnern, Verlierern und neutralen Werten. Zeigt, ob das Umfeld breit getragen oder eng ist.</li>
+        <li><b>Movers</b>: staerkste positive und negative Tagesbewegungen im aktiven Filter.</li>
+        <li><b>Heatmap</b>: Strukturansicht nach Cluster/Saeule und Score-Bucket. Macht Konzentrationen und Luecken sichtbar.</li>
       </ul>
-      <p>Alles in diesem Block ist <b>Kontext</b> und veraendert den Score nicht.</p>
+      <p>Dieser Block liefert Kontext und Orientierung. Er veraendert den Score nicht.</p>
     </details>
 
     <details>
       <summary>Kurze Projektbeschreibung</summary>
-      <p>Scanner_vNext kombiniert Watchlist-Daten, Regime-Logik und UI-Filter in einem taeglichen Workflow. Ziel ist nicht, Entscheidungen zu automatisieren, sondern sie konsistenter und nachvollziehbarer zu machen. Das Dashboard soll dir zeigen: Was ist heute relevant, was ist riskant, was braucht mehr Pruefung.</p>
+      <p>Scanner_vNext verbindet Datenaufbereitung, Scoring und UI-Exploration in einem taeglichen Analyseablauf. Ziel ist eine reproduzierbare und transparente Entscheidungsgrundlage: relevante Werte schneller erkennen, Risiken frueh markieren und Interpretationen nachvollziehbar dokumentieren.</p>
     </details>
   </main>
 </body>
