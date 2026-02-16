@@ -404,7 +404,7 @@ def build_watchlist_outputs() -> None:
         from scanner.data.enrich.yahoo_prices import enrich_watchlist_with_yahoo, should_fetch_yahoo
 
         if should_fetch_yahoo():
-            print("🔄 Yahoo Finance: fetch enabled (refreshing market data)")
+            print("[INFO] Yahoo Finance: fetch enabled (refreshing market data)")
             df_y, rep = enrich_watchlist_with_yahoo(df_raw, enabled=True)
             # Persist back to watchlist.csv ONLY if the source is the artifacts DB snapshot.
             # (Never overwrite templates under data/inputs)
@@ -426,10 +426,10 @@ def build_watchlist_outputs() -> None:
 
             df_raw = df_y
         else:
-            print("ℹ️ Yahoo Finance: fetch disabled (using existing values from watchlist.csv)")
+            print("[INFO] Yahoo Finance: fetch disabled (using existing values from watchlist.csv)")
     except Exception as e:
         # Never break the pipeline on market fetch. Keep existing values.
-        print(f"⚠️ Yahoo Finance enrichment skipped: {e}")
+        print(f"[WARN] Yahoo Finance enrichment skipped: {e}")
 
     # 2) RAW exportieren (ungeändert)
     raw_path = out_dir / "watchlist_full_raw.csv"
@@ -514,7 +514,7 @@ def build_watchlist_outputs() -> None:
     if dupes is not None and not dupes.empty:
         dup_path = reports_dir / "watchlist_duplicates_dropped.csv"
         to_csv_safely(dupes, dup_path, index=False)
-        print(f"⚠️ Dedup: dropped {len(dupes)} duplicate rows (see {dup_path})")
+        print(f"[WARN] Dedup: dropped {len(dupes)} duplicate rows (see {dup_path})")
 
     # 5) Canonical exportieren
     full_path = out_dir / "watchlist_full.csv"
@@ -794,7 +794,7 @@ def build_watchlist_outputs() -> None:
                 model = os.getenv("OPENAI_MODEL") or str(cfg.ai_model)
                 ai_text = generate_ai_briefing_text(briefing, model=model)
             except Exception as e:
-                print(f"⚠️ AI briefing skipped (enable_ai=true, but API failed): {e}")
+                print(f"[WARN] AI briefing skipped (enable_ai=true, but API failed): {e}")
 
         out = write_briefing_outputs(
             briefing=briefing,
@@ -820,9 +820,9 @@ def build_watchlist_outputs() -> None:
         try:
             fallback_path = reports_dir / "briefing.txt"
             _write_briefing(df=df, out_path=fallback_path)
-            print(f"⚠️ Briefing (new) failed: {e} — wrote legacy fallback: {fallback_path}")
+            print(f"[WARN] Briefing (new) failed: {e} - wrote legacy fallback: {fallback_path}")
         except Exception as e2:
-            print(f"⚠️ Briefing write failed: {e2}")
+            print(f"[WARN] Briefing write failed: {e2}")
 
 
 def _write_briefing(df: pd.DataFrame, out_path: Path) -> None:

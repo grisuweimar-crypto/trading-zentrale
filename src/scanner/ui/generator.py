@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 """Static UI generator (Phase B2 MVP).
 
@@ -49,7 +49,7 @@ DEFAULT_COLUMNS = [
     "Industry",
     "country",
     "currency",
-    "Währung",
+    "WÃ¤hrung",
     # pricing / momentum
     "price",
     "Akt. Kurs",
@@ -249,7 +249,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     # Server-side preset <option> fallback (so UI isn't empty if JS fails)
     preset_labels = {
         "ALL": "Alle Werte",
-        "CORE": "Übersicht",
+        "CORE": "Ãœbersicht",
         "SCORED": "Bewertet",
         "TOP": "Top",
         "TOP_RELAXED": "Top (entspannt)",
@@ -262,7 +262,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     for n in names:
         desc = str(((presets.get(n, {}) or {}).get("description", ""))).strip()
         label = preset_labels.get(n, n)
-        txt = f"{label} ({n})" + (f" — {desc}" if desc else "")
+        txt = f"{label} ({n})" + (f" â€” {desc}" if desc else "")
         opts.append(f'<option value="{html.escape(n)}">{html.escape(txt)}</option>')
     preset_options_html = "\n".join(opts)
 
@@ -273,7 +273,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Scanner_vNext — Research Dashboard</title>
+  <title>Scanner_vNext â€” Research Dashboard</title>
   <style>
     :root {
       --bg: #0b0f14;
@@ -333,7 +333,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .briefing-asset { margin: 10px 0 6px; font-weight: 700; }
     .briefing-label { margin: 10px 0 6px; opacity: .9; font-weight: 700; }
 
-    /* Mobile: Panels/Drawer/Modals dürfen nicht über den Viewport schießen */
+    /* Mobile: Panels/Drawer/Modals dÃ¼rfen nicht Ã¼ber den Viewport schieÃŸen */
     * { box-sizing: border-box; }
     html, body { max-width: 100%; overflow-x: hidden; }
 
@@ -472,7 +472,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .sig.grad.warn { background: linear-gradient(90deg, rgba(251,191,36,.20), rgba(251,191,36,.06)); }
     .sig.grad.bad  { background: linear-gradient(90deg, rgba(251,113,133,.18), rgba(251,113,133,.06)); }
 
-    /* Bucket matrix (Score × Risk) */
+    /* Bucket matrix (Score Ã— Risk) */
     .matrixPanel { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
     .matrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 12px; margin-bottom: 10px; }
     .matrixTitle { font-weight: 700; }
@@ -580,15 +580,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <header>
     <div class="wrap">
       <div class="title">
-        <h1>Scanner_vNext — Research Dashboard</h1>
-        <div class="meta">version __VERSION__ · build __BUILD__ · <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
+        <h1>Scanner_vNext â€” Research Dashboard</h1>
+        <div class="meta">version __VERSION__ Â· build __BUILD__ Â· <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
 
   <div class="wrap">
     <div class="disclaimer" id="disclaimer">
-      <div class="txt"><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Gewähr. Nutzung auf eigene Verantwortung.</div>
+      <div class="txt"><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine GewÃ¤hr. Nutzung auf eigene Verantwortung.</div>
       <button type="button" class="btn" id="discOk" title="Hinweis ausblenden">Verstanden</button>
     </div>
     <div id="jsErrorBanner" class="jsError"></div>
@@ -600,23 +600,23 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <select id="preset">__PRESET_OPTIONS__</select>
         </div>
         <div>
-          <label for="search">Suche (Symbol/Name/Kategorie/Land…)</label>
-          <input id="search" placeholder="z.B. NVDA, Gold, Deutschland, Krypto…"/>
+          <label for="search">Suche (Symbol/Name/Kategorie/Landâ€¦)</label>
+          <input id="search" placeholder="z.B. NVDA, Gold, Deutschland, Kryptoâ€¦"/>
         </div>
         <div>
           <label for="clusterSel">Cluster/Sektor</label>
           <select id="clusterSel"><option value="">Alle</option></select>
         </div>
         <div>
-          <label for="pillarSel">Säule (5‑Säulen/Playground)</label>
+          <label for="pillarSel">SÃ¤ule (5â€‘SÃ¤ulen/Playground)</label>
           <select id="pillarSel"><option value="">Alle</option></select>
         </div>
-        <div class="count" id="count">—</div>
+        <div class="count" id="count">â€”</div>
       </div>
 
-      <div class="kpis" id="kpis">—</div>
-      <div class="pillars" id="pillars">—</div>
-      <div class="clusters" id="clusters">—</div>
+      <div class="kpis" id="kpis">â€”</div>
+      <div class="pillars" id="pillars">â€”</div>
+      <div class="clusters" id="clusters">â€”</div>
 
       <div class="filters" id="filters">
         <button type="button" class="fbtn active" data-f="hideAvoid" title="AVOID-Zeilen ausblenden (score_status beginnt mit AVOID_)">AVOID ausblenden</button>
@@ -626,20 +626,20 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         <span class="fsep"></span>
         <button type="button" class="fbtn" data-f="onlyStock" title="Nur Aktien (is_crypto = false)">Aktien</button>
         <button type="button" class="fbtn" data-f="onlyCrypto" title="Nur Krypto (is_crypto = true)">Krypto</button>
-        <button type="button" class="fbtn" data-f="resetSort" title="Nur Sort-Override löschen (Preset-Sort bleibt)">Sortierung zurück</button>
-        <button type="button" class="fbtn" data-f="reset" title="Alles zurücksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
-        <button type="button" class="hintbtn" id="infoFlow" aria-haspopup="dialog" aria-expanded="false" title="Erklärung anzeigen"><span class="i">i</span>Preset → Quick-Filter</button>
+        <button type="button" class="fbtn" data-f="resetSort" title="Nur Sort-Override lÃ¶schen (Preset-Sort bleibt)">Sortierung zurÃ¼ck</button>
+        <button type="button" class="fbtn" data-f="reset" title="Alles zurÃ¼cksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
+        <button type="button" class="hintbtn" id="infoFlow" aria-haspopup="dialog" aria-expanded="false" title="ErklÃ¤rung anzeigen"><span class="i">i</span>Preset â†’ Quick-Filter</button>
       </div>
 
       <div class="popover" id="infoPopover" role="dialog" aria-modal="false" aria-hidden="true">
-        <button type="button" class="btn close" id="infoClose" title="Schließen">✕</button>
+        <button type="button" class="btn close" id="infoClose" title="SchlieÃŸen">âœ•</button>
         <div class="title">Wie wirken Preset, Suche und Quick-Filter?</div>
         <ul>
-          <li><b>Preset</b> filtert und sortiert zuerst (View-Layer, verändert kein Scoring).</li>
-          <li>Danach wirkt die <b>Suche</b> (Ticker/Name/Kategorie/Land…).</li>
+          <li><b>Preset</b> filtert und sortiert zuerst (View-Layer, verÃ¤ndert kein Scoring).</li>
+          <li>Danach wirkt die <b>Suche</b> (Ticker/Name/Kategorie/Landâ€¦).</li>
           <li>Zuletzt greifen die <b>Quick-Filter</b> (z.B. Trend OK, Liq OK, Nur OK).</li>
         </ul>
-        <div class="title" style="margin-top:10px;">Signal‑Codes (privat)</div>
+        <div class="title" style="margin-top:10px;">Signalâ€‘Codes (privat)</div>
         <ul>
           <li><b>R5</b> = <span class="sig good grad">Top Setup</span></li>
           <li><b>R4</b> = <span class="sig good grad">Good Setup</span></li>
@@ -655,15 +655,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div>
             <div class="matrixHead">
               <div>
-                <div class="matrixTitle">Bucket‑Matrix (Score × Risk)</div>
-                <div class="muted small">Klick auf ein Feld = Matrix‑Filter (zusätzlich zu Preset/Suche/Quick‑Filter).</div>
+                <div class="matrixTitle">Bucketâ€‘Matrix (Score Ã— Risk)</div>
+                <div class="muted small">Klick auf ein Feld = Matrixâ€‘Filter (zusÃ¤tzlich zu Preset/Suche/Quickâ€‘Filter).</div>
               </div>
               <div style="display:flex; gap:8px; align-items:center;">
-                <button type="button" class="btn" id="matrixClear" title="Matrix‑Filter zurücksetzen">Matrix zurück</button>
+                <button type="button" class="btn" id="matrixClear" title="Matrixâ€‘Filter zurÃ¼cksetzen">Matrix zurÃ¼ck</button>
               </div>
             </div>
             <div class="matrixGrid" id="matrix"></div>
-            <div class="matrixNote" id="matrixNote">—</div>
+            <div class="matrixNote" id="matrixNote">â€”</div>
           </div>
 
           <div class="briefingBox" id="briefingBox">
@@ -671,8 +671,8 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <div class="matrixTitle">Briefing</div>
               <button type="button" class="btn" id="briefingToggle" title="Briefing ein-/ausblenden">Ausblenden</button>
             </div>
-            <div class="muted small">Privat/experimentell · keine Anlageberatung · ohne Einfluss aufs Scoring.</div>
-            <div id="briefingText" class="briefingText">—</div>
+            <div class="muted small">Privat/experimentell Â· keine Anlageberatung Â· ohne Einfluss aufs Scoring.</div>
+            <div id="briefingText" class="briefingText">â€”</div>
           </div>
         </div>
       </div>
@@ -682,11 +682,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <div class="marketHead">
     <div>
       <div class="matrixTitle">Market Context</div>
-      <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) · Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/Säule)</div>
+      <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
       <select id="heatMode" title="Heatmap-Modus">
-        <option value="pillar">Heatmap: Säulen</option>
+        <option value="pillar">Heatmap: SÃ¤ulen</option>
         <option value="cluster">Heatmap: Cluster</option>
       </select>
       <button type="button" class="btn" id="marketToggle" title="Market Context ein-/ausblenden">Ausblenden</button>
@@ -695,26 +695,26 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <div id="marketBody" class="marketGrid">
     <div class="marketCard" id="breadthCard">
       <div class="marketCardTitle">Breadth</div>
-      <div id="breadthBox">—</div>
-      <div id="diversBox" class="muted small" style="margin-top:8px;">—</div>
-      <div id="qualityBox" class="muted small" style="margin-top:8px;">—</div>
+      <div id="breadthBox">â€”</div>
+      <div id="diversBox" class="muted small" style="margin-top:8px;">â€”</div>
+      <div id="qualityBox" class="muted small" style="margin-top:8px;">â€”</div>
     </div>
     <div class="marketCard" id="moversCard">
       <div class="marketCardTitle">Movers</div>
       <div class="moversGrid">
         <div>
-          <div class="muted small">Top ↑</div>
-          <div id="moversUp" class="moversList">—</div>
+          <div class="muted small">Top â†‘</div>
+          <div id="moversUp" class="moversList">â€”</div>
         </div>
         <div>
-          <div class="muted small">Weak ↓</div>
-          <div id="moversDown" class="moversList">—</div>
+          <div class="muted small">Weak â†“</div>
+          <div id="moversDown" class="moversList">â€”</div>
         </div>
       </div>
     </div>
     <div class="marketCard" id="heatCard">
       <div class="marketCardTitle">Heatmap</div>
-      <div id="heatmap" class="heatWrap">—</div>
+      <div id="heatmap" class="heatWrap">â€”</div>
     </div>
   </div>
 </div>
@@ -735,14 +735,14 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           </colgroup>
           <thead>
             <tr>
-              <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-Währung">Symbol/ISIN</th>
-              <th data-k="name" title="Name + Kategorie/Land/Währung">Name</th>
-              <th data-k="price" class="right" title="Aktueller Kurs (Originalwährung) + Tagesänderung (Perf %)">Kurs</th>
-              <th data-k="score" class="right" title="Gesamtscore (höher = besser)">Score</th>
+              <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
+              <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
+              <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
+              <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
-              <th data-k="liquidity_ok" title="Liquiditäts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
+              <th data-k="liquidity_ok" title="LiquiditÃ¤ts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
               <th data-k="score_status" title="OK / AVOID / AVOID_CRYPTO_BEAR / NA / ERROR">Status</th>
               <th data-k="is_crypto" class="hide-sm" title="Assetklasse">Art</th>
             </tr>
@@ -752,8 +752,8 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
 
       <div class="footer">
-        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung · <span class="kbd">Esc</span> = Suche leeren</div>
-        <div class="mono" id="sortHint">—</div>
+        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung Â· <span class="kbd">Esc</span> = Suche leeren</div>
+        <div class="mono" id="sortHint">â€”</div>
       </div>
     </div>
   </div>
@@ -762,12 +762,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     <div class="drawer panel" role="dialog" aria-modal="true" aria-label="Why Score">
       <div class="drawer-head">
         <div>
-          <div id="drawerTitle" style="font-weight:700;">—</div>
-          <div id="drawerSub" class="muted small">—</div>
+          <div id="drawerTitle" style="font-weight:700;">â€”</div>
+          <div id="drawerSub" class="muted small">â€”</div>
         </div>
         <div class="drawer-actions">
           <div id="drawerActions"></div>
-          <button class="btn" id="drawerClose">Schließen</button>
+          <button class="btn" id="drawerClose">SchlieÃŸen</button>
         </div>
       </div>
       <div class="drawer-body" id="drawerBody"></div>
@@ -791,17 +791,17 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     window.__showJsError = show;
     window.addEventListener('error', (ev) => {
       const m = (ev && (ev.message || (ev.error && ev.error.message))) ? (ev.message || ev.error.message) : 'Unbekannter Fehler';
-      show('UI‑Fehler (JS): ' + m);
+      show('UIâ€‘Fehler (JS): ' + m);
     });
     window.addEventListener('unhandledrejection', (ev) => {
       const r = ev && ev.reason;
       const m = (r && r.message) ? r.message : String(r);
-      show('UI‑Fehler (Promise): ' + m);
+      show('UIâ€‘Fehler (Promise): ' + m);
     });
     // If the main UI never sets jsok, show a helpful message (covers parse errors)
     setTimeout(() => {
       const ok = document.documentElement && document.documentElement.dataset && document.documentElement.dataset.jsok;
-      if (!ok) show('UI konnte nicht initialisiert werden (JS lädt nicht). Öffne die Konsole (F12) für Details.');
+      if (!ok) show('UI konnte nicht initialisiert werden (JS lÃ¤dt nicht). Ã–ffne die Konsole (F12) fÃ¼r Details.');
     }, 700);
   })();
   </script>
@@ -851,7 +851,7 @@ const elHeatMode = document.getElementById('heatMode');
     const drawerBody = document.getElementById('drawerBody');
     const drawerActions = document.getElementById('drawerActions');
 
-    // Flow info popover (Preset → Quick-Filter)
+    // Flow info popover (Preset â†’ Quick-Filter)
     const infoFlow = document.getElementById('infoFlow');
     const infoPopover = document.getElementById('infoPopover');
     const infoClose = document.getElementById('infoClose');
@@ -878,7 +878,7 @@ const elHeatMode = document.getElementById('heatMode');
     let activePreset = 'ALL';
     let userSort = null; // {k, dir} dir: 'asc'|'desc'
     let clusterPick = ''; // Cluster/Sektor filter (string)
-    let pillarPick = '';  // Säulen-Filter (string; private metadata)
+    let pillarPick = '';  // SÃ¤ulen-Filter (string; private metadata)
 
 // Market Context UI state (passive)
 let marketVisible = true;
@@ -901,7 +901,7 @@ let heatMode = 'pillar'; // 'pillar' | 'cluster'
       onlyCrypto: false,
     };
 
-    // Bucket-matrix filter (Score × Risk)
+    // Bucket-matrix filter (Score Ã— Risk)
     let matrix = { sb: null, rb: null };
     const DEFAULT_MATRIX = { sb: null, rb: null };
 
@@ -1003,7 +1003,7 @@ function resetAll() {
       refresh();
     }
 
-    // ---- info popover (Preset → Quick-Filter) ----
+    // ---- info popover (Preset â†’ Quick-Filter) ----
     function closeInfoPopover() {
       if (!infoPopover) return;
       infoPopover.classList.remove('show');
@@ -1129,7 +1129,7 @@ if (elHeatMode) {
       return (v ?? '').toString().trim();
     }
 
-    // HTML-Listen-Konvertierung für Briefing (bessere Mobile Darstellung)
+    // HTML-Listen-Konvertierung fÃ¼r Briefing (bessere Mobile Darstellung)
     function briefingToHtml(text){
       const lines = (text || "").split(/\\r?\\n/);
       let out = "";
@@ -1152,7 +1152,7 @@ if (elHeatMode) {
 
         if(/^\\d+\\)\\s/.test(line)){
           out += `<h4 class="briefing-asset">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</h4>`;
-        } else if(/^(Gründe|Risiken\\/Flags|Nächste Checks|Kontext-Hinweise)/.test(line)){
+        } else if(/^(GrÃ¼nde|Risiken\\/Flags|NÃ¤chste Checks|Kontext-Hinweise)/.test(line)){
           out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c).replace(/:$/,"")}</div>`;
         } else {
           out += `<p>${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</p>`;
@@ -1221,14 +1221,14 @@ function renderClusterChips(counts) {
   const active = clusterPick || '';
   let html = '<span class="label">Cluster:</span>';
   if (active) {
-    html += `<button type="button" class="chip kpi warn active" data-clr="1" title="Cluster-Filter löschen">✕ ${esc(active)}</button>`;
+    html += `<button type="button" class="chip kpi warn active" data-clr="1" title="Cluster-Filter lÃ¶schen">âœ• ${esc(active)}</button>`;
   }
   for (const x of top) {
     const isOn = active && x.k === active;
     const kind = isOn ? 'warn active' : 'blue';
     html += `<button type="button" class="chip kpi ${kind}" data-cl="${esc(x.k)}" title="Filter: nur Cluster ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
-  if (!top.length) html += '<span class="muted">—</span>';
+  if (!top.length) html += '<span class="muted">â€”</span>';
   elClusters.innerHTML = html;
 }
 
@@ -1238,7 +1238,7 @@ function applyClusterFilter(rows) {
   return (rows || []).filter(r => clusterLabel(r) === sel);
 }
 
-// ---- 5‑Säulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
+// ---- 5â€‘SÃ¤ulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
 const PILLAR_ORDER = ['Gehirn','Hardware','Energie','Fundament','Recycling','Playground'];
 
 function _derivePillarFromLegacy(catRaw) {
@@ -1253,9 +1253,9 @@ function _derivePillarFromLegacy(catRaw) {
   if (s.includes('energie') || s.includes('uran')) return 'Energie';
   if (s.includes('fundament')) return 'Fundament';
   if (s.includes('recycling') || s.includes('urban mining') || s.includes('urban-mining')) return 'Recycling';
-  // legacy mining buckets → Fundament
+  // legacy mining buckets â†’ Fundament
   if (s.includes('mining') || s.includes('mine') || s.includes('edelmetall') || s.includes('metall') || s.includes('rohstoff')) return 'Fundament';
-  // ambiguous tech buckets → Gehirn (default), hardware-specific keywords → Hardware
+  // ambiguous tech buckets â†’ Gehirn (default), hardware-specific keywords â†’ Hardware
   if (s.includes('robot') || s.includes('automation') || s.includes('sensor') || s.includes('vision') || s.includes('machine')) return 'Hardware';
   if (s.includes('software') || s.includes('internet') || s.includes('ki') || s.includes('ai') || s.includes('data') || s.includes('cloud') || s.includes('chip') || s.includes('semiconductor')) return 'Gehirn';
   return '';
@@ -1304,15 +1304,15 @@ function renderPillarOptions(counts) {
 function renderPillarChips(counts) {
   if (!elPillars) return;
   const active = pillarPick || '';
-  let html = '<span class="label">Säulen:</span>';
+  let html = '<span class="label">SÃ¤ulen:</span>';
   if (active) {
-    html += `<button type="button" class="chip kpi warn active" data-pr="1" title="Säulen-Filter löschen">✕ ${esc(active)}</button>`;
+    html += `<button type="button" class="chip kpi warn active" data-pr="1" title="SÃ¤ulen-Filter lÃ¶schen">âœ• ${esc(active)}</button>`;
   }
   for (const x of (counts || [])) {
     const isOn = active && x.k === active;
     const kind = isOn ? 'warn active' : 'blue';
     const dis = (x.v || 0) <= 0 ? 'disabled aria-disabled="true"' : '';
-    html += `<button type="button" class="chip kpi ${kind}" data-p="${esc(x.k)}" ${dis} title="Filter: nur Säule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
+    html += `<button type="button" class="chip kpi ${kind}" data-p="${esc(x.k)}" ${dis} title="Filter: nur SÃ¤ule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
   elPillars.innerHTML = html;
 }
@@ -1371,7 +1371,7 @@ function applyPillarFilter(rows) {
     function bucketRange(i) {
       const a = i * 20;
       const b = (i === 4) ? 100 : (i + 1) * 20;
-      return `${a}–${b}`;
+      return `${a}â€“${b}`;
     }
     function scoreBucketText(i) {
       return { range: bucketRange(i), hint: 'Score' };
@@ -1383,7 +1383,7 @@ function applyPillarFilter(rows) {
 
 
     function fmtPrice(n) {
-      if (n === null || n === undefined) return '—';
+      if (n === null || n === undefined) return 'â€”';
       const ax = Math.abs(n);
       let maxFrac = 2;
       if (ax < 1) maxFrac = 4;
@@ -1396,9 +1396,9 @@ function applyPillarFilter(rows) {
     }
 
     function perfLine(p) {
-      if (p === null || p === undefined) return '<div class="sub muted">—</div>';
+      if (p === null || p === undefined) return '<div class="sub muted">â€”</div>';
       const dir = (p > 0) ? 'pos' : (p < 0) ? 'neg' : 'flat';
-      const arrow = (p > 0) ? '▲' : (p < 0) ? '▼' : '•';
+      const arrow = (p > 0) ? 'â–²' : (p < 0) ? 'â–¼' : 'â€¢';
       return `<div class="sub chg ${dir}">${arrow} ${p.toFixed(2)}%</div>`;
     }
 
@@ -1459,7 +1459,7 @@ function applyPillarFilter(rows) {
         if (pair && pair.includes('-')) return pair.split('-')[0];
         const s = normStr(r.symbol) || normStr(r.Symbol);
         if (s && !looksLikeISIN(s)) return s;
-        return pair || pickDisplayTicker(r) || '—';
+        return pair || pickDisplayTicker(r) || 'â€”';
       }
       const s = normStr(r.symbol) || normStr(r.Symbol);
       if (s && !looksLikeISIN(s)) return s;
@@ -1469,7 +1469,7 @@ function applyPillarFilter(rows) {
       if (yh && !looksLikeISIN(yh)) return yh;
       const t = normStr(r.ticker);
       if (t && !looksLikeISIN(t)) return t;
-      return '—';
+      return 'â€”';
     }
 
 
@@ -1520,7 +1520,7 @@ function applyPillarFilter(rows) {
     function scoreCell(r) {
       const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
-      const sig = rec ? `<span class="sig ${rec.cls}" title="Signal‑Code">${esc(rec.code)}</span>` : '';
+      const sig = rec ? `<span class="sig ${rec.cls}" title="Signalâ€‘Code">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
     }
 
@@ -1633,7 +1633,7 @@ function applyPillarFilter(rows) {
       if (!q) return rows;
       const tokens = q.split(/\s+/).filter(Boolean);
       return rows.filter(r => {
-        const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["Währung"], r.quote_currency, r.score_status]
+        const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["WÃ¤hrung"], r.quote_currency, r.score_status]
           .map(normStr).join(' ').toLowerCase();
         return tokens.every(t => hay.includes(t));
       });
@@ -1671,7 +1671,7 @@ function applyPillarFilter(rows) {
       // KPI chips double as quick filters (intuitive). Preset applies first, then search, then quick filters.
       elKpis.innerHTML =
         `<span class="label">KPI</span>`
-        + kpiChip(`Sichtbar ${v.total}/${a.total}`, 'blue', 'Sichtbar nach Preset → Suche → Quick-Filter / Gesamt', '', false)
+        + kpiChip(`Sichtbar ${v.total}/${a.total}`, 'blue', 'Sichtbar nach Preset â†’ Suche â†’ Quick-Filter / Gesamt', '', false)
         + kpiChip(`OK ${v.ok}`, 'good', 'Filter: nur score_status == OK', 'ok', !!quick.onlyOK)
         + kpiChip(`AVOID ${v.avoid}`, 'warn', 'Filter: nur score_status beginnt mit AVOID_', 'avoid', !!quick.onlyAvoid)
         + kpiChip(`NA ${v.na}`, 'bad', 'Filter: nur score_status == NA', 'na', !!quick.onlyNA)
@@ -1781,15 +1781,15 @@ function applyQuickFilters(rows) {
 
       const parts = [];
       // header row: Score buckets (x). Corner shows axis directions.
-      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y) × Score (x)"><div class="lbl">Risk ↓</div><div class="hint">Score →</div></div>`);
+      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y) Ã— Score (x)"><div class="lbl">Risk â†“</div><div class="hint">Score â†’</div></div>`);
       for (let sb = 0; sb < 5; sb++) {
         const s = scoreBucketText(sb);
-        parts.push(`<div class="matrixLabel" title="Score‑Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="Scoreâ€‘Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
       }
 
       for (let rb = 0; rb < 5; rb++) {
         const rtxt = riskBucketText(rb);
-        parts.push(`<div class="matrixLabel" title="Risk‑Bucket (Perzentil; höher = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="Riskâ€‘Bucket (Perzentil; hÃ¶her = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
         for (let sb = 0; sb < 5; sb++) {
           const c = counts[rb][sb] || 0;
           const active = (matrix && matrix.sb === sb && matrix.rb === rb) ? 'active' : '';
@@ -1805,13 +1805,13 @@ function applyQuickFilters(rows) {
           const s = scoreBucketText(sb);
           const rr = riskBucketText(rb);
 
-          parts.push(`<div class="cell ${active} ${zero}" ${st} data-sb="${sb}" data-rb="${rb}" title="Score ${esc(s.range)} · Risk ${esc(rr.hint)}">${c ? `<span class="cnt">${c}</span>` : `<span class="cnt">·</span>`}</div>`);
+          parts.push(`<div class="cell ${active} ${zero}" ${st} data-sb="${sb}" data-rb="${rb}" title="Score ${esc(s.range)} Â· Risk ${esc(rr.hint)}">${c ? `<span class="cnt">${c}</span>` : `<span class="cnt">Â·</span>`}</div>`);
         }
       }
 
       elMatrix.innerHTML = parts.join('');
 
-      // Click → toggle matrix filter
+      // Click â†’ toggle matrix filter
       elMatrix.querySelectorAll('.cell').forEach(cell => {
         cell.addEventListener('click', () => {
           if (cell.classList.contains('zero')) return;
@@ -1830,8 +1830,8 @@ function applyQuickFilters(rows) {
       const sb = (matrix && matrix.sb !== undefined) ? matrix.sb : null;
       const rb = (matrix && matrix.rb !== undefined) ? matrix.rb : null;
       if (elMatrixNote) {
-        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Risk‑Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Risk‑Proxy fehlt (keine Risk‑Spalten im CSV)';
-        const sel = (sb !== null && rb !== null) ? ` · aktiv: Score ${bucketRange(sb)} × ${riskBucketText(rb).hint}` : '';
+        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Riskâ€‘Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Riskâ€‘Proxy fehlt (keine Riskâ€‘Spalten im CSV)';
+        const sel = (sb !== null && rb !== null) ? ` Â· aktiv: Score ${bucketRange(sb)} Ã— ${riskBucketText(rb).hint}` : '';
         elMatrixNote.textContent = metric + sel;
       }
     }
@@ -1855,12 +1855,12 @@ function perfPct(r) {
 
 function fmtRatioPct(v) {
   const n = asNum(v);
-  if (n === null) return '—';
+  if (n === null) return 'â€”';
   return `${(n * 100).toFixed(2)}%`;
 }
 
 function fmtPct(v) {
-  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+  if (v === null || v === undefined || !Number.isFinite(v)) return 'â€”';
   const s = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
   return s;
 }
@@ -1889,7 +1889,7 @@ function renderBreadth(rows) {
   }
   const tot = adv + dec + flat;
   if (!tot) {
-    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare Tagesänderung (Perf %) im aktuellen Universe.</div>`;
+    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare TagesÃ¤nderung (Perf %) im aktuellen Universe.</div>`;
     return;
   }
   const pct = (x) => (tot ? Math.round((x / tot) * 100) : 0);
@@ -1929,12 +1929,12 @@ function renderDiversification(rows) {
   }
   const topSec = Object.entries(sectorCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
   const secInfo = topSec.length
-    ? `Top Crowding: ${topSec.map(([k, v]) => `${esc(k)} (${v})`).join(' · ')}`
-    : 'Top Crowding: —';
+    ? `Top Crowding: ${topSec.map(([k, v]) => `${esc(k)} (${v})`).join(' Â· ')}`
+    : 'Top Crowding: â€”';
 
   elDiversBox.innerHTML = `
     <div class="breadthRow">
-      ${chip(`Div Ø ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
+      ${chip(`Div Ã˜ ${avg.toFixed(2)}`, avg >= 4 ? 'warn' : 'blue')}
       ${chip(`Median ${med.toFixed(2)}`, med >= 4 ? 'warn' : 'blue')}
       ${chip(`High ${hi}`, hi ? 'bad' : 'blue')}
       ${chip(`Low ${lo}`, lo ? 'good' : 'blue')}
@@ -1947,7 +1947,7 @@ function renderQualityPanel(rows) {
   if (!elQualityBox) return;
   const n = Array.isArray(rows) ? rows.length : 0;
   if (!n) {
-    elQualityBox.innerHTML = `<div class="muted">Preset-Qualität: keine Daten.</div>`;
+    elQualityBox.innerHTML = `<div class="muted">Preset-QualitÃ¤t: keine Daten.</div>`;
     return;
   }
 
@@ -1985,10 +1985,10 @@ function renderQualityPanel(rows) {
   elQualityBox.innerHTML = `
     <div class="marketCardTitle" style="margin-top:2px;">Preset Quality</div>
     <div class="breadthRow">
-      ${chip(`Score Med ${scoreMed === null ? '—' : scoreMed.toFixed(1)}`, (scoreMed !== null && scoreMed >= 34) ? 'good' : 'blue')}
-      ${chip(`Score IQR ${scoreIqr === null ? '—' : scoreIqr.toFixed(1)}`, (scoreIqr !== null && scoreIqr >= 10) ? 'good' : 'warn')}
-      ${chip(`Conf Med ${confMed === null ? '—' : confMed.toFixed(1)}`, (confMed !== null && confMed >= 60) ? 'good' : 'warn')}
-      ${chip(`Conf IQR ${confIqr === null ? '—' : confIqr.toFixed(1)}`, (confIqr !== null && confIqr >= 12) ? 'blue' : 'warn')}
+      ${chip(`Score Med ${scoreMed === null ? 'â€”' : scoreMed.toFixed(1)}`, (scoreMed !== null && scoreMed >= 34) ? 'good' : 'blue')}
+      ${chip(`Score IQR ${scoreIqr === null ? 'â€”' : scoreIqr.toFixed(1)}`, (scoreIqr !== null && scoreIqr >= 10) ? 'good' : 'warn')}
+      ${chip(`Conf Med ${confMed === null ? 'â€”' : confMed.toFixed(1)}`, (confMed !== null && confMed >= 60) ? 'good' : 'warn')}
+      ${chip(`Conf IQR ${confIqr === null ? 'â€”' : confIqr.toFixed(1)}`, (confIqr !== null && confIqr >= 12) ? 'blue' : 'warn')}
     </div>
     <div class="breadthRow">
       ${chip(`Trend OK ${fmtRatioPct(trendShare)}`, trendShare >= 0.7 ? 'good' : (trendShare >= 0.45 ? 'blue' : 'warn'))}
@@ -2010,8 +2010,8 @@ function renderMovers(rows) {
     arr.push({r, p});
   }
   if (!arr.length) {
-    elMoversUp.innerHTML = `<span class="muted">—</span>`;
-    elMoversDown.innerHTML = `<span class="muted">—</span>`;
+    elMoversUp.innerHTML = `<span class="muted">â€”</span>`;
+    elMoversDown.innerHTML = `<span class="muted">â€”</span>`;
     return;
   }
 
@@ -2028,8 +2028,8 @@ function renderMovers(rows) {
     return `<div class="moversItem"><span class="sym">${s}</span><span class="val ${cls}">${esc(fmtPct(x.p))}</span></div>`;
   }
 
-  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">—</span>`;
-  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">—</span>`;
+  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
+  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">â€”</span>`;
 }
 
 function renderHeatmap(rows) {
@@ -2046,7 +2046,7 @@ function renderHeatmap(rows) {
     m.get(cat)[sb] += 1;
   }
   if (!m.size) {
-    elHeatmap.innerHTML = `<div class="muted">Keine Daten für Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    elHeatmap.innerHTML = `<div class="muted">Keine Daten fÃ¼r Heatmap (keine Kategorie im aktuellen Universe).</div>`;
     return;
   }
 
@@ -2069,7 +2069,7 @@ function renderHeatmap(rows) {
       const alpha = 0.06 + rel * 0.28; // subtle
       const hue = 205; // blue-ish
       const bg = `background: hsla(${hue}, 70%, 50%, ${alpha});`;
-      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} · Score ${esc(hdr[sb])} = ${v}">${v ? v : '·'}</td>`;
+      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} Â· Score ${esc(hdr[sb])} = ${v}">${v ? v : 'Â·'}</td>`;
     }).join('');
     return `<tr><td class="mono">${esc(x.k)}</td>${tds}</tr>`;
   }).join('');
@@ -2077,10 +2077,10 @@ function renderHeatmap(rows) {
   elHeatmap.innerHTML = `
     <div class="heatWrap">
       <table class="heatTbl">
-        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'Säule'}</th>${th}</tr></thead>
+        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'SÃ¤ule'}</th>${th}</tr></thead>
         <tbody>${rowsHtml}</tbody>
       </table>
-      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Score‑Bucket (Top ${limit} nach Häufigkeit).</div>
+      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Scoreâ€‘Bucket (Top ${limit} nach HÃ¤ufigkeit).</div>
     </div>
   `;
 }
@@ -2112,13 +2112,13 @@ function renderMarketContext(rows, presetRows) {
         const isinRaw = normStr(r.isin);
         const isin = (!isC) ? (isinRaw || (looksLikeISIN(tRaw) ? tRaw : '')) : '';
 
-        const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["Währung"]);
-        const currChip = curr ? `<span class="tinychip" title="Währung">${esc(curr)}</span>` : '';
+        const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["WÃ¤hrung"]);
+        const currChip = curr ? `<span class="tinychip" title="WÃ¤hrung">${esc(curr)}</span>` : '';
 
         const main = href ? `<a class="yf" href="${href}" target="_blank" rel="noopener">${esc(disp)}</a>` : esc(disp);
         // subline for the left "Symbol/ISIN" cell: for crypto show the Yahoo pair (e.g. BTC-USD),
         // for stocks show ISIN. Use a distinct variable name so we don't collide with other "sub" vars.
-        const subTicker = isC ? (yh || '—') : (isin || '—');
+        const subTicker = isC ? (yh || 'â€”') : (isin || 'â€”');
         const subLabel = isC ? 'YahooSymbol' : 'ISIN';
         const subLine = `<div class="sub mono" title="${subLabel}">${esc(subTicker)}</div>`;
         const tCell = `<div class="tickerCell"><div class="tickerMain">${main}${currChip}</div>${subLine}</div>`;
@@ -2129,7 +2129,7 @@ function renderMarketContext(rows, presetRows) {
         const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
         const industryOfficial = normStr(r.industry) || normStr(r.Industry) || normStr(r.cluster_official);
 
-        // Private pillars (5-säulen + playground) are metadata only (never affect scoring)
+        // Private pillars (5-sÃ¤ulen + playground) are metadata only (never affect scoring)
         // Use UI fallback derivation so older universes still show the concept.
         const pillar = pillarLabel(r);
         const bucketType = normStr(r.bucket_type);
@@ -2150,14 +2150,14 @@ function renderMarketContext(rows, presetRows) {
         const ctry = normStr(r.country);
         const subParts = [];
         if (taxLabel) subParts.push(`<span title="${esc(taxTitle)}">${esc(taxLabel)}</span>`);
-        if (pillar) subParts.push(`<span class="muted" title="Säule (privat, Metadaten)">Säule: ${esc(pillar)}</span>`);
+        if (pillar) subParts.push(`<span class="muted" title="SÃ¤ule (privat, Metadaten)">SÃ¤ule: ${esc(pillar)}</span>`);
         if (bucketType && bucketType !== 'pillar' && bucketType !== 'none') subParts.push(`<span class="muted" title="Bucket-Type (privat)">(${esc(bucketType)})</span>`);
         if (ctry) subParts.push(esc(ctry));
-        const subName = subParts.join(' · ');
+        const subName = subParts.join(' Â· ');
 
         const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
         const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
-        const priceMain = (price === null) ? '—' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
+        const priceMain = (price === null) ? 'â€”' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
         const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
 
         const trend = asBool(r.trend_ok) ? chip('OK', 'good') : chip('NO', 'bad');
@@ -2185,7 +2185,7 @@ function renderMarketContext(rows, presetRows) {
           <td class="hide-sm right mono">${(asNum(r.cycle) ?? 0).toFixed(0)}%</td>
           <td>${trend}</td>
           <td>${liq}</td>
-          <td>${chip(status || '—', statusKind)}</td>
+          <td>${chip(status || 'â€”', statusKind)}</td>
           <td class="hide-sm">${cls}</td>
         `;
 
@@ -2212,26 +2212,26 @@ function renderMarketContext(rows, presetRows) {
     function openDrawer(r) {
       const t = pickDisplayTicker(r) || normStr(r.ticker);
       const n = normStr(r.name);
-      drawerTitle.textContent = `${t} — ${n}`.trim();
+      drawerTitle.textContent = `${t} â€” ${n}`.trim();
       const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
       const categoryManual = normStr(r.category) || normStr(r.Sektor) || normStr(r.Kategorie);
       const cat = asBool(r.is_crypto) ? 'Krypto' : (categoryManual ? `Cluster: ${categoryManual}` : (sectorOfficial || ''));
-      const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["Währung"]);
-      const sub = [cat, normStr(r.country), curr, normStr(r.isin)].filter(Boolean).join(' · ');
+      const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["WÃ¤hrung"]);
+      const sub = [cat, normStr(r.country), curr, normStr(r.isin)].filter(Boolean).join(' Â· ');
       drawerSub.textContent = sub || '';
 
       // Quick action: open on Yahoo Finance if we can determine a valid symbol
       if (drawerActions) {
         const sym = pickYahooSymbol(r);
         const href = yahooHref(sym);
-        drawerActions.innerHTML = href ? `<a class="btn" href="${href}" target="_blank" rel="noopener" title="Auf Yahoo Finance öffnen">Yahoo</a>` : '';
+        drawerActions.innerHTML = href ? `<a class="btn" href="${href}" target="_blank" rel="noopener" title="Auf Yahoo Finance Ã¶ffnen">Yahoo</a>` : '';
       }
 
       const items = [
         ['Score', (asNum(r.score) ?? 0).toFixed(2)],
         ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
         ['Cycle', `${(asNum(r.cycle) ?? 0).toFixed(0)}%`],
-        ['ScoreStatus', normStr(r.score_status) || '—'],
+        ['ScoreStatus', normStr(r.score_status) || 'â€”'],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
         ['AssetClass', asBool(r.is_crypto) ? 'Krypto' : 'Aktie'],
@@ -2262,9 +2262,9 @@ function renderMarketContext(rows, presetRows) {
       const status = normStr(r.score_status);
       const why = [];
       if (status === 'OK') why.push('Score>0 & keine harten Filter verletzt.');
-      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend → Score=0 (bewusstes Avoid).');
-      if (status === 'AVOID') why.push('Score==0 → Avoid (non-crypto).');
-      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten → NA.');
+      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend â†’ Score=0 (bewusstes Avoid).');
+      if (status === 'AVOID') why.push('Score==0 â†’ Avoid (non-crypto).');
+      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten â†’ NA.');
       if (status === 'ERROR') why.push('Scoring hat einen Fehler gemeldet (ScoreError).');
       if (asBool(r.trend_ok) === false) why.push('Trend-Filter: trend_ok=false.');
       if (asBool(r.liquidity_ok) === false) why.push('Liquidity-Filter: liquidity_ok=false.');
@@ -2302,7 +2302,7 @@ function renderMarketContext(rows, presetRows) {
       renderClusterOptions(cc);
       renderClusterChips(cc);
 
-      // pillar counts (5-säulen + playground) reflect the same universe
+      // pillar counts (5-sÃ¤ulen + playground) reflect the same universe
       const pc = computePillarCounts(rowsSQ);
       renderPillarOptions(pc);
       renderPillarChips(pc);
@@ -2337,7 +2337,7 @@ function renderMarketContext(rows, presetRows) {
       if (pillarPick) f.push(`pillar:${pillarPick}`);
       if (pillarPick) f.push(`pillar:${pillarPick}`);
 
-      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  ·  filters: ${f.join(',')}` : '');
+      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  Â·  filters: ${f.join(',')}` : '');
       if (btnMatrixClear) btnMatrixClear.disabled = !(matrix && matrix.sb !== null && matrix.rb !== null);
 
       const override = userSort ? ` | override: ${userSort.k}:${userSort.dir}` : '';
@@ -2346,7 +2346,7 @@ function renderMarketContext(rows, presetRows) {
 
     // ---- init ----
     const PRESET_LABELS = {
-      CORE: 'Übersicht',
+      CORE: 'Ãœbersicht',
       SCORED: 'Bewertet',
       TOP: 'Top',
       TOP_RELAXED: 'Top (entspannt)',
@@ -2368,7 +2368,7 @@ function renderMarketContext(rows, presetRows) {
         const opt = document.createElement('option');
         opt.value = n;
         const desc = (PRESETS[n].description || '').toString();
-        opt.textContent = `${presetLabel(n)} (${n})` + (desc ? ` — ${desc}` : '');
+        opt.textContent = `${presetLabel(n)} (${n})` + (desc ? ` â€” ${desc}` : '');
         elPreset.appendChild(opt);
       }
       elPreset.value = activePreset;
@@ -2499,7 +2499,7 @@ function renderMarketContext(rows, presetRows) {
     }
     if (elBriefing) {
       const t = normStr((BRIEFING || {}).text);
-      elBriefing.innerHTML = briefingToHtml(t) || '— (noch kein Briefing generiert)';
+      elBriefing.innerHTML = briefingToHtml(t) || 'â€” (noch kein Briefing generiert)';
     }
     refresh();
     try { document.documentElement.dataset.jsok = '1'; } catch (e) {}
@@ -2558,10 +2558,10 @@ function renderMarketContext(rows, presetRows) {
     } catch (err) {
       const msg = (err && err.message) ? err.message : String(err);
       const el = document.getElementById('count');
-      if (window.__showJsError) window.__showJsError('UI‑Fehler (JS): ' + msg);
+      if (window.__showJsError) window.__showJsError('UIâ€‘Fehler (JS): ' + msg);
       if (el) el.textContent = `JS error: ${msg}`;
       const k = document.getElementById('kpis');
-      if (k) k.textContent = 'JS error – siehe Konsole';
+      if (k) k.textContent = 'JS error â€“ siehe Konsole';
       try { console.error(err); } catch(e) {}
     }
   })();
@@ -2587,7 +2587,7 @@ def _render_help_html(*, version: str, build: str) -> str:
     """Generate a static help / project description page.
 
     This page is intentionally a living document: it describes what exists today
-    and keeps placeholders for upcoming features (Portfolio, KI‑Briefing, etc.).
+    and keeps placeholders for upcoming features (Portfolio, KIâ€‘Briefing, etc.).
     """
 
     return f"""<!doctype html>
@@ -2595,7 +2595,7 @@ def _render_help_html(*, version: str, build: str) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Scanner_vNext — Hilfe & Projektbeschreibung</title>
+  <title>Scanner_vNext â€” Hilfe & Projektbeschreibung</title>
   <style>
     :root{{
       --bg:#0b1020;
@@ -2638,10 +2638,10 @@ def _render_help_html(*, version: str, build: str) -> str:
     <div class="wrap">
       <div class="top">
         <div>
-          <h1>Scanner_vNext — Hilfe & Projektbeschreibung</h1>
-          <div class="meta">version {version} · build {build} · <a href="index.html">zurück zum Dashboard</a></div>
+          <h1>Scanner_vNext â€” Hilfe & Projektbeschreibung</h1>
+          <div class="meta">version {version} Â· build {build} Â· <a href="index.html">zurÃ¼ck zum Dashboard</a></div>
         </div>
-        <div class="pill">Living Doc · wird laufend erweitert</div>
+        <div class="pill">Living Doc Â· wird laufend erweitert</div>
       </div>
     </div>
   </header>
@@ -2650,16 +2650,16 @@ def _render_help_html(*, version: str, build: str) -> str:
 
     <div class="card" style="border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.06);">
       <h2>Disclaimer</h2>
-      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine Gewähr. Inhalte können unvollständig, falsch oder veraltet sein. Nutzung ausschließlich auf eigene Verantwortung.</p>
+      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine GewÃ¤hr. Inhalte kÃ¶nnen unvollstÃ¤ndig, falsch oder veraltet sein. Nutzung ausschlieÃŸlich auf eigene Verantwortung.</p>
     </div>
 
     <div class="card">
       <h2 id="toc">Inhalt</h2>
       <div class="toc">
-        <a href="#ueberblick">1) Überblick</a>
+        <a href="#ueberblick">1) Ãœberblick</a>
         <a href="#pipeline">2) Datenfluss (Pipeline)</a>
         <a href="#scoring">3) Scoring: Score, Opportunity, Risk, Regime, Confidence</a>
-        <a href="#recommendation">4) Empfehlungscode (R0–R5)</a>
+        <a href="#recommendation">4) Empfehlungscode (R0â€“R5)</a>
         <a href="#dashboard">5) Dashboard-Funktionen</a>
         <a href="#portfolio">6) Portfolio (geplant)</a>
         <a href="#briefing">7) Briefing / KI</a>
@@ -2671,73 +2671,73 @@ def _render_help_html(*, version: str, build: str) -> str:
     </div>
 
     <div class="card" id="ueberblick">
-      <h2>1) Überblick</h2>
-      <p><b>Scanner_vNext</b> ist ein privates Trading‑Research‑System für Watchlists und Portfolio‑Ideen. Es bündelt Kennzahlen, Signale und Markt‑Kontext zu einem <b>multi‑faktoriellen Score</b> – mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
+      <h2>1) Ãœberblick</h2>
+      <p><b>Scanner_vNext</b> ist ein privates Tradingâ€‘Researchâ€‘System fÃ¼r Watchlists und Portfolioâ€‘Ideen. Es bÃ¼ndelt Kennzahlen, Signale und Marktâ€‘Kontext zu einem <b>multiâ€‘faktoriellen Score</b> â€“ mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
       <div class="callout">
-        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (View‑Layer) – sie verändern das Scoring nicht. KI‑Texte sind reine <i>Briefings</i> und dürfen keinen Einfluss auf den Score haben.</p>
+        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (Viewâ€‘Layer) â€“ sie verÃ¤ndern das Scoring nicht. KIâ€‘Texte sind reine <i>Briefings</i> und dÃ¼rfen keinen Einfluss auf den Score haben.</p>
       </div>
       <p class="tag">Hinweis: Dieses Projekt ist kein Finanzrat. Es ist ein Werkzeug zur eigenen Strukturierung und Dokumentation von Entscheidungen.</p>
     </div>
 
     <div class="card" id="pipeline">
       <h2>2) Datenfluss (Pipeline)</h2>
-      <p>Die täglichen Schritte sind bewusst getrennt – damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
+      <p>Die tÃ¤glichen Schritte sind bewusst getrennt â€“ damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
       <pre>python -m scanner.app.run_daily
 python -m scanner.ui.generator</pre>
       <ul>
         <li><code>run_daily</code> erzeugt/aktualisiert CSVs in <code>artifacts/watchlist/</code> und (optional) Reports in <code>artifacts/reports/</code>.</li>
         <li><code>ui.generator</code> liest eine CSV (z.B. <code>watchlist_CORE.csv</code>) und schreibt statisches HTML nach <code>artifacts/ui/</code>.</li>
       </ul>
-      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausführen – ohne dass das UI „heimlich“ irgendwas berechnet, was die Ergebnisse verändern würde.</p>
+      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausfÃ¼hren â€“ ohne dass das UI â€žheimlichâ€œ irgendwas berechnet, was die Ergebnisse verÃ¤ndern wÃ¼rde.</p>
     </div>
 
     <div class="card" id="scoring">
       <h2>3) Scoring (Score, Opportunity, Risk, Regime, Confidence)</h2>
-      <p>Das Scoring läuft zentral im Domain‑Layer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer Watchlist‑Zeile ein Satz aus <b>Opportunity‑Faktoren</b> und <b>Risk‑Faktoren</b> gebildet und anschließend zu einem finalen Score zusammengeführt.</p>
+      <p>Das Scoring lÃ¤uft zentral im Domainâ€‘Layer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer Watchlistâ€‘Zeile ein Satz aus <b>Opportunityâ€‘Faktoren</b> und <b>Riskâ€‘Faktoren</b> gebildet und anschlieÃŸend zu einem finalen Score zusammengefÃ¼hrt.</p>
 
       <div class="grid2">
         <div>
-          <h3>Opportunity (0..1, höher = besser)</h3>
+          <h3>Opportunity (0..1, hÃ¶her = besser)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren (wenn in den CSVs vorhanden):</p>
           <ul>
             <li><b>Growth %</b>, <b>ROE %</b>, <b>Margin %</b></li>
-            <li><b>MC‑Chance</b> (Monte‑Carlo‑Chance)</li>
-            <li><b>Trend200</b> (200‑Tage‑Trend) und <b>RS3M</b> (relative Stärke 3M)</li>
-            <li><b>Elliott‑Quality</b> (abhängig vom Elliott‑Signal)</li>
-            <li><b>Upside</b> (nur wenn Elliott‑Signal BUY und Target/Preis vorhanden; 30% Upside = „voller“ Faktor)</li>
+            <li><b>MCâ€‘Chance</b> (Monteâ€‘Carloâ€‘Chance)</li>
+            <li><b>Trend200</b> (200â€‘Tageâ€‘Trend) und <b>RS3M</b> (relative StÃ¤rke 3M)</li>
+            <li><b>Elliottâ€‘Quality</b> (abhÃ¤ngig vom Elliottâ€‘Signal)</li>
+            <li><b>Upside</b> (nur wenn Elliottâ€‘Signal BUY und Target/Preis vorhanden; 30% Upside = â€žvollerâ€œ Faktor)</li>
           </ul>
-          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. Analyst‑Faktor), bis Spalten dafür existieren.</p>
+          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. Analystâ€‘Faktor), bis Spalten dafÃ¼r existieren.</p>
         </div>
         <div>
-          <h3>Risk (0..1, höher = riskanter)</h3>
+          <h3>Risk (0..1, hÃ¶her = riskanter)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren:</p>
           <ul>
             <li><b>Debt/Equity</b></li>
-            <li><b>CRV‑Fragility</b> (CRV wird in eine „Fragilität“ umgerechnet; bei fehlendem CRV neutral)</li>
+            <li><b>CRVâ€‘Fragility</b> (CRV wird in eine â€žFragilitÃ¤tâ€œ umgerechnet; bei fehlendem CRV neutral)</li>
             <li><b>Volatility</b>, <b>DownsideDev</b>, <b>MaxDrawdown</b></li>
-            <li><b>Liquidity‑Risk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
+            <li><b>Liquidityâ€‘Risk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
           </ul>
-          <p class="tag">Die Idee: Opportunity alleine reicht nicht – ein hoher Score soll bei fragiler Liquidität oder extremem Drawdown nicht „blind“ nach oben schießen.</p>
+          <p class="tag">Die Idee: Opportunity alleine reicht nicht â€“ ein hoher Score soll bei fragiler LiquiditÃ¤t oder extremem Drawdown nicht â€žblindâ€œ nach oben schieÃŸen.</p>
         </div>
       </div>
 
-      <h3>Normalisierung (Universe‑Scaling)</h3>
-      <p>Viele Rohwerte werden über ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen Markt‑Universum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
+      <h3>Normalisierung (Universeâ€‘Scaling)</h3>
+      <p>Viele Rohwerte werden Ã¼ber ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen Marktâ€‘Universum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
 
-      <h3>Regime (Markt‑Kontext)</h3>
-      <p>Der Score kann je nach Marktregime anders gewichtet werden. Dafür werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200‑Kontext). Wenn das Regime‑Label fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
+      <h3>Regime (Marktâ€‘Kontext)</h3>
+      <p>Der Score kann je nach Marktregime anders gewichtet werden. DafÃ¼r werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200â€‘Kontext). Wenn das Regimeâ€‘Label fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
       <ul>
-        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einfließt</li>
-        <li><b>risk_mult</b>: wie „hart“ Risiko bestraft wird</li>
+        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einflieÃŸt</li>
+        <li><b>risk_mult</b>: wie â€žhartâ€œ Risiko bestraft wird</li>
       </ul>
 
       <h3>Confidence (0..100)</h3>
-      <p>Zusätzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, Risiko‑Sauberkeit, Regime‑Ausrichtung und Liquidität berücksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht – oder auf dünnem Daten‑Eis.</p>
+      <p>ZusÃ¤tzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, Risikoâ€‘Sauberkeit, Regimeâ€‘Ausrichtung und LiquiditÃ¤t berÃ¼cksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht â€“ oder auf dÃ¼nnem Datenâ€‘Eis.</p>
     </div>
 
     <div class="card" id="recommendation">
-      <h2>4) Empfehlungscode (R0–R5)</h2>
-      <p>Im Dashboard erscheint im Score‑Bereich ein privater Code <b>R0–R5</b>. Das ist <b>kein Trading‑Signal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
+      <h2>4) Empfehlungscode (R0â€“R5)</h2>
+      <p>Im Dashboard erscheint im Scoreâ€‘Bereich ein privater Code <b>R0â€“R5</b>. Das ist <b>kein Tradingâ€‘Signal</b>, sondern eine knappe Zusammenfassung fÃ¼r deinen Workflow.</p>
       <ul>
         <li><b>R0</b>: <span class="sig warn grad">Avoid</span> (score_status beginnt mit <code>AVOID_</code>)</li>
         <li><b>R5</b>: <span class="sig good grad">Top Setup</span> (Score-Perzentil >= 90 <i>und</i> Trend OK <i>und</i> Liquidity OK)</li>
@@ -2746,94 +2746,94 @@ python -m scanner.ui.generator</pre>
         <li><b>R2</b>: <span class="sig warn grad">Weak</span> (Score-Perzentil >= 20)</li>
         <li><b>R1</b>: <span class="sig bad grad">Low Priority</span> (Rest)</li>
       </ul>
-      <p class="tag">Technik: das UI berechnet das Score‑Perzentil aus allen Zeilen der geladenen Tabelle.</p>
+      <p class="tag">Technik: das UI berechnet das Scoreâ€‘Perzentil aus allen Zeilen der geladenen Tabelle.</p>
     </div>
 
     <div class="card" id="dashboard">
-      <h2>5) Dashboard‑Funktionen</h2>
+      <h2>5) Dashboardâ€‘Funktionen</h2>
       <h3>Presets</h3>
-      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID …). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
+      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID â€¦). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
 
       <h3>Suche</h3>
-      <p>Suche filtert quer über Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
+      <p>Suche filtert quer Ã¼ber Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
 
-      <h3>Quick‑Filter & KPI‑Chips</h3>
-      <p>Quick‑Filter sind schnelle boolesche/Status‑Schalter (z.B. „Nur OK“, „Trend OK“, „Liq OK“). KPI‑Chips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
+      <h3>Quickâ€‘Filter & KPIâ€‘Chips</h3>
+      <p>Quickâ€‘Filter sind schnelle boolesche/Statusâ€‘Schalter (z.B. â€žNur OKâ€œ, â€žTrend OKâ€œ, â€žLiq OKâ€œ). KPIâ€‘Chips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
 
-      <h3>Cluster (offiziell) vs. Säulen (privat)</h3>
-      <p>Es gibt zwei unterschiedliche „Kategorien“ im UI – mit unterschiedlicher Bedeutung:</p>
+      <h3>Cluster (offiziell) vs. SÃ¤ulen (privat)</h3>
+      <p>Es gibt zwei unterschiedliche â€žKategorienâ€œ im UI â€“ mit unterschiedlicher Bedeutung:</p>
       <ul>
-        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus Yahoo‑Taxonomie (Sector/Industry) und ist dafür gedacht, echte Markt‑Cluster sichtbar zu machen.</li>
-        <li><b>Säulen (5‑Säulen/Playground, privat)</b>: deine thematische Metadaten‑Zuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>ändert niemals</b> den Score.</li>
+        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus Yahooâ€‘Taxonomie (Sector/Industry) und ist dafÃ¼r gedacht, echte Marktâ€‘Cluster sichtbar zu machen.</li>
+        <li><b>SÃ¤ulen (5â€‘SÃ¤ulen/Playground, privat)</b>: deine thematische Metadatenâ€‘Zuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>Ã¤ndert niemals</b> den Score.</li>
       </ul>
-      <p class="tag">Hinweis: ältere „Phantasie‑Sektoren“ können weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine Säule ableiten, damit das Konzept sichtbar bleibt.</p>
+      <p class="tag">Hinweis: Ã¤ltere â€žPhantasieâ€‘Sektorenâ€œ kÃ¶nnen weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine SÃ¤ule ableiten, damit das Konzept sichtbar bleibt.</p>
 
-      <h3>Bucket‑Matrix (Score × Risk)</h3>
-      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der X‑Achse, <b>Risk</b> auf der Y‑Achse. Klick auf ein Feld aktiviert einen zusätzlichen Matrix‑Filter.</p>
+      <h3>Bucketâ€‘Matrix (Score Ã— Risk)</h3>
+      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der Xâ€‘Achse, <b>Risk</b> auf der Yâ€‘Achse. Klick auf ein Feld aktiviert einen zusÃ¤tzlichen Matrixâ€‘Filter.</p>
 
-      <h3>Why‑Score Drawer</h3>
-      <p>Der Drawer erklärt, <i>warum</i> ein Wert so aussieht: Status‑Flags, wichtige Kennzahlen und – falls vorhanden – ein Breakdown (z.B. Confidence‑Breakdown).</p>
+      <h3>Whyâ€‘Score Drawer</h3>
+      <p>Der Drawer erklÃ¤rt, <i>warum</i> ein Wert so aussieht: Statusâ€‘Flags, wichtige Kennzahlen und â€“ falls vorhanden â€“ ein Breakdown (z.B. Confidenceâ€‘Breakdown).</p>
 
-      <h3>Ticker‑Zelle (2‑zeilig)</h3>
-      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten Yahoo‑Pair (oder was vorhanden ist). Ziel: du siehst Identität + „Key“ sofort, ohne zusätzliche Spalten.</p>
+      <h3>Tickerâ€‘Zelle (2â€‘zeilig)</h3>
+      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten Yahooâ€‘Pair (oder was vorhanden ist). Ziel: du siehst IdentitÃ¤t + â€žKeyâ€œ sofort, ohne zusÃ¤tzliche Spalten.</p>
 
-      <h3>Finviz‑Inspiration (eigene Umsetzung)</h3>
-      <p>Die Market‑Übersicht (Index‑Charts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">Market‑Dashboard</a>). Layout‑Ideen dürfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert – Scanner_vNext bleibt eine eigenständige Logik/UX.</p>
+      <h3>Finvizâ€‘Inspiration (eigene Umsetzung)</h3>
+      <p>Die Marketâ€‘Ãœbersicht (Indexâ€‘Charts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">Marketâ€‘Dashboard</a>). Layoutâ€‘Ideen dÃ¼rfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert â€“ Scanner_vNext bleibt eine eigenstÃ¤ndige Logik/UX.</p>
     </div>
 
     <div class="card" id="portfolio">
       <h2>6) Portfolio (geplant)</h2>
-      <p>Hier kommt eine Portfolio‑Sektion hin (Bestände, Einstand, Gewichtung, Risiko‑Beitrag, Ziel‑Allokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken können.</p>
-      <div class="callout"><p style="margin:0"><b>TODO:</b> Portfolio‑Konzept einfügen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
+      <p>Hier kommt eine Portfolioâ€‘Sektion hin (BestÃ¤nde, Einstand, Gewichtung, Risikoâ€‘Beitrag, Zielâ€‘Allokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken kÃ¶nnen.</p>
+      <div class="callout"><p style="margin:0"><b>TODO:</b> Portfolioâ€‘Konzept einfÃ¼gen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
     </div>
 
     <div class="card" id="briefing">
       <h2>7) Briefing / KI</h2>
-      <p>Das Briefing ist ein <b>passiver Explainability‑Report</b> für die Top‑Werte. Es wird ausschließlich aus bereits vorhandenen Feldern der Watchlist‑CSV abgeleitet (kein Re‑Scoring).</p>
+      <p>Das Briefing ist ein <b>passiver Explainabilityâ€‘Report</b> fÃ¼r die Topâ€‘Werte. Es wird ausschlieÃŸlich aus bereits vorhandenen Feldern der Watchlistâ€‘CSV abgeleitet (kein Reâ€‘Scoring).</p>
       <h3>Outputs</h3>
       <ul>
-        <li><code>artifacts/reports/briefing.json</code> – strukturierte Daten (Top‑N + Gründe/Risiken/Checks).</li>
-        <li><code>artifacts/reports/briefing.txt</code> – deterministische Text‑Version (immer vorhanden, offline).</li>
-        <li><code>artifacts/reports/briefing_ai.txt</code> – optionale sprachliche Glättung via OpenAI API (Feature‑Flag, default OFF).</li>
+        <li><code>artifacts/reports/briefing.json</code> â€“ strukturierte Daten (Topâ€‘N + GrÃ¼nde/Risiken/Checks).</li>
+        <li><code>artifacts/reports/briefing.txt</code> â€“ deterministische Textâ€‘Version (immer vorhanden, offline).</li>
+        <li><code>artifacts/reports/briefing_ai.txt</code> â€“ optionale sprachliche GlÃ¤ttung via OpenAI API (Featureâ€‘Flag, default OFF).</li>
       </ul>
       <h3>Erzeugung</h3>
       <p>Briefing generieren (Stage A, deterministisch):</p>
       <pre><code>python scripts/generate_briefing.py</code></pre>
-      <p>AI‑Enhancement (Stage B, optional):</p>
+      <p>AIâ€‘Enhancement (Stage B, optional):</p>
       <pre><code>set OPENAI_API_KEY=...  # Windows
 python scripts/generate_briefing.py --enable-ai</code></pre>
       <ul>
-        <li>Es ist <b>rein erklärend</b> (Notizen/Explainability).</li>
+        <li>Es ist <b>rein erklÃ¤rend</b> (Notizen/Explainability).</li>
         <li>Es darf <b>niemals</b> das Scoring oder Ranking beeinflussen.</li>
-        <li><b>Keine Anlageberatung</b>: das Briefing enthält einen kurzen Disclaimer.</li>
+        <li><b>Keine Anlageberatung</b>: das Briefing enthÃ¤lt einen kurzen Disclaimer.</li>
       </ul>
-      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: „Noch kein Briefing generiert“.</p>
+      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: â€žNoch kein Briefing generiertâ€œ.</p>
     </div>
 
 
 
     <div class="card" id="autopilot">
       <h2>8) GitHub Autopilot (ohne laufenden PC)</h2>
-      <p>Wenn Scanner_vNext in einem GitHub‑Repo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausführen. Damit läuft der Scanner „serverlos“ in der Cloud – dein Rechner muss dafür nicht an sein.</p>
+      <p>Wenn Scanner_vNext in einem GitHubâ€‘Repo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausfÃ¼hren. Damit lÃ¤uft der Scanner â€žserverlosâ€œ in der Cloud â€“ dein Rechner muss dafÃ¼r nicht an sein.</p>
       <h3>Was macht der Autopilot?</h3>
       <ul>
         <li>Installiert das Projekt (<code>pip install -e .</code>).</li>
-        <li>Führt <code>python -m scanner.app.run_daily</code> aus (CSV‑Outputs nach <code>artifacts/watchlist/</code>).</li>
-        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code> → <code>artifacts/reports/</code>).</li>
-        <li>Generiert die UI (<code>python -m scanner.ui.generator</code> → <code>artifacts/ui/</code>).</li>
-        <li>Committet die Outputs (standardmäßig <code>artifacts/</code>) zurück ins Repo.</li>
+        <li>FÃ¼hrt <code>python -m scanner.app.run_daily</code> aus (CSVâ€‘Outputs nach <code>artifacts/watchlist/</code>).</li>
+        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code> â†’ <code>artifacts/reports/</code>).</li>
+        <li>Generiert die UI (<code>python -m scanner.ui.generator</code> â†’ <code>artifacts/ui/</code>).</li>
+        <li>Committet die Outputs (standardmÃ¤ÃŸig <code>artifacts/</code>) zurÃ¼ck ins Repo.</li>
       </ul>
       <h3>Warum committen wir <code>artifacts/</code>?</h3>
-      <p>Für den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder über GitHub Pages sofort die aktuellen HTML/CSV‑Outputs. Später kann man das auf einen reinen Deploy‑Branch umstellen, wenn das Repo zu groß wird.</p>
+      <p>FÃ¼r den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder Ã¼ber GitHub Pages sofort die aktuellen HTML/CSVâ€‘Outputs. SpÃ¤ter kann man das auf einen reinen Deployâ€‘Branch umstellen, wenn das Repo zu groÃŸ wird.</p>
       <h3>Benachrichtigungen</h3>
-      <p>GitHub kann dir E‑Mails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo → <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
-      <p class="tag">Technik: Workflow‑Datei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
+      <p>GitHub kann dir Eâ€‘Mails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo â†’ <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
+      <p class="tag">Technik: Workflowâ€‘Datei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
     </div>
 
     <div class="card" id="notifications">
       <h2>9) Benachrichtigungen (Telegram)</h2>
-      <p>Telegram ist optional und standardmäßig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking – es ist nur ein zusätzlicher Kanal für Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
-      <h3>Aktivieren (falls du es später wieder willst)</h3>
+      <p>Telegram ist optional und standardmÃ¤ÃŸig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking â€“ es ist nur ein zusÃ¤tzlicher Kanal fÃ¼r Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
+      <h3>Aktivieren (falls du es spÃ¤ter wieder willst)</h3>
       <pre><code>TELEGRAM_ENABLED=1
 TELEGRAM_BOT_TOKEN=...   # oder TELEGRAM_TOKEN (Legacy)
 TELEGRAM_CHAT_ID=...</code></pre>
@@ -2842,43 +2842,43 @@ TELEGRAM_CHAT_ID=...</code></pre>
 
     <div class="card" id="troubleshooting">
       <h2>10) Troubleshooting</h2>
-      <h3>UI zeigt „Keine Daten“</h3>
+      <h3>UI zeigt â€žKeine Datenâ€œ</h3>
       <ul>
-        <li>Prüfe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
-        <li>Führe zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
+        <li>PrÃ¼fe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
+        <li>FÃ¼hre zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
       </ul>
       <h3>Contract validation failed</h3>
       <ul>
         <li>Contract: <code>configs/watchlist_contract.json</code></li>
-        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen – das verhindert stilles „UI zeigt Mist“.</li>
-        <li>Lösung: Watchlist‑CSV neu generieren oder Migration/Normalize‑Scripts nutzen.</li>
+        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen â€“ das verhindert stilles â€žUI zeigt Mistâ€œ.</li>
+        <li>LÃ¶sung: Watchlistâ€‘CSV neu generieren oder Migration/Normalizeâ€‘Scripts nutzen.</li>
       </ul>
       <h3>Briefing fehlt</h3>
       <ul>
         <li>Erzeuge es mit <code>python scripts/generate_briefing.py</code>.</li>
-        <li>UI lädt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: „Noch kein Briefing generiert“.</li>
+        <li>UI lÃ¤dt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: â€žNoch kein Briefing generiertâ€œ.</li>
       </ul>
       <h3>GOOGLE_CREDENTIALS fehlt (GitHub Action)</h3>
       <ul>
-        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSON‑Service‑Account).</li>
-        <li>Ohne Credentials kann der Scanner keine Sheets‑/Daten‑Quellen lesen (je nach Setup).</li>
+        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSONâ€‘Serviceâ€‘Account).</li>
+        <li>Ohne Credentials kann der Scanner keine Sheetsâ€‘/Datenâ€‘Quellen lesen (je nach Setup).</li>
       </ul>
       <p class="tag">Wenn du nicht weiterkommst: Logs aus GitHub Actions oder die konkrete Fehlermeldung hier rein kopieren.</p>
     </div>
     <div class="card" id="roadmap">
       <h2>11) Roadmap & Konzept (Platzhalter)</h2>
       <ul>
-        <li>Matrix Labels/Logik weiter finalisieren (Risk‑Proxy).</li>
-        <li>Recommendation‑Logik bei Bedarf schärfen (Regeln bleiben transparent).</li>
-        <li>Watchlist‑Hygiene: Spaltenmigration & Dedupe‑Strategie.</li>
-        <li>Portfolio‑Block ergänzen.</li>
-        <li>Briefing‑Logik weiter schärfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
+        <li>Matrix Labels/Logik weiter finalisieren (Riskâ€‘Proxy).</li>
+        <li>Recommendationâ€‘Logik bei Bedarf schÃ¤rfen (Regeln bleiben transparent).</li>
+        <li>Watchlistâ€‘Hygiene: Spaltenmigration & Dedupeâ€‘Strategie.</li>
+        <li>Portfolioâ€‘Block ergÃ¤nzen.</li>
+        <li>Briefingâ€‘Logik weiter schÃ¤rfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
       </ul>
-      <p class="tag">Diese Seite ist absichtlich nicht „fertig“ – sie ist deine Dokumentation, die mit dem Projekt mitwächst.</p>
+      <p class="tag">Diese Seite ist absichtlich nicht â€žfertigâ€œ â€“ sie ist deine Dokumentation, die mit dem Projekt mitwÃ¤chst.</p>
     </div>
 
     <div class="card">
-      <p style="margin:0"><a href="#toc">↑ zurück zum Anfang</a></p>
+      <p style="margin:0"><a href="#toc">â†‘ zurÃ¼ck zum Anfang</a></p>
     </div>
 
   </main>
@@ -2895,9 +2895,10 @@ def main() -> int:
     args = ap.parse_args()
 
     out = build_ui(csv_path=args.csv, out_html=args.out, contract_path=args.contract)
-    print(f"✅ UI wrote: {out.as_posix()}")
+    print(f"[OK] UI wrote: {out.as_posix()}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
