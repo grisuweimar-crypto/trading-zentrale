@@ -23,7 +23,7 @@ import pandas as pd
 from scanner.data.io.paths import project_root
 
 
-BRIEFING_SCHEMA_VERSION = 1
+BRIEFING_SCHEMA_VERSION = 2
 
 
 # ---------------------------
@@ -380,253 +380,229 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
     if df.empty:
         raise ValueError(f"CSV is empty: {csv_path}")
 
-    # canonical columns (fallback tolerant)
     c_score = _first_col(df, ["score", "Score"])
     c_status = _first_col(df, ["score_status", "ScoreStatus", "Status"])
     c_trend = _first_col(df, ["trend_ok", "TrendOK", "Trend Ok", "Trend"])
     c_liq = _first_col(df, ["liquidity_ok", "LiquidityOK", "LiqOK", "Liq"])
-    c_cycle = _first_col(df, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])  # pct-ish
-    c_perf = _first_col(df, ["perf_pct", "Perf %", "Perf%", "perf"])  # daily %
+    c_cycle = _first_col(df, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])
+    c_perf_1d = _first_col(df, ["perf_1d_pct", "Perf 1D %", "perf_1d", "perf1d"])
+    c_perf_1y = _first_col(df, ["perf_1y_pct", "Perf 1Y %", "perf_1y", "perf1y", "perf_pct", "Perf %", "Perf%", "perf"])
     c_conf = _first_col(df, ["confidence", "Confidence", "ConfidenceScore"])
     c_div = _first_col(df, ["diversification_penalty", "ScoreDiversificationPenalty"])
-
     c_cluster = _first_col(df, ["cluster_official", "Cluster", "Sektor", "sector", "Sector"])
-    c_pillar = _first_col(df, ["pillar_primary", "Saeule", "Säule", "Pillar"])
-    c_bucket_type = _first_col(df, ["bucket_type", "BUCKET", "bucket"])  # private taxonomy
+    c_pillar = _first_col(df, ["pillar_primary", "Saeule", "S??ule", "Pillar"])
+    c_symbol = _first_col(df, ["ticker_display", "symbol", "Symbol", "ticker", "Ticker"])
 
-    # percentiles
     score_vals = _num_series(df, c_score)
-    score_sorted = [float(x) for x in score_vals.dropna().tolist()]
-    score_sorted.sort()
-
+    score_sorted = sorted(float(x) for x in score_vals.dropna().tolist())
     risk_raw = _risk_raw(df)
-    risk_sorted = [float(x) for x in risk_raw.dropna().tolist()]
-    risk_sorted.sort()
-
-    score_pctl_list: list[float | None] = []
-    risk_pctl_list: list[float | None] = []
-    for i in range(len(df)):
-        sv = score_vals.iloc[i]
-        rv = risk_raw.iloc[i]
-        sp = _percentile_rank(score_sorted, None if pd.isna(sv) else float(sv))
-        rp = _percentile_rank(risk_sorted, None if pd.isna(rv) else float(rv))
-        score_pctl_list.append(sp)
-        risk_pctl_list.append(rp)
+    risk_sorted = sorted(float(x) for x in risk_raw.dropna().tolist())
 
     df = df.copy()
     df["__score__"] = score_vals
-    df["__score_pctl__"] = score_pctl_list
+    df["__score_pctl__"] = [
+        _percentile_rank(score_sorted, None if pd.isna(v) else float(v)) for v in score_vals.tolist()
+    ]
     df["__risk_raw__"] = risk_raw
-    df["__risk_pctl__"] = risk_pctl_list
+    df["__risk_pctl__"] = [
+        _percentile_rank(risk_sorted, None if pd.isna(v) else float(v)) for v in risk_raw.tolist()
+    ]
 
-    # candidate filter: prefer OK rows
-    status_s = df[c_status] if c_status and c_status in df.columns else pd.Series(["" for _ in range(len(df))])
-    status_s = status_s.fillna("").astype(str)
+    status_s = df[c_status].fillna("").astype(str) if c_status and c_status in df.columns else pd.Series([""] * len(df))
     ok_mask = status_s.str.upper().eq("OK")
     cand = df.loc[ok_mask].copy() if ok_mask.any() else df.copy()
-
-    # still filter out NA/ERROR if possible
     if c_status and c_status in cand.columns:
         st = cand[c_status].fillna("").astype(str).str.upper()
         m = ~st.isin(["NA", "ERROR"])
         if m.any():
             cand = cand.loc[m].copy()
 
-    # sort by score desc; stable fallbacks
     cand["__conf__"] = _num_series(cand, c_conf)
-    c_name = _first_col(cand, ["name", "Name", "ticker_display", "ticker", "Ticker", "symbol", "Symbol"])
-    cand["__name__"] = (
-        cand[c_name].fillna("").astype(str).str.strip().str.lower()
-        if c_name and c_name in cand.columns
-        else ""
+    cand["__symbol__"] = (
+        cand[c_symbol].fillna("").astype(str).str.strip().str.upper() if c_symbol and c_symbol in cand.columns else ""
     )
-    cand = cand.sort_values(by=["__score__", "__conf__", "__name__"], ascending=[False, False, True], kind="mergesort")
-
+    cand = cand.sort_values(by=["__score__", "__conf__", "__symbol__"], ascending=[False, False, True], kind="mergesort")
     top_n = max(1, min(50, int(top_n)))
     top_df = cand.head(top_n)
 
-    # concentration hints
-    def _top_counts(series: pd.Series) -> dict[str, int]:
-        s = series.fillna("").astype(str).str.strip()
-        s = s[s.ne("")]
-        return s.value_counts().to_dict() if not s.empty else {}
+    def _risk_bucket_1_4(risk_pctl: float | None) -> int:
+        b0 = _bucket_0_4(risk_pctl)
+        if b0 is None:
+            return 2
+        return min(4, max(1, int(b0) + 1))
 
-    cluster_counts = _top_counts(top_df[c_cluster]) if c_cluster and c_cluster in top_df.columns else {}
-    pillar_counts = _top_counts(top_df[c_pillar]) if c_pillar and c_pillar in top_df.columns else {}
+    def _risk_label(bucket: int) -> str:
+        return {1: "niedrig", 2: "moderat", 3: "hoch", 4: "sehr hoch"}.get(bucket, "moderat")
 
-    concentration: list[str] = []
-    if cluster_counts:
-        k, v = next(iter(sorted(cluster_counts.items(), key=lambda x: (-x[1], x[0]))))
-        if v >= max(2, (len(top_df) + 1) // 2):
-            concentration.append(f"Klumpenrisiko: Top‑{len(top_df)} dominiert von Cluster '{k}' ({v}/{len(top_df)}).")
-    if pillar_counts:
-        k, v = next(iter(sorted(pillar_counts.items(), key=lambda x: (-x[1], x[0]))))
-        if v >= max(2, (len(top_df) + 1) // 2):
-            concentration.append(f"Kontext: Viele Top‑{len(top_df)} in Säule '{k}' ({v}/{len(top_df)}).")
+    def _market_regime_hint(row: pd.Series) -> str:
+        if _is_crypto_row(row):
+            return _norm_str(row.get("regime_crypto")) or _norm_str(row.get("MarketRegimeCrypto"))
+        return _norm_str(row.get("regime_stock")) or _norm_str(row.get("MarketRegimeStock"))
 
-    # build items
+    def _trend200_hint(row: pd.Series) -> float | None:
+        if _is_crypto_row(row):
+            return _to_float_or_none(row.get("trend200_crypto") if "trend200_crypto" in row.index else row.get("Trend200Crypto"))
+        return _to_float_or_none(row.get("trend200_stock") if "trend200_stock" in row.index else row.get("Trend200Stock"))
+
+    def _bool_or_none(col: str | None, row: pd.Series) -> bool | None:
+        if not col or col not in row.index:
+            return None
+        try:
+            return bool(row.get(col))
+        except Exception:
+            return None
+
+    perf_window_1d = "unknown"
+    if c_perf_1d:
+        n = c_perf_1d.strip().lower()
+        if n in {"perf_1d_pct", "perf 1d %", "perf_1d", "perf1d"}:
+            perf_window_1d = "1d_close_to_close"
+        else:
+            perf_window_1d = "snapshot_to_snapshot"
+
+    perf_window_1y = "unknown"
+    if c_perf_1y:
+        n = c_perf_1y.strip().lower()
+        if n in {"perf_1y_pct", "perf 1y %", "perf_1y", "perf1y"}:
+            perf_window_1y = "1y_total_return"
+        else:
+            perf_window_1y = "snapshot_to_snapshot"
+
+    def _anomaly_for_perf_1d(perf_f: float | None) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        if perf_f is None:
+            return out
+        ap = abs(perf_f)
+        if ap >= 40:
+            sev = "alert"
+            lbl = "Sehr auffaellige Tagesbewegung (1D)"
+            exp = f"Sehr hoher 1D-Wert. Pruefe Datenbasis/Zeitraum ({perf_window_1d}) sowie Corporate Actions."
+        elif ap >= 20:
+            sev = "warn"
+            lbl = "Ungewoehnliche Tagesbewegung (1D)"
+            exp = f"Erhoehter 1D-Wert. Pruefe Definition/Zeitraum ({perf_window_1d}) und Datenkonsistenz."
+        else:
+            return out
+        out.append(
+            {
+                "id": "anomaly_extreme_perf",
+                "severity": sev,
+                "label": lbl,
+                "value": f"{perf_f:+.2f}%",
+                "explain": exp,
+                "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions.",
+            }
+        )
+        return out
+
+    notes: list[dict[str, str]] = []
+    if c_pillar and c_pillar in top_df.columns:
+        vc = top_df[c_pillar].fillna("").astype(str).str.strip()
+        vc = vc[vc.ne("")]
+        if not vc.empty:
+            k = vc.value_counts().idxmax()
+            v = int(vc.value_counts().max())
+            if v >= max(2, (len(top_df) + 1) // 2):
+                notes.append({"id": "note_column_concentration", "text": f"Top-{len(top_df)} enthalten {v}/{len(top_df)} Werte in Saeule '{k}'."})
+
     items: list[dict[str, Any]] = []
-    for _, r in top_df.iterrows():
+    extreme_perf_count = 0
+    for rank, (_, r) in enumerate(top_df.iterrows(), start=1):
         ident = _pick_identity(r)
         score = _to_float_or_none(r.get("__score__"))
-        sp = _to_float_or_none(r.get("__score_pctl__"))
-        rp = _to_float_or_none(r.get("__risk_pctl__"))
-
-        trend_ok = None
-        if c_trend and c_trend in r.index:
-            try:
-                trend_ok = bool(r.get(c_trend))
-            except Exception:
-                trend_ok = None
-        liq_ok = None
-        if c_liq and c_liq in r.index:
-            try:
-                liq_ok = bool(r.get(c_liq))
-            except Exception:
-                liq_ok = None
-
+        score_pctl = _to_float_or_none(r.get("__score_pctl__"))
+        risk_pctl = _to_float_or_none(r.get("__risk_pctl__"))
+        rb = _risk_bucket_1_4(risk_pctl)
+        trend_ok = _bool_or_none(c_trend, r)
+        liq_ok = _bool_or_none(c_liq, r)
         score_status = _norm_str(r.get(c_status)) if c_status and c_status in r.index else ""
-        r_code = _rec_code(score_status, sp, trend_ok, liq_ok)
-
-        cycle_f = _to_float_or_none(None if c_cycle is None else r.get(c_cycle))
-        perf_f = _to_float_or_none(None if c_perf is None else r.get(c_perf))
         conf_f = _to_float_or_none(None if c_conf is None else r.get(c_conf))
+        cycle_f = _to_float_or_none(None if c_cycle is None else r.get(c_cycle))
+        perf_1d_f = _to_float_or_none(None if c_perf_1d is None else r.get(c_perf_1d))
+        perf_1y_f = _to_float_or_none(None if c_perf_1y is None else r.get(c_perf_1y))
         dpen_f = _to_float_or_none(None if c_div is None else r.get(c_div))
-
-        cluster = _norm_str(r.get(c_cluster)) if c_cluster and c_cluster in r.index else ""
+        regime = _market_regime_hint(r)
+        trend200_f = _trend200_hint(r)
+        r_code = _rec_code(score_status, score_pctl, trend_ok, liq_ok)
         pillar = _norm_str(r.get(c_pillar)) if c_pillar and c_pillar in r.index else ""
-        bucket_type = _norm_str(r.get(c_bucket_type)) if c_bucket_type and c_bucket_type in r.index else ""
 
-        score_bucket = _score_bucket(score)
-        risk_bucket = _bucket_0_4(rp)
+        anomalies = _anomaly_for_perf_1d(perf_1d_f)
+        if anomalies:
+            extreme_perf_count += 1
 
-        # regime hint (best effort)
-        is_crypto = _is_crypto_row(r)
-        if is_crypto:
-            regime = _norm_str(r.get("regime_crypto")) or _norm_str(r.get("MarketRegimeCrypto"))
-            trend200 = r.get("trend200_crypto") if "trend200_crypto" in r.index else r.get("Trend200Crypto")
-        else:
-            regime = _norm_str(r.get("regime_stock")) or _norm_str(r.get("MarketRegimeStock"))
-            trend200 = r.get("trend200_stock") if "trend200_stock" in r.index else r.get("Trend200Stock")
-
-        trend200_f = _to_float_or_none(trend200)
-
-        reasons: list[str] = []
-        risks: list[str] = []
-        next_checks: list[str] = []
-
-        if score is not None:
-            if sp is not None:
-                reasons.append(f"Hoher Score: {score:.2f} (Perzentil {sp:.1f}%, Bucket {score_bucket}/4).")
-            else:
-                reasons.append(f"Hoher Score: {score:.2f} (Bucket {score_bucket}/4).")
-
-        if conf_f is not None:
-            reasons.append(f"Confidence: {conf_f:.1f} (Daten-/Konfluenz‑Hinweis).")
-
-        if dpen_f is not None:
-            if dpen_f >= 6:
-                risks.append(f"Diversifikation: Penalty {dpen_f:.2f} (erhoehtes Klumpenrisiko).")
-            elif dpen_f <= 2:
-                reasons.append(f"Diversifikation: Penalty {dpen_f:.2f} (breiteres Setup).")
-
-        if cycle_f is not None:
-            reasons.append(f"Zyklus: {cycle_f:.1f}% (≈50 neutral).")
-
-        if perf_f is not None:
-            reasons.append(f"Tagesbewegung (Perf %): {perf_f:+.2f}%." )
-
-        if trend_ok is True:
-            reasons.append("Trend‑Filter: OK.")
-        elif trend_ok is False:
-            risks.append("Trend‑Filter negativ (Trend OK = false).")
-
-        if liq_ok is True:
-            reasons.append("Liquidität: OK.")
-        elif liq_ok is False:
-            risks.append("Liquidität/Volumen schwach (Liquidity OK = false).")
-
-        if score_status:
-            if score_status.upper().startswith("AVOID"):
-                risks.append(f"Status: {score_status} (System‑Flag).")
-            elif score_status.upper() not in ("OK",):
-                risks.append(f"Status: {score_status}.")
-
-        if regime:
-            reasons.append(f"Regime‑Hinweis: {regime}.")
-        if trend200_f is not None:
-            reasons.append(f"Trend200‑Proxy: {trend200_f:+.3f}.")
-
-        if risk_bucket is not None:
-            if rp is not None:
-                (risks if risk_bucket >= 3 else reasons).append(
-                    f"Risk‑Proxy: Bucket {risk_bucket}/4 (Perzentil {rp:.1f}%)."
-                )
-            else:
-                (risks if risk_bucket >= 3 else reasons).append(f"Risk‑Proxy: Bucket {risk_bucket}/4.")
-
-        if cluster:
-            reasons.append(f"Cluster/Sektor: {cluster}.")
-        if pillar:
-            reasons.append(f"Säule (privat): {pillar}.")
-        if bucket_type:
-            reasons.append(f"BUCKET: {bucket_type}.")
-
-        # Top-level concentration hints into per-item risks
-        for msg in concentration:
-            if "Cluster" in msg and cluster and (f"'{cluster}'" in msg or cluster in msg):
-                risks.append(msg)
-
-        # next checks (workflow, not advice)
-        next_checks.extend(
-            [
-                "Datenqualität prüfen (Status/fehlende Felder/Confidence‑Breakdown).",
-                "Chart‑Kontext prüfen (z.B. Trend200, Support/Resistance).",
-                "Risk‑Metriken prüfen (Drawdown/Volatilität/Downside‑Dev).",
-                "Cluster-/Säulen‑Exposure im eigenen Setup prüfen (Klumpenrisiko).",
-            ]
+        headline = (
+            "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence)."
+            if bool(trend_ok) and bool(liq_ok) and (conf_f is not None and conf_f >= 70)
+            else "Relevanter Kandidat im aktuellen Universe (weitere Pruefung empfohlen)."
         )
-        if is_crypto:
-            next_checks.append("Krypto‑Regime/Trend‑Kontext separat prüfen (Risk‑Management).")
 
-        # de-dupe while preserving order
-        def _dedupe(xs: list[str]) -> list[str]:
-            seen: set[str] = set()
-            out2: list[str] = []
-            for x in xs:
-                x = x.strip()
-                if not x or x in seen:
-                    continue
-                seen.add(x)
-                out2.append(x)
-            return out2
+        drivers: list[dict[str, str]] = [
+            {
+                "id": "driver_score_top",
+                "label": "Rang im Universe",
+                "value": f"#{rank} von {len(df)}",
+                "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge.",
+            },
+            {
+                "id": "driver_quality_filters",
+                "label": "Qualitaetsfilter",
+                "value": f"Trend {'OK' if trend_ok else 'NO'} | Liq {'OK' if liq_ok else 'NO'}",
+                "why_it_matters": "Filterstatus zeigt, ob Mindestkriterien aktuell erfuellt sind.",
+            },
+            {
+                "id": "driver_confidence",
+                "label": "Confidence",
+                "value": "-" if conf_f is None else f"{conf_f:.0f}/100",
+                "why_it_matters": "Hinweis auf Datenkonsistenz und Konfluenz im Modellkontext.",
+            },
+        ]
+
+        next_checks: list[dict[str, str]] = [
+            {"id": "check_chart", "text": "Chartstruktur pruefen (Trend, markante Zonen, Bewegungskontext)."},
+            {"id": "check_news", "text": "News/Events pruefen (Earnings, Guidance, Corporate Actions)."},
+            {"id": "check_risk", "text": "Risikoprofil pruefen (Drawdown, Volatilitaet, Positionsrisiko)."},
+        ]
+        if anomalies:
+            next_checks[0] = {
+                "id": "check_perf_basis",
+                "text": f"Datenbasis der Tagesbewegung (1D) pruefen ({perf_window_1d}, Referenzwerte, Zeitfenster).",
+            }
 
         item = {
+            "rank": rank,
             "symbol": ident["symbol"],
-            "isin": ident["isin"],
-            "yahoo": ident["yahoo"],
             "name": ident["name"],
+            "isin": ident["isin"],
             "score": score,
-            "score_pctl": sp,
-            "r_code": r_code,
-            "trend_ok": trend_ok,
-            "liq_ok": liq_ok,
-            "risk_bucket": risk_bucket,
-            "risk_pctl": rp,
-            "score_bucket": score_bucket,
-            "diversification_penalty": dpen_f,
-            "cluster": cluster,
-            "pillar_primary": pillar,
-            "bucket_type": bucket_type,
-            "reasons": _dedupe(reasons),
-            "risks": _dedupe(risks),
-            "next_checks": _dedupe(next_checks),
+            "score_percentile": score_pctl,
+            "risk_bucket": rb,
+            "risk_buckets_total": 4,
+            "risk_label": _risk_label(rb),
+            "quality": {
+                "trend_ok": trend_ok,
+                "liq_ok": liq_ok,
+                "confidence": conf_f,
+                "status": score_status or "NA",
+            },
+            "headline": headline,
+            "drivers": drivers,
+            "anomalies": anomalies,
+            "next_checks": next_checks,
+            "details": {
+                "column": pillar,
+                "code": r_code,
+                "cycle_pct": cycle_f,
+                "perf_1d_pct": perf_1d_f,
+                "perf_1y_pct": perf_1y_f,
+                "regime": regime,
+                "trend200_proxy": trend200_f,
+                "risk_percentile": risk_pctl,
+                "diversification_penalty": dpen_f,
+            },
         }
         items.append(item)
 
     now = datetime.now(timezone.utc)
-
-    # detect market date if present
     date_col = _first_col(df, ["market_date", "MarketDate", "Date"])
     market_date = None
     if date_col and date_col in df.columns:
@@ -637,130 +613,158 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
         except Exception:
             market_date = None
 
+    source_name = csv_path.name.upper()
+    preset = "ALL" if "ALL" in source_name else ("CORE" if "CORE" in source_name else ("FULL" if "FULL" in source_name else "ALL"))
+
     meta = {
-        "schema_version": BRIEFING_SCHEMA_VERSION,
-        "generated_at": now.isoformat().replace("+00:00", "Z"),
+        "briefing_version": f"v{BRIEFING_SCHEMA_VERSION}",
+        "generated_utc": now.isoformat().replace("+00:00", "Z"),
+        "source_csv": str(csv_path.as_posix()),
+        "preset": preset,
+        "filters": {"query": "", "cluster": "Alle", "column": "Alle", "bucket": None},
+        "universe": {
+            "total": int(len(df)),
+            "scored": int(score_vals.notna().sum()),
+            "scoring_basis": "score desc, tie-break: confidence desc, then symbol asc",
+        },
+        "metrics_basis": {
+            "perf_1d_pct": {
+                "label": c_perf_1d or "perf_1d_pct",
+                "window": perf_window_1d,
+                "definition_hint": "Tagesbewegung (1D). Bei extremen Werten Referenz und Zeitfenster pruefen.",
+            },
+            "perf_1y_pct": {
+                "label": c_perf_1y or "perf_1y_pct",
+                "window": perf_window_1y,
+                "definition_hint": "Performance ueber 1 Jahr auf Basis der verfuegbaren Datenhistorie.",
+            }
+        },
+        "disclaimer": "Privat/experimentell | keine Anlageberatung | keine Empfehlung.",
         "date": market_date or now.date().isoformat(),
         "language": language or "de",
-        "source_csv": str(csv_path.as_posix()),
-        "universe_count": int(len(df)),
-        "scored_count": int(score_vals.notna().sum()),
-        "top_n": int(top_n),
-        "notes": concentration,
+        "schema_version": BRIEFING_SCHEMA_VERSION,
     }
 
-    return {"meta": meta, "top": items}
+    summary = {
+        "what_to_do_next": [
+            "Top-Werte zuerst auf Chart/News/Risiko pruefen.",
+            "Bei extremer Tagesbewegung (1D) zuerst Datenbasis und Zeitraum verifizieren.",
+        ],
+        "market_context_hint": "Market Context ist informativ und beeinflusst das Scoring nicht.",
+    }
+
+    diagnostics = {
+        "data_quality": {
+            "extreme_perf_count": int(extreme_perf_count),
+            "missing_fields_count": 0,
+            "suspicious_values": [{"field": "perf_1d_pct", "rule": "abs(perf_1d_pct) >= 20", "count": int(extreme_perf_count)}],
+        },
+        "build_info": {
+            "git_sha": (os.getenv("GITHUB_SHA") or "local")[:7],
+            "ui_sha": (os.getenv("GITHUB_SHA") or "local")[:7],
+            "pipeline": "run_daily -> validate -> briefing -> ui",
+        },
+    }
+
+    context = {"notes": notes}
+    return {"meta": meta, "summary": summary, "top": items, "context": context, "diagnostics": diagnostics}
 
 
 def render_briefing_txt(briefing: dict[str, Any]) -> str:
     meta = briefing.get("meta") or {}
+    summary = briefing.get("summary") or {}
     items = briefing.get("top") or []
+
+    date_str = _norm_str(meta.get("date")) or "-"
+    generated_utc = _norm_str(meta.get("generated_utc")) or "-"
+    source_csv = _norm_str(meta.get("source_csv")) or "-"
+    u = meta.get("universe") or {}
+    universe_total = u.get("total", "-")
+    universe_scored = u.get("scored", "-")
+
     lines: list[str] = []
-
-    lines.append("Scanner_vNext – Briefing (deterministisch)")
-    lines.append(f"Datum: {meta.get('date','—')}  |  Generiert: {meta.get('generated_at','—')}")
-    lines.append(f"Quelle: {meta.get('source_csv','—')}")
-    lines.append(f"Universe: {meta.get('universe_count','—')}  |  Scored: {meta.get('scored_count','—')}")
+    lines.append("Scanner_vNext - Briefing (deterministisch, Research)")
+    lines.append(_norm_str(meta.get("disclaimer")) or "Privat/experimentell - keine Anlageberatung - keine Empfehlung.")
     lines.append("")
+    lines.append(f"Datum: {date_str} | Generiert (UTC): {generated_utc}")
+    lines.append(f"Quelle: {source_csv}")
+    lines.append(f"Universe: {universe_total} | Scored: {universe_scored}")
+    lines.append("")
+    lines.append("So nutzt du das (30 Sekunden):")
+    for t in summary.get("what_to_do_next") or []:
+        lines.append(f"- {t}")
+    lines.append("")
+    lines.append(f"TOP {len(items)} (relativ im aktuellen Universe)")
+    lines.append("-" * 72)
 
-    n = len(items)
-    lines.append(f"Top {n} – Warum diese Werte oben stehen (aus vorhandenen Feldern abgeleitet)")
-    lines.append("—" * 72)
-
-    def _short_why(it: dict) -> str:
-        # Nimm 1–2 stärkste Gründe + Flags, keine neue Berechnung
-        sym = it.get("symbol") or "—"
-        score = it.get("score")
-        sp = it.get("score_pctl")
+    for it in items:
+        rank = it.get("rank")
+        symbol = _norm_str(it.get("symbol")) or "-"
+        name = _norm_str(it.get("name"))
+        isin = _norm_str(it.get("isin"))
+        score = _to_float_or_none(it.get("score"))
+        sp = _to_float_or_none(it.get("score_percentile"))
         rb = it.get("risk_bucket")
-        trend_ok = it.get("trend_ok")
-        liq_ok = it.get("liq_ok")
-        reasons = it.get("reasons") or []
+        rb_total = it.get("risk_buckets_total") or 4
+        risk_label = _norm_str(it.get("risk_label")) or "-"
+        d = it.get("details") or {}
+        perf_1d = _to_float_or_none(d.get("perf_1d_pct"))
+        perf_1y = _to_float_or_none(d.get("perf_1y_pct"))
 
-        # 1–2 Gründe als "Treiber"
-        treiber = "; ".join([str(x) for x in reasons[:2] if str(x).strip()])
+        q = it.get("quality") or {}
+        trend_ok = q.get("trend_ok")
+        liq_ok = q.get("liq_ok")
+        conf = _to_float_or_none(q.get("confidence"))
 
-        bits = []
-        if score is not None:
-            bits.append(f"Score {float(score):.2f}")
-        if sp is not None:
-            bits.append(f"Pctl {float(sp):.0f}%")
-        if rb is not None:
-            bits.append(f"RiskB {rb}/4")
-        if trend_ok is True:
-            bits.append("Trend OK")
-        if liq_ok is True:
-            bits.append("Liq OK")
-
-        head = f"{sym}: " + " | ".join(bits) if bits else f"{sym}:"
-        return f"{head} — Treiber: {treiber}." if treiber else f"{head}"
-
-    lines.append("")
-    lines.append("Top 3 – Kurzbegründung (pseudo-KI, deterministisch)")
-    for i, it in enumerate(items[:3], 1):
-        lines.append(f" {i}) {_short_why(it)}")
-    lines.append("")
-    lines.append("—" * 72)
-
-    for i, it in enumerate(items, 1):
-        sym = it.get("symbol") or "—"
-        name = it.get("name") or ""
-        isin = it.get("isin") or it.get("yahoo") or ""
-        score = it.get("score")
-        sp = it.get("score_pctl")
-        rb = it.get("risk_bucket")
-        rc = it.get("r_code") or "R?"
-        cluster = it.get("cluster") or ""
-        pillar = it.get("pillar_primary") or ""
-
-        head = f"{i}) {sym}"
+        title = f"#{rank} {symbol}"
         if name:
-            head += f" — {name}"
+            title += f" - {name}"
         if isin:
-            head += f" ({isin})"
-        lines.append(head)
+            title += f" ({isin})"
+        lines.append(title)
 
-        meta_line = []
+        parts = []
         if score is not None:
-            meta_line.append(f"Score {float(score):.2f}")
+            parts.append(f"Score {score:.2f}")
         if sp is not None:
-            meta_line.append(f"Pctl {float(sp):.1f}%")
+            parts.append(f"Top {sp:.1f}%")
         if rb is not None:
-            meta_line.append(f"RiskB {rb}/4")
-        meta_line.append(f"Code {rc}")
-        if cluster:
-            meta_line.append(f"Cluster {cluster}")
-        if pillar:
-            meta_line.append(f"Säule {pillar}")
-        lines.append("   " + " | ".join(meta_line))
+            parts.append(f"Risiko {risk_label} ({rb}/{rb_total})")
+        lines.append("Rang: " + " | ".join(parts) if parts else "Rang: -")
 
-        reasons = it.get("reasons") or []
-        risks = it.get("risks") or []
-        checks = it.get("next_checks") or []
+        q_txt = f"Qualitaet: Trend {'OK' if trend_ok else 'NO'} | Liq {'OK' if liq_ok else 'NO'}"
+        if conf is not None:
+            q_txt += f" | Confidence {conf:.0f}/100"
+        lines.append(q_txt)
+        if perf_1d is not None or perf_1y is not None:
+            p1d = "-" if perf_1d is None else f"{perf_1d:+.2f}%"
+            p1y = "-" if perf_1y is None else f"{perf_1y:+.2f}%"
+            lines.append(f"Performance: 1D {p1d} | 1Y {p1y}")
 
-        if reasons:
-            lines.append("   Gründe:")
-            for x in reasons[:10]:
-                lines.append(f"     - {x}")
-        if risks:
-            lines.append("   Risiken/Flags:")
-            for x in risks[:10]:
-                lines.append(f"     - {x}")
-        if checks:
-            lines.append("   Nächste Checks (keine Beratung):")
-            for x in checks[:10]:
-                lines.append(f"     - {x}")
+        lines.append("Warum oben:")
+        for d in (it.get("drivers") or [])[:3]:
+            lines.append(f"- {d.get('label', '-')}: {d.get('value', '-')} - {d.get('why_it_matters', '-')}")
+
+        anomalies = it.get("anomalies") or []
+        if anomalies:
+            lines.append("Auffaellig:")
+            for a in anomalies[:3]:
+                lines.append(f"- {a.get('label', '-')}: {a.get('value', '-')} - {a.get('explain', '-')}")
+
+        lines.append("Naechste Checks:")
+        for c in (it.get("next_checks") or [])[:3]:
+            lines.append(f"- {c.get('text', '-')}")
         lines.append("")
 
-    notes = meta.get("notes") or []
+    notes = ((briefing.get("context") or {}).get("notes") or [])
     if notes:
         lines.append("Kontext-Hinweise")
-        lines.append("—" * 72)
-        for x in notes:
-            lines.append(f"- {x}")
+        lines.append("-" * 72)
+        for n in notes:
+            lines.append(f"- {n.get('text', '-')}")
         lines.append("")
 
-    lines.append("Disclaimer: Privat/experimentell. Keine Anlageberatung. Keine Empfehlung. Nutzung auf eigenes Risiko.")
+    lines.append("Disclaimer: Privat/experimentell. Keine Anlageberatung. Keine Empfehlung.")
     return "\n".join(lines).strip() + "\n"
 
 
@@ -770,15 +774,24 @@ def validate_briefing_json(briefing: dict[str, Any]) -> tuple[bool, list[str]]:
     if not isinstance(briefing, dict):
         return False, ["root must be an object"]
     meta = briefing.get("meta")
+    summary = briefing.get("summary")
     top = briefing.get("top")
+    context = briefing.get("context")
+    diagnostics = briefing.get("diagnostics")
     if not isinstance(meta, dict):
         errs.append("meta must be an object")
         meta = {}
+    if not isinstance(summary, dict):
+        errs.append("summary must be an object")
+    if not isinstance(context, dict):
+        errs.append("context must be an object")
+    if not isinstance(diagnostics, dict):
+        errs.append("diagnostics must be an object")
     if not isinstance(top, list):
         errs.append("top must be an array")
         top = []
 
-    for k in ("schema_version", "generated_at", "date", "source_csv", "universe_count", "scored_count", "top_n"):
+    for k in ("briefing_version", "generated_utc", "source_csv", "preset", "universe", "metrics_basis", "disclaimer"):
         if k not in meta:
             errs.append(f"meta.{k} missing")
 
@@ -786,15 +799,19 @@ def validate_briefing_json(briefing: dict[str, Any]) -> tuple[bool, list[str]]:
         if not isinstance(it, dict):
             errs.append(f"top[{i}] must be an object")
             continue
-        for k in ("symbol", "name", "score", "r_code", "reasons", "risks", "next_checks"):
+        for k in ("rank", "symbol", "name", "score", "score_percentile", "quality", "drivers", "anomalies", "next_checks", "details"):
             if k not in it:
                 errs.append(f"top[{i}].{k} missing")
-        if "reasons" in it and not isinstance(it.get("reasons"), list):
-            errs.append(f"top[{i}].reasons must be an array")
-        if "risks" in it and not isinstance(it.get("risks"), list):
-            errs.append(f"top[{i}].risks must be an array")
+        if "drivers" in it and not isinstance(it.get("drivers"), list):
+            errs.append(f"top[{i}].drivers must be an array")
+        if "anomalies" in it and not isinstance(it.get("anomalies"), list):
+            errs.append(f"top[{i}].anomalies must be an array")
         if "next_checks" in it and not isinstance(it.get("next_checks"), list):
             errs.append(f"top[{i}].next_checks must be an array")
+        if "quality" in it and not isinstance(it.get("quality"), dict):
+            errs.append(f"top[{i}].quality must be an object")
+        if "details" in it and not isinstance(it.get("details"), dict):
+            errs.append(f"top[{i}].details must be an object")
 
     return len(errs) == 0, errs
 

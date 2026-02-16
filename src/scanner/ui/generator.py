@@ -22,7 +22,6 @@ import argparse
 import html
 import json
 import os
-import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -80,8 +79,6 @@ def _clean_ui_text(text: str) -> str:
     out = text
     for bad, good in _BROKEN_TEXT_MAP.items():
         out = out.replace(bad, good)
-    # Final fallback: force ASCII-safe output so mojibake cannot leak into UI.
-    out = unicodedata.normalize("NFKD", out).encode("ascii", errors="ignore").decode("ascii")
     return out
 
 
@@ -107,7 +104,11 @@ DEFAULT_COLUMNS = [
     "Akt. Kurs",
     "price_eur",
     "perf_pct",
+    "perf_1d_pct",
+    "perf_1y_pct",
     "Perf %",
+    "Perf 1D %",
+    "Perf 1Y %",
     "rs3m",
     "trend200",
     "sma200",
@@ -742,9 +743,9 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <div class="matrixNote" id="matrixNote">â€”</div>
           </div>
 
-          <div class="briefingBox" id="briefingBox">
+          <div class="briefingBox" id="briefingBox" title="Kurz-Erklaerung zu den Top-Werten aus vorhandenen Feldern, ohne Einfluss auf das Scoring.">
             <div class="briefHead">
-              <div class="matrixTitle">Briefing</div>
+              <div class="matrixTitle" title="Deterministische Zusammenfassung der aktuellen Top-Werte.">Briefing</div>
               <button type="button" class="btn" id="briefingToggle" title="Briefing ein-/ausblenden">Ausblenden</button>
             </div>
             <div class="muted small">Privat/experimentell Â· keine Anlageberatung Â· ohne Einfluss aufs Scoring.</div>
@@ -754,10 +755,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
 
 
-<div class="marketPanel" id="marketPanel">
+<div class="marketPanel" id="marketPanel" title="Marktumfeld aus deinem aktuellen Universe - nur Kontext, kein Score-Einfluss.">
   <div class="marketHead">
     <div>
-      <div class="matrixTitle">Market Context</div>
+      <div class="matrixTitle" title="Passiver Markt-Kontext aus den aktuell sichtbaren Werten.">Market Context</div>
       <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
@@ -770,13 +771,13 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   </div>
   <div id="marketBody" class="marketGrid">
     <div class="marketCard" id="breadthCard">
-      <div class="marketCardTitle">Breadth</div>
+      <div class="marketCardTitle" title="Marktbreite: Anteil Gewinner, Verlierer und neutrale Werte im aktuellen Universe.">Breadth</div>
       <div id="breadthBox">â€”</div>
       <div id="diversBox" class="muted small" style="margin-top:8px;">â€”</div>
       <div id="qualityBox" class="muted small" style="margin-top:8px;">â€”</div>
     </div>
     <div class="marketCard" id="moversCard">
-      <div class="marketCardTitle">Movers</div>
+      <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Tagesbewegung (1D) im aktuellen Universe.">Movers</div>
       <div class="moversGrid">
         <div>
           <div class="muted small">Top â†‘</div>
@@ -789,7 +790,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
     </div>
     <div class="marketCard" id="heatCard">
-      <div class="marketCardTitle">Heatmap</div>
+      <div class="marketCardTitle" title="Verteilung der Werte nach Cluster/Saeule und Score-Buckets.">Heatmap</div>
       <div id="heatmap" class="heatWrap">â€”</div>
     </div>
   </div>
@@ -813,7 +814,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <tr>
               <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
               <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
-              <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
+              <th data-k="price" class="right" title="Aktueller Kurs (Originalwaehrung) + Tagesbewegung (1D) und Performance (1Y)">Kurs</th>
               <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
@@ -1196,13 +1197,13 @@ if (elHeatMode) {
     function asBool(v) {
       if (v === true || v === false) return v;
       if (v === 1 || v === 0) return !!v;
-      const s = (v  '').toString().trim().toLowerCase();
+      const s = (v ?? '').toString().trim().toLowerCase();
       if (['true','t','yes','y','1'].includes(s)) return true;
       if (['false','f','no','n','0'].includes(s)) return false;
       return null;
     }
     function normStr(v) {
-      return (v  '').toString().trim();
+      return (v ?? '').toString().trim();
     }
 
     // HTML-Listen-Konvertierung fÃ¼r Briefing (bessere Mobile Darstellung)
@@ -1447,11 +1448,11 @@ function applyPillarFilter(rows) {
     }
 
     function scoreBucket(score) {
-      const s = Math.max(0, Math.min(100, asNum(score)  0));
+      const s = Math.max(0, Math.min(100, asNum(score) ?? 0));
       return Math.min(4, Math.floor(s / 20));
     }
     function riskBucket(pctl) {
-      const p = Math.max(0, Math.min(100, asNum(pctl)  0));
+      const p = Math.max(0, Math.min(100, asNum(pctl) ?? 0));
       return Math.min(4, Math.floor(p / 20));
     }
 
@@ -1482,11 +1483,20 @@ function applyPillarFilter(rows) {
       }
     }
 
-    function perfLine(p) {
-      if (p === null || p === undefined) return '<div class="sub muted">â€”</div>';
-      const dir = (p > 0) ? 'pos' : (p < 0) ? 'neg' : 'flat';
-      const arrow = (p > 0) ? 'â–²' : (p < 0) ? 'â–¼' : 'â€¢';
-      return `<div class="sub chg ${dir}">${arrow} ${p.toFixed(2)}%</div>`;
+    function perfLines(p1d, p1y) {
+      const parts = [];
+      if (p1d !== null && p1d !== undefined && Number.isFinite(p1d)) {
+        const dir1 = (p1d > 0) ? 'pos' : (p1d < 0) ? 'neg' : 'flat';
+        const arrow1 = (p1d > 0) ? '+' : (p1d < 0) ? '-' : '=';
+        parts.push(`<div class="sub chg ${dir1}" title="Tagesbewegung (1D)">${arrow1} 1D ${p1d.toFixed(2)}%</div>`);
+      }
+      if (p1y !== null && p1y !== undefined && Number.isFinite(p1y)) {
+        const dir2 = (p1y > 0) ? 'pos' : (p1y < 0) ? 'neg' : 'flat';
+        const arrow2 = (p1y > 0) ? '+' : (p1y < 0) ? '-' : '=';
+        parts.push(`<div class="sub chg ${dir2}" title="Performance (1Y)">${arrow2} 1Y ${p1y.toFixed(2)}%</div>`);
+      }
+      if (!parts.length) return '<div class="sub muted">-</div>';
+      return parts.join('');
     }
 
     function looksLikeISIN(s) {
@@ -1567,7 +1577,7 @@ function applyPillarFilter(rows) {
     }
 
     function esc(v) {
-      return (v  '').toString()
+      return (v ?? '').toString()
         .replaceAll('&','&amp;')
         .replaceAll('<','&lt;')
         .replaceAll('>','&gt;')
@@ -1605,7 +1615,7 @@ function applyPillarFilter(rows) {
     }
 
     function scoreCell(r) {
-      const s = Math.max(0, Math.min(100, asNum(r.score)  0));
+      const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
       const sig = rec ? `<span class="sig ${rec.cls}" title="Signalâ€‘Code">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
@@ -1934,9 +1944,15 @@ function parsePct(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-function perfPct(r) {
+function perf1dPct(r) {
   return parsePct(
-    r.perf_pct  r['Perf %']  r['Change %']  r.change_pct  r.changePercent  r.PerfPct
+    r.perf_1d_pct ?? r['Perf 1D %'] ?? r.perf_1d ?? r.perf1d ?? r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct
+  );
+}
+
+function perf1yPct(r) {
+  return parsePct(
+    r.perf_1y_pct ?? r['Perf 1Y %'] ?? r.perf_1y ?? r.perf1y ?? r.perf_pct ?? r['Perf %']
   );
 }
 
@@ -1968,7 +1984,7 @@ function renderBreadth(rows) {
   if (!elBreadthBox) return;
   let adv = 0, dec = 0, flat = 0, miss = 0;
   for (const r of rows || []) {
-    const p = perfPct(r);
+    const p = perf1dPct(r);
     if (p === null) { miss++; continue; }
     if (p > 0) adv++;
     else if (p < 0) dec++;
@@ -1976,7 +1992,7 @@ function renderBreadth(rows) {
   }
   const tot = adv + dec + flat;
   if (!tot) {
-    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare TagesÃ¤nderung (Perf %) im aktuellen Universe.</div>`;
+    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare Tagesbewegung (1D) im aktuellen Universe.</div>`;
     return;
   }
   const pct = (x) => (tot ? Math.round((x / tot) * 100) : 0);
@@ -1988,7 +2004,7 @@ function renderBreadth(rows) {
       ${chip(`Flat ${flat}`, flat ? 'blue' : 'blue')}
       ${miss ? chip(`n/a ${miss}`, 'warn') : ''}
     </div>
-    <div class="muted small">Basis: <span class="mono">perf_pct / Perf %</span> (nur Anzeige/Context).</div>
+    <div class="muted small">Basis: <span class="mono">perf_1d_pct / Perf 1D %</span> (Fallback: perf_pct / Perf %; nur Anzeige/Context).</div>
   `;
   elBreadthBox.innerHTML = row;
 }
@@ -2092,7 +2108,7 @@ function renderMovers(rows) {
 
   const arr = [];
   for (const r of rows || []) {
-    const p = perfPct(r);
+    const p = perf1dPct(r);
     if (p === null) continue;
     arr.push({r, p});
   }
@@ -2242,10 +2258,11 @@ function renderMarketContext(rows, presetRows) {
         if (ctry) subParts.push(esc(ctry));
         const subName = subParts.join(' Â· ');
 
-        const price = asNum(r.price)  asNum(r["Akt. Kurs"]);
-        const perf = asNum(r.perf_pct)  asNum(r["Perf %"]);
+        const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
+        const perf1d = perf1dPct(r);
+        const perf1y = perf1yPct(r);
         const priceMain = (price === null) ? 'â€”' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
-        const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
+        const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLines(perf1d, perf1y)}</div>`;
 
         const trend = asBool(r.trend_ok) ? chip('OK', 'good') : chip('NO', 'bad');
         const liq = asBool(r.liquidity_ok) ? chip('OK', 'good') : chip('LOW', 'warn');
@@ -2268,8 +2285,8 @@ function renderMarketContext(rows, presetRows) {
           </td>
           <td class="right">${pCell}</td>
           <td>${scoreCell(r)}</td>
-          <td class="hide-sm right mono">${(asNum(r.confidence)  0).toFixed(1)}</td>
-          <td class="hide-sm right mono">${(asNum(r.cycle)  0).toFixed(0)}%</td>
+          <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
+          <td class="hide-sm right mono">${(asNum(r.cycle) ?? 0).toFixed(0)}%</td>
           <td>${trend}</td>
           <td>${liq}</td>
           <td>${chip(status || 'â€”', statusKind)}</td>
@@ -2315,9 +2332,9 @@ function renderMarketContext(rows, presetRows) {
       }
 
       const items = [
-        ['Score', (asNum(r.score)  0).toFixed(2)],
-        ['Confidence', (asNum(r.confidence)  0).toFixed(1)],
-        ['Cycle', `${(asNum(r.cycle)  0).toFixed(0)}%`],
+        ['Score', (asNum(r.score) ?? 0).toFixed(2)],
+        ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
+        ['Cycle', `${(asNum(r.cycle) ?? 0).toFixed(0)}%`],
         ['ScoreStatus', normStr(r.score_status) || 'â€”'],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
@@ -2328,8 +2345,9 @@ function renderMarketContext(rows, presetRows) {
       const opt = [
         ['Price', r.price],
         ['Currency', curr],
-        ['Perf %', fmtPct(asNum(r.perf_pct)  asNum(r["Perf %"]))],
-        ['DiversPenalty', (asNum(r.diversification_penalty)  0).toFixed(2)],
+        ['Tagesbewegung (1D)', fmtPct(perf1dPct(r))],
+        ['Performance (1Y)', fmtPct(perf1yPct(r))],
+        ['DiversPenalty', (asNum(r.diversification_penalty) ?? 0).toFixed(2)],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],
         ['MC Chance', r.mc_chance],
@@ -2684,13 +2702,15 @@ def _render_help_html(*, version: str, build: str) -> str:
     :root{{--bg:#0b1020;--card:#0f172a;--border:rgba(148,163,184,.18);--muted:#94a3b8;--text:#e2e8f0;--accent:#60a5fa;}}
     *{{box-sizing:border-box}}
     body{{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}}
-    .wrap{{max-width:960px;margin:0 auto;padding:16px}}
+    .wrap{{max-width:980px;margin:0 auto;padding:16px}}
     .card{{background:rgba(15,23,42,.84);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}}
     .meta{{color:var(--muted);font-size:12px}}
     a{{color:var(--accent);text-decoration:none}}
     details{{border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px 0;background:rgba(2,6,23,.4)}}
     summary{{cursor:pointer;font-weight:700}}
     code{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}}
+    ul{{margin:8px 0 8px 18px}}
+    p{{line-height:1.5}}
   </style>
 </head>
 <body>
@@ -2698,54 +2718,58 @@ def _render_help_html(*, version: str, build: str) -> str:
     <div class="card">
       <h1 style="margin:0 0 6px 0">Scanner_vNext - Hilfe</h1>
       <div class="meta">version {version} - build {build} - <a href="index.html">zurueck zum Dashboard</a></div>
-      <p><b>Privates Research-Dashboard.</b> Keine Anlageberatung. Inhalte koennen unvollstaendig oder fehlerhaft sein.</p>
+      <p><b>Was ist das?</b> Scanner_vNext ist ein Research-Dashboard fuer Watchlist-Analyse. Die Anzeige kombiniert Rangfolge (Score), Datenqualitaet (Confidence), Filterstatus und Marktkontext in einer kompakten Ansicht.</p>
+      <p><b>Wichtig:</b> Die Inhalte sind Analyse- und Priorisierungsinformationen. Die Darstellung ist kein Handelsaufruf und keine Anlageberatung.</p>
     </div>
 
     <div class="card">
       <h2 style="margin:0 0 8px 0">60 Sekunden: So nutzt du das Dashboard</h2>
       <ol>
-        <li>Preset waehlen (z.B. ALL, CORE, TOP).</li>
-        <li>Suche und Quick-Filter setzen.</li>
-        <li>Bucket-Matrix anklicken fuer Fokus.</li>
-        <li>Drawer oeffnen fuer Detailpruefung.</li>
+        <li>Preset waehlen (ALL, CORE, TOP...), danach Suche und Quick-Filter setzen.</li>
+        <li>Score, Confidence, Trend und Liq gemeinsam lesen.</li>
+        <li>Bucket-Matrix fuer Score/Risk-Fokus verwenden.</li>
+        <li>Details im Drawer pruefen und mit Market Context einordnen.</li>
       </ol>
     </div>
 
     <details open>
-      <summary>Glossar (kurz)</summary>
-      <p><b>Score</b>: internes Ranking. <b>Confidence</b>: Qualitaet/Konfluenz. <b>R0-R5</b>: Workflow-Code, kein Kaufsignal.</p>
-      <p><b>trend_ok / liquidity_ok</b>: Mindestfilter. <b>score_status</b>: OK/AVOID/NA.</p>
+      <summary>Wie lese ich die Hauptspalten?</summary>
+      <p>Die Hauptspalten bilden drei Ebenen ab: Rangfolge, Qualitaet und Filterstatus.</p>
+      <ul>
+        <li><b>Score</b>: relative Rangfolge im aktuell geladenen Universe. Ein hoher Wert bedeutet eine starke Position innerhalb der aktuellen Vergleichsmenge.</li>
+        <li><b>Confidence</b>: Stabilitaet der Daten- und Signalbasis. Hohe Werte stehen fuer konsistentere Rahmenbedingungen.</li>
+        <li><b>Trend / Liq</b>: einfache Plausibilitaetsfilter. Trend prueft Trendlage, Liq prueft Handelbarkeit/Volumennahe.</li>
+        <li><b>Status</b>: kompakter Arbeitsstatus. <code>OK</code> = normal, <code>AVOID</code> = meiden, <code>NA</code> = unvollstaendig.</li>
+      </ul>
+      <p>Einzelwerte sollten nicht isoliert interpretiert werden. Aussagekraft entsteht aus der Kombination der Spalten.</p>
     </details>
 
     <details open>
-      <summary>Bucket-Matrix</summary>
-      <p>X-Achse = Score, Y-Achse = Risk. Klick auf ein Feld aktiviert einen zusaetzlichen Filter.</p>
+      <summary>Was bedeuten R0-R5?</summary>
+      <p>R0-R5 sind neutrale Workflow-Codes fuer die interne Priorisierung. Sie sind keine Kauf-/Verkaufssignale.</p>
+      <ul>
+        <li><b>R5/R4</b>: hohe Prioritaet fuer vertiefte Analyse.</li>
+        <li><b>R3</b>: neutraler Beobachtungsstatus.</li>
+        <li><b>R2/R1</b>: niedrige Prioritaet.</li>
+        <li><b>R0</b>: Ausschluss-/Vermeidungsstatus (z.B. AVOID).</li>
+      </ul>
+      <p>Der Code verdichtet mehrere Informationen zu einem schnellen Arbeitslabel. Er ersetzt keine Detailpruefung.</p>
     </details>
 
     <details open>
-      <summary>Market Context</summary>
-      <p>Nur Kontext, kein Einfluss auf Scoring.</p>
+      <summary>Market Context: Wozu ist das gut?</summary>
+      <p>Der Market-Context-Block ergaenzt die Einzeltitelansicht um den Zustand des aktuell gefilterten Gesamtuniversums.</p>
       <ul>
-        <li><b>Breadth</b>: Anzahl Gewinner/Verlierer im aktuellen gefilterten Universe.</li>
-        <li><b>Movers</b>: staerkste Auf- und Abbewegungen.</li>
-        <li><b>Heatmap</b>: Verteilung nach Cluster/Saeule und Score-Buckets.</li>
-        <li><b>Preset-Qualitaet</b>: Median/IQR fuer Score/Confidence plus Trend/Liq-Anteile.</li>
+        <li><b>Breadth</b>: Verteilung von Gewinnern, Verlierern und neutralen Werten. Zeigt, ob das Umfeld breit getragen oder eng ist.</li>
+        <li><b>Movers</b>: staerkste positive und negative Tagesbewegungen im aktiven Filter.</li>
+        <li><b>Heatmap</b>: Strukturansicht nach Cluster/Saeule und Score-Bucket. Macht Konzentrationen und Luecken sichtbar.</li>
       </ul>
+      <p>Dieser Block liefert Kontext und Orientierung. Er veraendert den Score nicht.</p>
     </details>
 
     <details>
-      <summary>Pipeline (Future-Me)</summary>
-      <p><code>python -m scanner.app.run_daily</code> erstellt Watchlist/Reports.<br/>
-      <code>python -m scanner.ui.generator</code> erzeugt <code>artifacts/ui/index.html</code>.</p>
-    </details>
-
-    <details>
-      <summary>Troubleshooting</summary>
-      <ul>
-        <li>Wenn UI leer ist: zuerst <code>run_daily</code>, dann <code>ui.generator</code>.</li>
-        <li>Wenn Texte komisch aussehen: UI neu generieren und Browser-Cache leeren.</li>
-        <li>Wenn Contract-Error: <code>python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_ALL.csv</code>.</li>
-      </ul>
+      <summary>Kurze Projektbeschreibung</summary>
+      <p>Scanner_vNext verbindet Datenaufbereitung, Scoring und UI-Exploration in einem taeglichen Analyseablauf. Ziel ist eine reproduzierbare und transparente Entscheidungsgrundlage: relevante Werte schneller erkennen, Risiken frueh markieren und Interpretationen nachvollziehbar dokumentieren.</p>
     </details>
   </main>
 </body>
