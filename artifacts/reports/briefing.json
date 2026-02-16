@@ -1,7 +1,7 @@
 {
   "meta": {
     "briefing_version": "v2",
-    "generated_utc": "2026-02-16T13:20:05.961993Z",
+    "generated_utc": "2026-02-16T13:37:30.142364Z",
     "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "preset": "ALL",
     "filters": {
@@ -40,7 +40,7 @@
       "symbol": "WPM.TO",
       "name": "WHEATON PREC.",
       "isin": "CA9628791027",
-      "score": 45.19,
+      "score": 45.15,
       "score_percentile": 100.0,
       "risk_bucket": 2,
       "risk_buckets_total": 4,
@@ -101,17 +101,88 @@
         "code": "R5",
         "cycle_pct": 38.5,
         "regime": "bull",
-        "trend200_proxy": 0.0553484204910741,
+        "trend200_proxy": 0.0553484174997196,
         "risk_percentile": 37.142857142857146,
         "diversification_penalty": 0.0
       }
     },
     {
       "rank": 2,
+      "symbol": "FRES.L",
+      "name": "FRESNILLO PLC",
+      "isin": "GB00B2QPKJ12",
+      "score": 44.5,
+      "score_percentile": 99.28571428571429,
+      "risk_bucket": 3,
+      "risk_buckets_total": 4,
+      "risk_label": "hoch",
+      "quality": {
+        "trend_ok": true,
+        "liq_ok": true,
+        "confidence": 87.9,
+        "status": "OK"
+      },
+      "headline": "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence).",
+      "drivers": [
+        {
+          "id": "driver_score_top",
+          "label": "Rang im Universe",
+          "value": "#2 von 141",
+          "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge."
+        },
+        {
+          "id": "driver_quality_filters",
+          "label": "Qualitaetsfilter",
+          "value": "Trend OK | Liq OK",
+          "why_it_matters": "Filterstatus zeigt, ob Mindestkriterien aktuell erfuellt sind."
+        },
+        {
+          "id": "driver_confidence",
+          "label": "Confidence",
+          "value": "88/100",
+          "why_it_matters": "Hinweis auf Datenkonsistenz und Konfluenz im Modellkontext."
+        }
+      ],
+      "anomalies": [
+        {
+          "id": "anomaly_extreme_perf",
+          "severity": "alert",
+          "label": "Sehr auffaellige Perf %",
+          "value": "+385.68%",
+          "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
+          "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
+        }
+      ],
+      "next_checks": [
+        {
+          "id": "check_perf_basis",
+          "text": "Datenbasis von Perf % pruefen (snapshot_to_snapshot, Referenzwerte, Zeitfenster)."
+        },
+        {
+          "id": "check_news",
+          "text": "News/Events pruefen (Earnings, Guidance, Corporate Actions)."
+        },
+        {
+          "id": "check_risk",
+          "text": "Risikoprofil pruefen (Drawdown, Volatilitaet, Positionsrisiko)."
+        }
+      ],
+      "details": {
+        "column": "Fundament",
+        "code": "R5",
+        "cycle_pct": 21.4,
+        "regime": "bull",
+        "trend200_proxy": 0.0553484174997196,
+        "risk_percentile": 51.42857142857142,
+        "diversification_penalty": 0.0
+      }
+    },
+    {
+      "rank": 3,
       "symbol": "AEM",
       "name": "AGNICO EAGLE",
       "isin": "CA0084741085",
-      "score": 44.52,
+      "score": 44.5,
       "score_percentile": 99.28571428571429,
       "risk_bucket": 3,
       "risk_buckets_total": 4,
@@ -127,7 +198,7 @@
         {
           "id": "driver_score_top",
           "label": "Rang im Universe",
-          "value": "#2 von 141",
+          "value": "#3 von 141",
           "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge."
         },
         {
@@ -172,79 +243,8 @@
         "code": "R5",
         "cycle_pct": 50.1,
         "regime": "bull",
-        "trend200_proxy": 0.0553484204910741,
+        "trend200_proxy": 0.0553484174997196,
         "risk_percentile": 41.42857142857143,
-        "diversification_penalty": 0.0
-      }
-    },
-    {
-      "rank": 3,
-      "symbol": "FRES.L",
-      "name": "FRESNILLO PLC",
-      "isin": "GB00B2QPKJ12",
-      "score": 44.45,
-      "score_percentile": 98.57142857142858,
-      "risk_bucket": 3,
-      "risk_buckets_total": 4,
-      "risk_label": "hoch",
-      "quality": {
-        "trend_ok": true,
-        "liq_ok": true,
-        "confidence": 87.9,
-        "status": "OK"
-      },
-      "headline": "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence).",
-      "drivers": [
-        {
-          "id": "driver_score_top",
-          "label": "Rang im Universe",
-          "value": "#3 von 141",
-          "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge."
-        },
-        {
-          "id": "driver_quality_filters",
-          "label": "Qualitaetsfilter",
-          "value": "Trend OK | Liq OK",
-          "why_it_matters": "Filterstatus zeigt, ob Mindestkriterien aktuell erfuellt sind."
-        },
-        {
-          "id": "driver_confidence",
-          "label": "Confidence",
-          "value": "88/100",
-          "why_it_matters": "Hinweis auf Datenkonsistenz und Konfluenz im Modellkontext."
-        }
-      ],
-      "anomalies": [
-        {
-          "id": "anomaly_extreme_perf",
-          "severity": "alert",
-          "label": "Sehr auffaellige Perf %",
-          "value": "+386.19%",
-          "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
-          "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
-        }
-      ],
-      "next_checks": [
-        {
-          "id": "check_perf_basis",
-          "text": "Datenbasis von Perf % pruefen (snapshot_to_snapshot, Referenzwerte, Zeitfenster)."
-        },
-        {
-          "id": "check_news",
-          "text": "News/Events pruefen (Earnings, Guidance, Corporate Actions)."
-        },
-        {
-          "id": "check_risk",
-          "text": "Risikoprofil pruefen (Drawdown, Volatilitaet, Positionsrisiko)."
-        }
-      ],
-      "details": {
-        "column": "Fundament",
-        "code": "R5",
-        "cycle_pct": 21.4,
-        "regime": "bull",
-        "trend200_proxy": 0.0553484204910741,
-        "risk_percentile": 51.42857142857142,
         "diversification_penalty": 0.0
       }
     }
@@ -270,8 +270,8 @@
       ]
     },
     "build_info": {
-      "git_sha": "d4d1f2f",
-      "ui_sha": "d4d1f2f",
+      "git_sha": "9875b39",
+      "ui_sha": "9875b39",
       "pipeline": "run_daily -> validate -> briefing -> ui"
     }
   }
