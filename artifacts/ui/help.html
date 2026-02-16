@@ -2,8 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Scanner_vNext — Hilfe & Projektbeschreibung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Scanner_vNext â€” Hilfe & Projektbeschreibung</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -46,10 +46,10 @@
     <div class="wrap">
       <div class="top">
         <div>
-          <h1>Scanner_vNext — Hilfe & Projektbeschreibung</h1>
-          <div class="meta">version 0.0.1-v7 · build 2026-02-13 · <a href="index.html">zurück zum Dashboard</a></div>
+          <h1>Scanner_vNext â€” Hilfe & Projektbeschreibung</h1>
+          <div class="meta">version 0.0.1-v7 Â· build 2026-02-13 Â· <a href="index.html">zurÃ¼ck zum Dashboard</a></div>
         </div>
-        <div class="pill">Living Doc · wird laufend erweitert</div>
+        <div class="pill">Living Doc Â· wird laufend erweitert</div>
       </div>
     </div>
   </header>
@@ -58,16 +58,16 @@
 
     <div class="card" style="border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.06);">
       <h2>Disclaimer</h2>
-      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine Gewähr. Inhalte können unvollständig, falsch oder veraltet sein. Nutzung ausschließlich auf eigene Verantwortung.</p>
+      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine GewÃ¤hr. Inhalte kÃ¶nnen unvollstÃ¤ndig, falsch oder veraltet sein. Nutzung ausschlieÃŸlich auf eigene Verantwortung.</p>
     </div>
 
     <div class="card">
       <h2 id="toc">Inhalt</h2>
       <div class="toc">
-        <a href="#ueberblick">1) Überblick</a>
+        <a href="#ueberblick">1) Ãœberblick</a>
         <a href="#pipeline">2) Datenfluss (Pipeline)</a>
         <a href="#scoring">3) Scoring: Score, Opportunity, Risk, Regime, Confidence</a>
-        <a href="#recommendation">4) Empfehlungscode (R0–R5)</a>
+        <a href="#recommendation">4) Empfehlungscode (R0â€“R5)</a>
         <a href="#dashboard">5) Dashboard-Funktionen</a>
         <a href="#portfolio">6) Portfolio (geplant)</a>
         <a href="#briefing">7) Briefing / KI</a>
@@ -79,169 +79,169 @@
     </div>
 
     <div class="card" id="ueberblick">
-      <h2>1) Überblick</h2>
-      <p><b>Scanner_vNext</b> ist ein privates Trading‑Research‑System für Watchlists und Portfolio‑Ideen. Es bündelt Kennzahlen, Signale und Markt‑Kontext zu einem <b>multi‑faktoriellen Score</b> – mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
+      <h2>1) Ãœberblick</h2>
+      <p><b>Scanner_vNext</b> ist ein privates Tradingâ€‘Researchâ€‘System fÃ¼r Watchlists und Portfolioâ€‘Ideen. Es bÃ¼ndelt Kennzahlen, Signale und Marktâ€‘Kontext zu einem <b>multiâ€‘faktoriellen Score</b> â€“ mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
       <div class="callout">
-        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (View‑Layer) – sie verändern das Scoring nicht. KI‑Texte sind reine <i>Briefings</i> und dürfen keinen Einfluss auf den Score haben.</p>
+        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (Viewâ€‘Layer) â€“ sie verÃ¤ndern das Scoring nicht. KIâ€‘Texte sind reine <i>Briefings</i> und dÃ¼rfen keinen Einfluss auf den Score haben.</p>
       </div>
       <p class="tag">Hinweis: Dieses Projekt ist kein Finanzrat. Es ist ein Werkzeug zur eigenen Strukturierung und Dokumentation von Entscheidungen.</p>
     </div>
 
     <div class="card" id="pipeline">
       <h2>2) Datenfluss (Pipeline)</h2>
-      <p>Die täglichen Schritte sind bewusst getrennt – damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
+      <p>Die tÃ¤glichen Schritte sind bewusst getrennt â€“ damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
       <pre>python -m scanner.app.run_daily
 python -m scanner.ui.generator</pre>
       <ul>
         <li><code>run_daily</code> erzeugt/aktualisiert CSVs in <code>artifacts/watchlist/</code> und (optional) Reports in <code>artifacts/reports/</code>.</li>
         <li><code>ui.generator</code> liest eine CSV (z.B. <code>watchlist_CORE.csv</code>) und schreibt statisches HTML nach <code>artifacts/ui/</code>.</li>
       </ul>
-      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausführen – ohne dass das UI „heimlich“ irgendwas berechnet, was die Ergebnisse verändern würde.</p>
+      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausfÃ¼hren â€“ ohne dass das UI â€žheimlichâ€œ irgendwas berechnet, was die Ergebnisse verÃ¤ndern wÃ¼rde.</p>
     </div>
 
     <div class="card" id="scoring">
       <h2>3) Scoring (Score, Opportunity, Risk, Regime, Confidence)</h2>
-      <p>Das Scoring läuft zentral im Domain‑Layer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer Watchlist‑Zeile ein Satz aus <b>Opportunity‑Faktoren</b> und <b>Risk‑Faktoren</b> gebildet und anschließend zu einem finalen Score zusammengeführt.</p>
+      <p>Das Scoring lÃ¤uft zentral im Domainâ€‘Layer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer Watchlistâ€‘Zeile ein Satz aus <b>Opportunityâ€‘Faktoren</b> und <b>Riskâ€‘Faktoren</b> gebildet und anschlieÃŸend zu einem finalen Score zusammengefÃ¼hrt.</p>
 
       <div class="grid2">
         <div>
-          <h3>Opportunity (0..1, höher = besser)</h3>
+          <h3>Opportunity (0..1, hÃ¶her = besser)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren (wenn in den CSVs vorhanden):</p>
           <ul>
             <li><b>Growth %</b>, <b>ROE %</b>, <b>Margin %</b></li>
-            <li><b>MC‑Chance</b> (Monte‑Carlo‑Chance)</li>
-            <li><b>Trend200</b> (200‑Tage‑Trend) und <b>RS3M</b> (relative Stärke 3M)</li>
-            <li><b>Elliott‑Quality</b> (abhängig vom Elliott‑Signal)</li>
-            <li><b>Upside</b> (nur wenn Elliott‑Signal BUY und Target/Preis vorhanden; 30% Upside = „voller“ Faktor)</li>
+            <li><b>MCâ€‘Chance</b> (Monteâ€‘Carloâ€‘Chance)</li>
+            <li><b>Trend200</b> (200â€‘Tageâ€‘Trend) und <b>RS3M</b> (relative StÃ¤rke 3M)</li>
+            <li><b>Elliottâ€‘Quality</b> (abhÃ¤ngig vom Elliottâ€‘Signal)</li>
+            <li><b>Upside</b> (nur wenn Elliottâ€‘Signal BUY und Target/Preis vorhanden; 30% Upside = â€žvollerâ€œ Faktor)</li>
           </ul>
-          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. Analyst‑Faktor), bis Spalten dafür existieren.</p>
+          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. Analystâ€‘Faktor), bis Spalten dafÃ¼r existieren.</p>
         </div>
         <div>
-          <h3>Risk (0..1, höher = riskanter)</h3>
+          <h3>Risk (0..1, hÃ¶her = riskanter)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren:</p>
           <ul>
             <li><b>Debt/Equity</b></li>
-            <li><b>CRV‑Fragility</b> (CRV wird in eine „Fragilität“ umgerechnet; bei fehlendem CRV neutral)</li>
+            <li><b>CRVâ€‘Fragility</b> (CRV wird in eine â€žFragilitÃ¤tâ€œ umgerechnet; bei fehlendem CRV neutral)</li>
             <li><b>Volatility</b>, <b>DownsideDev</b>, <b>MaxDrawdown</b></li>
-            <li><b>Liquidity‑Risk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
+            <li><b>Liquidityâ€‘Risk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
           </ul>
-          <p class="tag">Die Idee: Opportunity alleine reicht nicht – ein hoher Score soll bei fragiler Liquidität oder extremem Drawdown nicht „blind“ nach oben schießen.</p>
+          <p class="tag">Die Idee: Opportunity alleine reicht nicht â€“ ein hoher Score soll bei fragiler LiquiditÃ¤t oder extremem Drawdown nicht â€žblindâ€œ nach oben schieÃŸen.</p>
         </div>
       </div>
 
-      <h3>Normalisierung (Universe‑Scaling)</h3>
-      <p>Viele Rohwerte werden über ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen Markt‑Universum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
+      <h3>Normalisierung (Universeâ€‘Scaling)</h3>
+      <p>Viele Rohwerte werden Ã¼ber ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen Marktâ€‘Universum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
 
-      <h3>Regime (Markt‑Kontext)</h3>
-      <p>Der Score kann je nach Marktregime anders gewichtet werden. Dafür werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200‑Kontext). Wenn das Regime‑Label fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
+      <h3>Regime (Marktâ€‘Kontext)</h3>
+      <p>Der Score kann je nach Marktregime anders gewichtet werden. DafÃ¼r werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200â€‘Kontext). Wenn das Regimeâ€‘Label fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
       <ul>
-        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einfließt</li>
-        <li><b>risk_mult</b>: wie „hart“ Risiko bestraft wird</li>
+        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einflieÃŸt</li>
+        <li><b>risk_mult</b>: wie â€žhartâ€œ Risiko bestraft wird</li>
       </ul>
 
       <h3>Confidence (0..100)</h3>
-      <p>Zusätzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, Risiko‑Sauberkeit, Regime‑Ausrichtung und Liquidität berücksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht – oder auf dünnem Daten‑Eis.</p>
+      <p>ZusÃ¤tzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, Risikoâ€‘Sauberkeit, Regimeâ€‘Ausrichtung und LiquiditÃ¤t berÃ¼cksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht â€“ oder auf dÃ¼nnem Datenâ€‘Eis.</p>
     </div>
 
     <div class="card" id="recommendation">
-      <h2>4) Empfehlungscode (R0–R5)</h2>
-      <p>Im Dashboard erscheint im Score‑Bereich ein privater Code <b>R0–R5</b>. Das ist <b>kein Trading‑Signal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
+      <h2>4) Empfehlungscode (R0â€“R5)</h2>
+      <p>Im Dashboard erscheint im Scoreâ€‘Bereich ein privater Code <b>R0â€“R5</b>. Das ist <b>kein Tradingâ€‘Signal</b>, sondern eine knappe Zusammenfassung fÃ¼r deinen Workflow.</p>
       <ul>
-        <li><b>R0</b>: AVOID‑Zeilen (score_status beginnt mit <code>AVOID_</code>)</li>
-        <li><b>R5</b>: Score‑Perzentil ≥ 90 <i>und</i> Trend OK <i>und</i> Liquidity OK</li>
-        <li><b>R4</b>: Score‑Perzentil ≥ 75 <i>und</i> Liquidity OK</li>
-        <li><b>R3</b>: Score‑Perzentil ≥ 45</li>
-        <li><b>R2</b>: Score‑Perzentil ≥ 20</li>
-        <li><b>R1</b>: Rest</li>
+        <li><b>R0</b>: <span class="sig warn grad">Avoid</span> (score_status beginnt mit <code>AVOID_</code>)</li>
+        <li><b>R5</b>: <span class="sig good grad">Top Setup</span> (Score-Perzentil >= 90 <i>und</i> Trend OK <i>und</i> Liquidity OK)</li>
+        <li><b>R4</b>: <span class="sig good grad">Good Setup</span> (Score-Perzentil >= 75 <i>und</i> Liquidity OK)</li>
+        <li><b>R3</b>: <span class="sig blue grad">Neutral</span> (Score-Perzentil >= 45)</li>
+        <li><b>R2</b>: <span class="sig warn grad">Weak</span> (Score-Perzentil >= 20)</li>
+        <li><b>R1</b>: <span class="sig bad grad">Low Priority</span> (Rest)</li>
       </ul>
-      <p class="tag">Technik: das UI berechnet das Score‑Perzentil aus allen Zeilen der geladenen Tabelle.</p>
+      <p class="tag">Technik: das UI berechnet das Scoreâ€‘Perzentil aus allen Zeilen der geladenen Tabelle.</p>
     </div>
 
     <div class="card" id="dashboard">
-      <h2>5) Dashboard‑Funktionen</h2>
+      <h2>5) Dashboardâ€‘Funktionen</h2>
       <h3>Presets</h3>
-      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID …). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
+      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID â€¦). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
 
       <h3>Suche</h3>
-      <p>Suche filtert quer über Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
+      <p>Suche filtert quer Ã¼ber Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
 
-      <h3>Quick‑Filter & KPI‑Chips</h3>
-      <p>Quick‑Filter sind schnelle boolesche/Status‑Schalter (z.B. „Nur OK“, „Trend OK“, „Liq OK“). KPI‑Chips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
+      <h3>Quickâ€‘Filter & KPIâ€‘Chips</h3>
+      <p>Quickâ€‘Filter sind schnelle boolesche/Statusâ€‘Schalter (z.B. â€žNur OKâ€œ, â€žTrend OKâ€œ, â€žLiq OKâ€œ). KPIâ€‘Chips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
 
-      <h3>Cluster (offiziell) vs. Säulen (privat)</h3>
-      <p>Es gibt zwei unterschiedliche „Kategorien“ im UI – mit unterschiedlicher Bedeutung:</p>
+      <h3>Cluster (offiziell) vs. SÃ¤ulen (privat)</h3>
+      <p>Es gibt zwei unterschiedliche â€žKategorienâ€œ im UI â€“ mit unterschiedlicher Bedeutung:</p>
       <ul>
-        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus Yahoo‑Taxonomie (Sector/Industry) und ist dafür gedacht, echte Markt‑Cluster sichtbar zu machen.</li>
-        <li><b>Säulen (5‑Säulen/Playground, privat)</b>: deine thematische Metadaten‑Zuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>ändert niemals</b> den Score.</li>
+        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus Yahooâ€‘Taxonomie (Sector/Industry) und ist dafÃ¼r gedacht, echte Marktâ€‘Cluster sichtbar zu machen.</li>
+        <li><b>SÃ¤ulen (5â€‘SÃ¤ulen/Playground, privat)</b>: deine thematische Metadatenâ€‘Zuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>Ã¤ndert niemals</b> den Score.</li>
       </ul>
-      <p class="tag">Hinweis: ältere „Phantasie‑Sektoren“ können weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine Säule ableiten, damit das Konzept sichtbar bleibt.</p>
+      <p class="tag">Hinweis: Ã¤ltere â€žPhantasieâ€‘Sektorenâ€œ kÃ¶nnen weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine SÃ¤ule ableiten, damit das Konzept sichtbar bleibt.</p>
 
-      <h3>Bucket‑Matrix (Score × Risk)</h3>
-      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der X‑Achse, <b>Risk</b> auf der Y‑Achse. Klick auf ein Feld aktiviert einen zusätzlichen Matrix‑Filter.</p>
+      <h3>Bucketâ€‘Matrix (Score Ã— Risk)</h3>
+      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der Xâ€‘Achse, <b>Risk</b> auf der Yâ€‘Achse. Klick auf ein Feld aktiviert einen zusÃ¤tzlichen Matrixâ€‘Filter.</p>
 
-      <h3>Why‑Score Drawer</h3>
-      <p>Der Drawer erklärt, <i>warum</i> ein Wert so aussieht: Status‑Flags, wichtige Kennzahlen und – falls vorhanden – ein Breakdown (z.B. Confidence‑Breakdown).</p>
+      <h3>Whyâ€‘Score Drawer</h3>
+      <p>Der Drawer erklÃ¤rt, <i>warum</i> ein Wert so aussieht: Statusâ€‘Flags, wichtige Kennzahlen und â€“ falls vorhanden â€“ ein Breakdown (z.B. Confidenceâ€‘Breakdown).</p>
 
-      <h3>Ticker‑Zelle (2‑zeilig)</h3>
-      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten Yahoo‑Pair (oder was vorhanden ist). Ziel: du siehst Identität + „Key“ sofort, ohne zusätzliche Spalten.</p>
+      <h3>Tickerâ€‘Zelle (2â€‘zeilig)</h3>
+      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten Yahooâ€‘Pair (oder was vorhanden ist). Ziel: du siehst IdentitÃ¤t + â€žKeyâ€œ sofort, ohne zusÃ¤tzliche Spalten.</p>
 
-      <h3>Finviz‑Inspiration (eigene Umsetzung)</h3>
-      <p>Die Market‑Übersicht (Index‑Charts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">Market‑Dashboard</a>). Layout‑Ideen dürfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert – Scanner_vNext bleibt eine eigenständige Logik/UX.</p>
+      <h3>Finvizâ€‘Inspiration (eigene Umsetzung)</h3>
+      <p>Die Marketâ€‘Ãœbersicht (Indexâ€‘Charts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">Marketâ€‘Dashboard</a>). Layoutâ€‘Ideen dÃ¼rfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert â€“ Scanner_vNext bleibt eine eigenstÃ¤ndige Logik/UX.</p>
     </div>
 
     <div class="card" id="portfolio">
       <h2>6) Portfolio (geplant)</h2>
-      <p>Hier kommt eine Portfolio‑Sektion hin (Bestände, Einstand, Gewichtung, Risiko‑Beitrag, Ziel‑Allokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken können.</p>
-      <div class="callout"><p style="margin:0"><b>TODO:</b> Portfolio‑Konzept einfügen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
+      <p>Hier kommt eine Portfolioâ€‘Sektion hin (BestÃ¤nde, Einstand, Gewichtung, Risikoâ€‘Beitrag, Zielâ€‘Allokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken kÃ¶nnen.</p>
+      <div class="callout"><p style="margin:0"><b>TODO:</b> Portfolioâ€‘Konzept einfÃ¼gen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
     </div>
 
     <div class="card" id="briefing">
       <h2>7) Briefing / KI</h2>
-      <p>Das Briefing ist ein <b>passiver Explainability‑Report</b> für die Top‑Werte. Es wird ausschließlich aus bereits vorhandenen Feldern der Watchlist‑CSV abgeleitet (kein Re‑Scoring).</p>
+      <p>Das Briefing ist ein <b>passiver Explainabilityâ€‘Report</b> fÃ¼r die Topâ€‘Werte. Es wird ausschlieÃŸlich aus bereits vorhandenen Feldern der Watchlistâ€‘CSV abgeleitet (kein Reâ€‘Scoring).</p>
       <h3>Outputs</h3>
       <ul>
-        <li><code>artifacts/reports/briefing.json</code> – strukturierte Daten (Top‑N + Gründe/Risiken/Checks).</li>
-        <li><code>artifacts/reports/briefing.txt</code> – deterministische Text‑Version (immer vorhanden, offline).</li>
-        <li><code>artifacts/reports/briefing_ai.txt</code> – optionale sprachliche Glättung via OpenAI API (Feature‑Flag, default OFF).</li>
+        <li><code>artifacts/reports/briefing.json</code> â€“ strukturierte Daten (Topâ€‘N + GrÃ¼nde/Risiken/Checks).</li>
+        <li><code>artifacts/reports/briefing.txt</code> â€“ deterministische Textâ€‘Version (immer vorhanden, offline).</li>
+        <li><code>artifacts/reports/briefing_ai.txt</code> â€“ optionale sprachliche GlÃ¤ttung via OpenAI API (Featureâ€‘Flag, default OFF).</li>
       </ul>
       <h3>Erzeugung</h3>
       <p>Briefing generieren (Stage A, deterministisch):</p>
       <pre><code>python scripts/generate_briefing.py</code></pre>
-      <p>AI‑Enhancement (Stage B, optional):</p>
+      <p>AIâ€‘Enhancement (Stage B, optional):</p>
       <pre><code>set OPENAI_API_KEY=...  # Windows
 python scripts/generate_briefing.py --enable-ai</code></pre>
       <ul>
-        <li>Es ist <b>rein erklärend</b> (Notizen/Explainability).</li>
+        <li>Es ist <b>rein erklÃ¤rend</b> (Notizen/Explainability).</li>
         <li>Es darf <b>niemals</b> das Scoring oder Ranking beeinflussen.</li>
-        <li><b>Keine Anlageberatung</b>: das Briefing enthält einen kurzen Disclaimer.</li>
+        <li><b>Keine Anlageberatung</b>: das Briefing enthÃ¤lt einen kurzen Disclaimer.</li>
       </ul>
-      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: „Noch kein Briefing generiert“.</p>
+      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: â€žNoch kein Briefing generiertâ€œ.</p>
     </div>
 
 
 
     <div class="card" id="autopilot">
       <h2>8) GitHub Autopilot (ohne laufenden PC)</h2>
-      <p>Wenn Scanner_vNext in einem GitHub‑Repo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausführen. Damit läuft der Scanner „serverlos“ in der Cloud – dein Rechner muss dafür nicht an sein.</p>
+      <p>Wenn Scanner_vNext in einem GitHubâ€‘Repo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausfÃ¼hren. Damit lÃ¤uft der Scanner â€žserverlosâ€œ in der Cloud â€“ dein Rechner muss dafÃ¼r nicht an sein.</p>
       <h3>Was macht der Autopilot?</h3>
       <ul>
         <li>Installiert das Projekt (<code>pip install -e .</code>).</li>
-        <li>Führt <code>python -m scanner.app.run_daily</code> aus (CSV‑Outputs nach <code>artifacts/watchlist/</code>).</li>
-        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code> → <code>artifacts/reports/</code>).</li>
-        <li>Generiert die UI (<code>python -m scanner.ui.generator</code> → <code>artifacts/ui/</code>).</li>
-        <li>Committet die Outputs (standardmäßig <code>artifacts/</code>) zurück ins Repo.</li>
+        <li>FÃ¼hrt <code>python -m scanner.app.run_daily</code> aus (CSVâ€‘Outputs nach <code>artifacts/watchlist/</code>).</li>
+        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code> â†’ <code>artifacts/reports/</code>).</li>
+        <li>Generiert die UI (<code>python -m scanner.ui.generator</code> â†’ <code>artifacts/ui/</code>).</li>
+        <li>Committet die Outputs (standardmÃ¤ÃŸig <code>artifacts/</code>) zurÃ¼ck ins Repo.</li>
       </ul>
       <h3>Warum committen wir <code>artifacts/</code>?</h3>
-      <p>Für den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder über GitHub Pages sofort die aktuellen HTML/CSV‑Outputs. Später kann man das auf einen reinen Deploy‑Branch umstellen, wenn das Repo zu groß wird.</p>
+      <p>FÃ¼r den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder Ã¼ber GitHub Pages sofort die aktuellen HTML/CSVâ€‘Outputs. SpÃ¤ter kann man das auf einen reinen Deployâ€‘Branch umstellen, wenn das Repo zu groÃŸ wird.</p>
       <h3>Benachrichtigungen</h3>
-      <p>GitHub kann dir E‑Mails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo → <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
-      <p class="tag">Technik: Workflow‑Datei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
+      <p>GitHub kann dir Eâ€‘Mails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo â†’ <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
+      <p class="tag">Technik: Workflowâ€‘Datei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
     </div>
 
     <div class="card" id="notifications">
       <h2>9) Benachrichtigungen (Telegram)</h2>
-      <p>Telegram ist optional und standardmäßig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking – es ist nur ein zusätzlicher Kanal für Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
-      <h3>Aktivieren (falls du es später wieder willst)</h3>
+      <p>Telegram ist optional und standardmÃ¤ÃŸig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking â€“ es ist nur ein zusÃ¤tzlicher Kanal fÃ¼r Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
+      <h3>Aktivieren (falls du es spÃ¤ter wieder willst)</h3>
       <pre><code>TELEGRAM_ENABLED=1
 TELEGRAM_BOT_TOKEN=...   # oder TELEGRAM_TOKEN (Legacy)
 TELEGRAM_CHAT_ID=...</code></pre>
@@ -250,43 +250,43 @@ TELEGRAM_CHAT_ID=...</code></pre>
 
     <div class="card" id="troubleshooting">
       <h2>10) Troubleshooting</h2>
-      <h3>UI zeigt „Keine Daten“</h3>
+      <h3>UI zeigt â€žKeine Datenâ€œ</h3>
       <ul>
-        <li>Prüfe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
-        <li>Führe zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
+        <li>PrÃ¼fe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
+        <li>FÃ¼hre zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
       </ul>
       <h3>Contract validation failed</h3>
       <ul>
         <li>Contract: <code>configs/watchlist_contract.json</code></li>
-        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen – das verhindert stilles „UI zeigt Mist“.</li>
-        <li>Lösung: Watchlist‑CSV neu generieren oder Migration/Normalize‑Scripts nutzen.</li>
+        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen â€“ das verhindert stilles â€žUI zeigt Mistâ€œ.</li>
+        <li>LÃ¶sung: Watchlistâ€‘CSV neu generieren oder Migration/Normalizeâ€‘Scripts nutzen.</li>
       </ul>
       <h3>Briefing fehlt</h3>
       <ul>
         <li>Erzeuge es mit <code>python scripts/generate_briefing.py</code>.</li>
-        <li>UI lädt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: „Noch kein Briefing generiert“.</li>
+        <li>UI lÃ¤dt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: â€žNoch kein Briefing generiertâ€œ.</li>
       </ul>
       <h3>GOOGLE_CREDENTIALS fehlt (GitHub Action)</h3>
       <ul>
-        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSON‑Service‑Account).</li>
-        <li>Ohne Credentials kann der Scanner keine Sheets‑/Daten‑Quellen lesen (je nach Setup).</li>
+        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSONâ€‘Serviceâ€‘Account).</li>
+        <li>Ohne Credentials kann der Scanner keine Sheetsâ€‘/Datenâ€‘Quellen lesen (je nach Setup).</li>
       </ul>
       <p class="tag">Wenn du nicht weiterkommst: Logs aus GitHub Actions oder die konkrete Fehlermeldung hier rein kopieren.</p>
     </div>
     <div class="card" id="roadmap">
       <h2>11) Roadmap & Konzept (Platzhalter)</h2>
       <ul>
-        <li>Matrix Labels/Logik weiter finalisieren (Risk‑Proxy).</li>
-        <li>Recommendation‑Logik bei Bedarf schärfen (Regeln bleiben transparent).</li>
-        <li>Watchlist‑Hygiene: Spaltenmigration & Dedupe‑Strategie.</li>
-        <li>Portfolio‑Block ergänzen.</li>
-        <li>Briefing‑Logik weiter schärfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
+        <li>Matrix Labels/Logik weiter finalisieren (Riskâ€‘Proxy).</li>
+        <li>Recommendationâ€‘Logik bei Bedarf schÃ¤rfen (Regeln bleiben transparent).</li>
+        <li>Watchlistâ€‘Hygiene: Spaltenmigration & Dedupeâ€‘Strategie.</li>
+        <li>Portfolioâ€‘Block ergÃ¤nzen.</li>
+        <li>Briefingâ€‘Logik weiter schÃ¤rfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
       </ul>
-      <p class="tag">Diese Seite ist absichtlich nicht „fertig“ – sie ist deine Dokumentation, die mit dem Projekt mitwächst.</p>
+      <p class="tag">Diese Seite ist absichtlich nicht â€žfertigâ€œ â€“ sie ist deine Dokumentation, die mit dem Projekt mitwÃ¤chst.</p>
     </div>
 
     <div class="card">
-      <p style="margin:0"><a href="#toc">↑ zurück zum Anfang</a></p>
+      <p style="margin:0"><a href="#toc">â†‘ zurÃ¼ck zum Anfang</a></p>
     </div>
 
   </main>
