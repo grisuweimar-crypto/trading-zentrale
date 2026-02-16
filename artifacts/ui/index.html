@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="build-sha" content="02bcd83"/>
+  <meta name="build-sha" content="local"/>
   <title>Scanner_vNext â€” Research Dashboard</title>
   <style>
     :root {
@@ -307,12 +307,12 @@
     }
   </style>
 </head>
-<body data-build-sha="02bcd83" data-build-branch="main">
+<body data-build-sha="local" data-build-branch="">
   <header>
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext â€” Research Dashboard</h1>
-        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha 02bcd83 | branch main ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha local ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
@@ -898,10 +898,21 @@ if (elHeatMode) {
 
         if(/^\d+\)\s/.test(line)){
           out += '<h4 class="briefing-asset">' + briefingEscape(line) + '</h4>';
-        } else if(/^(Gr????nde|Risiken\/Flags|N????chste Checks|Kontext-Hinweise)/.test(line)){
-          out += '<div class="briefing-label">' + briefingEscape(line).replace(/:$/, "") + '</div>';
         } else {
-          out += '<p>' + briefingEscape(line) + '</p>';
+          const marker = line
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+          if (
+            marker.startsWith('grunde') ||
+            marker.startsWith('risiken/flags') ||
+            marker.startsWith('nachste checks') ||
+            marker.startsWith('kontext-hinweise')
+          ) {
+            out += '<div class="briefing-label">' + briefingEscape(line).replace(/:$/, "") + '</div>';
+          } else {
+            out += '<p>' + briefingEscape(line) + '</p>';
+          }
         }
       }
       closeUl();
