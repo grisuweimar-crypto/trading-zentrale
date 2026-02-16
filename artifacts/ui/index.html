@@ -247,14 +247,26 @@
 
 .moversGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .moversList { font-family: var(--mono); font-size: 11px; display:flex; flex-direction: column; gap: 6px; }
-.moversItem { display:flex; justify-content: space-between; gap: 10px; }
-.moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: clamp(68px, 24vw, 110px); }
-.moversLeft { display:flex; align-items:center; gap: 6px; min-width: 0; }
-.moversItem .val { white-space: nowrap; }
-.moversItem .val.pos { color: var(--good); }
-.moversItem .val.neg { color: var(--bad); }
+.moversItem { display:flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: clamp(64px, 22vw, 96px); }
+.moversItem .val { white-space: nowrap; font-weight: 700; letter-spacing: .12px; min-width: 74px; text-align: right; }
+.moversItem .val.pos { color: #3fe8b6; }
+.moversItem .val.neg { color: #ff7a97; }
 .moversItem .val.flat { color: var(--muted); }
 .moversMeta { color: var(--muted); font-size: 10px; margin-left: 6px; }
+.moversRight { display:flex; align-items:center; justify-content:flex-end; gap: 6px; min-width: 112px; flex: 0 0 auto; }
+.moversCode {
+  display:inline-flex; align-items:center; justify-content:center;
+  width: 34px; min-width: 34px; max-width: 34px;
+  border: 1px solid rgba(148,163,184,.24);
+  border-radius: 999px;
+  color: #a9bdd8;
+  background: rgba(15,23,42,.52);
+  font-size: 9px;
+  line-height: 1.2;
+  padding: 1px 0;
+  text-transform: uppercase;
+}
 .moversHead { display:flex; align-items:center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .moversMiniBtn {
   appearance: none; -webkit-appearance: none;
@@ -269,22 +281,6 @@
 }
 .moversMiniBtn:disabled { opacity: .45; cursor: default; }
 .moversMiniBtn:not(:disabled):hover { border-color: rgba(96,165,250,.55); color: #dbeafe; }
-.moversTag {
-  appearance: none; -webkit-appearance: none;
-  border: 1px solid rgba(148,163,184,.25);
-  background: rgba(15,23,42,.65);
-  color: #cbd5e1;
-  border-radius: 999px;
-  padding: 1px 6px;
-  font-size: 10px;
-  line-height: 1.2;
-  cursor: pointer;
-  max-width: clamp(72px, 22vw, 130px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.moversTag:hover { border-color: rgba(96,165,250,.55); color: #dbeafe; }
 
 .placeholderList { margin: 6px 0 0 16px; padding: 0; }
 .placeholderList li { margin: 6px 0; color: #cbd5e1; font-size: 12px; }
@@ -1836,31 +1832,20 @@ function renderMovers(rows) {
     btnMoversClearCluster.textContent = active ? `Cluster: ${clusterPick} x` : 'Cluster-Filter loesen';
   }
 
-  function moverToneStyle(v) {
-    if (v === null || v === undefined || !Number.isFinite(v)) return 'color: var(--muted);';
-    const abs = Math.min(Math.abs(v), 8.0);
-    const a = 0.55 + (abs / 8.0) * 0.45;
-    if (v > 0) return `color: rgba(52, 211, 153, ${a.toFixed(3)}); text-shadow: 0 0 10px rgba(52,211,153,.18);`;
-    if (v < 0) return `color: rgba(251, 113, 133, ${a.toFixed(3)}); text-shadow: 0 0 10px rgba(251,113,133,.14);`;
-    return 'color: var(--muted);';
-  }
-
-  function applyClusterFromBadge(cl) {
-    const cluster = (cl || '').toString().trim();
-    if (!cluster) return;
-    clusterPick = cluster;
-    if (elClusterSel) {
-      const has = Array.from(elClusterSel.options || []).some(o => (o.value || '') === cluster);
-      if (!has) {
-        const opt = document.createElement('option');
-        opt.value = cluster;
-        opt.textContent = cluster;
-        elClusterSel.appendChild(opt);
-      }
-      elClusterSel.value = cluster;
-    }
-    refresh();
-    saveState();
+  function clusterCode(label) {
+    const src = (label || '').toString().trim();
+    if (!src) return '--';
+    const words = src
+      .replace(/[^A-Za-z0-9 ]+/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    const stop = new Set(['AND','OF','THE','SERVICES','SERVICE','INDUSTRY','INDUSTRIAL','SECTOR']);
+    const keep = words.map(w => w.toUpperCase()).filter(w => !stop.has(w));
+    const use = keep.length ? keep : words.map(w => w.toUpperCase());
+    if (!use.length) return '--';
+    if (use.length === 1) return use[0].slice(0, 3);
+    return use.slice(0, 2).map(w => w[0]).join('');
   }
 
   const arr = [];
@@ -1887,26 +1872,16 @@ function renderMovers(rows) {
     const href = yahooHref(yh);
     const s = href ? `<a class="yf sym" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` : `<span class="sym">${esc(sym)}</span>`;
     const cl = clusterLabel(r);
-    const tag = cl ? `<button type="button" class="moversTag" data-cluster="${esc(cl)}" title="Filter auf ${esc(cl)} setzen">${esc(cl)}</button>` : '';
+    const code = clusterCode(cl);
+    const codeHtml = `<span class="moversCode" title="${esc(cl || 'n/a')}">${esc(code)}</span>`;
     const cls = x.rank > 0 ? 'pos' : (x.rank < 0 ? 'neg' : 'flat');
     const d1 = (x.p1d === null || x.p1d === undefined || !Number.isFinite(x.p1d)) ? '1D n/a' : `1D ${fmtPct(x.p1d)}`;
     const y1 = (x.p1y === null || x.p1y === undefined || !Number.isFinite(x.p1y)) ? '1Y n/a' : `1Y ${fmtPct(x.p1y)}`;
-    const tone = moverToneStyle(x.p1d);
-    return `<div class="moversItem"><span class="moversLeft">${s}${tag}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}" style="${tone}">${esc(d1)}</span></div>`;
+    return `<div class="moversItem"><span>${s}<span class="moversMeta">${esc(y1)}</span></span><span class="moversRight"><span class="val ${cls}">${esc(d1)}</span>${codeHtml}</span></div>`;
   }
 
   elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">-</span>`;
   elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">-</span>`;
-
-  for (const root of [elMoversUp, elMoversDown]) {
-    root.querySelectorAll('button.moversTag[data-cluster]').forEach(btn => {
-      btn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        applyClusterFromBadge(btn.getAttribute('data-cluster') || '');
-      });
-    });
-  }
 }
 
 function renderHeatmap(rows) {
