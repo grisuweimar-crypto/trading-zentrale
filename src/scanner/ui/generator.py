@@ -1176,7 +1176,7 @@ if (elHeatMode) {
         if(/^\\d+\\)\\s/.test(line)){
           out += `<h4 class="briefing-asset">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</h4>`;
         } else if(/^(GrÃ¼nde|Risiken\\/Flags|NÃ¤chste Checks|Kontext-Hinweise)/.test(line)){
-          out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c).replace(/:$/,"")}</div>`;
+          out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)).replace(/:$/,"")}</div>`;
         } else {
           out += `<p>${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</p>`;
         }
