@@ -1177,7 +1177,7 @@ if (elHeatMode) {
         const m = line.match(/^\\s*-\\s+(.*)$/);
         if(m){
           if(!inUl){ out += "<ul>"; inUl=true; }
-          out += `<li>${String(m[1]).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</li>`;
+          out += `<li>${String(m[1]).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c))}</li>`;
           continue;
         }
 

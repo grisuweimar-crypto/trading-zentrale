@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="build-sha" content="8c5e137"/>
+  <meta name="build-sha" content="local"/>
   <title>Scanner_vNext â€” Research Dashboard</title>
   <style>
     :root {
@@ -307,12 +307,12 @@
     }
   </style>
 </head>
-<body data-build-sha="8c5e137" data-build-branch="fix/watchlist-contract">
+<body data-build-sha="local" data-build-branch="">
   <header>
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext â€” Research Dashboard</h1>
-        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha 8c5e137 | branch fix/watchlist-contract ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha local ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
@@ -881,7 +881,7 @@ if (elHeatMode) {
         const m = line.match(/^\s*-\s+(.*)$/);
         if(m){
           if(!inUl){ out += "<ul>"; inUl=true; }
-          out += `<li>${String(m[1]).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</li>`;
+          out += `<li>${String(m[1]).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c))}</li>`;
           continue;
         }
 
