@@ -134,23 +134,68 @@ def load_briefing_config(config_path: str | Path | None = None) -> BriefingConfi
     ai_model = str(_get("ai_model", "gpt-4.1")).strip() or "gpt-4.1"
     ai_model = os.getenv("OPENAI_MODEL", ai_model)
 
+    def _text_or_default(v: Any, default: str) -> str:
+        if v is None:
+            return default
+        if isinstance(v, str):
+            t = v.strip()
+            if not t:
+                return default
+            if t.lower() in {"nan", "none", "<na>", "na"}:
+                return default
+            return t
+        try:
+            if pd.isna(v):
+                return default
+        except Exception:
+            pass
+        t = str(v).strip()
+        return t or default
+
     return BriefingConfig(
-        source_csv=str(_get("source_csv", "CORE") or "CORE").strip(),
+        source_csv=_text_or_default(_get("source_csv", "CORE"), "CORE"),
         top_n=top_n,
-        language=str(_get("language", "de") or "de").strip(),
+        language=_text_or_default(_get("language", "de"), "de"),
         enable_ai=enable_ai,
-        ai_provider=str(_get("ai_provider", "openai") or "openai").strip(),
+        ai_provider=_text_or_default(_get("ai_provider", "openai"), "openai"),
         ai_model=ai_model,
-        output_dir=str(_get("output_dir", "artifacts/reports") or "artifacts/reports").strip(),
+        output_dir=_text_or_default(_get("output_dir", "artifacts/reports"), "artifacts/reports"),
     )
 
 
-def resolve_source_csv(source: str) -> Path:
+def _is_blank(v: Any) -> bool:
+    if v is None:
+        return True
+    if isinstance(v, str):
+        t = v.strip().lower()
+        return t in {"", "nan", "none", "<na>", "na"}
+    try:
+        return bool(pd.isna(v))
+    except Exception:
+        return False
+
+
+def _to_float_or_none(v: Any) -> float | None:
+    if _is_blank(v):
+        return None
+    try:
+        x = float(v)
+    except Exception:
+        return None
+    try:
+        if pd.isna(x):
+            return None
+    except Exception:
+        pass
+    return x
+
+
+def resolve_source_csv(source: Any) -> Path:
     """Resolve configured CSV selector to an existing CSV path."""
 
     root = project_root()
     watch_dir = root / "artifacts" / "watchlist"
-    s = (source or "").strip()
+    s = "" if _is_blank(source) else str(source).strip()
     upper = s.upper()
 
     mapping = {
@@ -189,7 +234,7 @@ def _first_col(df: pd.DataFrame, names: list[str]) -> str | None:
 
 def _num_series(df: pd.DataFrame, col: str | None) -> pd.Series:
     if not col or col not in df.columns:
-        return pd.Series([pd.NA] * len(df), index=df.index, dtype="float64")
+        return pd.Series([float("nan")] * len(df), index=df.index, dtype="float64")
     return pd.to_numeric(df[col], errors="coerce")
 
 
@@ -209,7 +254,7 @@ def _bool_series(df: pd.DataFrame, col: str | None) -> pd.Series:
 
 
 def _norm_str(v: Any) -> str:
-    if v is None or (isinstance(v, float) and pd.isna(v)):
+    if _is_blank(v):
         return ""
     return str(v).strip()
 
@@ -423,12 +468,9 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
     items: list[dict[str, Any]] = []
     for _, r in top_df.iterrows():
         ident = _pick_identity(r)
-        score = None if pd.isna(r.get("__score__")) else float(r.get("__score__"))
-        sp = r.get("__score_pctl__")
-        sp = None if sp is None or (isinstance(sp, float) and pd.isna(sp)) else float(sp)
-
-        rp = r.get("__risk_pctl__")
-        rp = None if rp is None or (isinstance(rp, float) and pd.isna(rp)) else float(rp)
+        score = _to_float_or_none(r.get("__score__"))
+        sp = _to_float_or_none(r.get("__score_pctl__"))
+        rp = _to_float_or_none(r.get("__risk_pctl__"))
 
         trend_ok = None
         if c_trend and c_trend in r.index:
@@ -446,28 +488,10 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
         score_status = _norm_str(r.get(c_status)) if c_status and c_status in r.index else ""
         r_code = _rec_code(score_status, sp, trend_ok, liq_ok)
 
-        cycle = None if c_cycle is None else r.get(c_cycle)
-        try:
-            cycle_f = float(cycle) if cycle is not None and not (isinstance(cycle, float) and pd.isna(cycle)) else None
-        except Exception:
-            cycle_f = None
-
-        perf = None if c_perf is None else r.get(c_perf)
-        try:
-            perf_f = float(perf) if perf is not None and not (isinstance(perf, float) and pd.isna(perf)) else None
-        except Exception:
-            perf_f = None
-
-        conf = None if c_conf is None else r.get(c_conf)
-        try:
-            conf_f = float(conf) if conf is not None and not (isinstance(conf, float) and pd.isna(conf)) else None
-        except Exception:
-            conf_f = None
-        dpen = None if c_div is None else r.get(c_div)
-        try:
-            dpen_f = float(dpen) if dpen is not None and not (isinstance(dpen, float) and pd.isna(dpen)) else None
-        except Exception:
-            dpen_f = None
+        cycle_f = _to_float_or_none(None if c_cycle is None else r.get(c_cycle))
+        perf_f = _to_float_or_none(None if c_perf is None else r.get(c_perf))
+        conf_f = _to_float_or_none(None if c_conf is None else r.get(c_conf))
+        dpen_f = _to_float_or_none(None if c_div is None else r.get(c_div))
 
         cluster = _norm_str(r.get(c_cluster)) if c_cluster and c_cluster in r.index else ""
         pillar = _norm_str(r.get(c_pillar)) if c_pillar and c_pillar in r.index else ""
@@ -485,10 +509,7 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
             regime = _norm_str(r.get("regime_stock")) or _norm_str(r.get("MarketRegimeStock"))
             trend200 = r.get("trend200_stock") if "trend200_stock" in r.index else r.get("Trend200Stock")
 
-        try:
-            trend200_f = float(trend200) if trend200 is not None and not (isinstance(trend200, float) and pd.isna(trend200)) else None
-        except Exception:
-            trend200_f = None
+        trend200_f = _to_float_or_none(trend200)
 
         reasons: list[str] = []
         risks: list[str] = []

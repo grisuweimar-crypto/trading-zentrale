@@ -1,4 +1,4 @@
-﻿"""Validate the watchlist UI contract.
+"""Validate the watchlist UI contract.
 
 This is a lightweight gate to prevent the UI from silently breaking when
 columns/types/rules change.

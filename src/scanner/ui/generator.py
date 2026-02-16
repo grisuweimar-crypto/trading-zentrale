@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 """Static UI generator (Phase B2 MVP).
 
@@ -31,6 +31,9 @@ from scanner.data.io.paths import project_root
 from scanner.data.schema.contract import validate_csv
 from scanner.presets.load import load_presets
 from scanner.data.io.paths import artifacts_dir
+
+TRUE_SET = {"true", "t", "yes", "y", "1"}
+FALSE_SET = {"false", "f", "no", "n", "0"}
 
 
 DEFAULT_COLUMNS = [
@@ -108,6 +111,21 @@ def _to_json_records(df: pd.DataFrame) -> list[dict[str, Any]]:
                 except Exception:
                     row[k] = str(v)
         out.append(row)
+    return out
+
+
+def _coerce_bool_series(s: pd.Series) -> pd.Series:
+    if pd.api.types.is_bool_dtype(s):
+        return s.astype("boolean")
+    if pd.api.types.is_numeric_dtype(s):
+        out = pd.Series(pd.NA, index=s.index, dtype="boolean")
+        out[s == 1] = True
+        out[s == 0] = False
+        return out
+    ss = s.astype("string").str.strip().str.lower()
+    out = pd.Series(pd.NA, index=s.index, dtype="boolean")
+    out[ss.isin(TRUE_SET)] = True
+    out[ss.isin(FALSE_SET)] = False
     return out
 
 
@@ -196,6 +214,11 @@ def build_ui(
     for c in ("ticker", "ticker_display", "yahoo_symbol", "YahooSymbol", "symbol", "name", "sector", "country", "currency", "score_status"):
         if c in df.columns:
             df[c] = df[c].astype("string").fillna("").str.strip()
+
+    # Failsafe: ensure bool fields are real booleans before JSON export.
+    for c in ("trend_ok", "liquidity_ok", "is_crypto"):
+        if c in df.columns:
+            df[c] = _coerce_bool_series(df[c]).fillna(False).astype(bool)
 
     data_records = _to_json_records(df)
     fallback_tbody_html = _render_fallback_tbody(df)
@@ -1153,7 +1176,7 @@ if (elHeatMode) {
         if(/^\\d+\\)\\s/.test(line)){
           out += `<h4 class="briefing-asset">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</h4>`;
         } else if(/^(GrÃ¼nde|Risiken\\/Flags|NÃ¤chste Checks|Kontext-Hinweise)/.test(line)){
-          out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c).replace(/:$/,"")}</div>`;
+          out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)).replace(/:$/,"")}</div>`;
         } else {
           out += `<p>${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</p>`;
         }
@@ -1631,7 +1654,7 @@ function applyPillarFilter(rows) {
     function applySearch(rows, q) {
       q = (q || '').trim().toLowerCase();
       if (!q) return rows;
-      const tokens = q.split(/\s+/).filter(Boolean);
+      const tokens = q.split(/\\s+/).filter(Boolean);
       return rows.filter(r => {
         const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["WÃ¤hrung"], r.quote_currency, r.score_status]
           .map(normStr).join(' ').toLowerCase();
@@ -1842,7 +1865,7 @@ function parsePct(v) {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   let s = String(v).trim();
   if (!s) return null;
-  s = s.replace('%','').replace(/\s+/g,'').replace(',', '.');
+  s = s.replace('%','').replace(/\\s+/g,'').replace(',', '.');
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
