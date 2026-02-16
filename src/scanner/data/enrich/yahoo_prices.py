@@ -38,6 +38,7 @@ ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 CRYPTO_QUOTES = {"USD", "EUR", "USDT", "USDC", "BTC", "ETH", "GBP", "JPY", "CHF", "AUD", "CAD"}
 ISIN_OVERRIDES = {"CH0038863350": "NESN.SW"}
 NAME_OVERRIDES = {"NESTLE": "NESN.SW"}
+SYMBOL_ALIASES = {"NESN.SE": "NESN.SW"}
 
 
 def should_fetch_yahoo() -> bool:
@@ -142,6 +143,10 @@ def _apply_symbol_override(row: pd.Series, picked_symbol: str, picked_from: str)
     for pat, sym in NAME_OVERRIDES.items():
         if pat in name_u:
             return sym, "override:name"
+
+    alias = SYMBOL_ALIASES.get(str(picked_symbol).strip().upper())
+    if alias:
+        return alias, "alias:symbol"
 
     return picked_symbol, picked_from
 
