@@ -1,4 +1,4 @@
-﻿name: Scanner_vNext Autopilot
+name: Scanner_vNext Autopilot
 
 on:
   schedule:
@@ -16,7 +16,6 @@ permissions:
 
 jobs:
   build:
-    if: "${{ github.event_name != 'push' || !contains(github.event.head_commit.message, 'Autopilot: artifacts update') }}"
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
