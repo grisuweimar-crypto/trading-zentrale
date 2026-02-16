@@ -3,292 +3,74 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Scanner_vNext — Hilfe & Projektbeschreibung</title>
+  <title>Scanner_vNext - Hilfe</title>
   <style>
-    :root{
-      --bg:#0b1020;
-      --card:#0f172a;
-      --border:rgba(148,163,184,.15);
-      --muted:#94a3b8;
-      --text:#e2e8f0;
-      --accent:#60a5fa;
-      --good:#34d399;
-      --warn:#fbbf24;
-      --bad:#fb7185;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
+    :root{--bg:#0b1020;--card:#0f172a;--border:rgba(148,163,184,.18);--muted:#94a3b8;--text:#e2e8f0;--accent:#60a5fa;}
     *{box-sizing:border-box}
-    body{margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background: radial-gradient(1000px 600px at 10% 0%, rgba(96,165,250,.12), transparent 60%), radial-gradient(800px 500px at 90% 10%, rgba(52,211,153,.10), transparent 55%), var(--bg); color:var(--text);}
-    a{color:var(--accent); text-decoration:none}
-    a:hover{text-decoration:underline}
-    header{padding:18px 0; border-bottom:1px solid var(--border); background: rgba(15,23,42,.72); backdrop-filter: blur(10px); position: sticky; top:0; z-index: 10;}
-    .wrap{max-width: 980px; margin: 0 auto; padding: 0 18px;}
-    .top{display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap;}
-    h1{margin:0; font-size:18px;}
-    .meta{color:var(--muted); font-family: var(--mono); font-size:12px;}
-    .pill{display:inline-block; border:1px solid var(--border); border-radius:999px; padding:4px 10px; font-size:12px; background: rgba(148,163,184,.06);}
-    .card{background: rgba(15,23,42,.78); border:1px solid var(--border); border-radius: 16px; padding: 14px; margin: 14px 0;}
-    h2{margin: 0 0 8px 0; font-size: 16px;}
-    h3{margin: 14px 0 6px 0; font-size: 14px;}
-    p{margin: 8px 0; line-height: 1.55; color: rgba(226,232,240,.95);}
-    ul{margin: 8px 0 8px 18px; color: rgba(226,232,240,.95);}
-    code, pre{font-family: var(--mono);}
-    pre{background: rgba(2,6,23,.65); border:1px solid rgba(148,163,184,.15); padding:10px; border-radius: 12px; overflow:auto;}
-    .toc a{display:block; padding:4px 0;}
-    .callout{border-left: 4px solid var(--accent); padding: 8px 10px; background: rgba(96,165,250,.08); border-radius: 10px;}
-    .grid2{display:grid; grid-template-columns: 1fr; gap:12px;}
-    @media(min-width:860px){ .grid2{grid-template-columns: 1fr 1fr;} }
-    .tag{font-family: var(--mono); font-size: 12px; color: var(--muted);}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .wrap{max-width:960px;margin:0 auto;padding:16px}
+    .card{background:rgba(15,23,42,.84);border:1px solid var(--border);border-radius:14px;padding:14px;margin:12px 0}
+    .meta{color:var(--muted);font-size:12px}
+    a{color:var(--accent);text-decoration:none}
+    details{border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px 0;background:rgba(2,6,23,.4)}
+    summary{cursor:pointer;font-weight:700}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <div class="top">
-        <div>
-          <h1>Scanner_vNext — Hilfe & Projektbeschreibung</h1>
-          <div class="meta">version 0.0.1-v7 · build 2026-02-13 · <a href="index.html">zurück zum Dashboard</a></div>
-        </div>
-        <div class="pill">Living Doc · wird laufend erweitert</div>
-      </div>
-    </div>
-  </header>
-
   <main class="wrap">
-
-    <div class="card" style="border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.06);">
-      <h2>Disclaimer</h2>
-      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine Gewähr. Inhalte können unvollständig, falsch oder veraltet sein. Nutzung ausschließlich auf eigene Verantwortung.</p>
+    <div class="card">
+      <h1 style="margin:0 0 6px 0">Scanner_vNext - Hilfe</h1>
+      <div class="meta">version 0.0.1-v7 - build 2026-02-13 - <a href="index.html">zurueck zum Dashboard</a></div>
+      <p><b>Privates Research-Dashboard.</b> Keine Anlageberatung. Inhalte koennen unvollstaendig oder fehlerhaft sein.</p>
     </div>
 
     <div class="card">
-      <h2 id="toc">Inhalt</h2>
-      <div class="toc">
-        <a href="#ueberblick">1) Überblick</a>
-        <a href="#pipeline">2) Datenfluss (Pipeline)</a>
-        <a href="#scoring">3) Scoring: Score, Opportunity, Risk, Regime, Confidence</a>
-        <a href="#recommendation">4) Empfehlungscode (R0–R5)</a>
-        <a href="#dashboard">5) Dashboard-Funktionen</a>
-        <a href="#portfolio">6) Portfolio (geplant)</a>
-        <a href="#briefing">7) Briefing / KI</a>
-        <a href="#autopilot">8) GitHub Autopilot</a>
-        <a href="#notifications">9) Benachrichtigungen (Telegram)</a>
-        <a href="#troubleshooting">10) Troubleshooting</a>
-        <a href="#roadmap">11) Roadmap & Konzept</a>
-      </div>
+      <h2 style="margin:0 0 8px 0">60 Sekunden: So nutzt du das Dashboard</h2>
+      <ol>
+        <li>Preset waehlen (z.B. ALL, CORE, TOP).</li>
+        <li>Suche und Quick-Filter setzen.</li>
+        <li>Bucket-Matrix anklicken fuer Fokus.</li>
+        <li>Drawer oeffnen fuer Detailpruefung.</li>
+      </ol>
     </div>
 
-    <div class="card" id="ueberblick">
-      <h2>1) Überblick</h2>
-      <p><b>Scanner_vNext</b> ist ein privates Trading‑Research‑System für Watchlists und Portfolio‑Ideen. Es bündelt Kennzahlen, Signale und Markt‑Kontext zu einem <b>multi‑faktoriellen Score</b> – mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
-      <div class="callout">
-        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (View‑Layer) – sie verändern das Scoring nicht. KI‑Texte sind reine <i>Briefings</i> und dürfen keinen Einfluss auf den Score haben.</p>
-      </div>
-      <p class="tag">Hinweis: Dieses Projekt ist kein Finanzrat. Es ist ein Werkzeug zur eigenen Strukturierung und Dokumentation von Entscheidungen.</p>
-    </div>
+    <details open>
+      <summary>Glossar (kurz)</summary>
+      <p><b>Score</b>: internes Ranking. <b>Confidence</b>: Qualitaet/Konfluenz. <b>R0-R5</b>: Workflow-Code, kein Kaufsignal.</p>
+      <p><b>trend_ok / liquidity_ok</b>: Mindestfilter. <b>score_status</b>: OK/AVOID/NA.</p>
+    </details>
 
-    <div class="card" id="pipeline">
-      <h2>2) Datenfluss (Pipeline)</h2>
-      <p>Die täglichen Schritte sind bewusst getrennt – damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
-      <pre>python -m scanner.app.run_daily
-python -m scanner.ui.generator</pre>
+    <details open>
+      <summary>Bucket-Matrix</summary>
+      <p>X-Achse = Score, Y-Achse = Risk. Klick auf ein Feld aktiviert einen zusaetzlichen Filter.</p>
+    </details>
+
+    <details open>
+      <summary>Market Context</summary>
+      <p>Nur Kontext, kein Einfluss auf Scoring.</p>
       <ul>
-        <li><code>run_daily</code> erzeugt/aktualisiert CSVs in <code>artifacts/watchlist/</code> und (optional) Reports in <code>artifacts/reports/</code>.</li>
-        <li><code>ui.generator</code> liest eine CSV (z.B. <code>watchlist_CORE.csv</code>) und schreibt statisches HTML nach <code>artifacts/ui/</code>.</li>
+        <li><b>Breadth</b>: Anzahl Gewinner/Verlierer im aktuellen gefilterten Universe.</li>
+        <li><b>Movers</b>: staerkste Auf- und Abbewegungen.</li>
+        <li><b>Heatmap</b>: Verteilung nach Cluster/Saeule und Score-Buckets.</li>
+        <li><b>Preset-Qualitaet</b>: Median/IQR fuer Score/Confidence plus Trend/Liq-Anteile.</li>
       </ul>
-      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausführen – ohne dass das UI â€žheimlichâ€œ irgendwas berechnet, was die Ergebnisse verändern würde.</p>
-    </div>
+    </details>
 
-    <div class="card" id="scoring">
-      <h2>3) Scoring (Score, Opportunity, Risk, Regime, Confidence)</h2>
-      <p>Das Scoring läuft zentral im Domain‑Layer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer Watchlist‑Zeile ein Satz aus <b>Opportunity‑Faktoren</b> und <b>Risk‑Faktoren</b> gebildet und anschließend zu einem finalen Score zusammengeführt.</p>
+    <details>
+      <summary>Pipeline (Future-Me)</summary>
+      <p><code>python -m scanner.app.run_daily</code> erstellt Watchlist/Reports.<br/>
+      <code>python -m scanner.ui.generator</code> erzeugt <code>artifacts/ui/index.html</code>.</p>
+    </details>
 
-      <div class="grid2">
-        <div>
-          <h3>Opportunity (0..1, höher = besser)</h3>
-          <p>Beispiele der aktuell verwendeten Faktoren (wenn in den CSVs vorhanden):</p>
-          <ul>
-            <li><b>Growth %</b>, <b>ROE %</b>, <b>Margin %</b></li>
-            <li><b>MC‑Chance</b> (Monte‑Carlo‑Chance)</li>
-            <li><b>Trend200</b> (200‑Tage‑Trend) und <b>RS3M</b> (relative Stärke 3M)</li>
-            <li><b>Elliott‑Quality</b> (abhängig vom Elliott‑Signal)</li>
-            <li><b>Upside</b> (nur wenn Elliott‑Signal BUY und Target/Preis vorhanden; 30% Upside = â€žvollerâ€œ Faktor)</li>
-          </ul>
-          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. Analyst‑Faktor), bis Spalten dafür existieren.</p>
-        </div>
-        <div>
-          <h3>Risk (0..1, höher = riskanter)</h3>
-          <p>Beispiele der aktuell verwendeten Faktoren:</p>
-          <ul>
-            <li><b>Debt/Equity</b></li>
-            <li><b>CRV‑Fragility</b> (CRV wird in eine â€žFragilitätâ€œ umgerechnet; bei fehlendem CRV neutral)</li>
-            <li><b>Volatility</b>, <b>DownsideDev</b>, <b>MaxDrawdown</b></li>
-            <li><b>Liquidity‑Risk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
-          </ul>
-          <p class="tag">Die Idee: Opportunity alleine reicht nicht – ein hoher Score soll bei fragiler Liquidität oder extremem Drawdown nicht â€žblindâ€œ nach oben schießen.</p>
-        </div>
-      </div>
-
-      <h3>Normalisierung (Universe‑Scaling)</h3>
-      <p>Viele Rohwerte werden über ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen Markt‑Universum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
-
-      <h3>Regime (Markt‑Kontext)</h3>
-      <p>Der Score kann je nach Marktregime anders gewichtet werden. Dafür werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200‑Kontext). Wenn das Regime‑Label fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
+    <details>
+      <summary>Troubleshooting</summary>
       <ul>
-        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einfließt</li>
-        <li><b>risk_mult</b>: wie â€žhartâ€œ Risiko bestraft wird</li>
+        <li>Wenn UI leer ist: zuerst <code>run_daily</code>, dann <code>ui.generator</code>.</li>
+        <li>Wenn Texte komisch aussehen: UI neu generieren und Browser-Cache leeren.</li>
+        <li>Wenn Contract-Error: <code>python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_ALL.csv</code>.</li>
       </ul>
-
-      <h3>Confidence (0..100)</h3>
-      <p>Zusätzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, Risiko‑Sauberkeit, Regime‑Ausrichtung und Liquidität berücksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht – oder auf dünnem Daten‑Eis.</p>
-    </div>
-
-    <div class="card" id="recommendation">
-      <h2>4) Empfehlungscode (R0–R5)</h2>
-      <p>Im Dashboard erscheint im Score‑Bereich ein privater Code <b>R0–R5</b>. Das ist <b>kein Trading‑Signal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
-      <ul>
-        <li><b>R0</b>: <span class="sig warn grad">Avoid</span> (score_status beginnt mit <code>AVOID_</code>)</li>
-        <li><b>R5</b>: <span class="sig good grad">Top Setup</span> (Score-Perzentil >= 90 <i>und</i> Trend OK <i>und</i> Liquidity OK)</li>
-        <li><b>R4</b>: <span class="sig good grad">Good Setup</span> (Score-Perzentil >= 75 <i>und</i> Liquidity OK)</li>
-        <li><b>R3</b>: <span class="sig blue grad">Neutral</span> (Score-Perzentil >= 45)</li>
-        <li><b>R2</b>: <span class="sig warn grad">Weak</span> (Score-Perzentil >= 20)</li>
-        <li><b>R1</b>: <span class="sig bad grad">Low Priority</span> (Rest)</li>
-      </ul>
-      <p class="tag">Technik: das UI berechnet das Score‑Perzentil aus allen Zeilen der geladenen Tabelle.</p>
-    </div>
-
-    <div class="card" id="dashboard">
-      <h2>5) Dashboard‑Funktionen</h2>
-      <h3>Presets</h3>
-      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID …). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
-
-      <h3>Suche</h3>
-      <p>Suche filtert quer über Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
-
-      <h3>Quick‑Filter & KPI‑Chips</h3>
-      <p>Quick‑Filter sind schnelle boolesche/Status‑Schalter (z.B. â€žNur OKâ€œ, â€žTrend OKâ€œ, â€žLiq OKâ€œ). KPI‑Chips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
-
-      <h3>Cluster (offiziell) vs. Säulen (privat)</h3>
-      <p>Es gibt zwei unterschiedliche â€žKategorienâ€œ im UI – mit unterschiedlicher Bedeutung:</p>
-      <ul>
-        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus Yahoo‑Taxonomie (Sector/Industry) und ist dafür gedacht, echte Markt‑Cluster sichtbar zu machen.</li>
-        <li><b>Säulen (5‑Säulen/Playground, privat)</b>: deine thematische Metadaten‑Zuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>ändert niemals</b> den Score.</li>
-      </ul>
-      <p class="tag">Hinweis: ältere â€žPhantasie‑Sektorenâ€œ können weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine Säule ableiten, damit das Konzept sichtbar bleibt.</p>
-
-      <h3>Bucket‑Matrix (Score × Risk)</h3>
-      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der X‑Achse, <b>Risk</b> auf der Y‑Achse. Klick auf ein Feld aktiviert einen zusätzlichen Matrix‑Filter.</p>
-
-      <h3>Why‑Score Drawer</h3>
-      <p>Der Drawer erklärt, <i>warum</i> ein Wert so aussieht: Status‑Flags, wichtige Kennzahlen und – falls vorhanden – ein Breakdown (z.B. Confidence‑Breakdown).</p>
-
-      <h3>Ticker‑Zelle (2‑zeilig)</h3>
-      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten Yahoo‑Pair (oder was vorhanden ist). Ziel: du siehst Identität + â€žKeyâ€œ sofort, ohne zusätzliche Spalten.</p>
-
-      <h3>Finviz‑Inspiration (eigene Umsetzung)</h3>
-      <p>Die Market‑Übersicht (Index‑Charts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">Market‑Dashboard</a>). Layout‑Ideen dürfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert – Scanner_vNext bleibt eine eigenständige Logik/UX.</p>
-    </div>
-
-    <div class="card" id="portfolio">
-      <h2>6) Portfolio (geplant)</h2>
-      <p>Hier kommt eine Portfolio‑Sektion hin (Bestände, Einstand, Gewichtung, Risiko‑Beitrag, Ziel‑Allokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken können.</p>
-      <div class="callout"><p style="margin:0"><b>TODO:</b> Portfolio‑Konzept einfügen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
-    </div>
-
-    <div class="card" id="briefing">
-      <h2>7) Briefing / KI</h2>
-      <p>Das Briefing ist ein <b>passiver Explainability‑Report</b> für die Top‑Werte. Es wird ausschließlich aus bereits vorhandenen Feldern der Watchlist‑CSV abgeleitet (kein Re‑Scoring).</p>
-      <h3>Outputs</h3>
-      <ul>
-        <li><code>artifacts/reports/briefing.json</code> – strukturierte Daten (Top‑N + Gründe/Risiken/Checks).</li>
-        <li><code>artifacts/reports/briefing.txt</code> – deterministische Text‑Version (immer vorhanden, offline).</li>
-        <li><code>artifacts/reports/briefing_ai.txt</code> – optionale sprachliche Glättung via OpenAI API (Feature‑Flag, default OFF).</li>
-      </ul>
-      <h3>Erzeugung</h3>
-      <p>Briefing generieren (Stage A, deterministisch):</p>
-      <pre><code>python scripts/generate_briefing.py</code></pre>
-      <p>AI‑Enhancement (Stage B, optional):</p>
-      <pre><code>set OPENAI_API_KEY=...  # Windows
-python scripts/generate_briefing.py --enable-ai</code></pre>
-      <ul>
-        <li>Es ist <b>rein erklärend</b> (Notizen/Explainability).</li>
-        <li>Es darf <b>niemals</b> das Scoring oder Ranking beeinflussen.</li>
-        <li><b>Keine Anlageberatung</b>: das Briefing enthält einen kurzen Disclaimer.</li>
-      </ul>
-      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: â€žNoch kein Briefing generiertâ€œ.</p>
-    </div>
-
-
-
-    <div class="card" id="autopilot">
-      <h2>8) GitHub Autopilot (ohne laufenden PC)</h2>
-      <p>Wenn Scanner_vNext in einem GitHub‑Repo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausführen. Damit läuft der Scanner â€žserverlosâ€œ in der Cloud – dein Rechner muss dafür nicht an sein.</p>
-      <h3>Was macht der Autopilot?</h3>
-      <ul>
-        <li>Installiert das Projekt (<code>pip install -e .</code>).</li>
-        <li>Führt <code>python -m scanner.app.run_daily</code> aus (CSV‑Outputs nach <code>artifacts/watchlist/</code>).</li>
-        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code> → <code>artifacts/reports/</code>).</li>
-        <li>Generiert die UI (<code>python -m scanner.ui.generator</code> → <code>artifacts/ui/</code>).</li>
-        <li>Committet die Outputs (standardmäßig <code>artifacts/</code>) zurück ins Repo.</li>
-      </ul>
-      <h3>Warum committen wir <code>artifacts/</code>?</h3>
-      <p>Für den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder über GitHub Pages sofort die aktuellen HTML/CSV‑Outputs. Später kann man das auf einen reinen Deploy‑Branch umstellen, wenn das Repo zu groß wird.</p>
-      <h3>Benachrichtigungen</h3>
-      <p>GitHub kann dir E‑Mails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo → <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
-      <p class="tag">Technik: Workflow‑Datei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
-    </div>
-
-    <div class="card" id="notifications">
-      <h2>9) Benachrichtigungen (Telegram)</h2>
-      <p>Telegram ist optional und standardmäßig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking – es ist nur ein zusätzlicher Kanal für Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
-      <h3>Aktivieren (falls du es später wieder willst)</h3>
-      <pre><code>TELEGRAM_ENABLED=1
-TELEGRAM_BOT_TOKEN=...   # oder TELEGRAM_TOKEN (Legacy)
-TELEGRAM_CHAT_ID=...</code></pre>
-      <p class="tag">Hinweis: Ohne <code>TELEGRAM_ENABLED</code> (oder bei fehlenden Tokens) wird nichts gesendet.</p>
-    </div>
-
-    <div class="card" id="troubleshooting">
-      <h2>10) Troubleshooting</h2>
-      <h3>UI zeigt â€žKeine Datenâ€œ</h3>
-      <ul>
-        <li>Prüfe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
-        <li>Führe zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
-      </ul>
-      <h3>Contract validation failed</h3>
-      <ul>
-        <li>Contract: <code>configs/watchlist_contract.json</code></li>
-        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen – das verhindert stilles â€žUI zeigt Mistâ€œ.</li>
-        <li>Lösung: Watchlist‑CSV neu generieren oder Migration/Normalize‑Scripts nutzen.</li>
-      </ul>
-      <h3>Briefing fehlt</h3>
-      <ul>
-        <li>Erzeuge es mit <code>python scripts/generate_briefing.py</code>.</li>
-        <li>UI lädt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: â€žNoch kein Briefing generiertâ€œ.</li>
-      </ul>
-      <h3>GOOGLE_CREDENTIALS fehlt (GitHub Action)</h3>
-      <ul>
-        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSON‑Service‑Account).</li>
-        <li>Ohne Credentials kann der Scanner keine Sheets‑/Daten‑Quellen lesen (je nach Setup).</li>
-      </ul>
-      <p class="tag">Wenn du nicht weiterkommst: Logs aus GitHub Actions oder die konkrete Fehlermeldung hier rein kopieren.</p>
-    </div>
-    <div class="card" id="roadmap">
-      <h2>11) Roadmap & Konzept (Platzhalter)</h2>
-      <ul>
-        <li>Matrix Labels/Logik weiter finalisieren (Risk‑Proxy).</li>
-        <li>Recommendation‑Logik bei Bedarf schärfen (Regeln bleiben transparent).</li>
-        <li>Watchlist‑Hygiene: Spaltenmigration & Dedupe‑Strategie.</li>
-        <li>Portfolio‑Block ergänzen.</li>
-        <li>Briefing‑Logik weiter schärfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
-      </ul>
-      <p class="tag">Diese Seite ist absichtlich nicht â€žfertigâ€œ – sie ist deine Dokumentation, die mit dem Projekt mitwächst.</p>
-    </div>
-
-    <div class="card">
-      <p style="margin:0"><a href="#toc">↑ zurück zum Anfang</a></p>
-    </div>
-
+    </details>
   </main>
 </body>
 </html>
