@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <meta name="build-sha" content="6f1afa7"/>
+  <meta name="build-sha" content="local"/>
   <title>Scanner_vNext  -  Research Dashboard</title>
   <style>
     :root {
@@ -248,12 +248,29 @@
 .moversGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .moversList { font-family: var(--mono); font-size: 11px; display:flex; flex-direction: column; gap: 6px; }
 .moversItem { display:flex; justify-content: space-between; gap: 10px; }
-.moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
+.moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+.moversLeft { display:flex; align-items:center; gap: 6px; min-width: 0; }
 .moversItem .val { white-space: nowrap; }
 .moversItem .val.pos { color: var(--good); }
 .moversItem .val.neg { color: var(--bad); }
 .moversItem .val.flat { color: var(--muted); }
 .moversMeta { color: var(--muted); font-size: 10px; margin-left: 6px; }
+.moversTag {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid rgba(148,163,184,.25);
+  background: rgba(15,23,42,.65);
+  color: #cbd5e1;
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.2;
+  cursor: pointer;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.moversTag:hover { border-color: rgba(96,165,250,.55); color: #dbeafe; }
 
 .placeholderList { margin: 6px 0 0 16px; padding: 0; }
 .placeholderList li { margin: 6px 0; color: #cbd5e1; font-size: 12px; }
@@ -318,12 +335,12 @@
     }
   </style>
 </head>
-<body data-build-sha="6f1afa7" data-build-branch="main">
+<body data-build-sha="local" data-build-branch="">
   <header>
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext  -  Research Dashboard</h1>
-        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha 6f1afa7 | branch main ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version 0.0.1-v7 ? build 2026-02-13 ? sha local ? <a class="helpLink" href="help.html" target="_blank" rel="noopener">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
@@ -1796,6 +1813,33 @@ function renderQualityPanel(rows) {
 function renderMovers(rows) {
   if (!elMoversUp || !elMoversDown) return;
 
+  function moverToneStyle(v) {
+    if (v === null || v === undefined || !Number.isFinite(v)) return 'color: var(--muted);';
+    const abs = Math.min(Math.abs(v), 8.0);
+    const a = 0.55 + (abs / 8.0) * 0.45;
+    if (v > 0) return `color: rgba(52, 211, 153, ${a.toFixed(3)}); text-shadow: 0 0 10px rgba(52,211,153,.18);`;
+    if (v < 0) return `color: rgba(251, 113, 133, ${a.toFixed(3)}); text-shadow: 0 0 10px rgba(251,113,133,.14);`;
+    return 'color: var(--muted);';
+  }
+
+  function applyClusterFromBadge(cl) {
+    const cluster = (cl || '').toString().trim();
+    if (!cluster) return;
+    clusterPick = cluster;
+    if (elClusterSel) {
+      const has = Array.from(elClusterSel.options || []).some(o => (o.value || '') === cluster);
+      if (!has) {
+        const opt = document.createElement('option');
+        opt.value = cluster;
+        opt.textContent = cluster;
+        elClusterSel.appendChild(opt);
+      }
+      elClusterSel.value = cluster;
+    }
+    refresh();
+    saveState();
+  }
+
   const arr = [];
   for (const r of rows || []) {
     const p1d = perf1dPct(r);
@@ -1819,14 +1863,27 @@ function renderMovers(rows) {
     const yh = pickYahooSymbol(r) || sym;
     const href = yahooHref(yh);
     const s = href ? `<a class="yf sym" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` : `<span class="sym">${esc(sym)}</span>`;
+    const cl = clusterLabel(r);
+    const tag = cl ? `<button type="button" class="moversTag" data-cluster="${esc(cl)}" title="Filter auf ${esc(cl)} setzen">${esc(cl)}</button>` : '';
     const cls = x.rank > 0 ? 'pos' : (x.rank < 0 ? 'neg' : 'flat');
     const d1 = (x.p1d === null || x.p1d === undefined || !Number.isFinite(x.p1d)) ? '1D n/a' : `1D ${fmtPct(x.p1d)}`;
     const y1 = (x.p1y === null || x.p1y === undefined || !Number.isFinite(x.p1y)) ? '1Y n/a' : `1Y ${fmtPct(x.p1y)}`;
-    return `<div class="moversItem"><span class="sym">${s}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}">${esc(d1)}</span></div>`;
+    const tone = moverToneStyle(x.p1d);
+    return `<div class="moversItem"><span class="moversLeft">${s}${tag}<span class="moversMeta">${esc(y1)}</span></span><span class="val ${cls}" style="${tone}">${esc(d1)}</span></div>`;
   }
 
   elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">-</span>`;
   elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">-</span>`;
+
+  for (const root of [elMoversUp, elMoversDown]) {
+    root.querySelectorAll('button.moversTag[data-cluster]').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        applyClusterFromBadge(btn.getAttribute('data-cluster') || '');
+      });
+    });
+  }
 }
 
 function renderHeatmap(rows) {
