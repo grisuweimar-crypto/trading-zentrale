@@ -1,7 +1,7 @@
 {
   "meta": {
     "briefing_version": "v2",
-    "generated_utc": "2026-02-16T14:09:00.796628Z",
+    "generated_utc": "2026-02-16T14:10:32.925917Z",
     "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "preset": "ALL",
     "filters": {
@@ -101,7 +101,7 @@
         "code": "R5",
         "cycle_pct": 38.5,
         "regime": "bull",
-        "trend200_proxy": 0.0553484199925151,
+        "trend200_proxy": 0.0553484174997196,
         "risk_percentile": 37.142857142857146,
         "diversification_penalty": 0.0
       }
@@ -172,7 +172,7 @@
         "code": "R5",
         "cycle_pct": 50.1,
         "regime": "bull",
-        "trend200_proxy": 0.0553484199925151,
+        "trend200_proxy": 0.0553484174997196,
         "risk_percentile": 41.42857142857143,
         "diversification_penalty": 0.0
       }
@@ -219,7 +219,7 @@
           "id": "anomaly_extreme_perf",
           "severity": "alert",
           "label": "Sehr auffaellige Perf %",
-          "value": "+384.66%",
+          "value": "+384.15%",
           "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
           "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
         }
@@ -243,7 +243,7 @@
         "code": "R5",
         "cycle_pct": 21.4,
         "regime": "bull",
-        "trend200_proxy": 0.0553484199925151,
+        "trend200_proxy": 0.0553484174997196,
         "risk_percentile": 51.42857142857142,
         "diversification_penalty": 0.0
       }
@@ -270,8 +270,8 @@
       ]
     },
     "build_info": {
-      "git_sha": "a2ae2fe",
-      "ui_sha": "a2ae2fe",
+      "git_sha": "aa873ef",
+      "ui_sha": "aa873ef",
       "pipeline": "run_daily -> validate -> briefing -> ui"
     }
   }
