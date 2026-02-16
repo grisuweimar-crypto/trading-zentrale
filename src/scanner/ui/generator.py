@@ -1163,6 +1163,15 @@ if (elHeatMode) {
     }
 
     // HTML-Listen-Konvertierung fÃ¼r Briefing (bessere Mobile Darstellung)
+    function briefingEscape(v){
+      return String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function briefingToHtml(text){
       const lines = (text || "").split(/\\r?\\n/);
       let out = "";
@@ -1177,23 +1186,24 @@ if (elHeatMode) {
         const m = line.match(/^\\s*-\\s+(.*)$/);
         if(m){
           if(!inUl){ out += "<ul>"; inUl=true; }
-          out += `<li>${String(m[1]).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c))}</li>`;
+          out += '<li>' + briefingEscape(m[1]) + '</li>';
           continue;
         }
 
         closeUl();
 
         if(/^\\d+\\)\\s/.test(line)){
-          out += `<h4 class="briefing-asset">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</h4>`;
-        } else if(/^(GrÃ¼nde|Risiken\\/Flags|NÃ¤chste Checks|Kontext-Hinweise)/.test(line)){
-          out += `<div class="briefing-label">${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)).replace(/:$/,"")}</div>`;
+          out += '<h4 class="briefing-asset">' + briefingEscape(line) + '</h4>';
+        } else if(/^(Gr????nde|Risiken\\/Flags|N????chste Checks|Kontext-Hinweise)/.test(line)){
+          out += '<div class="briefing-label">' + briefingEscape(line).replace(/:$/, "") + '</div>';
         } else {
-          out += `<p>${String(line).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c)}</p>`;
+          out += '<p>' + briefingEscape(line) + '</p>';
         }
       }
       closeUl();
       return out;
     }
+
 
 // ---- disclaimer (UI-only) ----
 (function initDisclaimer() {
