@@ -189,6 +189,51 @@ def _failure_reason(symbol: str, base_reason: str) -> str:
     return reason
 
 
+def _is_blank(v: Any) -> bool:
+    if v is None:
+        return True
+    try:
+        s = str(v).strip()
+    except Exception:
+        return True
+    return (not s) or (s.lower() == "nan")
+
+
+def _profile_from_yahoo(yf: Any, sym: str, cache: dict[str, dict[str, str]]) -> dict[str, str]:
+    key = str(sym or "").strip().upper()
+    if not key:
+        return {}
+    if key in cache:
+        return cache[key]
+
+    prof: dict[str, str] = {}
+    try:
+        t = yf.Ticker(key)
+        info = {}
+        try:
+            info = t.get_info() or {}
+        except Exception:
+            try:
+                info = t.info or {}
+            except Exception:
+                info = {}
+        if isinstance(info, dict):
+            sec = str(info.get("sector") or "").strip()
+            ind = str(info.get("industry") or "").strip()
+            cty = str(info.get("country") or "").strip()
+            if sec:
+                prof["sector"] = sec
+            if ind:
+                prof["industry"] = ind
+            if cty:
+                prof["country"] = cty
+    except Exception:
+        prof = {}
+
+    cache[key] = prof
+    return prof
+
+
 def _series_from_download(dl: pd.DataFrame, ticker: str) -> tuple[pd.Series | None, pd.Series | None]:
     """Return (close, volume) series for a given ticker from yfinance.download output."""
     if dl is None or dl.empty:
@@ -439,6 +484,12 @@ def enrich_watchlist_with_yahoo(
     failed_rows: list[dict[str, Any]] = []
     success_symbols: set[str] = set()
 
+    # Ensure official taxonomy columns exist.
+    for col in ("Sector", "Industry", "Country"):
+        if col not in out.columns:
+            out[col] = pd.NA
+    profile_cache: dict[str, dict[str, str]] = {}
+
     # Per-row enrichment (keep previous values on failures)
     for idx, sym, picked_sym, picked_from, ctx in zip(out.index, row_symbols, row_picked, row_sources, row_context):
         if not sym:
@@ -448,6 +499,37 @@ def enrich_watchlist_with_yahoo(
             out.at[idx, "YahooSymbol"] = sym
         if sym and "yahoo_symbol" in out.columns and str(out.at[idx, "yahoo_symbol"] or "").strip() != sym:
             out.at[idx, "yahoo_symbol"] = sym
+
+        # Fill official taxonomy fields (Sector/Industry/Country) per symbol.
+        is_crypto_row = _looks_like_crypto_pair(sym) or (
+            "is_crypto" in out.columns and bool(out.at[idx, "is_crypto"])
+        )
+        if is_crypto_row:
+            if _is_blank(out.at[idx, "Sector"]):
+                out.at[idx, "Sector"] = "Cryptocurrency"
+            if _is_blank(out.at[idx, "Industry"]):
+                out.at[idx, "Industry"] = "Digital Currency"
+            if _is_blank(out.at[idx, "Country"]):
+                out.at[idx, "Country"] = "Global"
+        else:
+            need_profile = _is_blank(out.at[idx, "Sector"]) or _is_blank(out.at[idx, "Industry"]) or _is_blank(out.at[idx, "Country"])
+            if need_profile:
+                prof = _profile_from_yahoo(yf, sym, profile_cache)
+                if _is_blank(out.at[idx, "Sector"]) and prof.get("sector"):
+                    out.at[idx, "Sector"] = prof["sector"]
+                if _is_blank(out.at[idx, "Industry"]) and prof.get("industry"):
+                    out.at[idx, "Industry"] = prof["industry"]
+                if _is_blank(out.at[idx, "Country"]) and prof.get("country"):
+                    out.at[idx, "Country"] = prof["country"]
+
+            # Explicit fallback so all rows have populated official fields.
+            if _is_blank(out.at[idx, "Sector"]):
+                out.at[idx, "Sector"] = "Unknown"
+            if _is_blank(out.at[idx, "Industry"]):
+                out.at[idx, "Industry"] = "Unknown"
+            if _is_blank(out.at[idx, "Country"]):
+                out.at[idx, "Country"] = "Unknown"
+
         close, vol = _series_from_download(dl, sym)
         used_symbol = sym
         used_from = picked_from
