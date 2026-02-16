@@ -1447,11 +1447,11 @@ function applyPillarFilter(rows) {
     }
 
     function scoreBucket(score) {
-      const s = Math.max(0, Math.min(100, asNum(score)  0));
+      const s = Math.max(0, Math.min(100, asNum(score) ?? 0));
       return Math.min(4, Math.floor(s / 20));
     }
     function riskBucket(pctl) {
-      const p = Math.max(0, Math.min(100, asNum(pctl)  0));
+      const p = Math.max(0, Math.min(100, asNum(pctl) ?? 0));
       return Math.min(4, Math.floor(p / 20));
     }
 
@@ -1605,7 +1605,7 @@ function applyPillarFilter(rows) {
     }
 
     function scoreCell(r) {
-      const s = Math.max(0, Math.min(100, asNum(r.score)  0));
+      const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
       const sig = rec ? `<span class="sig ${rec.cls}" title="Signalâ€‘Code">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
@@ -2268,8 +2268,8 @@ function renderMarketContext(rows, presetRows) {
           </td>
           <td class="right">${pCell}</td>
           <td>${scoreCell(r)}</td>
-          <td class="hide-sm right mono">${(asNum(r.confidence)  0).toFixed(1)}</td>
-          <td class="hide-sm right mono">${(asNum(r.cycle)  0).toFixed(0)}%</td>
+          <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
+          <td class="hide-sm right mono">${(asNum(r.cycle) ?? 0).toFixed(0)}%</td>
           <td>${trend}</td>
           <td>${liq}</td>
           <td>${chip(status || 'â€”', statusKind)}</td>
@@ -2315,9 +2315,9 @@ function renderMarketContext(rows, presetRows) {
       }
 
       const items = [
-        ['Score', (asNum(r.score)  0).toFixed(2)],
-        ['Confidence', (asNum(r.confidence)  0).toFixed(1)],
-        ['Cycle', `${(asNum(r.cycle)  0).toFixed(0)}%`],
+        ['Score', (asNum(r.score) ?? 0).toFixed(2)],
+        ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
+        ['Cycle', `${(asNum(r.cycle) ?? 0).toFixed(0)}%`],
         ['ScoreStatus', normStr(r.score_status) || 'â€”'],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
@@ -2329,7 +2329,7 @@ function renderMarketContext(rows, presetRows) {
         ['Price', r.price],
         ['Currency', curr],
         ['Perf %', fmtPct(asNum(r.perf_pct)  asNum(r["Perf %"]))],
-        ['DiversPenalty', (asNum(r.diversification_penalty)  0).toFixed(2)],
+        ['DiversPenalty', (asNum(r.diversification_penalty) ?? 0).toFixed(2)],
         ['RS3M', r.rs3m],
         ['CRV', r.crv],
         ['MC Chance', r.mc_chance],
