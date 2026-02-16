@@ -268,7 +268,15 @@ def _is_crypto_row(row: pd.Series) -> bool:
                 return True
     ys = _norm_str(row.get("yahoo_symbol")) or _norm_str(row.get("YahooSymbol"))
     tk = _norm_str(row.get("ticker")) or _norm_str(row.get("Ticker"))
-    return ys.upper().endswith("-USD") or tk.upper().endswith("-USD")
+    for s in (ys, tk):
+        u = s.upper()
+        if u.endswith("-USD"):
+            return True
+        if "-" in u:
+            base, quote = u.rsplit("-", 1)
+            if quote in {"USD", "EUR", "USDT", "USDC", "GBP", "CHF", "BTC", "ETH"} and len(base) >= 2:
+                return True
+    return False
 
 
 def _rec_code(score_status: str, score_pctl: float | None, trend_ok: bool | None, liq_ok: bool | None) -> str:
@@ -335,6 +343,7 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
     c_cycle = _first_col(df, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])  # pct-ish
     c_perf = _first_col(df, ["perf_pct", "Perf %", "Perf%", "perf"])  # daily %
     c_conf = _first_col(df, ["confidence", "Confidence", "ConfidenceScore"])
+    c_div = _first_col(df, ["diversification_penalty", "ScoreDiversificationPenalty"])
 
     c_cluster = _first_col(df, ["cluster_official", "Cluster", "Sektor", "sector", "Sector"])
     c_pillar = _first_col(df, ["pillar_primary", "Saeule", "Säule", "Pillar"])
@@ -380,8 +389,13 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
 
     # sort by score desc; stable fallbacks
     cand["__conf__"] = _num_series(cand, c_conf)
-    cand["__perf__"] = _num_series(cand, c_perf)
-    cand = cand.sort_values(by=["__score__", "__conf__", "__perf__"], ascending=[False, False, False], kind="mergesort")
+    c_name = _first_col(cand, ["name", "Name", "ticker_display", "ticker", "Ticker", "symbol", "Symbol"])
+    cand["__name__"] = (
+        cand[c_name].fillna("").astype(str).str.strip().str.lower()
+        if c_name and c_name in cand.columns
+        else ""
+    )
+    cand = cand.sort_values(by=["__score__", "__conf__", "__name__"], ascending=[False, False, True], kind="mergesort")
 
     top_n = max(1, min(50, int(top_n)))
     top_df = cand.head(top_n)
@@ -449,6 +463,11 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
             conf_f = float(conf) if conf is not None and not (isinstance(conf, float) and pd.isna(conf)) else None
         except Exception:
             conf_f = None
+        dpen = None if c_div is None else r.get(c_div)
+        try:
+            dpen_f = float(dpen) if dpen is not None and not (isinstance(dpen, float) and pd.isna(dpen)) else None
+        except Exception:
+            dpen_f = None
 
         cluster = _norm_str(r.get(c_cluster)) if c_cluster and c_cluster in r.index else ""
         pillar = _norm_str(r.get(c_pillar)) if c_pillar and c_pillar in r.index else ""
@@ -483,6 +502,12 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
 
         if conf_f is not None:
             reasons.append(f"Confidence: {conf_f:.1f} (Daten-/Konfluenz‑Hinweis).")
+
+        if dpen_f is not None:
+            if dpen_f >= 6:
+                risks.append(f"Diversifikation: Penalty {dpen_f:.2f} (erhoehtes Klumpenrisiko).")
+            elif dpen_f <= 2:
+                reasons.append(f"Diversifikation: Penalty {dpen_f:.2f} (breiteres Setup).")
 
         if cycle_f is not None:
             reasons.append(f"Zyklus: {cycle_f:.1f}% (≈50 neutral).")
@@ -568,6 +593,7 @@ def build_briefing_from_csv(csv_path: Path, *, top_n: int = 3, language: str = "
             "risk_bucket": risk_bucket,
             "risk_pctl": rp,
             "score_bucket": score_bucket,
+            "diversification_penalty": dpen_f,
             "cluster": cluster,
             "pillar_primary": pillar,
             "bucket_type": bucket_type,
@@ -618,6 +644,41 @@ def render_briefing_txt(briefing: dict[str, Any]) -> str:
 
     n = len(items)
     lines.append(f"Top {n} – Warum diese Werte oben stehen (aus vorhandenen Feldern abgeleitet)")
+    lines.append("—" * 72)
+
+    def _short_why(it: dict) -> str:
+        # Nimm 1–2 stärkste Gründe + Flags, keine neue Berechnung
+        sym = it.get("symbol") or "—"
+        score = it.get("score")
+        sp = it.get("score_pctl")
+        rb = it.get("risk_bucket")
+        trend_ok = it.get("trend_ok")
+        liq_ok = it.get("liq_ok")
+        reasons = it.get("reasons") or []
+
+        # 1–2 Gründe als "Treiber"
+        treiber = "; ".join([str(x) for x in reasons[:2] if str(x).strip()])
+
+        bits = []
+        if score is not None:
+            bits.append(f"Score {float(score):.2f}")
+        if sp is not None:
+            bits.append(f"Pctl {float(sp):.0f}%")
+        if rb is not None:
+            bits.append(f"RiskB {rb}/4")
+        if trend_ok is True:
+            bits.append("Trend OK")
+        if liq_ok is True:
+            bits.append("Liq OK")
+
+        head = f"{sym}: " + " | ".join(bits) if bits else f"{sym}:"
+        return f"{head} — Treiber: {treiber}." if treiber else f"{head}"
+
+    lines.append("")
+    lines.append("Top 3 – Kurzbegründung (pseudo-KI, deterministisch)")
+    for i, it in enumerate(items[:3], 1):
+        lines.append(f" {i}) {_short_why(it)}")
+    lines.append("")
     lines.append("—" * 72)
 
     for i, it in enumerate(items, 1):

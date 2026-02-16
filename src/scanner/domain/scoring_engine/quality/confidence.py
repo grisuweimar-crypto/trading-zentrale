@@ -135,14 +135,19 @@ def compute_regime_alignment(factors_0_1: Dict[str, float], meta: Dict[str, Any]
     market_regime = meta.get('market_regime', 'neutral').lower()
     
     if market_regime == 'bull':
-        # Bull: Positive Momentum preferred
-        momentum_score = 0.0
-        if 'rs3m' in factors_0_1 and pd.notna(factors_0_1['rs3m']):
-            momentum_score += factors_0_1['rs3m'] * 0.5
-        if 'trend200' in factors_0_1 and pd.notna(factors_0_1['trend200']):
-            momentum_score += factors_0_1['trend200'] * 0.5
-        
-        return min(momentum_score, 1.0)
+        # Bull: prefer momentum signals; accept both canonical and legacy factor names.
+        momentum_keys = config.get(
+            'CONFIDENCE_MOMENTUM_FACTORS',
+            ['relative_strength', 'trend_200dma', 'rs3m', 'trend200'],
+        )
+        vals = [
+            float(factors_0_1[k])
+            for k in momentum_keys
+            if k in factors_0_1 and pd.notna(factors_0_1[k])
+        ]
+        if not vals:
+            return 0.5
+        return min(float(np.mean(vals)), 1.0)
     
     elif market_regime == 'bear':
         # Bear: Defensive/Quality preferred, lower volatility

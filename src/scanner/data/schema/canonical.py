@@ -32,6 +32,7 @@ COLUMN_MAP = {
     "score": ["Score"],
     "crv": ["CRV"],
     "confidence": ["ConfidenceScore"],
+    "diversification_penalty": ["ScoreDiversificationPenalty"],
     "elliott_signal": ["Elliott-Signal"],
     "mc_chance": ["MC-Chance"],
 
@@ -62,6 +63,7 @@ COLUMN_MAP = {
 NUMERIC_CANONICAL = {
     "price", "price_eur", "perf_pct",
     "score", "crv", "confidence", "mc_chance",
+    "diversification_penalty",
     "cycle", "rs3m", "trend200", "sma200",
     "volatility", "downside_dev", "max_drawdown",
     "avg_volume", "dollar_volume",
@@ -228,7 +230,7 @@ def canonicalize_df(df: pd.DataFrame) -> pd.DataFrame:
         # 4) common crypto names (only when no ISIN)
         name_is_crypto = (
             nm.str.contains(
-                r'\b(bitcoin|ethereum|cardano|solana|dogecoin|ripple|litecoin|polkadot|chainlink|avalanche|polygon|uniswap|cosmos)\b',
+                r'\b(?:bitcoin|ethereum|cardano|solana|dogecoin|ripple|litecoin|polkadot|chainlink|avalanche|polygon|uniswap|cosmos)\b',
                 regex=True,
                 na=False,
             )

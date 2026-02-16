@@ -1,4 +1,4 @@
-"""Validate the watchlist UI contract.
+﻿"""Validate the watchlist UI contract.
 
 This is a lightweight gate to prevent the UI from silently breaking when
 columns/types/rules change.
@@ -10,7 +10,7 @@ Usage
 
 Options
 -------
-  --csv       Which CSV to validate (default: watchlist_CORE.csv)
+  --csv       Which CSV to validate (default: watchlist_ALL.csv)
   --contract  Which contract JSON to use (default: configs/watchlist_contract.json)
   --strict-optional  Treat missing optional columns as errors
 
@@ -31,7 +31,7 @@ from scanner.data.schema.contract import validate_csv
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default=r"artifacts/watchlist/watchlist_CORE.csv")
+    ap.add_argument("--csv", default=r"artifacts/watchlist/watchlist_ALL.csv")
     ap.add_argument("--contract", default=r"configs/watchlist_contract.json")
     ap.add_argument("--strict-optional", action="store_true")
     args = ap.parse_args()
@@ -41,23 +41,23 @@ def main() -> int:
     # Not configured / missing inputs
     missing = [e for e in res.errors if e.startswith("missing CSV") or e.startswith("missing contract")]
     if missing:
-        print("❌ Not configured")
+        print("[FAIL] Not configured")
         for e in res.errors:
             print(" -", e)
         print("Run: python -m scanner.app.run_daily")
         return 2
 
     if res.ok:
-        print(f"✅ Contract OK: {Path(args.csv).as_posix()} ({res.summary()})")
+        print(f"[OK] Contract OK: {Path(args.csv).as_posix()} ({res.summary()})")
         for w in res.warnings:
-            print("⚠️", w)
+            print("[WARN]", w)
         return 0
 
-    print(f"❌ Contract FAIL: {Path(args.csv).as_posix()} ({res.summary()})")
+    print(f"[FAIL] Contract FAIL: {Path(args.csv).as_posix()} ({res.summary()})")
     for e in res.errors:
         print(" -", e)
     for w in res.warnings:
-        print("⚠️", w)
+        print("[WARN]", w)
     return 1
 
 
