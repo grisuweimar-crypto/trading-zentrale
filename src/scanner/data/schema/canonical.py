@@ -26,6 +26,8 @@ COLUMN_MAP = {
     # price/perf
     "price": ["Akt. Kurs"],
     "price_eur": ["Akt. Kurs [€]"],
+    "perf_1d_pct": ["Perf 1D %"],
+    "perf_1y_pct": ["Perf 1Y %"],
     "perf_pct": ["Perf %"],
 
     # scores/signals
@@ -61,7 +63,7 @@ COLUMN_MAP = {
 }
 
 NUMERIC_CANONICAL = {
-    "price", "price_eur", "perf_pct",
+    "price", "price_eur", "perf_1d_pct", "perf_1y_pct", "perf_pct",
     "score", "crv", "confidence", "mc_chance",
     "diversification_penalty",
     "cycle", "rs3m", "trend200", "sma200",
