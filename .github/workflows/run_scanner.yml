@@ -38,16 +38,16 @@ jobs:
         run: |
           python scripts/fix_contract_cols_post.py
 
+      - name: Quality Gates (watchlist contract)
+        run: |
+          python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_ALL.csv
+          python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_CORE.csv
+
       - name: Briefing erzeugen (deterministic)
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_briefing.py
-
-      - name: Quality Gates (watchlist contract)
-        run: |
-          python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_ALL.csv
-          python scripts/validate_contract.py --csv artifacts/watchlist/watchlist_CORE.csv
 
       - name: UI generieren
         env:

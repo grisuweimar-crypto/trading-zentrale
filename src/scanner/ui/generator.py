@@ -272,7 +272,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 <html lang="de">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Scanner_vNext — Research Dashboard</title>
   <style>
     :root {
@@ -2594,7 +2594,7 @@ def _render_help_html(*, version: str, build: str) -> str:
 <html lang="de">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Scanner_vNext — Hilfe & Projektbeschreibung</title>
   <style>
     :root{{
