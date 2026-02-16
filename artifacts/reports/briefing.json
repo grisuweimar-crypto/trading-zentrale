@@ -1,134 +1,278 @@
 {
   "meta": {
-    "schema_version": 1,
-    "generated_at": "2026-02-16T11:49:48.335242Z",
+    "briefing_version": "v2",
+    "generated_utc": "2026-02-16T12:17:54.081157Z",
+    "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
+    "preset": "ALL",
+    "filters": {
+      "query": "",
+      "cluster": "Alle",
+      "column": "Alle",
+      "bucket": null
+    },
+    "universe": {
+      "total": 141,
+      "scored": 141,
+      "scoring_basis": "score desc, tie-break: confidence desc, then symbol asc"
+    },
+    "metrics_basis": {
+      "perf_pct": {
+        "label": "perf_pct",
+        "window": "snapshot_to_snapshot",
+        "definition_hint": "Change vs reference in loaded CSV; verify source window if values look extreme."
+      }
+    },
+    "disclaimer": "Privat/experimentell | keine Anlageberatung | keine Empfehlung.",
     "date": "2026-02-16",
     "language": "de",
-    "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
-    "universe_count": 141,
-    "scored_count": 141,
-    "top_n": 3,
-    "notes": [
-      "Kontext: Viele Top‑3 in Säule 'Fundament' (3/3)."
-    ]
+    "schema_version": 2
+  },
+  "summary": {
+    "what_to_do_next": [
+      "Top-Werte zuerst auf Chart/News/Risiko pruefen.",
+      "Bei extremer Perf % zuerst Datenbasis und Zeitraum verifizieren."
+    ],
+    "market_context_hint": "Market Context ist informativ und beeinflusst das Scoring nicht."
   },
   "top": [
     {
+      "rank": 1,
       "symbol": "WPM.TO",
-      "isin": "CA9628791027",
-      "yahoo": "WPM.TO",
       "name": "WHEATON PREC.",
-      "score": 45.15,
-      "score_pctl": 100.0,
-      "r_code": "R5",
-      "trend_ok": true,
-      "liq_ok": true,
-      "risk_bucket": 1,
-      "risk_pctl": 37.142857142857146,
-      "score_bucket": 2,
-      "diversification_penalty": 0.0,
-      "cluster": "",
-      "pillar_primary": "Fundament",
-      "bucket_type": "pillar",
-      "reasons": [
-        "Hoher Score: 45.15 (Perzentil 100.0%, Bucket 2/4).",
-        "Confidence: 85.3 (Daten-/Konfluenz‑Hinweis).",
-        "Diversifikation: Penalty 0.00 (breiteres Setup).",
-        "Zyklus: 38.5% (≈50 neutral).",
-        "Tagesbewegung (Perf %): +103.72%.",
-        "Trend‑Filter: OK.",
-        "Liquidität: OK.",
-        "Regime‑Hinweis: bull.",
-        "Trend200‑Proxy: +0.055.",
-        "Risk‑Proxy: Bucket 1/4 (Perzentil 37.1%).",
-        "Säule (privat): Fundament.",
-        "BUCKET: pillar."
+      "isin": "CA9628791027",
+      "score": 45.16,
+      "score_percentile": 100.0,
+      "risk_bucket": 2,
+      "risk_buckets_total": 4,
+      "risk_label": "moderat",
+      "quality": {
+        "trend_ok": true,
+        "liq_ok": true,
+        "confidence": 85.3,
+        "status": "OK"
+      },
+      "headline": "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence).",
+      "drivers": [
+        {
+          "id": "driver_score_top",
+          "label": "Rang im Universe",
+          "value": "#1 von 141",
+          "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge."
+        },
+        {
+          "id": "driver_quality_filters",
+          "label": "Qualitaetsfilter",
+          "value": "Trend OK | Liq OK",
+          "why_it_matters": "Filterstatus zeigt, ob Mindestkriterien aktuell erfuellt sind."
+        },
+        {
+          "id": "driver_confidence",
+          "label": "Confidence",
+          "value": "85/100",
+          "why_it_matters": "Hinweis auf Datenkonsistenz und Konfluenz im Modellkontext."
+        }
       ],
-      "risks": [],
+      "anomalies": [
+        {
+          "id": "anomaly_extreme_perf",
+          "severity": "alert",
+          "label": "Sehr auffaellige Perf %",
+          "value": "+103.72%",
+          "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
+          "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
+        }
+      ],
       "next_checks": [
-        "Datenqualität prüfen (Status/fehlende Felder/Confidence‑Breakdown).",
-        "Chart‑Kontext prüfen (z.B. Trend200, Support/Resistance).",
-        "Risk‑Metriken prüfen (Drawdown/Volatilität/Downside‑Dev).",
-        "Cluster-/Säulen‑Exposure im eigenen Setup prüfen (Klumpenrisiko)."
-      ]
+        {
+          "id": "check_perf_basis",
+          "text": "Datenbasis von Perf % pruefen (snapshot_to_snapshot, Referenzwerte, Zeitfenster)."
+        },
+        {
+          "id": "check_news",
+          "text": "News/Events pruefen (Earnings, Guidance, Corporate Actions)."
+        },
+        {
+          "id": "check_risk",
+          "text": "Risikoprofil pruefen (Drawdown, Volatilitaet, Positionsrisiko)."
+        }
+      ],
+      "details": {
+        "column": "Fundament",
+        "code": "R5",
+        "cycle_pct": 38.5,
+        "regime": "bull",
+        "trend200_proxy": 0.0553484199925151,
+        "risk_percentile": 37.142857142857146,
+        "diversification_penalty": 0.0
+      }
     },
     {
+      "rank": 2,
       "symbol": "AEM",
-      "isin": "CA0084741085",
-      "yahoo": "AEM",
       "name": "AGNICO EAGLE",
-      "score": 44.52,
-      "score_pctl": 99.28571428571429,
-      "r_code": "R5",
-      "trend_ok": true,
-      "liq_ok": true,
-      "risk_bucket": 2,
-      "risk_pctl": 41.42857142857143,
-      "score_bucket": 2,
-      "diversification_penalty": 0.0,
-      "cluster": "",
-      "pillar_primary": "Fundament",
-      "bucket_type": "pillar",
-      "reasons": [
-        "Hoher Score: 44.52 (Perzentil 99.3%, Bucket 2/4).",
-        "Confidence: 86.7 (Daten-/Konfluenz‑Hinweis).",
-        "Diversifikation: Penalty 0.00 (breiteres Setup).",
-        "Zyklus: 50.1% (≈50 neutral).",
-        "Tagesbewegung (Perf %): +128.85%.",
-        "Trend‑Filter: OK.",
-        "Liquidität: OK.",
-        "Regime‑Hinweis: bull.",
-        "Trend200‑Proxy: +0.055.",
-        "Risk‑Proxy: Bucket 2/4 (Perzentil 41.4%).",
-        "Säule (privat): Fundament.",
-        "BUCKET: pillar."
+      "isin": "CA0084741085",
+      "score": 44.56,
+      "score_percentile": 99.28571428571429,
+      "risk_bucket": 3,
+      "risk_buckets_total": 4,
+      "risk_label": "hoch",
+      "quality": {
+        "trend_ok": true,
+        "liq_ok": true,
+        "confidence": 86.8,
+        "status": "OK"
+      },
+      "headline": "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence).",
+      "drivers": [
+        {
+          "id": "driver_score_top",
+          "label": "Rang im Universe",
+          "value": "#2 von 141",
+          "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge."
+        },
+        {
+          "id": "driver_quality_filters",
+          "label": "Qualitaetsfilter",
+          "value": "Trend OK | Liq OK",
+          "why_it_matters": "Filterstatus zeigt, ob Mindestkriterien aktuell erfuellt sind."
+        },
+        {
+          "id": "driver_confidence",
+          "label": "Confidence",
+          "value": "87/100",
+          "why_it_matters": "Hinweis auf Datenkonsistenz und Konfluenz im Modellkontext."
+        }
       ],
-      "risks": [],
+      "anomalies": [
+        {
+          "id": "anomaly_extreme_perf",
+          "severity": "alert",
+          "label": "Sehr auffaellige Perf %",
+          "value": "+128.85%",
+          "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
+          "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
+        }
+      ],
       "next_checks": [
-        "Datenqualität prüfen (Status/fehlende Felder/Confidence‑Breakdown).",
-        "Chart‑Kontext prüfen (z.B. Trend200, Support/Resistance).",
-        "Risk‑Metriken prüfen (Drawdown/Volatilität/Downside‑Dev).",
-        "Cluster-/Säulen‑Exposure im eigenen Setup prüfen (Klumpenrisiko)."
-      ]
+        {
+          "id": "check_perf_basis",
+          "text": "Datenbasis von Perf % pruefen (snapshot_to_snapshot, Referenzwerte, Zeitfenster)."
+        },
+        {
+          "id": "check_news",
+          "text": "News/Events pruefen (Earnings, Guidance, Corporate Actions)."
+        },
+        {
+          "id": "check_risk",
+          "text": "Risikoprofil pruefen (Drawdown, Volatilitaet, Positionsrisiko)."
+        }
+      ],
+      "details": {
+        "column": "Fundament",
+        "code": "R5",
+        "cycle_pct": 50.1,
+        "regime": "bull",
+        "trend200_proxy": 0.0553484199925151,
+        "risk_percentile": 41.42857142857143,
+        "diversification_penalty": 0.0
+      }
     },
     {
+      "rank": 3,
       "symbol": "FRES.L",
-      "isin": "GB00B2QPKJ12",
-      "yahoo": "FRES.L",
       "name": "FRESNILLO PLC",
-      "score": 44.5,
-      "score_pctl": 98.57142857142858,
-      "r_code": "R5",
-      "trend_ok": true,
-      "liq_ok": true,
-      "risk_bucket": 2,
-      "risk_pctl": 51.42857142857142,
-      "score_bucket": 2,
-      "diversification_penalty": 0.0,
-      "cluster": "",
-      "pillar_primary": "Fundament",
-      "bucket_type": "pillar",
-      "reasons": [
-        "Hoher Score: 44.50 (Perzentil 98.6%, Bucket 2/4).",
-        "Confidence: 87.9 (Daten-/Konfluenz‑Hinweis).",
-        "Diversifikation: Penalty 0.00 (breiteres Setup).",
-        "Zyklus: 21.4% (≈50 neutral).",
-        "Tagesbewegung (Perf %): +386.70%.",
-        "Trend‑Filter: OK.",
-        "Liquidität: OK.",
-        "Regime‑Hinweis: bull.",
-        "Trend200‑Proxy: +0.055.",
-        "Risk‑Proxy: Bucket 2/4 (Perzentil 51.4%).",
-        "Säule (privat): Fundament.",
-        "BUCKET: pillar."
+      "isin": "GB00B2QPKJ12",
+      "score": 44.45,
+      "score_percentile": 98.57142857142858,
+      "risk_bucket": 3,
+      "risk_buckets_total": 4,
+      "risk_label": "hoch",
+      "quality": {
+        "trend_ok": true,
+        "liq_ok": true,
+        "confidence": 87.9,
+        "status": "OK"
+      },
+      "headline": "Starker Kandidat im aktuellen Universe (Trend und Liquiditaet OK, hohe Confidence).",
+      "drivers": [
+        {
+          "id": "driver_score_top",
+          "label": "Rang im Universe",
+          "value": "#3 von 141",
+          "why_it_matters": "Hohe relative Position in der aktuellen Vergleichsmenge."
+        },
+        {
+          "id": "driver_quality_filters",
+          "label": "Qualitaetsfilter",
+          "value": "Trend OK | Liq OK",
+          "why_it_matters": "Filterstatus zeigt, ob Mindestkriterien aktuell erfuellt sind."
+        },
+        {
+          "id": "driver_confidence",
+          "label": "Confidence",
+          "value": "88/100",
+          "why_it_matters": "Hinweis auf Datenkonsistenz und Konfluenz im Modellkontext."
+        }
       ],
-      "risks": [],
+      "anomalies": [
+        {
+          "id": "anomaly_extreme_perf",
+          "severity": "alert",
+          "label": "Sehr auffaellige Perf %",
+          "value": "+387.20%",
+          "explain": "Sehr hoher Wert. Pruefe Datenbasis/Zeitraum (snapshot_to_snapshot) sowie Corporate Actions.",
+          "suggested_check": "Vergleiche Close heute vs. vorherigen Referenzwert und pruefe Split/Corporate Actions."
+        }
+      ],
       "next_checks": [
-        "Datenqualität prüfen (Status/fehlende Felder/Confidence‑Breakdown).",
-        "Chart‑Kontext prüfen (z.B. Trend200, Support/Resistance).",
-        "Risk‑Metriken prüfen (Drawdown/Volatilität/Downside‑Dev).",
-        "Cluster-/Säulen‑Exposure im eigenen Setup prüfen (Klumpenrisiko)."
-      ]
+        {
+          "id": "check_perf_basis",
+          "text": "Datenbasis von Perf % pruefen (snapshot_to_snapshot, Referenzwerte, Zeitfenster)."
+        },
+        {
+          "id": "check_news",
+          "text": "News/Events pruefen (Earnings, Guidance, Corporate Actions)."
+        },
+        {
+          "id": "check_risk",
+          "text": "Risikoprofil pruefen (Drawdown, Volatilitaet, Positionsrisiko)."
+        }
+      ],
+      "details": {
+        "column": "Fundament",
+        "code": "R5",
+        "cycle_pct": 21.4,
+        "regime": "bull",
+        "trend200_proxy": 0.0553484199925151,
+        "risk_percentile": 51.42857142857142,
+        "diversification_penalty": 0.0
+      }
     }
-  ]
+  ],
+  "context": {
+    "notes": [
+      {
+        "id": "note_column_concentration",
+        "text": "Top-3 enthalten 3/3 Werte in Saeule 'Fundament'."
+      }
+    ]
+  },
+  "diagnostics": {
+    "data_quality": {
+      "extreme_perf_count": 3,
+      "missing_fields_count": 0,
+      "suspicious_values": [
+        {
+          "field": "perf_pct",
+          "rule": "abs(perf_pct) > 30",
+          "count": 3
+        }
+      ]
+    },
+    "build_info": {
+      "git_sha": "73957b3",
+      "ui_sha": "73957b3",
+      "pipeline": "run_daily -> validate -> briefing -> ui"
+    }
+  }
 }
