@@ -248,13 +248,27 @@
 .moversGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .moversList { font-family: var(--mono); font-size: 11px; display:flex; flex-direction: column; gap: 6px; }
 .moversItem { display:flex; justify-content: space-between; gap: 10px; }
-.moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; }
+.moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: clamp(68px, 24vw, 110px); }
 .moversLeft { display:flex; align-items:center; gap: 6px; min-width: 0; }
 .moversItem .val { white-space: nowrap; }
 .moversItem .val.pos { color: var(--good); }
 .moversItem .val.neg { color: var(--bad); }
 .moversItem .val.flat { color: var(--muted); }
 .moversMeta { color: var(--muted); font-size: 10px; margin-left: 6px; }
+.moversHead { display:flex; align-items:center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.moversMiniBtn {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.55);
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 2px 7px;
+  font-size: 10px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.moversMiniBtn:disabled { opacity: .45; cursor: default; }
+.moversMiniBtn:not(:disabled):hover { border-color: rgba(96,165,250,.55); color: #dbeafe; }
 .moversTag {
   appearance: none; -webkit-appearance: none;
   border: 1px solid rgba(148,163,184,.25);
@@ -265,7 +279,7 @@
   font-size: 10px;
   line-height: 1.2;
   cursor: pointer;
-  max-width: 110px;
+  max-width: clamp(72px, 22vw, 130px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -470,7 +484,10 @@
       <div id="qualityBox" class="muted small" style="margin-top:8px;"> - </div>
     </div>
     <div class="marketCard" id="moversCard">
-      <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Tagesbewegung (1D) im aktuellen Universe.">Movers</div>
+      <div class="moversHead">
+        <div class="marketCardTitle" title="Staerkste Auf- und Abbewegungen nach Tagesbewegung (1D) im aktuellen Universe.">Movers</div>
+        <button type="button" class="moversMiniBtn" id="moversClearCluster" title="Cluster/Sektor-Filter loesen">Cluster-Filter loesen</button>
+      </div>
       <div class="moversGrid">
         <div>
           <div class="muted small">Top</div>
@@ -614,6 +631,7 @@ const elDiversBox = document.getElementById('diversBox');
 const elQualityBox = document.getElementById('qualityBox');
 const elMoversUp = document.getElementById('moversUp');
 const elMoversDown = document.getElementById('moversDown');
+const btnMoversClearCluster = document.getElementById('moversClearCluster');
 const elHeatmap = document.getElementById('heatmap');
 const elHeatmapNote = document.getElementById('heatmapNote');
 const elHeatMode = document.getElementById('heatMode');
@@ -1812,6 +1830,11 @@ function renderQualityPanel(rows) {
 
 function renderMovers(rows) {
   if (!elMoversUp || !elMoversDown) return;
+  if (btnMoversClearCluster) {
+    const active = !!(clusterPick || '').toString().trim();
+    btnMoversClearCluster.disabled = !active;
+    btnMoversClearCluster.textContent = active ? `Cluster: ${clusterPick} x` : 'Cluster-Filter loesen';
+  }
 
   function moverToneStyle(v) {
     if (v === null || v === undefined || !Number.isFinite(v)) return 'color: var(--muted);';
@@ -2270,6 +2293,14 @@ function renderMarketContext(rows, presetRows) {
     if (elClusterSel) {
       elClusterSel.addEventListener('change', () => {
         clusterPick = elClusterSel.value || '';
+        refresh();
+        saveState();
+      });
+    }
+    if (btnMoversClearCluster) {
+      btnMoversClearCluster.addEventListener('click', () => {
+        clusterPick = '';
+        if (elClusterSel) elClusterSel.value = '';
         refresh();
         saveState();
       });
