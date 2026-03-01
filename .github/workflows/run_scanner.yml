@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Code auschecken
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Python installieren
         uses: actions/setup-python@v5
@@ -54,6 +57,14 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          git add artifacts/ || true
-          git commit -m "📊 Autopilot: artifacts update [skip ci]" || echo "Keine Änderungen zum Speichern"
-          git push
+          
+          # Prüfen, ob es Änderungen unter artifacts/ gibt
+          if [ -z "$(git status --porcelain -- artifacts/)" ]; then
+            echo "Keine Änderungen unter artifacts/ gefunden - überspringe Commit"
+          else
+            echo "Änderungen unter artifacts/ gefunden - erstelle Commit"
+            git add artifacts/
+            git commit -m "📊 Autopilot: artifacts update [skip ci]"
+            git push origin HEAD:main
+            echo "Artifacts erfolgreich nach main gepushed"
+          fi
