@@ -21,10 +21,18 @@ Output
 import argparse
 import html
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+# Fix for running directly from ui directory
+if Path(__file__).parent.name == "ui":
+    # Add src to path so scanner modules can be found
+    src_path = Path(__file__).parent.parent.parent
+    if str(src_path) not in sys.path:
+        sys.path.insert(0, str(src_path))
 
 from scanner._version import __version__, __build__
 from scanner.data.io.paths import project_root
