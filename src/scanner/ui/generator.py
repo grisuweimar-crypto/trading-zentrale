@@ -21,6 +21,7 @@ Output
 import argparse
 import html
 import json
+from datetime import datetime, timezone
 import sys
 from pathlib import Path
 from typing import Any
@@ -194,6 +195,37 @@ def build_ui(
 
     df = pd.read_csv(csv_path)
 
+    # Ticker Normalizer: Ensure ticker_display is always a real ticker (not ISIN)
+    import re
+    isin_pattern = re.compile(r'^[A-Z]{2}[A-Z0-9]{9}[0-9]$')
+    
+    def normalize_ticker_fields(row):
+        # Priority order for real ticker candidates
+        candidates = []
+        for col in ['yahoo_symbol', 'YahooSymbol', 'symbol', 'ticker']:
+            if col in row and pd.notna(row[col]) and str(row[col]).strip():
+                val = str(row[col]).strip()
+                if not isin_pattern.match(val):
+                    candidates.append(val)
+        
+        # Get current ticker_display
+        current_td = str(row.get('ticker_display', '')).strip()
+        
+        # If ticker_display is empty or ISIN-like, replace with first valid candidate
+        if not current_td or isin_pattern.match(current_td):
+            if candidates:
+                row['ticker_display'] = candidates[0]
+                # Also fix yahoo_symbol/YahooSymbol if they are empty or ISIN-like
+                for col in ['yahoo_symbol', 'YahooSymbol']:
+                    if col in row:
+                        current_val = str(row[col]).strip()
+                        if not current_val or isin_pattern.match(current_val):
+                            row[col] = candidates[0]
+        
+        return row
+    
+    df = df.apply(normalize_ticker_fields, axis=1)
+
     cols = columns or DEFAULT_COLUMNS
     # Keep only columns that exist (UI should not crash if optional fields are missing)
     keep = [c for c in cols if c in df.columns]
@@ -226,6 +258,68 @@ def build_ui(
         briefing_text = ""
         briefing_source = ""
 
+    # Load passive reports (precomputed; never influence scoring)
+    history_delta: dict[str, Any] = {}
+    segment_monitor: dict[str, Any] = {}
+    reality_check: dict[str, Any] = {}
+    brief_realities_text = ""
+    brief_realities_source = ""
+    try:
+        reports_dir = artifacts_dir() / "reports"
+        hp = reports_dir / "history_delta.json"
+        sp = reports_dir / "segment_monitor.json"
+        rp = reports_dir / "reality_check.json"
+        brp = reports_dir / "briefing_realities.txt"
+        if hp.exists():
+            history_delta = json.loads(hp.read_text(encoding="utf-8", errors="replace") or "{}")
+        if sp.exists():
+            segment_monitor = json.loads(sp.read_text(encoding="utf-8", errors="replace") or "{}")
+        if rp.exists():
+            reality_check = json.loads(rp.read_text(encoding="utf-8", errors="replace") or "{}")
+        if brp.exists():
+            brief_realities_text = brp.read_text(encoding="utf-8", errors="replace")
+            brief_realities_source = "artifacts/reports/briefing_realities.txt"
+    except Exception:
+        history_delta = {}
+        segment_monitor = {}
+        reality_check = {}
+        brief_realities_text = ""
+        brief_realities_source = ""
+
+    # Run meta (UI header): prefer artifacts/reports/briefing.json -> meta.generated_at (fallback: mtime)
+    run_at = ''
+    run_src = ''
+    run_universe = ''
+    try:
+        reports_dir = artifacts_dir() / 'reports'
+        bj = reports_dir / 'briefing.json'
+        meta = {}
+        if bj.exists():
+            obj = json.loads(bj.read_text(encoding='utf-8', errors='replace') or '{}')
+            meta = (obj.get('meta') or {}) if isinstance(obj, dict) else {}
+        ga = str((meta.get('generated_at') or '')).strip()
+        if ga:
+            try:
+                dt = datetime.fromisoformat(ga.replace('Z', '+00:00')).astimezone(timezone.utc)
+                run_at = dt.strftime('%Y-%m-%d %H:%MZ')
+            except Exception:
+                run_at = ga
+        sc = str((meta.get('source_csv') or '')).strip()
+        if sc:
+            run_src = sc
+        uc = meta.get('universe_count', None)
+        if uc is not None:
+            run_universe = str(uc)
+        if not run_at:
+            fp = bj if bj.exists() else (reports_dir / 'briefing.txt')
+            if fp.exists():
+                dt = datetime.fromtimestamp(fp.stat().st_mtime, tz=timezone.utc)
+                run_at = dt.strftime('%Y-%m-%d %H:%MZ')
+    except Exception:
+        run_at = run_at or ''
+        run_src = run_src or ''
+        run_universe = run_universe or ''
+
     html = _render_html(
         data_records=data_records,
         presets=presets,
@@ -234,29 +328,41 @@ def build_ui(
         build=__build__,
         briefing_text=briefing_text,
         briefing_source=briefing_source,
+        history_delta=history_delta,
+        segment_monitor=segment_monitor,
+        reality_check=reality_check,
+        briefing_realities_text=brief_realities_text,
+        briefing_realities_source=brief_realities_source,
+        run_at=run_at,
+        run_src=run_src,
+        run_universe=run_universe,
         fallback_tbody_html=fallback_tbody_html,
     )
 
     out_html.parent.mkdir(parents=True, exist_ok=True)
-    out_html.write_text(html, encoding="utf-8")
+    out_html.write_text(html, encoding="utf-8-sig")
 
     # Help / project description page (static)
     help_path = out_html.parent / "help.html"
     help_html = _render_help_html(version=__version__, build=__build__)
-    help_path.write_text(help_html, encoding="utf-8")
+    help_path.write_text(help_html, encoding="utf-8-sig")
 
     return out_html
 
 
-def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any], source_csv: str, version: str, build: str, briefing_text: str, briefing_source: str, fallback_tbody_html: str) -> str:
+def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any], source_csv: str, version: str, build: str, briefing_text: str, briefing_source: str, history_delta: dict[str, Any], segment_monitor: dict[str, Any], reality_check: dict[str, Any], briefing_realities_text: str, briefing_realities_source: str, run_at: str, run_src: str, run_universe: str, fallback_tbody_html: str) -> str:
     data_json = json.dumps(data_records, ensure_ascii=False)
     presets_json = json.dumps(presets, ensure_ascii=False)
     briefing_json = json.dumps({"text": briefing_text, "source": briefing_source}, ensure_ascii=False)
+    history_delta_json = json.dumps(history_delta or {}, ensure_ascii=False)
+    segment_monitor_json = json.dumps(segment_monitor or {}, ensure_ascii=False)
+    reality_check_json = json.dumps(reality_check or {}, ensure_ascii=False)
+    briefing_realities_json = json.dumps({"text": briefing_realities_text, "source": briefing_realities_source}, ensure_ascii=False)
 
     # Server-side preset <option> fallback (so UI isn't empty if JS fails)
     preset_labels = {
         "ALL": "Alle Werte",
-        "CORE": "Übersicht",
+        "CORE": "bersicht",
         "SCORED": "Bewertet",
         "TOP": "Top",
         "TOP_RELAXED": "Top (entspannt)",
@@ -269,7 +375,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     for n in names:
         desc = str(((presets.get(n, {}) or {}).get("description", ""))).strip()
         label = preset_labels.get(n, n)
-        txt = f"{label} ({n})" + (f" — {desc}" if desc else "")
+        txt = f"{label} ({n})" + (f"  {desc}" if desc else "")
         opts.append(f'<option value="{html.escape(n)}">{html.escape(txt)}</option>')
     preset_options_html = "\n".join(opts)
 
@@ -280,18 +386,18 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Scanner_vNext — Research Dashboard</title>
+  <title>Scanner_vNext  Research Dashboard</title>
   <style>
     :root {
       --bg: #0b0f14;
-      --card: #111827;
+      --card: rgba(17,24,39,.72);
       --muted: #94a3b8;
       --text: #e5e7eb;
       --accent: #60a5fa;
       --good: #34d399;
       --warn: #fbbf24;
       --bad: #fb7185;
-      --chip: #1f2937;
+      --chip: rgba(31,41,55,.85);
       --border: #243244;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -300,6 +406,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       --w-name: 220px;
       --w-price: 130px;
       --w-score: 170px;
+      --w-dscore: 110px;
       --w-conf: 70px;
       --w-cycle: 70px;
       --w-trend: 70px;
@@ -308,23 +415,31 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       --w-class: 80px;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: var(--sans); background: var(--bg); color: var(--text); }
-    header { padding: 16px 18px; border-bottom: 1px solid var(--border); background: rgba(17,24,39,.55); backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 50; }
+    body { margin: 0; font-family: var(--sans); background: radial-gradient(1000px 600px at 10% 0%, rgba(96,165,250,.12), transparent 60%), radial-gradient(800px 500px at 90% 10%, rgba(52,211,153,.10), transparent 55%), var(--bg); color: var(--text); }
+    header { padding: 16px 18px; border-bottom: 1px solid var(--border); background: rgba(17,24,39,.72); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50; }
     .title { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
     .title h1 { margin: 0; font-size: 18px; font-weight: 700; }
     .meta { color: var(--muted); font-family: var(--mono); font-size: 12px; }
     .helpLink { color: var(--accent); text-decoration: none; }
     .helpLink:hover { text-decoration: underline; }
 
-    .wrap { max-width: 1680px; margin: 0 auto; padding: 18px; }
+    .wrap { max-width: 1400px; margin: 0 auto; padding: 18px; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
 
     /* Briefing box (passive text; must not influence scoring) */
-    .briefingBox { border: 1px solid rgba(148,163,184,.15); background: rgba(15,23,42,.35); border-radius: 12px; padding: 10px; }
+    .briefingBox { border: 1px solid rgba(148,163,184,.15); background: rgba(15,23,42,.35); border-radius: 12px; padding: 10px; min-width: 0; }
+    .cardHeader { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .cardTitle { font-weight: 700; }
+    .cardActions { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:nowrap; position:relative; }
     .briefHead { display:flex; align-items:center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
     .briefingBox .muted { margin-bottom: 8px; }
-    .briefingText { margin: 0; padding: 10px; border-radius: 10px; border: 1px solid rgba(148,163,184,.12); background: rgba(15,23,42,.55); white-space: pre-wrap; max-height: 300px; overflow: auto; font-family: inherit; line-height: 1.55; font-size: 10px; }
+    .briefingText { margin: 0; padding: 10px; border-radius: 10px; border: 1px solid rgba(148,163,184,.12); background: rgba(15,23,42,.55); white-space: pre-wrap; max-height: 300px; overflow: auto; font-family: inherit; line-height: 1.50; font-size: 12px; max-width: 100%; overflow-x: hidden; overflow-wrap: anywhere; word-break: break-word; }
     @media (min-width: 980px) { .briefingText { max-height: 520px; } }
+
+    /* Passive report boxes (History Delta / Segment / Reality) */
+    .reportText { margin: 0; padding: 10px; border-radius: 10px; border: 1px solid rgba(148,163,184,.12); background: rgba(15,23,42,.55); white-space: pre-wrap; max-height: 200px; overflow: auto; font-family: inherit; line-height: 1.50; font-size: 12px; max-width: 100%; overflow-x: hidden; overflow-wrap: anywhere; word-break: break-word; }
+    @media (min-width: 980px) { .reportText { max-height: 180px; } }
+
 
     .controls { display: grid; grid-template-columns: 220px 1fr 220px 220px auto; gap: 12px; padding: 14px; align-items: center; }
     .controls label { font-size: 12px; color: var(--muted); }
@@ -333,35 +448,34 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .count { justify-self: end; color: var(--muted); font-size: 12px; font-family: var(--mono); }
 
     .kpis { padding: 0 14px 10px 14px; display:flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-    .kpis .label { color: var(--muted); font-size: 12px; font-family: var(--mono); margin-right: 4px; }
+    .kpis .label { color: var(--muted); font-size: 12px; font-family: var(--mono); flex: 0 0 60px; margin-right: 0; }
 
-.clusters { padding: 0 14px 10px 14px; display:flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.clusters .label { color: var(--muted); font-size: 12px; font-family: var(--mono); margin-right: 4px; }
-.clusters .chip { padding: 2px 6px; font-size: 10px; line-height: 1.1; }
+    .clusters { padding: 0 14px 10px 14px; display:flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .clusters .label { color: var(--muted); font-size: 12px; font-family: var(--mono); flex: 0 0 60px; margin-right: 0; }
+    .clusters .chip { padding: 4px 8px; font-size: 11px; line-height: 1.4; }
 
-.pillars { padding: 0 14px 10px 14px; display:flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.pillars .label { color: var(--muted); font-size: 12px; font-family: var(--mono); margin-right: 4px; }
-.pillars .chip { padding: 2px 6px; font-size: 10px; line-height: 1.1; }
+    .pillars { padding: 0 14px 10px 14px; display:flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .pillars .label { color: var(--muted); font-size: 12px; font-family: var(--mono); flex: 0 0 60px; margin-right: 0; }
+    .pillars .chip { padding: 4px 8px; font-size: 11px; line-height: 1.4; }
 
-.disclaimer {
-  margin: 0 0 12px 0;
-  padding: 10px 14px;
-  border: 1px solid rgba(251,191,36,.35);
-  background: rgba(251,191,36,.08);
-  border-radius: 14px;
-  display:flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-}
-.disclaimer b { font-weight: 800; }
-.disclaimer .txt { color: rgba(226,232,240,.95); line-height: 1.35; font-size: 13px; }
-.disclaimer .btn { white-space: nowrap; }
-@media (max-width: 860px) {
-  .disclaimer { flex-direction: column; align-items: flex-start; }
-}
-
-    .filters { display:flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 14px 14px 14px; }
+    .disclaimer {
+      margin: 0 0 12px 0;
+      padding: 10px 14px;
+      border: 1px solid rgba(251,191,36,.35);
+      background: rgba(251,191,36,.08);
+      border-radius: 14px;
+      display:flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .disclaimer b { font-weight: 800; }
+    .disclaimer .txt { color: rgba(226,232,240,.95); line-height: 1.35; font-size: 13px; }
+    .disclaimer .btn { white-space: nowrap; }
+    @media (max-width: 860px) {
+      .disclaimer { flex-direction: column; align-items: flex-start; }
+    }
+  .filters { display:flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 14px 14px 14px; }
     .fbtn { background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 12px; }
     .fbtn:hover { border-color: rgba(96,165,250,.45); }
     .fbtn.active { border-color: rgba(96,165,250,.60); box-shadow: 0 0 0 2px rgba(96,165,250,.14) inset; }
@@ -387,6 +501,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     #tbl col.col-name   { width: var(--w-name); }
     #tbl col.col-price  { width: var(--w-price); }
     #tbl col.col-score  { width: var(--w-score); }
+    #tbl col.col-dscore { width: var(--w-dscore); }
     #tbl col.col-conf   { width: var(--w-conf); }
     #tbl col.col-cycle  { width: var(--w-cycle); }
     #tbl col.col-trend  { width: var(--w-trend); }
@@ -421,6 +536,9 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 
     .mono { font-family: var(--mono); }
     .muted { color: var(--muted); }
+    .deltaUp { color: var(--good); }
+    .deltaDown { color: var(--bad); }
+    .deltaFlat { color: var(--muted); }
     .row-title { display:flex; flex-direction:column; gap:2px; }
     .name { font-size: 13px; }
     .sub { font-size: 11px; color: var(--muted); }
@@ -450,12 +568,99 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .sig.bad  { border-color: rgba(251,113,133,.25); color: #fecdd3; background: rgba(251,113,133,.08); }
     .sig.blue { border-color: rgba(96,165,250,.25); color: #bfdbfe; background: rgba(96,165,250,.08); }
 
-    /* Bucket matrix (Score × Risk) */
+    /* Bucket matrix (Score  Risk) */
     .matrixPanel { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
     .matrixHead { display:flex; justify-content: space-between; align-items:flex-end; gap: 12px; margin-bottom: 10px; }
     .matrixTitle { font-weight: 700; }
-    .matrixLayout { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 980px) { .matrixLayout { grid-template-columns: .70fr 1.30fr; align-items: start; } }
+    .matrixLayout { display: grid; grid-template-columns: 1fr; gap: 12px; grid-auto-rows: minmax(0, 1fr); }
+    @media (min-width: 980px) { .matrixLayout { grid-template-columns: minmax(0, .70fr) minmax(0, 1.30fr); align-items: stretch; grid-auto-rows: minmax(0, 1fr); } }
+    .leftStack { display:flex; flex-direction:column; gap: 24px; min-width: 0; height: 100%; }
+    .rightStack { display:flex; flex-direction:column; gap: 12px; min-width: 0; height: 100%; min-height: 0; }
+    .rightTopGrid { display:grid; grid-template-columns: 1fr; gap: 12px; align-items: stretch; min-width: 0; height: 100%; min-height: 0; }
+    .briefingRealityContent { max-height: 320px; overflow: auto; min-height: 0; }
+    .briefingRealitySplit { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 12px; }
+    .briefingRealitySection { display: flex; flex-direction: column; }
+    .sectionTitle { font-weight: 600; font-size: 12px; color: var(--text); margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(148,163,184,.15); }
+    .briefingRealitySection .briefingText,
+    .briefingRealitySection .reportText { max-height: none; margin: 0; }
+    @media (min-width: 980px) { .briefingRealityContent { max-height: 280px; } }
+        @media (max-width: 1200px) { 
+      .briefingRealitySplit { grid-template-columns: 1fr; }
+    }
+    #segmentBox { flex: 1 1 auto; min-height: 0; }
+    #segmentText { height: 100%; overflow-y: auto; overflow-x: hidden; }
+    
+    /* Segment Monitor layout: fill remaining height under Briefing, align with Heatmap */
+    #segmentBox .cardBody { display:flex; flex-direction:column; min-height:0; }
+    .card.is-collapsed #segmentBox .cardBody { display:none; }
+    #segmentText { flex: 1 1 auto; min-height:0; }
+    .segmentTables { height: 100%; }
+
+    /* Segment Monitor table: keep headers readable */
+    .segmentTable { table-layout: fixed; width: 100%; }
+    .segmentTable th, .segmentTable td { padding: 8px 8px; }
+    .segmentTable th { white-space: nowrap; }
+    .segmentTable th:nth-child(1), .segmentTable td:nth-child(1) { width: 38%; }
+    .segmentTable th:nth-child(2), .segmentTable td:nth-child(2) { width: 16%; }
+    .segmentTable th:nth-child(3), .segmentTable td:nth-child(3) { width: 14%; }
+    .segmentTable th:nth-child(4), .segmentTable td:nth-child(4) { width: 14%; }
+    .segmentTable th:nth-child(5), .segmentTable td:nth-child(5) { width: 14%; }
+    .segmentTable th:nth-child(6), .segmentTable td:nth-child(6) { width: 4.5em; }
+
+    /* Movers (Market Context)  1D + 1Y lines like old screenshot */
+    .moversList { font-family: var(--mono); font-size: 11px; display:flex; flex-direction: column; gap: 8px; }
+    .moversItem { display:grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+    .moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+    .moversItem .mvVals { display:flex; flex-direction:column; gap: 2px; align-items: flex-end; }
+    .moversItem .mvLine { white-space: nowrap; }
+    .moversItem .mvLine.pos { color: var(--good); }
+    .moversItem .mvLine.neg { color: var(--bad); }
+    .moversItem .mvLine.flat { color: var(--muted); }
+
+.segmentTables { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: 100%; }
+    @media (max-width: 1200px) { .segmentTables { grid-template-columns: 1fr; } }
+
+.segmentTable { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .segmentTable th,
+    .segmentTable td { padding: 6px 8px; border-bottom: 1px solid rgba(36,50,68,.55); text-align: left; }
+    .segmentTable th { background: rgba(15,23,42,.55); color: #cbd5e1; font-weight: 600; position: sticky; top: 0; }
+    .segmentTable tr:hover td { background: rgba(96,165,250,.07); }
+    .segmentDelta { font-family: var(--mono); font-weight: 600; }
+    .segmentDelta.pos { color: var(--good); }
+    .segmentDelta.neg { color: var(--bad); }
+    .segmentDelta.zero { color: var(--muted); }
+
+    /* Segment Monitor (v4.1): compact table + ellipsis */
+    .segmentTable { table-layout: fixed; font-family: var(--mono); font-size: 11px; line-height: 1.25; }
+    .segmentTable th { white-space: nowrap; }
+    .segmentTable td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .segmentTable th:nth-child(1), .segmentTable td:nth-child(1) { width: 46%; }
+    .segmentTable th:nth-child(2), .segmentTable td:nth-child(2) { width: 14%; }
+    .segmentTable th:nth-child(3), .segmentTable td:nth-child(3) { width: 12%; }
+    .segmentTable th:nth-child(4), .segmentTable td:nth-child(4) { width: 12%; }
+    .segmentTable th:nth-child(5), .segmentTable td:nth-child(5) { width: 12%; }
+    .segmentTable th:nth-child(6), .segmentTable td:nth-child(6) { width: 4.5em; }
+
+    .heatControls { display:flex; gap: 8px; align-items:center; }
+    .heatControls select { width: auto; min-width: 160px; padding: 8px 10px; border-radius: 10px; }
+    /* Insights (collapsed by default) */
+    details.insightsDetails { margin-top: 12px; }
+    details.insightsDetails > summary {
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148,163,184,.15);
+      background: rgba(15,23,42,.30);
+      color: var(--text);
+      font-weight: 600;
+    }
+    details.insightsDetails > summary::-webkit-details-marker { display: none; }
+    details.insightsDetails[open] > summary { background: rgba(15,23,42,.45); }
+    .insightsGrid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+    @media (min-width: 980px) { .insightsGrid { grid-template-columns: 1fr 1fr; align-items: start; } }
+
 
     .matrixGrid { display: grid; grid-template-columns: 84px repeat(5, 1fr); gap: 4px; }
     .matrixLabel { font-size: 10px; color: var(--muted); display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 4px 0; line-height: 1.05; text-align: center; }
@@ -471,6 +676,19 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .cell .cnt { font-family: var(--mono); font-size: 11px; }
     .matrixNote { margin-top: 8px; color: var(--muted); font-size: 11px; }
 
+    /* Heatmap styling like Bucket matrix */
+    .heatWrap .matrixGrid .cell { background: hsla(205, 70%, 50%, 0.06); }
+    .heatWrap .matrixGrid .cell:hover { border-color: rgba(96,165,250,.45); }
+    .heatWrap .matrixGrid .cell.active { box-shadow: 0 0 0 2px rgba(96,165,250,.25) inset; }
+
+    /* Info button and popover */
+    .iBtn { display:inline-flex; align-items:center; justify-content:center; width: 18px; height: 18px; border-radius: 999px; border: 1px solid rgba(148,163,184,.20); background: rgba(148,163,184,.08); color: #cbd5e1; font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; transition: all .12s ease; }
+    .iBtn:hover { border-color: rgba(96,165,250,.45); background: rgba(96,165,250,.12); }
+    .iPop { position: absolute; top: 100%; right: 0; margin-top: 4px; min-width: 200px; max-width: 280px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,.20); background: rgba(15,23,42,.95); color: var(--text); font-size: 11px; line-height: 1.4; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.3); }
+    .card.is-collapsed .cardBody { display:none; }
+    .debugInfo, .renderProof { display: none; }
+
+
 
 /* Market Context (Finviz-inspired patterns, scanner-owned data & logic) */
 .marketPanel { padding: 12px 14px 14px; border-top: 1px solid var(--border); }
@@ -479,11 +697,32 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .marketGrid { display:grid; grid-template-columns: 1fr; gap: 12px; }
 @media (min-width: 980px) { .marketGrid { grid-template-columns: 1fr 1fr 1.2fr; align-items: stretch; } }
 
-.marketCard { border: 1px solid rgba(148,163,184,.15); background: rgba(15,23,42,.35); border-radius: 12px; padding: 10px; }
+.marketCard { border: 1px solid rgba(148,163,184,.15); background: rgba(15,23,42,.35); border-radius: 12px; padding: 10px; display:flex; flex-direction:column; min-height:0; }
 .marketCardTitle { font-weight: 700; margin-bottom: 8px; }
 .breadthRow { display:flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.breadthLvl1 { display:flex; flex-direction:column; gap: 6px; margin-bottom: 8px; }
+.breadthHeadline { display:flex; align-items:center; gap: 8px; font-weight: 700; }
+.breadthHeadline .ampel { width: 10px; height: 10px; border-radius: 999px; display:inline-block; }
+.breadthHeadline .ampel.riskOn { background: var(--good); box-shadow: 0 0 0 2px rgba(52,211,153,.18); }
+.breadthHeadline .ampel.mixed { background: var(--warn); box-shadow: 0 0 0 2px rgba(251,191,36,.18); }
+.breadthHeadline .ampel.riskOff { background: var(--bad); box-shadow: 0 0 0 2px rgba(251,113,133,.18); }
+.breadthPct { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+.breadthDetails { margin-top: 6px; }
+.breadthSummary { cursor: pointer; list-style: none; display:inline-flex; align-items:center; border: 1px solid rgba(148,163,184,.20); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--text); background: rgba(148,163,184,.06); user-select: none; }
+.breadthSummary::-webkit-details-marker { display: none; }
+.breadthDetailsBody { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(148,163,184,.15); display:flex; flex-direction:column; gap: 8px; }
 
 .moversGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* History Delta: fill half Market-Card height with scrollbar */
+#historyCard { min-height: 0; }
+#historyCard #historyText { flex: 1 1 auto; min-height: 0; max-height: 280px; overflow: auto; }
+
+/* Divider zwischen Top und Weak (Grid-Spalten) */
+.moversGrid > div + div {
+  border-left: 1px solid rgba(148,163,184,.12);
+  padding-left: 10px;
+}
 .moversList { font-family: var(--mono); font-size: 11px; display:flex; flex-direction: column; gap: 6px; }
 .moversItem { display:flex; justify-content: space-between; gap: 10px; }
 .moversItem .sym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
@@ -498,17 +737,22 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .heatTbl th { background: rgba(15,23,42,.55); color: #cbd5e1; position: sticky; top: 0; z-index: 2; }
 .heatTbl th:first-child { left: 0; z-index: 3; }
 .heatTbl td:first-child { position: sticky; left: 0; background: rgba(11,15,20,.96); z-index: 1; white-space: nowrap; }
+.heatTbl td { cursor: pointer; }
+.heatTbl td:hover { outline: 1px solid rgba(96,165,250,.45); }
+.heatTbl td.heatCell.active { outline: 2px solid rgba(251,191,36,.75); box-shadow: 0 0 0 2px rgba(0,0,0,.25) inset; }
+.heatTbl td.heatRowLabel.active { font-weight: 700; color: var(--text); }
+
 .heatCell { text-align: center; font-family: var(--mono); }
 .heatCell.zero { color: rgba(148,163,184,.55); }
 
     /* KPI chips are clickable quick-filters */
-    button.chip { appearance: none; -webkit-appearance: none; border: 1px solid rgba(148,163,184,.15); background: var(--chip); color: inherit; font: inherit; }
+    button.chip { appearance: none; -webkit-appearance: none; display:inline-flex; align-items:center; gap:6px; padding: 4px 8px; border-radius: 999px; background: var(--chip); border: 1px solid rgba(148,163,184,.15); color: var(--text); font-size: 11px; cursor: pointer; white-space: nowrap; }
     button.chip.kpi { cursor: pointer; }
     button.chip.kpi:hover { border-color: rgba(96,165,250,.45); }
     button.chip.kpi.active { box-shadow: 0 0 0 2px rgba(96,165,250,.25) inset; }
 
-    /* KPI chips slightly more compact than normal chips */
-    button.chip.kpi { padding: 2px 6px; font-size: 10px; line-height: 1.1; }
+    /* KPI chips same size as normal chips */
+    button.chip.kpi { padding: 4px 8px; font-size: 11px; line-height: 1.4; }
 
     .jsError { display:none; margin: 10px 14px 0 14px; padding: 10px 12px; border-radius: 14px; background: rgba(251,113,133,.08); border: 1px solid rgba(251,113,133,.25); color: #fecdd3; font-family: var(--mono); font-size: 12px; }
     .jsError.show { display:block; }
@@ -524,13 +768,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .kbd { font-family: var(--mono); background: rgba(148,163,184,.12); border: 1px solid rgba(148,163,184,.18); padding: 2px 6px; border-radius: 6px; }
 
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; align-items: flex-end; justify-content: center; padding: 18px; z-index: 90; }
-    .overlay.show { display: flex; }
     .drawer { width: min(720px, 96vw); max-height: 88vh; overflow: auto; }
     .drawer-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 14px; border-bottom: 1px solid var(--border); }
     .drawer-actions { display: flex; gap: 8px; align-items: center; }
     .drawer-title { font-weight: 700; }
     .drawer-body { padding: 14px; }
-    .btn { background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding: 4px 8px; border-radius: 999px; background: var(--chip); border: 1px solid rgba(148,163,184,.15); color: var(--text); font-size: 11px; cursor: pointer; white-space: nowrap; }
     .btn:hover { border-color: rgba(96,165,250,.45); }
     .kv { display: grid; grid-template-columns: 160px 1fr; gap: 6px 12px; }
     .kv div { padding: 4px 0; border-bottom: 1px dashed rgba(148,163,184,.15); }
@@ -548,9 +791,328 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       .hide-sm { display:none; }
     }
 
+    /* Briefing & Reality Check Panel Styles */
+    .briefingPick {
+      border: 1px solid rgba(148,163,184,.15);
+      border-radius: 14px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: rgba(15,23,42,.35);
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .briefingPickHeader {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      padding: 6px 8px;
+      border: 1px solid rgba(251,191,36,.28);
+      background: rgba(251,191,36,.06);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .briefingPickRank {
+      font-weight: 700;
+      color: var(--warn);
+      font-family: var(--mono);
+    }
+    .briefingPickSymbol {
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+    .briefingPickName {
+      color: var(--text);
+    }
+    .briefingPickBadges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .briefingBadge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 6px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(15,23,42,.55);
+      color: var(--muted);
+      border: 1px solid rgba(148,163,184,.15);
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .briefingPickReasons {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .briefingPickReasons li {
+      position: relative;
+      padding-left: 12px;
+      margin-bottom: 2px;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .briefingPickReasons li:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+    .briefingFallback {
+      border: 1px solid rgba(148,163,184,.15);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(15,23,42,.35);
+    }
+    .briefingLine {
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .briefingBullet {
+      margin-bottom: 4px;
+      padding-left: 12px;
+      position: relative;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .briefingBullet:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+    .realityTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-top: 8px;
+    }
+    .realityTable th,
+    .realityTable td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(36,50,68,.55);
+      text-align: left;
+      font-size: 11px;
+    }
+    .realityTable th {
+      background: rgba(15,23,42,.55);
+      color: #cbd5e1;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    .realityTable tr:hover td {
+      background: rgba(96,165,250,.07);
+    }
+    /* Responsive improvements for small screens */
+    @media (max-width: 1200px) {
+      .realityTable th,
+      .realityTable td {
+        line-height: 1.4;
+      }
+      .realityTable th {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+    @media (max-width: 900px) {
+      .realityTable th,
+      .realityTable td {
+        padding: 6px;
+        font-size: 10px;
+      }
+    }
+    .signalBadge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .signalBadge.positive {
+      background: rgba(52,211,153,.08);
+      border: 1px solid rgba(52,211,153,.25);
+      color: #a7f3d0;
+    }
+    .signalBadge.neutral {
+      background: rgba(251,191,36,.08);
+      border: 1px solid rgba(251,191,36,.25);
+      color: #fde68a;
+    }
+    .signalBadge.contra {
+      background: rgba(251,113,133,.08);
+      border: 1px solid rgba(251,113,133,.25);
+      color: #fecdd3;
+    }
+    .realitySummary {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .summaryChip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .summaryChip.ok {
+      background: rgba(52,211,153,.08);
+      border: 1px solid rgba(52,211,153,.25);
+      color: #a7f3d0;
+    }
+    .summaryChip.warn {
+      background: rgba(251,191,36,.08);
+      border: 1px solid rgba(251,191,36,.25);
+      color: #fde68a;
+    }
+    .summaryChip.error {
+      background: rgba(251,113,133,.08);
+      border: 1px solid rgba(251,113,133,.25);
+      color: #fecdd3;
+    }
+
+    /* Unified Help Popover System */
+    .helpPop {
+      position: fixed;
+      z-index: 9999;
+      max-width: 360px;
+      background: rgba(15,23,42,.95);
+      border: 1px solid rgba(148,163,184,.20);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      padding: 0;
+    }
+    .helpPopInner {
+      padding: 12px 14px;
+    }
+    .helpPopTitle {
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .helpPopBody {
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .helpPopBody ul {
+      margin: 8px 0 0 16px;
+      padding: 0;
+    }
+    .helpPopBody li {
+      margin-bottom: 4px;
+    }
+    .hidden {
+      display: none;
+    }
+    .helpPop.show {
+      display: block;
+    }
+
+    /* Dark scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(15,23,42,.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,.3); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,.5); }
+    
     /* Let the briefing breathe a bit more on larger screens */
     @media (min-width: 980px) {
       .briefingText { max-height: 520px; }
+    }
+
+    /* History Delta (Market Context): strukturiert + scanbar */
+#historyCard #historyText { white-space: normal; }
+
+.hdWrap { display:flex; flex-direction:column; gap: 10px; }
+.hdMeta { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+
+.hdGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.hdColTitle { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
+.hdList { display:flex; flex-direction:column; gap: 6px; }
+
+.hdItem { display:grid; grid-template-columns: 72px 1fr 100px; gap: 8px; align-items:center; }
+.hdSym { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.hdVals { display:flex; flex-direction:column; gap:2px; align-items:flex-end; font-family: var(--mono); font-size: 11px; line-height: 1.15; }
+.hdLine { white-space:nowrap; }
+.hdLine.pos { color: var(--good); }
+.hdLine.neg { color: var(--bad); }
+.hdLine.flat { color: var(--muted); }
+
+.hdSeg {
+  justify-self:end;
+  width: 100px; max-width: 100px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.18);
+  background: rgba(15,23,42,.55);
+  color: rgba(226,232,240,.85);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+
+@media (max-width: 980px) { .hdGrid { grid-template-columns: 1fr; } }
+
+    /* MOVERS_LAYOUT_v4_2: Symbol | 1D/1Y | Segment pill (right) */
+    .moversList { font-family: var(--mono); font-size: 11px; display:flex; flex-direction:column; gap:8px; }
+
+    .moversItem {
+      display: grid;
+      grid-template-columns: 72px 78px 40px;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .moversItem .mvSym { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .moversItem .mvVals { display:flex; flex-direction:column; gap:2px; align-items:flex-end; line-height:1.15; }
+    .moversItem .mvLine { white-space: nowrap; }
+    .moversItem .mvLine.pos { color: var(--good); }
+    .moversItem .mvLine.neg { color: var(--bad); }
+    .moversItem .mvLine.flat { color: var(--muted); }
+
+    .moversItem .mvSeg {
+      justify-self: end;
+      width: 40px; max-width: 40px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(15,23,42,.55);
+      color: rgba(226,232,240,.85);
+      font-size: 10px;
+    }
+
+    /* Dezente Trennlinie zwischen Top und Weak */
+    .moversSection {
+      position: relative;
+    }
+    .moversSection:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(148,163,184,.15);
+    }
+
+    /* Mobile: Segment unter die Zeile */
+    @media (max-width: 900px) {
+      .moversItem { grid-template-columns: 1fr 82px; grid-template-rows: auto auto; }
+      .moversItem .mvSeg { grid-column: 1 / -1; justify-self: start; width:auto; max-width:100%; }
     }
   </style>
 </head>
@@ -558,8 +1120,8 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <header>
     <div class="wrap">
       <div class="title">
-        <h1>Scanner_vNext — Research Dashboard</h1>
-        <div class="meta">version __VERSION__ · build __BUILD__ · <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
+        <h1>Scanner_vNext  Research Dashboard</h1>
+        <div class="meta">version __VERSION__ · build __BUILD__ · <span title="Quelle: __RUN_SRC__">run __RUN_AT__</span> · universe __RUN_UNIVERSE__ · <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
@@ -578,82 +1140,141 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <select id="preset">__PRESET_OPTIONS__</select>
         </div>
         <div>
-          <label for="search">Suche (Symbol/Name/Kategorie/Land…)</label>
-          <input id="search" placeholder="z.B. NVDA, Gold, Deutschland, Krypto…"/>
+          <label for="search">Suche (Symbol/Name/Kategorie/Land)</label>
+          <input id="search" placeholder="z.B. NVDA, Gold, Deutschland, Krypto"/>
         </div>
         <div>
           <label for="clusterSel">Cluster/Sektor</label>
           <select id="clusterSel"><option value="">Alle</option></select>
         </div>
         <div>
-          <label for="pillarSel">Säule (5‑Säulen/Playground)</label>
+          <label for="pillarSel">Säule (5Säulen/Playground)</label>
           <select id="pillarSel"><option value="">Alle</option></select>
         </div>
-        <div class="count" id="count">—</div>
+        <div class="count" id="count"></div>
       </div>
 
-      <div class="kpis" id="kpis">—</div>
-      <div class="pillars" id="pillars">—</div>
-      <div class="clusters" id="clusters">—</div>
+      <div class="kpis" id="kpis"></div>
+      <div class="pillars" id="pillars"></div>
+      <div class="clusters" id="clusters"></div>
 
       <div class="filters" id="filters">
-        <button type="button" class="fbtn active" data-f="hideAvoid" title="AVOID-Zeilen ausblenden (score_status beginnt mit AVOID_)">AVOID ausblenden</button>
-        <button type="button" class="fbtn" data-f="onlyOK" title="Nur score_status = OK anzeigen">Nur OK</button>
-        <button type="button" class="fbtn" data-f="trendOK" title="Nur trend_ok = true anzeigen">Trend OK</button>
-        <button type="button" class="fbtn" data-f="liqOK" title="Nur liquidity_ok = true anzeigen">Liq OK</button>
+        <button type="button" class="fbtn active" data-action="toggle" data-key="hideAvoid" title="AVOID-Zeilen ausblenden (score_status beginnt mit AVOID_)">AVOID ausblenden</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="onlyOK" title="Nur score_status = OK anzeigen">Nur OK</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="trendOK" title="Nur trend_ok = true anzeigen">Trend OK</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="liqOK" title="Nur liquidity_ok = true anzeigen">Liq OK</button>
         <span class="fsep"></span>
-        <button type="button" class="fbtn" data-f="onlyStock" title="Nur Aktien (is_crypto = false)">Aktien</button>
-        <button type="button" class="fbtn" data-f="onlyCrypto" title="Nur Krypto (is_crypto = true)">Krypto</button>
-        <button type="button" class="fbtn" data-f="resetSort" title="Nur Sort-Override löschen (Preset-Sort bleibt)">Sortierung zurück</button>
-        <button type="button" class="fbtn" data-f="reset" title="Alles zurücksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
-        <button type="button" class="hintbtn" id="infoFlow" aria-haspopup="dialog" aria-expanded="false" title="Erklärung anzeigen"><span class="i">i</span>Preset → Quick-Filter</button>
+        <button type="button" class="iBtn"
+          data-action="help"
+          data-help-title="Quick-Filter"
+          data-help-html="<ul>
+            <li><strong>AVOID ausblenden:</strong> Versteckt Zeilen, deren <span class='mono'>score_status</span> mit <span class='mono'>AVOID_</span> beginnt.</li>
+            <li><strong>Nur OK:</strong> Zeigt nur Zeilen mit <span class='mono'>score_status = OK</span>.</li>
+            <li><strong>Trend OK:</strong> Zeigt nur Zeilen mit <span class='mono'>trend_ok = true</span>.</li>
+            <li><strong>Liq OK:</strong> Zeigt nur Zeilen mit <span class='mono'>liquidity_ok = true</span>.</li>
+            <li><em>Hinweis:</em> Diese Filter beeinflussen nur die angezeigte Liste (Universe), nicht das Scoring.</li>
+          </ul>"
+          aria-haspopup="dialog" aria-expanded="false">i</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="onlyStock" title="Nur Aktien (is_crypto = false)">Aktien</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="onlyCrypto" title="Nur Krypto (is_crypto = true)">Krypto</button>
+        <button type="button" class="fbtn" data-action="resetSort" title="Nur Sort-Override löschen (Preset-Sort bleibt)">Sortierung zurück</button>
+        <button type="button" class="fbtn" data-action="resetAll" title="Alles zurücksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
       </div>
-
-      <div class="popover" id="infoPopover" role="dialog" aria-modal="false" aria-hidden="true">
-        <button type="button" class="btn close" id="infoClose" title="Schließen">✕</button>
-        <div class="title">Wie wirken Preset, Suche und Quick-Filter?</div>
-        <ul>
-          <li><b>Preset</b> filtert und sortiert zuerst (View-Layer, verändert kein Scoring).</li>
-          <li>Danach wirkt die <b>Suche</b> (Ticker/Name/Kategorie/Land…).</li>
-          <li>Zuletzt greifen die <b>Quick-Filter</b> (z.B. Trend OK, Liq OK, Nur OK).</li>
-        </ul>
-        <div class="title" style="margin-top:10px;">Signal‑Codes (privat)</div>
-        <ul>
-          <li><b>R5</b> = Strong Buy</li>
-          <li><b>R4</b> = Buy</li>
-          <li><b>R3</b> = Hold</li>
-          <li><b>R2</b> = Reduce</li>
-          <li><b>R1</b> = Sell</li>
-          <li><b>R0</b> = Avoid (z.B. AVOID_CRYPTO_BEAR)</li>
-        </ul>
       </div>
 
       <div class="matrixPanel" id="matrixPanel">
         <div class="matrixLayout">
-          <div>
-            <div class="matrixHead">
-              <div>
-                <div class="matrixTitle">Bucket‑Matrix (Score × Risk)</div>
-                <div class="muted small">Klick auf ein Feld = Matrix‑Filter (zusätzlich zu Preset/Suche/Quick‑Filter).</div>
-              </div>
-              <div style="display:flex; gap:8px; align-items:center;">
-                <button type="button" class="btn" id="matrixClear" title="Matrix‑Filter zurücksetzen">Matrix zurück</button>
-              </div>
-            </div>
-            <div class="matrixGrid" id="matrix"></div>
-            <div class="matrixNote" id="matrixNote">—</div>
-          </div>
-
-          <div class="briefingBox" id="briefingBox">
-            <div class="briefHead">
-              <div class="matrixTitle">Briefing</div>
-              <button type="button" class="btn" id="briefingToggle" title="Briefing ein-/ausblenden">Ausblenden</button>
-            </div>
-            <div class="muted small">Privat/experimentell · keine Anlageberatung · ohne Einfluss aufs Scoring.</div>
-            <div id="briefingText" class="briefingText">—</div>
+  <div class="leftStack">
+    <section class="card" data-panel="bucket">
+      <div class="briefingBox">
+        <div class="cardHeader">
+          <div class="cardTitle">BucketMatrix (Score  Risk)</div>
+          <div class="cardActions">
+            <button type="button" class="btn btnToggle" data-toggle="bucket">Ausblenden</button>
+            <button type="button" class="btn" id="matrixClear" title="MatrixFilter zurücksetzen">Reset</button>
+            <button type="button" class="iBtn" data-help-title="Bucket-Matrix" data-help-html="<ul><li><strong>Achsen:</strong> Score () vs Risk () Verteilung</li><li><strong>Klick:</strong> Setzt Matrix-Filter zusätzlich zu Preset/Suche</li><li><strong>Reset:</strong> Matrix-Filter löschen oder Preset zurücksetzen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
           </div>
         </div>
+        <div class="cardBody" data-body="bucket">
+          <div class="muted small">Klick auf ein Feld = MatrixFilter (zusätzlich zu Preset/Suche/QuickFilter).</div>
+          <div class="matrixGrid" id="matrix"></div>
+          <div class="matrixNote" id="matrixNote"></div>
+        </div>
       </div>
+    </section>
+
+    <section class="card" data-panel="heatmap">
+      <div class="briefingBox" id="heatCardLeft">
+        <div class="cardHeader">
+          <div class="cardTitle">Heatmap</div>
+          <div class="cardActions">
+            <div class="heatControls">
+              <select id="heatMode" title="Heatmap-Modus">
+                <option value="pillar">Heatmap: Säulen</option>
+                <option value="cluster">Heatmap: Cluster</option>
+              </select>
+            </div>
+            <button type="button" class="btn btnToggle" data-toggle="heatmap">Ausblenden</button>
+            <button type="button" class="btn" id="heatmapClear" title="HeatmapFilter zurücksetzen">Reset</button>
+            <button type="button" class="iBtn" data-help-title="Heatmap" data-help-html="<ul><li><strong>Was:</strong> Verteilung nach Score-Buckets</li><li><strong>Klick Zeile:</strong> Filtert Säule/Cluster</li><li><strong>Klick Zelle:</strong> Filtert Zeile + Score-Bucket</li><li><strong>Modus:</strong> Säule/Cluster umschalten</li><li><strong>Reset:</strong> Filter löschen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+          </div>
+        </div>
+        <div class="cardBody" data-body="heatmap">
+          <div class="muted small">Klick auf ein Feld = HeatmapFilter (zusätzlich zu Preset/Suche/QuickFilter).</div>
+          <div id="heatmap" class="heatWrap"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="rightStack">
+    <div class="rightTopGrid">
+      <section class="card" data-panel="briefingReality">
+        <div class="briefingBox" id="briefingRealityBox">
+          <div class="cardHeader">
+            <div class="cardTitle">Briefing & Reality Check</div>
+            <div class="cardActions">
+              <button type="button" class="btn btnToggle" data-toggle="briefingReality">Ausblenden</button>
+              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report)</li><li><strong>Badges:</strong> Score, Percentil, Bucket, Confidence, Trend, Liquidität</li><li><strong>Reality:</strong> Daten-Mapping Check (intern vs. Yahoo/Markt)</li><li><strong>Warn/Error:</strong> Zeigen Datenqualitätsprobleme</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+            </div>
+          </div>
+          <div class="cardBody" data-body="briefingReality">
+            <div class="muted small">Briefing: Privat/experimentell · Reality Check: Daten-/Mapping-Qualität</div>
+            <div class="briefingRealityContent">
+              <div class="briefingRealitySplit">
+                <div class="briefingRealitySection">
+                  <div class="sectionTitle">Briefing</div>
+                  <div id="briefingText" class="briefingText"></div>
+                </div>
+                <div class="briefingRealitySection">
+                  <div class="sectionTitle">Reality Check</div>
+                  <div id="realityText" class="reportText"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" data-panel="segment">
+      <div class="briefingBox segmentBox" id="segmentBox">
+        <div class="cardHeader">
+          <div class="cardTitle">Segment Monitor</div>
+          <div class="cardActions">
+            <button type="button" class="btn btnToggle" data-toggle="segment">Ausblenden</button>
+            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Segment:</strong> Säule/Cluster/Bucket Kombination</li><li><strong>Changed:</strong> Anzahl veränderter Segmente vs. letzter Snapshot</li><li><strong>Snapshot:</strong> Vergleichszeitpunkt</li><li><strong>Shifts:</strong> Zeigen wo sich Cluster neu bilden oder auflösen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+          </div>
+        </div>
+        <div class="cardBody" data-body="segment">
+          <div class="muted small">Säulen/Cluster/Bucket · inkl. nderungen vs. letzter Snapshot.</div>
+          <div id="segmentText" class="reportText"></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
 
 
 <div class="marketPanel" id="marketPanel">
@@ -663,34 +1284,71 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) · Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/Säule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
-      <select id="heatMode" title="Heatmap-Modus">
-        <option value="pillar">Heatmap: Säulen</option>
-        <option value="cluster">Heatmap: Cluster</option>
-      </select>
-      <button type="button" class="btn" id="marketToggle" title="Market Context ein-/ausblenden">Ausblenden</button>
+      <button type="button" class="btn" id="marketToggle" data-action="togglePanel" data-target="market" title="Market Context ein-/ausblenden">Ausblenden</button>
     </div>
   </div>
+
   <div id="marketBody" class="marketGrid">
     <div class="marketCard" id="breadthCard">
-      <div class="marketCardTitle">Breadth</div>
-      <div id="breadthBox">—</div>
+      <div class="marketCardTitle" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <span>Breadth</span>
+        <button type="button" class="iBtn"
+          data-action="help"
+          data-help-title="Breadth"
+          data-help-html="<ul>
+            <li><strong>Median:</strong> typischer Wert.</li>
+            <li><strong>IQR:</strong> Streuung (wie gemischt es ist).</li>
+            <li><strong>Perzentil:</strong> wie weit oben im Feld.</li>
+            <li><strong>Trend OK:</strong> Anteil mit positivem Trend-Flag.</li>
+            <li><strong>Liq OK:</strong> Anteil mit ausreichender Handelbarkeit.</li>
+          </ul>"
+          aria-haspopup="dialog" aria-expanded="false">i</button>
+      </div>
+      <div id="breadthBox"></div>
     </div>
+
     <div class="marketCard" id="moversCard">
-      <div class="marketCardTitle">Movers</div>
+      <div class="marketCardTitle" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <span>Movers</span>
+        <button type="button" class="iBtn"
+          data-action="help"
+          data-help-title="Movers"
+          data-help-html="<ul>
+            <li><strong>Was:</strong> Top/Weak Tages-Performer im aktuellen Universe.</li>
+            <li><strong>1D:</strong> <span class='mono'>Perf %</span> (nur Anzeige/Context).</li>
+            <li><strong>1Y:</strong> falls vorhanden (<span class='mono'>Perf 1Y %</span>), sonst n/a.</li>
+            <li><strong>Segment:</strong> offizielles Cluster/Industry/Sector (gekürzt; Hover zeigt voll).</li>
+          </ul>"
+          aria-haspopup="dialog" aria-expanded="false">i</button>
+      </div>
       <div class="moversGrid">
         <div>
-          <div class="muted small">Top ↑</div>
-          <div id="moversUp" class="moversList">—</div>
+          <div class="muted small">Top </div>
+          <div id="moversUp" class="moversList"></div>
         </div>
         <div>
-          <div class="muted small">Weak ↓</div>
-          <div id="moversDown" class="moversList">—</div>
+          <div class="muted small">Weak </div>
+          <div id="moversDown" class="moversList"></div>
         </div>
       </div>
     </div>
-    <div class="marketCard" id="heatCard">
-      <div class="marketCardTitle">Heatmap</div>
-      <div id="heatmap" class="heatWrap">—</div>
+
+    <div class="marketCard" id="historyCard">
+      <div class="marketCardTitle" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <span>History Delta</span>
+        <button type="button" class="iBtn"
+          data-action="help"
+          data-help-title="History Delta"
+          data-help-html="<ul>
+            <li><strong>Was:</strong> nderungen vs. letzter Snapshot (passiv, kein Einfluss auf Scoring).</li>
+            <li><strong>S:</strong> Score-Delta aus <span class='mono'>history_delta.json</span>.</li>
+            <li><strong>R:</strong> Rank-Delta (falls vorhanden).</li>
+            <li><strong>Filter:</strong> Respektiert das aktuelle Universe (Preset/Suche/Quick/Cluster/Säule).</li>
+          </ul>"
+          aria-haspopup="dialog" aria-expanded="false">i</button>
+      </div>
+      <div class="muted small">Score/Rank-nderungen vs. letzter Snapshot.</div>
+      <div id="historyText" class="reportText"></div>
     </div>
   </div>
 </div>
@@ -702,6 +1360,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <col class="col-name"/>
             <col class="col-price"/>
             <col class="col-score"/>
+            <col class="col-dscore"/>
             <col class="col-conf"/>
             <col class="col-cycle"/>
             <col class="col-trend"/>
@@ -715,6 +1374,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <th data-k="name" title="Name + Kategorie/Land/Währung">Name</th>
               <th data-k="price" class="right" title="Aktueller Kurs (Originalwährung) + Tagesänderung (Perf %)">Kurs</th>
               <th data-k="score" class="right" title="Gesamtscore (höher = besser)">Score</th>
+              <th data-k="dscore_1d" class="hide-sm right" title="ScoreVeränderung vs. letzter Snapshot (History Delta)">dScore 1D</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
@@ -729,7 +1389,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 
       <div class="footer">
         <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung · <span class="kbd">Esc</span> = Suche leeren</div>
-        <div class="mono" id="sortHint">—</div>
+        <div class="mono" id="sortHint"></div>
       </div>
     </div>
   </div>
@@ -738,12 +1398,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     <div class="drawer panel" role="dialog" aria-modal="true" aria-label="Why Score">
       <div class="drawer-head">
         <div>
-          <div id="drawerTitle" style="font-weight:700;">—</div>
-          <div id="drawerSub" class="muted small">—</div>
+          <div id="drawerTitle" style="font-weight:700;"></div>
+          <div id="drawerSub" class="muted small"></div>
         </div>
         <div class="drawer-actions">
           <div id="drawerActions"></div>
-          <button class="btn" id="drawerClose">Schließen</button>
+          <button class="btn" id="drawerClose">Schlieen</button>
         </div>
       </div>
       <div class="drawer-body" id="drawerBody"></div>
@@ -753,6 +1413,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <script id="DATA" type="application/json">__DATA_JSON__</script>
   <script id="PRESETS" type="application/json">__PRESETS_JSON__</script>
   <script id="BRIEFING" type="application/json">__BRIEFING_JSON__</script>
+  <script id="HISTORY_DELTA" type="application/json">__HISTORY_DELTA_JSON__</script>
+  <script id="SEGMENT_MONITOR" type="application/json">__SEGMENT_MONITOR_JSON__</script>
+  <script id="REALITY_CHECK" type="application/json">__REALITY_CHECK_JSON__</script>
+  <script id="BRIEFING_REALITIES" type="application/json">__BRIEFING_REALITIES_JSON__</script>
 
   <script>
   (function() {
@@ -767,17 +1431,17 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     window.__showJsError = show;
     window.addEventListener('error', (ev) => {
       const m = (ev && (ev.message || (ev.error && ev.error.message))) ? (ev.message || ev.error.message) : 'Unbekannter Fehler';
-      show('UI‑Fehler (JS): ' + m);
+      show('UIFehler (JS): ' + m);
     });
     window.addEventListener('unhandledrejection', (ev) => {
       const r = ev && ev.reason;
       const m = (r && r.message) ? r.message : String(r);
-      show('UI‑Fehler (Promise): ' + m);
+      show('UIFehler (Promise): ' + m);
     });
     // If the main UI never sets jsok, show a helpful message (covers parse errors)
     setTimeout(() => {
       const ok = document.documentElement && document.documentElement.dataset && document.documentElement.dataset.jsok;
-      if (!ok) show('UI konnte nicht initialisiert werden (JS lädt nicht). Öffne die Konsole (F12) für Details.');
+      if (!ok) show('UI konnte nicht initialisiert werden (JS lädt nicht). ffne die Konsole (F12) für Details.');
     }, 700);
   })();
   </script>
@@ -788,6 +1452,47 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     const DATA = JSON.parse((document.getElementById('DATA')?.textContent) || '[]');
     const PRESETS = JSON.parse((document.getElementById('PRESETS')?.textContent) || '{}');
     const BRIEFING = JSON.parse((document.getElementById('BRIEFING')?.textContent) || '{"text":""}');
+    const briefing = BRIEFING;
+    const HISTORY_DELTA = JSON.parse((document.getElementById('HISTORY_DELTA')?.textContent) || '{}');
+    const SEGMENT_MONITOR = JSON.parse((document.getElementById('SEGMENT_MONITOR')?.textContent) || '{}');
+    const REALITY_CHECK = JSON.parse((document.getElementById('REALITY_CHECK')?.textContent) || '{}');
+    const BRIEFING_REALITIES = JSON.parse((document.getElementById('BRIEFING_REALITIES')?.textContent) || '{"text":""}');
+    const HD_BY = (HISTORY_DELTA && HISTORY_DELTA.by_symbol) ? HISTORY_DELTA.by_symbol : {};
+
+    // UI State for Multi-Select Filters
+    const uiState = {
+      selPillars: new Set(),
+      selClusters: new Set(),
+      quick: {
+        hideAvoid: true,
+        onlyOK: false,
+        onlyAvoid: false,
+        onlyNA: false,
+        onlyERR: false,
+        trendOK: false,
+        onlyTrendFail: false,
+        liqOK: false,
+        onlyLiqFail: false,
+        onlyStock: false,
+        onlyCrypto: false,
+      },
+    };
+
+    function historyKey(r) {
+      return normStr(r.asset_id) || normStr(r.symbol) || normStr(r.ticker_display) || normStr(r.ticker);
+    }
+
+    function attachDScore(rows) {
+      if (!rows) return rows;
+      for (const r of rows) {
+        const k = historyKey(r);
+        const rec = k ? HD_BY[k] : null;
+        const d = rec ? (rec.score_delta ?? rec.scoreDelta ?? rec.delta ?? null) : null;
+        r.dscore_1d = (d === null || d === undefined) ? null : Number(d);
+      }
+      return rows;
+    }
+
 
     const elPreset = document.getElementById('preset');
     const elSearch = document.getElementById('search');
@@ -818,6 +1523,14 @@ const elHeatMode = document.getElementById('heatMode');
 
     const elBriefing = document.getElementById('briefingText');
     const btnBriefingToggle = document.getElementById('briefingToggle');
+    const elBriefReal = document.getElementById('briefRealText');
+    const btnBriefRealToggle = document.getElementById('briefRealToggle');
+    const elReality = document.getElementById('realityText');
+    const btnRealityToggle = document.getElementById('realityToggle');
+    const elSegment = document.getElementById('segmentText');
+    const btnSegmentToggle = document.getElementById('segmentToggle');
+    const elHistory = document.getElementById('historyText');
+    const btnHistoryToggle = document.getElementById('historyToggle');
     const drawerOverlay = document.getElementById('drawerOverlay');
     const drawerClose = document.getElementById('drawerClose');
     const drawerTitle = document.getElementById('drawerTitle');
@@ -825,10 +1538,7 @@ const elHeatMode = document.getElementById('heatMode');
     const drawerBody = document.getElementById('drawerBody');
     const drawerActions = document.getElementById('drawerActions');
 
-    // Flow info popover (Preset → Quick-Filter)
-    const infoFlow = document.getElementById('infoFlow');
-    const infoPopover = document.getElementById('infoPopover');
-    const infoClose = document.getElementById('infoClose');
+    // Flow info popover (Preset  Quick-Filter) - REMOVED: Now using unified help system
 
     // ---- briefing toggle (UI-only; must not affect scoring) ----
     let briefingVisible = true;
@@ -839,45 +1549,53 @@ const elHeatMode = document.getElementById('heatMode');
         if (btnBriefingToggle) btnBriefingToggle.textContent = on ? 'Ausblenden' : 'Einblenden';
       } catch (e) {}
     }
-    if (btnBriefingToggle) {
-      btnBriefingToggle.addEventListener('click', () => {
-        briefingVisible = !briefingVisible;
-        setBriefingVisible(briefingVisible);
-      });
+    
+
+
+    // ---- passive panels toggles ----
+    function _mkToggle(btn, el, label) {
+      let on = true;
+      function set(on_) {
+        try {
+          on = !!on_;
+          if (el) el.style.display = on ? 'block' : 'none';
+          if (btn) btn.textContent = on ? 'Ausblenden' : 'Einblenden';
+        } catch (e) {}
+      }
+      if (btn) {
+        btn.addEventListener('click', () => set(!on));
+      }
+      return { set };
     }
+
+    const tBriefReal = _mkToggle(btnBriefRealToggle, elBriefReal, 'Briefing & Realities');
+    const tReality = _mkToggle(btnRealityToggle, elReality, 'Reality Check');
+    const tSegment = _mkToggle(btnSegmentToggle, elSegment, 'Segment Monitor');
+    const tHistory = _mkToggle(btnHistoryToggle, elHistory, 'History Delta');
 
 
 
     // ---- state ----
     let activePreset = 'ALL';
     let userSort = null; // {k, dir} dir: 'asc'|'desc'
-    let clusterPick = ''; // Cluster/Sektor filter (string)
-    let pillarPick = '';  // Säulen-Filter (string; private metadata)
+    // Multi-select: use arrays of strings. Ctrl/-Click toggles, normal click selects single.
+    let clusterPick = []; // Cluster/Sektor filter (array)
+        let pillarPick = [];  // Säulen-Filter (array; private metadata)
 
 // Market Context UI state (passive)
 let marketVisible = true;
 let heatMode = 'pillar'; // 'pillar' | 'cluster'
+let heatFilter = { cat: null, sb: null, mode: null };
 
 
     const DEFAULT_SORT = [{k:'score', dir:'desc'},{k:'confidence', dir:'desc'},{k:'name', dir:'asc'}];
 
-    let quick = {
-      hideAvoid: true,
-      onlyOK: false,
-      onlyAvoid: false,
-      onlyNA: false,
-      onlyERR: false,
-      trendOK: false,
-      onlyTrendFail: false,
-      liqOK: false,
-      onlyLiqFail: false,
-      onlyStock: false,
-      onlyCrypto: false,
-    };
+    let quick = uiState.quick;
 
-    // Bucket-matrix filter (Score × Risk)
+    // Bucket-matrix filter (Score  Risk)
     let matrix = { sb: null, rb: null };
     const DEFAULT_MATRIX = { sb: null, rb: null };
+    const DEFAULT_HEAT_FILTER = { cat: null, sb: null, mode: null };
 
     const DEFAULT_QUICK = {
       hideAvoid: true,
@@ -895,6 +1613,11 @@ let heatMode = 'pillar'; // 'pillar' | 'cluster'
 
     const STORAGE_KEY = 'scanner_vnext.ui_state.v1';
 
+    function syncSelectionArrays() {
+      clusterPick = Array.from(uiState.selClusters);
+      pillarPick = Array.from(uiState.selPillars);
+    }
+
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -911,13 +1634,14 @@ let heatMode = 'pillar'; // 'pillar' | 'cluster'
         const st = {
           preset: activePreset,
           search: elSearch ? (elSearch.value || '') : '',
-          quick: quick,
+          quick: uiState.quick,
           matrix: matrix,
           sort: userSort,
-          cluster: clusterPick,
-          pillar: pillarPick,
+          cluster: Array.from(uiState.selClusters),
+          pillar: Array.from(uiState.selPillars),
           marketVisible: marketVisible,
           heatMode: heatMode,
+          heatFilter: heatFilter,
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
       } catch (e) {}
@@ -931,45 +1655,27 @@ let heatMode = 'pillar'; // 'pillar' | 'cluster'
       const fb = document.getElementById('filters');
       if (!fb) return;
       fb.querySelectorAll('button.fbtn').forEach(b => {
-        const kk = b.getAttribute('data-f');
-        if (!kk || kk === 'reset') return;
-        const on = !!quick[kk];
+        const kk = b.getAttribute('data-key');
+        if (!kk) return;
+        const on = !!uiState.quick[kk];
         if (on) b.classList.add('active'); else b.classList.remove('active');
       });
     }
 
     
 
-    // KPI chips: click to toggle quick-filters (intuitive)
-    if (elKpis) {
-      elKpis.addEventListener('click', (ev) => {
-        const t = ev.target;
-        if (!(t instanceof HTMLElement)) return;
-        const k = t.getAttribute('data-kpi');
-        if (!k) return;
-        ev.preventDefault();
-        toggleKpi(k);
-      });
-      elKpis.addEventListener('keydown', (ev) => {
-        const t = ev.target;
-        if (!(t instanceof HTMLElement)) return;
-        const k = t.getAttribute('data-kpi');
-        if (!k) return;
-        if (ev.key === 'Enter' || ev.key === ' ') {
-          ev.preventDefault();
-          toggleKpi(k);
-        }
-      });
-    }
-function resetAll() {
+      function resetAll() {
       activePreset = (PRESETS && PRESETS.ALL) ? 'ALL' : ((PRESETS && PRESETS.CORE) ? 'CORE' : (Object.keys(PRESETS || {})[0] || 'CORE'));
       userSort = null;
-      quick = Object.assign({}, DEFAULT_QUICK);
+      uiState.quick = Object.assign({}, DEFAULT_QUICK);
+      quick = uiState.quick;
+      uiState.selPillars.clear();
+      uiState.selClusters.clear();
       matrix = Object.assign({}, DEFAULT_MATRIX);
+      heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER);
       if (elSearch) elSearch.value = '';
-      clusterPick = '';
+      syncSelectionArrays();
       if (elClusterSel) elClusterSel.value = '';
-      pillarPick = '';
       if (elPillarSel) elPillarSel.value = '';
       if (elPreset) elPreset.value = activePreset;
       syncFilterButtons();
@@ -977,38 +1683,7 @@ function resetAll() {
       refresh();
     }
 
-    // ---- info popover (Preset → Quick-Filter) ----
-    function closeInfoPopover() {
-      if (!infoPopover) return;
-      infoPopover.classList.remove('show');
-      infoPopover.setAttribute('aria-hidden', 'true');
-      if (infoFlow) infoFlow.setAttribute('aria-expanded', 'false');
-    }
-
-    function openInfoPopover() {
-      if (!infoPopover || !infoFlow) return;
-      infoPopover.classList.add('show');
-      infoPopover.setAttribute('aria-hidden', 'false');
-      infoFlow.setAttribute('aria-expanded', 'true');
-
-      // position under the button
-      const r = infoFlow.getBoundingClientRect();
-      const pad = 12;
-      // ensure we can measure width
-      const w = infoPopover.offsetWidth || 360;
-      const leftMax = window.scrollX + window.innerWidth - w - pad;
-      const left = Math.max(window.scrollX + pad, Math.min(window.scrollX + r.left, leftMax));
-      const top = window.scrollY + r.bottom + 8;
-      infoPopover.style.left = `${left}px`;
-      infoPopover.style.top = `${top}px`;
-    }
-
-    function toggleInfoPopover() {
-      if (!infoPopover) return;
-      const open = infoPopover.classList.contains('show');
-      if (open) closeInfoPopover();
-      else openInfoPopover();
-    }
+    // ---- info popover (Preset  Quick-Filter) - REMOVED: Now using unified help system
 
     // Try restoring last UI state
     (function restoreState() {
@@ -1022,12 +1697,25 @@ function resetAll() {
         elSearch.value = (st.search || '').toString();
       }
 
+      // cluster/pillar can be stored as string (legacy) or array (multi-select)
       if (st.cluster !== undefined && st.cluster !== null) {
-        clusterPick = (st.cluster || '').toString();
+        if (Array.isArray(st.cluster)) {
+          clusterPick = st.cluster.map(x => (x ?? '').toString().trim()).filter(Boolean);
+        } else {
+          const s = (st.cluster || '').toString().trim();
+          clusterPick = s ? [s] : [];
+        }
+        uiState.selClusters = new Set(clusterPick);
       }
 
       if (st.pillar !== undefined && st.pillar !== null) {
-        pillarPick = (st.pillar || '').toString();
+        if (Array.isArray(st.pillar)) {
+          pillarPick = st.pillar.map(x => (x ?? '').toString().trim()).filter(Boolean);
+        } else {
+          const s = (st.pillar || '').toString().trim();
+          pillarPick = s ? [s] : [];
+        }
+        uiState.selPillars = new Set(pillarPick);
       }
 
 if (st.marketVisible !== undefined && st.marketVisible !== null) {
@@ -1041,12 +1729,24 @@ if (st.heatMode !== undefined && st.heatMode !== null) {
 
       if (st.quick && typeof st.quick === 'object') {
         quick = Object.assign({}, DEFAULT_QUICK, st.quick);
+        uiState.quick = quick;
       }
 
       if (st.matrix && typeof st.matrix === 'object') {
         const sb = (st.matrix.sb === null || st.matrix.sb === undefined) ? null : Number(st.matrix.sb);
         const rb = (st.matrix.rb === null || st.matrix.rb === undefined) ? null : Number(st.matrix.rb);
         matrix = Object.assign({}, DEFAULT_MATRIX, {sb: Number.isFinite(sb) ? sb : null, rb: Number.isFinite(rb) ? rb : null});
+      }
+
+      if (st.heatFilter && typeof st.heatFilter === 'object') {
+        const cat = (st.heatFilter.cat ?? '').toString().trim() || null;
+        const sb = (st.heatFilter.sb === null || st.heatFilter.sb === undefined) ? null : Number(st.heatFilter.sb);
+        const mode = (st.heatFilter.mode ?? '').toString();
+        heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER, {
+          cat,
+          sb: Number.isFinite(sb) ? sb : null,
+          mode: (mode === 'cluster' || mode === 'pillar') ? mode : null,
+        });
       }
 
       if (st.sort && typeof st.sort === 'object' && st.sort.k) {
@@ -1069,18 +1769,12 @@ function setMarketVisible(on) {
 if (elHeatMode) elHeatMode.value = heatMode;
 setMarketVisible(marketVisible);
 
-if (btnMarketToggle) {
-  btnMarketToggle.addEventListener('click', () => {
-    marketVisible = !marketVisible;
-    setMarketVisible(marketVisible);
-    saveState();
-  });
-}
 
 if (elHeatMode) {
   elHeatMode.addEventListener('change', () => {
     const v = (elHeatMode.value || '').toString();
     heatMode = (v === 'cluster' || v === 'pillar') ? v : heatMode;
+    heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER);
     saveState();
     refresh();
   });
@@ -1141,7 +1835,7 @@ function computeClusterCounts(rows) {
 
 function renderClusterOptions(counts) {
   if (!elClusterSel) return;
-  const cur = clusterPick || '';
+  const cur = (Array.isArray(clusterPick) ? (clusterPick.length===1 ? clusterPick[0] : '') : (clusterPick || '') ) || '';
   elClusterSel.innerHTML = '';
   const opt0 = document.createElement('option');
   opt0.value = '';
@@ -1159,27 +1853,33 @@ function renderClusterOptions(counts) {
 function renderClusterChips(counts) {
   if (!elClusters) return;
   const top = (counts || []).slice(0, 12);
-  const active = clusterPick || '';
+  const activeSet = uiState.selClusters;
   let html = '<span class="label">Cluster:</span>';
-  if (active) {
-    html += `<button type="button" class="chip kpi warn active" data-clr="1" title="Cluster-Filter löschen">✕ ${esc(active)}</button>`;
+  
+  // "Alle" chip
+  const allActive = activeSet.size === 0;
+  html += `<button type="button" class="chip kpi ${allActive ? 'blue active' : 'blue'}" data-chip="cluster" data-val="__ALL__" title="Alle Cluster anzeigen">Alle</button>`;
+  
+  if (activeSet.size) {
+    const label = activeSet.size + ' selected';
+    const tip = Array.from(activeSet).join(', ');
+    html += `<button type="button" class="chip kpi warn active" data-chip="cluster" data-val="__CLEAR__" title="Cluster-Filter löschen: ${esc(tip)}"> ${esc(label)}</button>`;
   }
   for (const x of top) {
-    const isOn = active && x.k === active;
+    const isOn = activeSet.has(x.k);
     const kind = isOn ? 'warn active' : 'blue';
-    html += `<button type="button" class="chip kpi ${kind}" data-cl="${esc(x.k)}" title="Filter: nur Cluster ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
+    html += `<button type="button" class="chip kpi ${kind}" data-chip="cluster" data-val="${esc(x.k)}" title="Filter: nur Cluster ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
-  if (!top.length) html += '<span class="muted">—</span>';
+  if (!top.length) html += '<span class="muted"></span>';
   elClusters.innerHTML = html;
 }
 
 function applyClusterFilter(rows) {
-  const sel = (clusterPick || '').toString().trim();
-  if (!sel) return rows;
-  return (rows || []).filter(r => clusterLabel(r) === sel);
+  if (uiState.selClusters.size === 0) return rows;
+  return (rows || []).filter(r => uiState.selClusters.has(clusterLabel(r)));
 }
 
-// ---- 5‑Säulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
+// ---- 5Säulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
 const PILLAR_ORDER = ['Gehirn','Hardware','Energie','Fundament','Recycling','Playground'];
 
 function _derivePillarFromLegacy(catRaw) {
@@ -1194,9 +1894,9 @@ function _derivePillarFromLegacy(catRaw) {
   if (s.includes('energie') || s.includes('uran')) return 'Energie';
   if (s.includes('fundament')) return 'Fundament';
   if (s.includes('recycling') || s.includes('urban mining') || s.includes('urban-mining')) return 'Recycling';
-  // legacy mining buckets → Fundament
+  // legacy mining buckets  Fundament
   if (s.includes('mining') || s.includes('mine') || s.includes('edelmetall') || s.includes('metall') || s.includes('rohstoff')) return 'Fundament';
-  // ambiguous tech buckets → Gehirn (default), hardware-specific keywords → Hardware
+  // ambiguous tech buckets  Gehirn (default), hardware-specific keywords  Hardware
   if (s.includes('robot') || s.includes('automation') || s.includes('sensor') || s.includes('vision') || s.includes('machine')) return 'Hardware';
   if (s.includes('software') || s.includes('internet') || s.includes('ki') || s.includes('ai') || s.includes('data') || s.includes('cloud') || s.includes('chip') || s.includes('semiconductor')) return 'Gehirn';
   return '';
@@ -1226,7 +1926,7 @@ function computePillarCounts(rows) {
 
 function renderPillarOptions(counts) {
   if (!elPillarSel) return;
-  const cur = pillarPick || '';
+  const cur = (Array.isArray(pillarPick) ? (pillarPick.length===1 ? pillarPick[0] : '') : (pillarPick || '') ) || '';
   elPillarSel.innerHTML = '';
   const opt0 = document.createElement('option');
   opt0.value = '';
@@ -1244,24 +1944,30 @@ function renderPillarOptions(counts) {
 
 function renderPillarChips(counts) {
   if (!elPillars) return;
-  const active = pillarPick || '';
+  const activeSet = uiState.selPillars;
   let html = '<span class="label">Säulen:</span>';
-  if (active) {
-    html += `<button type="button" class="chip kpi warn active" data-pr="1" title="Säulen-Filter löschen">✕ ${esc(active)}</button>`;
+  
+  // "Alle" chip
+  const allActive = activeSet.size === 0;
+  html += `<button type="button" class="chip kpi ${allActive ? 'blue active' : 'blue'}" data-chip="pillar" data-val="__ALL__" title="Alle Säulen anzeigen">Alle</button>`;
+  
+  if (activeSet.size) {
+    const label = activeSet.size + ' selected';
+    const tip = Array.from(activeSet).join(', ');
+    html += `<button type="button" class="chip kpi warn active" data-chip="pillar" data-val="__CLEAR__" title="Säulen-Filter löschen: ${esc(tip)}"> ${esc(label)}</button>`;
   }
   for (const x of (counts || [])) {
-    const isOn = active && x.k === active;
+    const isOn = activeSet.has(x.k);
     const kind = isOn ? 'warn active' : 'blue';
     const dis = (x.v || 0) <= 0 ? 'disabled aria-disabled="true"' : '';
-    html += `<button type="button" class="chip kpi ${kind}" data-p="${esc(x.k)}" ${dis} title="Filter: nur Säule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
+    html += `<button type="button" class="chip kpi ${kind}" data-chip="pillar" data-val="${esc(x.k)}" ${dis} title="Filter: nur Säule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
   elPillars.innerHTML = html;
 }
 
 function applyPillarFilter(rows) {
-  const sel = (pillarPick || '').toString().trim();
-  if (!sel) return rows;
-  return (rows || []).filter(r => pillarLabel(r) === sel);
+  if (uiState.selPillars.size === 0) return rows;
+  return (rows || []).filter(r => uiState.selPillars.has(pillarLabel(r)));
 }
 
     function percentileRank(sorted, v) {
@@ -1312,7 +2018,7 @@ function applyPillarFilter(rows) {
     function bucketRange(i) {
       const a = i * 20;
       const b = (i === 4) ? 100 : (i + 1) * 20;
-      return `${a}–${b}`;
+      return `${a}${b}`;
     }
     function scoreBucketText(i) {
       return { range: bucketRange(i), hint: 'Score' };
@@ -1324,7 +2030,7 @@ function applyPillarFilter(rows) {
 
 
     function fmtPrice(n) {
-      if (n === null || n === undefined) return '—';
+      if (n === null || n === undefined) return '';
       const ax = Math.abs(n);
       let maxFrac = 2;
       if (ax < 1) maxFrac = 4;
@@ -1337,9 +2043,9 @@ function applyPillarFilter(rows) {
     }
 
     function perfLine(p) {
-      if (p === null || p === undefined) return '<div class="sub muted">—</div>';
+      if (p === null || p === undefined) return '<div class="sub muted"></div>';
       const dir = (p > 0) ? 'pos' : (p < 0) ? 'neg' : 'flat';
-      const arrow = (p > 0) ? '▲' : (p < 0) ? '▼' : '•';
+      const arrow = (p > 0) ? '' : (p < 0) ? '' : '';
       return `<div class="sub chg ${dir}">${arrow} ${p.toFixed(2)}%</div>`;
     }
 
@@ -1400,7 +2106,7 @@ function applyPillarFilter(rows) {
         if (pair && pair.includes('-')) return pair.split('-')[0];
         const s = normStr(r.symbol) || normStr(r.Symbol);
         if (s && !looksLikeISIN(s)) return s;
-        return pair || pickDisplayTicker(r) || '—';
+        return pair || pickDisplayTicker(r) || '';
       }
       const s = normStr(r.symbol) || normStr(r.Symbol);
       if (s && !looksLikeISIN(s)) return s;
@@ -1410,7 +2116,7 @@ function applyPillarFilter(rows) {
       if (yh && !looksLikeISIN(yh)) return yh;
       const t = normStr(r.ticker);
       if (t && !looksLikeISIN(t)) return t;
-      return '—';
+      return '';
     }
 
 
@@ -1461,8 +2167,16 @@ function applyPillarFilter(rows) {
     function scoreCell(r) {
       const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
-      const sig = rec ? `<span class="sig ${rec.cls}" title="Signal‑Code">${esc(rec.code)}</span>` : '';
+      const sig = rec ? `<span class="sig ${rec.cls}" title="SignalCode">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
+    }
+
+    function dScoreCell(r) {
+      const d = asNum(r.dscore_1d);
+      if (d === null) return '<span class="muted"></span>';
+      const sign = d > 0 ? '+' : '';
+      const cls = d > 0 ? 'deltaUp' : (d < 0 ? 'deltaDown' : 'deltaFlat');
+      return `<span class="mono ${cls}">${sign}${d.toFixed(2)}</span>`;
     }
 
     // ---- preset logic (mirrors scanner.presets.apply) ----
@@ -1572,7 +2286,7 @@ function applyPillarFilter(rows) {
     function applySearch(rows, q) {
       q = (q || '').trim().toLowerCase();
       if (!q) return rows;
-      const tokens = q.split(/\s+/).filter(Boolean);
+      const tokens = q.split(/\\s+/).filter(Boolean);
       return rows.filter(r => {
         const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["Währung"], r.quote_currency, r.score_status]
           .map(normStr).join(' ').toLowerCase();
@@ -1612,7 +2326,7 @@ function applyPillarFilter(rows) {
       // KPI chips double as quick filters (intuitive). Preset applies first, then search, then quick filters.
       elKpis.innerHTML =
         `<span class="label">KPI</span>`
-        + kpiChip(`Sichtbar ${v.total}/${a.total}`, 'blue', 'Sichtbar nach Preset → Suche → Quick-Filter / Gesamt', '', false)
+        + kpiChip(`Sichtbar ${v.total}/${a.total}`, 'blue', 'Sichtbar nach Preset  Suche  Quick-Filter / Gesamt', '', false)
         + kpiChip(`OK ${v.ok}`, 'good', 'Filter: nur score_status == OK', 'ok', !!quick.onlyOK)
         + kpiChip(`AVOID ${v.avoid}`, 'warn', 'Filter: nur score_status beginnt mit AVOID_', 'avoid', !!quick.onlyAvoid)
         + kpiChip(`NA ${v.na}`, 'bad', 'Filter: nur score_status == NA', 'na', !!quick.onlyNA)
@@ -1624,38 +2338,73 @@ function applyPillarFilter(rows) {
     }
 
     
-    function toggleKpi(key) {
+    function toggleKpi(key, multiSelect = false) {
       key = (key || '').toString();
-      // mutually exclusive groups
-      const clearStatus = () => { quick.onlyOK=false; quick.onlyAvoid=false; quick.onlyNA=false; quick.onlyERR=false; };
-      const clearTrend = () => { quick.trendOK=false; quick.onlyTrendFail=false; };
-      const clearLiq = () => { quick.liqOK=false; quick.onlyLiqFail=false; };
+      
+      // For multi-select mode, don't clear other filters in the same group
+      if (!multiSelect) {
+        // mutually exclusive groups (normal click)
+        const clearStatus = () => { quick.onlyOK=false; quick.onlyAvoid=false; quick.onlyNA=false; quick.onlyERR=false; };
+        const clearTrend = () => { quick.trendOK=false; quick.onlyTrendFail=false; };
+        const clearLiq = () => { quick.liqOK=false; quick.onlyLiqFail=false; };
+      }
 
       if (key === 'ok') {
-        const nv = !quick.onlyOK;
-        clearStatus();
-        quick.onlyOK = nv;
+        if (multiSelect) {
+          quick.onlyOK = !quick.onlyOK;
+        } else {
+          const nv = !quick.onlyOK;
+          const clearStatus = () => { quick.onlyOK=false; quick.onlyAvoid=false; quick.onlyNA=false; quick.onlyERR=false; };
+          clearStatus();
+          quick.onlyOK = nv;
+        }
       } else if (key === 'avoid') {
-        const nv = !quick.onlyAvoid;
-        clearStatus();
-        quick.onlyAvoid = nv;
-        if (nv) quick.hideAvoid = false; // show avoid when filtering for it
+        if (multiSelect) {
+          quick.onlyAvoid = !quick.onlyAvoid;
+          if (quick.onlyAvoid) quick.hideAvoid = false; // show avoid when filtering for it
+        } else {
+          const nv = !quick.onlyAvoid;
+          const clearStatus = () => { quick.onlyOK=false; quick.onlyAvoid=false; quick.onlyNA=false; quick.onlyERR=false; };
+          clearStatus();
+          quick.onlyAvoid = nv;
+          if (nv) quick.hideAvoid = false; // show avoid when filtering for it
+        }
       } else if (key === 'na') {
-        const nv = !quick.onlyNA;
-        clearStatus();
-        quick.onlyNA = nv;
+        if (multiSelect) {
+          quick.onlyNA = !quick.onlyNA;
+        } else {
+          const nv = !quick.onlyNA;
+          const clearStatus = () => { quick.onlyOK=false; quick.onlyAvoid=false; quick.onlyNA=false; quick.onlyERR=false; };
+          clearStatus();
+          quick.onlyNA = nv;
+        }
       } else if (key === 'err') {
-        const nv = !quick.onlyERR;
-        clearStatus();
-        quick.onlyERR = nv;
+        if (multiSelect) {
+          quick.onlyERR = !quick.onlyERR;
+        } else {
+          const nv = !quick.onlyERR;
+          const clearStatus = () => { quick.onlyOK=false; quick.onlyAvoid=false; quick.onlyNA=false; quick.onlyERR=false; };
+          clearStatus();
+          quick.onlyERR = nv;
+        }
       } else if (key === 'trendFail') {
-        const nv = !quick.onlyTrendFail;
-        clearTrend();
-        quick.onlyTrendFail = nv;
+        if (multiSelect) {
+          quick.onlyTrendFail = !quick.onlyTrendFail;
+        } else {
+          const nv = !quick.onlyTrendFail;
+          const clearTrend = () => { quick.trendOK=false; quick.onlyTrendFail=false; };
+          clearTrend();
+          quick.onlyTrendFail = nv;
+        }
       } else if (key === 'liqFail') {
-        const nv = !quick.onlyLiqFail;
-        clearLiq();
-        quick.onlyLiqFail = nv;
+        if (multiSelect) {
+          quick.onlyLiqFail = !quick.onlyLiqFail;
+        } else {
+          const nv = !quick.onlyLiqFail;
+          const clearLiq = () => { quick.liqOK=false; quick.onlyLiqFail=false; };
+          clearLiq();
+          quick.onlyLiqFail = nv;
+        }
       } else if (key === 'stock') {
         quick.onlyStock = !quick.onlyStock;
         if (quick.onlyStock) quick.onlyCrypto = false;
@@ -1675,25 +2424,25 @@ function applyQuickFilters(rows) {
         const isAvoid = isAvoidStatus(status);
 
         // status-only filters (from KPI chips)
-        if (quick.onlyOK && status !== 'OK') return false;
-        if (quick.onlyAvoid && !isAvoid) return false;
-        if (quick.onlyNA && status !== 'NA') return false;
-        if (quick.onlyERR && status !== 'ERROR') return false;
+        if (uiState.quick.onlyOK && status !== 'OK') return false;
+        if (uiState.quick.onlyAvoid && !isAvoid) return false;
+        if (uiState.quick.onlyNA && status !== 'NA') return false;
+        if (uiState.quick.onlyERR && status !== 'ERROR') return false;
 
         // Hide AVOID applies only when we're not explicitly filtering for AVOID
-        if (quick.hideAvoid && !quick.onlyAvoid && isAvoid) return false;
+        if (uiState.quick.hideAvoid && !uiState.quick.onlyAvoid && isAvoid) return false;
 
         // pass/fail filters
-        if (quick.trendOK && asBool(r.trend_ok) !== true) return false;
-        if (quick.onlyTrendFail && asBool(r.trend_ok) !== false) return false;
+        if (uiState.quick.trendOK && asBool(r.trend_ok) !== true) return false;
+        if (uiState.quick.onlyTrendFail && asBool(r.trend_ok) !== false) return false;
 
-        if (quick.liqOK && asBool(r.liquidity_ok) !== true) return false;
-        if (quick.onlyLiqFail && asBool(r.liquidity_ok) !== false) return false;
+        if (uiState.quick.liqOK && asBool(r.liquidity_ok) !== true) return false;
+        if (uiState.quick.onlyLiqFail && asBool(r.liquidity_ok) !== false) return false;
 
         // class filters
         const isCrypto = asBool(r.is_crypto) === true;
-        if (quick.onlyCrypto && !isCrypto) return false;
-        if (quick.onlyStock && isCrypto) return false;
+        if (uiState.quick.onlyCrypto && !isCrypto) return false;
+        if (uiState.quick.onlyStock && isCrypto) return false;
         return true;
       });
     }
@@ -1713,7 +2462,7 @@ function applyQuickFilters(rows) {
       if (!elMatrix) return;
 
       // Grid layout: rows = Risk buckets (y), cols = Score buckets (x)
-      const counts = Array.from({length: 5}, () => Array(5).fill(0)); // [rb][sb]
+      const counts = Array.from({length:5}, () => Array(5).fill(0)); // [rb][sb]
       for (const r of rows) {
         const sb = scoreBucket(r.score);
         const rb = riskBucket(r.risk_pctl);
@@ -1722,15 +2471,15 @@ function applyQuickFilters(rows) {
 
       const parts = [];
       // header row: Score buckets (x). Corner shows axis directions.
-      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y) × Score (x)"><div class="lbl">Risk ↓</div><div class="hint">Score →</div></div>`);
+      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y)  Score (x)"><div class="lbl">Risk </div><div class="hint">Score </div></div>`);
       for (let sb = 0; sb < 5; sb++) {
         const s = scoreBucketText(sb);
-        parts.push(`<div class="matrixLabel" title="Score‑Bucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="ScoreBucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
       }
 
       for (let rb = 0; rb < 5; rb++) {
         const rtxt = riskBucketText(rb);
-        parts.push(`<div class="matrixLabel" title="Risk‑Bucket (Perzentil; höher = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="RiskBucket (Perzentil; höher = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
         for (let sb = 0; sb < 5; sb++) {
           const c = counts[rb][sb] || 0;
           const active = (matrix && matrix.sb === sb && matrix.rb === rb) ? 'active' : '';
@@ -1752,7 +2501,7 @@ function applyQuickFilters(rows) {
 
       elMatrix.innerHTML = parts.join('');
 
-      // Click → toggle matrix filter
+      // Click  toggle matrix filter
       elMatrix.querySelectorAll('.cell').forEach(cell => {
         cell.addEventListener('click', () => {
           if (cell.classList.contains('zero')) return;
@@ -1771,8 +2520,8 @@ function applyQuickFilters(rows) {
       const sb = (matrix && matrix.sb !== undefined) ? matrix.sb : null;
       const rb = (matrix && matrix.rb !== undefined) ? matrix.rb : null;
       if (elMatrixNote) {
-        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'Risk‑Proxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'Risk‑Proxy fehlt (keine Risk‑Spalten im CSV)';
-        const sel = (sb !== null && rb !== null) ? ` · aktiv: Score ${bucketRange(sb)} × ${riskBucketText(rb).hint}` : '';
+        const metric = (RISK_SORTED && RISK_SORTED.length) ? 'RiskProxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'RiskProxy fehlt (keine RiskSpalten im CSV)';
+        const sel = (sb !== null && rb !== null) ? ` · aktiv: Score ${bucketRange(sb)}  ${riskBucketText(rb).hint}` : '';
         elMatrixNote.textContent = metric + sel;
       }
     }
@@ -1783,7 +2532,7 @@ function parsePct(v) {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   let s = String(v).trim();
   if (!s) return null;
-  s = s.replace('%','').replace(/\s+/g,'').replace(',', '.');
+  s = s.replace('%','').replace(/\\s+/g,'').replace(',', '.');
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
@@ -1795,70 +2544,233 @@ function perfPct(r) {
 }
 
 function fmtPct(v) {
-  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+  if (v === null || v === undefined || !Number.isFinite(v)) return '';
   const s = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
   return s;
 }
 
 function renderBreadth(rows) {
   if (!elBreadthBox) return;
+
+  const list = rows || [];
+  const n = list.length;
   let adv = 0, dec = 0, flat = 0, miss = 0;
-  for (const r of rows || []) {
+  let basisPerfPct = 0;
+
+  for (const r of list) {
+    const raw = (r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct);
+    if (raw !== null && raw !== undefined && raw !== '') basisPerfPct += 1;
     const p = perfPct(r);
     if (p === null) { miss++; continue; }
     if (p > 0) adv++;
     else if (p < 0) dec++;
     else flat++;
   }
+
   const tot = adv + dec + flat;
-  if (!tot) {
-    elBreadthBox.innerHTML = `<div class="muted">Keine verwertbare Tagesänderung (Perf %) im aktuellen Universe.</div>`;
-    return;
+  const pct = (x, d) => d ? Math.round((x / d) * 10000) / 100 : 0;
+  const advPct = pct(adv, tot);
+
+  let regime = 'Gemischt';
+  let regimeClass = 'mixed';
+  let sayToday = 'Heute ist das Bild gemischt, weder Gewinner noch Verlierer dominieren klar.';
+  if (tot > 0 && advPct >= 60) {
+    regime = 'Risk-On';
+    regimeClass = 'riskOn';
+    sayToday = 'Heute berwiegen Gewinner, das Umfeld wirkt freundlich.';
+  } else if (tot > 0 && advPct <= 40) {
+    regime = 'Risk-Off';
+    regimeClass = 'riskOff';
+    sayToday = 'Heute berwiegen Verlierer, das Umfeld wirkt vorsichtig.';
+  } else if (tot === 0) {
+    sayToday = 'Heute fehlen genug Perf%-Daten fr ein klares Tagesbild.';
   }
-  const pct = (x) => (tot ? Math.round((x / tot) * 100) : 0);
 
-  const row = `
-    <div class="breadthRow">
-      ${chip(`Adv ${adv} (${pct(adv)}%)`, adv ? 'good' : 'blue')}
-      ${chip(`Dec ${dec} (${pct(dec)}%)`, dec ? 'bad' : 'blue')}
-      ${chip(`Flat ${flat}`, flat ? 'blue' : 'blue')}
-      ${miss ? chip(`n/a ${miss}`, 'warn') : ''}
+  function quantile(sorted, q) {
+    if (!sorted.length) return null;
+    const pos = (sorted.length - 1) * q;
+    const base = Math.floor(pos);
+    const rest = pos - base;
+    if (sorted[base + 1] === undefined) return sorted[base];
+    return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+  }
+  function medIqr(values) {
+    const a = values.filter(Number.isFinite).slice().sort((x, y) => x - y);
+    if (!a.length) return { med: null, iqr: null };
+    const q25 = quantile(a, 0.25);
+    const q50 = quantile(a, 0.50);
+    const q75 = quantile(a, 0.75);
+    return { med: q50, iqr: (q75 !== null && q25 !== null) ? (q75 - q25) : null };
+  }
+
+  const scores = list.map(r => asNum(r.score)).filter(Number.isFinite);
+  const confs = list.map(r => asNum(r.confidence ?? r.conf ?? r.konf)).filter(Number.isFinite);
+  const sm = medIqr(scores);
+  const cm = medIqr(confs);
+
+  let trendOk = 0, liqOk = 0, topPctl = 0;
+  for (const r of list) {
+    if (asBool(r.trend_ok) === true) trendOk++;
+    if (asBool(r.liquidity_ok) === true) liqOk++;
+    const sp = asNum(r.score_pctl);
+    if (Number.isFinite(sp) && sp >= 90) topPctl++;
+  }
+
+  function topKey(getLabel) {
+    const m = new Map();
+    for (const r of list) {
+      const k = normStr(getLabel(r));
+      if (!k) continue;
+      m.set(k, (m.get(k) || 0) + 1);
+    }
+    let best = null;
+    let bestN = 0;
+    for (const [k, v] of m.entries()) {
+      if (v > bestN) { best = k; bestN = v; }
+    }
+    return best ? `${best} (${bestN})` : null;
+  }
+  const topPillar = topKey(r => pillarLabel(r));
+  const topCluster = topKey(r => clusterLabel(r));
+
+  elBreadthBox.innerHTML = `
+    <div class="breadthLvl1">
+      <div class="breadthHeadline">
+        <span class="ampel ${regimeClass}" aria-hidden="true"></span>
+        <span>${esc(regime)}</span>
+        <span class="breadthPct">Adv ${tot ? advPct.toFixed(2) : '0.00'}%</span>
+      </div>
+      <div class="breadthRow">
+        ${chip(`Gewinner ${adv}`, adv ? 'good' : 'blue')}
+        ${chip(`Verlierer ${dec}`, dec ? 'bad' : 'blue')}
+        ${chip(`Neutral ${flat}`, 'blue')}
+        ${miss ? chip(`n/a ${miss}`, 'warn') : ''}
+      </div>
+      <div class="muted small">Was heit das heute? ${esc(sayToday)}</div>
     </div>
-    <div class="muted small">Basis: <span class="mono">perf_pct / Perf %</span> (nur Anzeige/Context).</div>
-  `;
-  elBreadthBox.innerHTML = row;
-}
 
+    <details class="breadthDetails">
+      <summary class="breadthSummary">Mehr Details</summary>
+      <div class="breadthDetailsBody">
+        <div>
+          <div class="muted small">Warum/Kontext</div>
+          <div class="breadthRow">
+            ${chip(`Strkste Sule ${topPillar || ''}`, 'blue')}
+            ${chip(`Strkstes Cluster ${topCluster || ''}`, 'blue')}
+          </div>
+        </div>
+
+        <div>
+          <div class="muted small">Handelbarkeit</div>
+          <div class="breadthRow">
+            ${chip(`Trend OK ${pct(trendOk, n).toFixed(2)}%`, 'blue')}
+            ${chip(`Liq OK ${pct(liqOk, n).toFixed(2)}%`, 'blue')}
+            ${chip(`N ${n}`, 'blue')}
+          </div>
+        </div>
+
+        <div>
+          <div class="muted small">Kandidaten</div>
+          <div class="breadthRow">
+            ${chip(`Top-Anteil ${pct(topPctl, n).toFixed(2)}%`, 'blue')}
+            ${chip(`Basis Perf% ${basisPerfPct}/${n}`, 'blue')}
+          </div>
+        </div>
+
+        <div>
+          <div class="muted small">Qualitt</div>
+          <div class="breadthRow">
+            ${chip(`Typische Qualitt ${sm.med !== null ? sm.med.toFixed(1) : ''}`, 'blue')}
+            ${chip(`Streuung ${sm.iqr !== null ? sm.iqr.toFixed(1) : ''}`, 'blue')}
+            ${chip(`Daten-Vertrauen typisch ${cm.med !== null ? cm.med.toFixed(1) : ''}`, 'blue')}
+            ${chip(`Vertrauen Streuung ${cm.iqr !== null ? cm.iqr.toFixed(1) : ''}`, 'blue')}
+          </div>
+        </div>
+      </div>
+    </details>
+  `;
+}
 function renderMovers(rows) {
   if (!elMoversUp || !elMoversDown) return;
+
+  function perf1yPct(r) {
+    return parsePct(
+      r.perf_1y ?? r.perf1y ?? r.perf_1yr ?? r.perf_1year ?? r['Perf 1Y %'] ?? r['Perf 1Y'] ??
+      r.change_1y_pct ?? r.change1y_pct ?? r.yoy_pct ?? r.perf_year
+    );
+  }
 
   const arr = [];
   for (const r of rows || []) {
     const p = perfPct(r);
     if (p === null) continue;
-    arr.push({r, p});
+    arr.push({ r, p, y: perf1yPct(r) });
   }
+
   if (!arr.length) {
-    elMoversUp.innerHTML = `<span class="muted">—</span>`;
-    elMoversDown.innerHTML = `<span class="muted">—</span>`;
+    elMoversUp.innerHTML = `<span class="muted"></span>`;
+    elMoversDown.innerHTML = `<span class="muted"></span>`;
     return;
   }
 
-  const up = arr.slice().sort((a,b) => b.p - a.p).filter(x => x.p > 0).slice(0, 8);
-  const dn = arr.slice().sort((a,b) => a.p - b.p).filter(x => x.p < 0).slice(0, 8);
+  const up = arr.slice().sort((a,b) => b.p - a.p).filter(x => x.p > 0).slice(0, 10);
+  const dn = arr.slice().sort((a,b) => a.p - b.p).filter(x => x.p < 0).slice(0, 10);
+
+  function segShort(r) {
+    const full = normStr(clusterLabel(r)) || (asBool(r.is_crypto) === true ? 'Krypto' : '');
+    if (!full) return { short: '', full: '' };
+    
+    // Kürzere Abkürzungen für schmale Pills (ca. 8-10 Zeichen)
+    const words = full.split(' ');
+    let short = '';
+    
+    if (words.length >= 2) {
+      // Erste Buchstaben der ersten 2 Worte (z.B. "Internet Content" -> "IC")
+      short = words.slice(0, 2).map(w => w.charAt(0)).join('');
+    } else if (words.length === 1) {
+      // Bei einem Wort: erste 8-10 Zeichen
+      const word = words[0];
+      short = word.length > 8 ? word.slice(0, 8) + '' : word;
+    }
+    
+    // Fallback falls zu kurz
+    if (short.length < 2) {
+      short = full.slice(0, 8);
+    }
+    
+    return { short, full };
+  }
 
   function itemHtml(x) {
     const r = x.r;
     const sym = pickDisplaySymbol(r);
-    const yh = pickYahooSymbol(r) || sym;
+    const yh  = pickYahooSymbol(r) || sym;
     const href = yahooHref(yh);
-    const s = href ? `<a class="yf sym" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` : `<span class="sym">${esc(sym)}</span>`;
-    const cls = x.p > 0 ? 'pos' : (x.p < 0 ? 'neg' : 'flat');
-    return `<div class="moversItem"><span class="sym">${s}</span><span class="val ${cls}">${esc(fmtPct(x.p))}</span></div>`;
+    const symHtml = href
+      ? `<a class="yf" href="${href}" target="_blank" rel="noopener">${esc(sym)}</a>` 
+      : esc(sym);
+
+    const cls1d = x.p > 0 ? 'pos' : (x.p < 0 ? 'neg' : 'flat');
+    const cls1y = (x.y === null) ? 'flat' : (x.y > 0 ? 'pos' : (x.y < 0 ? 'neg' : 'flat'));
+
+    const line1 = `<span class="mvLine ${cls1d}">1D ${esc(fmtPct(x.p))}</span>`;
+    const line2 = (x.y === null)
+      ? `<span class="mvLine flat">1Y n/a</span>` 
+      : `<span class="mvLine ${cls1y}">1Y ${esc(fmtPct(x.y))}</span>`;
+
+    const seg = segShort(r);
+    const segHtml = `<span class="mvSeg" title="${esc(seg.full || '')}">${esc(seg.short)}</span>`;
+
+    return `<div class="moversItem">
+      <div class="mvSym">${symHtml}</div>
+      <div class="mvVals">${line1}${line2}</div>
+      ${segHtml}
+    </div>`;
   }
 
-  elMoversUp.innerHTML = up.length ? up.map(itemHtml).join('') : `<span class="muted">—</span>`;
-  elMoversDown.innerHTML = dn.length ? dn.map(itemHtml).join('') : `<span class="muted">—</span>`;
+  // Wichtig: Container sollte .moversList tragen (falls du das schon im HTML hast, ok; sonst bleibt es trotzdem sichtbar)
+  elMoversUp.innerHTML = up.length ? `<div class="moversList">${up.map(itemHtml).join('')}</div>` : `<span class="muted"></span>`;
+  elMoversDown.innerHTML = dn.length ? `<div class="moversList">${dn.map(itemHtml).join('')}</div>` : `<span class="muted"></span>`;
 }
 
 function renderHeatmap(rows) {
@@ -1892,26 +2804,80 @@ function renderHeatmap(rows) {
   const th = hdr.map(h => `<th class="heatCell">${esc(h)}</th>`).join('');
 
   const rowsHtml = top.map(x => {
+    const rowOn = heatFilter.mode === heatMode && heatFilter.cat === x.k;
+
     const tds = x.arr.map((v, sb) => {
       const zero = v === 0 ? ' zero' : '';
       const rel = vmax ? (v / vmax) : 0;
       const alpha = 0.06 + rel * 0.28; // subtle
       const hue = 205; // blue-ish
       const bg = `background: hsla(${hue}, 70%, 50%, ${alpha});`;
-      return `<td class="heatCell${zero}" style="${bg}" title="${esc(x.k)} · Score ${esc(hdr[sb])} = ${v}">${v ? v : '·'}</td>`;
+      const cellOn = rowOn && heatFilter.sb !== null && Number(heatFilter.sb) === sb;
+      const act = cellOn ? ' active' : '';
+      return `<td class="heatCell${zero}${act}" data-hcat="${esc(x.k)}" data-sb="${sb}" style="${bg}" title="${esc(x.k)} · Score ${esc(hdr[sb])} = ${v}">${v ? v : '·'}</td>`;
     }).join('');
-    return `<tr><td class="mono">${esc(x.k)}</td>${tds}</tr>`;
+
+    const rowAct = rowOn ? ' active' : '';
+    return `<tr class="heatRow${rowOn ? ' heatRowOn' : ''}"><td class="mono heatRowLabel${rowAct}" data-hcat="${esc(x.k)}" title="Filter: ${esc(x.k)}">${esc(x.k)}</td>${tds}</tr>`;
   }).join('');
 
   elHeatmap.innerHTML = `
-    <div class="heatWrap">
-      <table class="heatTbl">
-        <thead><tr><th>${heatMode === 'cluster' ? 'Cluster' : 'Säule'}</th>${th}</tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-      <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro Score‑Bucket (Top ${limit} nach Häufigkeit).</div>
+    <div class="matrixGrid" style="grid-template-columns: 84px repeat(5, 1fr);">
+      <!-- Corner cell with mode labels -->
+      <div class="matrixAxis" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding: 6px 4px;">
+        <div class="lbl" style="font-weight: 700;">${heatMode === 'cluster' ? 'Cluster' : 'Säule'} </div>
+        <div class="hint" style="font-size: 9px;">Score </div>
+      </div>
+      <!-- Score bucket headers -->
+      ${Array.from({length:5}, (_,sb) => {
+        const s = scoreBucketText(sb);
+        return `<div class="matrixLabel" title="ScoreBucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`;
+      }).join('')}
+      <!-- Category rows -->
+      ${top.map(x => {
+        const rowOn = heatFilter.mode === heatMode && heatFilter.cat === x.k;
+        const parts = [];
+        parts.push(`<div class="matrixLabel${rowOn ? ' active' : ''}" data-hcat="${esc(x.k)}" title="Filter: ${esc(x.k)}"><div class="lbl">${esc(x.k)}</div></div>`);
+        for (let sb = 0; sb < 5; sb++) {
+          const v = x.arr[sb] || 0;
+          const rel = vmax ? (v / vmax) : 0;
+          const alpha = 0.06 + rel * 0.28;
+          const bg = `background: hsla(205, 70%, 50%, ${alpha});`;
+          const cellOn = rowOn && heatFilter.sb !== null && Number(heatFilter.sb) === sb;
+          const act = cellOn ? ' active' : '';
+          const zero = v === 0 ? ' zero' : '';
+          parts.push(`<div class="cell${zero}${act}" style="${bg}" data-hcat="${esc(x.k)}" data-sb="${sb}"><span class="cnt">${v ? v : '·'}</span></div>`);
+        }
+        return parts.join('');
+      }).join('')}
     </div>
+    <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro ScoreBucket (Top ${limit} nach Häufigkeit).</div>
   `;
+
+  elHeatmap.querySelectorAll('[data-hcat]').forEach(node => {
+    node.addEventListener('click', () => {
+      const cat = (node.getAttribute('data-hcat') || '').toString();
+      const sbAttr = node.getAttribute('data-sb');
+      const sb = (sbAttr === null || sbAttr === undefined) ? null : Number(sbAttr);
+      if (!cat) return;
+
+      if (sb === null) {
+        if (heatFilter.mode === heatMode && heatFilter.cat === cat && heatFilter.sb === null) {
+          heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER);
+        } else {
+          heatFilter = { cat, sb: null, mode: heatMode };
+        }
+      } else {
+        if (heatFilter.mode === heatMode && heatFilter.cat === cat && heatFilter.sb === sb) {
+          heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER);
+        } else {
+          heatFilter = { cat, sb, mode: heatMode };
+        }
+      }
+      refresh();
+      saveState();
+    });
+  });
 }
 
 function renderMarketContext(rows) {
@@ -1919,6 +2885,17 @@ function renderMarketContext(rows) {
   renderBreadth(rows);
   renderMovers(rows);
   renderHeatmap(rows);
+  renderHistoryDeltaPanel(rows);
+}
+
+function applyHeatFilter(rows) {
+  if (!heatFilter || !heatFilter.cat) return rows;
+  return (rows || []).filter(r => {
+    const label = (heatFilter.mode === 'cluster') ? clusterLabel(r) : pillarLabel(r);
+    if (label !== heatFilter.cat) return false;
+    if (heatFilter.sb === null || heatFilter.sb === undefined) return true;
+    return scoreBucket(r.score) === Number(heatFilter.sb);
+  });
 }
 
 
@@ -1945,7 +2922,7 @@ function renderMarketContext(rows) {
         const main = href ? `<a class="yf" href="${href}" target="_blank" rel="noopener">${esc(disp)}</a>` : esc(disp);
         // subline for the left "Symbol/ISIN" cell: for crypto show the Yahoo pair (e.g. BTC-USD),
         // for stocks show ISIN. Use a distinct variable name so we don't collide with other "sub" vars.
-        const subTicker = isC ? (yh || '—') : (isin || '—');
+        const subTicker = isC ? (yh || '') : (isin || '');
         const subLabel = isC ? 'YahooSymbol' : 'ISIN';
         const subLine = `<div class="sub mono" title="${subLabel}">${esc(subTicker)}</div>`;
         const tCell = `<div class="tickerCell"><div class="tickerMain">${main}${currChip}</div>${subLine}</div>`;
@@ -1984,7 +2961,7 @@ function renderMarketContext(rows) {
 
         const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
         const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
-        const priceMain = (price === null) ? '—' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
+        const priceMain = (price === null) ? '' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
         const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
 
         const trend = asBool(r.trend_ok) ? chip('OK', 'good') : chip('NO', 'bad');
@@ -2008,11 +2985,12 @@ function renderMarketContext(rows) {
           </td>
           <td class="right">${pCell}</td>
           <td>${scoreCell(r)}</td>
+          <td class="hide-sm right mono">${dScoreCell(r)}</td>
           <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
           <td class="hide-sm right mono">${(asNum(r.cycle) ?? 0).toFixed(0)}%</td>
           <td>${trend}</td>
           <td>${liq}</td>
-          <td>${chip(status || '—', statusKind)}</td>
+          <td>${chip(status || '', statusKind)}</td>
           <td class="hide-sm">${cls}</td>
         `;
 
@@ -2039,7 +3017,7 @@ function renderMarketContext(rows) {
     function openDrawer(r) {
       const t = pickDisplayTicker(r) || normStr(r.ticker);
       const n = normStr(r.name);
-      drawerTitle.textContent = `${t} — ${n}`.trim();
+      drawerTitle.textContent = `${t}  ${n}`.trim();
       const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
       const categoryManual = normStr(r.category) || normStr(r.Sektor) || normStr(r.Kategorie);
       const cat = asBool(r.is_crypto) ? 'Krypto' : (categoryManual ? `Cluster: ${categoryManual}` : (sectorOfficial || ''));
@@ -2058,7 +3036,7 @@ function renderMarketContext(rows) {
         ['Score', (asNum(r.score) ?? 0).toFixed(2)],
         ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
         ['Cycle', `${(asNum(r.cycle) ?? 0).toFixed(0)}%`],
-        ['ScoreStatus', normStr(r.score_status) || '—'],
+        ['ScoreStatus', normStr(r.score_status) || ''],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
         ['AssetClass', asBool(r.is_crypto) ? 'Krypto' : 'Aktie'],
@@ -2087,9 +3065,9 @@ function renderMarketContext(rows) {
       const status = normStr(r.score_status);
       const why = [];
       if (status === 'OK') why.push('Score>0 & keine harten Filter verletzt.');
-      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend → Score=0 (bewusstes Avoid).');
-      if (status === 'AVOID') why.push('Score==0 → Avoid (non-crypto).');
-      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten → NA.');
+      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend  Score=0 (bewusstes Avoid).');
+      if (status === 'AVOID') why.push('Score==0  Avoid (non-crypto).');
+      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten  NA.');
       if (status === 'ERROR') why.push('Scoring hat einen Fehler gemeldet (ScoreError).');
       if (asBool(r.trend_ok) === false) why.push('Trend-Filter: trend_ok=false.');
       if (asBool(r.liquidity_ok) === false) why.push('Liquidity-Filter: liquidity_ok=false.');
@@ -2133,10 +3111,14 @@ function renderMarketContext(rows) {
       // cluster + pillar filters (string)
       let rows = applyClusterFilter(rowsSQ);
       rows = applyPillarFilter(rows);
+      rows = attachDScore(rows);
 
       // matrix counts always reflect the current (pre-matrix) universe (after cluster filter)
       renderMatrix(rows);
       renderMarketContext(rows);
+      renderSegmentMonitor(rows);
+
+      rows = applyHeatFilter(rows);
 
       // matrix filter (if active)
       rows = applyMatrixFilter(rows);
@@ -2156,9 +3138,14 @@ function renderMarketContext(rows) {
       if (quick.onlyStock) f.push('stock');
       if (quick.onlyCrypto) f.push('crypto');
       if (matrix && matrix.sb !== null && matrix.rb !== null) f.push(`matrix:${matrix.sb}x${matrix.rb}`);
-      if (clusterPick) f.push(`cluster:${clusterPick}`);
-      if (pillarPick) f.push(`pillar:${pillarPick}`);
-      if (pillarPick) f.push(`pillar:${pillarPick}`);
+      if (heatFilter && heatFilter.cat) {
+        const suffix = (heatFilter.sb === null || heatFilter.sb === undefined) ? '' : `:${heatFilter.sb}`;
+        f.push(`heat:${heatFilter.mode || heatMode}:${heatFilter.cat}${suffix}`);
+      }
+      const _cps = Array.isArray(clusterPick) ? clusterPick : ((clusterPick || '') ? [String(clusterPick)] : []);
+      if (_cps.length) f.push(`cluster:${_cps.join('|')}`);
+      const _pps = Array.isArray(pillarPick) ? pillarPick : ((pillarPick || '') ? [String(pillarPick)] : []);
+      if (_pps.length) f.push(`pillar:${_pps.join('|')}`);
 
       elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  ·  filters: ${f.join(',')}` : '');
       if (btnMatrixClear) btnMatrixClear.disabled = !(matrix && matrix.sb !== null && matrix.rb !== null);
@@ -2169,7 +3156,7 @@ function renderMarketContext(rows) {
 
     // ---- init ----
     const PRESET_LABELS = {
-      CORE: 'Übersicht',
+      CORE: 'bersicht',
       SCORED: 'Bewertet',
       TOP: 'Top',
       TOP_RELAXED: 'Top (entspannt)',
@@ -2191,7 +3178,7 @@ function renderMarketContext(rows) {
         const opt = document.createElement('option');
         opt.value = n;
         const desc = (PRESETS[n].description || '').toString();
-        opt.textContent = `${presetLabel(n)} (${n})` + (desc ? ` — ${desc}` : '');
+        opt.textContent = `${presetLabel(n)} (${n})` + (desc ? `  ${desc}` : '');
         elPreset.appendChild(opt);
       }
       elPreset.value = activePreset;
@@ -2199,43 +3186,139 @@ function renderMarketContext(rows) {
 
     initPresets();
     // quick filters
-    const filterBar = document.getElementById('filters');
-    if (filterBar) {
-      filterBar.querySelectorAll('button.fbtn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const k = btn.getAttribute('data-f');
-          if (!k) return;
+    // Toggle helper for multi-select sets
+    function toggleSet(set, val) {
+      if (val === '__ALL__') { 
+        set.clear(); 
+        return; 
+      }
+      if (val === '__CLEAR__') { 
+        set.clear(); 
+        return; 
+      }
+      if (set.has(val)) set.delete(val); 
+      else set.add(val);
+    }
 
-          if (k === 'reset') {
+    // Unified Event Delegation for all chips and buttons
+    console.log('delegation ready');
+    document.addEventListener('click', (e) => {
+      // Handle help buttons (i-Buttons)
+      const helpBtn = e.target.closest('[data-action="help"]');
+      if (helpBtn) {
+        console.log('help', helpBtn.getAttribute('data-help-title'));
+        openHelp(helpBtn);
+        return;
+      }
+
+      // Handle chips (pillar/cluster)
+      const chip = e.target.closest('[data-chip]');
+      if (chip) {
+        const type = chip.getAttribute('data-chip');
+        const val = chip.getAttribute('data-val');
+        console.log('chip', type, val);
+        
+        if (type === 'pillar') {
+          toggleSet(uiState.selPillars, val);
+          syncSelectionArrays();
+          const base = DATA;
+          const {rows: presetRows} = applyPreset(base, activePreset);
+          const q = elSearch.value;
+          let rowsSQ = applySearch(presetRows, q);
+          rowsSQ = applyQuickFilters(rowsSQ);
+          renderPillarChips(computePillarCounts(rowsSQ));
+        } else if (type === 'cluster') {
+          toggleSet(uiState.selClusters, val);
+          syncSelectionArrays();
+          const base = DATA;
+          const {rows: presetRows} = applyPreset(base, activePreset);
+          const q = elSearch.value;
+          let rowsSQ = applySearch(presetRows, q);
+          rowsSQ = applyQuickFilters(rowsSQ);
+          renderClusterChips(computeClusterCounts(rowsSQ));
+        }
+        
+        refresh();
+        return;
+      }
+
+      const btnToggle = e.target.closest('.btnToggle[data-toggle]');
+      if (btnToggle) {
+        const panel = btnToggle.getAttribute('data-toggle');
+        if (panel) {
+          const card = document.querySelector(`.card[data-panel="${panel}"]`);
+          if (card) {
+            const collapsed = card.classList.toggle('is-collapsed');
+            btnToggle.textContent = collapsed ? 'Einblenden' : 'Ausblenden';
+          }
+        }
+        return;
+      }
+
+      if (e.target.closest('#heatmapClear')) {
+        heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER);
+        refresh();
+        saveState();
+        return;
+      }
+
+      // Handle action buttons (quick filters, reset, etc.)
+      const act = e.target.closest('[data-action]:not([data-action="help"])');
+      if (act) {
+        const action = act.getAttribute('data-action');
+        const key = act.getAttribute('data-key');
+        const target = act.getAttribute('data-target');
+        
+        console.log('delegation action', action, key, target);
+        
+        if (action === 'toggle' && key) {
+          if (key === 'resetAll') {
             resetAll();
-            return;
-          } else if (k === 'resetSort') {
+          } else if (key === 'resetSort') {
             userSort = null;
             refresh();
             saveState();
-            return;
-          } else if (k === 'onlyCrypto') {
-            quick.onlyCrypto = !quick.onlyCrypto;
-            if (quick.onlyCrypto) quick.onlyStock = false;
-          } else if (k === 'onlyStock') {
-            quick.onlyStock = !quick.onlyStock;
-            if (quick.onlyStock) quick.onlyCrypto = false;
+          } else if (key === 'onlyCrypto') {
+            uiState.quick.onlyCrypto = !uiState.quick.onlyCrypto;
+            if (uiState.quick.onlyCrypto) uiState.quick.onlyStock = false;
+          } else if (key === 'onlyStock') {
+            uiState.quick.onlyStock = !uiState.quick.onlyStock;
+            if (uiState.quick.onlyStock) uiState.quick.onlyCrypto = false;
           } else {
-            quick[k] = !quick[k];
+            uiState.quick[key] = !uiState.quick[key];
           }
-
+          
           syncFilterButtons();
           refresh();
           saveState();
-        });
-      });
-    }
+        } else if (action === 'togglePanel' && target) {
+          if (target === 'market') {
+            marketVisible = !marketVisible;
+            setMarketVisible(marketVisible);
+            saveState();
+          } else if (target === 'briefing') {
+            briefingVisible = !briefingVisible;
+            setBriefingVisible(briefingVisible);
+          }
+        } else if (action === 'resetSort') {
+          userSort = null;
+          refresh();
+          saveState();
+        } else if (action === 'resetAll') {
+          resetAll();
+        }
+        return;
+      }
+    });
     syncFilterButtons();
 
     // cluster select wiring
     if (elClusterSel) {
       elClusterSel.addEventListener('change', () => {
-        clusterPick = elClusterSel.value || '';
+        const v = (elClusterSel.value || '').toString().trim();
+        uiState.selClusters.clear();
+        if (v) uiState.selClusters.add(v);
+        syncSelectionArrays();
         refresh();
         saveState();
       });
@@ -2244,86 +3327,614 @@ function renderMarketContext(rows) {
     // pillar select wiring
     if (elPillarSel) {
       elPillarSel.addEventListener('change', () => {
-        pillarPick = elPillarSel.value || '';
+        const v = (elPillarSel.value || '').toString().trim();
+        uiState.selPillars.clear();
+        if (v) uiState.selPillars.add(v);
+        syncSelectionArrays();
         refresh();
         saveState();
       });
     }
-    if (elClusters) {
-      elClusters.addEventListener('click', (ev) => {
-        const t = ev.target;
-        if (!(t instanceof HTMLElement)) return;
-        const clr = t.getAttribute('data-clr');
-        if (clr) {
-          clusterPick = '';
-          if (elClusterSel) elClusterSel.value = '';
-          refresh();
-          saveState();
-          return;
-        }
-        const cl = t.getAttribute('data-cl');
-        if (!cl) return;
-        clusterPick = cl;
-        if (elClusterSel) elClusterSel.value = cl;
-        refresh();
-        saveState();
-      });
+    
+    
+    
+    
+    // ---- Unified Help Popover System ----
+    function getHelpEls() {
+      return {
+        pop: document.getElementById('helpPop'),
+        title: document.getElementById('helpPopTitle'),
+        body: document.getElementById('helpPopBody'),
+      };
     }
 
-    if (elPillars) {
-      elPillars.addEventListener('click', (ev) => {
-        const t = ev.target;
-        if (!(t instanceof HTMLElement)) return;
-        const pr = t.getAttribute('data-pr');
-        if (pr) {
-          pillarPick = '';
-          if (elPillarSel) elPillarSel.value = '';
-          refresh();
-          saveState();
-          return;
-        }
-        const p = t.getAttribute('data-p');
-        if (!p) return;
-        pillarPick = p;
-        if (elPillarSel) elPillarSel.value = p;
-        refresh();
-        saveState();
-      });
+    // Null-safe helper for contains checks
+    function _in(el, t) {
+      if (!el) return false;
+      try { return el === t || el.contains(t); } catch (e) { return false; }
     }
 
-    if (btnMatrixClear) {
-      btnMatrixClear.addEventListener('click', () => {
-        matrix = Object.assign({}, DEFAULT_MATRIX);
-        refresh();
-        saveState();
-      });
-    }
+    function openHelp(button) {
+      const { pop: helpPop, title: helpPopTitle, body: helpPopBody } = getHelpEls();
+      if (!helpPop || !helpPopTitle || !helpPopBody || !button) return;
 
-    // info popover wiring
-    if (infoFlow && infoPopover) {
-      infoFlow.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleInfoPopover();
-      });
-      if (infoClose) {
-        infoClose.addEventListener('click', (e) => {
-          e.stopPropagation();
-          closeInfoPopover();
-        });
+      // Get content from button
+      const title = button.getAttribute('data-help-title') || 'Hilfe';
+      const html = button.getAttribute('data-help-html') || button.getAttribute('data-help') || '';
+      // Set content
+      helpPopTitle.textContent = title;
+      helpPopBody.innerHTML = html;
+
+      // Position popover relative to button
+      const rect = button.getBoundingClientRect();
+      const popoverWidth = 360; // max-width from CSS
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      // Work in viewport coordinates first, then convert once to page coordinates.
+      let left = rect.right + 8;
+      let top = rect.bottom + 8;
+
+      if (left + popoverWidth > viewportWidth - 12) {
+        left = rect.left - popoverWidth - 8;
       }
-      document.addEventListener('click', (e) => {
-        if (!infoPopover.classList.contains('show')) return;
-        const t = e.target;
-        if (t === infoFlow || infoFlow.contains(t) || infoPopover.contains(t)) return;
-        closeInfoPopover();
+      if (left < 12) left = 12;
+
+      const estimatedHeight = Math.min(260, Math.max(140, helpPop.offsetHeight || 200));
+      if (top + estimatedHeight > viewportHeight - 12) {
+        top = rect.top - estimatedHeight - 8;
+      }
+      if (top < 12) top = 12;
+
+      helpPop.style.left = `${left}px`;
+      helpPop.style.top = `${top}px`;
+      
+      // Show popover
+      helpPop.classList.remove('hidden');
+      helpPop.classList.add('show');
+      helpPop.setAttribute('aria-hidden', 'false');
+      button.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeHelp() {
+      const { pop: helpPop } = getHelpEls();
+      if (!helpPop) return;
+      
+      helpPop.classList.add('hidden');
+      helpPop.classList.remove('show');
+      helpPop.setAttribute('aria-hidden', 'true');
+      
+      // Reset all button states
+      document.querySelectorAll('.iBtn[aria-expanded="true"]').forEach(btn => {
+        btn.setAttribute('aria-expanded', 'false');
       });
-      window.addEventListener('resize', () => closeInfoPopover());
-      window.addEventListener('scroll', () => closeInfoPopover(), true);
     }
+
+    // Event delegation for all i-buttons
+    document.addEventListener('click', (e) => {
+      const button = e.target.closest('.iBtn');
+      if (button) {
+        e.stopPropagation();
+        openHelp(button);
+      } else if (!_in(getHelpEls().pop, e.target)) {
+        closeHelp();
+      }
+    });
+
+    // ESC key closes popover
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeHelp();
+      }
+    });
+
+    // Close popover on scroll/resize (optional UX)
+    let activeAnchor = null;
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.removedNodes.forEach((node) => {
+          if (activeAnchor && (node === activeAnchor || node.contains && node.contains(activeAnchor))) {
+            activeAnchor = null;
+            closeHelp();
+          }
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Close on resize/scroll
+    window.addEventListener('resize', closeHelp);
+    window.addEventListener('scroll', closeHelp, true);
+
     if (elBriefing) {
-      const t = normStr((BRIEFING || {}).text);
-      elBriefing.textContent = t || '— (noch kein Briefing generiert)';
+      const hasTop = Array.isArray(briefing.top) && briefing.top.length > 0;
+      const debugInfo = 'briefing: text=' + (briefing.text ? 'yes' : 'no') + ' | meta=' + (briefing.meta ? 'yes' : 'no') + ' | top=' + (hasTop ? briefing.top.length : 0);
+      const isinRe = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
+      const escRe = (s) => String(s || '').replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+      function normalizeBriefHeader(rawSymbol, rawName) {
+        const sym = normStr(rawSymbol);
+        let name = normStr(rawName) || '?';
+        if (sym) name = name.replace(new RegExp('^' + escRe(sym) + '\\s*[\\-–—:]\\s*', 'i'), '');
+        name = name.replace(/^([A-Z]{2}[A-Z0-9]{9}[0-9])\\s*[\\-–—:]\\s*/i, '');
+        let showSym = sym;
+        const nameUpper = name.toUpperCase();
+        const symUpper = sym.toUpperCase();
+        if (sym && (nameUpper === symUpper || nameUpper.includes('(' + symUpper + ')'))) showSym = '';
+        if (sym && isinRe.test(symUpper) && /\\([A-Z]{2}[A-Z0-9]{9}[0-9]\\)/.test(nameUpper)) showSym = '';
+        return { displaySymbol: esc(showSym), displayName: esc(name || '?') };
+      }
+      
+      if (!briefing.text && !hasTop) {
+        elBriefing.innerHTML = '<div class="debugInfo">' + debugInfo + '</div><div class="briefingMissing">Warnung: Briefing Report fehlt / nicht generiert</div>';
+      } else if (hasTop) {
+        // Use structured data if available
+        const meta = briefing.meta || {};
+        const top = briefing.top || [];
+        
+        // Meta line
+        const metaLine = '<div class="briefingMeta">' + esc(meta.date || '?') + ' · ' + esc(meta.generated_at ? new Date(meta.generated_at).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '?') + ' · ' + esc(meta.universe_count || '?') + '/' + esc(meta.scored_count || '?') + ' scored</div>';
+        
+        // Top 3 picks
+        const picksHtml = top.slice(0, 3).map((pick, idx) => {
+          const symbol = pick.symbol || pick.isin || '?';
+          const name = pick.name || '?';
+          const score = pick.score ? pick.score.toFixed(2) : '?';
+          const scorePctl = pick.score_pctl ? (pick.score_pctl).toFixed(1) + '%' : '?';
+          const riskBucket = pick.risk_bucket != null ? 'R' + pick.risk_bucket : '?';
+          const trendOk = pick.trend_ok ? 'OK' : 'Nein';
+          const liqOk = pick.liq_ok ? 'OK' : 'Nein';
+          const cluster = esc(pick.cluster || '?');
+          const pillar = esc(pick.pillar_primary || '?');
+          const reasons = Array.isArray(pick.reasons) ? pick.reasons.slice(0, 4) : [];
+          
+          const normHead = normalizeBriefHeader(symbol, name);
+          const displayName = normHead.displayName;
+          const displaySymbol = normHead.displaySymbol;
+          
+          return '<div class="briefingPick">' +
+            '<div class="briefingPickHeader">' +
+              '<span class="briefingPickRank">#' + (idx + 1) + '</span>' +
+              '<span class="briefingPickSymbol">' + displaySymbol + '</span>' +
+              '<span class="briefingPickName">' + displayName + '</span>' +
+            '</div>' +
+            '<div class="briefingPickBadges">' +
+              '<span class="briefingBadge">Score: ' + score + ' (' + scorePctl + ')</span>' +
+              '<span class="briefingBadge">Risk: ' + riskBucket + '</span>' +
+              '<span class="briefingBadge">Trend: ' + trendOk + '</span>' +
+              '<span class="briefingBadge">Liq: ' + liqOk + '</span>' +
+              '<span class="briefingBadge">' + cluster + '</span>' +
+              '<span class="briefingBadge">' + pillar + '</span>' +
+            '</div>' +
+            (reasons.length ? '<div class="briefingPickReasons">' + reasons.map(r => '<div class="briefingReason">• ' + esc(r) + '</div>').join('') + '</div>' : '') +
+          '</div>';
+        }).join('');
+        
+        elBriefing.innerHTML = '<div class="debugInfo">' + debugInfo + '</div><div class="renderProof">BRIEFING_RENDER: structured-data picks=' + top.length + '</div><div class="briefingStructured">' + metaLine + picksHtml + '</div>';
+      } else {
+        // Parse briefing text into picks
+        function parseBriefingTextToPicks(text) {
+          const lines = text.split('\\n').filter(line => line.trim());
+          const picks = [];
+          let currentPick = null;
+          let foundFirstPick = false;
+          
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            
+            // Skip separator lines
+            if (/^(—+|_+|-+)$/.test(line)) continue;
+            
+            // Check for pick header patterns
+            const hashMatch = line.match(/^#\\s*(\\d+)\\s*(.+)$/);
+            const numMatch = line.match(/^(\\d+)[).:]\\s*(.+)$/);
+            const match = hashMatch || numMatch;
+            
+            if (match) {
+              foundFirstPick = true;
+              // Save previous pick if exists
+              if (currentPick) picks.push(currentPick);
+              
+              // Parse symbol and name
+              const header = match[2];
+              const symbolMatch = header.match(/^([A-Z]{2}[A-Z0-9]{8,12}|[A-Z]{1,5})\\s*[\\-–—]\\s*(.+)$/);
+              const symbol = symbolMatch ? symbolMatch[1] : header.split(/\\s+[\\-–—]\\s+/)[0] || '?';
+              const name = symbolMatch ? symbolMatch[2] : header.split(/\\s+[\\-–—]\\s+/)[1] || header;
+              
+              currentPick = {
+                rank: parseInt(match[1]),
+                symbol: symbol,
+                name: name,
+                reasons: []
+              };
+            } else if (foundFirstPick && currentPick) {
+              // Add as reason if we have a current pick
+              const isBullet = line.startsWith('-') || line.startsWith('•') || line.startsWith('*');
+              const reasonText = isBullet ? line.substring(1).trim() : line;
+              if (reasonText && currentPick.reasons.length < 6) {
+                currentPick.reasons.push(reasonText);
+              }
+            }
+          }
+          
+          // Add last pick
+          if (currentPick) picks.push(currentPick);
+          
+          return picks;
+        }
+        
+        const picks = parseBriefingTextToPicks(briefing.text || '');
+        
+        // Meta line from briefing.meta or fallback extraction
+        let metaLine = '';
+        const meta = briefing.meta || {};
+        if (meta.date || meta.generated_at || meta.universe_count) {
+          metaLine = '<div class="briefingMeta">' + 
+            (meta.date || '?') + ' · ' + 
+            (meta.generated_at ? new Date(meta.generated_at).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '?') + ' · ' +
+            (meta.universe_count || '?') + '/' + (meta.scored_count || '?') + ' scored' +
+          '</div>';
+        } else {
+          // Try to extract meta from briefing.text using regex
+          const text = briefing.text || '';
+          const dateMatch = text.match(/Datum:\\s*(\\d{2}\\.\\d{2}\\.\\d{4}|\\d{4}-\\d{2}-\\d{2})/i);
+          const generatedMatch = text.match(/Generiert:\\s*(\\d{2}:\\d{2}|\\d{2}\\.\\d{2}\\.\\d{4}\\s+\\d{2}:\\d{2})/i);
+          const universeMatch = text.match(/Universe:\\s*(\\d+)/i);
+          const scoredMatch = text.match(/Scored:\\s*(\\d+)/i);
+          
+          if (dateMatch || generatedMatch || universeMatch) {
+            const parts = [];
+            if (dateMatch) parts.push(dateMatch[1]);
+            if (generatedMatch) parts.push(generatedMatch[1]);
+            if (universeMatch && scoredMatch) parts.push(universeMatch[1] + '/' + scoredMatch[1] + ' scored');
+            else if (universeMatch) parts.push('Universe: ' + universeMatch[1]);
+            
+            if (parts.length > 0) {
+              metaLine = '<div class="briefingMeta">' + parts.join(' · ') + '</div>';
+            }
+          }
+        }
+        
+        // Render picks (max 3) with badge parsing
+        const picksHtml = picks.slice(0, 3).map((pick, idx) => {
+          // Parse badges from reasons
+          const badgeKeywords = ['Score', 'Percentil', 'Bucket', 'Confidence', 'Trend', 'Liq', 'Liquidität', 'Cluster', 'Säule', 'Pillar'];
+          const badges = [];
+          const reasons = [];
+          
+          pick.reasons.forEach(reason => {
+            const trimmed = reason.trim();
+            // Check if reason starts with a badge keyword
+            const isBadge = badgeKeywords.some(keyword => 
+              trimmed.toLowerCase().startsWith(keyword.toLowerCase())
+            );
+            
+            if (isBadge && !trimmed.toLowerCase().includes('gründe')) {
+              badges.push(trimmed);
+            } else if (trimmed && !trimmed.toLowerCase().includes('gründe')) {
+              reasons.push(trimmed);
+            }
+          });
+          
+          const normHead = normalizeBriefHeader(pick.symbol, pick.name);
+          const displayName = normHead.displayName;
+          const displaySymbol = normHead.displaySymbol;
+          
+          return '<div class="briefingPick">' +
+            '<div class="briefingPickHeader">' +
+              '<span class="briefingPickRank">#' + pick.rank + '</span>' +
+              '<span class="briefingPickSymbol">' + displaySymbol + '</span>' +
+              '<span class="briefingPickName">' + displayName + '</span>' +
+            '</div>' +
+            (badges.length > 0 ? '<div class="briefingPickBadges">' + badges.map(b => '<span class="briefingBadge">' + esc(b) + '</span>').join('') + '</div>' : '') +
+            (reasons.length > 0 ? '<ul class="briefingPickReasons">' + reasons.slice(0, 6).map(r => '<li>' + esc(r) + '</li>').join('') + '</ul>' : '') +
+          '</div>';
+        }).join('');
+        
+        const content = picks.length ? picksHtml : '<div class="briefingFallback">' + briefing.text.split('\\n').map(l => '<div class="briefingLine">' + esc(l) + '</div>').join('') + '</div>';
+        
+        const cardsRendered = picks.length;
+        elBriefing.innerHTML = '<div class="debugInfo">' + debugInfo + '</div><div class="renderProof">BRIEFING_RENDER: parsed-text picks=' + picks.length + ' | briefing cards rendered: ' + cardsRendered + '</div><div class="briefingStructured">' + metaLine + content + '</div>';
+      }
     }
+
+    // Passive report panels (precomputed server-side)
+    function renderHistoryDeltaPanel(rows) {
+      if (!elHistory) return;
+      try {
+        const d = (HISTORY_DELTA || {});
+        const latest = normStr(d.latest_date || d.latest || d.date || '');
+        const prev   = normStr(d.prev_date   || d.prev   || d.prevDate || '');
+        const snaps  = (latest && prev) ? 2 : 1;
+
+        // Build items from CURRENT filtered rows + HD_BY mapping
+        const items = [];
+        for (const r of rows || []) {
+          const k = historyKey(r);
+          const rec = (k && HD_BY) ? HD_BY[k] : null;
+          if (!rec) continue;
+
+          const sd = asNum(rec.score_delta ?? rec.scoreDelta ?? rec.delta ?? rec.dscore_1d ?? rec.dscore);
+          const rd = asNum(rec.rank_delta  ?? rec.rankDelta  ?? rec.dr    ?? rec.rank_change);
+          if (sd === null && rd === null) continue;
+
+          const sym  = pickDisplaySymbol(r);
+          const yh   = pickYahooSymbol(r) || sym;
+          const href = yahooHref(yh);
+
+          const segFull  = normStr(clusterLabel(r)) || (asBool(r.is_crypto) === true ? 'Krypto' : '');
+          const segShort = segFull
+            ? (segFull.split(' ').slice(0, 2).join(' ').slice(0, 10) + (segFull.length > 10 ? '' : ''))
+            : '';
+
+          items.push({ sym, href, sd, rd, segFull, segShort });
+        }
+
+        function fmtDelta(n, digits) {
+          if (n === null || n === undefined || !Number.isFinite(n)) return 'n/a';
+          const sign = n > 0 ? '+' : '';
+          return sign + n.toFixed(digits);
+        }
+
+        // Prefer score_delta lists, fallback to rank_delta if needed
+        let pos = items.filter(x => x.sd !== null && x.sd > 0).sort((a,b) => b.sd - a.sd).slice(0, 12);
+        let neg = items.filter(x => x.sd !== null && x.sd < 0).sort((a,b) => a.sd - b.sd).slice(0, 12);
+
+        if (!pos.length && !neg.length) {
+          pos = items.filter(x => x.rd !== null && x.rd > 0).sort((a,b) => b.rd - a.rd).slice(0, 12);
+          neg = items.filter(x => x.rd !== null && x.rd < 0).sort((a,b) => a.rd - b.rd).slice(0, 12);
+        }
+
+        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} · Universe: ${(rows||[]).length} · with : ${items.length}</div>`;
+
+        // Deine schönen 4 Pills bleiben, plus Top/Weak Zähler als Bonus
+        const controls = `<div class="breadthRow" style="margin-top:6px;">
+          ${chip(`Snapshots ${snaps}`, 'blue')}
+          ${chip(`1D`, 'blue')}
+          ${chip(`1W n/a`, 'warn')}
+          ${chip(`1M n/a`, 'warn')}
+          ${chip(`Top ${pos.length}`, pos.length ? 'good' : 'blue')}
+          ${chip(`Weak ${neg.length}`, neg.length ? 'bad' : 'blue')}
+        </div>`;
+
+        function itemRow(x) {
+          const symHtml = x.href
+            ? `<a class="yf hdSym" href="${x.href}" target="_blank" rel="noopener">${esc(x.sym)}</a>` 
+            : `<span class="hdSym">${esc(x.sym)}</span>`;
+
+          const sd = (x.sd === null || x.sd === undefined) ? null : Number(x.sd);
+          const rd = (x.rd === null || x.rd === undefined) ? null : Number(x.rd);
+
+          const sdCls = (sd === null) ? 'flat' : (sd > 0 ? 'pos' : (sd < 0 ? 'neg' : 'flat'));
+          const rdCls = (rd === null) ? 'flat' : (rd > 0 ? 'pos' : (rd < 0 ? 'neg' : 'flat'));
+
+          const line1 = `<span class="hdLine ${sdCls}">S ${esc(fmtDelta(sd, 2))}</span>`;
+          const line2 = `<span class="hdLine ${rdCls}">R ${esc(fmtDelta(rd, 0))}</span>`;
+
+          const seg = `<span class="hdSeg" title="${esc(x.segFull || '')}">${esc(x.segShort || '')}</span>`;
+
+          return `<div class="hdItem">${symHtml}<div class="hdVals">${line1}${line2}</div>${seg}</div>`;
+        }
+
+        const topHtml  = pos.length ? pos.map(itemRow).join('') : `<div class="muted small"></div>`;
+        const weakHtml = neg.length ? neg.map(itemRow).join('') : `<div class="muted small"></div>`;
+
+        const grid = `<div class="hdGrid">
+          <div><div class="hdColTitle">Top </div><div class="hdList">${topHtml}</div></div>
+          <div><div class="hdColTitle">Weak </div><div class="hdList">${weakHtml}</div></div>
+        </div>`;
+
+        const explain = `<div class="muted small" style="margin-top:8px;">
+          Positiv bedeutet: im Ranking/Score gestiegen. Anzeige ist <b>passiv</b> (kein Einfluss auf Scoring) und wird aus <span class="mono">history_delta.json</span> + aktuellem Filter gebaut.
+        </div>`;
+
+        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${explain}</div>`;
+      } catch (e) {
+        elHistory.textContent = '';
+      }
+    }
+
+    function renderReality(r) {
+      try {
+        const hasStats = !!(r && r.stats && Object.keys(r.stats).length);
+        const hasIssues = Array.isArray(r && r.top_issues) && r.top_issues.length > 0;
+        const issuesCount = hasIssues ? r.top_issues.length : 0;
+        
+        // Debug info - show actual keys
+        let debugInfo = `reality: stats=${hasStats ? 'yes' : 'no'} issues=${issuesCount}`;
+        if (hasIssues && r.top_issues.length > 0) {
+          debugInfo += ' | reality keys: ' + Object.keys(r.top_issues[0]).join(', ');
+        }
+        
+        if (!r || (!hasStats && !hasIssues)) {
+          return '<div class="debugInfo">' + debugInfo + '</div><div class="realityMissing">️ Reality Check Report fehlt / nicht generiert</div>';
+        }
+        
+        const st = r.stats || {};
+        const summary = '<div class="realitySummary">' +
+          '<div class="summaryChip ok">ok: ' + esc(st.ok || 0) + '</div>' +
+          '<div class="summaryChip warn">warn: ' + esc(st.warn || 0) + '</div>' +
+          '<div class="summaryChip error">error: ' + esc(st.error || 0) + '</div>' +
+        '</div>';
+        
+        if (hasIssues) {
+          // Proper HTML table with robust key mapping
+          const tableHtml = '<table class="realityTable">' +
+            '<thead>' +
+              '<tr>' +
+                '<th>Intern</th>' +
+                '<th>Offiziell</th>' +
+                '<th>Scanner</th>' +
+                '<th>Markt</th>' +
+                '<th>Signal</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            r.top_issues.slice(0, 12).map(issue => {
+              // Robust key mapping with fallbacks
+              const intern = esc(issue.intern || issue.internal || issue.pillar_primary || issue.scanner_pillar || '—');
+              const official = esc(issue.offiziell || issue.official || issue.official_sector || issue.official_industry || '—');
+              const scanner = esc(issue.scanner || issue.cluster || issue.scanner_cluster || issue.pillar_primary || '—');
+              const market = esc(issue.market || issue.yahoo_sector || issue.yahoo_industry || issue.market_sector || '—');
+              
+              // Signal badge from severity/verdict
+              let signalClass = 'neutral';
+              let signalText = 'OK';
+              const severity = (issue.severity || '').toLowerCase();
+              const verdict = (issue.verdict || '').toLowerCase();
+              const signal = (issue.signal || '').toLowerCase();
+              
+              if (severity === 'error' || severity === 'high' || verdict === 'contra' || signal === 'contra') {
+                signalClass = 'contra';
+                signalText = issue.signal || 'Kontra';
+              } else if (severity === 'warn' || severity === 'medium' || verdict === 'warn' || signal === 'warn') {
+                signalClass = 'neutral';
+                signalText = issue.signal || 'Warn';
+              } else {
+                signalClass = 'positive';
+                signalText = issue.signal || 'OK';
+              }
+              
+              // Show problems as tooltip in signal cell if available
+              let signalCell = '<span class="signalBadge ' + signalClass + '">' + signalText + '</span>';
+              if (Array.isArray(issue.problems) && issue.problems.length > 0) {
+                signalCell = '<span class="signalBadge ' + signalClass + '" title="' + esc(issue.problems.join('; ')) + '">' + signalText + '</span>';
+              }
+              
+              return '<tr>' +
+                '<td>' + intern + '</td>' +
+                '<td>' + official + '</td>' +
+                '<td>' + scanner + '</td>' +
+                '<td>' + market + '</td>' +
+                '<td>' + signalCell + '</td>' +
+              '</tr>';
+            }).join('') +
+            '</tbody>' +
+          '</table>' +
+          (issuesCount > 12 ? '<div class="muted small" style="margin-top: 6px;"> weitere ' + (issuesCount - 12) + ' Einträge</div>' : '');
+          
+          const rowsRendered = Math.min(issuesCount, 12);
+          return '<div class="debugInfo">' + debugInfo + '</div><div class="renderProof">REALITY_RENDER: top_issues rows=' + issuesCount + ' | reality rows rendered: ' + rowsRendered + '</div>' + summary + tableHtml;
+        } else {
+          // Fallback: render as list if no structured issues
+          const fallbackHtml = '<div class="realityTable">' +
+            '<div class="realityRow">' +
+              '<div class="realityCell" style="grid-column: 1/-1;">' +
+                '<div style="font-weight: 600; margin-bottom: 8px;">Reality Check Status</div>' +
+                '<div>ok: ' + esc(st.ok || 0) + ' · warn: ' + esc(st.warn || 0) + ' · error: ' + esc(st.error || 0) + '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+          
+          return '<div class="debugInfo">' + debugInfo + '</div><div class="renderProof">REALITY_RENDER: fallback</div>' + summary + fallbackHtml;
+        }
+      } catch (e) { return ''; }
+    }
+
+    
+    function renderSegmentMonitor(rows) {
+      if (!elSegment) return;
+      try {
+        const s = (SEGMENT_MONITOR || {});
+        const latest = esc(normStr(s.latest_date) || '');
+        const prev = esc(normStr(s.prev_date) || '');
+
+        // Group helper: total + valid (dScore) + sum + pos
+        function buildGroups(getKey) {
+          const map = new Map();
+          for (const r of rows || []) {
+            const k = normStr(getKey(r)) || '';
+            const rec = map.get(k) || { total: 0, valid: 0, sum: 0, pos: 0 };
+            rec.total += 1;
+            const d = r.dscore_1d;
+            if (Number.isFinite(d)) {
+              rec.valid += 1;
+              rec.sum += d;
+              if (d > 0) rec.pos += 1;
+            }
+            map.set(k, rec);
+          }
+          const out = [];
+          for (const [k, v] of map.entries()) {
+            const cov = v.total > 0 ? (v.valid / v.total) : 0;
+            const avg = v.valid > 0 ? (v.sum / v.valid) : null;
+            const pp = v.valid > 0 ? (v.pos / v.valid) : null;
+            out.push({ key: k, total: v.total, valid: v.valid, avg, posPct: pp, cov });
+          }
+          return out;
+        }
+
+        function fmtAvg(x) { return (x === null || x === undefined) ? '' : (x >= 0 ? '+' : '') + x.toFixed(2); }
+        function fmtPct(x) { return (x === null || x === undefined) ? '' : (x * 100).toFixed(1) + '%'; }
+        function fmtCov(x) { return (x === null || x === undefined) ? '' : (x * 100).toFixed(1) + '%'; }
+
+        function stableBadge(valid) {
+          if (!Number.isFinite(valid)) return '';
+          const stable = valid >= 5;
+          return stable ? '<span class="stableSample">stable</span>' : '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">thin</span>';
+        }
+
+        function nBadge(valid) {
+          if (!Number.isFinite(valid)) return '';
+          if (valid <= 2) return '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">' + valid + '</span>';
+          return String(valid);
+        }
+
+        function renderTable(title, groups) {
+          groups = groups.slice().sort((a,b) => {
+            const av = (a.avg === null) ? -9999 : a.avg;
+            const bv = (b.avg === null) ? -9999 : b.avg;
+            if (bv !== av) return bv - av;
+            return (b.valid - a.valid);
+          }).slice(0, 12);
+
+          const rowsHtml = groups.map(g => (
+            '<tr>' +
+              '<td title="' + esc(g.key) + '">' + esc(g.key) + '</td>' +
+              '<td class="right">' + fmtAvg(g.avg) + '</td>' +
+              '<td class="right">' + fmtPct(g.posPct) + '</td>' +
+              '<td class="right">' + stableBadge(g.valid) + '</td>' +
+              '<td class="right">' + fmtCov(g.cov) + '</td>' +
+              '<td class="right">' + nBadge(g.valid) + '</td>' +
+            '</tr>'
+          )).join('');
+
+          return (
+            '<table class="segmentTable">' +
+              '<thead>' +
+                '<tr><th colspan="6">' + esc(title) + '</th></tr>' +
+                '<tr>' +
+                  '<th>Segment</th><th class="right"> dScore</th><th class="right">Pos%</th><th class="right">Stable</th><th class="right">Cov%</th><th class="right">N</th>' +
+                '</tr>' +
+              '</thead>' +
+              '<tbody>' + (rowsHtml || '<tr><td colspan="6" class="muted"></td></tr>') + '</tbody>' +
+            '</table>'
+          );
+        }
+
+        // IMPORTANT: Use the same label logic as chips/filters so Segment Monitor matches the visible UI.
+        const intern = buildGroups(r => pillarLabel(r));     // internal: 5-säulen (scanner-owned)
+        const official = buildGroups(r => clusterLabel(r));  // official: market cluster/sector/industry
+
+        const metaLine = '<div class="muted small">Snapshot: ' + (prev || '') + '  ' + (latest || '') + ' | Universe: ' + (rows ? rows.length : 0) + '</div>';
+
+        elSegment.innerHTML = metaLine + '<div class="segmentTables">' +
+          renderTable('Intern (Scanner)', intern) +
+          renderTable('Offiziell (Markt)', official) +
+        '</div>';
+      } catch (e) {
+        elSegment.textContent = '';
+      }
+    }
+
+
+    if (elBriefReal) {
+      const t = normStr((BRIEFING_REALITIES || {}).text);
+      elBriefReal.textContent = t || '';
+    }
+    // History Delta wird jetzt dynamisch in renderMarketContext gerendert
+    if (elReality) {
+      elReality.innerHTML = renderReality(REALITY_CHECK);
+    }
+
     refresh();
     try { document.documentElement.dataset.jsok = '1'; } catch (e) {}
 
@@ -2350,8 +3961,9 @@ function renderMarketContext(rows) {
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (infoPopover && infoPopover.classList.contains('show')) {
-          closeInfoPopover();
+        const { pop: helpPop } = getHelpEls();
+        if (helpPop && helpPop.classList.contains('show')) {
+          closeHelp();
           return;
         }
         if (drawerOverlay.classList.contains('show')) {
@@ -2381,14 +3993,21 @@ function renderMarketContext(rows) {
     } catch (err) {
       const msg = (err && err.message) ? err.message : String(err);
       const el = document.getElementById('count');
-      if (window.__showJsError) window.__showJsError('UI‑Fehler (JS): ' + msg);
+      if (window.__showJsError) window.__showJsError('UIFehler (JS): ' + msg);
       if (el) el.textContent = `JS error: ${msg}`;
       const k = document.getElementById('kpis');
-      if (k) k.textContent = 'JS error – siehe Konsole';
+      if (k) k.textContent = 'JS error  siehe Konsole';
       try { console.error(err); } catch(e) {}
     }
   })();
   </script>
+<!-- Unified Help Popover System -->
+<div id="helpPop" class="helpPop hidden" role="dialog" aria-hidden="true">
+  <div class="helpPopInner">
+    <div class="helpPopTitle" id="helpPopTitle"></div>
+    <div class="helpPopBody" id="helpPopBody"></div>
+  </div>
+</div>
 </body>
 </html>
 """
@@ -2399,18 +4018,25 @@ function renderMarketContext(rows) {
         .replace("__PRESETS_JSON__", presets_json)
         .replace("__PRESET_OPTIONS__", preset_options_html)
         .replace("__BRIEFING_JSON__", briefing_json)
+        .replace("__HISTORY_DELTA_JSON__", history_delta_json)
+        .replace("__SEGMENT_MONITOR_JSON__", segment_monitor_json)
+        .replace("__REALITY_CHECK_JSON__", reality_check_json)
+        .replace("__BRIEFING_REALITIES_JSON__", briefing_realities_json)
         .replace("__FALLBACK_TBODY__", fallback_tbody_html)
         .replace("__VERSION__", str(version))
         .replace("__BUILD__", str(build))
+        .replace("__RUN_AT__", str(run_at or ""))
+        .replace("__RUN_SRC__", str(run_src or ""))
+        .replace("__RUN_UNIVERSE__", str(run_universe or ""))
         .replace("__SOURCE_CSV__", str(source_csv))
     )
 
 
-def _render_help_html(*, version: str, build: str) -> str:
+def _render_help_html_legacy_inline(*, version: str, build: str) -> str:
     """Generate a static help / project description page.
 
     This page is intentionally a living document: it describes what exists today
-    and keeps placeholders for upcoming features (Portfolio, KI‑Briefing, etc.).
+    and keeps placeholders for upcoming features (Portfolio, KIBriefing, etc.).
     """
 
     return f"""<!doctype html>
@@ -2418,7 +4044,7 @@ def _render_help_html(*, version: str, build: str) -> str:
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Scanner_vNext — Hilfe & Projektbeschreibung</title>
+  <title>Scanner_vNext  Hilfe & Projektbeschreibung</title>
   <style>
     :root{{
       --bg:#0b1020;
@@ -2461,7 +4087,7 @@ def _render_help_html(*, version: str, build: str) -> str:
     <div class="wrap">
       <div class="top">
         <div>
-          <h1>Scanner_vNext — Hilfe & Projektbeschreibung</h1>
+          <h1>Scanner_vNext  Hilfe & Projektbeschreibung</h1>
           <div class="meta">version {version} · build {build} · <a href="index.html">zurück zum Dashboard</a></div>
         </div>
         <div class="pill">Living Doc · wird laufend erweitert</div>
@@ -2473,16 +4099,16 @@ def _render_help_html(*, version: str, build: str) -> str:
 
     <div class="card" style="border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.06);">
       <h2>Disclaimer</h2>
-      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine Gewähr. Inhalte können unvollständig, falsch oder veraltet sein. Nutzung ausschließlich auf eigene Verantwortung.</p>
+      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine Gewähr. Inhalte können unvollständig, falsch oder veraltet sein. Nutzung ausschlielich auf eigene Verantwortung.</p>
     </div>
 
     <div class="card">
       <h2 id="toc">Inhalt</h2>
       <div class="toc">
-        <a href="#ueberblick">1) Überblick</a>
+        <a href="#ueberblick">1) berblick</a>
         <a href="#pipeline">2) Datenfluss (Pipeline)</a>
         <a href="#scoring">3) Scoring: Score, Opportunity, Risk, Regime, Confidence</a>
-        <a href="#recommendation">4) Empfehlungscode (R0–R5)</a>
+        <a href="#recommendation">4) Empfehlungscode (R0R5)</a>
         <a href="#dashboard">5) Dashboard-Funktionen</a>
         <a href="#portfolio">6) Portfolio (geplant)</a>
         <a href="#briefing">7) Briefing / KI</a>
@@ -2494,29 +4120,29 @@ def _render_help_html(*, version: str, build: str) -> str:
     </div>
 
     <div class="card" id="ueberblick">
-      <h2>1) Überblick</h2>
-      <p><b>Scanner_vNext</b> ist ein privates Trading‑Research‑System für Watchlists und Portfolio‑Ideen. Es bündelt Kennzahlen, Signale und Markt‑Kontext zu einem <b>multi‑faktoriellen Score</b> – mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
+      <h2>1) berblick</h2>
+      <p><b>Scanner_vNext</b> ist ein privates TradingResearchSystem für Watchlists und PortfolioIdeen. Es bündelt Kennzahlen, Signale und MarktKontext zu einem <b>multifaktoriellen Score</b>  mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
       <div class="callout">
-        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (View‑Layer) – sie verändern das Scoring nicht. KI‑Texte sind reine <i>Briefings</i> und dürfen keinen Einfluss auf den Score haben.</p>
+        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (ViewLayer)  sie verändern das Scoring nicht. KITexte sind reine <i>Briefings</i> und dürfen keinen Einfluss auf den Score haben.</p>
       </div>
       <p class="tag">Hinweis: Dieses Projekt ist kein Finanzrat. Es ist ein Werkzeug zur eigenen Strukturierung und Dokumentation von Entscheidungen.</p>
     </div>
 
     <div class="card" id="pipeline">
       <h2>2) Datenfluss (Pipeline)</h2>
-      <p>Die täglichen Schritte sind bewusst getrennt – damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
+      <p>Die täglichen Schritte sind bewusst getrennt  damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
       <pre>python -m scanner.app.run_daily
 python -m scanner.ui.generator</pre>
       <ul>
         <li><code>run_daily</code> erzeugt/aktualisiert CSVs in <code>artifacts/watchlist/</code> und (optional) Reports in <code>artifacts/reports/</code>.</li>
         <li><code>ui.generator</code> liest eine CSV (z.B. <code>watchlist_CORE.csv</code>) und schreibt statisches HTML nach <code>artifacts/ui/</code>.</li>
       </ul>
-      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausführen – ohne dass das UI „heimlich“ irgendwas berechnet, was die Ergebnisse verändern würde.</p>
+      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausführen  ohne dass das UI heimlich irgendwas berechnet, was die Ergebnisse verändern würde.</p>
     </div>
 
     <div class="card" id="scoring">
       <h2>3) Scoring (Score, Opportunity, Risk, Regime, Confidence)</h2>
-      <p>Das Scoring läuft zentral im Domain‑Layer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer Watchlist‑Zeile ein Satz aus <b>Opportunity‑Faktoren</b> und <b>Risk‑Faktoren</b> gebildet und anschließend zu einem finalen Score zusammengeführt.</p>
+      <p>Das Scoring läuft zentral im DomainLayer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer WatchlistZeile ein Satz aus <b>OpportunityFaktoren</b> und <b>RiskFaktoren</b> gebildet und anschlieend zu einem finalen Score zusammengeführt.</p>
 
       <div class="grid2">
         <div>
@@ -2524,105 +4150,105 @@ python -m scanner.ui.generator</pre>
           <p>Beispiele der aktuell verwendeten Faktoren (wenn in den CSVs vorhanden):</p>
           <ul>
             <li><b>Growth %</b>, <b>ROE %</b>, <b>Margin %</b></li>
-            <li><b>MC‑Chance</b> (Monte‑Carlo‑Chance)</li>
-            <li><b>Trend200</b> (200‑Tage‑Trend) und <b>RS3M</b> (relative Stärke 3M)</li>
-            <li><b>Elliott‑Quality</b> (abhängig vom Elliott‑Signal)</li>
-            <li><b>Upside</b> (nur wenn Elliott‑Signal BUY und Target/Preis vorhanden; 30% Upside = „voller“ Faktor)</li>
+            <li><b>MCChance</b> (MonteCarloChance)</li>
+            <li><b>Trend200</b> (200TageTrend) und <b>RS3M</b> (relative Stärke 3M)</li>
+            <li><b>ElliottQuality</b> (abhängig vom ElliottSignal)</li>
+            <li><b>Upside</b> (nur wenn ElliottSignal BUY und Target/Preis vorhanden; 30% Upside = voller Faktor)</li>
           </ul>
-          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. Analyst‑Faktor), bis Spalten dafür existieren.</p>
+          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. AnalystFaktor), bis Spalten dafür existieren.</p>
         </div>
         <div>
           <h3>Risk (0..1, höher = riskanter)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren:</p>
           <ul>
             <li><b>Debt/Equity</b></li>
-            <li><b>CRV‑Fragility</b> (CRV wird in eine „Fragilität“ umgerechnet; bei fehlendem CRV neutral)</li>
+            <li><b>CRVFragility</b> (CRV wird in eine Fragilität umgerechnet; bei fehlendem CRV neutral)</li>
             <li><b>Volatility</b>, <b>DownsideDev</b>, <b>MaxDrawdown</b></li>
-            <li><b>Liquidity‑Risk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
+            <li><b>LiquidityRisk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
           </ul>
-          <p class="tag">Die Idee: Opportunity alleine reicht nicht – ein hoher Score soll bei fragiler Liquidität oder extremem Drawdown nicht „blind“ nach oben schießen.</p>
+          <p class="tag">Die Idee: Opportunity alleine reicht nicht  ein hoher Score soll bei fragiler Liquidität oder extremem Drawdown nicht blind nach oben schieen.</p>
         </div>
       </div>
 
-      <h3>Normalisierung (Universe‑Scaling)</h3>
-      <p>Viele Rohwerte werden über ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen Markt‑Universum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
+      <h3>Normalisierung (UniverseScaling)</h3>
+      <p>Viele Rohwerte werden über ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen MarktUniversum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
 
-      <h3>Regime (Markt‑Kontext)</h3>
-      <p>Der Score kann je nach Marktregime anders gewichtet werden. Dafür werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200‑Kontext). Wenn das Regime‑Label fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
+      <h3>Regime (MarktKontext)</h3>
+      <p>Der Score kann je nach Marktregime anders gewichtet werden. Dafür werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200Kontext). Wenn das RegimeLabel fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
       <ul>
-        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einfließt</li>
-        <li><b>risk_mult</b>: wie „hart“ Risiko bestraft wird</li>
+        <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einfliet</li>
+        <li><b>risk_mult</b>: wie hart Risiko bestraft wird</li>
       </ul>
 
       <h3>Confidence (0..100)</h3>
-      <p>Zusätzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, Risiko‑Sauberkeit, Regime‑Ausrichtung und Liquidität berücksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht – oder auf dünnem Daten‑Eis.</p>
+      <p>Zusätzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, RisikoSauberkeit, RegimeAusrichtung und Liquidität berücksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht  oder auf dünnem DatenEis.</p>
     </div>
 
     <div class="card" id="recommendation">
-      <h2>4) Empfehlungscode (R0–R5)</h2>
-      <p>Im Dashboard erscheint im Score‑Bereich ein privater Code <b>R0–R5</b>. Das ist <b>kein Trading‑Signal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
+      <h2>4) Empfehlungscode (R0R5)</h2>
+      <p>Im Dashboard erscheint im ScoreBereich ein privater Code <b>R0R5</b>. Das ist <b>kein TradingSignal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
       <ul>
-        <li><b>R0</b>: AVOID‑Zeilen (score_status beginnt mit <code>AVOID_</code>)</li>
-        <li><b>R5</b>: Score‑Perzentil ≥ 90 <i>und</i> Trend OK <i>und</i> Liquidity OK</li>
-        <li><b>R4</b>: Score‑Perzentil ≥ 75 <i>und</i> Liquidity OK</li>
-        <li><b>R3</b>: Score‑Perzentil ≥ 45</li>
-        <li><b>R2</b>: Score‑Perzentil ≥ 20</li>
+        <li><b>R0</b>: AVOIDZeilen (score_status beginnt mit <code>AVOID_</code>)</li>
+        <li><b>R5</b>: ScorePerzentil  90 <i>und</i> Trend OK <i>und</i> Liquidity OK</li>
+        <li><b>R4</b>: ScorePerzentil  75 <i>und</i> Liquidity OK</li>
+        <li><b>R3</b>: ScorePerzentil  45</li>
+        <li><b>R2</b>: ScorePerzentil  20</li>
         <li><b>R1</b>: Rest</li>
       </ul>
-      <p class="tag">Technik: das UI berechnet das Score‑Perzentil aus allen Zeilen der geladenen Tabelle.</p>
+      <p class="tag">Technik: das UI berechnet das ScorePerzentil aus allen Zeilen der geladenen Tabelle.</p>
     </div>
 
     <div class="card" id="dashboard">
-      <h2>5) Dashboard‑Funktionen</h2>
+      <h2>5) DashboardFunktionen</h2>
       <h3>Presets</h3>
-      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID …). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
+      <p>Presets sind Filter/Sichten (CORE, TOP, AVOID ). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
 
       <h3>Suche</h3>
       <p>Suche filtert quer über Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
 
-      <h3>Quick‑Filter & KPI‑Chips</h3>
-      <p>Quick‑Filter sind schnelle boolesche/Status‑Schalter (z.B. „Nur OK“, „Trend OK“, „Liq OK“). KPI‑Chips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
+      <h3>QuickFilter & KPIChips</h3>
+      <p>QuickFilter sind schnelle boolesche/StatusSchalter (z.B. Nur OK, Trend OK, Liq OK). KPIChips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
 
       <h3>Cluster (offiziell) vs. Säulen (privat)</h3>
-      <p>Es gibt zwei unterschiedliche „Kategorien“ im UI – mit unterschiedlicher Bedeutung:</p>
+      <p>Es gibt zwei unterschiedliche Kategorien im UI  mit unterschiedlicher Bedeutung:</p>
       <ul>
-        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus Yahoo‑Taxonomie (Sector/Industry) und ist dafür gedacht, echte Markt‑Cluster sichtbar zu machen.</li>
-        <li><b>Säulen (5‑Säulen/Playground, privat)</b>: deine thematische Metadaten‑Zuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>ändert niemals</b> den Score.</li>
+        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus YahooTaxonomie (Sector/Industry) und ist dafür gedacht, echte MarktCluster sichtbar zu machen.</li>
+        <li><b>Säulen (5Säulen/Playground, privat)</b>: deine thematische MetadatenZuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>ändert niemals</b> den Score.</li>
       </ul>
-      <p class="tag">Hinweis: ältere „Phantasie‑Sektoren“ können weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine Säule ableiten, damit das Konzept sichtbar bleibt.</p>
+      <p class="tag">Hinweis: ältere PhantasieSektoren können weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine Säule ableiten, damit das Konzept sichtbar bleibt.</p>
 
-      <h3>Bucket‑Matrix (Score × Risk)</h3>
-      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der X‑Achse, <b>Risk</b> auf der Y‑Achse. Klick auf ein Feld aktiviert einen zusätzlichen Matrix‑Filter.</p>
+      <h3>BucketMatrix (Score  Risk)</h3>
+      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der XAchse, <b>Risk</b> auf der YAchse. Klick auf ein Feld aktiviert einen zusätzlichen MatrixFilter.</p>
 
-      <h3>Why‑Score Drawer</h3>
-      <p>Der Drawer erklärt, <i>warum</i> ein Wert so aussieht: Status‑Flags, wichtige Kennzahlen und – falls vorhanden – ein Breakdown (z.B. Confidence‑Breakdown).</p>
+      <h3>WhyScore Drawer</h3>
+      <p>Der Drawer erklärt, <i>warum</i> ein Wert so aussieht: StatusFlags, wichtige Kennzahlen und  falls vorhanden  ein Breakdown (z.B. ConfidenceBreakdown).</p>
 
-      <h3>Ticker‑Zelle (2‑zeilig)</h3>
-      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten Yahoo‑Pair (oder was vorhanden ist). Ziel: du siehst Identität + „Key“ sofort, ohne zusätzliche Spalten.</p>
+      <h3>TickerZelle (2zeilig)</h3>
+      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten YahooPair (oder was vorhanden ist). Ziel: du siehst Identität + Key sofort, ohne zusätzliche Spalten.</p>
 
-      <h3>Finviz‑Inspiration (eigene Umsetzung)</h3>
-      <p>Die Market‑Übersicht (Index‑Charts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">Market‑Dashboard</a>). Layout‑Ideen dürfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert – Scanner_vNext bleibt eine eigenständige Logik/UX.</p>
+      <h3>FinvizInspiration (eigene Umsetzung)</h3>
+      <p>Die Marketbersicht (IndexCharts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">MarketDashboard</a>). LayoutIdeen dürfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert  Scanner_vNext bleibt eine eigenständige Logik/UX.</p>
     </div>
 
     <div class="card" id="portfolio">
       <h2>6) Portfolio (geplant)</h2>
-      <p>Hier kommt eine Portfolio‑Sektion hin (Bestände, Einstand, Gewichtung, Risiko‑Beitrag, Ziel‑Allokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken können.</p>
-      <div class="callout"><p style="margin:0"><b>TODO:</b> Portfolio‑Konzept einfügen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
+      <p>Hier kommt eine PortfolioSektion hin (Bestände, Einstand, Gewichtung, RisikoBeitrag, ZielAllokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken können.</p>
+      <div class="callout"><p style="margin:0"><b>TODO:</b> PortfolioKonzept einfügen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
     </div>
 
     <div class="card" id="briefing">
       <h2>7) Briefing / KI</h2>
-      <p>Das Briefing ist ein <b>passiver Explainability‑Report</b> für die Top‑Werte. Es wird ausschließlich aus bereits vorhandenen Feldern der Watchlist‑CSV abgeleitet (kein Re‑Scoring).</p>
+      <p>Das Briefing ist ein <b>passiver ExplainabilityReport</b> für die TopWerte. Es wird ausschlielich aus bereits vorhandenen Feldern der WatchlistCSV abgeleitet (kein ReScoring).</p>
       <h3>Outputs</h3>
       <ul>
-        <li><code>artifacts/reports/briefing.json</code> – strukturierte Daten (Top‑N + Gründe/Risiken/Checks).</li>
-        <li><code>artifacts/reports/briefing.txt</code> – deterministische Text‑Version (immer vorhanden, offline).</li>
-        <li><code>artifacts/reports/briefing_ai.txt</code> – optionale sprachliche Glättung via OpenAI API (Feature‑Flag, default OFF).</li>
+        <li><code>artifacts/reports/briefing.json</code>  strukturierte Daten (TopN + Gründe/Risiken/Checks).</li>
+        <li><code>artifacts/reports/briefing.txt</code>  deterministische TextVersion (immer vorhanden, offline).</li>
+        <li><code>artifacts/reports/briefing_ai.txt</code>  optionale sprachliche Glättung via OpenAI API (FeatureFlag, default OFF).</li>
       </ul>
       <h3>Erzeugung</h3>
       <p>Briefing generieren (Stage A, deterministisch):</p>
       <pre><code>python scripts/generate_briefing.py</code></pre>
-      <p>AI‑Enhancement (Stage B, optional):</p>
+      <p>AIEnhancement (Stage B, optional):</p>
       <pre><code>set OPENAI_API_KEY=...  # Windows
 python scripts/generate_briefing.py --enable-ai</code></pre>
       <ul>
@@ -2630,32 +4256,32 @@ python scripts/generate_briefing.py --enable-ai</code></pre>
         <li>Es darf <b>niemals</b> das Scoring oder Ranking beeinflussen.</li>
         <li><b>Keine Anlageberatung</b>: das Briefing enthält einen kurzen Disclaimer.</li>
       </ul>
-      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: „Noch kein Briefing generiert“.</p>
+      <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: Noch kein Briefing generiert.</p>
     </div>
 
 
 
     <div class="card" id="autopilot">
       <h2>8) GitHub Autopilot (ohne laufenden PC)</h2>
-      <p>Wenn Scanner_vNext in einem GitHub‑Repo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausführen. Damit läuft der Scanner „serverlos“ in der Cloud – dein Rechner muss dafür nicht an sein.</p>
+      <p>Wenn Scanner_vNext in einem GitHubRepo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausführen. Damit läuft der Scanner serverlos in der Cloud  dein Rechner muss dafür nicht an sein.</p>
       <h3>Was macht der Autopilot?</h3>
       <ul>
         <li>Installiert das Projekt (<code>pip install -e .</code>).</li>
-        <li>Führt <code>python -m scanner.app.run_daily</code> aus (CSV‑Outputs nach <code>artifacts/watchlist/</code>).</li>
-        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code> → <code>artifacts/reports/</code>).</li>
-        <li>Generiert die UI (<code>python -m scanner.ui.generator</code> → <code>artifacts/ui/</code>).</li>
-        <li>Committet die Outputs (standardmäßig <code>artifacts/</code>) zurück ins Repo.</li>
+        <li>Führt <code>python -m scanner.app.run_daily</code> aus (CSVOutputs nach <code>artifacts/watchlist/</code>).</li>
+        <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code>  <code>artifacts/reports/</code>).</li>
+        <li>Generiert die UI (<code>python -m scanner.ui.generator</code>  <code>artifacts/ui/</code>).</li>
+        <li>Committet die Outputs (standardmäig <code>artifacts/</code>) zurück ins Repo.</li>
       </ul>
       <h3>Warum committen wir <code>artifacts/</code>?</h3>
-      <p>Für den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder über GitHub Pages sofort die aktuellen HTML/CSV‑Outputs. Später kann man das auf einen reinen Deploy‑Branch umstellen, wenn das Repo zu groß wird.</p>
+      <p>Für den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder über GitHub Pages sofort die aktuellen HTML/CSVOutputs. Später kann man das auf einen reinen DeployBranch umstellen, wenn das Repo zu gro wird.</p>
       <h3>Benachrichtigungen</h3>
-      <p>GitHub kann dir E‑Mails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo → <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
-      <p class="tag">Technik: Workflow‑Datei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
+      <p>GitHub kann dir EMails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo  <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
+      <p class="tag">Technik: WorkflowDatei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
     </div>
 
     <div class="card" id="notifications">
       <h2>9) Benachrichtigungen (Telegram)</h2>
-      <p>Telegram ist optional und standardmäßig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking – es ist nur ein zusätzlicher Kanal für Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
+      <p>Telegram ist optional und standardmäig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking  es ist nur ein zusätzlicher Kanal für Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
       <h3>Aktivieren (falls du es später wieder willst)</h3>
       <pre><code>TELEGRAM_ENABLED=1
 TELEGRAM_BOT_TOKEN=...   # oder TELEGRAM_TOKEN (Legacy)
@@ -2665,7 +4291,7 @@ TELEGRAM_CHAT_ID=...</code></pre>
 
     <div class="card" id="troubleshooting">
       <h2>10) Troubleshooting</h2>
-      <h3>UI zeigt „Keine Daten“</h3>
+      <h3>UI zeigt Keine Daten</h3>
       <ul>
         <li>Prüfe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
         <li>Führe zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
@@ -2673,41 +4299,54 @@ TELEGRAM_CHAT_ID=...</code></pre>
       <h3>Contract validation failed</h3>
       <ul>
         <li>Contract: <code>configs/watchlist_contract.json</code></li>
-        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen – das verhindert stilles „UI zeigt Mist“.</li>
-        <li>Lösung: Watchlist‑CSV neu generieren oder Migration/Normalize‑Scripts nutzen.</li>
+        <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen  das verhindert stilles UI zeigt Mist.</li>
+        <li>Lösung: WatchlistCSV neu generieren oder Migration/NormalizeScripts nutzen.</li>
       </ul>
       <h3>Briefing fehlt</h3>
       <ul>
         <li>Erzeuge es mit <code>python scripts/generate_briefing.py</code>.</li>
-        <li>UI lädt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: „Noch kein Briefing generiert“.</li>
+        <li>UI lädt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: Noch kein Briefing generiert.</li>
       </ul>
       <h3>GOOGLE_CREDENTIALS fehlt (GitHub Action)</h3>
       <ul>
-        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSON‑Service‑Account).</li>
-        <li>Ohne Credentials kann der Scanner keine Sheets‑/Daten‑Quellen lesen (je nach Setup).</li>
+        <li>Das Secret muss in GitHub als <code>GOOGLE_CREDENTIALS</code> hinterlegt sein (JSONServiceAccount).</li>
+        <li>Ohne Credentials kann der Scanner keine Sheets/DatenQuellen lesen (je nach Setup).</li>
       </ul>
       <p class="tag">Wenn du nicht weiterkommst: Logs aus GitHub Actions oder die konkrete Fehlermeldung hier rein kopieren.</p>
     </div>
     <div class="card" id="roadmap">
       <h2>11) Roadmap & Konzept (Platzhalter)</h2>
       <ul>
-        <li>Matrix Labels/Logik weiter finalisieren (Risk‑Proxy).</li>
-        <li>Recommendation‑Logik bei Bedarf schärfen (Regeln bleiben transparent).</li>
-        <li>Watchlist‑Hygiene: Spaltenmigration & Dedupe‑Strategie.</li>
-        <li>Portfolio‑Block ergänzen.</li>
-        <li>Briefing‑Logik weiter schärfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
+        <li>Matrix Labels/Logik weiter finalisieren (RiskProxy).</li>
+        <li>RecommendationLogik bei Bedarf schärfen (Regeln bleiben transparent).</li>
+        <li>WatchlistHygiene: Spaltenmigration & DedupeStrategie.</li>
+        <li>PortfolioBlock ergänzen.</li>
+        <li>BriefingLogik weiter schärfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
       </ul>
-      <p class="tag">Diese Seite ist absichtlich nicht „fertig“ – sie ist deine Dokumentation, die mit dem Projekt mitwächst.</p>
+      <p class="tag">Diese Seite ist absichtlich nicht fertig  sie ist deine Dokumentation, die mit dem Projekt mitwächst.</p>
     </div>
 
     <div class="card">
-      <p style="margin:0"><a href="#toc">↑ zurück zum Anfang</a></p>
+      <p style="margin:0"><a href="#toc"> zurück zum Anfang</a></p>
     </div>
 
   </main>
 </body>
 </html>
 """
+
+def _render_help_html(*, version: str, build: str) -> str:
+    template_path = Path(__file__).resolve().parent / "templates" / "help.html"
+    try:
+        template = template_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Help template fehlt: {template_path}") from exc
+
+    return (
+        template
+        .replace("__VERSION__", html.escape(str(version)))
+        .replace("__BUILD__", html.escape(str(build)))
+    )
 
 
 def main() -> int:
@@ -2718,9 +4357,12 @@ def main() -> int:
     args = ap.parse_args()
 
     out = build_ui(csv_path=args.csv, out_html=args.out, contract_path=args.contract)
-    print(f"✅ UI wrote: {out.as_posix()}")
+    print(f" UI wrote: {out.as_posix()}")
+    print(f" Help wrote: {(out.parent / 'help.html').as_posix()}")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+

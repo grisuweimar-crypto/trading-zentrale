@@ -34,11 +34,36 @@ jobs:
         run: |
           python -m scanner.app.run_daily
 
+
+      - name: History Delta erzeugen (Scanner-interne Verläufe)
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python scripts/generate_history_delta.py
+
+      - name: Segment Monitor erzeugen
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python scripts/generate_segment_monitor.py
+
+      - name: Reality Check erzeugen
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python scripts/generate_reality_check.py
+
       - name: Briefing erzeugen (deterministic)
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_briefing.py
+
+      - name: Briefing & Realities erzeugen
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python scripts/generate_briefing_realities.py
 
       - name: UI generieren
         env:
