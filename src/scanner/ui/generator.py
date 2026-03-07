@@ -1420,7 +1420,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
 
       <div class="footer">
-        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung Â· <span class="kbd">Esc</span> = Suche leeren</div>
+        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung Â· <span class="kbd">Esc</span> = Suche leeren Â· <span class="kbd">Shift</span>+<span class="kbd">Esc</span> = Voll-Reset</div>
         <div class="mono" id="sortHint"></div>
       </div>
     </div>
@@ -4010,6 +4010,11 @@ function applyHeatFilter(rows) {
         const { pop: helpPop } = getHelpEls();
         if (helpPop && helpPop.classList.contains('show')) {
           closeHelp();
+          return;
+        }
+        if (e.shiftKey) {
+          e.preventDefault();
+          resetAll();
           return;
         }
         if (drawerOverlay.classList.contains('show')) {
