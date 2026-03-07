@@ -209,11 +209,18 @@ def _compute_features(
 
     last = float(c.iloc[-1])
 
-    # 1y perf (pct)
+    # 1d perf (pct): last close vs previous close
+    perf_1d_pct = None
+    if len(c) >= 2:
+        prev = float(c.iloc[-2])
+        if prev and math.isfinite(prev) and prev != 0:
+            perf_1d_pct = (last / prev - 1.0) * 100.0
+
+    # 1y perf (pct): start of loaded history vs last
     first = float(c.iloc[0])
-    perf_pct = None
+    perf_1y_pct = None
     if first and math.isfinite(first) and first != 0:
-        perf_pct = (last / first - 1.0) * 100.0
+        perf_1y_pct = (last / first - 1.0) * 100.0
 
     # SMA200 + Trend200 (fraction)
     sma200 = c.rolling(200).mean()
@@ -262,7 +269,10 @@ def _compute_features(
 
     return {
         "Akt. Kurs": last,
-        "Perf %": perf_pct,
+        # Legacy alias: historically "Perf %" was used as long-window perf.
+        "Perf %": perf_1y_pct,
+        "Perf 1D %": perf_1d_pct,
+        "Perf 1Y %": perf_1y_pct,
         "SMA200": sma_last,
         "Trend200": trend200,
         "RS3M": rs3m,

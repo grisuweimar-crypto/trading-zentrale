@@ -462,8 +462,11 @@ def build_watchlist_outputs() -> None:
     if "bucket_type" in df.columns:
         df["bucket_type"] = df["bucket_type"].fillna("none")
 
-    # Contract safety: cycle must be numeric (no empty values in UI presets).
-    if "cycle" in df.columns:
+    # Contract safety: cycle must be numeric.
+    # Source of truth is legacy "Zyklus %"; mirror into canonical "cycle".
+    if "Zyklus %" in df.columns:
+        df["cycle"] = pd.to_numeric(df["Zyklus %"], errors="coerce").fillna(0.0)
+    elif "cycle" in df.columns:
         df["cycle"] = pd.to_numeric(df["cycle"], errors="coerce").fillna(0.0)
     else:
         df["cycle"] = 0.0

@@ -65,6 +65,14 @@ DEFAULT_COLUMNS = [
     "price_eur",
     "perf_pct",
     "Perf %",
+    "perf_1d",
+    "perf_1d_pct",
+    "Perf 1D %",
+    "Perf 1D",
+    "perf_1y",
+    "perf_1y_pct",
+    "Perf 1Y %",
+    "Perf 1Y",
     "rs3m",
     "trend200",
     "sma200",
@@ -444,12 +452,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       --w-name: 220px;
       --w-price: 130px;
       --w-score: 170px;
-      --w-dscore: 110px;
+      --w-dscore: 96px;
       --w-conf: 70px;
       --w-cycle: 70px;
       --w-trend: 70px;
       --w-liq: 70px;
-      --w-status: 120px;
+      --w-status: 104px;
       --w-class: 80px;
     }
     * { box-sizing: border-box; }
@@ -1371,7 +1379,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
       </div>
-      <div class="muted small">Score/Rank-nderungen vs. letzter Snapshot.</div>
+      <div class="muted small">Delta-nderungen vs. letzter Snapshot (nicht Kurs-1D).</div>
       <div id="historyText" class="reportText"></div>
     </div>
   </div>
@@ -1398,7 +1406,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
               <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
               <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
-              <th data-k="dscore_1d" class="hide-sm right" title="ScoreVerÃ¤nderung vs. letzter Snapshot (History Delta)">dScore 1D</th>
+              <th data-k="dscore_1d" class="hide-sm right" title="Delta des Scanner-Scores vs. letzter Snapshot (History Delta), nicht Kurs-1D">ΔScore Snapshot</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
@@ -2563,7 +2571,14 @@ function parsePct(v) {
 
 function perfPct(r) {
   return parsePct(
-    r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct
+    r.perf_1d ?? r.perf_1d_pct ?? r.perf1d ?? r.perf_day ?? r['Perf 1D %'] ?? r['Perf 1D'] ??
+    r['Change %'] ?? r.change_pct ?? r.changePercent
+  );
+}
+
+function cyclePct(r) {
+  return parsePct(
+    r.cycle ?? r['Zyklus %'] ?? r.cycle_pct ?? r['Zyklus'] ?? r['Cycle']
   );
 }
 
@@ -2582,9 +2597,8 @@ function renderBreadth(rows) {
   let basisPerfPct = 0;
 
   for (const r of list) {
-    const raw = (r.perf_pct ?? r['Perf %'] ?? r['Change %'] ?? r.change_pct ?? r.changePercent ?? r.PerfPct);
-    if (raw !== null && raw !== undefined && raw !== '') basisPerfPct += 1;
     const p = perfPct(r);
+    if (p !== null) basisPerfPct += 1;
     if (p === null) { miss++; continue; }
     if (p > 0) adv++;
     else if (p < 0) dec++;
@@ -2720,7 +2734,8 @@ function renderMovers(rows) {
   function perf1yPct(r) {
     return parsePct(
       r.perf_1y ?? r.perf1y ?? r.perf_1yr ?? r.perf_1year ?? r['Perf 1Y %'] ?? r['Perf 1Y'] ??
-      r.change_1y_pct ?? r.change1y_pct ?? r.yoy_pct ?? r.perf_year
+      r.change_1y_pct ?? r.change1y_pct ?? r.yoy_pct ?? r.perf_year ??
+      r.perf_pct ?? r['Perf %']
     );
   }
 
@@ -2984,7 +2999,7 @@ function applyHeatFilter(rows) {
         const subName = subParts.join(' Â· ');
 
         const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
-        const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
+        const perf = perfPct(r);
         const priceMain = (price === null) ? '' : `${fmtPrice(price)}${curr ? ' ' + esc(curr) : ''}`;
         const pCell = `<div class="priceCell"><div class="priceMain">${priceMain}</div>${perfLine(perf)}</div>`;
 
@@ -3011,7 +3026,7 @@ function applyHeatFilter(rows) {
           <td>${scoreCell(r)}</td>
           <td class="hide-sm right mono">${dScoreCell(r)}</td>
           <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
-          <td class="hide-sm right mono">${(asNum(r.cycle) ?? 0).toFixed(0)}%</td>
+          <td class="hide-sm right mono">${(cyclePct(r) ?? 0).toFixed(0)}%</td>
           <td>${trend}</td>
           <td>${liq}</td>
           <td>${chip(status || '', statusKind)}</td>
@@ -3059,7 +3074,7 @@ function applyHeatFilter(rows) {
       const items = [
         ['Score', (asNum(r.score) ?? 0).toFixed(2)],
         ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
-        ['Cycle', `${(asNum(r.cycle) ?? 0).toFixed(0)}%`],
+        ['Cycle', `${(cyclePct(r) ?? 0).toFixed(0)}%`],
         ['ScoreStatus', normStr(r.score_status) || ''],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
