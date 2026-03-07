@@ -139,6 +139,17 @@
         <li>Reality Check (Daten ok?)</li>
         <li>History Delta (hat sich wirklich was veraendert?)</li>
       </ul>
+
+      <h3>Neuen Titel hinzufuegen (Master-Workflow)</h3>
+      <p>Pflege neue Aktien/Krypto nur in <code>data/inputs/universe_master.csv</code>. Diese Datei ist die Stammdaten-Quelle.</p>
+      <ul>
+        <li>Neue Zeile mit <code>active=1</code>, <code>symbol</code>, <code>name</code>, <code>isin</code> (bei Krypto leer) eintragen.</li>
+        <li>Optional: <code>category</code>, <code>sector</code>, <code>industry</code>, <code>pillar_primary</code>, <code>bucket_type</code>.</li>
+      </ul>
+      <pre><code>$env:SCANNER_FETCH_YAHOO='1'
+py -3 -X utf8 -m scanner.app.run_daily
+py -3 -X utf8 -m scanner.ui.generator</code></pre>
+      <p>Danach <code>artifacts/ui/index.html</code> im Browser oeffnen und mit <code>Ctrl+F5</code> neu laden.</p>
     </div>
 
     <div class="card" id="sec3">

@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 """Static UI generator (Phase B2 MVP).
 
@@ -58,7 +58,7 @@ DEFAULT_COLUMNS = [
     "Industry",
     "country",
     "currency",
-    "Währung",
+    "WÃ¤hrung",
     # pricing / momentum
     "price",
     "Akt. Kurs",
@@ -97,6 +97,42 @@ DEFAULT_COLUMNS = [
     # keep legacy category around for migration / derivation
     "category",
 ]
+
+
+def _repair_mojibake_text(text: str) -> str:
+    """Best-effort repair for common UTF-8/cp1252 mojibake sequences."""
+    if not text:
+        return text
+    repl = {
+        "Ã¤": "ä",
+        "Ã„": "Ä",
+        "Ã¶": "ö",
+        "Ã–": "Ö",
+        "Ã¼": "ü",
+        "Ãœ": "Ü",
+        "ÃŸ": "ß",
+        "Â·": "·",
+        "Â ": " ",
+        "â€”": "—",
+        "â€“": "–",
+        "â†’": "→",
+        "â‰¥": "≥",
+        "â‰¤": "≤",
+        "â‚¬": "€",
+        "â€œ": "“",
+        "â€": "”",
+        "â€ž": "„",
+        "â€™": "’",
+        "ï¸": "",
+        "ðŸ“Š": "📊",
+        "ðŸ”„": "🔄",
+        "ðŸ§ª": "🧪",
+        "Ã—": "×",
+    }
+    out = text
+    for bad, good in repl.items():
+        out = out.replace(bad, good)
+    return out
 
 
 def _to_json_records(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -340,11 +376,13 @@ def build_ui(
     )
 
     out_html.parent.mkdir(parents=True, exist_ok=True)
+    html = _repair_mojibake_text(html)
     out_html.write_text(html, encoding="utf-8-sig")
 
     # Help / project description page (static)
     help_path = out_html.parent / "help.html"
     help_html = _render_help_html(version=__version__, build=__build__)
+    help_html = _repair_mojibake_text(help_html)
     help_path.write_text(help_html, encoding="utf-8-sig")
 
     return out_html
@@ -596,15 +634,17 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     #segmentText { flex: 1 1 auto; min-height:0; }
     .segmentTables { height: 100%; }
 
-    /* Segment Monitor table: keep headers readable */
-    .segmentTable { table-layout: fixed; width: 100%; }
-    .segmentTable th, .segmentTable td { padding: 8px 8px; }
-    .segmentTable th { white-space: nowrap; }
-    .segmentTable th:nth-child(1), .segmentTable td:nth-child(1) { width: 38%; }
-    .segmentTable th:nth-child(2), .segmentTable td:nth-child(2) { width: 16%; }
-    .segmentTable th:nth-child(3), .segmentTable td:nth-child(3) { width: 14%; }
-    .segmentTable th:nth-child(4), .segmentTable td:nth-child(4) { width: 14%; }
-    .segmentTable th:nth-child(5), .segmentTable td:nth-child(5) { width: 14%; }
+    /* Segment Monitor table: aligned with dashboard table style */
+    .segmentTable { table-layout: fixed; width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.35; }
+    .segmentTable th, .segmentTable td { padding: 8px 8px; border-bottom: 1px solid rgba(36,50,68,.55); text-align: left; }
+    .segmentTable th { white-space: nowrap; background: rgba(15,23,42,.55); color: #cbd5e1; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+    .segmentTable tr:hover td { background: rgba(96,165,250,.07); }
+    .segmentTable td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .segmentTable th:nth-child(1), .segmentTable td:nth-child(1) { width: 40%; }
+    .segmentTable th:nth-child(2), .segmentTable td:nth-child(2) { width: 14%; }
+    .segmentTable th:nth-child(3), .segmentTable td:nth-child(3) { width: 12%; }
+    .segmentTable th:nth-child(4), .segmentTable td:nth-child(4) { width: 12%; }
+    .segmentTable th:nth-child(5), .segmentTable td:nth-child(5) { width: 12%; }
     .segmentTable th:nth-child(6), .segmentTable td:nth-child(6) { width: 4.5em; }
 
     /* Movers (Market Context)  1D + 1Y lines like old screenshot */
@@ -620,26 +660,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .segmentTables { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: 100%; }
     @media (max-width: 1200px) { .segmentTables { grid-template-columns: 1fr; } }
 
-.segmentTable { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .segmentTable th,
-    .segmentTable td { padding: 6px 8px; border-bottom: 1px solid rgba(36,50,68,.55); text-align: left; }
-    .segmentTable th { background: rgba(15,23,42,.55); color: #cbd5e1; font-weight: 600; position: sticky; top: 0; }
-    .segmentTable tr:hover td { background: rgba(96,165,250,.07); }
-    .segmentDelta { font-family: var(--mono); font-weight: 600; }
+    .segmentDelta { font-weight: 600; }
     .segmentDelta.pos { color: var(--good); }
     .segmentDelta.neg { color: var(--bad); }
     .segmentDelta.zero { color: var(--muted); }
-
-    /* Segment Monitor (v4.1): compact table + ellipsis */
-    .segmentTable { table-layout: fixed; font-family: var(--mono); font-size: 11px; line-height: 1.25; }
-    .segmentTable th { white-space: nowrap; }
-    .segmentTable td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .segmentTable th:nth-child(1), .segmentTable td:nth-child(1) { width: 46%; }
-    .segmentTable th:nth-child(2), .segmentTable td:nth-child(2) { width: 14%; }
-    .segmentTable th:nth-child(3), .segmentTable td:nth-child(3) { width: 12%; }
-    .segmentTable th:nth-child(4), .segmentTable td:nth-child(4) { width: 12%; }
-    .segmentTable th:nth-child(5), .segmentTable td:nth-child(5) { width: 12%; }
-    .segmentTable th:nth-child(6), .segmentTable td:nth-child(6) { width: 4.5em; }
 
     .heatControls { display:flex; gap: 8px; align-items:center; }
     .heatControls select { width: auto; min-width: 160px; padding: 8px 10px; border-radius: 10px; }
@@ -1042,7 +1066,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .hdColTitle { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
 .hdList { display:flex; flex-direction:column; gap: 6px; }
 
-.hdItem { display:grid; grid-template-columns: 72px 1fr 100px; gap: 8px; align-items:center; }
+.hdItem { display:grid; grid-template-columns: 72px 1fr 74px; gap: 8px; align-items:center; }
 .hdSym { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 .hdVals { display:flex; flex-direction:column; gap:2px; align-items:flex-end; font-family: var(--mono); font-size: 11px; line-height: 1.15; }
@@ -1053,7 +1077,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 
 .hdSeg {
   justify-self:end;
-  width: 100px; max-width: 100px;
+  width: 74px; max-width: 74px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   padding: 2px 6px;
   border-radius: 999px;
@@ -1121,14 +1145,14 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext  Research Dashboard</h1>
-        <div class="meta">version __VERSION__ · build __BUILD__ · <span title="Quelle: __RUN_SRC__">run __RUN_AT__</span> · universe __RUN_UNIVERSE__ · <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version __VERSION__ Â· build __BUILD__ Â· <span title="Quelle: __RUN_SRC__">run __RUN_AT__</span> Â· universe __RUN_UNIVERSE__ Â· <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>
 
   <div class="wrap">
     <div class="disclaimer" id="disclaimer">
-      <div class="txt"><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Gewähr. Nutzung auf eigene Verantwortung.</div>
+      <div class="txt"><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine GewÃ¤hr. Nutzung auf eigene Verantwortung.</div>
       <button type="button" class="btn" id="discOk" title="Hinweis ausblenden">Verstanden</button>
     </div>
     <div id="jsErrorBanner" class="jsError"></div>
@@ -1148,7 +1172,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <select id="clusterSel"><option value="">Alle</option></select>
         </div>
         <div>
-          <label for="pillarSel">Säule (5Säulen/Playground)</label>
+          <label for="pillarSel">SÃ¤ule (5SÃ¤ulen/Playground)</label>
           <select id="pillarSel"><option value="">Alle</option></select>
         </div>
         <div class="count" id="count"></div>
@@ -1177,8 +1201,8 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           aria-haspopup="dialog" aria-expanded="false">i</button>
         <button type="button" class="fbtn" data-action="toggle" data-key="onlyStock" title="Nur Aktien (is_crypto = false)">Aktien</button>
         <button type="button" class="fbtn" data-action="toggle" data-key="onlyCrypto" title="Nur Krypto (is_crypto = true)">Krypto</button>
-        <button type="button" class="fbtn" data-action="resetSort" title="Nur Sort-Override löschen (Preset-Sort bleibt)">Sortierung zurück</button>
-        <button type="button" class="fbtn" data-action="resetAll" title="Alles zurücksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
+        <button type="button" class="fbtn" data-action="resetSort" title="Nur Sort-Override lÃ¶schen (Preset-Sort bleibt)">Sortierung zurÃ¼ck</button>
+        <button type="button" class="fbtn" data-action="resetAll" title="Alles zurÃ¼cksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
       </div>
       </div>
 
@@ -1191,12 +1215,12 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div class="cardTitle">BucketMatrix (Score  Risk)</div>
           <div class="cardActions">
             <button type="button" class="btn btnToggle" data-toggle="bucket">Ausblenden</button>
-            <button type="button" class="btn" id="matrixClear" title="MatrixFilter zurücksetzen">Reset</button>
-            <button type="button" class="iBtn" data-help-title="Bucket-Matrix" data-help-html="<ul><li><strong>Achsen:</strong> Score () vs Risk () Verteilung</li><li><strong>Klick:</strong> Setzt Matrix-Filter zusätzlich zu Preset/Suche</li><li><strong>Reset:</strong> Matrix-Filter löschen oder Preset zurücksetzen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+            <button type="button" class="btn" id="matrixClear" title="MatrixFilter zurÃ¼cksetzen">Reset</button>
+            <button type="button" class="iBtn" data-help-title="Bucket-Matrix" data-help-html="<ul><li><strong>Achsen:</strong> Score () vs Risk () Verteilung</li><li><strong>Klick:</strong> Setzt Matrix-Filter zusÃ¤tzlich zu Preset/Suche</li><li><strong>Reset:</strong> Matrix-Filter lÃ¶schen oder Preset zurÃ¼cksetzen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
           </div>
         </div>
         <div class="cardBody" data-body="bucket">
-          <div class="muted small">Klick auf ein Feld = MatrixFilter (zusätzlich zu Preset/Suche/QuickFilter).</div>
+          <div class="muted small">Klick auf ein Feld = MatrixFilter (zusÃ¤tzlich zu Preset/Suche/QuickFilter).</div>
           <div class="matrixGrid" id="matrix"></div>
           <div class="matrixNote" id="matrixNote"></div>
         </div>
@@ -1210,17 +1234,17 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div class="cardActions">
             <div class="heatControls">
               <select id="heatMode" title="Heatmap-Modus">
-                <option value="pillar">Heatmap: Säulen</option>
+                <option value="pillar">Heatmap: SÃ¤ulen</option>
                 <option value="cluster">Heatmap: Cluster</option>
               </select>
             </div>
             <button type="button" class="btn btnToggle" data-toggle="heatmap">Ausblenden</button>
-            <button type="button" class="btn" id="heatmapClear" title="HeatmapFilter zurücksetzen">Reset</button>
-            <button type="button" class="iBtn" data-help-title="Heatmap" data-help-html="<ul><li><strong>Was:</strong> Verteilung nach Score-Buckets</li><li><strong>Klick Zeile:</strong> Filtert Säule/Cluster</li><li><strong>Klick Zelle:</strong> Filtert Zeile + Score-Bucket</li><li><strong>Modus:</strong> Säule/Cluster umschalten</li><li><strong>Reset:</strong> Filter löschen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+            <button type="button" class="btn" id="heatmapClear" title="HeatmapFilter zurÃ¼cksetzen">Reset</button>
+            <button type="button" class="iBtn" data-help-title="Heatmap" data-help-html="<ul><li><strong>Was:</strong> Verteilung nach Score-Buckets</li><li><strong>Klick Zeile:</strong> Filtert SÃ¤ule/Cluster</li><li><strong>Klick Zelle:</strong> Filtert Zeile + Score-Bucket</li><li><strong>Modus:</strong> SÃ¤ule/Cluster umschalten</li><li><strong>Reset:</strong> Filter lÃ¶schen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
           </div>
         </div>
         <div class="cardBody" data-body="heatmap">
-          <div class="muted small">Klick auf ein Feld = HeatmapFilter (zusätzlich zu Preset/Suche/QuickFilter).</div>
+          <div class="muted small">Klick auf ein Feld = HeatmapFilter (zusÃ¤tzlich zu Preset/Suche/QuickFilter).</div>
           <div id="heatmap" class="heatWrap"></div>
         </div>
       </div>
@@ -1235,11 +1259,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <div class="cardTitle">Briefing & Reality Check</div>
             <div class="cardActions">
               <button type="button" class="btn btnToggle" data-toggle="briefingReality">Ausblenden</button>
-              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report)</li><li><strong>Badges:</strong> Score, Percentil, Bucket, Confidence, Trend, Liquidität</li><li><strong>Reality:</strong> Daten-Mapping Check (intern vs. Yahoo/Markt)</li><li><strong>Warn/Error:</strong> Zeigen Datenqualitätsprobleme</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report)</li><li><strong>Badges:</strong> Score, Percentil, Bucket, Confidence, Trend, LiquiditÃ¤t</li><li><strong>Reality:</strong> Daten-Mapping Check (intern vs. Yahoo/Markt)</li><li><strong>Warn/Error:</strong> Zeigen DatenqualitÃ¤tsprobleme</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
             </div>
           </div>
           <div class="cardBody" data-body="briefingReality">
-            <div class="muted small">Briefing: Privat/experimentell · Reality Check: Daten-/Mapping-Qualität</div>
+            <div class="muted small">Briefing: Privat/experimentell Â· Reality Check: Daten-/Mapping-QualitÃ¤t</div>
             <div class="briefingRealityContent">
               <div class="briefingRealitySplit">
                 <div class="briefingRealitySection">
@@ -1263,11 +1287,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div class="cardTitle">Segment Monitor</div>
           <div class="cardActions">
             <button type="button" class="btn btnToggle" data-toggle="segment">Ausblenden</button>
-            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Segment:</strong> Säule/Cluster/Bucket Kombination</li><li><strong>Changed:</strong> Anzahl veränderter Segmente vs. letzter Snapshot</li><li><strong>Snapshot:</strong> Vergleichszeitpunkt</li><li><strong>Shifts:</strong> Zeigen wo sich Cluster neu bilden oder auflösen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Segment:</strong> SÃ¤ule/Cluster/Bucket Kombination</li><li><strong>Changed:</strong> Anzahl verÃ¤nderter Segmente vs. letzter Snapshot</li><li><strong>Snapshot:</strong> Vergleichszeitpunkt</li><li><strong>Shifts:</strong> Zeigen wo sich Cluster neu bilden oder auflÃ¶sen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
           </div>
         </div>
         <div class="cardBody" data-body="segment">
-          <div class="muted small">Säulen/Cluster/Bucket · inkl. nderungen vs. letzter Snapshot.</div>
+          <div class="muted small">SÃ¤ulen/Cluster/Bucket Â· inkl. nderungen vs. letzter Snapshot.</div>
           <div id="segmentText" class="reportText"></div>
         </div>
       </div>
@@ -1281,7 +1305,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <div class="marketHead">
     <div>
       <div class="matrixTitle">Market Context</div>
-      <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) · Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/Säule)</div>
+      <div class="muted small">Passiv aus deiner Watchlist (kein Einfluss auf Scoring) Â· Basis: gefiltertes Universe (Preset/Suche/Quick/Cluster/SÃ¤ule)</div>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
       <button type="button" class="btn" id="marketToggle" data-action="togglePanel" data-target="market" title="Market Context ein-/ausblenden">Ausblenden</button>
@@ -1317,7 +1341,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <li><strong>Was:</strong> Top/Weak Tages-Performer im aktuellen Universe.</li>
             <li><strong>1D:</strong> <span class='mono'>Perf %</span> (nur Anzeige/Context).</li>
             <li><strong>1Y:</strong> falls vorhanden (<span class='mono'>Perf 1Y %</span>), sonst n/a.</li>
-            <li><strong>Segment:</strong> offizielles Cluster/Industry/Sector (gekürzt; Hover zeigt voll).</li>
+            <li><strong>Segment:</strong> offizielles Cluster/Industry/Sector (gekÃ¼rzt; Hover zeigt voll).</li>
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
       </div>
@@ -1343,7 +1367,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <li><strong>Was:</strong> nderungen vs. letzter Snapshot (passiv, kein Einfluss auf Scoring).</li>
             <li><strong>S:</strong> Score-Delta aus <span class='mono'>history_delta.json</span>.</li>
             <li><strong>R:</strong> Rank-Delta (falls vorhanden).</li>
-            <li><strong>Filter:</strong> Respektiert das aktuelle Universe (Preset/Suche/Quick/Cluster/Säule).</li>
+            <li><strong>Filter:</strong> Respektiert das aktuelle Universe (Preset/Suche/Quick/Cluster/SÃ¤ule).</li>
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
       </div>
@@ -1370,15 +1394,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           </colgroup>
           <thead>
             <tr>
-              <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-Währung">Symbol/ISIN</th>
-              <th data-k="name" title="Name + Kategorie/Land/Währung">Name</th>
-              <th data-k="price" class="right" title="Aktueller Kurs (Originalwährung) + Tagesänderung (Perf %)">Kurs</th>
-              <th data-k="score" class="right" title="Gesamtscore (höher = besser)">Score</th>
-              <th data-k="dscore_1d" class="hide-sm right" title="ScoreVeränderung vs. letzter Snapshot (History Delta)">dScore 1D</th>
+              <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
+              <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
+              <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
+              <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
+              <th data-k="dscore_1d" class="hide-sm right" title="ScoreVerÃ¤nderung vs. letzter Snapshot (History Delta)">dScore 1D</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
-              <th data-k="liquidity_ok" title="Liquiditäts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
+              <th data-k="liquidity_ok" title="LiquiditÃ¤ts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
               <th data-k="score_status" title="OK / AVOID / AVOID_CRYPTO_BEAR / NA / ERROR">Status</th>
               <th data-k="is_crypto" class="hide-sm" title="Assetklasse">Art</th>
             </tr>
@@ -1388,7 +1412,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </div>
 
       <div class="footer">
-        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung · <span class="kbd">Esc</span> = Suche leeren</div>
+        <div>Tipp: <span class="kbd">Klick</span> Header = Sortierung Â· <span class="kbd">Esc</span> = Suche leeren</div>
         <div class="mono" id="sortHint"></div>
       </div>
     </div>
@@ -1441,7 +1465,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     // If the main UI never sets jsok, show a helpful message (covers parse errors)
     setTimeout(() => {
       const ok = document.documentElement && document.documentElement.dataset && document.documentElement.dataset.jsok;
-      if (!ok) show('UI konnte nicht initialisiert werden (JS lädt nicht). ffne die Konsole (F12) für Details.');
+      if (!ok) show('UI konnte nicht initialisiert werden (JS lÃ¤dt nicht). ffne die Konsole (F12) fÃ¼r Details.');
     }, 700);
   })();
   </script>
@@ -1580,7 +1604,7 @@ const elHeatMode = document.getElementById('heatMode');
     let userSort = null; // {k, dir} dir: 'asc'|'desc'
     // Multi-select: use arrays of strings. Ctrl/-Click toggles, normal click selects single.
     let clusterPick = []; // Cluster/Sektor filter (array)
-        let pillarPick = [];  // Säulen-Filter (array; private metadata)
+        let pillarPick = [];  // SÃ¤ulen-Filter (array; private metadata)
 
 // Market Context UI state (passive)
 let marketVisible = true;
@@ -1863,7 +1887,7 @@ function renderClusterChips(counts) {
   if (activeSet.size) {
     const label = activeSet.size + ' selected';
     const tip = Array.from(activeSet).join(', ');
-    html += `<button type="button" class="chip kpi warn active" data-chip="cluster" data-val="__CLEAR__" title="Cluster-Filter löschen: ${esc(tip)}"> ${esc(label)}</button>`;
+    html += `<button type="button" class="chip kpi warn active" data-chip="cluster" data-val="__CLEAR__" title="Cluster-Filter lÃ¶schen: ${esc(tip)}"> ${esc(label)}</button>`;
   }
   for (const x of top) {
     const isOn = activeSet.has(x.k);
@@ -1879,7 +1903,7 @@ function applyClusterFilter(rows) {
   return (rows || []).filter(r => uiState.selClusters.has(clusterLabel(r)));
 }
 
-// ---- 5Säulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
+// ---- 5SÃ¤ulen / Playground helpers (UI-only; private metadata; never affects scoring) ----
 const PILLAR_ORDER = ['Gehirn','Hardware','Energie','Fundament','Recycling','Playground'];
 
 function _derivePillarFromLegacy(catRaw) {
@@ -1945,22 +1969,22 @@ function renderPillarOptions(counts) {
 function renderPillarChips(counts) {
   if (!elPillars) return;
   const activeSet = uiState.selPillars;
-  let html = '<span class="label">Säulen:</span>';
+  let html = '<span class="label">SÃ¤ulen:</span>';
   
   // "Alle" chip
   const allActive = activeSet.size === 0;
-  html += `<button type="button" class="chip kpi ${allActive ? 'blue active' : 'blue'}" data-chip="pillar" data-val="__ALL__" title="Alle Säulen anzeigen">Alle</button>`;
+  html += `<button type="button" class="chip kpi ${allActive ? 'blue active' : 'blue'}" data-chip="pillar" data-val="__ALL__" title="Alle SÃ¤ulen anzeigen">Alle</button>`;
   
   if (activeSet.size) {
     const label = activeSet.size + ' selected';
     const tip = Array.from(activeSet).join(', ');
-    html += `<button type="button" class="chip kpi warn active" data-chip="pillar" data-val="__CLEAR__" title="Säulen-Filter löschen: ${esc(tip)}"> ${esc(label)}</button>`;
+    html += `<button type="button" class="chip kpi warn active" data-chip="pillar" data-val="__CLEAR__" title="SÃ¤ulen-Filter lÃ¶schen: ${esc(tip)}"> ${esc(label)}</button>`;
   }
   for (const x of (counts || [])) {
     const isOn = activeSet.has(x.k);
     const kind = isOn ? 'warn active' : 'blue';
     const dis = (x.v || 0) <= 0 ? 'disabled aria-disabled="true"' : '';
-    html += `<button type="button" class="chip kpi ${kind}" data-chip="pillar" data-val="${esc(x.k)}" ${dis} title="Filter: nur Säule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
+    html += `<button type="button" class="chip kpi ${kind}" data-chip="pillar" data-val="${esc(x.k)}" ${dis} title="Filter: nur SÃ¤ule ${esc(x.k)}">${esc(x.k)} <span class="mono">(${x.v})</span></button>`;
   }
   elPillars.innerHTML = html;
 }
@@ -2288,7 +2312,7 @@ function applyPillarFilter(rows) {
       if (!q) return rows;
       const tokens = q.split(/\\s+/).filter(Boolean);
       return rows.filter(r => {
-        const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["Währung"], r.quote_currency, r.score_status]
+        const hay = [r.ticker, r.ticker_display, r.yahoo_symbol, r.YahooSymbol, r.symbol, r.isin, r.name, r.sector, r.Sector, r.category, r.Sektor, r.Kategorie, r.Industry, r.industry, r.country, r.currency, r["WÃ¤hrung"], r.quote_currency, r.score_status]
           .map(normStr).join(' ').toLowerCase();
         return tokens.every(t => hay.includes(t));
       });
@@ -2479,7 +2503,7 @@ function applyQuickFilters(rows) {
 
       for (let rb = 0; rb < 5; rb++) {
         const rtxt = riskBucketText(rb);
-        parts.push(`<div class="matrixLabel" title="RiskBucket (Perzentil; höher = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
+        parts.push(`<div class="matrixLabel" title="RiskBucket (Perzentil; hÃ¶her = riskanter)"><div class="lbl">${esc(rtxt.range)}</div><div class="hint">${esc(rtxt.hint)}</div></div>`);
         for (let sb = 0; sb < 5; sb++) {
           const c = counts[rb][sb] || 0;
           const active = (matrix && matrix.sb === sb && matrix.rb === rb) ? 'active' : '';
@@ -2495,7 +2519,7 @@ function applyQuickFilters(rows) {
           const s = scoreBucketText(sb);
           const rr = riskBucketText(rb);
 
-          parts.push(`<div class="cell ${active} ${zero}" ${st} data-sb="${sb}" data-rb="${rb}" title="Score ${esc(s.range)} · Risk ${esc(rr.hint)}">${c ? `<span class="cnt">${c}</span>` : `<span class="cnt">·</span>`}</div>`);
+          parts.push(`<div class="cell ${active} ${zero}" ${st} data-sb="${sb}" data-rb="${rb}" title="Score ${esc(s.range)} Â· Risk ${esc(rr.hint)}">${c ? `<span class="cnt">${c}</span>` : `<span class="cnt">Â·</span>`}</div>`);
         }
       }
 
@@ -2521,7 +2545,7 @@ function applyQuickFilters(rows) {
       const rb = (matrix && matrix.rb !== undefined) ? matrix.rb : null;
       if (elMatrixNote) {
         const metric = (RISK_SORTED && RISK_SORTED.length) ? 'RiskProxy aus volatility/downside_dev/max_drawdown (Perzentil)' : 'RiskProxy fehlt (keine RiskSpalten im CSV)';
-        const sel = (sb !== null && rb !== null) ? ` · aktiv: Score ${bucketRange(sb)}  ${riskBucketText(rb).hint}` : '';
+        const sel = (sb !== null && rb !== null) ? ` Â· aktiv: Score ${bucketRange(sb)}  ${riskBucketText(rb).hint}` : '';
         elMatrixNote.textContent = metric + sel;
       }
     }
@@ -2720,7 +2744,7 @@ function renderMovers(rows) {
     const full = normStr(clusterLabel(r)) || (asBool(r.is_crypto) === true ? 'Krypto' : '');
     if (!full) return { short: '', full: '' };
     
-    // Kürzere Abkürzungen für schmale Pills (ca. 8-10 Zeichen)
+    // KÃ¼rzere AbkÃ¼rzungen fÃ¼r schmale Pills (ca. 8-10 Zeichen)
     const words = full.split(' ');
     let short = '';
     
@@ -2787,7 +2811,7 @@ function renderHeatmap(rows) {
     m.get(cat)[sb] += 1;
   }
   if (!m.size) {
-    elHeatmap.innerHTML = `<div class="muted">Keine Daten für Heatmap (keine Kategorie im aktuellen Universe).</div>`;
+    elHeatmap.innerHTML = `<div class="muted">Keine Daten fÃ¼r Heatmap (keine Kategorie im aktuellen Universe).</div>`;
     return;
   }
 
@@ -2814,7 +2838,7 @@ function renderHeatmap(rows) {
       const bg = `background: hsla(${hue}, 70%, 50%, ${alpha});`;
       const cellOn = rowOn && heatFilter.sb !== null && Number(heatFilter.sb) === sb;
       const act = cellOn ? ' active' : '';
-      return `<td class="heatCell${zero}${act}" data-hcat="${esc(x.k)}" data-sb="${sb}" style="${bg}" title="${esc(x.k)} · Score ${esc(hdr[sb])} = ${v}">${v ? v : '·'}</td>`;
+      return `<td class="heatCell${zero}${act}" data-hcat="${esc(x.k)}" data-sb="${sb}" style="${bg}" title="${esc(x.k)} Â· Score ${esc(hdr[sb])} = ${v}">${v ? v : 'Â·'}</td>`;
     }).join('');
 
     const rowAct = rowOn ? ' active' : '';
@@ -2825,7 +2849,7 @@ function renderHeatmap(rows) {
     <div class="matrixGrid" style="grid-template-columns: 84px repeat(5, 1fr);">
       <!-- Corner cell with mode labels -->
       <div class="matrixAxis" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding: 6px 4px;">
-        <div class="lbl" style="font-weight: 700;">${heatMode === 'cluster' ? 'Cluster' : 'Säule'} </div>
+        <div class="lbl" style="font-weight: 700;">${heatMode === 'cluster' ? 'Cluster' : 'SÃ¤ule'} </div>
         <div class="hint" style="font-size: 9px;">Score </div>
       </div>
       <!-- Score bucket headers -->
@@ -2846,12 +2870,12 @@ function renderHeatmap(rows) {
           const cellOn = rowOn && heatFilter.sb !== null && Number(heatFilter.sb) === sb;
           const act = cellOn ? ' active' : '';
           const zero = v === 0 ? ' zero' : '';
-          parts.push(`<div class="cell${zero}${act}" style="${bg}" data-hcat="${esc(x.k)}" data-sb="${sb}"><span class="cnt">${v ? v : '·'}</span></div>`);
+          parts.push(`<div class="cell${zero}${act}" style="${bg}" data-hcat="${esc(x.k)}" data-sb="${sb}"><span class="cnt">${v ? v : 'Â·'}</span></div>`);
         }
         return parts.join('');
       }).join('')}
     </div>
-    <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro ScoreBucket (Top ${limit} nach Häufigkeit).</div>
+    <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro ScoreBucket (Top ${limit} nach HÃ¤ufigkeit).</div>
   `;
 
   elHeatmap.querySelectorAll('[data-hcat]').forEach(node => {
@@ -2916,8 +2940,8 @@ function applyHeatFilter(rows) {
         const isinRaw = normStr(r.isin);
         const isin = (!isC) ? (isinRaw || (looksLikeISIN(tRaw) ? tRaw : '')) : '';
 
-        const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["Währung"]);
-        const currChip = curr ? `<span class="tinychip" title="Währung">${esc(curr)}</span>` : '';
+        const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["WÃ¤hrung"]);
+        const currChip = curr ? `<span class="tinychip" title="WÃ¤hrung">${esc(curr)}</span>` : '';
 
         const main = href ? `<a class="yf" href="${href}" target="_blank" rel="noopener">${esc(disp)}</a>` : esc(disp);
         // subline for the left "Symbol/ISIN" cell: for crypto show the Yahoo pair (e.g. BTC-USD),
@@ -2933,7 +2957,7 @@ function applyHeatFilter(rows) {
         const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
         const industryOfficial = normStr(r.industry) || normStr(r.Industry) || normStr(r.cluster_official);
 
-        // Private pillars (5-säulen + playground) are metadata only (never affect scoring)
+        // Private pillars (5-sÃ¤ulen + playground) are metadata only (never affect scoring)
         // Use UI fallback derivation so older universes still show the concept.
         const pillar = pillarLabel(r);
         const bucketType = normStr(r.bucket_type);
@@ -2954,10 +2978,10 @@ function applyHeatFilter(rows) {
         const ctry = normStr(r.country);
         const subParts = [];
         if (taxLabel) subParts.push(`<span title="${esc(taxTitle)}">${esc(taxLabel)}</span>`);
-        if (pillar) subParts.push(`<span class="muted" title="Säule (privat, Metadaten)">Säule: ${esc(pillar)}</span>`);
+        if (pillar) subParts.push(`<span class="muted" title="SÃ¤ule (privat, Metadaten)">SÃ¤ule: ${esc(pillar)}</span>`);
         if (bucketType && bucketType !== 'pillar' && bucketType !== 'none') subParts.push(`<span class="muted" title="Bucket-Type (privat)">(${esc(bucketType)})</span>`);
         if (ctry) subParts.push(esc(ctry));
-        const subName = subParts.join(' · ');
+        const subName = subParts.join(' Â· ');
 
         const price = asNum(r.price) ?? asNum(r["Akt. Kurs"]);
         const perf = asNum(r.perf_pct) ?? asNum(r["Perf %"]);
@@ -3021,15 +3045,15 @@ function applyHeatFilter(rows) {
       const sectorOfficial = normStr(r.sector) || normStr(r.Sector);
       const categoryManual = normStr(r.category) || normStr(r.Sektor) || normStr(r.Kategorie);
       const cat = asBool(r.is_crypto) ? 'Krypto' : (categoryManual ? `Cluster: ${categoryManual}` : (sectorOfficial || ''));
-      const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["Währung"]);
-      const sub = [cat, normStr(r.country), curr, normStr(r.isin)].filter(Boolean).join(' · ');
+      const curr = normStr(r.quote_currency) || normStr(r.currency) || normStr(r["WÃ¤hrung"]);
+      const sub = [cat, normStr(r.country), curr, normStr(r.isin)].filter(Boolean).join(' Â· ');
       drawerSub.textContent = sub || '';
 
       // Quick action: open on Yahoo Finance if we can determine a valid symbol
       if (drawerActions) {
         const sym = pickYahooSymbol(r);
         const href = yahooHref(sym);
-        drawerActions.innerHTML = href ? `<a class="btn" href="${href}" target="_blank" rel="noopener" title="Auf Yahoo Finance öffnen">Yahoo</a>` : '';
+        drawerActions.innerHTML = href ? `<a class="btn" href="${href}" target="_blank" rel="noopener" title="Auf Yahoo Finance Ã¶ffnen">Yahoo</a>` : '';
       }
 
       const items = [
@@ -3103,7 +3127,7 @@ function applyHeatFilter(rows) {
       renderClusterOptions(cc);
       renderClusterChips(cc);
 
-      // pillar counts (5-säulen + playground) reflect the same universe
+      // pillar counts (5-sÃ¤ulen + playground) reflect the same universe
       const pc = computePillarCounts(rowsSQ);
       renderPillarOptions(pc);
       renderPillarChips(pc);
@@ -3147,7 +3171,7 @@ function applyHeatFilter(rows) {
       const _pps = Array.isArray(pillarPick) ? pillarPick : ((pillarPick || '') ? [String(pillarPick)] : []);
       if (_pps.length) f.push(`pillar:${_pps.join('|')}`);
 
-      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  ·  filters: ${f.join(',')}` : '');
+      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  Â·  filters: ${f.join(',')}` : '');
       if (btnMatrixClear) btnMatrixClear.disabled = !(matrix && matrix.sb !== null && matrix.rb !== null);
 
       const override = userSort ? ` | override: ${userSort.k}:${userSort.dir}` : '';
@@ -3453,8 +3477,8 @@ function applyHeatFilter(rows) {
       function normalizeBriefHeader(rawSymbol, rawName) {
         const sym = normStr(rawSymbol);
         let name = normStr(rawName) || '?';
-        if (sym) name = name.replace(new RegExp('^' + escRe(sym) + '\\s*[\\-–—:]\\s*', 'i'), '');
-        name = name.replace(/^([A-Z]{2}[A-Z0-9]{9}[0-9])\\s*[\\-–—:]\\s*/i, '');
+        if (sym) name = name.replace(new RegExp('^' + escRe(sym) + '\\s*[\\-â€“â€”:]\\s*', 'i'), '');
+        name = name.replace(/^([A-Z]{2}[A-Z0-9]{9}[0-9])\\s*[\\-â€“â€”:]\\s*/i, '');
         let showSym = sym;
         const nameUpper = name.toUpperCase();
         const symUpper = sym.toUpperCase();
@@ -3471,7 +3495,7 @@ function applyHeatFilter(rows) {
         const top = briefing.top || [];
         
         // Meta line
-        const metaLine = '<div class="briefingMeta">' + esc(meta.date || '?') + ' · ' + esc(meta.generated_at ? new Date(meta.generated_at).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '?') + ' · ' + esc(meta.universe_count || '?') + '/' + esc(meta.scored_count || '?') + ' scored</div>';
+        const metaLine = '<div class="briefingMeta">' + esc(meta.date || '?') + ' Â· ' + esc(meta.generated_at ? new Date(meta.generated_at).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '?') + ' Â· ' + esc(meta.universe_count || '?') + '/' + esc(meta.scored_count || '?') + ' scored</div>';
         
         // Top 3 picks
         const picksHtml = top.slice(0, 3).map((pick, idx) => {
@@ -3504,7 +3528,7 @@ function applyHeatFilter(rows) {
               '<span class="briefingBadge">' + cluster + '</span>' +
               '<span class="briefingBadge">' + pillar + '</span>' +
             '</div>' +
-            (reasons.length ? '<div class="briefingPickReasons">' + reasons.map(r => '<div class="briefingReason">• ' + esc(r) + '</div>').join('') + '</div>' : '') +
+            (reasons.length ? '<div class="briefingPickReasons">' + reasons.map(r => '<div class="briefingReason">â€¢ ' + esc(r) + '</div>').join('') + '</div>' : '') +
           '</div>';
         }).join('');
         
@@ -3521,7 +3545,7 @@ function applyHeatFilter(rows) {
             const line = lines[i].trim();
             
             // Skip separator lines
-            if (/^(—+|_+|-+)$/.test(line)) continue;
+            if (/^(â€”+|_+|-+)$/.test(line)) continue;
             
             // Check for pick header patterns
             const hashMatch = line.match(/^#\\s*(\\d+)\\s*(.+)$/);
@@ -3535,9 +3559,9 @@ function applyHeatFilter(rows) {
               
               // Parse symbol and name
               const header = match[2];
-              const symbolMatch = header.match(/^([A-Z]{2}[A-Z0-9]{8,12}|[A-Z]{1,5})\\s*[\\-–—]\\s*(.+)$/);
-              const symbol = symbolMatch ? symbolMatch[1] : header.split(/\\s+[\\-–—]\\s+/)[0] || '?';
-              const name = symbolMatch ? symbolMatch[2] : header.split(/\\s+[\\-–—]\\s+/)[1] || header;
+              const symbolMatch = header.match(/^([A-Z]{2}[A-Z0-9]{8,12}|[A-Z]{1,5})\\s*[\\-â€“â€”]\\s*(.+)$/);
+              const symbol = symbolMatch ? symbolMatch[1] : header.split(/\\s+[\\-â€“â€”]\\s+/)[0] || '?';
+              const name = symbolMatch ? symbolMatch[2] : header.split(/\\s+[\\-â€“â€”]\\s+/)[1] || header;
               
               currentPick = {
                 rank: parseInt(match[1]),
@@ -3547,7 +3571,7 @@ function applyHeatFilter(rows) {
               };
             } else if (foundFirstPick && currentPick) {
               // Add as reason if we have a current pick
-              const isBullet = line.startsWith('-') || line.startsWith('•') || line.startsWith('*');
+              const isBullet = line.startsWith('-') || line.startsWith('â€¢') || line.startsWith('*');
               const reasonText = isBullet ? line.substring(1).trim() : line;
               if (reasonText && currentPick.reasons.length < 6) {
                 currentPick.reasons.push(reasonText);
@@ -3568,8 +3592,8 @@ function applyHeatFilter(rows) {
         const meta = briefing.meta || {};
         if (meta.date || meta.generated_at || meta.universe_count) {
           metaLine = '<div class="briefingMeta">' + 
-            (meta.date || '?') + ' · ' + 
-            (meta.generated_at ? new Date(meta.generated_at).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '?') + ' · ' +
+            (meta.date || '?') + ' Â· ' + 
+            (meta.generated_at ? new Date(meta.generated_at).toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '?') + ' Â· ' +
             (meta.universe_count || '?') + '/' + (meta.scored_count || '?') + ' scored' +
           '</div>';
         } else {
@@ -3588,7 +3612,7 @@ function applyHeatFilter(rows) {
             else if (universeMatch) parts.push('Universe: ' + universeMatch[1]);
             
             if (parts.length > 0) {
-              metaLine = '<div class="briefingMeta">' + parts.join(' · ') + '</div>';
+              metaLine = '<div class="briefingMeta">' + parts.join(' Â· ') + '</div>';
             }
           }
         }
@@ -3596,7 +3620,7 @@ function applyHeatFilter(rows) {
         // Render picks (max 3) with badge parsing
         const picksHtml = picks.slice(0, 3).map((pick, idx) => {
           // Parse badges from reasons
-          const badgeKeywords = ['Score', 'Percentil', 'Bucket', 'Confidence', 'Trend', 'Liq', 'Liquidität', 'Cluster', 'Säule', 'Pillar'];
+          const badgeKeywords = ['Score', 'Percentil', 'Bucket', 'Confidence', 'Trend', 'Liq', 'LiquiditÃ¤t', 'Cluster', 'SÃ¤ule', 'Pillar'];
           const badges = [];
           const reasons = [];
           
@@ -3607,9 +3631,9 @@ function applyHeatFilter(rows) {
               trimmed.toLowerCase().startsWith(keyword.toLowerCase())
             );
             
-            if (isBadge && !trimmed.toLowerCase().includes('gründe')) {
+            if (isBadge && !trimmed.toLowerCase().includes('grÃ¼nde')) {
               badges.push(trimmed);
-            } else if (trimmed && !trimmed.toLowerCase().includes('gründe')) {
+            } else if (trimmed && !trimmed.toLowerCase().includes('grÃ¼nde')) {
               reasons.push(trimmed);
             }
           });
@@ -3674,18 +3698,33 @@ function applyHeatFilter(rows) {
           return sign + n.toFixed(digits);
         }
 
-        // Prefer score_delta lists, fallback to rank_delta if needed
-        let pos = items.filter(x => x.sd !== null && x.sd > 0).sort((a,b) => b.sd - a.sd).slice(0, 12);
-        let neg = items.filter(x => x.sd !== null && x.sd < 0).sort((a,b) => a.sd - b.sd).slice(0, 12);
-
-        if (!pos.length && !neg.length) {
-          pos = items.filter(x => x.rd !== null && x.rd > 0).sort((a,b) => b.rd - a.rd).slice(0, 12);
-          neg = items.filter(x => x.rd !== null && x.rd < 0).sort((a,b) => a.rd - b.rd).slice(0, 12);
+        // Movement side: prefer rank movement (relative universe), then score as fallback.
+        function movementSide(x) {
+          const rd = (x.rd === null || x.rd === undefined) ? 0 : Number(x.rd);
+          const sd = (x.sd === null || x.sd === undefined) ? 0 : Number(x.sd);
+          const rs = rd > 0 ? 1 : (rd < 0 ? -1 : 0);
+          const ss = sd > 0 ? 1 : (sd < 0 ? -1 : 0);
+          if (rs !== 0) return rs;
+          return ss;
+        }
+        function movementKey(x) {
+          const rdAbs = (x.rd === null || x.rd === undefined) ? 0 : Math.abs(Number(x.rd));
+          const sdAbs = (x.sd === null || x.sd === undefined) ? 0 : Math.abs(Number(x.sd));
+          return (rdAbs * 1000) + sdAbs;
         }
 
-        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} · Universe: ${(rows||[]).length} · with : ${items.length}</div>`;
+        let pos = items
+          .filter(x => movementSide(x) > 0)
+          .sort((a, b) => movementKey(b) - movementKey(a))
+          .slice(0, 12);
+        let neg = items
+          .filter(x => movementSide(x) < 0)
+          .sort((a, b) => movementKey(b) - movementKey(a))
+          .slice(0, 12);
 
-        // Deine schönen 4 Pills bleiben, plus Top/Weak Zähler als Bonus
+        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} Â· Universe: ${(rows||[]).length} Â· with : ${items.length}</div>`;
+
+        // Deine schÃ¶nen 4 Pills bleiben, plus Top/Weak ZÃ¤hler als Bonus
         const controls = `<div class="breadthRow" style="margin-top:6px;">
           ${chip(`Snapshots ${snaps}`, 'blue')}
           ${chip(`1D`, 'blue')}
@@ -3723,7 +3762,7 @@ function applyHeatFilter(rows) {
         </div>`;
 
         const explain = `<div class="muted small" style="margin-top:8px;">
-          Positiv bedeutet: im Ranking/Score gestiegen. Anzeige ist <b>passiv</b> (kein Einfluss auf Scoring) und wird aus <span class="mono">history_delta.json</span> + aktuellem Filter gebaut.
+          Top/Weak basiert primär auf <b>Rank-Delta</b> (relative Bewegung im Universe), Score-Delta ist Zusatzinfo. Anzeige ist <b>passiv</b> und wird aus <span class="mono">history_delta.json</span> + aktuellem Filter gebaut.
         </div>`;
 
         elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${explain}</div>`;
@@ -3737,84 +3776,75 @@ function applyHeatFilter(rows) {
         const hasStats = !!(r && r.stats && Object.keys(r.stats).length);
         const hasIssues = Array.isArray(r && r.top_issues) && r.top_issues.length > 0;
         const issuesCount = hasIssues ? r.top_issues.length : 0;
-        
-        // Debug info - show actual keys
-        let debugInfo = `reality: stats=${hasStats ? 'yes' : 'no'} issues=${issuesCount}`;
-        if (hasIssues && r.top_issues.length > 0) {
-          debugInfo += ' | reality keys: ' + Object.keys(r.top_issues[0]).join(', ');
-        }
-        
+
         if (!r || (!hasStats && !hasIssues)) {
-          return '<div class="debugInfo">' + debugInfo + '</div><div class="realityMissing">️ Reality Check Report fehlt / nicht generiert</div>';
+          return '<div class="realityMissing">Reality Check Report fehlt / nicht generiert</div>';
         }
-        
+
         const st = r.stats || {};
         const summary = '<div class="realitySummary">' +
           '<div class="summaryChip ok">ok: ' + esc(st.ok || 0) + '</div>' +
           '<div class="summaryChip warn">warn: ' + esc(st.warn || 0) + '</div>' +
           '<div class="summaryChip error">error: ' + esc(st.error || 0) + '</div>' +
         '</div>';
-        
+
         if (hasIssues) {
-          // Proper HTML table with robust key mapping
           const tableHtml = '<table class="realityTable">' +
             '<thead>' +
               '<tr>' +
                 '<th>Intern</th>' +
                 '<th>Offiziell</th>' +
-                '<th>Scanner</th>' +
-                '<th>Markt</th>' +
+                '<th>Bewertung</th>' +
+                '<th>Markttrend</th>' +
                 '<th>Signal</th>' +
+                '<th>Hinweis</th>' +
               '</tr>' +
             '</thead>' +
             '<tbody>' +
             r.top_issues.slice(0, 12).map(issue => {
-              // Robust key mapping with fallbacks
               const intern = esc(issue.intern || issue.internal || issue.pillar_primary || issue.scanner_pillar || '—');
               const official = esc(issue.offiziell || issue.official || issue.official_sector || issue.official_industry || '—');
               const scanner = esc(issue.scanner || issue.cluster || issue.scanner_cluster || issue.pillar_primary || '—');
               const market = esc(issue.market || issue.yahoo_sector || issue.yahoo_industry || issue.market_sector || '—');
-              
-              // Signal badge from severity/verdict
+
               let signalClass = 'neutral';
               let signalText = 'OK';
               const severity = (issue.severity || '').toLowerCase();
               const verdict = (issue.verdict || '').toLowerCase();
               const signal = (issue.signal || '').toLowerCase();
-              
-              if (severity === 'error' || severity === 'high' || verdict === 'contra' || signal === 'contra') {
+
+              if (severity === 'error' || verdict === 'contra' || signal === 'contra') {
                 signalClass = 'contra';
                 signalText = issue.signal || 'Kontra';
-              } else if (severity === 'warn' || severity === 'medium' || verdict === 'warn' || signal === 'warn') {
+              } else if (severity === 'warn' || verdict === 'warn' || signal === 'warn') {
                 signalClass = 'neutral';
                 signalText = issue.signal || 'Warn';
               } else {
                 signalClass = 'positive';
                 signalText = issue.signal || 'OK';
               }
-              
-              // Show problems as tooltip in signal cell if available
+
               let signalCell = '<span class="signalBadge ' + signalClass + '">' + signalText + '</span>';
               if (Array.isArray(issue.problems) && issue.problems.length > 0) {
                 signalCell = '<span class="signalBadge ' + signalClass + '" title="' + esc(issue.problems.join('; ')) + '">' + signalText + '</span>';
               }
-              
+              const hint = esc(issue.hint || issue.problems_text || '');
+
               return '<tr>' +
                 '<td>' + intern + '</td>' +
                 '<td>' + official + '</td>' +
                 '<td>' + scanner + '</td>' +
                 '<td>' + market + '</td>' +
                 '<td>' + signalCell + '</td>' +
+                '<td>' + hint + '</td>' +
               '</tr>';
             }).join('') +
             '</tbody>' +
           '</table>' +
-          (issuesCount > 12 ? '<div class="muted small" style="margin-top: 6px;"> weitere ' + (issuesCount - 12) + ' Einträge</div>' : '');
-          
-          const rowsRendered = Math.min(issuesCount, 12);
-          return '<div class="debugInfo">' + debugInfo + '</div><div class="renderProof">REALITY_RENDER: top_issues rows=' + issuesCount + ' | reality rows rendered: ' + rowsRendered + '</div>' + summary + tableHtml;
+          (issuesCount > 12 ? '<div class="muted small" style="margin-top: 6px;">+ weitere ' + (issuesCount - 12) + ' Einträge</div>' : '');
+
+          return summary + tableHtml;
         } else {
-          // Fallback: render as list if no structured issues
           const fallbackHtml = '<div class="realityTable">' +
             '<div class="realityRow">' +
               '<div class="realityCell" style="grid-column: 1/-1;">' +
@@ -3823,13 +3853,11 @@ function applyHeatFilter(rows) {
               '</div>' +
             '</div>' +
           '</div>';
-          
-          return '<div class="debugInfo">' + debugInfo + '</div><div class="renderProof">REALITY_RENDER: fallback</div>' + summary + fallbackHtml;
+
+          return '<div class="realityMissing">Keine Vergleichsdaten vorhanden</div>' + summary + fallbackHtml;
         }
       } catch (e) { return ''; }
     }
-
-    
     function renderSegmentMonitor(rows) {
       if (!elSegment) return;
       try {
@@ -3911,7 +3939,7 @@ function applyHeatFilter(rows) {
         }
 
         // IMPORTANT: Use the same label logic as chips/filters so Segment Monitor matches the visible UI.
-        const intern = buildGroups(r => pillarLabel(r));     // internal: 5-säulen (scanner-owned)
+        const intern = buildGroups(r => pillarLabel(r));     // internal: 5-sÃ¤ulen (scanner-owned)
         const official = buildGroups(r => clusterLabel(r));  // official: market cluster/sector/industry
 
         const metaLine = '<div class="muted small">Snapshot: ' + (prev || '') + '  ' + (latest || '') + ' | Universe: ' + (rows ? rows.length : 0) + '</div>';
@@ -4088,9 +4116,9 @@ def _render_help_html_legacy_inline(*, version: str, build: str) -> str:
       <div class="top">
         <div>
           <h1>Scanner_vNext  Hilfe & Projektbeschreibung</h1>
-          <div class="meta">version {version} · build {build} · <a href="index.html">zurück zum Dashboard</a></div>
+          <div class="meta">version {version} Â· build {build} Â· <a href="index.html">zurÃ¼ck zum Dashboard</a></div>
         </div>
-        <div class="pill">Living Doc · wird laufend erweitert</div>
+        <div class="pill">Living Doc Â· wird laufend erweitert</div>
       </div>
     </div>
   </header>
@@ -4099,7 +4127,7 @@ def _render_help_html_legacy_inline(*, version: str, build: str) -> str:
 
     <div class="card" style="border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.06);">
       <h2>Disclaimer</h2>
-      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine Gewähr. Inhalte können unvollständig, falsch oder veraltet sein. Nutzung ausschlielich auf eigene Verantwortung.</p>
+      <p><b>Privates, experimentelles Projekt.</b> Keine Anlageberatung, keine Empfehlung, keine GewÃ¤hr. Inhalte kÃ¶nnen unvollstÃ¤ndig, falsch oder veraltet sein. Nutzung ausschlielich auf eigene Verantwortung.</p>
     </div>
 
     <div class="card">
@@ -4121,72 +4149,72 @@ def _render_help_html_legacy_inline(*, version: str, build: str) -> str:
 
     <div class="card" id="ueberblick">
       <h2>1) berblick</h2>
-      <p><b>Scanner_vNext</b> ist ein privates TradingResearchSystem für Watchlists und PortfolioIdeen. Es bündelt Kennzahlen, Signale und MarktKontext zu einem <b>multifaktoriellen Score</b>  mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
+      <p><b>Scanner_vNext</b> ist ein privates TradingResearchSystem fÃ¼r Watchlists und PortfolioIdeen. Es bÃ¼ndelt Kennzahlen, Signale und MarktKontext zu einem <b>multifaktoriellen Score</b>  mit dem Ziel, Entscheidungen schneller, konsistenter und nachvollziehbar zu machen.</p>
       <div class="callout">
-        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (ViewLayer)  sie verändern das Scoring nicht. KITexte sind reine <i>Briefings</i> und dürfen keinen Einfluss auf den Score haben.</p>
+        <p style="margin:0"><b>Wichtig:</b> Presets sind reine <i>Ansichten</i> (ViewLayer)  sie verÃ¤ndern das Scoring nicht. KITexte sind reine <i>Briefings</i> und dÃ¼rfen keinen Einfluss auf den Score haben.</p>
       </div>
       <p class="tag">Hinweis: Dieses Projekt ist kein Finanzrat. Es ist ein Werkzeug zur eigenen Strukturierung und Dokumentation von Entscheidungen.</p>
     </div>
 
     <div class="card" id="pipeline">
       <h2>2) Datenfluss (Pipeline)</h2>
-      <p>Die täglichen Schritte sind bewusst getrennt  damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
+      <p>Die tÃ¤glichen Schritte sind bewusst getrennt  damit Scoring, Daten und UI sauber entkoppelt bleiben.</p>
       <pre>python -m scanner.app.run_daily
 python -m scanner.ui.generator</pre>
       <ul>
         <li><code>run_daily</code> erzeugt/aktualisiert CSVs in <code>artifacts/watchlist/</code> und (optional) Reports in <code>artifacts/reports/</code>.</li>
         <li><code>ui.generator</code> liest eine CSV (z.B. <code>watchlist_CORE.csv</code>) und schreibt statisches HTML nach <code>artifacts/ui/</code>.</li>
       </ul>
-      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausführen  ohne dass das UI heimlich irgendwas berechnet, was die Ergebnisse verändern würde.</p>
+      <p>Damit kannst du die Pipeline testen, versionieren und reproduzierbar ausfÃ¼hren  ohne dass das UI heimlich irgendwas berechnet, was die Ergebnisse verÃ¤ndern wÃ¼rde.</p>
     </div>
 
     <div class="card" id="scoring">
       <h2>3) Scoring (Score, Opportunity, Risk, Regime, Confidence)</h2>
-      <p>Das Scoring läuft zentral im DomainLayer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer WatchlistZeile ein Satz aus <b>OpportunityFaktoren</b> und <b>RiskFaktoren</b> gebildet und anschlieend zu einem finalen Score zusammengeführt.</p>
+      <p>Das Scoring lÃ¤uft zentral im DomainLayer (<code>scanner.domain.scoring_engine</code>). Dort wird aus einer WatchlistZeile ein Satz aus <b>OpportunityFaktoren</b> und <b>RiskFaktoren</b> gebildet und anschlieend zu einem finalen Score zusammengefÃ¼hrt.</p>
 
       <div class="grid2">
         <div>
-          <h3>Opportunity (0..1, höher = besser)</h3>
+          <h3>Opportunity (0..1, hÃ¶her = besser)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren (wenn in den CSVs vorhanden):</p>
           <ul>
             <li><b>Growth %</b>, <b>ROE %</b>, <b>Margin %</b></li>
             <li><b>MCChance</b> (MonteCarloChance)</li>
-            <li><b>Trend200</b> (200TageTrend) und <b>RS3M</b> (relative Stärke 3M)</li>
-            <li><b>ElliottQuality</b> (abhängig vom ElliottSignal)</li>
+            <li><b>Trend200</b> (200TageTrend) und <b>RS3M</b> (relative StÃ¤rke 3M)</li>
+            <li><b>ElliottQuality</b> (abhÃ¤ngig vom ElliottSignal)</li>
             <li><b>Upside</b> (nur wenn ElliottSignal BUY und Target/Preis vorhanden; 30% Upside = voller Faktor)</li>
           </ul>
-          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. AnalystFaktor), bis Spalten dafür existieren.</p>
+          <p class="tag">Hinweis: einzelne Faktoren sind bewusst als Platzhalter gesetzt (z.B. AnalystFaktor), bis Spalten dafÃ¼r existieren.</p>
         </div>
         <div>
-          <h3>Risk (0..1, höher = riskanter)</h3>
+          <h3>Risk (0..1, hÃ¶her = riskanter)</h3>
           <p>Beispiele der aktuell verwendeten Faktoren:</p>
           <ul>
             <li><b>Debt/Equity</b></li>
-            <li><b>CRVFragility</b> (CRV wird in eine Fragilität umgerechnet; bei fehlendem CRV neutral)</li>
+            <li><b>CRVFragility</b> (CRV wird in eine FragilitÃ¤t umgerechnet; bei fehlendem CRV neutral)</li>
             <li><b>Volatility</b>, <b>DownsideDev</b>, <b>MaxDrawdown</b></li>
             <li><b>LiquidityRisk</b> (bevorzugt DollarVolume; Fallback AvgVolume)</li>
           </ul>
-          <p class="tag">Die Idee: Opportunity alleine reicht nicht  ein hoher Score soll bei fragiler Liquidität oder extremem Drawdown nicht blind nach oben schieen.</p>
+          <p class="tag">Die Idee: Opportunity alleine reicht nicht  ein hoher Score soll bei fragiler LiquiditÃ¤t oder extremem Drawdown nicht blind nach oben schieen.</p>
         </div>
       </div>
 
       <h3>Normalisierung (UniverseScaling)</h3>
-      <p>Viele Rohwerte werden über ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen MarktUniversum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
+      <p>Viele Rohwerte werden Ã¼ber ein Universe (Verteilung der Werte im aktuellen Datensatz) auf 0..1 skaliert. Dadurch wird der Score <b>relativ zum aktuellen MarktUniversum</b> interpretierbar (statt absolute Schwellen zu erzwingen).</p>
 
       <h3>Regime (MarktKontext)</h3>
-      <p>Der Score kann je nach Marktregime anders gewichtet werden. Dafür werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200Kontext). Wenn das RegimeLabel fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
+      <p>Der Score kann je nach Marktregime anders gewichtet werden. DafÃ¼r werden vorhandene Spalten genutzt (z.B. <code>MarketRegimeStock</code>/<code>MarketRegimeCrypto</code> und Trend200Kontext). Wenn das RegimeLabel fehlt, wird es aus Trend200 grob als bull/neutral/bear abgeleitet.</p>
       <ul>
         <li><b>opp_w</b> / <b>risk_w</b>: wie stark Opportunity vs. Risk in den finalen Score einfliet</li>
         <li><b>risk_mult</b>: wie hart Risiko bestraft wird</li>
       </ul>
 
       <h3>Confidence (0..100)</h3>
-      <p>Zusätzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, RisikoSauberkeit, RegimeAusrichtung und Liquidität berücksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht  oder auf dünnem DatenEis.</p>
+      <p>ZusÃ¤tzlich wird eine <b>Confidence</b> berechnet, die z.B. Datenabdeckung, Konfluenz, RisikoSauberkeit, RegimeAusrichtung und LiquiditÃ¤t berÃ¼cksichtigt. Ziel: du erkennst schneller, ob ein hoher Score auf stabilen Inputs steht  oder auf dÃ¼nnem DatenEis.</p>
     </div>
 
     <div class="card" id="recommendation">
       <h2>4) Empfehlungscode (R0R5)</h2>
-      <p>Im Dashboard erscheint im ScoreBereich ein privater Code <b>R0R5</b>. Das ist <b>kein TradingSignal</b>, sondern eine knappe Zusammenfassung für deinen Workflow.</p>
+      <p>Im Dashboard erscheint im ScoreBereich ein privater Code <b>R0R5</b>. Das ist <b>kein TradingSignal</b>, sondern eine knappe Zusammenfassung fÃ¼r deinen Workflow.</p>
       <ul>
         <li><b>R0</b>: AVOIDZeilen (score_status beginnt mit <code>AVOID_</code>)</li>
         <li><b>R5</b>: ScorePerzentil  90 <i>und</i> Trend OK <i>und</i> Liquidity OK</li>
@@ -4204,46 +4232,46 @@ python -m scanner.ui.generator</pre>
       <p>Presets sind Filter/Sichten (CORE, TOP, AVOID ). Sie bestimmen, <i>was du siehst</i>, nicht <i>wie gescored wird</i>.</p>
 
       <h3>Suche</h3>
-      <p>Suche filtert quer über Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
+      <p>Suche filtert quer Ã¼ber Symbol/Name/Kategorie/Land (und weitere Felder, sofern vorhanden).</p>
 
       <h3>QuickFilter & KPIChips</h3>
       <p>QuickFilter sind schnelle boolesche/StatusSchalter (z.B. Nur OK, Trend OK, Liq OK). KPIChips sind klickbare Zusammenfassungen, die ebenfalls als Filter wirken.</p>
 
-      <h3>Cluster (offiziell) vs. Säulen (privat)</h3>
+      <h3>Cluster (offiziell) vs. SÃ¤ulen (privat)</h3>
       <p>Es gibt zwei unterschiedliche Kategorien im UI  mit unterschiedlicher Bedeutung:</p>
       <ul>
-        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus YahooTaxonomie (Sector/Industry) und ist dafür gedacht, echte MarktCluster sichtbar zu machen.</li>
-        <li><b>Säulen (5Säulen/Playground, privat)</b>: deine thematische MetadatenZuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>ändert niemals</b> den Score.</li>
+        <li><b>Cluster/Sektor (offiziell)</b>: kommt aus YahooTaxonomie (Sector/Industry) und ist dafÃ¼r gedacht, echte MarktCluster sichtbar zu machen.</li>
+        <li><b>SÃ¤ulen (5SÃ¤ulen/Playground, privat)</b>: deine thematische MetadatenZuordnung (Gehirn, Hardware, Energie, Fundament, Recycling, Playground). Sie dient nur der Navigation/Explainability und <b>Ã¤ndert niemals</b> den Score.</li>
       </ul>
-      <p class="tag">Hinweis: ältere PhantasieSektoren können weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine Säule ableiten, damit das Konzept sichtbar bleibt.</p>
+      <p class="tag">Hinweis: Ã¤ltere PhantasieSektoren kÃ¶nnen weiterhin in der Quelle vorkommen, werden aber nicht als offizieller Sektor interpretiert. Die UI kann daraus optional eine SÃ¤ule ableiten, damit das Konzept sichtbar bleibt.</p>
 
       <h3>BucketMatrix (Score  Risk)</h3>
-      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der XAchse, <b>Risk</b> auf der YAchse. Klick auf ein Feld aktiviert einen zusätzlichen MatrixFilter.</p>
+      <p>Die Matrix verdichtet das Universum: <b>Score</b> auf der XAchse, <b>Risk</b> auf der YAchse. Klick auf ein Feld aktiviert einen zusÃ¤tzlichen MatrixFilter.</p>
 
       <h3>WhyScore Drawer</h3>
-      <p>Der Drawer erklärt, <i>warum</i> ein Wert so aussieht: StatusFlags, wichtige Kennzahlen und  falls vorhanden  ein Breakdown (z.B. ConfidenceBreakdown).</p>
+      <p>Der Drawer erklÃ¤rt, <i>warum</i> ein Wert so aussieht: StatusFlags, wichtige Kennzahlen und  falls vorhanden  ein Breakdown (z.B. ConfidenceBreakdown).</p>
 
       <h3>TickerZelle (2zeilig)</h3>
-      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten YahooPair (oder was vorhanden ist). Ziel: du siehst Identität + Key sofort, ohne zusätzliche Spalten.</p>
+      <p>Aktien: oben Symbol, unten ISIN. Krypto: oben Pair/ID, unten YahooPair (oder was vorhanden ist). Ziel: du siehst IdentitÃ¤t + Key sofort, ohne zusÃ¤tzliche Spalten.</p>
 
       <h3>FinvizInspiration (eigene Umsetzung)</h3>
-      <p>Die Marketbersicht (IndexCharts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">MarketDashboard</a>). LayoutIdeen dürfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert  Scanner_vNext bleibt eine eigenständige Logik/UX.</p>
+      <p>Die Marketbersicht (IndexCharts, Breadth, Heatmap, Movers/News) ist als eigene Seite geplant/teilweise vorhanden (<a href="../dashboard/index.html" target="_blank" rel="noopener">MarketDashboard</a>). LayoutIdeen dÃ¼rfen inspiriert sein, aber Inhalte/Code werden nicht 1:1 kopiert  Scanner_vNext bleibt eine eigenstÃ¤ndige Logik/UX.</p>
     </div>
 
     <div class="card" id="portfolio">
       <h2>6) Portfolio (geplant)</h2>
-      <p>Hier kommt eine PortfolioSektion hin (Bestände, Einstand, Gewichtung, RisikoBeitrag, ZielAllokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken können.</p>
-      <div class="callout"><p style="margin:0"><b>TODO:</b> PortfolioKonzept einfügen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
+      <p>Hier kommt eine PortfolioSektion hin (BestÃ¤nde, Einstand, Gewichtung, RisikoBeitrag, ZielAllokation, Alerts). Aktuell ist das bewusst noch Platzhalter, damit wir es sauber an dein Konzept andocken kÃ¶nnen.</p>
+      <div class="callout"><p style="margin:0"><b>TODO:</b> PortfolioKonzept einfÃ¼gen, sobald du es wieder parat hast (oder als Datei/Notiz lieferst).</p></div>
     </div>
 
     <div class="card" id="briefing">
       <h2>7) Briefing / KI</h2>
-      <p>Das Briefing ist ein <b>passiver ExplainabilityReport</b> für die TopWerte. Es wird ausschlielich aus bereits vorhandenen Feldern der WatchlistCSV abgeleitet (kein ReScoring).</p>
+      <p>Das Briefing ist ein <b>passiver ExplainabilityReport</b> fÃ¼r die TopWerte. Es wird ausschlielich aus bereits vorhandenen Feldern der WatchlistCSV abgeleitet (kein ReScoring).</p>
       <h3>Outputs</h3>
       <ul>
-        <li><code>artifacts/reports/briefing.json</code>  strukturierte Daten (TopN + Gründe/Risiken/Checks).</li>
+        <li><code>artifacts/reports/briefing.json</code>  strukturierte Daten (TopN + GrÃ¼nde/Risiken/Checks).</li>
         <li><code>artifacts/reports/briefing.txt</code>  deterministische TextVersion (immer vorhanden, offline).</li>
-        <li><code>artifacts/reports/briefing_ai.txt</code>  optionale sprachliche Glättung via OpenAI API (FeatureFlag, default OFF).</li>
+        <li><code>artifacts/reports/briefing_ai.txt</code>  optionale sprachliche GlÃ¤ttung via OpenAI API (FeatureFlag, default OFF).</li>
       </ul>
       <h3>Erzeugung</h3>
       <p>Briefing generieren (Stage A, deterministisch):</p>
@@ -4252,9 +4280,9 @@ python -m scanner.ui.generator</pre>
       <pre><code>set OPENAI_API_KEY=...  # Windows
 python scripts/generate_briefing.py --enable-ai</code></pre>
       <ul>
-        <li>Es ist <b>rein erklärend</b> (Notizen/Explainability).</li>
+        <li>Es ist <b>rein erklÃ¤rend</b> (Notizen/Explainability).</li>
         <li>Es darf <b>niemals</b> das Scoring oder Ranking beeinflussen.</li>
-        <li><b>Keine Anlageberatung</b>: das Briefing enthält einen kurzen Disclaimer.</li>
+        <li><b>Keine Anlageberatung</b>: das Briefing enthÃ¤lt einen kurzen Disclaimer.</li>
       </ul>
       <p class="tag">Dashboard: Das UI zeigt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn nichts vorhanden ist: Noch kein Briefing generiert.</p>
     </div>
@@ -4263,17 +4291,17 @@ python scripts/generate_briefing.py --enable-ai</code></pre>
 
     <div class="card" id="autopilot">
       <h2>8) GitHub Autopilot (ohne laufenden PC)</h2>
-      <p>Wenn Scanner_vNext in einem GitHubRepo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausführen. Damit läuft der Scanner serverlos in der Cloud  dein Rechner muss dafür nicht an sein.</p>
+      <p>Wenn Scanner_vNext in einem GitHubRepo liegt, kann ein geplanter Workflow (GitHub Actions) die Pipeline automatisch ausfÃ¼hren. Damit lÃ¤uft der Scanner serverlos in der Cloud  dein Rechner muss dafÃ¼r nicht an sein.</p>
       <h3>Was macht der Autopilot?</h3>
       <ul>
         <li>Installiert das Projekt (<code>pip install -e .</code>).</li>
-        <li>Führt <code>python -m scanner.app.run_daily</code> aus (CSVOutputs nach <code>artifacts/watchlist/</code>).</li>
+        <li>FÃ¼hrt <code>python -m scanner.app.run_daily</code> aus (CSVOutputs nach <code>artifacts/watchlist/</code>).</li>
         <li>Erzeugt das deterministische Briefing (<code>scripts/generate_briefing.py</code>  <code>artifacts/reports/</code>).</li>
         <li>Generiert die UI (<code>python -m scanner.ui.generator</code>  <code>artifacts/ui/</code>).</li>
-        <li>Committet die Outputs (standardmäig <code>artifacts/</code>) zurück ins Repo.</li>
+        <li>Committet die Outputs (standardmÃ¤ig <code>artifacts/</code>) zurÃ¼ck ins Repo.</li>
       </ul>
       <h3>Warum committen wir <code>artifacts/</code>?</h3>
-      <p>Für den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder über GitHub Pages sofort die aktuellen HTML/CSVOutputs. Später kann man das auf einen reinen DeployBranch umstellen, wenn das Repo zu gro wird.</p>
+      <p>FÃ¼r den Einstieg ist das der simpelste Weg: du siehst im Repo und/oder Ã¼ber GitHub Pages sofort die aktuellen HTML/CSVOutputs. SpÃ¤ter kann man das auf einen reinen DeployBranch umstellen, wenn das Repo zu gro wird.</p>
       <h3>Benachrichtigungen</h3>
       <p>GitHub kann dir EMails senden, wenn ein Workflow gelaufen ist. Das kommt von GitHub (nicht vom Projekt). Wenn du das reduzieren willst: Repo  <i>Watch</i> Einstellungen bzw. GitHub Notifications anpassen.</p>
       <p class="tag">Technik: WorkflowDatei liegt unter <code>.github/workflows/run_scanner.yml</code>.</p>
@@ -4281,8 +4309,8 @@ python scripts/generate_briefing.py --enable-ai</code></pre>
 
     <div class="card" id="notifications">
       <h2>9) Benachrichtigungen (Telegram)</h2>
-      <p>Telegram ist optional und standardmäig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking  es ist nur ein zusätzlicher Kanal für Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
-      <h3>Aktivieren (falls du es später wieder willst)</h3>
+      <p>Telegram ist optional und standardmÃ¤ig deaktiviert. Es hat keinen Einfluss auf Scoring oder Ranking  es ist nur ein zusÃ¤tzlicher Kanal fÃ¼r Hinweise. Da du es aktuell nicht brauchst, bleibt es aus.</p>
+      <h3>Aktivieren (falls du es spÃ¤ter wieder willst)</h3>
       <pre><code>TELEGRAM_ENABLED=1
 TELEGRAM_BOT_TOKEN=...   # oder TELEGRAM_TOKEN (Legacy)
 TELEGRAM_CHAT_ID=...</code></pre>
@@ -4293,19 +4321,19 @@ TELEGRAM_CHAT_ID=...</code></pre>
       <h2>10) Troubleshooting</h2>
       <h3>UI zeigt Keine Daten</h3>
       <ul>
-        <li>Prüfe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
-        <li>Führe zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
+        <li>PrÃ¼fe, ob <code>artifacts/watchlist/watchlist_CORE.csv</code> (oder ALL) existiert.</li>
+        <li>FÃ¼hre zuerst <code>python -m scanner.app.run_daily</code> aus.</li>
       </ul>
       <h3>Contract validation failed</h3>
       <ul>
         <li>Contract: <code>configs/watchlist_contract.json</code></li>
         <li>Die UI bricht absichtlich ab, wenn Pflichtspalten fehlen  das verhindert stilles UI zeigt Mist.</li>
-        <li>Lösung: WatchlistCSV neu generieren oder Migration/NormalizeScripts nutzen.</li>
+        <li>LÃ¶sung: WatchlistCSV neu generieren oder Migration/NormalizeScripts nutzen.</li>
       </ul>
       <h3>Briefing fehlt</h3>
       <ul>
         <li>Erzeuge es mit <code>python scripts/generate_briefing.py</code>.</li>
-        <li>UI lädt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: Noch kein Briefing generiert.</li>
+        <li>UI lÃ¤dt bevorzugt <code>briefing_ai.txt</code>, sonst <code>briefing.txt</code>. Wenn beide fehlen: Noch kein Briefing generiert.</li>
       </ul>
       <h3>GOOGLE_CREDENTIALS fehlt (GitHub Action)</h3>
       <ul>
@@ -4318,16 +4346,16 @@ TELEGRAM_CHAT_ID=...</code></pre>
       <h2>11) Roadmap & Konzept (Platzhalter)</h2>
       <ul>
         <li>Matrix Labels/Logik weiter finalisieren (RiskProxy).</li>
-        <li>RecommendationLogik bei Bedarf schärfen (Regeln bleiben transparent).</li>
+        <li>RecommendationLogik bei Bedarf schÃ¤rfen (Regeln bleiben transparent).</li>
         <li>WatchlistHygiene: Spaltenmigration & DedupeStrategie.</li>
-        <li>PortfolioBlock ergänzen.</li>
-        <li>BriefingLogik weiter schärfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
+        <li>PortfolioBlock ergÃ¤nzen.</li>
+        <li>BriefingLogik weiter schÃ¤rfen (Texte/Mapping), AI bleibt optional und ohne Einfluss auf Score.</li>
       </ul>
-      <p class="tag">Diese Seite ist absichtlich nicht fertig  sie ist deine Dokumentation, die mit dem Projekt mitwächst.</p>
+      <p class="tag">Diese Seite ist absichtlich nicht fertig  sie ist deine Dokumentation, die mit dem Projekt mitwÃ¤chst.</p>
     </div>
 
     <div class="card">
-      <p style="margin:0"><a href="#toc"> zurück zum Anfang</a></p>
+      <p style="margin:0"><a href="#toc"> zurÃ¼ck zum Anfang</a></p>
     </div>
 
   </main>

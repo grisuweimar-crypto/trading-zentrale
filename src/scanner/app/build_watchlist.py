@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 import os
 import shutil
+import re
 import pandas as pd
 
 from scanner.data.io.paths import artifacts_dir, project_root
@@ -13,6 +14,254 @@ from scanner.data.enrich.yahoo_taxonomy import load_mapping as load_yahoo_taxono
 from scanner.data.enrich.pillars import load_mapping as load_pillars, apply_mapping as apply_pillars, derive_from_official_taxonomy, derive_from_legacy_categories
 from scanner.app.score_step import apply_scoring
 from scanner._version import __version__, __build__
+
+ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
+MASTER_UNIVERSE_PATH = project_root() / "data" / "inputs" / "universe_master.csv"
+
+
+def _norm_text_col(df: pd.DataFrame, col: str) -> pd.Series:
+    if col not in df.columns:
+        return pd.Series("", index=df.index, dtype="string")
+    s = df[col]
+    if isinstance(s, pd.DataFrame):
+        s = s.iloc[:, 0] if s.shape[1] else pd.Series("", index=df.index)
+    return s.fillna("").astype("string").str.strip()
+
+
+def _normalize_identifier_fields(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Keep identifier fields UI-safe without touching scores.
+    Only repairs rows where identifier columns are empty or ISIN-like.
+    """
+    out = df.copy()
+
+    targets = ["ticker_display", "ticker", "yahoo_symbol", "symbol"]
+    cols = [
+        _norm_text_col(out, "ticker_display"),
+        _norm_text_col(out, "ticker"),
+        _norm_text_col(out, "yahoo_symbol"),
+        _norm_text_col(out, "YahooSymbol"),
+        _norm_text_col(out, "symbol"),
+        _norm_text_col(out, "asset_id"),
+    ]
+    cand_df = pd.concat(cols, axis=1)
+    cand_df = cand_df.mask(cand_df.eq(""), pd.NA)
+    isin_mask = cand_df.apply(lambda s: s.astype("string").str.upper().str.match(ISIN_RE, na=False))
+    cand_df = cand_df.mask(isin_mask, pd.NA)
+    best = cand_df.bfill(axis=1).iloc[:, 0].fillna("").astype("string")
+
+    stats: list[dict[str, int | str]] = []
+    for col in targets:
+        cur = _norm_text_col(out, col)
+        bad_before = cur.eq("") | cur.str.upper().str.match(ISIN_RE, na=False)
+        repaired = bad_before & best.ne("")
+        out.loc[repaired, col] = best.loc[repaired]
+
+        nxt = _norm_text_col(out, col)
+        bad_after = nxt.eq("") | nxt.str.upper().str.match(ISIN_RE, na=False)
+        stats.append(
+            {
+                "column": col,
+                "rows": int(len(out)),
+                "bad_before": int(bad_before.sum()),
+                "repaired": int(repaired.sum()),
+                "bad_after": int(bad_after.sum()),
+            }
+        )
+
+    report = pd.DataFrame(stats)
+    return out, report
+
+
+def _truthy(v: object) -> bool:
+    s = str(v).strip().lower()
+    if s in {"", "nan", "none", "null"}:
+        return False
+    return s in {"1", "true", "t", "yes", "y", "on", "active", "aktiv"}
+
+
+def _load_master_universe(path: Path | None = None) -> pd.DataFrame | None:
+    p = Path(path) if path is not None else MASTER_UNIVERSE_PATH
+    if not p.exists():
+        return None
+
+    try:
+        m = pd.read_csv(p, sep=None, engine="python")
+    except Exception:
+        try:
+            m = pd.read_csv(p, sep=";")
+        except Exception:
+            return None
+
+    if m.empty:
+        return None
+
+    ren = {}
+    for c in m.columns:
+        cn = str(c).strip().lower()
+        if cn in {"symbol", "ticker", "yahoo", "yahoo_symbol", "yahoosymbol"}:
+            ren[c] = "symbol"
+        elif cn in {"name", "bezeichnung"}:
+            ren[c] = "name"
+        elif cn in {"isin"}:
+            ren[c] = "isin"
+        elif cn in {"asset_type", "type", "klasse"}:
+            ren[c] = "asset_type"
+        elif cn in {"active", "aktiv", "enabled"}:
+            ren[c] = "active"
+        elif cn in {"category", "kategorie", "sektor"}:
+            ren[c] = "category"
+        elif cn in {"sector"}:
+            ren[c] = "sector"
+        elif cn in {"industry", "cluster"}:
+            ren[c] = "industry"
+        elif cn in {"country", "land"}:
+            ren[c] = "country"
+        elif cn in {"currency", "waehrung", "währung"}:
+            ren[c] = "currency"
+        elif cn in {"pillar_primary", "pillar", "saeule", "säule"}:
+            ren[c] = "pillar_primary"
+        elif cn in {"bucket_type", "bucket"}:
+            ren[c] = "bucket_type"
+        elif cn in {"pillar_confidence", "pillar_conf"}:
+            ren[c] = "pillar_confidence"
+        elif cn in {"pillar_reason"}:
+            ren[c] = "pillar_reason"
+        elif cn in {"pillar_tags", "tags"}:
+            ren[c] = "pillar_tags"
+    m = m.rename(columns=ren)
+
+    for c in (
+        "symbol",
+        "name",
+        "isin",
+        "asset_type",
+        "category",
+        "sector",
+        "industry",
+        "country",
+        "currency",
+        "pillar_primary",
+        "bucket_type",
+        "pillar_reason",
+        "pillar_tags",
+    ):
+        if c in m.columns:
+            m[c] = m[c].fillna("").astype("string").str.strip()
+
+    if "pillar_confidence" in m.columns:
+        m["pillar_confidence"] = pd.to_numeric(m["pillar_confidence"], errors="coerce")
+
+    if "active" in m.columns:
+        active_mask = m["active"].apply(_truthy)
+    else:
+        active_mask = pd.Series(True, index=m.index)
+    m = m[active_mask].copy()
+    if m.empty:
+        return None
+
+    # Keep rows that can be identified by symbol or ISIN.
+    has_key = pd.Series(False, index=m.index)
+    if "symbol" in m.columns:
+        has_key = has_key | m["symbol"].str.len().gt(0)
+    if "isin" in m.columns:
+        has_key = has_key | m["isin"].str.len().gt(0)
+    m = m[has_key].copy()
+    if m.empty:
+        return None
+
+    return m
+
+
+def _sync_watchlist_from_master(df_raw: pd.DataFrame, master: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Rebuild runtime watchlist rows from the active master universe."""
+    if master is None or master.empty:
+        return df_raw, pd.DataFrame()
+
+    db = df_raw.copy()
+    db_cols = list(db.columns)
+
+    # Build lookups from current DB snapshot.
+    by_isin: dict[str, pd.Series] = {}
+    by_symbol: dict[str, pd.Series] = {}
+    for _, r in db.iterrows():
+        isin = str(r.get("ISIN", "")).strip().upper()
+        if isin and isin not in by_isin:
+            by_isin[isin] = r
+        for c in ("Ticker", "Symbol", "YahooSymbol", "Yahoo"):
+            s = str(r.get(c, "")).strip().upper()
+            if s and s not in by_symbol:
+                by_symbol[s] = r
+
+    rows: list[dict] = []
+    matched = 0
+    created = 0
+
+    for _, mrow in master.iterrows():
+        isin = str(mrow.get("isin", "")).strip().upper()
+        sym = str(mrow.get("symbol", "")).strip()
+        sym_u = sym.upper()
+
+        base = None
+        if isin and isin in by_isin:
+            base = by_isin[isin]
+        elif sym_u and sym_u in by_symbol:
+            base = by_symbol[sym_u]
+
+        if base is not None:
+            row = base.to_dict()
+            matched += 1
+        else:
+            row = {c: "" for c in db_cols}
+            created += 1
+
+        # Master is authoritative for identity/stammdaten.
+        if sym:
+            row["Ticker"] = sym
+            row["Symbol"] = sym
+            row["YahooSymbol"] = sym
+            row["Yahoo"] = sym
+        if isin:
+            row["ISIN"] = isin
+        if str(mrow.get("name", "")).strip():
+            row["Name"] = str(mrow.get("name", "")).strip()
+        if str(mrow.get("category", "")).strip():
+            row["Sektor"] = str(mrow.get("category", "")).strip()
+        if str(mrow.get("sector", "")).strip():
+            row["Sector"] = str(mrow.get("sector", "")).strip()
+        if str(mrow.get("industry", "")).strip():
+            row["Industry"] = str(mrow.get("industry", "")).strip()
+        if str(mrow.get("country", "")).strip():
+            row["Country"] = str(mrow.get("country", "")).strip()
+        if str(mrow.get("currency", "")).strip():
+            row["Currency"] = str(mrow.get("currency", "")).strip()
+            # Keep legacy column in sync when present.
+            row["Währung"] = str(mrow.get("currency", "")).strip()
+        if str(mrow.get("asset_type", "")).strip():
+            row["AssetType"] = str(mrow.get("asset_type", "")).strip()
+
+        # Optional direct pillar overrides from master.
+        for c in ("pillar_primary", "bucket_type", "pillar_confidence", "pillar_reason", "pillar_tags"):
+            v = mrow.get(c)
+            if pd.notna(v) and str(v).strip() != "":
+                row[c] = v
+
+        rows.append(row)
+
+    synced = pd.DataFrame(rows)
+    # Preserve existing DB column order first.
+    ordered = db_cols + [c for c in synced.columns if c not in db_cols]
+    synced = synced.reindex(columns=ordered)
+
+    report = pd.DataFrame(
+        [
+            {"metric": "master_rows_active", "value": int(len(master))},
+            {"metric": "matched_existing_rows", "value": int(matched)},
+            {"metric": "created_new_rows", "value": int(created)},
+            {"metric": "removed_rows", "value": int(max(len(db) - len(master), 0))},
+        ]
+    )
+    return synced, report
 
 
 def _dedupe_universe(df: pd.DataFrame) -> tuple[pd.DataFrame, list[int], pd.DataFrame | None]:
@@ -118,6 +367,31 @@ def build_watchlist_outputs() -> None:
     # 1) RAW laden (watchlist.csv acts like a small DB snapshot)
     df_raw = pd.read_csv(src)
 
+    # 1a) Optional master universe sync (stammdaten source-of-truth).
+    # If present, master defines active rows + identifiers + manual taxonomy fields.
+    # Dynamic market/scoring fields are still populated later in the pipeline.
+    master = _load_master_universe(MASTER_UNIVERSE_PATH)
+    if master is not None and not master.empty:
+        df_raw, master_sync_report = _sync_watchlist_from_master(df_raw, master)
+        reports_dir = artifacts_dir() / "reports"
+        reports_dir.mkdir(parents=True, exist_ok=True)
+        master_sync_path = reports_dir / "universe_master_sync.csv"
+        to_csv_safely(master_sync_report, master_sync_path, index=False)
+        print(
+            f"Master universe sync: {len(master)} active rows "
+            f"(see {master_sync_path})"
+        )
+
+        # Persist synced DB snapshot before Yahoo refresh so local/CI stay deterministic.
+        try:
+            db_path = artifacts_dir() / "watchlist" / "watchlist.csv"
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            to_csv_safely(df_raw, db_path, index=False)
+            src = db_path
+            print(f"Updated DB snapshot from master: {db_path}")
+        except Exception as e:
+            print(f"⚠️ Could not persist master-synced DB snapshot: {e}")
+
     # 1b) Optional: refresh market data via Yahoo Finance
     # IMPORTANT: This only updates input columns (price/perf/risk/regime). It never touches scores.
     # By default, this is auto-enabled on GitHub Actions, but stays OFF locally.
@@ -188,8 +462,25 @@ def build_watchlist_outputs() -> None:
     if "bucket_type" in df.columns:
         df["bucket_type"] = df["bucket_type"].fillna("none")
 
+    # Contract safety: cycle must be numeric (no empty values in UI presets).
+    if "cycle" in df.columns:
+        df["cycle"] = pd.to_numeric(df["cycle"], errors="coerce").fillna(0.0)
+    else:
+        df["cycle"] = 0.0
+
+    # Final identifier hygiene pass for UI/output files.
+    # Deliberately non-invasive: only empty/ISIN-like identifier values are repaired.
+    df, id_health = _normalize_identifier_fields(df)
+
     reports_dir = artifacts_dir() / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
+    id_health_path = reports_dir / "identifier_health.csv"
+    to_csv_safely(id_health, id_health_path, index=False)
+    id_bad_after = int(pd.to_numeric(id_health["bad_after"], errors="coerce").fillna(0).sum())
+    if id_bad_after > 0:
+        print(f"⚠️ Identifier hygiene: {id_bad_after} unresolved values (see {id_health_path})")
+    else:
+        print(f"Identifier hygiene: OK (see {id_health_path})")
     if dupes is not None and not dupes.empty:
         dup_path = reports_dir / "watchlist_duplicates_dropped.csv"
         to_csv_safely(dupes, dup_path, index=False)
