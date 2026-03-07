@@ -174,6 +174,121 @@ def _rank_by_score(df: pd.DataFrame) -> pd.Series:
     return (-s).rank(method="min", na_option="bottom").astype("Int64")
 
 
+def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: str, top_n: int = 12) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Compute delta payload for a concrete date pair."""
+    prev = work[work["date"] == prev_date].copy()
+    now = work[work["date"] == latest_date].copy()
+
+    # Global snapshot ranks (all symbols in each day)
+    prev["rank"] = _rank_by_score(prev)
+    now["rank"] = _rank_by_score(now)
+
+    prev = prev.sort_values(["symbol"]).drop_duplicates(subset=["symbol"], keep="last")
+    now = now.sort_values(["symbol"]).drop_duplicates(subset=["symbol"], keep="last")
+
+    # Stable comparison ranks: only common symbols from both days.
+    common_syms = sorted(set(prev["symbol"].astype(str)) & set(now["symbol"].astype(str)))
+    prev_common = prev[prev["symbol"].astype(str).isin(common_syms)].copy()
+    now_common = now[now["symbol"].astype(str).isin(common_syms)].copy()
+    prev_common["rank_common"] = _rank_by_score(prev_common)
+    now_common["rank_common"] = _rank_by_score(now_common)
+    prev_common_map = prev_common.set_index("symbol")["rank_common"].to_dict()
+    now_common_map = now_common.set_index("symbol")["rank_common"].to_dict()
+
+    prev = prev.set_index("symbol", drop=False)
+    now = now.set_index("symbol", drop=False)
+
+    all_syms = sorted(set(prev.index.tolist()) | set(now.index.tolist()))
+    rows: list[dict[str, Any]] = []
+    for sym in all_syms:
+        p = prev.loc[sym] if sym in prev.index else None
+        n = now.loc[sym] if sym in now.index else None
+
+        name = ""
+        if n is not None:
+            name = str(n.get("name", "") or "")
+        elif p is not None:
+            name = str(p.get("name", "") or "")
+
+        score_prev = float(p["score"]) if p is not None and pd.notna(p["score"]) else None
+        score_now = float(n["score"]) if n is not None and pd.notna(n["score"]) else None
+        rank_prev = int(p["rank"]) if p is not None and pd.notna(p["rank"]) else None
+        rank_now = int(n["rank"]) if n is not None and pd.notna(n["rank"]) else None
+        rank_prev_common = None
+        rank_now_common = None
+        if sym in prev_common_map and pd.notna(prev_common_map[sym]):
+            rank_prev_common = int(prev_common_map[sym])
+        if sym in now_common_map and pd.notna(now_common_map[sym]):
+            rank_now_common = int(now_common_map[sym])
+
+        if p is None and n is not None:
+            status = "new"
+        elif p is not None and n is None:
+            status = "dropped"
+        else:
+            status = "ok"
+
+        score_delta = None
+        if score_prev is not None and score_now is not None:
+            score_delta = score_now - score_prev
+
+        rank_delta = None
+        if rank_prev_common is not None and rank_now_common is not None:
+            # positive means moved UP within stable common universe
+            rank_delta = rank_prev_common - rank_now_common
+
+        rows.append(
+            {
+                "symbol": sym,
+                "name": name,
+                "score_prev": score_prev,
+                "score_now": score_now,
+                "score_delta": score_delta,
+                "rank_prev": rank_prev,
+                "rank_now": rank_now,
+                "rank_prev_common": rank_prev_common,
+                "rank_now_common": rank_now_common,
+                "rank_delta": rank_delta,
+                "status": status,
+            }
+        )
+
+    delta = pd.DataFrame(rows)
+    both = delta[delta["status"] == "ok"].copy()
+    both["rank_delta_num"] = pd.to_numeric(both["rank_delta"], errors="coerce").fillna(0)
+    both["score_delta_num"] = pd.to_numeric(both["score_delta"], errors="coerce").fillna(0)
+
+    up_pool = both[both["rank_delta_num"] > 0].copy()
+    down_pool = both[both["rank_delta_num"] < 0].copy()
+
+    movers_up = up_pool.sort_values(["rank_delta_num", "score_delta_num"], ascending=[False, False]).head(top_n)
+    movers_down = down_pool.sort_values(["rank_delta_num", "score_delta_num"], ascending=[True, True]).head(top_n)
+
+    def _pack(df: pd.DataFrame) -> list[dict[str, Any]]:
+        out = []
+        for _, r in df.iterrows():
+            out.append(
+                {
+                    "symbol": r["symbol"],
+                    "name": r.get("name", ""),
+                    "rank_delta": None if pd.isna(r.get("rank_delta")) else int(r.get("rank_delta")),
+                    "score_delta": None if pd.isna(r.get("score_delta")) else float(r.get("score_delta")),
+                    "score_now": None if pd.isna(r.get("score_now")) else float(r.get("score_now")),
+                    "rank_now": None if pd.isna(r.get("rank_now")) else int(r.get("rank_now")),
+                }
+            )
+        return out
+
+    payload = {
+        "prev_date": prev_date,
+        "latest_date": latest_date,
+        "with": int(len(both)),
+        "movers_up": _pack(movers_up),
+        "movers_down": _pack(movers_down),
+    }
+    return delta, payload
+
+
 def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
     if score_hist is None or score_hist.empty:
         empty = pd.DataFrame(columns=["symbol", "name", "score_prev", "score_now", "score_delta", "rank_prev", "rank_now", "rank_delta", "status"])
@@ -213,93 +328,7 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
         return empty, js
 
     prev_date, latest_date = dates[-2], dates[-1]
-
-    prev = work[work["date"] == prev_date].copy()
-    now = work[work["date"] == latest_date].copy()
-
-    # Rank within each snapshot
-    prev["rank"] = _rank_by_score(prev)
-    now["rank"] = _rank_by_score(now)
-
-    # Reduce to last occurrence per symbol within date (in case of duplicates)
-    prev = prev.sort_values(["symbol"]).drop_duplicates(subset=["symbol"], keep="last")
-    now = now.sort_values(["symbol"]).drop_duplicates(subset=["symbol"], keep="last")
-
-    prev = prev.set_index("symbol", drop=False)
-    now = now.set_index("symbol", drop=False)
-
-    all_syms = sorted(set(prev.index.tolist()) | set(now.index.tolist()))
-    rows = []
-    for sym in all_syms:
-        p = prev.loc[sym] if sym in prev.index else None
-        n = now.loc[sym] if sym in now.index else None
-
-        name = ""
-        if n is not None:
-            name = str(n.get("name", "") or "")
-        elif p is not None:
-            name = str(p.get("name", "") or "")
-
-        score_prev = float(p["score"]) if p is not None and pd.notna(p["score"]) else None
-        score_now = float(n["score"]) if n is not None and pd.notna(n["score"]) else None
-
-        rank_prev = int(p["rank"]) if p is not None and pd.notna(p["rank"]) else None
-        rank_now = int(n["rank"]) if n is not None and pd.notna(n["rank"]) else None
-
-        if p is None and n is not None:
-            status = "new"
-        elif p is not None and n is None:
-            status = "dropped"
-        else:
-            status = "ok"
-
-        score_delta = None
-        if score_prev is not None and score_now is not None:
-            score_delta = score_now - score_prev
-
-        rank_delta = None
-        if rank_prev is not None and rank_now is not None:
-            # positive means moved UP (e.g., 10 -> 5 => +5)
-            rank_delta = rank_prev - rank_now
-
-        rows.append(
-            {
-                "symbol": sym,
-                "name": name,
-                "score_prev": score_prev,
-                "score_now": score_now,
-                "score_delta": score_delta,
-                "rank_prev": rank_prev,
-                "rank_now": rank_now,
-                "rank_delta": rank_delta,
-                "status": status,
-            }
-        )
-
-    delta = pd.DataFrame(rows)
-
-    # Movers: only those present in both snapshots
-    both = delta[delta["status"] == "ok"].copy()
-    both["rank_delta_num"] = pd.to_numeric(both["rank_delta"], errors="coerce").fillna(0)
-    both["score_delta_num"] = pd.to_numeric(both["score_delta"], errors="coerce").fillna(0)
-
-    movers_up = both.sort_values(["rank_delta_num", "score_delta_num"], ascending=[False, False]).head(10)
-    movers_down = both.sort_values(["rank_delta_num", "score_delta_num"], ascending=[True, True]).head(10)
-
-    def _pack(df: pd.DataFrame) -> list[dict[str, Any]]:
-        out = []
-        for _, r in df.iterrows():
-            out.append(
-                {
-                    "symbol": r["symbol"],
-                    "name": r.get("name", ""),
-                    "rank_delta": None if pd.isna(r.get("rank_delta")) else int(r.get("rank_delta")),
-                    "score_delta": None if pd.isna(r.get("score_delta")) else float(r.get("score_delta")),
-                    "score_now": None if pd.isna(r.get("score_now")) else float(r.get("score_now")),
-                    "rank_now": None if pd.isna(r.get("rank_now")) else int(r.get("rank_now")),
-                }
-            )
-        return out
+    delta, pair_1d = _compute_pair_payload(work, prev_date=prev_date, latest_date=latest_date, top_n=12)
 
     new_syms = delta[delta["status"] == "new"]["symbol"].tolist()
     dropped_syms = delta[delta["status"] == "dropped"]["symbol"].tolist()
@@ -343,6 +372,28 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "rank_delta": _as_int(rr.get("rank_delta")),
         }
 
+    def _pick_prev_by_min_days(days: int) -> str | None:
+        latest_ts = pd.to_datetime(latest_date, errors="coerce")
+        if pd.isna(latest_ts):
+            return None
+        cutoff = latest_ts - pd.Timedelta(days=days)
+        candidates: list[tuple[pd.Timestamp, str]] = []
+        for d in dates[:-1]:
+            ts = pd.to_datetime(str(d), errors="coerce")
+            if pd.isna(ts):
+                continue
+            if ts <= cutoff:
+                candidates.append((ts, str(d)))
+        if not candidates:
+            return None
+        candidates.sort(key=lambda x: x[0])
+        return candidates[-1][1]
+
+    prev_1w = _pick_prev_by_min_days(7)
+    prev_1m = _pick_prev_by_min_days(30)
+    pair_1w = _compute_pair_payload(work, prev_date=prev_1w, latest_date=latest_date, top_n=12)[1] if prev_1w else None
+    pair_1m = _compute_pair_payload(work, prev_date=prev_1m, latest_date=latest_date, top_n=12)[1] if prev_1m else None
+
     js = {
         "schema_version": SCHEMA_VERSION,
         "latest_date": latest_date,
@@ -354,8 +405,13 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "changed": int(((delta["status"] == "ok") & (pd.to_numeric(delta["rank_delta"], errors="coerce").fillna(0) != 0)).sum()),
         },
         "by_symbol": by_symbol,
-        "movers_up": _pack(movers_up),
-        "movers_down": _pack(movers_down),
+        "movers_up": pair_1d["movers_up"],
+        "movers_down": pair_1d["movers_down"],
+        "periods": {
+            "1d": pair_1d,
+            "1w": pair_1w,
+            "1m": pair_1m,
+        },
         "new_symbols": new_syms[:30],
         "dropped_symbols": dropped_syms[:30],
     }

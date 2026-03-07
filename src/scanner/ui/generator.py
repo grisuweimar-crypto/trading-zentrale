@@ -3669,27 +3669,33 @@ function applyHeatFilter(rows) {
         const prev   = normStr(d.prev_date   || d.prev   || d.prevDate || '');
         const snaps  = (latest && prev) ? 2 : 1;
 
-        // Build items from CURRENT filtered rows + HD_BY mapping
-        const items = [];
-        for (const r of rows || []) {
+        // Build global lookup from full DATA for label/link enrichment.
+        const byKey = new Map();
+        for (const r of (Array.isArray(DATA) ? DATA : [])) {
           const k = historyKey(r);
-          const rec = (k && HD_BY) ? HD_BY[k] : null;
-          if (!rec) continue;
+          if (k && !byKey.has(k)) byKey.set(k, r);
+        }
 
+        function fromMover(rec) {
+          if (!rec) return null;
+          const k = normStr(rec.symbol);
+          const row = (k && byKey.has(k)) ? byKey.get(k) : null;
           const sd = asNum(rec.score_delta ?? rec.scoreDelta ?? rec.delta ?? rec.dscore_1d ?? rec.dscore);
           const rd = asNum(rec.rank_delta  ?? rec.rankDelta  ?? rec.dr    ?? rec.rank_change);
-          if (sd === null && rd === null) continue;
+          if (sd === null && rd === null) return null;
 
-          const sym  = pickDisplaySymbol(r);
-          const yh   = pickYahooSymbol(r) || sym;
+          const sym = row ? pickDisplaySymbol(row) : normStr(rec.symbol || rec.name || '');
+          const yh  = row ? (pickYahooSymbol(row) || sym) : normStr(rec.symbol || '');
           const href = yahooHref(yh);
 
-          const segFull  = normStr(clusterLabel(r)) || (asBool(r.is_crypto) === true ? 'Krypto' : '');
+          const segFull = row
+            ? (normStr(clusterLabel(row)) || (asBool(row.is_crypto) === true ? 'Krypto' : ''))
+            : '';
           const segShort = segFull
             ? (segFull.split(' ').slice(0, 2).join(' ').slice(0, 10) + (segFull.length > 10 ? '' : ''))
             : '';
 
-          items.push({ sym, href, sd, rd, segFull, segShort });
+          return { sym, href, sd, rd, segFull, segShort };
         }
 
         function fmtDelta(n, digits) {
@@ -3698,38 +3704,35 @@ function applyHeatFilter(rows) {
           return sign + n.toFixed(digits);
         }
 
-        // Movement side: prefer rank movement (relative universe), then score as fallback.
-        function movementSide(x) {
-          const rd = (x.rd === null || x.rd === undefined) ? 0 : Number(x.rd);
-          const sd = (x.sd === null || x.sd === undefined) ? 0 : Number(x.sd);
-          const rs = rd > 0 ? 1 : (rd < 0 ? -1 : 0);
-          const ss = sd > 0 ? 1 : (sd < 0 ? -1 : 0);
-          if (rs !== 0) return rs;
-          return ss;
-        }
-        function movementKey(x) {
-          const rdAbs = (x.rd === null || x.rd === undefined) ? 0 : Math.abs(Number(x.rd));
-          const sdAbs = (x.sd === null || x.sd === undefined) ? 0 : Math.abs(Number(x.sd));
-          return (rdAbs * 1000) + sdAbs;
-        }
-
-        let pos = items
-          .filter(x => movementSide(x) > 0)
-          .sort((a, b) => movementKey(b) - movementKey(a))
+        const pos = (Array.isArray(d.movers_up) ? d.movers_up : [])
+          .map(fromMover)
+          .filter(x => !!x && x.rd !== null && Number(x.rd) > 0)
           .slice(0, 12);
-        let neg = items
-          .filter(x => movementSide(x) < 0)
-          .sort((a, b) => movementKey(b) - movementKey(a))
+        const neg = (Array.isArray(d.movers_down) ? d.movers_down : [])
+          .map(fromMover)
+          .filter(x => !!x && x.rd !== null && Number(x.rd) < 0)
           .slice(0, 12);
 
-        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} Â· Universe: ${(rows||[]).length} Â· with : ${items.length}</div>`;
+        const p1w = (d.periods && typeof d.periods === 'object') ? d.periods['1w'] : null;
+        const p1m = (d.periods && typeof d.periods === 'object') ? d.periods['1m'] : null;
+        const wUp = p1w && Array.isArray(p1w.movers_up) ? p1w.movers_up.length : 0;
+        const wDn = p1w && Array.isArray(p1w.movers_down) ? p1w.movers_down.length : 0;
+        const mUp = p1m && Array.isArray(p1m.movers_up) ? p1m.movers_up.length : 0;
+        const mDn = p1m && Array.isArray(p1m.movers_down) ? p1m.movers_down.length : 0;
+        const wLabel = p1w ? `1W +${wUp}/-${wDn}` : '1W n/a';
+        const mLabel = p1m ? `1M +${mUp}/-${mDn}` : '1M n/a';
+
+        const bySymbol = (d && typeof d.by_symbol === 'object' && d.by_symbol) ? d.by_symbol : {};
+        const withN = Object.values(bySymbol).filter(v => v && v.status === 'ok').length;
+        const universeN = Array.isArray(DATA) ? DATA.length : ((rows || []).length);
+        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} · Universe: ${universeN} · with: ${withN}</div>`;
 
         // Deine schÃ¶nen 4 Pills bleiben, plus Top/Weak ZÃ¤hler als Bonus
         const controls = `<div class="breadthRow" style="margin-top:6px;">
           ${chip(`Snapshots ${snaps}`, 'blue')}
           ${chip(`1D`, 'blue')}
-          ${chip(`1W n/a`, 'warn')}
-          ${chip(`1M n/a`, 'warn')}
+          ${chip(wLabel, p1w ? 'blue' : 'warn')}
+          ${chip(mLabel, p1m ? 'blue' : 'warn')}
           ${chip(`Top ${pos.length}`, pos.length ? 'good' : 'blue')}
           ${chip(`Weak ${neg.length}`, neg.length ? 'bad' : 'blue')}
         </div>`;
@@ -3762,7 +3765,7 @@ function applyHeatFilter(rows) {
         </div>`;
 
         const explain = `<div class="muted small" style="margin-top:8px;">
-          Top/Weak basiert primär auf <b>Rank-Delta</b> (relative Bewegung im Universe), Score-Delta ist Zusatzinfo. Anzeige ist <b>passiv</b> und wird aus <span class="mono">history_delta.json</span> + aktuellem Filter gebaut.
+          Top/Weak basiert primär auf <b>Rank-Delta</b> in der <b>gemeinsamen Schnittmenge</b> beider Snapshots (stabil trotz New/Dropped). Score-Delta ist Zusatzinfo.
         </div>`;
 
         elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${explain}</div>`;
