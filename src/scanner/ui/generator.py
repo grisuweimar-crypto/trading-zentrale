@@ -306,6 +306,7 @@ def build_ui(
     history_delta: dict[str, Any] = {}
     segment_monitor: dict[str, Any] = {}
     reality_check: dict[str, Any] = {}
+    macro_chain_signal: dict[str, Any] = {}
     brief_realities_text = ""
     brief_realities_source = ""
     try:
@@ -313,6 +314,7 @@ def build_ui(
         hp = reports_dir / "history_delta.json"
         sp = reports_dir / "segment_monitor.json"
         rp = reports_dir / "reality_check.json"
+        mp = reports_dir / "macro_chain_signal.json"
         brp = reports_dir / "briefing_realities.txt"
         if hp.exists():
             history_delta = json.loads(hp.read_text(encoding="utf-8", errors="replace") or "{}")
@@ -320,6 +322,8 @@ def build_ui(
             segment_monitor = json.loads(sp.read_text(encoding="utf-8", errors="replace") or "{}")
         if rp.exists():
             reality_check = json.loads(rp.read_text(encoding="utf-8", errors="replace") or "{}")
+        if mp.exists():
+            macro_chain_signal = json.loads(mp.read_text(encoding="utf-8", errors="replace") or "{}")
         if brp.exists():
             brief_realities_text = brp.read_text(encoding="utf-8", errors="replace")
             brief_realities_source = "artifacts/reports/briefing_realities.txt"
@@ -327,6 +331,7 @@ def build_ui(
         history_delta = {}
         segment_monitor = {}
         reality_check = {}
+        macro_chain_signal = {}
         brief_realities_text = ""
         brief_realities_source = ""
 
@@ -375,6 +380,7 @@ def build_ui(
         history_delta=history_delta,
         segment_monitor=segment_monitor,
         reality_check=reality_check,
+        macro_chain_signal=macro_chain_signal,
         briefing_realities_text=brief_realities_text,
         briefing_realities_source=brief_realities_source,
         run_at=run_at,
@@ -396,13 +402,14 @@ def build_ui(
     return out_html
 
 
-def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any], source_csv: str, version: str, build: str, briefing_text: str, briefing_source: str, history_delta: dict[str, Any], segment_monitor: dict[str, Any], reality_check: dict[str, Any], briefing_realities_text: str, briefing_realities_source: str, run_at: str, run_src: str, run_universe: str, fallback_tbody_html: str) -> str:
+def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any], source_csv: str, version: str, build: str, briefing_text: str, briefing_source: str, history_delta: dict[str, Any], segment_monitor: dict[str, Any], reality_check: dict[str, Any], macro_chain_signal: dict[str, Any], briefing_realities_text: str, briefing_realities_source: str, run_at: str, run_src: str, run_universe: str, fallback_tbody_html: str) -> str:
     data_json = json.dumps(data_records, ensure_ascii=False)
     presets_json = json.dumps(presets, ensure_ascii=False)
     briefing_json = json.dumps({"text": briefing_text, "source": briefing_source}, ensure_ascii=False)
     history_delta_json = json.dumps(history_delta or {}, ensure_ascii=False)
     segment_monitor_json = json.dumps(segment_monitor or {}, ensure_ascii=False)
     reality_check_json = json.dumps(reality_check or {}, ensure_ascii=False)
+    macro_chain_json = json.dumps(macro_chain_signal or {}, ensure_ascii=False)
     briefing_realities_json = json.dumps({"text": briefing_realities_text, "source": briefing_realities_source}, ensure_ascii=False)
 
     # Server-side preset <option> fallback (so UI isn't empty if JS fails)
@@ -641,6 +648,26 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     .card.is-collapsed #segmentBox .cardBody { display:none; }
     #segmentText { flex: 1 1 auto; min-height:0; }
     .segmentTables { height: 100%; }
+
+    /* Mega-Trend Signal (compact table) */
+    #macroChainText { margin-top: 8px; max-height: 220px; overflow: auto; }
+    .macroTbl { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.35; }
+    .macroTbl th, .macroTbl td { padding: 8px 8px; border-bottom: 1px solid rgba(36,50,68,.55); text-align: left; vertical-align: top; }
+    .macroTbl th { white-space: nowrap; background: rgba(15,23,42,.55); color: #cbd5e1; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+    .macroTbl tr:hover td { background: rgba(96,165,250,.07); }
+    .macroTbl td:nth-child(1) { width: 22%; font-weight: 600; }
+    .macroTbl td:nth-child(2) { width: 12%; }
+    .macroTbl td:nth-child(3) { width: 12%; white-space: nowrap; }
+    .macroTbl td:nth-child(4) { width: 12%; white-space: nowrap; }
+    .macroTbl td:nth-child(5) { width: 42%; color: #cbd5e1; }
+    .macroStat { font-family: var(--mono); font-size: 11px; color: #cbd5e1; white-space: nowrap; }
+    .macroBadge { display:inline-flex; align-items:center; justify-content:center; padding: 3px 8px; border-radius: 999px; font-size: 10px; border: 1px solid rgba(148,163,184,.20); background: rgba(148,163,184,.08); color: #cbd5e1; text-transform: lowercase; }
+    .macroBadge.inactive { border-color: rgba(148,163,184,.25); color: #cbd5e1; }
+    .macroBadge.early { border-color: rgba(96,165,250,.35); color: #bfdbfe; background: rgba(96,165,250,.10); }
+    .macroBadge.building { border-color: rgba(251,191,36,.35); color: #fde68a; background: rgba(251,191,36,.10); }
+    .macroBadge.confirmed { border-color: rgba(52,211,153,.35); color: #a7f3d0; background: rgba(52,211,153,.10); }
+    .macroBadge.extended { border-color: rgba(16,185,129,.45); color: #86efac; background: rgba(16,185,129,.16); }
+    .macroHint { font-size: 11px; color: #cbd5e1; }
 
     /* Segment Monitor table: aligned with dashboard table style */
     .segmentTable { table-layout: fixed; width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.35; }
@@ -1294,6 +1321,22 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       </section>
     </div>
 
+    <section class="card" data-panel="macroChain">
+      <div class="briefingBox" id="macroChainBox">
+        <div class="cardHeader">
+          <div class="cardTitle">Mega-Trend Signal</div>
+          <div class="cardActions">
+            <button type="button" class="btn btnToggle" data-toggle="macroChain">Ausblenden</button>
+            <button type="button" class="iBtn" data-help-title="Mega-Trend Signal" data-help-html="<ul><li><strong>Ziel:</strong> Ketten-Bestaetigung ueber Saeulen, kein Einzeltitel-Ranking.</li><li><strong>Strength 0-100:</strong> Mischung aus dScore, positiver 1D-Quote, Trend-Quote und Score-Niveau je Saeule.</li><li><strong>Coverage:</strong> aktive Saeulen / Saeulen der Kette.</li><li><strong>Status:</strong> inactive / early / building / confirmed / extended.</li><li><strong>Cross-Chain:</strong> zeigt, ob mehrere Ketten gleichzeitig positiv sind.</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+          </div>
+        </div>
+        <div class="cardBody" data-body="macroChain">
+          <div class="muted small">Systemische Kettenbestaetigung ueber Saeulen hinweg.</div>
+          <div id="macroChainText" class="reportText"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="card" data-panel="segment">
       <div class="briefingBox segmentBox" id="segmentBox">
         <div class="cardHeader">
@@ -1453,6 +1496,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
   <script id="HISTORY_DELTA" type="application/json">__HISTORY_DELTA_JSON__</script>
   <script id="SEGMENT_MONITOR" type="application/json">__SEGMENT_MONITOR_JSON__</script>
   <script id="REALITY_CHECK" type="application/json">__REALITY_CHECK_JSON__</script>
+  <script id="MACRO_CHAIN" type="application/json">__MACRO_CHAIN_JSON__</script>
   <script id="BRIEFING_REALITIES" type="application/json">__BRIEFING_REALITIES_JSON__</script>
 
   <script>
@@ -1493,6 +1537,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     const HISTORY_DELTA = JSON.parse((document.getElementById('HISTORY_DELTA')?.textContent) || '{}');
     const SEGMENT_MONITOR = JSON.parse((document.getElementById('SEGMENT_MONITOR')?.textContent) || '{}');
     const REALITY_CHECK = JSON.parse((document.getElementById('REALITY_CHECK')?.textContent) || '{}');
+    const MACRO_CHAIN = JSON.parse((document.getElementById('MACRO_CHAIN')?.textContent) || '{}');
     const BRIEFING_REALITIES = JSON.parse((document.getElementById('BRIEFING_REALITIES')?.textContent) || '{"text":""}');
     const HD_BY = (HISTORY_DELTA && HISTORY_DELTA.by_symbol) ? HISTORY_DELTA.by_symbol : {};
 
@@ -1564,6 +1609,7 @@ const elHeatMode = document.getElementById('heatMode');
     const btnBriefRealToggle = document.getElementById('briefRealToggle');
     const elReality = document.getElementById('realityText');
     const btnRealityToggle = document.getElementById('realityToggle');
+    const elMacroChain = document.getElementById('macroChainText');
     const elSegment = document.getElementById('segmentText');
     const btnSegmentToggle = document.getElementById('segmentToggle');
     const elHistory = document.getElementById('historyText');
@@ -1621,7 +1667,7 @@ const elHeatMode = document.getElementById('heatMode');
 
 // Market Context UI state (passive)
 let marketVisible = true;
-let heatMode = 'tech_focus'; // 'tech_focus' | 'tech_stack' | 'civil_stack' | 'fin_stack' | 'playground' | 'pillar_all' | 'cluster'
+let heatMode = 'pillar_all'; // 'tech_focus' | 'tech_stack' | 'civil_stack' | 'fin_stack' | 'playground' | 'pillar_all' | 'cluster'
 let heatFilter = { cat: null, sb: null, mode: null };
 
 
@@ -3264,6 +3310,7 @@ function applyHeatFilter(rows) {
       // matrix counts always reflect the current (pre-matrix) universe (after cluster filter)
       renderMatrix(rows);
       renderMarketContext(rows);
+      renderMacroChain();
       renderSegmentMonitor(rows);
 
       rows = applyHeatFilter(rows);
@@ -3985,6 +4032,47 @@ function applyHeatFilter(rows) {
         }
       } catch (e) { return ''; }
     }
+    function renderMacroChain() {
+      if (!elMacroChain) return;
+      try {
+        const payload = (MACRO_CHAIN && typeof MACRO_CHAIN === 'object') ? MACRO_CHAIN : {};
+        const chains = Array.isArray(payload.chains) ? payload.chains : [];
+        if (!chains.length) {
+          elMacroChain.innerHTML = '<div class="muted small">Noch kein Macro-Chain-Report vorhanden. Run: scripts/generate_macro_chain_signal.py</div>';
+          return;
+        }
+        const rowsHtml = chains.slice(0, 4).map(x => {
+          const name = normStr(x.name) || normStr(x.title) || '';
+          const status = normStr(x.status) || 'inactive';
+          const strength = Number.isFinite(asNum(x.strength)) ? String(Math.round(asNum(x.strength))) : 'n/a';
+          const coverage = normStr(x.coverage) || `${asNum(x.coverage_active) ?? 0}/${asNum(x.coverage_total) ?? 0}`;
+          const hint = normStr(x.hint) || 'Noch zu wenig Daten fuer belastbares Signal.';
+          return `<tr>
+            <td>${esc(name)}</td>
+            <td><span class="macroBadge ${esc(status)}">${esc(status)}</span></td>
+            <td><span class="macroStat">${esc(strength)}</span></td>
+            <td><span class="macroStat">${esc(coverage)}</span></td>
+            <td><span class="macroHint">${esc(hint)}</span></td>
+          </tr>`;
+        }).join('');
+        elMacroChain.innerHTML = `
+          <table class="macroTbl">
+            <thead>
+              <tr>
+                <th>Kette</th>
+                <th>Status</th>
+                <th>Strength</th>
+                <th>Coverage</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        `;
+      } catch (e) {
+        elMacroChain.textContent = '';
+      }
+    }
     function renderSegmentMonitor(rows) {
       if (!elSegment) return;
       try {
@@ -4181,6 +4269,7 @@ function applyHeatFilter(rows) {
         .replace("__HISTORY_DELTA_JSON__", history_delta_json)
         .replace("__SEGMENT_MONITOR_JSON__", segment_monitor_json)
         .replace("__REALITY_CHECK_JSON__", reality_check_json)
+        .replace("__MACRO_CHAIN_JSON__", macro_chain_json)
         .replace("__BRIEFING_REALITIES_JSON__", briefing_realities_json)
         .replace("__FALLBACK_TBODY__", fallback_tbody_html)
         .replace("__VERSION__", str(version))

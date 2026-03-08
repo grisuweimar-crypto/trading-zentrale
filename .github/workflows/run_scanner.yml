@@ -53,6 +53,12 @@ jobs:
         run: |
           python scripts/generate_reality_check.py
 
+      - name: Macro Chain Signal erzeugen
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: |
+          python scripts/generate_macro_chain_signal.py
+
       - name: Briefing erzeugen (deterministic)
         env:
           TELEGRAM_ENABLED: '0'

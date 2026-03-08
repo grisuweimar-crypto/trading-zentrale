@@ -4,10 +4,14 @@ from __future__ import annotations
 
 This is the "one command" entrypoint:
   1) scanner.app.run_daily
-  2) scripts/test_pipeline.py
-  3) scripts/test_golden.py
-  4) scripts/validate_contract.py
-  5) scanner.ui.generator
+  2) scripts/generate_history_delta.py
+  3) scripts/generate_segment_monitor.py
+  4) scripts/generate_reality_check.py
+  5) scripts/generate_macro_chain_signal.py
+  6) scripts/test_pipeline.py
+  7) scripts/test_golden.py
+  8) scripts/validate_contract.py
+  9) scanner.ui.generator
 
 Run:
   python scripts/build_all.py
@@ -51,6 +55,10 @@ def main() -> int:
     steps: list[tuple[list[str], str]] = []
     if not ns.skip_run:
         steps.append(([py, "-m", "scanner.app.run_daily"], "run_daily (generate CSVs)") )
+        steps.append(([py, "scripts/generate_history_delta.py"], "history delta report"))
+        steps.append(([py, "scripts/generate_segment_monitor.py"], "segment monitor report"))
+        steps.append(([py, "scripts/generate_reality_check.py"], "reality check report"))
+        steps.append(([py, "scripts/generate_macro_chain_signal.py"], "macro chain signal report"))
 
     steps.append(([py, "scripts/test_pipeline.py"], "pipeline gate") )
 
