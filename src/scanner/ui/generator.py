@@ -1247,7 +1247,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
                 <option value="civil_stack">S11-S20</option>
                 <option value="fin_stack">S21+</option>
                 <option value="playground">Playground</option>
-                <option value="pillar">SÃ¤ulen (alle)</option>
+                <option value="pillar_all">SÃ¤ulen (alle)</option>
                 <option value="cluster">Cluster</option>
               </select>
             </div>
@@ -1621,7 +1621,7 @@ const elHeatMode = document.getElementById('heatMode');
 
 // Market Context UI state (passive)
 let marketVisible = true;
-let heatMode = 'tech_focus'; // 'tech_focus' | 'tech_stack' | 'civil_stack' | 'fin_stack' | 'playground' | 'pillar' | 'cluster'
+let heatMode = 'tech_focus'; // 'tech_focus' | 'tech_stack' | 'civil_stack' | 'fin_stack' | 'playground' | 'pillar_all' | 'cluster'
 let heatFilter = { cat: null, sb: null, mode: null };
 
 
@@ -1761,9 +1761,10 @@ if (st.marketVisible !== undefined && st.marketVisible !== null) {
 if (st.heatMode !== undefined && st.heatMode !== null) {
   let hm = (st.heatMode || '').toString();
   if (hm === 'pillar_base') hm = 'tech_focus'; // migration from old mode
+  if (hm === 'pillar') hm = 'tech_focus'; // migration from old "all pillars" default
   heatMode = (
     hm === 'cluster' ||
-    hm === 'pillar' ||
+    hm === 'pillar_all' ||
     hm === 'tech_focus' ||
     hm === 'tech_stack' ||
     hm === 'civil_stack' ||
@@ -1793,14 +1794,14 @@ if (st.heatMode !== undefined && st.heatMode !== null) {
           sb: Number.isFinite(sb) ? sb : null,
           mode: (
             mode === 'cluster' ||
-            mode === 'pillar' ||
+            mode === 'pillar_all' ||
             mode === 'tech_focus' ||
             mode === 'tech_stack' ||
             mode === 'civil_stack' ||
             mode === 'fin_stack' ||
             mode === 'playground' ||
             mode === 'pillar_base'
-          ) ? (mode === 'pillar_base' ? 'tech_focus' : mode) : null,
+          ) ? ((mode === 'pillar_base' || mode === 'pillar') ? 'tech_focus' : mode) : null,
         });
       }
 
@@ -1830,7 +1831,7 @@ if (elHeatMode) {
     const v = (elHeatMode.value || '').toString();
     heatMode = (
       v === 'cluster' ||
-      v === 'pillar' ||
+      v === 'pillar_all' ||
       v === 'tech_focus' ||
       v === 'tech_stack' ||
       v === 'civil_stack' ||
@@ -1990,7 +1991,7 @@ function heatConceptLabel(r, mode) {
   const isC = asBool(r.is_crypto) === true || /krypto|crypto/i.test(p) || /krypto|crypto/i.test(normStr(clusterLabel(r)));
   const isPlay = /playground|spielplatz/i.test(p);
   if (mode === 'cluster') return normStr(clusterLabel(r));
-  if (mode === 'pillar') return p;
+  if (mode === 'pillar_all') return p;
   if (mode === 'playground') return isPlay ? 'Playground' : '';
   if (mode === 'tech_focus') {
     if (isC) return 'Krypto';
@@ -2909,6 +2910,22 @@ function renderHeatmap(rows) {
   let top = [];
   if (Array.isArray(fixedCats)) {
     top = fixedCats.map(k => ({k, arr: (m.get(k) || [0,0,0,0,0]), tot: (m.get(k) || [0,0,0,0,0]).reduce((a,b)=>a+b,0)}));
+  } else if (heatMode === 'pillar_all') {
+    const allP = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
+    allP.sort((a,b) => {
+      const na = pillarNumber(a.k);
+      const nb = pillarNumber(b.k);
+      if (na !== null && nb !== null) return na - nb;
+      if (na !== null) return -1;
+      if (nb !== null) return 1;
+      const ak = normStr(a.k).toLowerCase();
+      const bk = normStr(b.k).toLowerCase();
+      const ra = ak.includes('krypto') ? 1 : (ak.includes('playground') ? 2 : 3);
+      const rb = bk.includes('krypto') ? 1 : (bk.includes('playground') ? 2 : 3);
+      if (ra !== rb) return ra - rb;
+      return a.k.localeCompare(b.k);
+    });
+    top = allP;
   } else if (heatMode === 'fin_stack') {
     const allFin = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
     allFin.sort((a,b) => {
