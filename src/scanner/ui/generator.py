@@ -1242,8 +1242,13 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div class="cardActions">
             <div class="heatControls">
               <select id="heatMode" title="Heatmap-Modus">
-                <option value="pillar">Heatmap: SÃ¤ulen</option>
-                <option value="cluster">Heatmap: Cluster</option>
+                <option value="tech_focus">S1-S5 + K</option>
+                <option value="tech_stack">S1-S10 + K</option>
+                <option value="civil_stack">S11-S20</option>
+                <option value="fin_stack">S21+</option>
+                <option value="playground">Playground</option>
+                <option value="pillar">SÃ¤ulen (alle)</option>
+                <option value="cluster">Cluster</option>
               </select>
             </div>
             <button type="button" class="btn btnToggle" data-toggle="heatmap">Ausblenden</button>
@@ -1616,7 +1621,7 @@ const elHeatMode = document.getElementById('heatMode');
 
 // Market Context UI state (passive)
 let marketVisible = true;
-let heatMode = 'pillar'; // 'pillar' | 'cluster'
+let heatMode = 'tech_focus'; // 'tech_focus' | 'tech_stack' | 'civil_stack' | 'fin_stack' | 'playground' | 'pillar' | 'cluster'
 let heatFilter = { cat: null, sb: null, mode: null };
 
 
@@ -1754,8 +1759,17 @@ if (st.marketVisible !== undefined && st.marketVisible !== null) {
   marketVisible = !!st.marketVisible;
 }
 if (st.heatMode !== undefined && st.heatMode !== null) {
-  const hm = (st.heatMode || '').toString();
-  heatMode = (hm === 'cluster' || hm === 'pillar') ? hm : heatMode;
+  let hm = (st.heatMode || '').toString();
+  if (hm === 'pillar_base') hm = 'tech_focus'; // migration from old mode
+  heatMode = (
+    hm === 'cluster' ||
+    hm === 'pillar' ||
+    hm === 'tech_focus' ||
+    hm === 'tech_stack' ||
+    hm === 'civil_stack' ||
+    hm === 'fin_stack' ||
+    hm === 'playground'
+  ) ? hm : heatMode;
 }
 
 
@@ -1777,7 +1791,16 @@ if (st.heatMode !== undefined && st.heatMode !== null) {
         heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER, {
           cat,
           sb: Number.isFinite(sb) ? sb : null,
-          mode: (mode === 'cluster' || mode === 'pillar') ? mode : null,
+          mode: (
+            mode === 'cluster' ||
+            mode === 'pillar' ||
+            mode === 'tech_focus' ||
+            mode === 'tech_stack' ||
+            mode === 'civil_stack' ||
+            mode === 'fin_stack' ||
+            mode === 'playground' ||
+            mode === 'pillar_base'
+          ) ? (mode === 'pillar_base' ? 'tech_focus' : mode) : null,
         });
       }
 
@@ -1805,7 +1828,15 @@ setMarketVisible(marketVisible);
 if (elHeatMode) {
   elHeatMode.addEventListener('change', () => {
     const v = (elHeatMode.value || '').toString();
-    heatMode = (v === 'cluster' || v === 'pillar') ? v : heatMode;
+    heatMode = (
+      v === 'cluster' ||
+      v === 'pillar' ||
+      v === 'tech_focus' ||
+      v === 'tech_stack' ||
+      v === 'civil_stack' ||
+      v === 'fin_stack' ||
+      v === 'playground'
+    ) ? v : heatMode;
     heatFilter = Object.assign({}, DEFAULT_HEAT_FILTER);
     saveState();
     refresh();
@@ -1941,6 +1972,45 @@ function pillarLabel(r) {
   const legacy = normStr(r.Sektor) || normStr(r.category);
   return _derivePillarFromLegacy(legacy);
 }
+function basePillarLabel(r) {
+  const p = normStr(pillarLabel(r));
+  if (!p) return '';
+  const m = p.match(/^S([1-5])\b/i);
+  if (m) return `S${m[1]}`;
+  if (/playground/i.test(p)) return 'Playground';
+  return '';
+}
+function pillarNumber(s) {
+  const m = normStr(s).match(/^S\\s*([0-9]{1,2})\\b/i);
+  return m ? Number(m[1]) : null;
+}
+function heatConceptLabel(r, mode) {
+  const p = normStr(pillarLabel(r));
+  const n = pillarNumber(p);
+  const isC = asBool(r.is_crypto) === true || /krypto|crypto/i.test(p) || /krypto|crypto/i.test(normStr(clusterLabel(r)));
+  const isPlay = /playground|spielplatz/i.test(p);
+  if (mode === 'cluster') return normStr(clusterLabel(r));
+  if (mode === 'pillar') return p;
+  if (mode === 'playground') return isPlay ? 'Playground' : '';
+  if (mode === 'tech_focus') {
+    if (isC) return 'Krypto';
+    return (n !== null && n >= 1 && n <= 5) ? `S${n}` : '';
+  }
+  if (mode === 'tech_stack') {
+    if (isC) return 'Krypto';
+    return (n !== null && n >= 1 && n <= 10) ? `S${n}` : '';
+  }
+  if (mode === 'civil_stack') return (n !== null && n >= 11 && n <= 20) ? `S${n}` : '';
+  if (mode === 'fin_stack') return (n !== null && n >= 21) ? `S${n}` : '';
+  return '';
+}
+function fixedHeatCategories(mode) {
+  if (mode === 'tech_focus') return ['S1', 'S2', 'S3', 'S4', 'S5', 'Krypto'];
+  if (mode === 'tech_stack') return ['S1','S2','S3','S4','S5','S6','S7','S8','S9','S10','Krypto'];
+  if (mode === 'civil_stack') return ['S11','S12','S13','S14','S15','S16','S17','S18','S19','S20'];
+  if (mode === 'playground') return ['Playground'];
+  return null;
+}
 
 function computePillarCounts(rows) {
   const m = new Map();
@@ -2050,7 +2120,7 @@ function applyPillarFilter(rows) {
     function bucketRange(i) {
       const a = i * 20;
       const b = (i === 4) ? 100 : (i + 1) * 20;
-      return `${a}${b}`;
+      return `${a}-${b}`;
     }
     function scoreBucketText(i) {
       return { range: bucketRange(i), hint: 'Score' };
@@ -2503,7 +2573,7 @@ function applyQuickFilters(rows) {
 
       const parts = [];
       // header row: Score buckets (x). Corner shows axis directions.
-      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y)  Score (x)"><div class="lbl">Risk </div><div class="hint">Score </div></div>`);
+      parts.push(`<div class="matrixAxis" title="Achsen: Risk (y) Score (x)"><div class="lbl">Risk &darr;</div><div class="hint">Score &rarr;</div></div>`);
       for (let sb = 0; sb < 5; sb++) {
         const s = scoreBucketText(sb);
         parts.push(`<div class="matrixLabel" title="ScoreBucket"><div class="lbl">${esc(s.range)}</div><div class="hint">${esc(s.hint)}</div></div>`);
@@ -2814,11 +2884,16 @@ function renderMovers(rows) {
 
 function renderHeatmap(rows) {
   if (!elHeatmap) return;
-  const fn = (heatMode === 'cluster') ? clusterLabel : pillarLabel;
+  const fn = (r) => heatConceptLabel(r, heatMode);
+  const fixedCats = fixedHeatCategories(heatMode);
+  const scopedRows = (rows || []).filter(r => !!normStr(fn(r)));
 
   // counts[cat][sb] -> number
   const m = new Map();
-  for (const r of rows || []) {
+  if (Array.isArray(fixedCats)) {
+    for (const c of fixedCats) m.set(c, [0,0,0,0,0]);
+  }
+  for (const r of scopedRows) {
     const cat = (fn(r) || '').toString().trim();
     if (!cat) continue;
     const sb = scoreBucket(r.score);
@@ -2831,10 +2906,26 @@ function renderHeatmap(rows) {
   }
 
   // choose top categories
-  const all = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
-  all.sort((a,b) => b.tot - a.tot || a.k.localeCompare(b.k));
-  const limit = (heatMode === 'cluster') ? 8 : 6;
-  const top = all.slice(0, limit);
+  let top = [];
+  if (Array.isArray(fixedCats)) {
+    top = fixedCats.map(k => ({k, arr: (m.get(k) || [0,0,0,0,0]), tot: (m.get(k) || [0,0,0,0,0]).reduce((a,b)=>a+b,0)}));
+  } else if (heatMode === 'fin_stack') {
+    const allFin = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
+    allFin.sort((a,b) => {
+      const na = pillarNumber(a.k);
+      const nb = pillarNumber(b.k);
+      if (na !== null && nb !== null) return na - nb;
+      if (na !== null) return -1;
+      if (nb !== null) return 1;
+      return a.k.localeCompare(b.k);
+    });
+    top = allFin;
+  } else {
+    const all = Array.from(m.entries()).map(([k, arr]) => ({k, arr, tot: arr.reduce((a,b)=>a+b,0)}));
+    all.sort((a,b) => b.tot - a.tot || a.k.localeCompare(b.k));
+    const limit = (heatMode === 'cluster') ? 8 : 12;
+    top = all.slice(0, limit);
+  }
 
   let vmax = 0;
   for (const x of top) for (const v of x.arr) vmax = Math.max(vmax, v);
@@ -2864,8 +2955,8 @@ function renderHeatmap(rows) {
     <div class="matrixGrid" style="grid-template-columns: 84px repeat(5, 1fr);">
       <!-- Corner cell with mode labels -->
       <div class="matrixAxis" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding: 6px 4px;">
-        <div class="lbl" style="font-weight: 700;">${heatMode === 'cluster' ? 'Cluster' : 'SÃ¤ule'} </div>
-        <div class="hint" style="font-size: 9px;">Score </div>
+        <div class="lbl" style="font-weight: 700;">${heatMode === 'cluster' ? 'Cluster &darr;' : 'SÃ¤ule &darr;'}</div>
+        <div class="hint" style="font-size: 9px;">Score &rarr;</div>
       </div>
       <!-- Score bucket headers -->
       ${Array.from({length:5}, (_,sb) => {
@@ -2890,7 +2981,7 @@ function renderHeatmap(rows) {
         return parts.join('');
       }).join('')}
     </div>
-    <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro ScoreBucket (Top ${limit} nach HÃ¤ufigkeit).</div>
+    <div class="muted small" style="margin-top:6px;">Zahl = Anzahl Werte pro ScoreBucket.</div>
   `;
 
   elHeatmap.querySelectorAll('[data-hcat]').forEach(node => {
@@ -2930,7 +3021,8 @@ function renderMarketContext(rows) {
 function applyHeatFilter(rows) {
   if (!heatFilter || !heatFilter.cat) return rows;
   return (rows || []).filter(r => {
-    const label = (heatFilter.mode === 'cluster') ? clusterLabel(r) : pillarLabel(r);
+    const mode = (heatFilter.mode === 'pillar_base') ? 'tech_focus' : (heatFilter.mode || heatMode);
+    const label = heatConceptLabel(r, mode);
     if (label !== heatFilter.cat) return false;
     if (heatFilter.sb === null || heatFilter.sb === undefined) return true;
     return scoreBucket(r.score) === Number(heatFilter.sb);
