@@ -1,16 +1,15 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-06-13T15:43:35.677536Z",
-    "date": "2026-06-13",
+    "generated_at": "2026-06-14T15:50:17.640408Z",
+    "date": "2026-06-14",
     "language": "de",
     "source_csv": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/watchlist/watchlist_ALL.csv",
     "universe_count": 172,
     "scored_count": 172,
     "top_n": 3,
     "notes": [
-      "Klumpenrisiko: Top‑3 dominiert von Cluster 'Semiconductors' (2/3).",
-      "Kontext: Viele Top‑3 in Säule 'S2 Gehirn' (3/3)."
+      "Kontext: Viele Top‑3 in Säule 'S2 Gehirn' (2/3)."
     ]
   },
   "top": [
@@ -57,7 +56,7 @@
       "isin": "US67066G1040",
       "yahoo": "NVDA",
       "name": "NVIDIA CORP.",
-      "score": 37.27,
+      "score": 37.26,
       "score_pctl": 99.41520467836257,
       "r_code": "R5",
       "trend_ok": true,
@@ -69,7 +68,7 @@
       "pillar_primary": "S2 Gehirn",
       "bucket_type": "pillar",
       "reasons": [
-        "Hoher Score: 37.27 (Perzentil 99.4%, Bucket 1/4).",
+        "Hoher Score: 37.26 (Perzentil 99.4%, Bucket 1/4).",
         "Confidence: 69.4 (Daten-/Konfluenz‑Hinweis).",
         "Zyklus: 73.6% (≈50 neutral).",
         "Tagesbewegung (Perf %): +44.72%.",
@@ -82,9 +81,7 @@
         "Säule (privat): S2 Gehirn.",
         "BUCKET: pillar."
       ],
-      "risks": [
-        "Klumpenrisiko: Top‑3 dominiert von Cluster 'Semiconductors' (2/3)."
-      ],
+      "risks": [],
       "next_checks": [
         "Datenqualität prüfen (Status/fehlende Felder/Confidence‑Breakdown).",
         "Chart‑Kontext prüfen (z.B. Trend200, Support/Resistance).",
@@ -93,37 +90,36 @@
       ]
     },
     {
-      "symbol": "MU",
-      "isin": "US5951121038",
-      "yahoo": "MU",
-      "name": "MICRON TECHNOLOGY INC",
-      "score": 36.69,
+      "symbol": "WPM.TO",
+      "isin": "CA9628791027",
+      "yahoo": "WPM.TO",
+      "name": "WHEATON PREC.",
+      "score": 36.71,
       "score_pctl": 98.83040935672514,
-      "r_code": "R5",
-      "trend_ok": true,
+      "r_code": "R4",
+      "trend_ok": false,
       "liq_ok": true,
-      "risk_bucket": 4,
-      "risk_pctl": 81.87134502923976,
+      "risk_bucket": 2,
+      "risk_pctl": 44.44444444444444,
       "score_bucket": 1,
-      "cluster": "Semiconductors",
-      "pillar_primary": "S2 Gehirn",
+      "cluster": "Gold",
+      "pillar_primary": "S4 Fundament",
       "bucket_type": "pillar",
       "reasons": [
-        "Hoher Score: 36.69 (Perzentil 98.8%, Bucket 1/4).",
-        "Confidence: 72.9 (Daten-/Konfluenz‑Hinweis).",
-        "Zyklus: 0.0% (≈50 neutral).",
-        "Tagesbewegung (Perf %): +751.18%.",
-        "Trend‑Filter: OK.",
+        "Hoher Score: 36.71 (Perzentil 98.8%, Bucket 1/4).",
+        "Confidence: 58.6 (Daten-/Konfluenz‑Hinweis).",
+        "Zyklus: 38.5% (≈50 neutral).",
+        "Tagesbewegung (Perf %): +32.82%.",
         "Liquidität: OK.",
         "Regime‑Hinweis: bull.",
         "Trend200‑Proxy: +0.084.",
-        "Cluster/Sektor: Semiconductors.",
-        "Säule (privat): S2 Gehirn.",
+        "Risk‑Proxy: Bucket 2/4 (Perzentil 44.4%).",
+        "Cluster/Sektor: Gold.",
+        "Säule (privat): S4 Fundament.",
         "BUCKET: pillar."
       ],
       "risks": [
-        "Risk‑Proxy: Bucket 4/4 (Perzentil 81.9%).",
-        "Klumpenrisiko: Top‑3 dominiert von Cluster 'Semiconductors' (2/3)."
+        "Trend‑Filter negativ (Trend OK = false)."
       ],
       "next_checks": [
         "Datenqualität prüfen (Status/fehlende Felder/Confidence‑Breakdown).",
