@@ -20,6 +20,10 @@ Notes
 -----
 We *upsert* today's snapshot (by date+symbol) into score_history.csv to keep the
 pipeline deterministic per day (reruns don't duplicate rows).
+
+Each snapshot row also carries the already computed ``cycle`` (0-100), the
+derived ``r_code`` (R0-R5) and a fixed ``scoring_version``. Rows written before
+these columns existed keep them empty.
 """
 
 from dataclasses import dataclass
@@ -32,9 +36,25 @@ import pandas as pd
 
 from scanner.data.io.paths import artifacts_dir, project_root
 from scanner.data.io.safe_csv import to_csv_safely
+from scanner.reports.briefing import (
+    _bool_series,
+    _first_col,
+    _norm_str,
+    _num_series,
+    _percentile_rank,
+    _rec_code,
+)
 
 
 SCHEMA_VERSION = 1
+
+# Bumped whenever the scoring/recommendation system changes, so historical rows
+# stay comparable only within the same version.
+SCORING_VERSION = "v1"
+
+# Snapshot columns that are not part of the historical rows written before they
+# were introduced.
+SNAPSHOT_EXTRA_COLUMNS = ("cycle", "r_code", "scoring_version")
 
 
 def _utc_today() -> str:
@@ -62,10 +82,50 @@ def _first_nonempty(*vals: Any) -> Any:
     return None
 
 
+def _cycle_series(df_full: pd.DataFrame) -> pd.Series:
+    """Already computed cycle value (0-100) from the watchlist."""
+    col = _first_col(df_full, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])
+    return _num_series(df_full, col)
+
+
+def _r_code_series(df_full: pd.DataFrame) -> pd.Series:
+    """Recommendation code (R0-R5) as derived for the current run.
+
+    Mirrors the dashboard/briefing derivation: score percentile within the run's
+    universe plus score_status, trend_ok and liquidity_ok.
+    """
+    c_status = _first_col(df_full, ["score_status", "ScoreStatus", "Status"])
+    c_score = _first_col(df_full, ["score", "Score"])
+    c_trend = _first_col(df_full, ["trend_ok", "TrendOK", "Trend Ok", "Trend"])
+    c_liq = _first_col(df_full, ["liquidity_ok", "LiquidityOK", "LiqOK", "Liq"])
+
+    scores = _num_series(df_full, c_score)
+    score_sorted = sorted(float(x) for x in scores.dropna().tolist())
+    trend = _bool_series(df_full, c_trend)
+    liq = _bool_series(df_full, c_liq)
+
+    codes: list[str] = []
+    for i in df_full.index:
+        sv = scores.loc[i]
+        pctl = _percentile_rank(score_sorted, None if pd.isna(sv) else float(sv))
+        status = _norm_str(df_full.loc[i, c_status]) if c_status else ""
+        t = trend.loc[i]
+        lq = liq.loc[i]
+        codes.append(
+            _rec_code(
+                status,
+                pctl,
+                None if pd.isna(t) else bool(t),
+                None if pd.isna(lq) else bool(lq),
+            )
+        )
+    return pd.Series(codes, index=df_full.index, dtype="object")
+
+
 def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
     """Create a normalized daily snapshot frame from watchlist_full.csv."""
     if df_full is None or df_full.empty:
-        return pd.DataFrame(columns=["date", "symbol", "name", "score"])
+        return pd.DataFrame(columns=["date", "symbol", "name", "score", *SNAPSHOT_EXTRA_COLUMNS])
 
     # Prefer a stable market_date if present; else UTC today
     dt = date
@@ -121,6 +181,9 @@ def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None
             "pillar_primary": pillar_primary.astype(str).replace({"nan": ""}),
             "cluster_official": cluster_official.astype(str).replace({"nan": ""}),
             "bucket_type": bucket_type.astype(str).replace({"nan": ""}),
+            "cycle": _cycle_series(df_full),
+            "r_code": _r_code_series(df_full),
+            "scoring_version": SCORING_VERSION,
         }
     )
 
