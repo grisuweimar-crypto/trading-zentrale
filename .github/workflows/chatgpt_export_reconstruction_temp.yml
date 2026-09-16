@@ -1,0 +1,28 @@
+name: ChatGPT export reconstructed history
+
+on:
+  push:
+    branches:
+      - chatgpt-history-reconstruction-20260916
+    paths:
+      - '.github/workflows/chatgpt_export_reconstruction_temp.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt-history-reconstruction-20260916
+      - name: Upload reconstructed CSV and logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: score-history-reconstruction
+          path: |
+            artifacts/reconstruction_temp/score_history_reconstructed.csv
+            artifacts/reconstruction_temp/reconstruction_log.csv
+            artifacts/reconstruction_temp/reconstruction_report.json
+          retention-days: 1
