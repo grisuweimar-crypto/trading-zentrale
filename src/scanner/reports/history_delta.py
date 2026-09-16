@@ -54,7 +54,14 @@ SCORING_VERSION = "v1"
 
 # Snapshot columns that are not part of the historical rows written before they
 # were introduced.
-SNAPSHOT_EXTRA_COLUMNS = ("cycle", "r_code", "scoring_version")
+SNAPSHOT_EXTRA_COLUMNS = (
+    "cycle",
+    "r_code",
+    "scoring_version",
+    "rank",
+    "universe_size",
+    "rank_percentile",
+)
 
 
 def _utc_today() -> str:
@@ -122,6 +129,20 @@ def _r_code_series(df_full: pd.DataFrame) -> pd.Series:
     return pd.Series(codes, index=df_full.index, dtype="object")
 
 
+def _rank_metadata(df_full: pd.DataFrame) -> tuple[pd.Series, int, pd.Series]:
+    """Persist the existing score-rank convention for the current run only."""
+    scores = pd.to_numeric(df_full["score"], errors="coerce")
+    evaluated = scores.notna()
+    universe_size = int(evaluated.sum())
+    ranks = pd.Series(pd.NA, index=df_full.index, dtype="Int64")
+    if universe_size:
+        ranks.loc[evaluated] = (-scores.loc[evaluated]).rank(method="min").astype("Int64")
+    percentile = pd.Series(pd.NA, index=df_full.index, dtype="Float64")
+    if universe_size:
+        percentile.loc[evaluated] = ranks.loc[evaluated].astype("Float64") / universe_size
+    return ranks, universe_size, percentile
+
+
 def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None) -> pd.DataFrame:
     """Create a normalized daily snapshot frame from watchlist_full.csv."""
     if df_full is None or df_full.empty:
@@ -158,6 +179,7 @@ def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None
     pillar_primary = _col("pillar_primary")
     cluster_official = _col("cluster_official")
     bucket_type = _col("bucket_type")
+    rank, universe_size, rank_percentile = _rank_metadata(df_full)
 
     # Normalize symbol key: prefer asset_id, then symbol, then ticker
     key = []
@@ -184,6 +206,9 @@ def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None
             "cycle": _cycle_series(df_full),
             "r_code": _r_code_series(df_full),
             "scoring_version": SCORING_VERSION,
+            "rank": rank,
+            "universe_size": universe_size,
+            "rank_percentile": rank_percentile,
         }
     )
 
@@ -207,6 +232,17 @@ def upsert_daily_snapshot(score_history_path: Path, snapshot: pd.DataFrame) -> p
 
     if score_history_path.exists():
         existing = pd.read_csv(score_history_path)
+        for column in snapshot.columns:
+            if column not in existing.columns:
+                if column in {"rank", "universe_size"}:
+                    existing[column] = pd.Series(pd.NA, index=existing.index, dtype="Int64")
+                else:
+                    existing[column] = float("nan")
+        for integer_column in ("rank", "universe_size"):
+            if integer_column in existing.columns:
+                existing[integer_column] = pd.to_numeric(
+                    existing[integer_column], errors="coerce"
+                ).astype("Int64")
     else:
         existing = pd.DataFrame()
 

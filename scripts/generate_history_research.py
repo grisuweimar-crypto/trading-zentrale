@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 
 EXPECTED_COLUMNS = (
-    "date symbol name close currency score rank r_code rs3m trend200 cycle "
+    "date symbol name close currency score rank universe_size rank_percentile r_code rs3m trend200 cycle "
     "confidence opportunity risk sector pillar_primary cluster_official "
     "bucket_type scoring_version run_id universe_version config_version"
 ).split()
@@ -140,6 +140,21 @@ def build_research(root: Path, now: datetime | None = None) -> dict:
         },
         "monthly_exports": sorted(monthly),
         "skipped_incomplete_months": skipped,
+    }
+    rank_fields = ("rank", "universe_size", "rank_percentile")
+    rank_indexes = [
+        i for i, row in enumerate(rows)
+        if all(field in columns and row[columns.index(field)].strip() for field in rank_fields)
+    ]
+    metadata["rank_data"] = {
+        "fields": list(rank_fields),
+        "first_observed_date": min((dates[i] for i in rank_indexes), default=None).isoformat()
+        if rank_indexes else None,
+        "first_observed_run_id": (
+            rows[min(rank_indexes)][columns.index("run_id")].strip()
+            if rank_indexes and "run_id" in columns else None
+        ),
+        "observed_row_count": len(rank_indexes),
     }
     for version in ("scoring_version", "universe_version", "config_version"):
         metadata[version + "s"] = (sorted({r[columns.index(version)] for r in rows

@@ -81,6 +81,25 @@ class ResearchTests(unittest.TestCase):
         research.build_research(self.root, self.now)
         self.assertEqual(first, {p: p.read_bytes() for p in first})
 
+    def test_rank_fields_pass_through_monthly_and_metadata(self):
+        columns = ["date", "symbol", "score", "rank", "universe_size", "rank_percentile", "run_id"]
+        rows = [
+            [(date(2026, 8, 1) + timedelta(days=i)).isoformat(), "001", "50", "2", "4", "0.5", "run-20260901"]
+            for i in range(35)
+        ]
+        self.write(rows, columns)
+        meta = research.build_research(self.root, self.now)
+        expected = [columns] + rows
+        self.assertEqual(self.read(self.output / "history_research.csv"), expected)
+        self.assertEqual(self.read(self.output / "monthly/history_monthly_2026-08.csv"),
+                         [columns] + rows[:31])
+        self.assertEqual(meta["rank_data"], {
+            "fields": ["rank", "universe_size", "rank_percentile"],
+            "first_observed_date": "2026-08-01",
+            "first_observed_run_id": "run-20260901",
+            "observed_row_count": 35,
+        })
+
     def test_calendar_boundaries_and_leap_year(self):
         for today, expected in [(date(2027, 1, 5), (date(2026, 12, 1), date(2026, 12, 31))),
                                 (date(2024, 3, 1), (date(2024, 2, 1), date(2024, 2, 29))),

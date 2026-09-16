@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from scanner.reports.history_delta import write_recent_score_history
+from scanner.reports.history_delta import _rank_metadata, build_snapshot_from_watchlist, write_recent_score_history
 
 
 class RecentHistoryTests(unittest.TestCase):
@@ -21,6 +21,34 @@ class RecentHistoryTests(unittest.TestCase):
 
     def write(self, rows):
         self.full.write_text("date,symbol,score,extra\n" + rows, encoding="utf-8")
+
+    def test_snapshot_rank_metadata_uses_evaluated_universe_and_score_ties(self):
+        watchlist = pd.DataFrame([
+            {"market_date": "2026-09-16", "asset_id": "TOP", "symbol": "TOP", "name": "Top", "score": 90, "cycle": 0},
+            {"market_date": "2026-09-16", "asset_id": "TIE", "symbol": "TIE", "name": "Tie", "score": 80, "cycle": 0},
+            {"market_date": "2026-09-16", "asset_id": "TIE2", "symbol": "TIE2", "name": "Tie 2", "score": 80, "cycle": 0},
+            {"market_date": "2026-09-16", "asset_id": "LOW", "symbol": "LOW", "name": "Low", "score": 10, "cycle": 0},
+            {"market_date": "2026-09-16", "asset_id": "FAILED", "symbol": "FAILED", "name": "Failed", "score": None, "cycle": 0},
+        ])
+        snapshot = build_snapshot_from_watchlist(watchlist)
+        self.assertEqual(snapshot["universe_size"].tolist(), [4] * 5)
+        indexed = snapshot.set_index("symbol")
+        self.assertEqual(indexed.loc["TOP", "rank"], 1)
+        self.assertEqual(indexed.loc["TIE", "rank"], 2)
+        self.assertEqual(indexed.loc["TIE2", "rank"], 2)
+        self.assertEqual(indexed.loc["LOW", "rank"], 4)
+        self.assertTrue(pd.isna(indexed.loc["FAILED", "rank"]))
+        self.assertAlmostEqual(indexed.loc["LOW", "rank_percentile"], 1.0)
+
+    def test_rank_percentiles_for_300_and_150_titles(self):
+        for universe_size, expected in [(300, 0.10), (150, 0.20)]:
+            with self.subTest(universe_size=universe_size):
+                scores = pd.DataFrame({"score": list(range(universe_size, 0, -1))})
+                ranks, actual_size, percentiles = _rank_metadata(scores)
+                self.assertEqual(actual_size, universe_size)
+                self.assertEqual(ranks.iloc[29], 30)
+                self.assertAlmostEqual(percentiles.iloc[29], expected)
+        self.assertLess(30 / 300, 30 / 150)
 
     def test_window_values_archive_and_repeat(self):
         self.write("2020-01-07,OLD,1,\n2020-04-01,001,2.123456789012345678,NA\n"
@@ -100,6 +128,9 @@ class RecentHistoryTests(unittest.TestCase):
             recent = pd.read_csv(self.root / "snapshots/score_history_recent.csv")
             self.assertEqual(len(recent), 2)
             self.assertEqual(recent.date.max(), full.date.max())
+            self.assertEqual(recent.loc[recent["date"] == "2020-04-02", "rank"].iloc[0], 1)
+            self.assertEqual(recent.loc[recent["date"] == "2020-04-02", "universe_size"].iloc[0], 1)
+            self.assertEqual(recent.loc[recent["date"] == "2020-04-02", "rank_percentile"].iloc[0], 1.0)
             self.assertTrue((self.root / "reports/history_delta.json").exists())
             self.assertTrue((self.root / "reports/history_delta.csv").exists())
             with patch.object(module, "write_recent_score_history", side_effect=RuntimeError("bug")):
