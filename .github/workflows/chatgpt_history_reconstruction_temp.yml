@@ -1,0 +1,37 @@
+name: ChatGPT temporary history reconstruction
+
+on:
+  push:
+    branches:
+      - chatgpt-history-reconstruction-20260916
+    paths:
+      - '.github/workflows/chatgpt_history_reconstruction_temp.yml'
+      - 'scripts/reconstruct_score_history_temp.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt-history-reconstruction-20260916
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas numpy yfinance
+      - name: Reconstruct missing history fields
+        run: python scripts/reconstruct_score_history_temp.py
+      - name: Commit reconstruction artifacts to temporary branch only
+        run: |
+          git config user.name 'ChatGPT Reconstruction Bot'
+          git config user.email 'action@github.com'
+          git add artifacts/reconstruction_temp/
+          git commit -m 'Temporary reconstructed score history [skip ci]' || exit 0
+          git push origin HEAD:chatgpt-history-reconstruction-20260916
