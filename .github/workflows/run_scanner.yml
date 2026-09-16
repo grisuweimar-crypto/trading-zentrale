@@ -1,9 +1,6 @@
 name: Scanner_vNext Autopilot
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '0 15 * * *' # 17:00 Uhr Berlin waehrend der Sommerzeit (GitHub cron laeuft in UTC)
 
@@ -12,7 +9,6 @@ permissions:
 
 jobs:
   build:
-    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[autorun-retry]')
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
