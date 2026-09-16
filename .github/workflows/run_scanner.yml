@@ -27,6 +27,11 @@ jobs:
       - name: History-Regressionstests
         run: python -m unittest discover -s tests -v
 
+      - name: Historische Marktanalyse aktualisieren
+        run: |
+          python scripts/prefetch_market_history.py AVAV ROL --minimum-days 300
+          python scripts/publish_history_analysis.py
+
       - name: Scanner ausführen (run_daily)
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
