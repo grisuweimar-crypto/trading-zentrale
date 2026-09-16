@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-16T09:15:03.216295+00:00",
+  "generated_at": "2026-09-16T19:20:46.531565+00:00",
   "source_file": "artifacts/snapshots/score_history.csv",
-  "source_sha256": "62c66198d9b1d3bfb84596a890cefa5ee633e22c1eacc0d0a90d4336243af673",
-  "source_size_bytes": 6121600,
+  "source_sha256": "17372ae28864fb71de47e774f558ddf0216bc509b0ff35d5ca574d51c91973cb",
+  "source_size_bytes": 7374861,
   "source_oldest_date": "2026-02-10",
   "source_newest_date": "2026-09-16",
   "source_row_count": 33825,
@@ -46,12 +46,13 @@
     "bucket_type",
     "cycle",
     "r_code",
-    "scoring_version"
+    "scoring_version",
+    "rank",
+    "universe_size",
+    "rank_percentile"
   ],
-  "missing_expected_columns": [
-    "rank"
-  ],
-  "research_size_bytes": 6087774,
+  "missing_expected_columns": [],
+  "research_size_bytes": 7374861,
   "deduplication": "none; all source observations and their order are retained",
   "duplicate_date_symbol_rows": 155,
   "validation": {
@@ -90,6 +91,16 @@
   },
   "monthly_exports": [],
   "skipped_incomplete_months": {},
+  "rank_data": {
+    "fields": [
+      "rank",
+      "universe_size",
+      "rank_percentile"
+    ],
+    "first_observed_date": "2026-09-16",
+    "first_observed_run_id": "",
+    "observed_row_count": 197
+  },
   "scoring_versions": [
     "v1"
   ],
