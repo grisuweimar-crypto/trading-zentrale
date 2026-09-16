@@ -229,6 +229,30 @@ def upsert_daily_snapshot(score_history_path: Path, snapshot: pd.DataFrame) -> p
     return combined
 
 
+def write_recent_score_history(score_history_path: Path, recent_path: Path) -> pd.DataFrame:
+    """Rebuild the inclusive last 12 market weeks from the persisted archive.
+
+    The archive calls MarketDate ``date`` and its ticker key ``symbol``.
+    Read cells as text so filtering preserves CSV values, including empty cells,
+    leading zeros and numeric precision. Only the separate date mask is parsed.
+    Errors deliberately propagate to the regular workflow.
+    """
+    if score_history_path.resolve() == recent_path.resolve():
+        raise ValueError("Recent history must not overwrite the full archive")
+    history = pd.read_csv(score_history_path, dtype=str, keep_default_na=False)
+    if not {"date", "symbol"}.issubset(history.columns):
+        raise ValueError("Score history requires date (MarketDate) and symbol columns")
+    dates = pd.to_datetime(history["date"], format="%Y-%m-%d", errors="raise")
+    if dates.isna().any() or history["symbol"].str.strip().eq("").any():
+        raise ValueError("Score history contains missing dates or symbols")
+    recent = history.loc[dates >= dates.max() - pd.Timedelta(weeks=12)].copy()
+    # Preserve the last actual archive row for a repeated key; never synthesize cells.
+    recent = recent.drop_duplicates(subset=["date", "symbol"], keep="last")
+    recent_path.parent.mkdir(parents=True, exist_ok=True)
+    to_csv_safely(recent, recent_path, index=False)
+    return recent
+
+
 def _rank_by_score(df: pd.DataFrame) -> pd.Series:
     """Dense rank: 1 is best (highest score). NaN ranks last."""
     s = pd.to_numeric(df["score"], errors="coerce")

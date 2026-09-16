@@ -12,6 +12,7 @@ Outputs:
 
 Also maintains snapshot store:
   - artifacts/snapshots/score_history.csv (upsert by date+symbol)
+  - artifacts/snapshots/score_history_recent.csv (last 12 weeks of the archive)
 
 This script is explainability-only (reads existing CSV outputs).
 """
@@ -27,6 +28,7 @@ from scanner.reports.history_delta import (
     resolve_score_history_path,
     build_snapshot_from_watchlist,
     upsert_daily_snapshot,
+    write_recent_score_history,
     compute_history_delta,
     write_history_delta_outputs,
 )
@@ -50,6 +52,9 @@ def main() -> int:
 
     hist_path = resolve_score_history_path()
     hist = upsert_daily_snapshot(hist_path, snap)
+    recent_path = artifacts_dir() / "snapshots" / "score_history_recent.csv"
+    recent = write_recent_score_history(hist_path, recent_path)
+    print(f"Recent history: {recent_path.as_posix()} ({len(recent)} rows)")
 
     delta_df, payload = compute_history_delta(hist)
     out = write_history_delta_outputs(delta_df, payload)
