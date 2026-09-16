@@ -1,0 +1,135 @@
+{
+  "input": "artifacts/snapshots/score_history.csv",
+  "rows": 33825,
+  "date_min": "2026-02-10",
+  "date_max": "2026-09-16",
+  "mapped_rows": 33825,
+  "unique_yahoo_tickers_requested": 208,
+  "unique_yahoo_tickers_fetched": 200,
+  "fetch_failed": [
+    "CRYPTO:ADA",
+    "CRYPTO:BTC",
+    "CRYPTO:DOGE",
+    "CRYPTO:ETH",
+    "CRYPTO:SOL",
+    "CRYPTO:XRP",
+    "DV.V",
+    "SLVR.V"
+  ],
+  "missing_before": {
+    "close": 0,
+    "volatility": 33378,
+    "drawdown": 33378,
+    "rs3m": 21,
+    "trend200": 337
+  },
+  "filled": {
+    "close": 0,
+    "volatility": 31818,
+    "drawdown": 31818,
+    "rs3m": 10,
+    "trend200": 10
+  },
+  "unresolved_after": {
+    "close": 0,
+    "volatility": 1560,
+    "drawdown": 1560,
+    "rs3m": 11,
+    "trend200": 327
+  },
+  "chosen_formulas": {
+    "volatility": "vol_1y",
+    "drawdown": "dd_calendar_1y",
+    "rs3m": "rel_current63",
+    "trend200": "trend_200"
+  },
+  "validation": {
+    "volatility": {
+      "vol_1y": {
+        "n": 441.0,
+        "mae": 0.00021833335640904675,
+        "median_abs_error": 4.000150813860889e-05,
+        "p90_abs_error": 0.00017179878073451255
+      },
+      "vol_30": {
+        "n": 441.0,
+        "mae": 0.007889022967079743,
+        "median_abs_error": 0.0061022914793757085,
+        "p90_abs_error": 0.015723168008678297
+      },
+      "vol_63": {
+        "n": 441.0,
+        "mae": 0.006995847881094962,
+        "median_abs_error": 0.0036096930550016462,
+        "p90_abs_error": 0.010206150203835154
+      }
+    },
+    "drawdown": {
+      "dd_calendar_1y": {
+        "n": 441.0,
+        "mae": 0.003816931131458858,
+        "median_abs_error": 2.654739006402451e-07,
+        "p90_abs_error": 4.991351451044679e-07
+      },
+      "dd_252": {
+        "n": 441.0,
+        "mae": 0.005058083980172346,
+        "median_abs_error": 2.739749778990497e-07,
+        "p90_abs_error": 0.002389826452959487
+      }
+    },
+    "rs3m": {
+      "ret_63": {
+        "n": 4772.0,
+        "mae": 0.06879607930996529,
+        "median_abs_error": 0.05719619031711831,
+        "p90_abs_error": 0.13551086249429348
+      },
+      "ret_current63": {
+        "n": 4772.0,
+        "mae": 0.06662876283144686,
+        "median_abs_error": 0.05299194163998336,
+        "p90_abs_error": 0.13369220410655774
+      },
+      "ret_calendar_3m": {
+        "n": 4772.0,
+        "mae": 0.06905648435949352,
+        "median_abs_error": 0.05442572124972572,
+        "p90_abs_error": 0.1385553432756943
+      },
+      "rel_63": {
+        "n": 4772.0,
+        "mae": 0.026389148310857605,
+        "median_abs_error": 0.01617077890695404,
+        "p90_abs_error": 0.0581023119200759
+      },
+      "rel_current63": {
+        "n": 4772.0,
+        "mae": 0.008798053853845073,
+        "median_abs_error": 0.002519083205505923,
+        "p90_abs_error": 0.02044259269097574
+      },
+      "rel_calendar_3m": {
+        "n": 4772.0,
+        "mae": 0.024279186400020313,
+        "median_abs_error": 0.012290093070114565,
+        "p90_abs_error": 0.0581286824760812
+      }
+    },
+    "trend200": {
+      "trend_200": {
+        "n": 4763.0,
+        "mae": 0.007143462060004417,
+        "median_abs_error": 0.0013309648019457776,
+        "p90_abs_error": 0.01843970445823621
+      }
+    }
+  },
+  "notes": [
+    "Existing non-null values were never overwritten.",
+    "Historical Yahoo daily data were downloaded with auto_adjust=True.",
+    "For legacy ISIN rows the current universe master was used to resolve a Yahoo ticker; currency and name were used as tie-breakers.",
+    "Formula variants were selected empirically by lowest validation error against preserved historical values already present in score_history.csv.",
+    "Rows without a verifiable ticker/history remain blank and are logged."
+  ]
+}
