@@ -133,7 +133,7 @@ Risiko-basierte Komponente (Volatilität, Drawdown, Liquidität).
 ## 🚨 Operating Procedures
 
 ### **Daily Routine**
-1. **17:53 CEST**: Automatischer Scan via GitHub Actions (der GitHub-Cron ist waehrend der Sommerzeit auf 15:53 UTC gesetzt)
+1. **18:03 CEST**: Automatischer Scan via GitHub Actions (der GitHub-Cron ist waehrend der Sommerzeit auf 16:03 UTC gesetzt)
 2. **Check**: Log-File auf Errors/Warnings
 3. **Health**: `python scripts/health_report.py` bei Problemen
 4. **Review**: Top-10 Liste + Confidence Scores
