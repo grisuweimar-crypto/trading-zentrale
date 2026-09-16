@@ -3,7 +3,6 @@ name: Scanner_vNext Autopilot
 on:
   schedule:
     - cron: '0 15 * * *' # 17:00 Uhr Berlin waehrend der Sommerzeit (GitHub cron laeuft in UTC)
-  workflow_dispatch:
 
 permissions:
   contents: write
