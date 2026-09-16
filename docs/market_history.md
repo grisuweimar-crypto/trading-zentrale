@@ -16,7 +16,7 @@ The public analysis export combines all observed scanner rows from
 `artifacts/snapshots/score_history.csv` with this cache at
 `artifacts/research/history_analysis.csv`. Its stable public URL is:
 
-`https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/main/artifacts/research/history_analysis.csv`
+`https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/artifacts/research/history_analysis.csv`
 
 `observation_type=observed_scanner` and `data_source=scanner_run` identify real
 scanner observations. `observation_type=market_data` and
