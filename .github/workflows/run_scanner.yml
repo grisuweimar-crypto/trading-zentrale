@@ -2,7 +2,8 @@ name: Scanner_vNext Autopilot
 
 on:
   schedule:
-    - cron: '0 14 * * *' # taeglich 14:00 UTC (15/16 Uhr Berlin je nach DST)
+    - cron: '0 17 * * *' # taeglich 17:00 Uhr deutscher Zeit, inklusive Zeitumstellung
+      timezone: 'Europe/Berlin'
   workflow_dispatch:
 
 permissions:
