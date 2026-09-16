@@ -62,6 +62,12 @@ class MarketHistoryTests(unittest.TestCase):
     def test_public_analysis_export_has_provenance_and_stable_schema(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            scanner = root / "artifacts/snapshots/score_history.csv"
+            scanner.parent.mkdir(parents=True)
+            scanner.write_text(
+                "date,symbol,score\n2026-01-02,AAPL,50\n",
+                encoding="utf-8",
+            )
             source = root / "artifacts/market_data/yahoo_ohlcv.csv"
             source.parent.mkdir(parents=True)
             source.write_text(
@@ -71,12 +77,11 @@ class MarketHistoryTests(unittest.TestCase):
             )
             target = publish_history_analysis(root)
             exported = pd.read_csv(target)
-            self.assertEqual(list(exported.columns), [
-                "date", "symbol", "currency", "open", "high", "low", "close", "volume",
-                "observation_type", "data_source",
-            ])
-            self.assertEqual(exported.loc[0, "observation_type"], "market_data")
-            self.assertEqual(exported.loc[0, "data_source"], "yahoo_ohlcv")
+            self.assertEqual(exported["symbol"].tolist(), ["AAPL", "AVAV"])
+            self.assertEqual(set(exported["observation_type"]), {"observed_scanner", "market_data"})
+            self.assertEqual(set(exported["data_source"]), {"scanner_run", "yahoo_ohlcv"})
+            self.assertIn("score", exported.columns)
+            self.assertIn("open", exported.columns)
 
 
 if __name__ == "__main__":

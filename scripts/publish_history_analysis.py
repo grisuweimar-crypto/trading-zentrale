@@ -1,4 +1,4 @@
-"""Publish the stable, public analysis CSV from the raw market-data cache."""
+"""Publish the stable, public analysis CSV from scanner and market history."""
 
 from __future__ import annotations
 
@@ -9,30 +9,45 @@ import pandas as pd
 from scanner.data.io.safe_csv import to_csv_safely
 
 
-SOURCE = "artifacts/market_data/yahoo_ohlcv.csv"
+SCANNER_SOURCE = "artifacts/snapshots/score_history.csv"
+MARKET_SOURCE = "artifacts/market_data/yahoo_ohlcv.csv"
 TARGET = "artifacts/research/history_analysis.csv"
 BASE_COLUMNS = ["date", "symbol", "currency", "open", "high", "low", "close", "volume"]
-PUBLIC_COLUMNS = BASE_COLUMNS + ["observation_type", "data_source"]
+PROVENANCE_COLUMNS = ["observation_type", "data_source"]
 
 
 def publish_history_analysis(root: Path) -> Path:
-    source = root / SOURCE
     target = root / TARGET
-    if not source.exists():
-        raise FileNotFoundError(source)
+    scanner_path = root / SCANNER_SOURCE
+    market_path = root / MARKET_SOURCE
+    if not scanner_path.exists():
+        raise FileNotFoundError(scanner_path)
+    if not market_path.exists():
+        raise FileNotFoundError(market_path)
 
-    data = pd.read_csv(source, dtype={"date": str, "symbol": str, "currency": str})
-    missing = [column for column in BASE_COLUMNS if column not in data.columns]
+    scanner = pd.read_csv(scanner_path, dtype=str, keep_default_na=False)
+    if not {"date", "symbol"}.issubset(scanner.columns):
+        raise ValueError("Scanner history requires date and symbol columns")
+    scanner["observation_type"] = "observed_scanner"
+    scanner["data_source"] = "scanner_run"
+
+    market = pd.read_csv(market_path, dtype=str, keep_default_na=False)
+    missing = [column for column in BASE_COLUMNS if column not in market.columns]
     if missing:
         raise ValueError(f"Market cache is missing columns: {missing}")
-    data = data[BASE_COLUMNS].copy()
-    data["observation_type"] = "market_data"
-    data["data_source"] = "yahoo_ohlcv"
-    data = data.drop_duplicates(["date", "symbol"], keep="first")
-    data = data.sort_values(["symbol", "date"], kind="mergesort").reset_index(drop=True)
+    market = market[BASE_COLUMNS].copy()
+    market["observation_type"] = "market_data"
+    market["data_source"] = "yahoo_ohlcv"
+    market = market.drop_duplicates(["date", "symbol"], keep="first")
+
+    columns = list(scanner.columns)
+    columns += [column for column in market.columns if column not in columns]
+    columns += [column for column in PROVENANCE_COLUMNS if column not in columns]
+    data = pd.concat([scanner, market], ignore_index=True).reindex(columns=columns)
+    data = data.sort_values(["date", "symbol", "observation_type"], kind="mergesort").reset_index(drop=True)
 
     target.parent.mkdir(parents=True, exist_ok=True)
-    to_csv_safely(data[PUBLIC_COLUMNS], target, index=False)
+    to_csv_safely(data, target, index=False)
     return target
 
 

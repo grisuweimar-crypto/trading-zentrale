@@ -12,11 +12,15 @@ are not overwritten. Currency comes from the active master universe.
 This cache is separate from scanner observations. It does not backfill or alter
 `artifacts/snapshots/score_history.csv`.
 
-The public analysis export is generated from this cache at
+The public analysis export combines all observed scanner rows from
+`artifacts/snapshots/score_history.csv` with this cache at
 `artifacts/research/history_analysis.csv`. Its stable public URL is:
 
 `https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/main/artifacts/research/history_analysis.csv`
 
-The export currently contains raw market observations only. `observation_type`
-and `data_source` identify the provenance; reconstructed scanner scores are not
-claimed until they are separately calculated and reviewed.
+`observation_type=observed_scanner` and `data_source=scanner_run` identify real
+scanner observations. `observation_type=market_data` and
+`data_source=yahoo_ohlcv` identify raw market observations. The two types are
+kept as separate rows even when their date and symbol overlap. Reconstructed
+scanner scores are not claimed until they are separately calculated and
+reviewed.
