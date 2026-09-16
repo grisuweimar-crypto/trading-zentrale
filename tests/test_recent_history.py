@@ -76,7 +76,12 @@ class RecentHistoryTests(unittest.TestCase):
         spec.loader.exec_module(module)
         self.write("2020-01-01,OLD,1,x\n2020-04-01,A,2,y\n")
         watchlist = self.root / "watchlist.csv"
-        watchlist.write_text("market_date,symbol,name,score\n2020-04-02,A,Asset,3\n")
+        # Match the current watchlist schema consumed by the snapshot builder.
+        watchlist.write_text(
+            "market_date,symbol,asset_id,name,score,cycle,score_status,trend_ok,liquidity_ok\n"
+            "2020-04-02,A,A,Asset,3,50,ok,True,True\n",
+            encoding="utf-8",
+        )
         with patch.object(module, "artifacts_dir", return_value=self.root), \
              patch.object(module, "resolve_score_history_path", return_value=self.full), \
              patch("scanner.reports.history_delta.artifacts_dir", return_value=self.root), \
@@ -89,6 +94,9 @@ class RecentHistoryTests(unittest.TestCase):
             self.assertEqual(len(full), 3)
             self.assertEqual(full.date.min(), "2020-01-01")
             self.assertFalse(full.duplicated(["date", "symbol"]).any())
+            latest = full.loc[full["date"] == "2020-04-02"].iloc[0]
+            self.assertEqual(latest["symbol"], "A")
+            self.assertEqual(latest["cycle"], 50)
             recent = pd.read_csv(self.root / "snapshots/score_history_recent.csv")
             self.assertEqual(len(recent), 2)
             self.assertEqual(recent.date.max(), full.date.max())
