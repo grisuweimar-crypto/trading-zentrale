@@ -1,0 +1,103 @@
+{
+  "generated_at": "2026-09-16T09:15:03.216295+00:00",
+  "source_file": "artifacts/snapshots/score_history.csv",
+  "source_sha256": "62c66198d9b1d3bfb84596a890cefa5ee633e22c1eacc0d0a90d4336243af673",
+  "source_size_bytes": 6121600,
+  "source_oldest_date": "2026-02-10",
+  "source_newest_date": "2026-09-16",
+  "source_row_count": 33825,
+  "research_row_count": 33825,
+  "unique_symbols": 284,
+  "covered_period": {
+    "start": "2026-02-10",
+    "end": "2026-09-16"
+  },
+  "latest_completed_month": "2026-08",
+  "columns": [
+    "date",
+    "symbol",
+    "name",
+    "score",
+    "opportunity",
+    "risk",
+    "confidence",
+    "confidence_label",
+    "rs3m",
+    "trend200",
+    "liquidity_risk",
+    "volatility",
+    "drawdown",
+    "roe",
+    "growth",
+    "margin",
+    "debt_ratio",
+    "close",
+    "currency",
+    "sector",
+    "market_regime_stock",
+    "market_regime_crypto",
+    "market_trend200_stock",
+    "market_trend200_crypto",
+    "run_id",
+    "universe_version",
+    "config_version",
+    "pillar_primary",
+    "cluster_official",
+    "bucket_type",
+    "cycle",
+    "r_code",
+    "scoring_version"
+  ],
+  "missing_expected_columns": [
+    "rank"
+  ],
+  "research_size_bytes": 6087774,
+  "deduplication": "none; all source observations and their order are retained",
+  "duplicate_date_symbol_rows": 155,
+  "validation": {
+    "status": "blocked",
+    "errors": [
+      "Previous month 2026-08 is incomplete; missing daily observations: 2026-08-06"
+    ],
+    "policy": "Every calendar day in previous month; newest date at most 3 days old. Date coverage is not a guarantee of per-symbol completeness.",
+    "previous_month_missing_dates": [
+      "2026-08-06"
+    ],
+    "source_missing_dates": [
+      "2026-02-12",
+      "2026-02-13",
+      "2026-02-14",
+      "2026-02-15",
+      "2026-02-16",
+      "2026-02-17",
+      "2026-02-18",
+      "2026-02-19",
+      "2026-02-20",
+      "2026-02-21",
+      "2026-02-22",
+      "2026-02-23",
+      "2026-02-24",
+      "2026-02-25",
+      "2026-02-26",
+      "2026-02-27",
+      "2026-02-28",
+      "2026-03-02",
+      "2026-03-03",
+      "2026-03-04",
+      "2026-03-05",
+      "2026-08-06"
+    ]
+  },
+  "monthly_exports": [],
+  "skipped_incomplete_months": {},
+  "scoring_versions": [
+    "v1"
+  ],
+  "universe_versions": [
+    "1aa0c9aa7ece4b770552ed300d6f2923",
+    "dc6a956d0dce171598da6b4aa8785427"
+  ],
+  "config_versions": [
+    "git-bb46a41"
+  ]
+}

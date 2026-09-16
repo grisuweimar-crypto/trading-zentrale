@@ -1,0 +1,49 @@
+name: Monthly history research
+
+on:
+  schedule:
+    - cron: '17 3 5 * *'
+      timezone: Europe/Berlin
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monthly-history-research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Research regression tests
+        run: python -m unittest discover -s tests -p 'test_history_research.py' -v
+      - name: Record protected input hashes
+        run: |
+          sha256sum artifacts/snapshots/score_history.csv artifacts/snapshots/score_history_recent.csv artifacts/reports/history_delta.csv artifacts/watchlist/watchlist_ALL.csv > "$RUNNER_TEMP/research-inputs.sha256"
+      - name: Generate research and validate previous month
+        run: python scripts/generate_history_research.py
+      - name: Verify protected inputs
+        if: always()
+        run: sha256sum --check "$RUNNER_TEMP/research-inputs.sha256"
+      - name: Commit research only
+        run: |
+          set -euo pipefail
+          git config user.name 'GitHub Action Bot'
+          git config user.email 'action@github.com'
+          git add -- artifacts/research/
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git diff --cached --check
+          git commit -m 'Monthly scanner research [skip ci]'
+          # A concurrent main update must fail safely; rerun on its new source.
+          git push origin HEAD:main
