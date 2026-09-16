@@ -32,8 +32,8 @@
   },
   "unresolved_after": {
     "close": 0,
-    "volatility": 1560,
-    "drawdown": 1560,
+    "volatility": 390,
+    "drawdown": 390,
     "rs3m": 11,
     "trend200": 327
   },
@@ -130,6 +130,13 @@
     "Historical Yahoo daily data were downloaded with auto_adjust=True.",
     "For legacy ISIN rows the current universe master was used to resolve a Yahoo ticker; currency and name were used as tie-breakers.",
     "Formula variants were selected empirically by lowest validation error against preserved historical values already present in score_history.csv.",
-    "Rows without a verifiable ticker/history remain blank and are logged."
-  ]
+    "Rows without a verifiable ticker/history remain blank and are logged.",
+    "Legacy CRYPTO:* symbols were remapped to BASE-original_currency pairs and filled only where Yahoo returned verifiable history."
+  ],
+  "legacy_crypto_alias_fill": {
+    "volatility": 1170,
+    "drawdown": 1170,
+    "rs3m": 0,
+    "trend200": 0
+  }
 }
