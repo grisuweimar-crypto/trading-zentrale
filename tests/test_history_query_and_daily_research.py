@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scanner.reports.daily_research import generate_daily_research
+from scanner.reports.daily_research import generate_daily_research, validate_daily_research
 from scanner.research.query_api import HistoryQueryService
 
 
@@ -110,11 +110,14 @@ class DailyResearchAndQueryTests(unittest.TestCase):
             )
             (research / "history_metadata.json").write_text(json.dumps({
                 "snapshot_id": "snap-123",
+                "as_of": "2026-09-04",
                 "history_recent": {"path": "artifacts/research/history_recent.csv"},
             }), encoding="utf-8")
+            (research / "daily_research.json").write_text('{"snapshot_id":"old"}', encoding="utf-8")
 
             result = generate_daily_research(root)
             self.assertEqual(result["snapshot_id"], "snap-123")
+            self.assertEqual(result["as_of"], "2026-09-04")
             self.assertEqual(set(result["symbols"].keys()), {"AAA", "BBB"})
             self.assertIn("current", result["symbols"]["AAA"])
             self.assertIn("dynamics", result["symbols"]["AAA"])
@@ -124,6 +127,9 @@ class DailyResearchAndQueryTests(unittest.TestCase):
             metadata = json.loads((research / "history_metadata.json").read_text(encoding="utf-8"))
             self.assertIn("daily_research", metadata)
             self.assertEqual(metadata["daily_research"]["snapshot_id"], "snap-123")
+            self.assertEqual(metadata["daily_research"]["as_of"], "2026-09-04")
+            self.assertEqual(metadata["daily_research"]["symbol_count"], 2)
+            self.assertEqual(validate_daily_research(root)["snapshot_id"], "snap-123")
 
     def test_history_query_filters_and_rejects_invalid_requests(self):
         with tempfile.TemporaryDirectory() as tmp:

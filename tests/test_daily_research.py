@@ -157,6 +157,8 @@ class DailyResearchTests(unittest.TestCase):
         self.assertLess(index("--begin-run"), index("python -m scanner.app.run_daily"))
         self.assertLess(index("python -m scanner.app.run_daily"), index("--scanner-status"))
         self.assertLess(index("--scanner-status"), index("generate_history_delta.py --report-only"))
+        self.assertLess(index("--scanner-status"), index("generate_daily_research.py"))
+        self.assertEqual(steps[index("generate_daily_research.py")]["if"], "steps.research.outputs.complete == 'true'")
         self.assertLess(index("--validate-only"), index("git add artifacts/"))
         self.assertLess(index("git add artifacts/"), index("exit 1"))
         self.assertNotIn("publish_history_analysis.py", "\n".join(s.get("run", "") for s in steps))

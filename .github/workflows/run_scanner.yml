@@ -54,6 +54,10 @@ jobs:
         id: research
         run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status "${{ steps.scan.outcome }}"
 
+      - name: Daily Research erzeugen und validieren
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/generate_daily_research.py
+
       - name: History Delta erzeugen (Scanner-interne Verläufe)
         if: steps.research.outputs.complete == 'true'
         env:
