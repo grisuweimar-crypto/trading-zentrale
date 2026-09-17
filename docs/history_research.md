@@ -1,5 +1,9 @@
 # Monthly scanner research
 
+For the validated daily archive, recent/latest views and separate price backfills,
+see [research data architecture](research_data_architecture.md). The monthly export
+described below remains an independent, unchanged source-preserving export.
+
 The separate `history_research.yml` workflow runs on the fifth day of each
 month at **03:17 Europe/Berlin**, using `17 3 5 * *` and native `timezone`.
 It can also be dispatched manually on main. The daily scanner is unchanged.

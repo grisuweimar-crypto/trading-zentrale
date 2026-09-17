@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from scripts.prefetch_market_history import prefetch_history
 from scripts.publish_history_analysis import publish_history_analysis
+from scanner.reports.research_views import ValidationPolicy
 
 
 class MarketHistoryTests(unittest.TestCase):
@@ -75,13 +76,16 @@ class MarketHistoryTests(unittest.TestCase):
                 "2026-01-02,AVAV,USD,1,2,0.5,1.5,10\n",
                 encoding="utf-8",
             )
-            target = publish_history_analysis(root)
+            target = publish_history_analysis(root, policy=ValidationPolicy(expected_symbol_count=1))
             exported = pd.read_csv(target)
-            self.assertEqual(exported["symbol"].tolist(), ["AAPL", "AVAV"])
-            self.assertEqual(set(exported["observation_type"]), {"observed_scanner", "market_data"})
-            self.assertEqual(set(exported["data_source"]), {"scanner_run", "yahoo_ohlcv"})
+            self.assertEqual(exported["symbol"].tolist(), ["AAPL"])
+            self.assertEqual(set(exported["observation_type"]), {"observed_scanner"})
+            self.assertEqual(set(exported["data_source"]), {"scanner_run"})
             self.assertIn("score", exported.columns)
-            self.assertIn("open", exported.columns)
+            prices = pd.read_csv(root / "artifacts/research/price_backfill.csv")
+            self.assertEqual(prices["symbol"].tolist(), ["AVAV"])
+            self.assertIn("open", prices.columns)
+            self.assertNotIn("score", prices.columns)
 
 
 if __name__ == "__main__":

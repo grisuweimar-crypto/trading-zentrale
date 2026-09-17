@@ -38,7 +38,21 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--watchlist", default="artifacts/watchlist/watchlist_full.csv")
     ap.add_argument("--date", default=None, help="Override snapshot date (YYYY-MM-DD).")
+    ap.add_argument("--report-only", action="store_true", help="Read validated history; do not upsert a watchlist.")
     args = ap.parse_args()
+
+    if args.report_only:
+        hist_path = resolve_score_history_path()
+        hist = pd.read_csv(hist_path, dtype=str, keep_default_na=False)
+        # Preserve the archive. For each date, report only its most recently
+        # appended run, so same-day retries cannot mix different universes.
+        if "run_id" in hist:
+            selected = hist.groupby("date", sort=False)["run_id"].last()
+            hist = hist[hist["run_id"].eq(hist["date"].map(selected))].copy()
+        write_recent_score_history(hist_path, artifacts_dir() / "snapshots" / "score_history_recent.csv")
+        delta_df, payload = compute_history_delta(hist)
+        write_history_delta_outputs(delta_df, payload)
+        return 0
 
     root = artifacts_dir().parent
     wl_path = root / args.watchlist

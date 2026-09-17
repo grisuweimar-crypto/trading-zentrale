@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -82,6 +83,7 @@ def prefetch_history(
     currencies = _currency_map(root)
     downloaded["currency"] = downloaded["symbol"].map(currencies).fillna("")
     downloaded = downloaded[REQUIRED_COLUMNS]
+    downloaded["retrieved_at"] = datetime.now(timezone.utc).isoformat()
 
     def _keys(frame: pd.DataFrame) -> set[tuple[str, str]]:
         dates = pd.to_datetime(frame.get("date", pd.Series(dtype="object")), errors="coerce")

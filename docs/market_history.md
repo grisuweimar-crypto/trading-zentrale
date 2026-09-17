@@ -12,15 +12,16 @@ are not overwritten. Currency comes from the active master universe.
 This cache is separate from scanner observations. It does not backfill or alter
 `artifacts/snapshots/score_history.csv`.
 
-The public analysis export combines all observed scanner rows from
-`artifacts/snapshots/score_history.csv` with this cache at
-`artifacts/research/history_analysis.csv`. Its stable public URL is:
+The validated analysis publisher stores new scanner observations at
+`artifacts/research/history_analysis.csv` and prices separately at
+`artifacts/research/price_backfill.csv`. The archive's stable public URL is:
 
 `https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/artifacts/research/history_analysis.csv`
 
 `observation_type=observed_scanner` and `data_source=scanner_run` identify real
-scanner observations. `observation_type=market_data` and
-`data_source=yahoo_ohlcv` identify raw market observations. The two types are
-kept as separate rows even when their date and symbol overlap. Reconstructed
-scanner scores are not claimed until they are separately calculated and
-reviewed.
+scanner observations. Legacy `market_data` archive rows remain preserved but are
+excluded from scanner views. New price rows use `observation_type=price_backfill`.
+Scanner metrics must never be reconstructed from these prices. New downloads carry
+their UTC retrieval time; unavailable legacy retrieval times remain blank.
+See [research data architecture](research_data_architecture.md) for validation,
+daily views, partial scans, and metadata.

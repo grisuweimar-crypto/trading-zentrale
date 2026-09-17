@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: scanner-daily-publication
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,9 +35,13 @@ jobs:
       - name: Historische Marktanalyse aktualisieren
         run: |
           python scripts/prefetch_market_history.py AVAV ROL --minimum-days 300
-          python scripts/publish_history_analysis.py
+
+      - name: Daily-Lauf vorbereiten
+        run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/scanner-run.json"
 
       - name: Scanner ausführen (run_daily)
+        id: scan
+        continue-on-error: true
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           TELEGRAM_ENABLED: '0'
@@ -42,57 +50,79 @@ jobs:
         run: |
           python -m scanner.app.run_daily
 
+      - name: Aktuellen Scan validieren und Research-Views erzeugen
+        id: research
+        run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status "${{ steps.scan.outcome }}"
 
       - name: History Delta erzeugen (Scanner-interne Verläufe)
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
-          python scripts/generate_history_delta.py
+          python scripts/generate_history_delta.py --report-only
 
       - name: Segment Monitor erzeugen
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_segment_monitor.py
 
       - name: Reality Check erzeugen
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_reality_check.py
 
       - name: Macro Chain Signal erzeugen
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_macro_chain_signal.py
 
       - name: Briefing erzeugen (deterministic)
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_briefing.py
 
       - name: Briefing & Realities erzeugen
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_briefing_realities.py
 
       - name: UI generieren
+        if: steps.research.outputs.complete == 'true'
         env:
           TELEGRAM_ENABLED: '0'
         run: |
           python -m scanner.ui.generator
 
       - name: Quality Gates (light)
+        if: steps.research.outputs.complete == 'true'
         run: |
           python scripts/validate_contract.py
+
+      - name: Research-Kohaerenz vor Veroeffentlichung pruefen
+        run: python scripts/generate_research_views.py --validate-only
 
       - name: Ergebnisse speichern (Commit & Push)
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          git add artifacts/ || true
-          git commit -m "📊 Autopilot: artifacts update [skip ci]" || echo "Keine Änderungen zum Speichern"
+          git add artifacts/
+          if ! git diff --cached --quiet; then
+            git commit -m "📊 Autopilot: artifacts update [skip ci]"
+          fi
           git push
+
+      - name: Unvollstaendigen Scan als Fehler melden
+        if: steps.research.outputs.complete != 'true'
+        run: |
+          echo "Scannerlauf unvollstaendig; Fehlermetadaten wurden publiziert, letzte gueltige Research-Views bleiben erhalten."
+          exit 1
