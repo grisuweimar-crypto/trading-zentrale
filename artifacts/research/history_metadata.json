@@ -1,0 +1,84 @@
+{
+  "schema_version": "research_views_v1",
+  "snapshot_id": "d51520bc-3ff7-423b-b91f-926abe5d629c",
+  "attempt_id": "d51520bc-3ff7-423b-b91f-926abe5d629c",
+  "as_of": "2026-09-17",
+  "generated_at": "2026-09-17T18:26:42.534686+00:00",
+  "views_generated_at": "2026-09-17T18:26:42.534686+00:00",
+  "latest_run_complete": true,
+  "last_complete_scan": "2026-09-17",
+  "latest_run_error": null,
+  "source": {
+    "file": "artifacts/watchlist/watchlist_full.csv",
+    "sha256": "7a9c14e653ad81cb76b2b8d800efa7bcfd49c94d2fec5fac337457538ba30fc5"
+  },
+  "validation": {
+    "status": "ok",
+    "errors": [],
+    "warnings": [
+      "source_columns_missing_from_previous_archive: config_version,liquidity_risk,rank,rank_percentile,universe_size,universe_version",
+      "legacy_non_scanner_rows_retained_in_archive_and_excluded_from_views",
+      "price_retrieved_at_unknown_in_legacy_cache; not inferred from export time"
+    ],
+    "policy": {
+      "expected_symbol_count": null,
+      "min_symbol_ratio": 1.0,
+      "min_score_ratio": 0.9,
+      "baseline_runs": 20,
+      "required_columns": [
+        "date",
+        "symbol",
+        "name",
+        "score",
+        "opportunity",
+        "risk",
+        "confidence",
+        "rs3m",
+        "trend200",
+        "cycle"
+      ]
+    },
+    "baseline_symbol_count": 197,
+    "required_symbol_count": 197,
+    "symbol_count": 197,
+    "numeric_score_count": 197
+  },
+  "daily_run": {
+    "run_id": "github-35258783861-1",
+    "started_at": "2026-09-17T18:26:26.488879+00:00",
+    "scanner_status": "success",
+    "watchlist_rewritten": true
+  },
+  "history_analysis": {
+    "path": "artifacts/research/history_analysis.csv",
+    "sha256": "dce2478639b961cac14a394d76fee9d1303ee6c31c4e7648a00a85e5e619b059",
+    "row_count": 35223,
+    "symbol_count": 284,
+    "start_date": "2024-09-17",
+    "end_date": "2026-09-17"
+  },
+  "history_recent": {
+    "path": "artifacts/research/history_recent.csv",
+    "sha256": "e4abcdf4369b89eed905a5d35a024a8217b70808a874c0e247f38e9530677bed",
+    "row_count": 20935,
+    "symbol_count": 197,
+    "start_date": "2026-05-20",
+    "end_date": "2026-09-17"
+  },
+  "latest_scanner": {
+    "path": "artifacts/research/latest_scanner.csv",
+    "sha256": "d3fd1bfe18b290dfafc450ab0a88d82a85412911503d6e03b29f60de384a68db",
+    "row_count": 197,
+    "symbol_count": 197,
+    "start_date": "2026-09-17",
+    "end_date": "2026-09-17"
+  },
+  "price_backfill": {
+    "path": "artifacts/research/price_backfill.csv",
+    "sha256": "3df088cd2cf15d43e7dc540578bef0e084c60f94b42721906eb64bd19c905331",
+    "row_count": 1004,
+    "symbol_count": 2,
+    "start_date": "2024-09-17",
+    "end_date": "2026-09-17"
+  }
+}
