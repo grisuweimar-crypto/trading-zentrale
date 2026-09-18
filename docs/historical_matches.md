@@ -13,10 +13,12 @@ Scannerfelder und legt keine zweite Scannerhistorie an.
 - Die erste gespeicherte Scannerzeile je Symbol/Datum wird unverändert verwendet.
   Weitere taggleiche Läufe sind keine unabhängigen Tagesereignisse. Felder aus
   verschiedenen Läufen werden nicht zusammengeführt oder aufgefüllt.
-- Ein vorhandenes, endliches `rank_percentile` im Intervall [0,1] ist zwingend.
-  Es wird weder aus historischen Scores noch aus `rank/universe_size` oder dem
-  heutigen Universum berechnet. Fehlendes historisches RS3M/Trend200 wird ebenfalls
-  nicht rekonstruiert. R-Code wird für historische Zeilen niemals neu abgeleitet.
+- Ein vorhandenes, endliches `rank_percentile` im Intervall [0,1] wird verwendet.
+  Bei Legacy-Snapshots ohne dieses Feld wird der Rang deterministisch aus den
+  gespeicherten Scanner-Scores derselben Snapshot-Gruppe abgeleitet. Preise,
+  `rank/universe_size` und das heutige Universum fließen dabei nicht ein. Fehlendes
+  historisches RS3M/Trend200 wird nicht rekonstruiert. R-Code wird für historische
+  Zeilen niemals neu abgeleitet.
 - `price_backfill.csv` liefert die getrennten Marktbeobachtungen für Sitzungen und
   Returns. Scanner-Datumswerte sind im aktuellen Projekt **Laufdaten**, nicht
   verlässlich Börsensitzungsdaten (`yahoo_prices.py` setzt MarketDate auf UTC-heute).
@@ -120,8 +122,10 @@ Snapshot, Symbole und Hash und berechnet zusätzlich die Vergleichsstatistik aus
 den Originalquellen nach. Ein manipuliertes N oder ein falscher Median wird auch
 dann abgewiesen, wenn jemand den Ausgabedatei-Hash passend geändert hat.
 
-Aktueller Datenbestand bei Einführung: echte Kurssitzungen in Price-Backfill nur
-für AVAV und ROL; gespeicherte historische Rank-Perzentile erst ab 16.09.2026.
-Deshalb sind derzeit auch bei vorhandenen Cross-Universe-Ereignissen sämtliche
-5T/10T/20T/40T-Outcomes noch unreif. N=0 wird nicht durch Rekonstruktion umgangen.
+Die [Price-Session-Pipeline](price_session_pipeline.md) versorgt inzwischen das
+gesamte aktuelle Universum; die tatsächliche Abdeckung steht in Metadata und
+`historical_outcome_coverage`. Gespeicherte historische Rank-Perzentile existieren
+erst ab 16.09.2026. Am 18.09. sind deshalb auch bei vorhandenen Cross-Universe-
+Ereignissen sämtliche 5T/10T/20T/40T-Outcomes noch unreif. N=0 wird nicht durch
+Rekonstruktion umgangen.
 Die übrigen Daily-Felder und die Scanner-/Snapshot-Architektur bleiben erhalten.

@@ -82,6 +82,14 @@ class HistoricalMatchTests(unittest.TestCase):
         self.assertEqual((result["filter_id"], result["N"]), ("none", 0))
         self.assertEqual(history, original)
 
+    def test_legacy_rank_is_derived_from_same_snapshot_scores(self):
+        history = [event("BBB", rank="", rank_percentile="", score="90", r_code="", run_id="old"),
+               event("CCC", rank="", rank_percentile="", score="80", r_code="", run_id="old")]
+        result = self.match(history, minimum=1, current=dict(CURRENT, rank_percentile="0.5"))
+        self.assertEqual((result["filter_id"], result["N"]), ("level_2", 1))
+        self.assertEqual(result["forward_5t"]["N"], 0)
+        self.assertEqual(history[0]["rank_percentile"], "")
+
     def test_missing_or_invalid_required_fields_never_match(self):
         for field in ("rank_percentile", "rs3m", "trend200"):
             for value in ("", None, "NaN", "Infinity", "-Infinity", "garbage"):

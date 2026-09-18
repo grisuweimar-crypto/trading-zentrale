@@ -19,11 +19,12 @@ from pathlib import Path
 import tempfile
 from uuid import uuid4
 
+from scanner.data.price_history import PRICE_COLUMNS, coverage as price_coverage, merge_prices
+
 SCHEMA_VERSION = "research_views_v1"
 SOURCE = "artifacts/snapshots/score_history.csv"
 MARKET = "artifacts/market_data/yahoo_ohlcv.csv"
 OUTPUT = "artifacts/research"
-PRICE_COLUMNS = "date symbol currency open high low close volume source retrieved_at observation_type".split()
 VIEW_COLUMNS = "as_of generated_at snapshot_id schema_version".split()
 KNOWN_COLUMNS = set(("date symbol name score opportunity risk confidence confidence_label rs3m trend200 cycle r_code rank universe_size rank_percentile close currency sector pillar_primary cluster_official bucket_type scoring_version run_id universe_version config_version observation_type data_source liquidity_risk volatility drawdown roe growth margin debt_ratio market_regime_stock market_regime_crypto market_trend200_stock market_trend200_crypto scan_status".split()) + VIEW_COLUMNS)
 
@@ -290,23 +291,17 @@ def _build(root, paths, meta_path, now, generated, attempt_id, policy, daily_inp
         raise ValueError("price_backfill_schema_mismatch")
     market_path = root / MARKET
     market_raw = market_path.read_bytes() if market_path.exists() else None
+    price_issues = {}
     if market_raw is not None:
         mc, market = parse_csv(market_raw)
         if not set(PRICE_COLUMNS[:8]).issubset(mc):
             raise ValueError("market_missing_required_columns")
-        keys = {(r["date"], r["symbol"]) for r in prices}
-        for row in market:
-            date.fromisoformat(row["date"])
-            if not row["symbol"].strip():
-                raise ValueError("market_empty_symbol")
-            key = row["date"], row["symbol"]
-            if key not in keys:
-                prices.append({**{c: row[c] for c in PRICE_COLUMNS[:8]}, "source": "yahoo_ohlcv",
-                               "retrieved_at": row.get("retrieved_at", ""), "observation_type": "price_backfill"})
-                keys.add(key)
+        prices, price_issues = import_market_prices(prices, market)
+        if price_issues:
+            warnings.append("invalid_or_revised_price_rows_reported_in_price_coverage")
         if any(not r["retrieved_at"] for r in prices):
             warnings.append("price_retrieved_at_unknown_in_legacy_cache; not inferred from export time")
-    if not pc or len(prices) != len(existing("price_backfill")[1]):
+    if not pc or prices != existing("price_backfill")[1]:
         pending[paths["price_backfill"]] = encode_csv(PRICE_COLUMNS, prices)
     metadata = {"schema_version": SCHEMA_VERSION, "snapshot_id": snapshot_id, "attempt_id": attempt_id,
                 "as_of": as_of(current[0]) if current else None, "generated_at": generated,
@@ -318,6 +313,14 @@ def _build(root, paths, meta_path, now, generated, attempt_id, policy, daily_inp
                                "warnings": warnings, "policy": asdict(policy), **diagnostics}}
     if daily_input:
         metadata["daily_run"] = daily_input.context
+    fetch_state = read_price_fetch_state(root)
+    fetch_details = fetch_state.get("symbols", {})
+    for symbol, counts in price_issues.items():
+        fetch_details.setdefault(symbol, {}).setdefault("validation_issues", {}).update(counts)
+    metadata["price_coverage"] = price_coverage(
+        [r["symbol"] for r in latest], prices, as_of=as_of(latest[0]) if latest else now.date().isoformat(),
+        minimum_sessions=fetch_state.get("minimum_sessions_target", 300),
+        fetch_state=fetch_details)
     for name, path in paths.items():
         data = pending.get(path, original[path])
         rows = parse_csv(data)[1] if data is not None else []
@@ -339,3 +342,74 @@ def _build(root, paths, meta_path, now, generated, attempt_id, policy, daily_inp
             atomic_write(path, pending[path])
     atomic_write(meta_path, (json.dumps(metadata, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
     return metadata
+
+
+def import_market_prices(prices, market):
+    # Explicit allowlist: neither provider nor scanner fields can contaminate
+    # this price-only derived view. Preserve existing valid observations.
+    incoming = [{**{c: row.get(c, "") for c in PRICE_COLUMNS[:8]}, "source": "yahoo_ohlcv",
+                 "retrieved_at": row.get("retrieved_at", ""), "observation_type": "price_backfill"}
+                for row in market]
+    return merge_prices(prices, incoming)
+
+
+def read_price_fetch_state(root):
+    path = root / "artifacts/market_data/price_fetch_state.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def refresh_price_backfill(root):
+    """Refresh prices and coverage without re-running or rewriting any scanner view."""
+    from scanner.reports.research_validation import NAMES, validate_bundle, validate_publication
+    root = Path(root).resolve()
+    output = root / OUTPUT
+    lock = output / ".research_views.lock"
+    with lock.open("x"):
+        pass
+    try:
+        metadata = validate_publication(root)
+        if not metadata["latest_run_complete"]:
+            raise ValueError("price refresh requires a complete scanner snapshot")
+        paths = {n: output / (n + ".csv") for n in NAMES}
+        meta_path = output / "history_metadata.json"
+        market_path = root / MARKET
+        state_path = root / "artifacts/market_data/price_fetch_state.json"
+        originals = {p: p.read_bytes() if p.exists() else None for p in [*paths.values(), meta_path, market_path, state_path]}
+        if originals[market_path] is None:
+            raise ValueError("market cache missing")
+        columns, market = parse_csv(originals[market_path])
+        if not set(PRICE_COLUMNS[:8]).issubset(columns):
+            raise ValueError("market_missing_required_columns")
+        previous = parse_csv(originals[paths["price_backfill"]])[1]
+        prices, issues = import_market_prices(previous, market)
+        latest = parse_csv(originals[paths["latest_scanner"]])[1]
+        state = read_price_fetch_state(root)
+        if state.get("snapshot_id") not in (None, metadata["snapshot_id"]):
+            raise ValueError("price fetch belongs to a different scanner snapshot")
+        details = state.get("symbols", {})
+        for symbol, counts in issues.items():
+            details.setdefault(symbol, {}).setdefault("validation_issues", {}).update(counts)
+        metadata["price_coverage"] = price_coverage(
+            [r["symbol"] for r in latest], prices, as_of=metadata["as_of"],
+            minimum_sessions=state.get("minimum_sessions_target", 300), fetch_state=details)
+        raw = encode_csv(PRICE_COLUMNS, prices)
+        dates = [r["date"] for r in prices]
+        metadata["price_backfill"] = {
+            "path": "artifacts/research/price_backfill.csv", "sha256": hashlib.sha256(raw).hexdigest(),
+            "row_count": len(prices), "symbol_count": len({r["symbol"] for r in prices}),
+            "start_date": min(dates, default=None), "end_date": max(dates, default=None),
+        }
+        # Old daily output no longer represents the newly available price base.
+        # Remove its publication marker until the next (required) daily step.
+        metadata.pop("daily_research", None)
+        blobs = {name: raw if name == "price_backfill" else originals[path] for name, path in paths.items()}
+        validate_bundle(metadata, blobs)
+        for path, before in originals.items():
+            if (path.read_bytes() if path.exists() else None) != before:
+                raise ValueError(f"Input changed during price publication: {path}")
+        if raw != originals[paths["price_backfill"]]:
+            atomic_write(paths["price_backfill"], raw)
+        atomic_write(meta_path, (json.dumps(metadata, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
+        return validate_publication(root)
+    finally:
+        lock.unlink(missing_ok=True)

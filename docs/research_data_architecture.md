@@ -19,6 +19,9 @@ Die Forschungsdateien liegen unter `artifacts/research/`. Die Implementierung li
 Die verbindliche L1/L2/L3-Logik, feste Buckets, Cross-Universe-Suche, Cooldown und
 Kurs-Outcomes sind in [Historische Vergleichsfälle](historical_matches.md)
 dokumentiert. `history_recent.csv` bleibt deren Scanner-Source-of-Truth.
+Die [Price-Session-Pipeline](price_session_pipeline.md) lädt nach erfolgreicher
+Scanner-Validierung das gesamte Latest-Universum und aktualisiert Price-Backfill
+vor der Erzeugung von `daily_research.json`.
 
 ## Datenfluss und Erhaltung
 

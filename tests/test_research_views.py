@@ -94,7 +94,7 @@ class ResearchViewsTests(unittest.TestCase):
 
     def test_price_allowlist_no_scanner_metrics_and_immutable_values(self):
         cols = views.PRICE_COLUMNS[:8] + ["score", "rank", "retrieved_at"]
-        row = dict(zip(cols, ["2026-01-01", "P", "USD", "1", "2", "0", "1.50", "20", "99", "1", "2026-09-16T10:00:00+00:00"]))
+        row = dict(zip(cols, ["2026-01-01", "P", "USD", "1", "2", "0.5", "1.50", "20", "99", "1", "2026-09-16T10:00:00+00:00"]))
         self.write(views.MARKET, cols, [row])
         self.build()
         prices = self.read("price_backfill")

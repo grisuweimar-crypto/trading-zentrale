@@ -1,5 +1,10 @@
 # Historical market data cache
 
+The production pipeline now discovers the full validated universe from
+`latest_scanner.csv` and performs bootstrap/incremental updates before daily
+research generation. See [Price Session Pipeline](price_session_pipeline.md)
+for the authoritative workflow, validation, mapping, retry and coverage rules.
+
 The scanner currently refreshes Yahoo data live and derives `Trend200`, `RS3M`,
 and risk metrics from that response. It does not use `score_history.csv` as a
 price-history cache.

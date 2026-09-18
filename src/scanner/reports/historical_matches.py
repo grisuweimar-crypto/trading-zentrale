@@ -10,6 +10,7 @@ import math
 from statistics import median
 
 from scanner.reports.research_views import observed
+from scanner.data.price_history import validated_rows
 
 
 MIN_MATCHES = 20
@@ -91,24 +92,30 @@ def features(row):
     }
 
 
+def _historical_rank_percentiles(rows):
+    """Derive missing historical ranks from stored scanner scores only."""
+    groups = {}
+    for index, row in enumerate(rows):
+        group = (str(row.get("date") or row.get("as_of") or ""), row.get("run_id", ""))
+        score = finite_number(row.get("score"))
+        if score is not None:
+            groups.setdefault(group, []).append((index, score))
+    result = {}
+    for values in groups.values():
+        ordered = sorted((score for _, score in values), reverse=True)
+        for index, score in values:
+            result[index] = (ordered.index(score) + 1) / len(ordered)
+    return result
+
+
 class PriceSessions:
     """One finite positive close per actual symbol/date, never scanner run dates."""
 
     def __init__(self, rows):
-        prices, conflicts = {}, set()
-        for row in rows:
-            symbol = str(row.get("symbol") or "").strip()
-            day, close = parse_date(row.get("date")), finite_number(row.get("close"))
-            if not symbol or day is None or close is None or close <= 0:
-                continue
-            key = (symbol, day)
-            if key in prices and prices[key] != close:
-                conflicts.add(key)
-            prices.setdefault(key, close)
+        valid, _ = validated_rows(rows)
         self.closes = {}
-        for (symbol, day), close in prices.items():
-            if (symbol, day) not in conflicts:
-                self.closes.setdefault(symbol, {})[day] = close
+        for row in valid:
+            self.closes.setdefault(row["symbol"], {})[parse_date(row["date"])] = float(row["close"])
         self.dates = {symbol: sorted(values) for symbol, values in self.closes.items()}
 
     def elapsed(self, symbol, start, end):
@@ -139,13 +146,17 @@ class HistoricalMatcher:
         # The first stored scanner observation of each symbol/date wins intact.
         # Never merge fields from separate intraday runs or fill missing ranks.
         seen, self.events = set(), []
-        for row in history_rows:
+        derived_ranks = _historical_rank_percentiles(history_rows)
+        for index, row in enumerate(history_rows):
             symbol = str(row.get("symbol") or "").strip()
             day = parse_date(row.get("date"))
             if not symbol or day is None or not observed(row) or (symbol, day) in seen:
                 continue
             seen.add((symbol, day))
-            self.events.append((day, symbol, features(row)))
+            enriched = row
+            if not str(row.get("rank_percentile") or "").strip() and index in derived_ranks:
+                enriched = dict(row, rank_percentile=str(derived_ranks[index]))
+            self.events.append((day, symbol, features(enriched)))
         self.events.sort(key=lambda event: (event[0], event[1]))
         self.cache = {}
 

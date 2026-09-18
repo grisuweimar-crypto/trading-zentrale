@@ -153,7 +153,12 @@ class DailyResearchTests(unittest.TestCase):
         def index(text):
             return next(i for i, step in enumerate(steps) if text in step.get("run", ""))
         self.assertLess(index("unittest discover"), index("prefetch_market_history"))
-        self.assertLess(index("prefetch_market_history"), index("--begin-run"))
+        self.assertLess(index("--scanner-status"), index("prefetch_market_history"))
+        self.assertLess(index("prefetch_market_history"), index("--refresh-prices"))
+        self.assertLess(index("--refresh-prices"), index("generate_daily_research.py"))
+        self.assertNotIn("AVAV ROL", steps[index("prefetch_market_history")]["run"])
+        for command in ("prefetch_market_history", "--refresh-prices"):
+            self.assertEqual(steps[index(command)]["if"], "steps.research.outputs.complete == 'true'")
         self.assertLess(index("--begin-run"), index("python -m scanner.app.run_daily"))
         self.assertLess(index("python -m scanner.app.run_daily"), index("--scanner-status"))
         self.assertLess(index("--scanner-status"), index("generate_history_delta.py --report-only"))

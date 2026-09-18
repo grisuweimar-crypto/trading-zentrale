@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 import hashlib
 import json
 from pathlib import Path
+from scanner.data.price_history import coverage, validated_rows
 
 from scanner.reports.research_views import (
     OUTPUT, PRICE_COLUMNS, SCHEMA_VERSION, VIEW_COLUMNS, as_of, observed, parse_csv, score,
@@ -35,6 +36,8 @@ def validate_bundle(metadata, blobs, archive_before=None):
     pc, prices = frames["price_backfill"]
     require(pc == PRICE_COLUMNS, "price allowlist violated")
     require(all(r["observation_type"] == "price_backfill" for r in prices), "invalid price provenance")
+    valid_prices, price_issues = validated_rows(prices)
+    require(not price_issues and len(valid_prices) == len(prices), "invalid or duplicate price sessions")
     complete = metadata["latest_run_complete"]
     if complete:
         require(all(blobs[n] is not None for n in NAMES), "missing required view")
@@ -47,6 +50,13 @@ def validate_bundle(metadata, blobs, archive_before=None):
             require(timestamp.utcoffset() == timedelta(0), name + " timestamp not UTC")
             require(observed(row), name + " contains non-scanner observations")
     _, latest = frames["latest_scanner"]
+    if "price_coverage" in metadata:
+        reported = metadata["price_coverage"]
+        expected = coverage([r["symbol"] for r in latest], prices,
+                            minimum_sessions=reported["minimum_sessions_target"],
+                            as_of=reported["as_of"], fetch_state=reported["symbols"])
+        require(reported == expected, "price coverage does not match stored sessions")
+        require(not latest or reported["as_of"] == metadata["last_complete_scan"], "price coverage date mismatch")
     require(len({r["symbol"].strip() for r in latest}) == len(latest), "duplicate latest symbols")
     require(all(r["symbol"].strip() for r in latest), "empty latest symbol")
     require(all(as_of(r) == metadata["last_complete_scan"] for r in latest), "latest as_of mismatch")

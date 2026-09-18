@@ -56,10 +56,6 @@ jobs:
       - name: History-Regressionstests
         run: python -m unittest discover -s tests -v
 
-      - name: Historische Marktanalyse aktualisieren
-        run: |
-          python scripts/prefetch_market_history.py AVAV ROL --minimum-days 300
-
       - name: Daily-Lauf vorbereiten
         run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/scanner-run.json"
 
@@ -77,6 +73,14 @@ jobs:
       - name: Aktuellen Scan validieren und Research-Views erzeugen
         id: research
         run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status "${{ steps.scan.outcome }}"
+
+      - name: Marktpreise fuer das vollstaendige aktuelle Universum aktualisieren
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/prefetch_market_history.py --minimum-sessions 300
+
+      - name: Price Backfill aktualisieren und Research-Bundle validieren
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/generate_research_views.py --refresh-prices
 
       - name: Daily Research erzeugen und validieren
         if: steps.research.outputs.complete == 'true'

@@ -23,7 +23,7 @@ class MarketHistoryTests(unittest.TestCase):
             with target.open("w", newline="", encoding="utf-8") as handle:
                 writer = csv.writer(handle)
                 writer.writerow(["date", "symbol", "currency", "open", "high", "low", "close", "volume"])
-                writer.writerow(["2026-01-02", "AVAV", "USD", "1", "2", "0.5", "99", "10"])
+                writer.writerow(["2026-01-02", "AVAV", "USD", "99", "100", "98", "99", "10"])
 
             downloaded = pd.DataFrame([
                 {"date": "2026-01-02", "symbol": "AVAV", "open": 1, "high": 2, "low": 0.5, "close": 1, "volume": 10},
@@ -35,7 +35,7 @@ class MarketHistoryTests(unittest.TestCase):
 
             avav = result[result["symbol"] == "AVAV"]
             self.assertEqual(len(avav), 2)
-            self.assertEqual(avav.loc[avav["date"] == "2026-01-02", "close"].iloc[0], 99)
+            self.assertEqual(float(avav.loc[avav["date"] == "2026-01-02", "close"].iloc[0]), 99)
             self.assertFalse(result.duplicated(["date", "symbol"]).any())
 
     def test_second_prefetch_does_not_rewrite_existing_cache(self):
@@ -48,7 +48,7 @@ class MarketHistoryTests(unittest.TestCase):
             target.parent.mkdir(parents=True)
             target.write_text(
                 "date,symbol,currency,open,high,low,close,volume\n"
-                "2026-01-02,AVAV,USD,1,2,0.5,99,10\n",
+                "2026-01-02,AVAV,USD,99,100,98,99,10\n",
                 encoding="utf-8",
             )
             before = target.read_bytes()

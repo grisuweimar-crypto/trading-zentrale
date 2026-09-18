@@ -6,7 +6,7 @@ from pathlib import Path
 
 from scanner.reports.daily_research import begin_daily, generate_daily
 from scanner.reports.research_validation import validate_publication
-from scanner.reports.research_views import ValidationPolicy
+from scanner.reports.research_views import ValidationPolicy, refresh_price_backfill
 
 
 def main():
@@ -15,11 +15,14 @@ def main():
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--begin-run", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--refresh-prices", action="store_true")
     parser.add_argument("--scanner-status", default="success", choices=("success", "failure", "cancelled", "skipped"))
     parser.add_argument("--expected-symbol-count", type=int)
     args = parser.parse_args()
     if args.validate_only:
         result = validate_publication(args.root)
+    elif args.refresh_prices:
+        result = refresh_price_backfill(args.root)
     elif not args.receipt:
         parser.error("--receipt is required for daily generation and --begin-run")
     elif args.begin_run:

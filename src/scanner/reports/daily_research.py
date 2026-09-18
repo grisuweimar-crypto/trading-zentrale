@@ -198,6 +198,15 @@ def _price_rows(research):
         return list(csv.DictReader(handle))
 
 
+def _outcome_coverage(symbols, matcher, as_of):
+    return {
+        "price_symbols_available": sum(any(day.isoformat() <= as_of for day in matcher.prices.dates.get(symbol, []))
+                                       for symbol in symbols),
+        **{f"symbols_with_forward_{h}t_samples": sum(value["historical_matches"][f"forward_{h}t"]["N"] > 0
+                                                    for value in symbols.values()) for h in (5, 10, 20, 40)},
+    }
+
+
 def _classify_symbol(row):
     percentile = _research_float(row.get("rank_percentile"))
     rs3m = _research_float(row.get("rs3m"))
@@ -258,6 +267,8 @@ def validate_daily_research(root: Path | str, payload=None):
         current = dict(row, date=row.get("date") or row.get("as_of") or metadata["as_of"])
         if payload["symbols"][row["symbol"].strip()].get("historical_matches") != matcher.summary(current):
             raise ValueError("daily_research historical match semantics mismatch: " + row["symbol"])
+    if payload.get("historical_outcome_coverage") != _outcome_coverage(payload["symbols"], matcher, payload["as_of"]):
+        raise ValueError("daily_research historical outcome coverage mismatch")
     return payload
 
 
@@ -329,6 +340,7 @@ def generate_daily_research(root: Path | str, *, match_policy=None):
         "source_snapshot_id": snapshot_id,
         "universe_size": len(symbols),
         "historical_match_method": method_metadata(match_policy),
+        "historical_outcome_coverage": _outcome_coverage(symbols, matcher, as_of),
         "symbols": symbols,
     }
     output_path = research / "daily_research.json"
