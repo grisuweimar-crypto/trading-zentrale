@@ -2,9 +2,95 @@
   "schema_version": "daily_research_v1",
   "snapshot_id": "880790db-7ee7-45e2-986a-e533bcab3837",
   "as_of": "2026-09-18",
-  "generated_at": "2026-09-18T16:56:15.045239+00:00",
+  "generated_at": "2026-09-18T17:34:58.033801+00:00",
   "source_snapshot_id": "880790db-7ee7-45e2-986a-e533bcab3837",
   "universe_size": 197,
+  "historical_match_method": {
+    "version": "cross_universe_v1",
+    "min_matches": 20,
+    "cooldown_trading_days": 5,
+    "buckets": {
+      "rank_percentile": {
+        "boundaries": [
+          0.1,
+          0.2,
+          0.4,
+          0.6,
+          0.8,
+          0.9
+        ],
+        "labels": [
+          "top10",
+          "10..20",
+          "20..40",
+          "40..60",
+          "60..80",
+          "80..90",
+          "bottom10"
+        ],
+        "boundary_side": "upper_inclusive",
+        "valid_range": [
+          0,
+          1
+        ]
+      },
+      "rank_percentile_coarse": {
+        "boundaries": [
+          0.2,
+          0.6
+        ],
+        "labels": [
+          "top20",
+          "20..60",
+          "bottom40"
+        ],
+        "boundary_side": "upper_inclusive",
+        "valid_range": [
+          0,
+          1
+        ]
+      },
+      "rs3m": {
+        "boundaries": [
+          -0.2,
+          0.0,
+          0.15,
+          0.3
+        ],
+        "labels": [
+          "<-20%",
+          "[-20%,0%)",
+          "[0%,15%)",
+          "[15%,30%)",
+          ">=30%"
+        ],
+        "boundary_side": "lower_inclusive"
+      },
+      "trend200": {
+        "boundaries": [
+          -0.2,
+          0.0,
+          0.2,
+          0.4
+        ],
+        "labels": [
+          "<-20%",
+          "[-20%,0%)",
+          "[0%,20%)",
+          "[20%,40%)",
+          ">=40%"
+        ],
+        "boundary_side": "lower_inclusive"
+      }
+    },
+    "event_source": "artifacts/research/history_recent.csv",
+    "session_source": "artifacts/research/price_backfill.csv",
+    "universe": "all stored scanner symbols",
+    "level_selection": "independent event N before outcome availability",
+    "duplicate_events": "first stored observation per symbol/date, no field merging",
+    "missing_sessions": "no inferred sessions; first event retained, subsequent events require observed cooldown",
+    "outcomes": "exact event-day close to h-th later valid price session, at or before snapshot as_of"
+  },
   "symbols": {
     "1810.HK": {
       "current": {
@@ -57,9 +143,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -137,9 +235,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 7,
+          "level_2": 7,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -217,9 +327,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 4,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 4
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -297,9 +419,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -377,9 +511,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -457,9 +603,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -537,9 +695,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -617,9 +787,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -697,9 +879,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 6,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 4,
+          "level_3": 6
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -776,10 +970,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -857,9 +1063,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -937,9 +1155,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1017,9 +1247,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1097,9 +1339,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1177,9 +1431,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1257,9 +1523,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1337,9 +1615,17 @@
       },
       "historical_matches": {
         "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1417,9 +1703,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1497,9 +1795,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1577,9 +1887,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=<-20%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 3,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 3,
+          "level_3": 3
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1657,9 +1979,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 7,
+          "level_2": 7,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1737,9 +2071,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=<-20%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 3,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 3,
+          "level_3": 3
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1817,9 +2163,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1897,9 +2255,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -1977,9 +2347,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 3,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 3
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2057,9 +2439,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2137,9 +2531,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 7,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2217,9 +2623,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2296,10 +2714,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2376,10 +2806,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2457,9 +2895,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2537,9 +2987,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2617,9 +3079,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2697,9 +3171,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 3,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 3
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2777,9 +3263,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2857,9 +3355,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 3,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 3
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -2937,9 +3447,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 3,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 3
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3017,9 +3539,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 11,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 7,
+          "level_3": 11
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3097,9 +3631,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3177,9 +3723,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=>=30%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3256,10 +3814,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=>=40%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": ">=40%"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 1,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3337,9 +3907,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3417,9 +3999,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3497,9 +4091,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3577,9 +4183,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3657,9 +4275,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=>=30%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3737,9 +4367,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=>=30%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3816,10 +4458,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=>=30%; trend200_bucket=>=40%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": ">=40%"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3897,9 +4551,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -3977,9 +4643,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4057,9 +4735,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=>=30%; trend200_bucket=>=40%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": ">=40%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4137,9 +4827,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4217,9 +4919,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 6,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 6
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4297,9 +5011,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4377,9 +5103,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4457,9 +5195,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4537,9 +5287,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4617,9 +5379,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 3,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4697,9 +5471,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4777,9 +5563,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 6,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 6
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4857,9 +5655,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -4936,10 +5746,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5017,9 +5839,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5097,9 +5931,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 3,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5177,9 +6023,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5257,9 +6115,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5337,9 +6207,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5417,9 +6299,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5497,9 +6391,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5577,9 +6483,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5657,9 +6575,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5737,9 +6667,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5817,9 +6759,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5897,9 +6851,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -5977,9 +6943,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6057,9 +7035,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 2,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6137,9 +7127,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 6,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 4,
+          "level_3": 6
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6216,10 +7218,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6297,9 +7307,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6377,9 +7399,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 4,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6457,9 +7491,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 11,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 4,
+          "level_3": 11
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6537,9 +7583,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6617,9 +7675,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6697,9 +7767,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6776,10 +7858,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6857,9 +7947,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 2,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -6937,9 +8039,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7017,9 +8131,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7097,9 +8223,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7176,10 +8314,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7257,9 +8407,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7337,9 +8499,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7417,9 +8591,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 4,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 4
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7497,9 +8683,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7577,9 +8775,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7657,9 +8867,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7737,9 +8959,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7817,9 +9051,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7897,9 +9143,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -7977,9 +9235,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8057,9 +9327,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8137,9 +9419,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8217,9 +9511,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 7,
+          "level_2": 7,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8297,9 +9603,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8377,9 +9695,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 7,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8457,9 +9787,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8537,9 +9879,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8617,9 +9971,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8697,9 +10063,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 7,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8777,9 +10155,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 6,
+          "level_2": 6,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8857,9 +10247,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -8937,9 +10339,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9017,9 +10431,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9097,9 +10523,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9177,9 +10615,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9257,9 +10707,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9337,9 +10799,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9417,9 +10891,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9496,10 +10982,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9577,9 +11071,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9657,9 +11163,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 11,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 4,
+          "level_3": 11
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9737,9 +11255,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9817,9 +11347,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9897,9 +11439,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=>=30%; trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -9977,9 +11531,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 4,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10057,9 +11623,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10137,9 +11715,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10216,10 +11806,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10297,9 +11895,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10376,10 +11986,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10457,9 +12075,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10537,9 +12167,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10617,9 +12259,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10697,9 +12351,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10777,9 +12443,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10857,9 +12535,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -10937,9 +12627,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 1,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11017,9 +12719,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11097,9 +12811,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11177,9 +12903,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11257,9 +12995,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11337,9 +13087,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11417,9 +13179,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 7,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11497,9 +13271,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11577,9 +13363,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11657,9 +13455,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11736,10 +13546,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11817,9 +13639,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 7,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11897,9 +13731,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -11977,9 +13823,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12057,9 +13915,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 3,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12137,9 +14007,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 7,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 7
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12217,9 +14099,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 11,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 4,
+          "level_3": 11
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12297,9 +14191,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=>=30%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12377,9 +14283,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12457,9 +14375,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12537,9 +14467,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 15,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 7,
+          "level_3": 15
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12617,9 +14559,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12697,9 +14651,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 4,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12777,9 +14743,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 8,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 5,
+          "level_3": 8
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12856,10 +14834,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 4,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 4
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -12937,9 +14927,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13017,9 +15019,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13097,9 +15111,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13177,9 +15203,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13257,9 +15295,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13337,9 +15387,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 6,
+          "level_2": 6,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13417,9 +15479,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13497,9 +15571,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=>=30%; trend200_bucket=>=40%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": ">=40%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13577,9 +15663,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 9,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13657,9 +15755,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=>=30%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13737,9 +15847,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=top20; rs3m_bucket=>=30%; trend200_bucket=>=40%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "top20",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": ">=40%"
+        },
         "cooldown_trading_days": 5,
+        "min_matches": 20,
+        "sufficient_matches": false,
         "N": 1,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 1
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13817,9 +15939,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 14,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 14
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13897,9 +16031,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[15%,30%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[15%,30%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -13977,9 +16123,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 6,
+          "level_2": 6,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14057,9 +16215,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14137,9 +16307,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14217,9 +16399,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14297,9 +16491,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14376,10 +16582,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14457,9 +16671,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14537,9 +16763,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[20%,40%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[20%,40%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 2,
+          "level_2": 2,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14617,9 +16855,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 11,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 7,
+          "level_3": 11
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14697,9 +16947,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 1,
+          "level_2": 1,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14777,9 +17039,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14857,9 +17131,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -14937,9 +17223,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 6,
+          "level_2": 6,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15017,9 +17315,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 10,
+        "evaluated_levels": {
+          "level_1": 6,
+          "level_2": 6,
+          "level_3": 10
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15097,9 +17407,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=>=30%; trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": ">=30%",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 5,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 3,
+          "level_3": 5
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15177,9 +17499,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 11,
+        "evaluated_levels": {
+          "level_1": 3,
+          "level_2": 4,
+          "level_3": 11
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15257,9 +17591,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 8,
+          "level_2": 8,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15337,9 +17683,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 12,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15416,10 +17774,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=<-20%; trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "<-20%",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 4,
+          "level_2": 4,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15496,10 +17866,22 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "none",
-        "filter_description": "no comparable historical rows",
+        "filter_id": "level_3",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[-20%,0%); trend200_bucket=[-20%,0%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[-20%,0%)",
+          "trend200_bucket": "[-20%,0%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 0,
+        "min_matches": 20,
+        "sufficient_matches": true,
+        "N": 24,
+        "evaluated_levels": {
+          "level_1": 11,
+          "level_2": 12,
+          "level_3": 24
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15577,9 +17959,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=20..60; rs3m_bucket=[0%,15%); trend200_bucket=[0%,20%)",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "20..60",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "[0%,20%)"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 13,
+        "evaluated_levels": {
+          "level_1": 5,
+          "level_2": 9,
+          "level_3": 13
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15656,10 +18050,18 @@
         "mining_override_warning": false
       },
       "historical_matches": {
-        "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_id": "none",
+        "filter_description": "No eligible stored historical scanner events for L1/L2/L3",
+        "conditions": {},
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 0,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 0
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,
@@ -15737,9 +18139,21 @@
       },
       "historical_matches": {
         "filter_id": "level_3",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown",
+        "filter_description": "rank_percentile_coarse_bucket=bottom40; rs3m_bucket=[0%,15%); trend200_bucket=<-20%",
+        "conditions": {
+          "rank_percentile_coarse_bucket": "bottom40",
+          "rs3m_bucket": "[0%,15%)",
+          "trend200_bucket": "<-20%"
+        },
         "cooldown_trading_days": 5,
-        "N": 1,
+        "min_matches": 20,
+        "sufficient_matches": false,
+        "N": 2,
+        "evaluated_levels": {
+          "level_1": 0,
+          "level_2": 0,
+          "level_3": 2
+        },
         "forward_5t": {
           "N": 0,
           "median_return": null,

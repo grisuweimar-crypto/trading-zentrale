@@ -14,6 +14,11 @@ Die Forschungsdateien liegen unter `artifacts/research/`. Die Implementierung li
 | `latest_scanner.csv` | Tagesanalyse: letzter validierter vollständiger Snapshot, eine Zeile je Symbol. |
 | `price_backfill.csv` | Separate historische OHLCV-Kurse; keinerlei Scannerkennzahlen. |
 | `history_metadata.json` | Veröffentlichungsmanifest mit Prüfergebnis, Schwellen, Quellenhash und Datei-Hashes. |
+| `daily_research.json` | Kompakte Derived-Research-Schicht mit aktuellen Feldern und historischen Vergleichsfällen. |
+
+Die verbindliche L1/L2/L3-Logik, feste Buckets, Cross-Universe-Suche, Cooldown und
+Kurs-Outcomes sind in [Historische Vergleichsfälle](historical_matches.md)
+dokumentiert. `history_recent.csv` bleibt deren Scanner-Source-of-Truth.
 
 ## Datenfluss und Erhaltung
 

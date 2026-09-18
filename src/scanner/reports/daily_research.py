@@ -16,6 +16,7 @@ from scanner.reports.research_views import (
     ValidationPolicy, atomic_write, build_views, parse_csv,
 )
 from scanner.reports.research_validation import validate_publication
+from scanner.reports.historical_matches import HistoricalMatcher, MatchPolicy, method_metadata
 
 WATCHLIST = "artifacts/watchlist/watchlist_full.csv"
 ALIASES = {
@@ -184,52 +185,17 @@ def _business_days_between(start, end):
     return sum(1 for day in ((start + __import__("datetime").timedelta(days=offset)) for offset in range(1, (end - start).days)) if day.weekday() < 5)
 
 
-def _forward_return(rows, index, horizon):
-    current_date = _parse_date(rows[index].get("date"))
-    current_close = _research_float(rows[index].get("close"))
-    if current_date is None or current_close in (None, 0):
-        return None
-    for later in rows[index + 1:]:
-        later_date = _parse_date(later.get("date"))
-        later_close = _research_float(later.get("close"))
-        if later_date and _business_days_between(current_date, later_date) >= horizon:
-            return (later_close / current_close) - 1 if later_close not in (None, 0) else None
-    return None
+def _historical_match_summary(symbol, current_row, history_rows, *, price_rows=(), policy=None):
+    # symbol is retained for compatibility, never used to restrict the universe.
+    return HistoricalMatcher(history_rows, price_rows, policy).summary(current_row)
 
 
-def _historical_match_summary(symbol, current_row, history_rows):
-    rows = sorted((row for row in history_rows if row.get("symbol") == symbol and row.get("date") != current_row.get("date")), key=lambda row: row.get("date", ""))
-    current_bucket = int((_research_float(current_row.get("rank_percentile")) or 0) * 10)
-    candidates = [row for row in rows if int((_research_float(row.get("rank_percentile")) or -1) * 10) == current_bucket]
-    kept = []
-    last_date = None
-    for row in candidates:
-        row_date = _parse_date(row.get("date"))
-        if last_date is None or _business_days_between(last_date, row_date) > 5:
-            kept.append(row)
-            last_date = row_date
-    values = {horizon: [] for horizon in (5, 10, 20, 40)}
-    for row in kept:
-        index = rows.index(row)
-        for horizon in values:
-            value = _forward_return(rows, index, horizon)
-            if value is not None:
-                values[horizon].append(value)
-    def summary(values_for_horizon):
-        ordered = sorted(values_for_horizon)
-        return {
-            "N": len(ordered),
-            "median_return": ordered[len(ordered) // 2] if ordered else None,
-            "positive_count": sum(value > 0 for value in ordered),
-            "positive_rate": (sum(value > 0 for value in ordered) / len(ordered)) if ordered else None,
-        }
-    return {
-        "filter_id": "level_3" if kept else "none",
-        "filter_description": "same rank percentile bucket; five trading-day cooldown" if kept else "no comparable historical rows",
-        "cooldown_trading_days": 5,
-        "N": len(kept),
-        **{"forward_" + str(horizon) + "t": summary(values[horizon]) for horizon in values},
-    }
+def _price_rows(research):
+    path = research / "price_backfill.csv"
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
 
 
 def _classify_symbol(row):
@@ -283,10 +249,19 @@ def validate_daily_research(root: Path | str, payload=None):
     expected_hash = hashlib.sha256(daily_path.read_bytes()).hexdigest()
     if metadata.get("daily_research", {}).get("sha256") != expected_hash:
         raise ValueError("daily_research hash mismatch")
+    method = payload.get("historical_match_method", {})
+    policy = MatchPolicy(method.get("min_matches"), method.get("cooldown_trading_days"))
+    if method != method_metadata(policy):
+        raise ValueError("daily_research historical match method mismatch")
+    matcher = HistoricalMatcher(recent_rows, _price_rows(research), policy)
+    for row in latest_rows:
+        current = dict(row, date=row.get("date") or row.get("as_of") or metadata["as_of"])
+        if payload["symbols"][row["symbol"].strip()].get("historical_matches") != matcher.summary(current):
+            raise ValueError("daily_research historical match semantics mismatch: " + row["symbol"])
     return payload
 
 
-def generate_daily_research(root: Path | str):
+def generate_daily_research(root: Path | str, *, match_policy=None):
     """Build the compact daily view from the current, published research views."""
     root = Path(root)
     research = root / "artifacts" / "research"
@@ -304,6 +279,8 @@ def generate_daily_research(root: Path | str):
         raise ValueError("research metadata missing snapshot_id")
     if not as_of and any(row.get("as_of") or row.get("date") for row in latest_rows):
         raise ValueError("research metadata missing as_of")
+    match_policy = match_policy or MatchPolicy()
+    matcher = HistoricalMatcher(history_rows, _price_rows(research), match_policy)
     symbols = {}
     for row in latest_rows:
         symbol = row.get("symbol", "").strip()
@@ -342,7 +319,7 @@ def generate_daily_research(root: Path | str):
                 "consecutive_days_trend200_negative": negative_trend,
             },
             "classification": _classify_symbol(row),
-            "historical_matches": _historical_match_summary(symbol, row, history_rows),
+            "historical_matches": matcher.summary(dict(row, date=row.get("date") or row.get("as_of") or as_of)),
         }
     payload = {
         "schema_version": "daily_research_v1",
@@ -351,6 +328,7 @@ def generate_daily_research(root: Path | str):
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_snapshot_id": snapshot_id,
         "universe_size": len(symbols),
+        "historical_match_method": method_metadata(match_policy),
         "symbols": symbols,
     }
     output_path = research / "daily_research.json"
