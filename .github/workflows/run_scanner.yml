@@ -2,7 +2,11 @@ name: Scanner_vNext Autopilot
 
 on:
   schedule:
-    - cron: '7 15 * * *' # 17:07 Uhr Berlin waehrend der Sommerzeit (GitHub cron laeuft in UTC)
+    # Primaertermin plus Nachholtermine bei verspaeteten/ausgefallenen GitHub-Starts.
+    - cron: '7 17 * * *'
+      timezone: Europe/Berlin
+    - cron: '37 18,20 * * *'
+      timezone: Europe/Berlin
   workflow_dispatch:
 
 permissions:
@@ -13,11 +17,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  autorun:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Wartende Laeufe muessen den zuletzt publizierten Stand lesen.
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Bereits publizierten Abendscan pruefen
+        id: check
+        run: python scripts/autorun_state.py
+
   build:
+    needs: autorun
+    if: needs.autorun.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Code auschecken
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Python installieren
         uses: actions/setup-python@v5
@@ -114,6 +138,12 @@ jobs:
 
       - name: Research-Kohaerenz vor Veroeffentlichung pruefen
         run: python scripts/generate_research_views.py --validate-only
+
+      - name: Erfolgreichen Abendscan vormerken
+        if: steps.research.outputs.complete == 'true'
+        # Marker und Ergebnisse werden gemeinsam publiziert; ein fehlgeschlagener
+        # Push oder unvollstaendiger Scan darf keinen Nachholtermin unterdruecken.
+        run: python scripts/autorun_state.py --record
 
       - name: Ergebnisse speichern (Commit & Push)
         run: |
