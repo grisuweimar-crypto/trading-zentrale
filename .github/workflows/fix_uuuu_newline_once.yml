@@ -1,0 +1,44 @@
+name: Fix Energy Fuels CSV newline once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix_uuuu_newline_once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix-newline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Ensure UUUU starts on its own CSV row
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('data/inputs/universe_master.csv')
+          s = p.read_text(encoding='utf-8')
+          old = '"ai, semis, software"1,UUUU,Energy Fuels Inc.'
+          new = '"ai, semis, software"\n1,UUUU,Energy Fuels Inc.'
+          if old in s:
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          elif '\n1,UUUU,Energy Fuels Inc.' in s:
+              print('Already fixed')
+          else:
+              raise SystemExit('Expected UUUU row pattern not found')
+      - name: Commit fix if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- data/inputs/universe_master.csv; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/inputs/universe_master.csv
+          git commit -m "Fix Energy Fuels row in universe master"
+          git push origin HEAD:main
