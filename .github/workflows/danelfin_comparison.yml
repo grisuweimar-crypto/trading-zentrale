@@ -1,0 +1,66 @@
+name: Danelfin Comparison Research
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/danelfin_comparison.yml'
+      - 'src/scanner/reports/danelfin_compare.py'
+      - 'scripts/run_danelfin_comparison.py'
+      - 'tests/test_danelfin_compare.py'
+      - 'tests/test_danelfin_review_fixes.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Python installieren
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Abhaengigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      - name: Danelfin-Vergleichstests
+        run: |
+          python -m pytest tests/test_danelfin_compare.py tests/test_danelfin_review_fixes.py -q
+
+      - name: Danelfin API Secret pruefen
+        env:
+          DANELFIN_API_KEY: ${{ secrets.DANELFIN_API_KEY }}
+        run: |
+          if [ -z "$DANELFIN_API_KEY" ]; then
+            echo "DANELFIN_API_KEY repository secret is missing."
+            exit 2
+          fi
+
+      - name: 30 US-Titel vergleichen
+        env:
+          DANELFIN_API_KEY: ${{ secrets.DANELFIN_API_KEY }}
+        run: |
+          python scripts/run_danelfin_comparison.py \
+            --markets us \
+            --limit 30 \
+            --benchmark SPY \
+            --cooldown 5 \
+            --max-staleness-days 3
+
+      - name: Vergleichsergebnisse hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: danelfin-comparison
+          path: |
+            artifacts/research/danelfin_comparison.json
+            artifacts/research/danelfin_comparison_events.csv
+          if-no-files-found: error
+          retention-days: 7
