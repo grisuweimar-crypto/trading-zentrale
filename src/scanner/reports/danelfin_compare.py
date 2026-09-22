@@ -381,10 +381,19 @@ def build_comparison_events(
     return events
 
 
-def summarize_events(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+def summarize_events(
+    events: Sequence[Mapping[str, Any]],
+    *,
+    danelfin_positive_min: float = 8.0,
+    scanner_top_percentile: float = 0.20,
+) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "event_count": len(events),
         "symbol_count": len({str(row["symbol"]) for row in events}),
+        "signal_thresholds": {
+            "danelfin_ai_score_min": danelfin_positive_min,
+            "scanner_rank_percentile_max": scanner_top_percentile,
+        },
         "horizons": {},
     }
     for horizon in HORIZONS:
@@ -420,9 +429,11 @@ def summarize_events(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
         groups: dict[str, list[float]] = defaultdict(list)
         for row in usable:
-            danelfin_positive = float(row["aiscore"]) >= 8
+            danelfin_positive = float(row["aiscore"]) >= danelfin_positive_min
             percentile = finite_number(row.get("rank_percentile"))
-            scanner_positive = percentile is not None and percentile <= 0.20
+            scanner_positive = (
+                percentile is not None and percentile <= scanner_top_percentile
+            )
             if danelfin_positive and scanner_positive:
                 key = "both_positive"
             elif danelfin_positive:
