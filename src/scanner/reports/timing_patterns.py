@@ -19,12 +19,10 @@ from scanner.reports.selection_timing import (
     HORIZONS,
     Phase1AConfig,
     _scanner_rows,
-    _price_rows,
     build_events,
     cooldown_events,
     _spearman,
 )
-
 
 NUMERIC_ALIASES = {
     "score": ("score",),
@@ -34,9 +32,7 @@ NUMERIC_ALIASES = {
     "trend200": ("trend200", "Trend200"),
     "cycle": ("cycle", "cycle_pct", "Zyklus %"),
 }
-ELLIOTT_ALIASES = (
-    "elliott_signal", "elliott", "Elliott-Signal", "elliott_signal_raw"
-)
+ELLIOTT_ALIASES = ("elliott_signal", "elliott", "Elliott-Signal", "elliott_signal_raw")
 
 
 @dataclass(frozen=True)
@@ -53,10 +49,7 @@ class Phase1BConfig:
 
 
 def _first_column(frame: pd.DataFrame, names: tuple[str, ...]) -> str | None:
-    for name in names:
-        if name in frame.columns:
-            return name
-    return None
+    return next((name for name in names if name in frame.columns), None)
 
 
 def _normalise_elliott(value) -> str | None:
@@ -79,9 +72,9 @@ def _r_number(value) -> float:
         return np.nan
     text = str(value).strip().upper()
     if text.startswith("R") and text[1:].isdigit():
-        n = int(text[1:])
-        if 0 <= n <= 5:
-            return float(n)
+        number = int(text[1:])
+        if 0 <= number <= 5:
+            return float(number)
     return np.nan
 
 
@@ -89,30 +82,28 @@ def feature_rows(history: pd.DataFrame, config: Phase1BConfig = Phase1BConfig())
     frame = _scanner_rows(history)
     frame = frame.loc[(~frame["is_crypto"]) & (frame["date"] >= pd.Timestamp(config.stable_start))].copy()
 
-    available: dict[str, str | None] = {}
+    sources: dict[str, str | None] = {}
     for canonical, aliases in NUMERIC_ALIASES.items():
         source = _first_column(frame, aliases)
-        available[canonical] = source
+        sources[canonical] = source
         frame[canonical] = pd.to_numeric(frame[source], errors="coerce") if source else np.nan
 
     elliott_source = _first_column(frame, ELLIOTT_ALIASES)
-    available["elliott"] = elliott_source
+    sources["elliott"] = elliott_source
     frame["elliott_state"] = frame[elliott_source].map(_normalise_elliott) if elliott_source else None
     frame["r_num"] = frame.get("r_code", pd.Series(index=frame.index, dtype=object)).map(_r_number)
 
     frame = frame.sort_values(["symbol", "date"], kind="mergesort").reset_index(drop=True)
-    g = frame.groupby("symbol", sort=False)
+    grouped = frame.groupby("symbol", sort=False)
     for name in NUMERIC_ALIASES:
         for lag in (1, 5, 10):
-            frame[f"{name}_d{lag}"] = frame[name] - g[name].shift(lag)
-    frame["r_d1"] = frame["r_num"] - g["r_num"].shift(1)
-    frame["r_d5"] = frame["r_num"] - g["r_num"].shift(5)
-    frame["trend_prev1"] = g["trend200"].shift(1)
-    frame["cycle_prev1"] = g["cycle"].shift(1)
-    frame["elliott_prev1"] = g["elliott_state"].shift(1)
+            frame[f"{name}_d{lag}"] = frame[name] - grouped[name].shift(lag)
+    frame["r_d1"] = frame["r_num"] - grouped["r_num"].shift(1)
+    frame["r_d5"] = frame["r_num"] - grouped["r_num"].shift(5)
+    frame["trend_prev1"] = grouped["trend200"].shift(1)
+    frame["cycle_prev1"] = grouped["cycle"].shift(1)
+    frame["elliott_prev1"] = grouped["elliott_state"].shift(1)
 
-    # Atomic states are deliberately simple and fixed ex ante. No thresholds are
-    # fitted on future returns.
     atoms: dict[str, pd.Series] = {}
     for name in ("score", "opportunity", "risk", "rs3m", "trend200", "cycle"):
         for lag in (1, 5, 10):
@@ -121,42 +112,64 @@ def feature_rows(history: pd.DataFrame, config: Phase1BConfig = Phase1BConfig())
             atoms[f"{col}_up"] = valid & (frame[col] > 0)
             atoms[f"{col}_down"] = valid & (frame[col] < 0)
 
-    atoms["trend_cross_up"] = frame["trend200"].notna() & frame["trend_prev1"].notna() & (frame["trend200"] >= 0) & (frame["trend_prev1"] < 0)
-    atoms["trend_cross_down"] = frame["trend200"].notna() & frame["trend_prev1"].notna() & (frame["trend200"] < 0) & (frame["trend_prev1"] >= 0)
+    atoms["trend_cross_up"] = (
+        frame["trend200"].notna() & frame["trend_prev1"].notna()
+        & (frame["trend200"] >= 0) & (frame["trend_prev1"] < 0)
+    )
+    atoms["trend_cross_down"] = (
+        frame["trend200"].notna() & frame["trend_prev1"].notna()
+        & (frame["trend200"] < 0) & (frame["trend_prev1"] >= 0)
+    )
     for level in (25.0, 50.0, 75.0):
-        atoms[f"cycle_cross_up_{int(level)}"] = frame["cycle"].notna() & frame["cycle_prev1"].notna() & (frame["cycle"] >= level) & (frame["cycle_prev1"] < level)
-        atoms[f"cycle_cross_down_{int(level)}"] = frame["cycle"].notna() & frame["cycle_prev1"].notna() & (frame["cycle"] < level) & (frame["cycle_prev1"] >= level)
+        atoms[f"cycle_cross_up_{int(level)}"] = (
+            frame["cycle"].notna() & frame["cycle_prev1"].notna()
+            & (frame["cycle"] >= level) & (frame["cycle_prev1"] < level)
+        )
+        atoms[f"cycle_cross_down_{int(level)}"] = (
+            frame["cycle"].notna() & frame["cycle_prev1"].notna()
+            & (frame["cycle"] < level) & (frame["cycle_prev1"] >= level)
+        )
+
     atoms["r_upgrade"] = frame["r_d1"].notna() & (frame["r_d1"] > 0)
     atoms["r_downgrade"] = frame["r_d1"].notna() & (frame["r_d1"] < 0)
     atoms["r_high"] = frame["r_num"].notna() & (frame["r_num"] >= 4)
     atoms["r_low"] = frame["r_num"].notna() & (frame["r_num"] <= 2)
+
     if elliott_source:
         atoms["elliott_buy"] = frame["elliott_state"].eq("BUY")
         atoms["elliott_sell"] = frame["elliott_state"].eq("SELL")
         atoms["elliott_to_buy"] = frame["elliott_state"].eq("BUY") & ~frame["elliott_prev1"].eq("BUY")
         atoms["elliott_to_sell"] = frame["elliott_state"].eq("SELL") & ~frame["elliott_prev1"].eq("SELL")
 
-    for name, series in atoms.items():
-        frame[name] = series.fillna(False).astype(bool)
+    for name, mask in atoms.items():
+        frame[name] = mask.fillna(False).astype(bool)
 
     coverage = {
         "rows": int(len(frame)),
         "symbols": int(frame["symbol"].nunique()),
         "date_min": str(frame["date"].min().date()) if len(frame) else None,
         "date_max": str(frame["date"].max().date()) if len(frame) else None,
-        "sources": available,
+        "sources": sources,
         "non_null": {
             key: int(frame[key].notna().sum())
-            for key in ["score", "opportunity", "risk", "rs3m", "trend200", "cycle", "r_num", "elliott_state"]
+            for key in ("score", "opportunity", "risk", "rs3m", "trend200", "cycle", "r_num", "elliott_state")
         },
         "atomic_patterns": list(atoms),
     }
     return frame, coverage
 
 
-def build_timing_events(history: pd.DataFrame, prices: pd.DataFrame, config: Phase1BConfig = Phase1BConfig()) -> tuple[pd.DataFrame, dict]:
+def build_timing_events(
+    history: pd.DataFrame,
+    prices: pd.DataFrame,
+    config: Phase1BConfig = Phase1BConfig(),
+) -> tuple[pd.DataFrame, dict]:
     features, coverage = feature_rows(history, config)
-    events = build_events(history, prices, Phase1AConfig(stable_start=config.stable_start, cooldown_sessions=config.cooldown_sessions))
+    events = build_events(
+        history,
+        prices,
+        Phase1AConfig(stable_start=config.stable_start, cooldown_sessions=config.cooldown_sessions),
+    )
     if events.empty:
         return events, coverage
 
@@ -180,28 +193,33 @@ def _add_peer_excess(events: pd.DataFrame, horizon: int) -> pd.DataFrame:
     return work
 
 
-def continuous_feature_summary(events: pd.DataFrame, prices: pd.DataFrame, horizon: int, config: Phase1BConfig) -> dict:
+def continuous_feature_summary(
+    events: pd.DataFrame,
+    prices: pd.DataFrame,
+    horizon: int,
+    config: Phase1BConfig,
+) -> dict:
     work = _add_peer_excess(cooldown_events(events, prices, config.cooldown_sessions), horizon)
     target = f"peer_excess_{horizon}t"
-    cols = [
+    columns = [
         f"{name}_d{lag}"
         for name in ("score", "opportunity", "risk", "rs3m", "trend200", "cycle")
         for lag in (1, 5, 10)
     ] + ["r_d1", "r_d5"]
+
     out = {}
-    for col in cols:
-        if col not in work.columns:
+    for column in columns:
+        if column not in work.columns:
             continue
-        z = work[[col, target]].dropna()
-        if len(z) < config.min_single_n or z[col].nunique() < 3:
+        z = work[[column, target]].dropna()
+        if len(z) < config.min_single_n or z[column].nunique() < 3:
             continue
-        rho = _spearman(z[col], z[target])
-        q20, q80 = z[col].quantile([0.2, 0.8])
-        low = z.loc[z[col] <= q20, target]
-        high = z.loc[z[col] >= q80, target]
-        out[col] = {
+        q20, q80 = z[column].quantile([0.2, 0.8])
+        low = z.loc[z[column] <= q20, target]
+        high = z.loc[z[column] >= q80, target]
+        out[column] = {
             "N": int(len(z)),
-            "spearman": rho,
+            "spearman": _spearman(z[column], z[target]),
             "low20_N": int(len(low)),
             "high20_N": int(len(high)),
             "high_minus_low_mean_peer_excess": float(high.mean() - low.mean()) if len(low) and len(high) else None,
@@ -212,37 +230,62 @@ def continuous_feature_summary(events: pd.DataFrame, prices: pd.DataFrame, horiz
 
 
 def _pattern_stats(work: pd.DataFrame, mask: pd.Series, target: str) -> dict | None:
-    z = work.loc[mask & work[target].notna(), target]
-    if len(z) == 0:
+    values = work.loc[mask & work[target].notna(), target]
+    if values.empty:
         return None
     baseline = work.loc[work[target].notna(), target]
+    positive = float((values > 0).mean())
+    baseline_positive = float((baseline > 0).mean()) if len(baseline) else None
     return {
-        "N": int(len(z)),
-        "mean_peer_excess": float(z.mean()),
-        "median_peer_excess": float(z.median()),
-        "positive_rate": float((z > 0).mean()),
-        "baseline_positive_rate": float((baseline > 0).mean()) if len(baseline) else None,
-        "positive_rate_uplift": float((z > 0).mean() - (baseline > 0).mean()) if len(baseline) else None,
+        "N": int(len(values)),
+        "mean_peer_excess": float(values.mean()),
+        "median_peer_excess": float(values.median()),
+        "positive_rate": positive,
+        "baseline_positive_rate": baseline_positive,
+        "positive_rate_uplift": positive - baseline_positive if baseline_positive is not None else None,
     }
 
 
-def discover_patterns(events: pd.DataFrame, prices: pd.DataFrame, horizon: int, coverage: dict, config: Phase1BConfig) -> dict:
+def _strict_windows(work: pd.DataFrame, horizon: int, config: Phase1BConfig) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Non-overlapping holdout: discovery outcomes must finish before cutoff."""
+    discovery_end = pd.Timestamp(config.discovery_end)
+    validation_start = pd.Timestamp(config.validation_start)
+    end_col = f"end_date_{horizon}t"
+    end_date = pd.to_datetime(work[end_col], errors="coerce")
+    discovery = work.loc[(work["obs_date"] <= discovery_end) & end_date.notna() & (end_date <= discovery_end)].copy()
+    validation = work.loc[work["obs_date"] >= validation_start].copy()
+    return discovery, validation
+
+
+def discover_patterns(
+    events: pd.DataFrame,
+    prices: pd.DataFrame,
+    horizon: int,
+    coverage: dict,
+    config: Phase1BConfig,
+) -> dict:
     work = _add_peer_excess(cooldown_events(events, prices, config.cooldown_sessions), horizon)
     target = f"peer_excess_{horizon}t"
-    discovery = work.loc[work["obs_date"] <= pd.Timestamp(config.discovery_end)].copy()
-    validation = work.loc[work["obs_date"] >= pd.Timestamp(config.validation_start)].copy()
-    atom_names = [name for name in coverage.get("atomic_patterns", []) if name in work.columns]
+    discovery, validation = _strict_windows(work, horizon, config)
+
+    candidates = [name for name in coverage.get("atomic_patterns", []) if name in work.columns]
+    # Performance-only prefilter. It uses condition prevalence, never future outcomes.
+    atom_names = [
+        name for name in candidates
+        if int(discovery[name].sum()) >= config.min_pattern_discovery_n
+        and int(validation[name].sum()) >= config.min_pattern_validation_n
+    ]
 
     rows = []
     for size in range(1, config.max_combo_size + 1):
         for combo in combinations(atom_names, size):
             dmask = discovery[list(combo)].all(axis=1)
             vmask = validation[list(combo)].all(axis=1)
+            if int(dmask.sum()) < config.min_pattern_discovery_n or int(vmask.sum()) < config.min_pattern_validation_n:
+                continue
             ds = _pattern_stats(discovery, dmask, target)
             vs = _pattern_stats(validation, vmask, target)
             if not ds or not vs:
-                continue
-            if ds["N"] < config.min_pattern_discovery_n or vs["N"] < config.min_pattern_validation_n:
                 continue
             dmean = ds["mean_peer_excess"]
             vmean = vs["mean_peer_excess"]
@@ -256,18 +299,37 @@ def discover_patterns(events: pd.DataFrame, prices: pd.DataFrame, horizon: int, 
                 "robust_effect": float(np.sign(vmean) * min(abs(dmean), abs(vmean))),
             })
 
-    positive = sorted((r for r in rows if r["validation"]["mean_peer_excess"] > 0), key=lambda r: r["robust_effect"], reverse=True)
-    negative = sorted((r for r in rows if r["validation"]["mean_peer_excess"] < 0), key=lambda r: r["robust_effect"])
+    positive = sorted(
+        (r for r in rows if r["validation"]["mean_peer_excess"] > 0),
+        key=lambda r: r["robust_effect"],
+        reverse=True,
+    )
+    negative = sorted(
+        (r for r in rows if r["validation"]["mean_peer_excess"] < 0),
+        key=lambda r: r["robust_effect"],
+    )
     return {
         "discovery_window": [config.stable_start, config.discovery_end],
-        "validation_window": [config.validation_start, str(work["obs_date"].max().date()) if len(work) else None],
+        "discovery_requires_target_end_by_cutoff": True,
+        "validation_window": [
+            config.validation_start,
+            str(work["obs_date"].max().date()) if len(work) else None,
+        ],
+        "discovery_events": int(len(discovery)),
+        "validation_events": int(len(validation)),
+        "prefiltered_atoms": atom_names,
         "eligible_patterns": int(len(rows)),
         "top_positive": positive[: config.top_patterns],
         "top_negative": negative[: config.top_patterns],
     }
 
 
-def categorical_states(events: pd.DataFrame, prices: pd.DataFrame, horizon: int, config: Phase1BConfig) -> dict:
+def categorical_states(
+    events: pd.DataFrame,
+    prices: pd.DataFrame,
+    horizon: int,
+    config: Phase1BConfig,
+) -> dict:
     work = _add_peer_excess(cooldown_events(events, prices, config.cooldown_sessions), horizon)
     target = f"peer_excess_{horizon}t"
     out = {}
@@ -289,7 +351,11 @@ def categorical_states(events: pd.DataFrame, prices: pd.DataFrame, horizon: int,
     return out
 
 
-def analyze(history: pd.DataFrame, prices: pd.DataFrame, config: Phase1BConfig = Phase1BConfig()) -> dict:
+def analyze(
+    history: pd.DataFrame,
+    prices: pd.DataFrame,
+    config: Phase1BConfig = Phase1BConfig(),
+) -> dict:
     events, coverage = build_timing_events(history, prices, config)
     result = {
         "phase": "1B_timing_patterns",
@@ -311,7 +377,12 @@ def analyze(history: pd.DataFrame, prices: pd.DataFrame, config: Phase1BConfig =
     return result
 
 
-def run(history_path: str | Path, price_path: str | Path, output_path: str | Path, config: Phase1BConfig = Phase1BConfig()) -> dict:
+def run(
+    history_path: str | Path,
+    price_path: str | Path,
+    output_path: str | Path,
+    config: Phase1BConfig = Phase1BConfig(),
+) -> dict:
     history = pd.read_csv(history_path, low_memory=False)
     prices = pd.read_csv(price_path, low_memory=False)
     result = analyze(history, prices, config)
