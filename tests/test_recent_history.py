@@ -1,4 +1,4 @@
-"""Offline regression tests: python -m unittest discover -s tests -v."""
+"""Offline regression tests: python -m pytest tests -v."""
 
 import importlib.util
 from pathlib import Path

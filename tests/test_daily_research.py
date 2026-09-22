@@ -152,7 +152,9 @@ class DailyResearchTests(unittest.TestCase):
         steps = workflow["jobs"]["build"]["steps"]
         def index(text):
             return next(i for i, step in enumerate(steps) if text in step.get("run", ""))
-        self.assertLess(index("unittest discover"), index("prefetch_market_history"))
+        self.assertLess(index("pytest tests"), index("prefetch_market_history"))
+        install = index('pip install -e ".[test]"')
+        self.assertLess(install, index("pytest tests"))
         self.assertLess(index("--scanner-status"), index("prefetch_market_history"))
         self.assertLess(index("prefetch_market_history"), index("--refresh-prices"))
         self.assertLess(index("--refresh-prices"), index("generate_daily_research.py"))
