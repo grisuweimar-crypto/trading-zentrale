@@ -1,0 +1,47 @@
+name: Phase 1A Selection vs Timing
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/scanner/reports/selection_timing.py'
+      - 'scripts/run_selection_timing_1a.py'
+      - 'tests/test_selection_timing.py'
+      - 'docs/selection_timing_1a.md'
+      - '.github/workflows/selection_timing_1a.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/scanner/reports/selection_timing.py'
+      - 'scripts/run_selection_timing_1a.py'
+      - 'tests/test_selection_timing.py'
+      - 'artifacts/research/history_analysis.csv'
+      - 'artifacts/research/price_backfill.csv'
+      - '.github/workflows/selection_timing_1a.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+      - name: Regression tests
+        run: python -m pytest -q tests/test_selection_timing.py
+      - name: Run Phase 1A
+        run: python scripts/run_selection_timing_1a.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: selection-timing-1a
+          path: artifacts/research/selection_timing_1a.json
+          if-no-files-found: error
