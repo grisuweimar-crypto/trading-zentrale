@@ -20,7 +20,7 @@ def _synthetic():
                 "date": day.date().isoformat(),
                 "symbol": symbol,
                 "name": symbol,
-                "score": base + i * 0.1,
+                "score": base + 0.01 * i * i,
                 "opportunity": 40 + i * 0.2,
                 "risk": 50 - i * 0.1,
                 "rs3m": -0.2 + i * 0.01,
