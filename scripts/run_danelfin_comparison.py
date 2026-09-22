@@ -28,6 +28,8 @@ def main():
     parser.add_argument("--benchmark", default="SPY")
     parser.add_argument("--cooldown", type=int, default=5)
     parser.add_argument("--max-staleness-days", type=int, default=3)
+    parser.add_argument("--danelfin-positive-min", type=float, default=8.0)
+    parser.add_argument("--scanner-top-percentile", type=float, default=0.20)
     parser.add_argument("--events-out", type=Path)
     parser.add_argument("--summary-out", type=Path)
     args = parser.parse_args()
@@ -74,7 +76,11 @@ def main():
         cooldown_sessions=args.cooldown,
         max_scanner_staleness_days=args.max_staleness_days,
     )
-    summary = summarize_events(events)
+    summary = summarize_events(
+        events,
+        danelfin_positive_min=args.danelfin_positive_min,
+        scanner_top_percentile=args.scanner_top_percentile,
+    )
     summary["requested_symbols"] = [item["symbol"] for item in mappings]
     summary["danelfin_symbols_with_history"] = sorted(
         symbol for symbol, values in histories.items() if values
