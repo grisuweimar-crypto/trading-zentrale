@@ -27,6 +27,7 @@ import requests
 BASE_URL = "https://apirest.danelfin.com"
 SCORE_FIELDS = ("aiscore", "fundamental", "technical", "sentiment", "low_risk")
 HORIZONS = (5, 20, 40, 60)
+PRICE_OBSERVATION_TYPES = {"market_data", "price_backfill"}
 EU_SUFFIXES = (
     ".AS", ".BR", ".CO", ".DE", ".HE", ".L", ".LS", ".MC",
     ".MI", ".OL", ".PA", ".ST", ".SW", ".VI",
@@ -162,7 +163,7 @@ def _is_scanner_row(row: Mapping[str, Any]) -> bool:
 
 def _is_price_row(row: Mapping[str, Any]) -> bool:
     return (
-        str(row.get("observation_type") or "") == "market_data"
+        str(row.get("observation_type") or "") in PRICE_OBSERVATION_TYPES
         and finite_number(row.get("close")) not in (None, 0)
         and parse_day(row.get("date")) is not None
         and str(row.get("symbol") or "").strip() != ""
@@ -178,14 +179,25 @@ class PriceSeries:
         idx = bisect_left(self.dates, day)
         return idx if idx < len(self.dates) and self.dates[idx] == day else None
 
-    def forward_return(self, day: date, horizon: int) -> float | None:
+    def target_day(self, day: date, horizon: int) -> date | None:
         idx = self.index(day)
         if idx is None:
             return None
         target = idx + horizon
         if target >= len(self.dates):
             return None
-        return self.closes[target] / self.closes[idx] - 1.0
+        return self.dates[target]
+
+    def return_between(self, start: date, end: date) -> float | None:
+        start_idx = self.index(start)
+        end_idx = self.index(end)
+        if start_idx is None or end_idx is None or end_idx <= start_idx:
+            return None
+        return self.closes[end_idx] / self.closes[start_idx] - 1.0
+
+    def forward_return(self, day: date, horizon: int) -> float | None:
+        target_day = self.target_day(day, horizon)
+        return self.return_between(day, target_day) if target_day is not None else None
 
 
 def build_price_series(rows: Iterable[Mapping[str, Any]]) -> dict[str, PriceSeries]:
@@ -367,9 +379,21 @@ def build_comparison_events(
                 **{field: finite_number(drow.get(field)) for field in SCORE_FIELDS},
             }
             for horizon in HORIZONS:
-                ret = pseries.forward_return(day, horizon)
+                target_day = pseries.target_day(day, horizon)
+                ret = (
+                    pseries.return_between(day, target_day)
+                    if target_day is not None
+                    else None
+                )
+                benchmark_return = (
+                    benchmark.return_between(day, target_day)
+                    if benchmark is not None and target_day is not None
+                    else None
+                )
+                event[f"target_date_{horizon}t"] = (
+                    target_day.isoformat() if target_day is not None else None
+                )
                 event[f"return_{horizon}t"] = ret
-                benchmark_return = benchmark.forward_return(day, horizon) if benchmark else None
                 event[f"benchmark_return_{horizon}t"] = benchmark_return
                 event[f"alpha_{horizon}t"] = (
                     ret - benchmark_return
@@ -431,22 +455,35 @@ def summarize_events(
         for row in usable:
             danelfin_positive = float(row["aiscore"]) >= danelfin_positive_min
             percentile = finite_number(row.get("rank_percentile"))
-            scanner_positive = (
-                percentile is not None and percentile <= scanner_top_percentile
-            )
-            if danelfin_positive and scanner_positive:
-                key = "both_positive"
-            elif danelfin_positive:
-                key = "danelfin_only"
-            elif scanner_positive:
-                key = "scanner_only"
+            if percentile is None:
+                key = "scanner_rank_unknown"
             else:
-                key = "neither"
+                scanner_positive = percentile <= scanner_top_percentile
+                if danelfin_positive and scanner_positive:
+                    key = "both_positive"
+                elif danelfin_positive:
+                    key = "danelfin_only"
+                elif scanner_positive:
+                    key = "scanner_only"
+                else:
+                    key = "neither"
             groups[key].append(float(row[target]))
+        group_order = (
+            "both_positive",
+            "danelfin_only",
+            "scanner_only",
+            "neither",
+            "scanner_rank_unknown",
+        )
         horizon_summary["agreement_groups"] = {
-            key: _stats(groups.get(key, []))
-            for key in ("both_positive", "danelfin_only", "scanner_only", "neither")
+            key: _stats(groups.get(key, [])) for key in group_order
         }
+        horizon_summary["agreement_rank_known_N"] = sum(
+            len(groups.get(key, [])) for key in group_order[:-1]
+        )
+        horizon_summary["agreement_rank_unknown_N"] = len(
+            groups.get("scanner_rank_unknown", [])
+        )
         summary["horizons"][str(horizon)] = horizon_summary
     return summary
 
@@ -474,6 +511,7 @@ def write_events_csv(events: Sequence[Mapping[str, Any]], path: str | Path) -> N
     ]
     for horizon in HORIZONS:
         fieldnames.extend([
+            f"target_date_{horizon}t",
             f"return_{horizon}t",
             f"benchmark_return_{horizon}t",
             f"alpha_{horizon}t",

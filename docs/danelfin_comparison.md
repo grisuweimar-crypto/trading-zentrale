@@ -29,6 +29,7 @@ Defaults:
 
 - source: `artifacts/research/history_analysis.csv`
 - optional extra prices: `artifacts/research/price_backfill.csv`
+- accepted canonical price observations: `market_data` and `price_backfill`
 - first pass: US-listed scanner symbols only
 - up to 30 symbols
 - 5-session cooldown between retained observations per symbol
@@ -36,7 +37,7 @@ Defaults:
 - horizons: 5, 20, 40, and 60 observed trading sessions
 - Danelfin positive threshold: AI Score >= 8
 - scanner positive threshold: stored `rank_percentile <= 0.20`
-- benchmark: SPY when SPY price observations are available
+- benchmark: SPY when exact matching benchmark endpoints are available
 
 Useful examples:
 
@@ -53,18 +54,26 @@ python scripts/run_danelfin_comparison.py --danelfin-positive-min 9 --scanner-to
 - `artifacts/research/danelfin_comparison.json`
 
 The CSV contains the aligned point-in-time observations and forward outcomes.
-The JSON summarizes, per horizon:
+For every horizon it also stores the asset's exact target date used for the
+forward return. The JSON summarizes, per horizon:
 
 - number of usable observations
 - Spearman rank correlation of scanner score vs outcome
 - Spearman rank correlation of Danelfin AI Score vs outcome
 - separate correlations for Fundamental, Technical, Sentiment and Low Risk
 - agreement groups: both positive, Danelfin only, scanner only, neither
+- a separate `scanner_rank_unknown` group when historical scanner rank is absent
 - positive rate, median outcome and mean outcome for each group
+- counts of observations with known and unknown scanner rank
 
-If benchmark observations exist, outcome is alpha versus the benchmark.
-Otherwise the report explicitly falls back to raw forward return for that
-horizon instead of inventing benchmark data.
+If exact benchmark observations exist on both the event date and the asset's
+horizon target date, outcome is alpha versus the benchmark. Alpha is never
+calculated by independently advancing the benchmark by N sessions, because that
+can create mismatched calendar intervals across exchanges or missing sessions.
+If exact benchmark endpoints are unavailable, alpha remains missing for that
+event instead of inventing or shifting benchmark dates. If a horizon has no
+usable alpha observations at all, the summary explicitly falls back to raw
+forward return for that horizon.
 
 ## Point-in-time rules
 
@@ -73,10 +82,15 @@ horizon instead of inventing benchmark data.
    scanner observations are never used.
 3. A maximum scanner staleness of three calendar days is allowed by default.
 4. The event-day observed close is the start price.
-5. Forward horizons use the N-th later observed price session, not calendar days.
-6. Repeated daily signals are thinned with a five-session cooldown to reduce
+5. Forward horizons use the asset's N-th later observed price session, not
+   calendar days. The resulting asset target date is retained in the event CSV.
+6. Benchmark return, when available, uses the exact same calendar start and end
+   dates as the asset return.
+7. Repeated daily signals are thinned with a five-session cooldown to reduce
    autocorrelation.
-7. Unsupported markets are excluded rather than guessed. The first pass uses US
+8. Missing historical `rank_percentile` is treated as unknown, never as a
+   negative scanner signal.
+9. Unsupported markets are excluded rather than guessed. The first pass uses US
    symbols; Europe can be enabled explicitly. Canada, Hong Kong, Japan,
    Australia, Korea and crypto require separate coverage/mapping work.
 
