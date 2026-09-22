@@ -39,6 +39,22 @@ jobs:
         run: python -m pytest -q tests/test_selection_timing.py
       - name: Run Phase 1A
         run: python scripts/run_selection_timing_1a.py
+      - name: Print summary
+        run: |
+          python - <<'PY'
+          import json
+          with open('artifacts/research/selection_timing_1a.json', encoding='utf-8') as handle:
+              payload = json.load(handle)
+          print('COVERAGE', json.dumps(payload['coverage'], sort_keys=True))
+          for horizon in ('5', '20', '40', '60'):
+              section = payload['horizons'][horizon]
+              print('HORIZON', horizon)
+              print('CROSS', json.dumps(section['cross_sectional_selection'], sort_keys=True))
+              print('BACKBONE', json.dumps(section['r_score_backbone'].get('B5_vs_B1_daily', {}), sort_keys=True))
+              print('WITHIN', json.dumps(section['within_stock_timing'], sort_keys=True))
+              print('OWN', json.dumps(section['point_in_time_own_score'], sort_keys=True))
+              print('CURRENCY', json.dumps(section['currency_selection'], sort_keys=True))
+          PY
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
