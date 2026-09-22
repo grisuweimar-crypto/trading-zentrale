@@ -1,7 +1,7 @@
 name: Danelfin Comparison Research
 
 on:
-  pull_request:
+  push:
     branches: [main]
     paths:
       - '.github/workflows/danelfin_comparison.yml'
@@ -16,10 +16,13 @@ permissions:
 
 jobs:
   compare:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Repository auschecken
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Python installieren
         uses: actions/setup-python@v5
