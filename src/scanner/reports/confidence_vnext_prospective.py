@@ -316,10 +316,10 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
     evaluated = _required_utc_timestamp(evaluated_at, "evaluated_at")
     start_date = pd.Timestamp(_required_text(claim.get("start_market_date"), "start_market_date")).normalize()
     try:
-        start_value = float(claim.get("start_adjusted_close"))
+        claim_start_value = float(claim.get("start_adjusted_close"))
     except (TypeError, ValueError) as exc:
         raise ValueError("start_adjusted_close must be numeric") from exc
-    if not np.isfinite(start_value) or start_value <= 0:
+    if not np.isfinite(claim_start_value) or claim_start_value <= 0:
         raise ValueError("start_adjusted_close must be positive")
 
     dates = pd.to_datetime(group["date"], errors="coerce")
@@ -339,12 +339,16 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
     if target_day_utc.normalize() >= evaluated.normalize():
         return None
 
+    # `group` must be an evaluation-time fresh adjusted-price history. Use its
+    # entire path on one provider adjustment basis. The claim-time adjusted
+    # close remains immutable audit evidence and is deliberately not spliced
+    # into this later basis; only the claim-time start SESSION is immutable.
     path = pd.to_numeric(group.iloc[pos : target + 1]["adj_close"], errors="coerce").to_numpy(dtype=float)
     if len(path) != horizon + 1 or not np.isfinite(path).all() or (path <= 0).any():
         return None
-    path[0] = start_value
+    evaluation_start_value = float(path[0])
     end_value = float(path[-1])
-    entry_returns = path / start_value - 1.0
+    entry_returns = path / evaluation_start_value - 1.0
     peaks = np.maximum.accumulate(path)
     drawdowns = path / peaks - 1.0
     return {
@@ -357,9 +361,9 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
         "horizon_sessions": horizon,
         "start_market_date": start_date.date().isoformat(),
         "end_market_date": target_date.date().isoformat(),
-        "start_adjusted_close": start_value,
+        "start_adjusted_close": evaluation_start_value,
         "end_adjusted_close": end_value,
-        "return": end_value / start_value - 1.0,
+        "return": end_value / evaluation_start_value - 1.0,
         "adverse_excursion": max(0.0, -float(np.min(entry_returns))),
         "path_max_drawdown": max(0.0, -float(np.min(drawdowns))),
     }
@@ -480,6 +484,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
             "peer_labels_are_derived_not_frozen_early": True,
             "peer_cross_sections_use_exact_snapshot_cohorts": True,
             "outcomes_require_completed_session_day": True,
+            "outcome_adjusted_prices_share_one_evaluation_basis": True,
             "production_confidence_changed": False,
             "scalar_confidence_mapping_created": False,
             "confidence_thresholds_created": False,
@@ -490,7 +495,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
             "risk_reliability": "compare pre-specified risk-tension states on future adverse excursion and path max drawdown",
             "data_quality_reliability": "retain claim-time outcome eligibility and unavailable reasons as prospective Data-Quality evidence",
             "peer_baseline": "derive inside each immutable scanner snapshot from all currently matured leave-one-symbol-out peers; same currency first, global fallback",
-            "outcome_maturity": "use the immutable claim-time start session and price; claims without one remain permanently unevaluable; day-level target sessions mature only after the target UTC calendar day is complete",
+            "outcome_maturity": "freeze the claim-time start session and audit price; mature only eligible claims after the target day, using one freshly evaluated adjusted-close basis across the full frozen-session-to-target path",
             "fixed_cooldown_sessions": 5,
             "uncertainty": "circular moving observation-date blocks with effective length 2x horizon; full dates stay clustered",
             "minimum_independent_support": "fail closed until at least two time-separated support regions exist",
