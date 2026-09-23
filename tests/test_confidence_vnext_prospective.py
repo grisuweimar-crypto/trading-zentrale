@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -143,18 +145,29 @@ def _prices():
     return pd.DataFrame(rows)
 
 
+def _claims(claim_prices: pd.DataFrame | None = None):
+    return build_claim_rows(
+        _phase4_report(),
+        _latest(),
+        _metadata(),
+        _fingerprints(),
+        _prices() if claim_prices is None else claim_prices,
+    )
+
+
 def test_claim_snapshot_is_stock_only_compact_and_score_free():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     assert list(claims.columns) == list(CLAIM_COLUMNS)
     assert set(claims["symbol"]) == {"AAA", "BBB"}
     assert "score" not in claims.columns
     assert set(claims["return_claim_direction"]) == {"positive", "negative"}
     assert set(claims["volatility_application_status"]) == {"scale_incompatible"}
     assert claims["claim_id"].nunique() == 2
+    assert set(claims["start_market_date"]) == {"2026-09-23"}
 
 
 def test_claim_append_is_idempotent_and_rejects_reinterpretation():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     first = append_claims(pd.DataFrame(columns=CLAIM_COLUMNS), claims)
     second = append_claims(first.astype(str), claims)
     assert len(second) == len(first)
@@ -166,8 +179,37 @@ def test_claim_append_is_idempotent_and_rejects_reinterpretation():
         append_claims(first.astype(str), changed)
 
 
+def test_claim_start_price_is_frozen_before_later_same_day_close_exists():
+    claim_prices = pd.DataFrame(
+        [
+            {"date": "2026-09-22", "symbol": "AAA", "open": 90, "high": 90, "low": 90, "close": 90, "adj_close": 90, "volume": 1, "observation_type": "price_backfill"},
+            {"date": "2026-09-22", "symbol": "BBB", "open": 110, "high": 110, "low": 110, "close": 110, "adj_close": 110, "volume": 1, "observation_type": "price_backfill"},
+        ]
+    )
+    claims = _claims(claim_prices)
+    aaa_claim = claims.loc[claims["symbol"].eq("AAA")].iloc[0]
+    assert aaa_claim["start_market_date"] == "2026-09-22"
+    assert float(aaa_claim["start_adjusted_close"]) == pytest.approx(90.0)
+
+    revised_start = claim_prices.copy()
+    revised_start.loc[revised_start["symbol"].eq("AAA"), ["open", "high", "low", "close", "adj_close"]] = 95
+    future = pd.concat([revised_start, _prices()], ignore_index=True)
+    outcomes = compute_mature_outcomes(
+        claims,
+        future,
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-28T00:00:00+00:00",
+    )
+    aaa = outcomes.loc[outcomes["symbol"].eq("AAA")].iloc[0]
+    assert aaa["start_market_date"] == "2026-09-22"
+    assert aaa["start_adjusted_close"] == pytest.approx(90.0)
+    assert aaa["end_market_date"] == "2026-09-27"
+    assert aaa["end_adjusted_close"] == pytest.approx(105.0)
+    assert aaa["return"] == pytest.approx(105.0 / 90.0 - 1.0)
+
+
 def test_raw_outcomes_mature_only_when_full_horizon_exists():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     immature_prices = _prices().loc[lambda x: x["date"] < "2026-09-28"].copy()
     none = compute_mature_outcomes(
         claims,
@@ -195,7 +237,7 @@ def test_raw_outcomes_mature_only_when_full_horizon_exists():
 
 
 def test_target_session_must_be_completed_before_evaluation_time():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     same_day = compute_mature_outcomes(
         claims,
         _prices(),
@@ -223,7 +265,7 @@ def test_target_session_must_be_completed_before_evaluation_time():
 
 
 def test_peer_labels_are_derived_from_all_currently_matured_snapshot_rows():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     outcomes = compute_mature_outcomes(
         claims,
         _prices(),
@@ -245,7 +287,7 @@ def test_peer_labels_are_derived_from_all_currently_matured_snapshot_rows():
 
 
 def test_same_day_rerun_snapshots_do_not_mix_peer_cross_sections():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     outcomes = compute_mature_outcomes(
         claims,
         _prices(),
@@ -278,7 +320,7 @@ def test_same_day_rerun_snapshots_do_not_mix_peer_cross_sections():
 
 
 def test_late_peer_maturity_improves_derived_label_without_rewriting_raw_outcome():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     outcomes = compute_mature_outcomes(
         claims,
         _prices(),
@@ -303,7 +345,7 @@ def test_late_peer_maturity_improves_derived_label_without_rewriting_raw_outcome
 
 
 def test_outcomes_are_append_only():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     new = compute_mature_outcomes(
         claims,
         _prices(),
@@ -319,7 +361,7 @@ def test_outcomes_are_append_only():
 
 
 def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds():
-    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    claims = _claims()
     outcomes = compute_mature_outcomes(
         claims,
         _prices(),
@@ -330,6 +372,7 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["status"] == "collecting_prospective_evidence"
     assert report["semantics"]["scalar_confidence_mapping_created"] is False
     assert report["semantics"]["confidence_thresholds_created"] is False
+    assert report["semantics"]["claim_time_start_session_is_frozen"] is True
     assert report["semantics"]["peer_labels_are_derived_not_frozen_early"] is True
     assert report["semantics"]["peer_cross_sections_use_exact_snapshot_cohorts"] is True
     assert report["semantics"]["outcomes_require_completed_session_day"] is True
@@ -338,3 +381,13 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["horizons"]["5"]["block_length_sessions_for_future_inference"] == 10
     assert report["horizons"]["5"]["derived_peer_labels"] == 2
     assert report["horizons"]["5"]["snapshot_cohorts"] == 1
+
+
+def test_workflow_contract_binds_trigger_and_refreshes_outstanding_symbols():
+    workflow = Path(".github/workflows/confidence_vnext_4e.yml").read_text(encoding="utf-8")
+    assert "EXPECTED_RUN_ID" in workflow
+    assert "workflow_run.id" in workflow
+    assert "run_attempt" in workflow
+    assert "claim_prices.csv" in workflow
+    assert "OUTSTANDING_SYMBOLS" in workflow
+    assert "prefetch_market_history.py" in workflow
