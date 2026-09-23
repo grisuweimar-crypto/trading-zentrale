@@ -1,0 +1,141 @@
+name: Phase 4 Confidence vNext Research
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase4-confidence-research-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  research:
+    if: github.event_name != 'pull_request' || github.head_ref == 'phase4-confidence-vnext-research'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Verify Phase 4B-D PR scope
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+
+          allowed = {
+              '.github/workflows/confidence_vnext_research_4.yml',
+              'docs/confidence_vnext_research_4.md',
+              'scripts/audit_phase4_risk_scale.py',
+              'scripts/run_confidence_vnext_research_4.py',
+              'src/scanner/reports/confidence_vnext_research.py',
+              'src/scanner/reports/confidence_vnext_research_guarded.py',
+              'tests/test_confidence_vnext_research.py',
+              'tests/test_confidence_vnext_research_guards.py',
+          }
+          changed = subprocess.check_output(
+              ['git', 'diff', '--name-only', f"{os.environ['BASE_SHA']}...{os.environ['HEAD_SHA']}"],
+              text=True,
+          ).splitlines()
+          unexpected = sorted(path for path in changed if path not in allowed)
+          print('CHANGED_PATHS', changed)
+          if unexpected:
+              raise SystemExit('Phase 4B-D changed files outside research-only allowlist: ' + ', '.join(unexpected))
+          PY
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Phase 4B-D tests
+        run: >-
+          python -m pytest -q
+          tests/test_confidence_vnext_research.py
+          tests/test_confidence_vnext_research_guards.py
+          tests/test_confidence_vnext.py
+          tests/test_confidence.py
+
+      - name: Regenerate Phase 3 evidence for current snapshot
+        run: python scripts/run_risk_vnext_3.py --output artifacts/research/risk_vnext_3.json
+
+      - name: Audit current versus historical risk metric scales
+        run: python scripts/audit_phase4_risk_scale.py
+
+      - name: Run Phase 4B-D research
+        run: python scripts/run_confidence_vnext_research_4.py
+
+      - name: Validate Phase 4B-D report
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('artifacts/research/confidence_vnext_research_4.json').read_text(encoding='utf-8'))
+          assert report['phase'] == '4_confidence_vnext_empirical_research'
+          s = report['semantics']
+          assert s['research_only'] is True
+          assert s['production_confidence_changed'] is False
+          assert s['production_score_changed'] is False
+          assert s['risk_weights_changed'] is False
+          assert s['r_codes_changed'] is False
+          assert s['portfolio_logic_changed'] is False
+          assert s['scalar_confidence_mapping_created'] is False
+          assert s['confidence_thresholds_created'] is False
+          assert s['missing_evidence'] == 'unknown_or_insufficient_not_neutral'
+          assert s['phase2_phase3_holdout'] == 'spent_not_used_to_tune_phase4_weights_or_thresholds'
+          assert s['asset_scope'] == 'stocks_only_until_non_stock_evidence_is_validated'
+          assert s['stock_evidence_applied_to_crypto'] is False
+          assert s['volatility_current_application'] == 'scale_incompatible_fail_closed'
+          assert s['volatility_conversion_applied'] is False
+
+          current = report['current']
+          assert current['scanner_rows_total'] == 209
+          assert current['scanner_rows'] == 203
+          assert current['excluded_unsupported_crypto_rows'] == 6
+          assert len(current['excluded_unsupported_crypto_symbols']) == 6
+          assert len(current['rows']) == 203 * 4
+          assert all(row['regime']['counted_as_model_vote'] is False for row in current['rows'])
+          assert all(row['model_agreement']['probability_counted_as_independent_model'] is False for row in current['rows'])
+          assert all(row['model_agreement']['low_risk_counted_as_positive_return_support'] is False for row in current['rows'])
+          assert all(row['model_agreement']['regime_counted_as_model_vote'] is False for row in current['rows'])
+          assert all(
+              all(feature.get('feature') != 'volatility' for feature in row['risk'].get('features', []))
+              for row in current['rows']
+          )
+          assert current['risk_metric_applicability']['volatility']['status'] == 'scale_incompatible'
+          assert current['risk_metric_applicability']['volatility']['conversion_applied'] is False
+          assert report['next_validation_gate']['phase'] == '4E_walk_forward_reliability_validation'
+
+          scale = json.loads(Path('artifacts/research/confidence_vnext_risk_scale_4.json').read_text(encoding='utf-8'))
+          vol = scale['features']['volatility']
+          assert vol['recent_to_pre_median_ratio'] > 10
+          assert vol['current_to_pre_median_ratio'] > 10
+
+          print('AS_OF', current['as_of'])
+          print('SCANNER_ROWS', current['scanner_rows'])
+          print('EXCLUDED_CRYPTO', current['excluded_unsupported_crypto_symbols'])
+          print('AGREEMENT_COUNTS', json.dumps(report['agreement_counts'], sort_keys=True))
+          print('PIT_SOURCE_CHECKS', json.dumps(current['pit_source_checks'], sort_keys=True))
+          print('VOLATILITY_SCALE_GUARD', json.dumps(current['risk_metric_applicability']['volatility'], sort_keys=True))
+          PY
+
+      - name: Upload Phase 4B-D reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: confidence-vnext-research-4
+          path: |
+            artifacts/research/confidence_vnext_research_4.json
+            artifacts/research/confidence_vnext_risk_scale_4.json
+          if-no-files-found: error
