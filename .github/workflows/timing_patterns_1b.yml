@@ -48,13 +48,19 @@ jobs:
           print('COVERAGE', json.dumps(p['coverage'], sort_keys=True))
           for h in ('5','20','40','60'):
               s=p['horizons'][h]
-              cont=s['continuous_changes']
-              ranked=sorted(cont.items(), key=lambda kv: abs(kv[1].get('spearman') or 0), reverse=True)[:8]
+              discovery=s['continuous_changes'].get('discovery', {})
+              validation=s['continuous_changes'].get('validation', {})
+              d_ranked=sorted(discovery.items(), key=lambda kv: abs(kv[1].get('spearman') or 0), reverse=True)[:8]
+              v_ranked=sorted(validation.items(), key=lambda kv: abs(kv[1].get('spearman') or 0), reverse=True)[:8]
+              pat=s['patterns']
               print('HORIZON',h)
-              print('CONT_TOP', json.dumps(ranked, sort_keys=True))
-              print('PATTERN_POS', json.dumps(s['validated_patterns'].get('top_positive', [])[:8], sort_keys=True))
-              print('PATTERN_NEG', json.dumps(s['validated_patterns'].get('top_negative', [])[:8], sort_keys=True))
-              print('CATEGORICAL', json.dumps(s['categorical_states'], sort_keys=True))
+              print('CONT_DISCOVERY_TOP', json.dumps(d_ranked, sort_keys=True))
+              print('CONT_VALIDATION_TOP', json.dumps(v_ranked, sort_keys=True))
+              print('FROZEN_POS', json.dumps(pat.get('frozen_positive', [])[:8], sort_keys=True))
+              print('FROZEN_NEG', json.dumps(pat.get('frozen_negative', [])[:8], sort_keys=True))
+              print('VALIDATION_CONFIRMED', json.dumps(pat.get('validation_confirmed', [])[:12], sort_keys=True))
+              print('CATEGORICAL_DISCOVERY', json.dumps(s['categorical_states'].get('discovery', {}), sort_keys=True))
+              print('CATEGORICAL_VALIDATION', json.dumps(s['categorical_states'].get('validation', {}), sort_keys=True))
           PY
       - name: Upload report
         uses: actions/upload-artifact@v4
