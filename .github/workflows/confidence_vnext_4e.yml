@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: phase4e-confidence-shadow-${{ github.event.pull_request.number || 'main' }}
@@ -26,6 +27,8 @@ jobs:
   shadow:
     if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
+    outputs:
+      process: ${{ steps.bind.outputs.process }}
     steps:
       - name: Checkout source
         uses: actions/checkout@v6
@@ -33,52 +36,98 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
 
-      - name: Bind workflow_run to exact scanner publication
-        if: github.event_name == 'workflow_run'
-        env:
-          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
-          TRIGGER_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      - name: Bind to oldest unclaimed scanner publication
+        id: bind
+        if: github.event_name != 'pull_request'
         run: |
           git fetch origin main --force
           python - <<'PY'
+          import csv
+          import io
           import json
           import os
           import subprocess
 
-          expected = f"github-{os.environ['TRIGGER_RUN_ID']}-{os.environ['TRIGGER_RUN_ATTEMPT']}"
-          shas = subprocess.check_output(
-              ['git', 'rev-list', 'origin/main', '--', 'artifacts/research/history_metadata.json'],
-              text=True,
-          ).splitlines()
-          match = None
-          for sha in shas:
+          def git_text(*args, allow_fail=False):
               try:
-                  raw = subprocess.check_output(
-                      ['git', 'show', f'{sha}:artifacts/research/history_metadata.json'],
-                      text=True,
-                      stderr=subprocess.DEVNULL,
-                  )
-                  metadata = json.loads(raw)
-              except (subprocess.CalledProcessError, json.JSONDecodeError):
+                  return subprocess.check_output(['git', *args], text=True, stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          claimed_run_ids = set()
+          raw_claims = git_text(
+              'show',
+              'origin/main:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
+              allow_fail=True,
+          )
+          if raw_claims:
+              for row in csv.DictReader(io.StringIO(raw_claims)):
+                  run_id = str(row.get('run_id') or '').strip()
+                  if run_id:
+                      claimed_run_ids.add(run_id)
+
+          candidates = []
+          shas = git_text(
+              'rev-list', '--reverse', 'origin/main', '--',
+              'artifacts/research/history_metadata.json',
+          ).splitlines()
+          for sha in shas:
+              # The prospective stream starts only after Phase 4E exists in main.
+              if git_text('cat-file', '-e', f'{sha}:.github/workflows/confidence_vnext_4e.yml', allow_fail=True) is None:
                   continue
-              run_id = ((metadata.get('daily_run') or {}).get('run_id'))
-              if run_id == expected:
-                  match = sha
-                  break
-          if match is None:
-              raise SystemExit(f'No scanner publication commit found for EXPECTED_RUN_ID={expected}')
-          subprocess.check_call(['git', 'checkout', '--detach', match])
-          metadata = json.loads(open('artifacts/research/history_metadata.json', encoding='utf-8').read())
-          actual = ((metadata.get('daily_run') or {}).get('run_id'))
-          if actual != expected:
-              raise SystemExit(f'Exact publication verification failed: {actual!r} != {expected!r}')
-          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
-              handle.write(f'EXPECTED_RUN_ID={expected}\n')
-              handle.write(f'TRIGGER_PUBLICATION_COMMIT={match}\n')
-          print('Bound Phase 4E to', match, expected)
+              raw = git_text('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
+              if not raw:
+                  continue
+              try:
+                  metadata = json.loads(raw)
+              except json.JSONDecodeError:
+                  continue
+              daily = metadata.get('daily_run') or {}
+              run_id = str(daily.get('run_id') or '').strip()
+              if (
+                  metadata.get('latest_run_complete') is True
+                  and daily.get('scanner_status') == 'success'
+                  and run_id
+                  and run_id not in claimed_run_ids
+              ):
+                  candidates.append((sha, run_id, str(metadata.get('snapshot_id') or '')))
+
+          output = os.environ['GITHUB_OUTPUT']
+          env_file = os.environ['GITHUB_ENV']
+          if not candidates:
+              with open(output, 'a', encoding='utf-8') as handle:
+                  handle.write('process=false\n')
+                  handle.write('backlog_count=0\n')
+              with open(env_file, 'a', encoding='utf-8') as handle:
+                  handle.write('PHASE4E_PROCESS=0\n')
+              print('No unclaimed scanner publication exists; Phase 4E is a clean no-op.')
+              raise SystemExit(0)
+
+          sha, run_id, snapshot_id = candidates[0]
+          subprocess.check_call(['git', 'checkout', '--detach', sha])
+          selected = json.loads(open('artifacts/research/history_metadata.json', encoding='utf-8').read())
+          actual_run_id = str(((selected.get('daily_run') or {}).get('run_id')) or '')
+          if actual_run_id != run_id:
+              raise SystemExit(f'Publication binding mismatch: {actual_run_id!r} != {run_id!r}')
+
+          with open(output, 'a', encoding='utf-8') as handle:
+              handle.write('process=true\n')
+              handle.write(f'bound_run_id={run_id}\n')
+              handle.write(f'bound_snapshot_id={snapshot_id}\n')
+              handle.write(f'bound_commit={sha}\n')
+              handle.write(f'backlog_count={max(0, len(candidates) - 1)}\n')
+          with open(env_file, 'a', encoding='utf-8') as handle:
+              handle.write('PHASE4E_PROCESS=1\n')
+              handle.write(f'BOUND_RUN_ID={run_id}\n')
+              handle.write(f'BOUND_PUBLICATION_COMMIT={sha}\n')
+          print('Bound Phase 4E to oldest unclaimed publication:', sha, run_id, snapshot_id)
+          print('Additional unclaimed publications behind it:', max(0, len(candidates) - 1))
           PY
 
       - name: Set up Python
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         uses: actions/setup-python@v6
         with:
           python-version: '3.10'
@@ -111,11 +160,13 @@ jobs:
           PY
 
       - name: Install
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e '.[test]'
 
       - name: Phase 4E tests
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: |
           python -m pytest -q \
             tests/test_confidence_vnext_prospective.py \
@@ -123,23 +174,28 @@ jobs:
             tests/test_confidence_vnext_research_guards.py
 
       - name: Regenerate Phase 3 evidence for current snapshot
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: python scripts/run_risk_vnext_3.py --output artifacts/research/risk_vnext_3.json
 
       - name: Audit current versus historical risk metric scales
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: python scripts/audit_phase4_risk_scale.py
 
       - name: Build current guarded Phase 4 registry
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: |
           python scripts/run_confidence_vnext_research_4.py \
             --output "$RUNNER_TEMP/confidence_vnext_current_4.json"
 
       - name: Preserve exact triggering claim inputs
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: |
           cp artifacts/research/latest_scanner.csv "$RUNNER_TEMP/trigger_latest.csv"
           cp artifacts/research/history_metadata.json "$RUNNER_TEMP/trigger_metadata.json"
           cp artifacts/research/price_backfill.csv "$RUNNER_TEMP/claim_prices.csv"
 
       - name: Select shadow destinations
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         env:
           EVENT_NAME: ${{ github.event_name }}
         run: |
@@ -154,7 +210,7 @@ jobs:
           fi
 
       - name: Restore latest append-only shadow archives
-        if: github.event_name == 'workflow_run'
+        if: github.event_name != 'pull_request' && env.PHASE4E_PROCESS == '1'
         run: |
           git fetch origin main --force
           for path in \
@@ -171,7 +227,7 @@ jobs:
           done
 
       - name: Determine unresolved claim symbols
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && env.PHASE4E_PROCESS == '1'
         run: |
           python - <<'PY'
           import os
@@ -202,7 +258,7 @@ jobs:
           PY
 
       - name: Refresh prices for unresolved removed symbols
-        if: github.event_name != 'pull_request' && env.OUTSTANDING_SYMBOLS != '0'
+        if: github.event_name != 'pull_request' && env.PHASE4E_PROCESS == '1' && env.OUTSTANDING_SYMBOLS != '0'
         run: |
           mapfile -t SYMBOLS < "$RUNNER_TEMP/outstanding_symbols.txt"
           python scripts/prefetch_market_history.py "${SYMBOLS[@]}"
@@ -213,6 +269,7 @@ jobs:
           PY
 
       - name: Run Phase 4E shadow recorder
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: |
           python scripts/run_confidence_vnext_prospective_4e.py \
             --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
@@ -242,6 +299,7 @@ jobs:
           test "$OUTCOMES_BEFORE" = "$(sha256sum "$OUTCOMES_PATH" | cut -d' ' -f1)"
 
       - name: Validate Phase 4E contract
+        if: github.event_name == 'pull_request' || env.PHASE4E_PROCESS == '1'
         run: |
           python - <<'PY'
           import json, os
@@ -280,7 +338,7 @@ jobs:
           PY
 
       - name: Stage shadow publication payload
-        if: github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+        if: github.event_name != 'pull_request' && env.PHASE4E_PROCESS == '1'
         uses: actions/upload-artifact@v4
         with:
           name: phase4e-shadow-publication
@@ -292,7 +350,7 @@ jobs:
 
   publish:
     needs: shadow
-    if: github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: needs.shadow.result == 'success' && needs.shadow.outputs.process == 'true' && (github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
     concurrency:
       group: scanner-daily-publication
@@ -321,4 +379,67 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Phase 4E shadow update [skip ci]'
             git push origin HEAD:main
+          fi
+
+      - name: Continue Phase 4E catch-up queue if publications remain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main --force
+          REMAINING=$(python - <<'PY'
+          import csv
+          import io
+          import json
+          import subprocess
+
+          def git_text(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(['git', *args], text=True, stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          claimed = set()
+          raw_claims = git_text(
+              'show',
+              'origin/main:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
+              allow_fail=True,
+          )
+          if raw_claims:
+              for row in csv.DictReader(io.StringIO(raw_claims)):
+                  run_id = str(row.get('run_id') or '').strip()
+                  if run_id:
+                      claimed.add(run_id)
+
+          remaining = 0
+          shas = git_text(
+              'rev-list', '--reverse', 'origin/main', '--',
+              'artifacts/research/history_metadata.json',
+          ).splitlines()
+          for sha in shas:
+              if git_text('cat-file', '-e', f'{sha}:.github/workflows/confidence_vnext_4e.yml', allow_fail=True) is None:
+                  continue
+              raw = git_text('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
+              if not raw:
+                  continue
+              try:
+                  metadata = json.loads(raw)
+              except json.JSONDecodeError:
+                  continue
+              daily = metadata.get('daily_run') or {}
+              run_id = str(daily.get('run_id') or '').strip()
+              if (
+                  metadata.get('latest_run_complete') is True
+                  and daily.get('scanner_status') == 'success'
+                  and run_id
+                  and run_id not in claimed
+              ):
+                  remaining += 1
+          print(remaining)
+          PY
+          )
+          echo "Unclaimed Phase 4E scanner publications remaining: $REMAINING"
+          if [ "$REMAINING" -gt 0 ]; then
+            gh workflow run confidence_vnext_4e.yml --ref main
           fi
