@@ -442,7 +442,11 @@ def _spearman_pair(frame: pd.DataFrame, left: str, right: str) -> dict[str, obje
     ).dropna()
     if len(values) < 3 or values["left"].nunique() < 2 or values["right"].nunique() < 2:
         return {"N": int(len(values)), "spearman": None}
-    rho = values["left"].corr(values["right"], method="spearman")
+    # Spearman is Pearson correlation of ranks. Do it explicitly so Phase 4
+    # does not acquire an undeclared SciPy dependency through pandas.
+    left_rank = values["left"].rank(method="average")
+    right_rank = values["right"].rank(method="average")
+    rho = left_rank.corr(right_rank)
     return {"N": int(len(values)), "spearman": None if pd.isna(rho) else float(rho)}
 
 
