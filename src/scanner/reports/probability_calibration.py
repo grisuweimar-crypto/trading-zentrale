@@ -123,19 +123,32 @@ def _block_bootstrap_uncertainty(
     """Resample complete horizon-length time blocks in sync.
 
     Occurrence and baseline rows use the same resampled date blocks, preserving
-    dependence created by overlapping forward windows. Returns unavailable
-    intervals when fewer than two complete blocks exist or resampling is disabled.
+    dependence created by overlapping forward windows. Robust intervals are
+    unavailable unless at least two complete baseline blocks and at least two
+    occurrence-bearing blocks exist.
     """
     v = values[["obs_date", target]].dropna().copy()
     b = baseline[["obs_date", target]].dropna().copy()
     blocks = _horizon_date_blocks(b, horizon)
+    unavailable = {
+        "mean_peer_excess_95": None,
+        "probability_advantage_95": None,
+        "block_count": len(blocks),
+        "occurrence_block_count": 0,
+    }
     if config.cluster_bootstrap_reps <= 0 or len(blocks) < 2 or v.empty or b.empty:
-        return {"mean_peer_excess_95": None, "probability_advantage_95": None, "block_count": len(blocks)}
+        return unavailable
 
     v["obs_date"] = pd.to_datetime(v["obs_date"])
     b["obs_date"] = pd.to_datetime(b["obs_date"])
     v_by_block = [v.loc[v["obs_date"].isin(days), target].to_numpy(dtype=float) for days in blocks]
     b_by_block = [b.loc[b["obs_date"].isin(days), target].to_numpy(dtype=float) for days in blocks]
+    occurrence_block_count = sum(1 for part in v_by_block if len(part))
+    if occurrence_block_count < 2:
+        return {
+            **unavailable,
+            "occurrence_block_count": occurrence_block_count,
+        }
 
     rng = np.random.default_rng(seed)
     mean_estimates: list[float] = []
@@ -167,6 +180,7 @@ def _block_bootstrap_uncertainty(
         "mean_peer_excess_95": interval(mean_estimates),
         "probability_advantage_95": interval(advantage_estimates),
         "block_count": len(blocks),
+        "occurrence_block_count": occurrence_block_count,
     }
 
 
@@ -211,6 +225,7 @@ def _probability_stats(
         "block_bootstrap_mean_peer_excess_95": robust["mean_peer_excess_95"],
         "block_bootstrap_probability_advantage_95": robust["probability_advantage_95"],
         "bootstrap_block_count": int(robust["block_count"]),
+        "bootstrap_occurrence_block_count": int(robust["occurrence_block_count"]),
         "bootstrap_block_length_sessions": int(horizon),
         "raw_positive_peer_excess_rate": float(raw_rate),
         "raw_rate_wilson_95_iid_diagnostic": _wilson_interval(successes, n),
@@ -224,7 +239,7 @@ def _probability_stats(
         "prior_beta": shrink["prior_beta"],
         "approx_binomial_p_iid_diagnostic": p_value,
         "bonferroni_adjusted_p_iid_diagnostic": bonferroni,
-        "uncertainty_note": "strong-validation decisions use horizon-aware block bootstrap; Wilson/Beta intervals and binomial p-values are iid diagnostics only",
+        "uncertainty_note": "strong-validation decisions use horizon-aware block bootstrap with at least two occurrence-bearing blocks; Wilson/Beta intervals and binomial p-values are iid diagnostics only",
     }
 
 
