@@ -4,22 +4,36 @@ Research-only. Phase 2 does **not** change scanner scoring, R0-R5, the daily wat
 
 ## Goal
 
-Phase 1A separated cross-sectional selection quality from within-stock timing. Phase 1B discovered timing patterns using a purged discovery window and a later holdout. Phase 2 keeps that separation and asks a different question:
+Phase 1A separated cross-sectional selection quality from within-stock timing. Phase 1B discovered timing patterns using a purged discovery window and a later holdout. Phase 2 keeps that separation and asks:
 
-> Given a quality band or a frozen timing pattern, how large is the historically observed probability of outperforming the validated peer benchmark, and how uncertain is that estimate?
+> Given a quality band or a timing pattern frozen by Phase 1B, how large is the historically observed probability of outperforming the validated peer benchmark, and how uncertain is that estimate?
 
-The target is `peer_excess > 0`, where peer excess is the same leave-one-symbol-out, same-currency peer comparison used by the corrected Phase 1 research. Returns use adjusted close prices.
+The target is `peer_excess > 0`, using the corrected leave-one-symbol-out peer benchmark and adjusted-close returns.
+
+## Frozen Phase 1B candidates
+
+Phase 2 does **not** call the Phase 1B discovery search again. The corrected Phase 1B candidates are frozen in:
+
+`artifacts/research/timing_patterns_1b_frozen.json`
+
+This is important both statistically and operationally:
+
+- new holdout observations cannot change which patterns were selected;
+- Phase 2 remains a calibration layer rather than another discovery pass;
+- the expensive combinatorial Phase 1B search is not repeated for every Phase 2 run.
+
+The frozen catalog is tied to the original discovery window. Phase 2 rejects it if that window does not match its configured discovery window.
 
 ## Windows
 
-Default windows stay unchanged:
+Defaults remain:
 
 - stable history start: 2026-04-15
-- discovery: 2026-04-15 through 2026-07-31, with the horizon target required to finish by the discovery cutoff
+- discovery: 2026-04-15 through 2026-07-31, with each horizon target required to finish by the discovery cutoff
 - validation: 2026-08-01 onward
 - horizons: 5 / 20 / 40 / 60 trading sessions
 
-Validation is never used to select timing patterns. Phase 2 first reuses the frozen Phase 1B candidates and then calibrates them.
+Each horizon reports validation maturity explicitly. A horizon with no completed validation targets is `not_yet_mature`, not a failed signal.
 
 ## Selection calibration
 
@@ -27,11 +41,9 @@ Selection remains a cross-sectional quality question. Phase 2 reports the score-
 
 For each band and window the report contains:
 
-- raw positive peer-excess rate
-- Wilson 95% interval
+- raw positive peer-excess rate and Wilson 95% interval
 - baseline positive peer-excess rate
-- Beta-shrunk positive peer-excess probability
-- approximate 95% interval around the shrunk probability
+- Beta-shrunk positive peer-excess probability and approximate 95% interval
 - probability advantage versus the window baseline
 - mean and median peer excess
 - day-cluster bootstrap interval for mean peer excess
@@ -39,31 +51,42 @@ For each band and window the report contains:
 
 ## Timing-pattern calibration
 
-The Phase 1B discovery algorithm remains responsible for freezing candidates. Phase 2 does not search the holdout for replacements.
+For every frozen pattern Phase 2 reports discovery and validation statistics and separates several evidence levels:
 
-For every frozen pattern it reports the same probability and peer-excess statistics separately for discovery and validation, plus:
+- `alpha_direction_confirmed`: mean peer excess in validation has the Phase 1B discovery direction
+- `probability_direction_confirmed`: probability advantage has that same direction
+- `joint_direction_confirmed`: both are true and the validation sample meets minimum N
+- `alpha_interval_confirmed`: clustered alpha interval stays entirely on the expected side of zero
+- `probability_interval_confirmed`: probability interval stays entirely on the expected side of the validation baseline
+- `strong_validation`: sufficient N plus joint direction plus both interval checks
 
-- whether validation has the configured minimum number of occurrences
-- whether validation confirms the discovery direction
-- approximate binomial p-value versus the window baseline
-- Bonferroni-adjusted discovery diagnostic using the number of discovery candidates searched
+The report therefore no longer treats a matching mean-alpha sign alone as proof that the probability layer is confirmed.
 
-The p-values are deliberately labelled diagnostic: event independence is not assumed to be proven. Day-cluster bootstrap intervals are included because scanner observations on the same date can share market shocks.
+Approximate binomial and Bonferroni-adjusted values remain diagnostic only; independence is not assumed. Day-cluster bootstrap intervals account for common same-day market shocks more conservatively than treating every row as independent.
 
 ## Shrinkage
 
-The raw hit rate is not presented as if it were perfectly known. A Beta prior is centred on the contemporaneous baseline positive peer-excess rate. Default prior strength is 20 pseudo-observations. Small samples are therefore pulled more strongly toward the baseline than large samples.
+The raw hit rate is not treated as perfectly known. A Beta prior is centred on the contemporaneous baseline rate with default strength 20. A 0.5 shape floor keeps the prior proper even when a finite window's baseline rate is exactly 0 or 1. Configured prior strengths below 1 are rejected.
 
-This is intentionally transparent and deterministic rather than a black-box machine-learning model.
+## Automation
 
-## Run
+The Phase 2 workflow runs:
+
+- on pull requests affecting the Phase 2 layer,
+- manually,
+- downstream of a successful `Scanner_vNext Autopilot` run,
+- and once nightly as a fallback.
+
+A freshness gate compares the scanner `snapshot_id` in `history_metadata.json` with the source snapshot stored in the last Phase 2 report. Repeated catch-up scanner workflows therefore skip the expensive calibration when no new research snapshot exists.
+
+Successful non-PR runs persist the current report to:
+
+`artifacts/research/probability_calibration_2.json`
+
+## Run locally
 
 ```bash
 python scripts/run_probability_calibration_2.py
 ```
 
-Output:
-
-`artifacts/research/probability_calibration_2.json`
-
-The first Phase 2 implementation is a research layer only. Integration into the scanner UI or daily watch should happen only after the calibration output itself has passed tests and been reviewed on the full corrected history.
+Phase 2 remains a research layer. UI / Depot-Watch interpretation belongs to the later interpretation phase after this calibration layer is accepted.
