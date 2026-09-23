@@ -38,7 +38,7 @@ class MarketHistoryTests(unittest.TestCase):
             self.assertEqual(float(avav.loc[avav["date"] == "2026-01-02", "close"].iloc[0]), 99)
             self.assertFalse(result.duplicated(["date", "symbol"]).any())
 
-    def test_second_prefetch_does_not_rewrite_existing_cache(self):
+    def test_second_prefetch_preserves_raw_cache_while_migrating_schema(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             universe = root / "data/inputs/universe_master.csv"
@@ -51,14 +51,23 @@ class MarketHistoryTests(unittest.TestCase):
                 "2026-01-02,AVAV,USD,99,100,98,99,10\n",
                 encoding="utf-8",
             )
-            before = target.read_bytes()
             downloaded = pd.DataFrame([{
                 "date": "2026-01-02", "symbol": "AVAV", "open": 9,
                 "high": 9, "low": 9, "close": 9, "volume": 9,
             }])
             with patch("scripts.prefetch_market_history._download", return_value=downloaded):
-                prefetch_history(root, ("AVAV",), minimum_days=1, output=target)
-            self.assertEqual(before, target.read_bytes())
+                result = prefetch_history(root, ("AVAV",), minimum_days=1, output=target)
+
+            self.assertIn("adj_close", result.columns)
+            row = result.iloc[0]
+            self.assertEqual(float(row["open"]), 99)
+            self.assertEqual(float(row["high"]), 100)
+            self.assertEqual(float(row["low"]), 98)
+            self.assertEqual(float(row["close"]), 99)
+            self.assertEqual(float(row["volume"]), 10)
+            self.assertTrue(pd.isna(row["adj_close"]) or row["adj_close"] == "")
+            header = target.read_text(encoding="utf-8").splitlines()[0]
+            self.assertIn("adj_close", header)
 
     def test_public_analysis_export_has_provenance_and_stable_schema(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -72,8 +81,8 @@ class MarketHistoryTests(unittest.TestCase):
             source = root / "artifacts/market_data/yahoo_ohlcv.csv"
             source.parent.mkdir(parents=True)
             source.write_text(
-                "date,symbol,currency,open,high,low,close,volume\n"
-                "2026-01-02,AVAV,USD,1,2,0.5,1.5,10\n",
+                "date,symbol,currency,open,high,low,close,adj_close,volume,retrieved_at\n"
+                "2026-01-02,AVAV,USD,1,2,0.5,1.5,1.5,10,2026-01-03T00:00:00+00:00\n",
                 encoding="utf-8",
             )
             target = publish_history_analysis(root, policy=ValidationPolicy(expected_symbol_count=1))
@@ -85,6 +94,7 @@ class MarketHistoryTests(unittest.TestCase):
             prices = pd.read_csv(root / "artifacts/research/price_backfill.csv")
             self.assertEqual(prices["symbol"].tolist(), ["AVAV"])
             self.assertIn("open", prices.columns)
+            self.assertIn("adj_close", prices.columns)
             self.assertNotIn("score", prices.columns)
 
 
