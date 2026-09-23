@@ -78,6 +78,12 @@ jobs:
             tests/test_confidence_vnext_research.py \
             tests/test_confidence_vnext_research_guards.py
 
+      - name: Regenerate Phase 3 evidence for current snapshot
+        run: python scripts/run_risk_vnext_3.py --output artifacts/research/risk_vnext_3.json
+
+      - name: Audit current versus historical risk metric scales
+        run: python scripts/audit_phase4_risk_scale.py
+
       - name: Build current guarded Phase 4 registry
         run: |
           python scripts/run_confidence_vnext_research_4.py \
