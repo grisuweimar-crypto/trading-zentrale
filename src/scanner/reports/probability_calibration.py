@@ -62,13 +62,7 @@ def _wilson_interval(successes: int, n: int, z: float = 1.959963984540054) -> li
 
 
 def _beta_shrinkage(successes: int, n: int, baseline_rate: float, prior_strength: float) -> dict:
-    """Shrink a binomial rate toward the baseline using a proper Beta prior.
-
-    A Beta distribution requires both shape parameters to be strictly positive.
-    A 0/1 baseline would otherwise produce an improper prior. We therefore use a
-    0.5 shape floor (Jeffreys half-count) while preserving the requested baseline
-    prior mass wherever possible. Strengths must be finite and at least 1.
-    """
+    """Shrink a binomial rate toward the baseline using a proper Beta prior."""
     strength = float(prior_strength)
     if not isfinite(strength) or strength < 1.0:
         raise ValueError("prior_strength must be finite and >= 1.0 for a proper Beta prior")
@@ -102,29 +96,132 @@ def _normal_binomial_p(successes: int, n: int, baseline_rate: float) -> float | 
     return float(erfc(z / sqrt(2.0)))
 
 
-def _cluster_bootstrap_mean(values: pd.DataFrame, target: str, reps: int, seed: int) -> list[float] | None:
-    work = values[["obs_date", target]].dropna().copy()
-    if work.empty:
-        return None
-    groups = [g[target].to_numpy(dtype=float) for _, g in work.groupby("obs_date", sort=False)]
-    if len(groups) < 2 or reps <= 0:
-        mean = float(work[target].mean())
-        return [mean, mean]
-    rng = np.random.default_rng(seed)
-    count = len(groups)
-    means = np.empty(reps, dtype=float)
-    for i in range(reps):
-        chosen = rng.integers(0, count, size=count)
-        sample = np.concatenate([groups[j] for j in chosen])
-        means[i] = float(np.mean(sample))
-    low, high = np.quantile(means, [0.025, 0.975])
-    return [float(low), float(high)]
-
-
 def _stable_seed(base: int, *parts: object) -> int:
     digest = sha256("|".join(map(str, parts)).encode("utf-8")).digest()
     return int((base + int.from_bytes(digest[:4], "big")) % (2**32 - 1))
 
+
+def _effective_block_length(horizon: int) -> int:
+    return max(1, 2 * int(horizon))
+
+
+def _moving_date_blocks(
+    baseline: pd.DataFrame,
+    horizon: int,
+) -> tuple[list[pd.Timestamp], list[list[pd.Timestamp]], int]:
+    """Build circular moving date blocks using every eligible baseline date."""
+    block_length = _effective_block_length(horizon)
+    if horizon < 1 or baseline.empty or "obs_date" not in baseline.columns:
+        return [], [], block_length
+    dates = sorted(
+        pd.Timestamp(day)
+        for day in pd.to_datetime(baseline["obs_date"], errors="coerce").dropna().unique()
+    )
+    if not dates:
+        return [], [], block_length
+    span = min(block_length, len(dates))
+    blocks = [
+        [dates[(start + offset) % len(dates)] for offset in range(span)]
+        for start in range(len(dates))
+    ]
+    return dates, blocks, block_length
+
+
+def _occurrence_support_region_count(
+    values: pd.DataFrame,
+    baseline_dates: list[pd.Timestamp],
+    block_length: int,
+) -> int:
+    """Count time-separated occurrence support regions."""
+    if values.empty or not baseline_dates:
+        return 0
+    positions = {day: i for i, day in enumerate(baseline_dates)}
+    occurrence_positions = sorted(
+        positions[pd.Timestamp(day)]
+        for day in pd.to_datetime(values["obs_date"], errors="coerce").dropna().unique()
+        if pd.Timestamp(day) in positions
+    )
+    count = 0
+    last_start: int | None = None
+    for pos in occurrence_positions:
+        if last_start is None or pos - last_start >= block_length:
+            count += 1
+            last_start = pos
+    return count
+
+
+def _block_bootstrap_uncertainty(
+    values: pd.DataFrame,
+    baseline: pd.DataFrame,
+    target: str,
+    horizon: int,
+    config: Phase2Config,
+    seed: int,
+) -> dict:
+    """Circular moving-block uncertainty with synchronized baseline sampling.
+
+    The effective block length is twice the evaluated horizon. Occurrence
+    and baseline rows use the same sampled date sequence. Every eligible
+    baseline date is retained as a possible block start. Robust intervals
+    fail closed unless occurrences have support in at least two
+    time-separated block-length regions.
+    """
+    v = values[["obs_date", target]].dropna().copy()
+    b = baseline[["obs_date", target]].dropna().copy()
+    dates, blocks, block_length = _moving_date_blocks(b, horizon)
+    support_regions = _occurrence_support_region_count(v, dates, block_length)
+    diagnostics = {
+        "block_count": len(blocks),
+        "occurrence_block_count": support_regions,
+        "date_count": len(dates),
+        "block_length": block_length,
+    }
+    if config.cluster_bootstrap_reps <= 0 or len(blocks) < 2 or v.empty or b.empty or support_regions < 2:
+        return {"mean_peer_excess_95": None, "probability_advantage_95": None, **diagnostics}
+
+    v["obs_date"] = pd.to_datetime(v["obs_date"])
+    b["obs_date"] = pd.to_datetime(b["obs_date"])
+    v_by_day = {
+        day: v.loc[v["obs_date"].eq(day), target].to_numpy(dtype=float)
+        for day in dates
+    }
+    b_by_day = {
+        day: b.loc[b["obs_date"].eq(day), target].to_numpy(dtype=float)
+        for day in dates
+    }
+
+    rng = np.random.default_rng(seed)
+    mean_estimates: list[float] = []
+    advantage_estimates: list[float] = []
+    draws_per_rep = int(np.ceil(len(dates) / block_length))
+    for _ in range(config.cluster_bootstrap_reps):
+        chosen = rng.integers(0, len(blocks), size=draws_per_rep)
+        sampled_dates = [day for idx in chosen for day in blocks[idx]][: len(dates)]
+        v_parts = [v_by_day[day] for day in sampled_dates if len(v_by_day[day])]
+        b_parts = [b_by_day[day] for day in sampled_dates if len(b_by_day[day])]
+        if not v_parts or not b_parts:
+            continue
+        v_sample = np.concatenate(v_parts)
+        b_sample = np.concatenate(b_parts)
+        if len(v_sample) == 0 or len(b_sample) == 0:
+            continue
+        mean_estimates.append(float(v_sample.mean()))
+        baseline_rate = float((b_sample > 0).mean())
+        successes = int((v_sample > 0).sum())
+        shrink = _beta_shrinkage(successes, len(v_sample), baseline_rate, config.prior_strength)
+        advantage_estimates.append(float(shrink["posterior_mean"] - baseline_rate))
+
+    def interval(items: list[float]) -> list[float] | None:
+        if not items:
+            return None
+        low, high = np.quantile(np.asarray(items, dtype=float), [0.025, 0.975])
+        return [float(low), float(high)]
+
+    return {
+        "mean_peer_excess_95": interval(mean_estimates),
+        "probability_advantage_95": interval(advantage_estimates),
+        **diagnostics,
+    }
 
 def _probability_stats(
     occurrences: pd.DataFrame,
@@ -133,6 +230,7 @@ def _probability_stats(
     config: Phase2Config,
     seed_key: tuple[object, ...],
     comparisons: int = 1,
+    horizon: int = 1,
 ) -> dict | None:
     values = occurrences.dropna(subset=[target]).copy()
     base = baseline.dropna(subset=[target]).copy()
@@ -147,6 +245,14 @@ def _probability_stats(
     p_value = _normal_binomial_p(successes, n, baseline_rate)
     bonferroni = None if p_value is None else min(1.0, p_value * max(int(comparisons), 1))
     symbol_counts = values["symbol"].astype(str).value_counts() if "symbol" in values else pd.Series(dtype=int)
+    robust = _block_bootstrap_uncertainty(
+        values,
+        base,
+        target,
+        horizon,
+        config,
+        _stable_seed(config.random_seed, *seed_key),
+    )
 
     return {
         "N": n,
@@ -155,22 +261,26 @@ def _probability_stats(
         "top_symbol_share": float(symbol_counts.iloc[0] / n) if len(symbol_counts) else None,
         "mean_peer_excess": float(values[target].mean()),
         "median_peer_excess": float(values[target].median()),
-        "cluster_bootstrap_mean_peer_excess_95": _cluster_bootstrap_mean(
-            values, target, config.cluster_bootstrap_reps, _stable_seed(config.random_seed, *seed_key)
-        ),
+        "block_bootstrap_mean_peer_excess_95": robust["mean_peer_excess_95"],
+        "block_bootstrap_probability_advantage_95": robust["probability_advantage_95"],
+        "bootstrap_block_count": int(robust["block_count"]),
+        "bootstrap_occurrence_block_count": int(robust["occurrence_block_count"]),
+        "bootstrap_occurrence_support_region_count": int(robust["occurrence_block_count"]),
+        "bootstrap_date_count": int(robust.get("date_count", 0)),
+        "bootstrap_block_length_sessions": int(robust.get("block_length", _effective_block_length(horizon))),
         "raw_positive_peer_excess_rate": float(raw_rate),
-        "raw_rate_wilson_95": _wilson_interval(successes, n),
+        "raw_rate_wilson_95_iid_diagnostic": _wilson_interval(successes, n),
         "baseline_positive_peer_excess_rate": baseline_rate,
         "shrunk_positive_peer_excess_probability": shrink["posterior_mean"],
-        "shrunk_probability_interval_95": shrink["posterior_interval_95"],
+        "shrunk_probability_interval_95_iid_diagnostic": shrink["posterior_interval_95"],
         "probability_advantage_vs_baseline": float(shrink["posterior_mean"] - baseline_rate),
         "configured_prior_strength": shrink["configured_prior_strength"],
         "effective_prior_strength": shrink["effective_prior_strength"],
         "prior_alpha": shrink["prior_alpha"],
         "prior_beta": shrink["prior_beta"],
-        "approx_binomial_p": p_value,
-        "bonferroni_adjusted_p": bonferroni,
-        "multiple_testing_note": "normal approximation; Bonferroni diagnostic across the supplied comparison family, not an independence-proof significance test",
+        "approx_binomial_p_iid_diagnostic": p_value,
+        "bonferroni_adjusted_p_iid_diagnostic": bonferroni,
+        "uncertainty_note": "strong-validation decisions use a circular 2x-horizon moving-block bootstrap and require at least two time-separated occurrence support regions; Wilson/Beta intervals and binomial p-values are iid diagnostics only",
     }
 
 
@@ -220,6 +330,7 @@ def selection_calibration(
                 config,
                 ("selection", horizon, label, band),
                 max(len(bands), 1),
+                horizon,
             )
             if stats:
                 out[label][band] = stats
@@ -270,25 +381,23 @@ def _validation_flags(
     probability_direction = _direction(validation["probability_advantage_vs_baseline"])
     alpha_confirmed = alpha_direction == discovery_direction
     probability_confirmed = probability_direction == discovery_direction
-    baseline = validation["baseline_positive_peer_excess_rate"]
-    probability_interval = validation["shrunk_probability_interval_95"]
+    alpha_interval = validation.get("block_bootstrap_mean_peer_excess_95")
+    probability_interval = validation.get("block_bootstrap_probability_advantage_95")
+    alpha_interval_confirmed = _interval_supports_direction(alpha_interval, discovery_direction, 0.0)
+    probability_interval_confirmed = _interval_supports_direction(probability_interval, discovery_direction, 0.0)
     return {
         "validation_sufficient": sufficient,
         "alpha_direction_confirmed": alpha_confirmed,
         "probability_direction_confirmed": probability_confirmed,
         "joint_direction_confirmed": bool(sufficient and alpha_confirmed and probability_confirmed),
-        "alpha_interval_confirmed": _interval_supports_direction(
-            validation["cluster_bootstrap_mean_peer_excess_95"], discovery_direction, 0.0
-        ),
-        "probability_interval_confirmed": _interval_supports_direction(
-            probability_interval, discovery_direction, baseline
-        ),
+        "alpha_interval_confirmed": alpha_interval_confirmed,
+        "probability_interval_confirmed": probability_interval_confirmed,
         "strong_validation": bool(
             sufficient
             and alpha_confirmed
             and probability_confirmed
-            and _interval_supports_direction(validation["cluster_bootstrap_mean_peer_excess_95"], discovery_direction, 0.0)
-            and _interval_supports_direction(probability_interval, discovery_direction, baseline)
+            and alpha_interval_confirmed
+            and probability_interval_confirmed
         ),
     }
 
@@ -318,6 +427,7 @@ def timing_pattern_calibration(
             config,
             ("timing", horizon, "discovery", row.get("pattern")),
             comparisons,
+            horizon,
         )
         v_stats = _probability_stats(
             _pattern_occurrences(validation, prices, conditions, config, position_maps),
@@ -326,6 +436,7 @@ def timing_pattern_calibration(
             config,
             ("timing", horizon, "validation", row.get("pattern")),
             validation_comparisons,
+            horizon,
         )
         calibrated.append(
             {
@@ -402,6 +513,8 @@ def analyze(
             "selection_and_timing_kept_separate": True,
             "timing_candidates_are_frozen_from_phase1b": True,
             "probability_target": "future peer_excess > 0 versus validated leave-one-symbol-out peer benchmark",
+            "strong_validation_uncertainty": "circular moving observation-date block bootstrap with 2x-horizon blocks",
+            "iid_intervals_and_pvalues_are_diagnostics_only": True,
             "note": "Calibrated research probabilities; not deterministic buy/sell instructions.",
         },
         "config": config.__dict__,
@@ -422,6 +535,7 @@ def analyze(
         s_discovery, s_validation = _windowed_peer_events(selection_events, horizon, config)
         t_discovery, t_validation = _windowed_peer_events(timing_events, horizon, config)
         result["horizons"][str(horizon)] = {
+            "bootstrap": {"method": "circular_moving_observation_date_blocks", "base_horizon_sessions": int(horizon), "block_length_sessions": int(_effective_block_length(horizon)), "uses_all_eligible_dates": True, "minimum_occurrence_support_regions": 2},
             "validation_maturity": _validation_maturity(t_validation, horizon),
             "selection": selection_calibration(s_discovery, s_validation, horizon, config),
             "timing_patterns": timing_pattern_calibration(

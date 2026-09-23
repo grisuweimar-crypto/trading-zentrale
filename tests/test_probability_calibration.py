@@ -9,7 +9,10 @@ from scanner.reports import probability_calibration as module
 from scanner.reports.probability_calibration import (
     Phase2Config,
     _beta_shrinkage,
+    _block_bootstrap_uncertainty,
+    _moving_date_blocks,
     _probability_stats,
+    _validation_flags,
     _wilson_interval,
     analyze,
 )
@@ -104,16 +107,26 @@ def test_beta_shrinkage_uses_proper_prior_at_boundary_rates():
             _beta_shrinkage(1, 2, 0.5, invalid)
 
 
-def test_probability_stats_reports_raw_shrunk_and_cluster_uncertainty():
-    days = pd.to_datetime(["2026-05-01", "2026-05-01", "2026-05-08", "2026-05-08"])
+def test_moving_blocks_are_circular_and_keep_trailing_dates():
+    dates = pd.bdate_range("2026-05-01", periods=12)
+    frame = pd.DataFrame({"obs_date": dates})
+    used_dates, blocks, block_length = _moving_date_blocks(frame, 2)
+    assert block_length == 4
+    assert used_dates == list(dates)
+    assert len(blocks) == 12
+    assert blocks[-2] == [dates[-2], dates[-1], dates[0], dates[1]]
+
+
+def test_probability_stats_reports_horizon_robust_uncertainty():
+    dates = pd.bdate_range("2026-05-01", periods=20)
     baseline = pd.DataFrame(
         {
-            "obs_date": list(days) * 2,
-            "symbol": list("ABCDEFGH"),
-            "peer_excess_5t": [-0.2, 0.1, -0.1, 0.2, -0.05, 0.05, -0.3, 0.3],
+            "obs_date": dates.repeat(2),
+            "symbol": [f"S{i}" for i in range(40)],
+            "peer_excess_5t": [-0.2, 0.1] * 20,
         }
     )
-    occurrences = baseline.iloc[[1, 3, 5, 7]].copy()
+    occurrences = baseline.loc[baseline["peer_excess_5t"] > 0].copy()
     out = _probability_stats(
         occurrences,
         baseline,
@@ -121,13 +134,59 @@ def test_probability_stats_reports_raw_shrunk_and_cluster_uncertainty():
         Phase2Config(cluster_bootstrap_reps=50),
         ("test",),
         comparisons=4,
+        horizon=5,
     )
     assert out is not None
     assert out["raw_positive_peer_excess_rate"] == 1.0
     assert out["shrunk_positive_peer_excess_probability"] < 1.0
     assert out["probability_advantage_vs_baseline"] > 0
-    assert len(out["cluster_bootstrap_mean_peer_excess_95"]) == 2
-    assert out["bonferroni_adjusted_p"] == pytest.approx(min(1.0, out["approx_binomial_p"] * 4))
+    assert out["bootstrap_block_count"] == 20
+    assert out["bootstrap_occurrence_block_count"] >= 2
+    assert out["bootstrap_block_length_sessions"] == 10
+    assert len(out["block_bootstrap_mean_peer_excess_95"]) == 2
+    assert len(out["block_bootstrap_probability_advantage_95"]) == 2
+    assert "raw_rate_wilson_95_iid_diagnostic" in out
+    assert "approx_binomial_p_iid_diagnostic" in out
+
+
+def test_block_uncertainty_unavailable_without_two_temporal_support_regions():
+    dates = pd.bdate_range("2026-05-01", periods=9)
+    baseline = pd.DataFrame(
+        {
+            "obs_date": dates.repeat(2),
+            "peer_excess_5t": [-0.2, 0.1] * 9,
+        }
+    )
+    occurrences = baseline.loc[baseline["peer_excess_5t"] > 0].copy()
+    out = _block_bootstrap_uncertainty(
+        occurrences,
+        baseline,
+        "peer_excess_5t",
+        5,
+        Phase2Config(cluster_bootstrap_reps=50),
+        123,
+    )
+    assert out["occurrence_block_count"] < 2
+    assert out["mean_peer_excess_95"] is None
+    assert out["probability_advantage_95"] is None
+
+
+def test_strong_validation_uses_block_intervals_not_iid_diagnostics():
+    validation = {
+        "N": 100,
+        "mean_peer_excess": 0.02,
+        "probability_advantage_vs_baseline": 0.05,
+        "block_bootstrap_mean_peer_excess_95": [-0.01, 0.04],
+        "block_bootstrap_probability_advantage_95": [0.01, 0.09],
+        "shrunk_probability_interval_95_iid_diagnostic": [0.60, 0.75],
+        "baseline_positive_peer_excess_rate": 0.50,
+    }
+    flags = _validation_flags("positive", validation, 20)
+    assert flags["alpha_direction_confirmed"] is True
+    assert flags["probability_direction_confirmed"] is True
+    assert flags["probability_interval_confirmed"] is True
+    assert flags["alpha_interval_confirmed"] is False
+    assert flags["strong_validation"] is False
 
 
 def test_phase2_keeps_selection_and_timing_separate_and_uses_frozen_candidates():
@@ -144,7 +203,10 @@ def test_phase2_keeps_selection_and_timing_separate_and_uses_frozen_candidates()
     )
     assert result["semantics"]["selection_and_timing_kept_separate"] is True
     assert result["semantics"]["timing_candidates_are_frozen_from_phase1b"] is True
-    assert set(result["horizons"]["5"]) == {"validation_maturity", "selection", "timing_patterns"}
+    assert result["semantics"]["iid_intervals_and_pvalues_are_diagnostics_only"] is True
+    assert set(result["horizons"]["5"]) == {"bootstrap", "validation_maturity", "selection", "timing_patterns"}
+    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 40
+    assert result["horizons"]["20"]["bootstrap"]["method"] == "circular_moving_observation_date_blocks"
     timing = result["horizons"]["5"]["timing_patterns"]
     assert timing["candidate_source"] == "frozen_phase1b"
     assert timing["candidate_selection_uses_validation"] is False
@@ -155,10 +217,9 @@ def test_phase2_keeps_selection_and_timing_separate_and_uses_frozen_candidates()
         assert "probability_direction_confirmed" in row
         assert "strong_validation" in row
         validation = row["validation"]
-        if validation and validation["approx_binomial_p"] is not None:
-            assert validation["bonferroni_adjusted_p"] == pytest.approx(
-                min(1.0, validation["approx_binomial_p"] * 2)
-            )
+        if validation:
+            assert "block_bootstrap_probability_advantage_95" in validation
+            assert "bonferroni_adjusted_p_iid_diagnostic" in validation
 
 
 def test_analyze_rejects_nonfinite_prior_strength_before_research():
