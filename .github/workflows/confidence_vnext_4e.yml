@@ -1,0 +1,153 @@
+name: Phase 4E Confidence Prospective Shadow
+
+on:
+  pull_request:
+    branches:
+      - main
+      - phase4-confidence-vnext-research
+    paths:
+      - '.github/workflows/confidence_vnext_4e.yml'
+      - 'docs/confidence_vnext_4e.md'
+      - 'scripts/run_confidence_vnext_prospective_4e.py'
+      - 'src/scanner/reports/confidence_vnext_prospective.py'
+      - 'tests/test_confidence_vnext_prospective.py'
+  workflow_run:
+    workflows: ['Scanner_vNext Autopilot']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase4e-confidence-shadow
+  cancel-in-progress: false
+
+jobs:
+  shadow:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'workflow_run' && 'main' || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Verify Phase 4E PR scope
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          allowed = {
+              '.github/workflows/confidence_vnext_4e.yml',
+              'docs/confidence_vnext_4e.md',
+              'scripts/run_confidence_vnext_prospective_4e.py',
+              'src/scanner/reports/confidence_vnext_prospective.py',
+              'tests/test_confidence_vnext_prospective.py',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
+              text=True,
+          ).splitlines())
+          unexpected = sorted(changed - allowed)
+          if unexpected:
+              raise SystemExit(f'unexpected Phase 4E paths: {unexpected}')
+          if not changed:
+              raise SystemExit('Phase 4E PR has no changed files')
+          print('Phase 4E scope ok:', sorted(changed))
+          PY
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Phase 4E tests
+        run: |
+          python -m pytest -q \
+            tests/test_confidence_vnext_prospective.py \
+            tests/test_confidence_vnext_research.py \
+            tests/test_confidence_vnext_research_guards.py
+
+      - name: Build current guarded Phase 4 registry
+        run: |
+          python scripts/run_confidence_vnext_research_4.py \
+            --output "$RUNNER_TEMP/confidence_vnext_current_4.json"
+
+      - name: Select shadow destinations
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "CLAIMS_PATH=$RUNNER_TEMP/confidence_vnext_shadow_claims_4e.csv" >> "$GITHUB_ENV"
+            echo "OUTCOMES_PATH=$RUNNER_TEMP/confidence_vnext_shadow_outcomes_4e.csv" >> "$GITHUB_ENV"
+            echo "SUMMARY_PATH=$RUNNER_TEMP/confidence_vnext_shadow_4e.json" >> "$GITHUB_ENV"
+          else
+            echo "CLAIMS_PATH=artifacts/research/confidence_vnext_shadow_claims_4e.csv" >> "$GITHUB_ENV"
+            echo "OUTCOMES_PATH=artifacts/research/confidence_vnext_shadow_outcomes_4e.csv" >> "$GITHUB_ENV"
+            echo "SUMMARY_PATH=artifacts/research/confidence_vnext_shadow_4e.json" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run Phase 4E shadow recorder
+        run: |
+          python scripts/run_confidence_vnext_prospective_4e.py \
+            --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
+            --claims "$CLAIMS_PATH" \
+            --outcomes "$OUTCOMES_PATH" \
+            --summary "$SUMMARY_PATH"
+
+      - name: Verify idempotent claim/outcome archives
+        if: github.event_name == 'pull_request'
+        run: |
+          CLAIMS_BEFORE=$(sha256sum "$CLAIMS_PATH" | cut -d' ' -f1)
+          OUTCOMES_BEFORE=$(sha256sum "$OUTCOMES_PATH" | cut -d' ' -f1)
+          python scripts/run_confidence_vnext_prospective_4e.py \
+            --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
+            --claims "$CLAIMS_PATH" \
+            --outcomes "$OUTCOMES_PATH" \
+            --summary "$SUMMARY_PATH"
+          test "$CLAIMS_BEFORE" = "$(sha256sum "$CLAIMS_PATH" | cut -d' ' -f1)"
+          test "$OUTCOMES_BEFORE" = "$(sha256sum "$OUTCOMES_PATH" | cut -d' ' -f1)"
+
+      - name: Validate Phase 4E contract
+        run: |
+          python - <<'PY'
+          import json, os
+          import pandas as pd
+          claims = pd.read_csv(os.environ['CLAIMS_PATH'])
+          report = json.load(open(os.environ['SUMMARY_PATH'], encoding='utf-8'))
+          if 'score' in claims.columns:
+              raise SystemExit('raw scanner score must not be archived as Confidence strength')
+          if report['semantics']['production_confidence_changed'] is not False:
+              raise SystemExit('Phase 4E must remain research-only')
+          if report['semantics']['scalar_confidence_mapping_created'] is not False:
+              raise SystemExit('Phase 4E may not create scalar Confidence')
+          if report['validation_contract']['weights_or_thresholds_may_be_tuned_on_this_stream'] is not False:
+              raise SystemExit('prospective stream may not be used to tune its own mapping')
+          if report['status'] != 'collecting_prospective_evidence':
+              raise SystemExit('Phase 4E must fail closed while evidence is accumulating')
+          print('Phase 4E contract validated:', len(claims), 'claims')
+          PY
+
+      - name: Publish shadow artifacts
+        if: github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+        run: |
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add \
+            artifacts/research/confidence_vnext_shadow_claims_4e.csv \
+            artifacts/research/confidence_vnext_shadow_outcomes_4e.csv \
+            artifacts/research/confidence_vnext_shadow_4e.json
+          if ! git diff --cached --quiet; then
+            git commit -m '🧪 Phase 4E shadow update [skip ci]'
+            git push origin HEAD:main
+          fi
