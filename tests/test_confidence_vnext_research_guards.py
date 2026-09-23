@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from scanner.reports.confidence_vnext_research import _agreement_state
+from scanner.reports.confidence_vnext_research import _agreement_state, _assert_pit_sources
 from scanner.reports.confidence_vnext_research_guarded import (
     VOLATILITY_SCALE_BREAK_DATE,
     _assert_fail_closed_pit_sources,
@@ -11,6 +11,7 @@ from scanner.reports.confidence_vnext_research_guarded import (
     _crypto_symbols_from_latest,
     _guard_risk_data_quality,
     _guard_timing_data_quality,
+    _legacy_pit_compatible_inputs,
     _mark_registry_application_guard,
     _risk_state_without_incompatible_volatility,
 )
@@ -171,6 +172,17 @@ def test_pit_guard_accepts_parseable_not_after_current_sources():
     )
     assert result["phase2"]["not_after_current_scan"] is True
     assert result["phase3"]["not_after_current_scan"] is True
+
+
+def test_legacy_pit_recheck_accepts_aware_current_and_naive_sources_after_normalization():
+    latest, phase2, phase3 = _legacy_pit_compatible_inputs(
+        _latest_with_as_of("2026-09-23T17:00:00Z"),
+        {"source": {"as_of": "2026-09-23T16:00:00"}},
+        {"source": {"as_of": "2026-09-23T16:30:00"}},
+    )
+    checks = _assert_pit_sources(latest, phase2, phase3)
+    assert checks["phase2"]["not_after_current_scan"] is True
+    assert checks["phase3"]["not_after_current_scan"] is True
 
 
 def test_no_claim_timing_quality_requires_complete_provenance():
