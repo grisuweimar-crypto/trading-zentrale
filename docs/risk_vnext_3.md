@@ -52,7 +52,7 @@ For each available risk factor and horizon, the report includes:
 - low-risk outperformance rate versus high-risk outperformance rate
 - high-minus-low protection gaps
 - low-risk-minus-high-risk peer-alpha advantage
-- horizon-aware block-bootstrap uncertainty for group differences
+- circular moving-block bootstrap uncertainty for group differences
 
 Return/alpha and protection outcomes use independent available samples; neither is restricted to their complete-case intersection.
 
