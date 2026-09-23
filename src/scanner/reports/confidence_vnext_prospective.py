@@ -33,12 +33,13 @@ SCHEMA_VERSION = "phase4e_shadow_v1"
 CLAIM_COLUMNS = (
     "claim_id", "schema_version", "as_of", "generated_at", "run_id", "snapshot_id",
     "symbol", "currency", "horizon_sessions", "start_market_date", "start_adjusted_close",
-    "evidence_version", "evidence_fingerprint", "phase4_report_sha256", "phase2_sha256",
-    "phase3_sha256", "risk_scale_sha256", "phase2_source_as_of", "phase3_source_as_of",
-    "selection_band", "selection_state", "selection_direction", "timing_state",
-    "timing_direction", "timing_patterns", "risk_state", "agreement_state",
-    "agreement_conflicts", "return_claim_direction", "dq_selection_state",
-    "dq_timing_state", "dq_risk_state", "volatility_application_status",
+    "outcome_eligibility", "outcome_unavailable_reason", "evidence_version",
+    "evidence_fingerprint", "phase4_report_sha256", "phase2_sha256", "phase3_sha256",
+    "risk_scale_sha256", "phase2_source_as_of", "phase3_source_as_of", "selection_band",
+    "selection_state", "selection_direction", "timing_state", "timing_direction",
+    "timing_patterns", "risk_state", "agreement_state", "agreement_conflicts",
+    "return_claim_direction", "dq_selection_state", "dq_timing_state", "dq_risk_state",
+    "volatility_application_status",
 )
 OUTCOME_COLUMNS = (
     "claim_id", "schema_version", "as_of", "evaluated_at", "symbol", "currency",
@@ -136,23 +137,33 @@ def _current_stock_context(latest: pd.DataFrame) -> dict[str, dict[str, object]]
     }
 
 
-def _claim_start(prices: pd.DataFrame, symbol: str, as_of: str) -> tuple[str, float]:
+def _claim_start(prices: pd.DataFrame, symbol: str, as_of: str) -> tuple[str, float | None, str, str]:
+    """Freeze the contemporaneously available start session or fail closed per symbol.
+
+    A missing/invalid start is itself prospective Data-Quality evidence. It must
+    not abort the whole snapshot and must never be backfilled later.
+    """
     price = _price_rows(prices)
     group = price.loc[price["symbol"].astype(str).eq(symbol)].copy()
     if group.empty:
-        raise ValueError(f"claim-time price history missing for {symbol}")
+        return "", None, "unevaluable", "claim_time_price_history_missing"
     group["_date"] = pd.to_datetime(group["date"], errors="coerce")
     group["_adj"] = pd.to_numeric(group["adj_close"], errors="coerce")
     obs_date = pd.Timestamp(as_of).normalize()
     eligible = group.loc[group["_date"].notna() & group["_date"].le(obs_date)].sort_values("_date", kind="mergesort")
     if eligible.empty:
-        raise ValueError(f"claim-time start session missing for {symbol}")
+        return "", None, "unevaluable", "claim_time_start_session_missing"
     row = eligible.iloc[-1]
     start_date = pd.Timestamp(row["_date"]).normalize()
-    start_value = float(row["_adj"])
-    if (obs_date - start_date).days > 7 or not np.isfinite(start_value) or start_value <= 0:
-        raise ValueError(f"claim-time start session invalid for {symbol}")
-    return start_date.date().isoformat(), start_value
+    if (obs_date - start_date).days > 7:
+        return "", None, "unevaluable", "claim_time_start_session_stale"
+    try:
+        start_value = float(row["_adj"])
+    except (TypeError, ValueError):
+        return "", None, "unevaluable", "claim_time_adjusted_close_invalid"
+    if not np.isfinite(start_value) or start_value <= 0:
+        return "", None, "unevaluable", "claim_time_adjusted_close_invalid"
+    return start_date.date().isoformat(), start_value, "eligible", ""
 
 
 def build_claim_rows(
@@ -202,7 +213,7 @@ def build_claim_rows(
         horizon = int(row.get("horizon_sessions"))
         if horizon not in HORIZONS:
             raise ValueError(f"unsupported horizon: {horizon}")
-        start_market_date, start_adjusted_close = starts[symbol]
+        start_market_date, start_adjusted_close, outcome_eligibility, outcome_unavailable_reason = starts[symbol]
         selection = row.get("selection") or {}
         timing = row.get("timing") or {}
         risk = row.get("risk") or {}
@@ -219,6 +230,8 @@ def build_claim_rows(
             "horizon_sessions": horizon,
             "start_market_date": start_market_date,
             "start_adjusted_close": start_adjusted_close,
+            "outcome_eligibility": outcome_eligibility,
+            "outcome_unavailable_reason": outcome_unavailable_reason,
             "evidence_version": evidence_version,
             **fingerprints,
             "phase2_source_as_of": phase2_source_as_of,
@@ -298,6 +311,8 @@ def _price_groups(prices: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 
 def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str) -> dict[str, object] | None:
+    if str(claim.get("outcome_eligibility") or "") != "eligible":
+        return None
     evaluated = _required_utc_timestamp(evaluated_at, "evaluated_at")
     start_date = pd.Timestamp(_required_text(claim.get("start_market_date"), "start_market_date")).normalize()
     try:
@@ -437,8 +452,11 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
         c = claims.loc[pd.to_numeric(claims["horizon_sessions"], errors="coerce").eq(horizon)] if not claims.empty else claims
         o = outcomes.loc[pd.to_numeric(outcomes["horizon_sessions"], errors="coerce").eq(horizon)] if not outcomes.empty else outcomes
         d = derived.loc[pd.to_numeric(derived["horizon_sessions"], errors="coerce").eq(horizon)] if not derived.empty else derived
+        eligibility = c["outcome_eligibility"].astype(str) if len(c) else pd.Series(dtype=str)
         horizons[str(horizon)] = {
             "claims": int(len(c)),
+            "outcome_eligible_claims": int(eligibility.eq("eligible").sum()),
+            "outcome_unevaluable_claims": int(eligibility.eq("unevaluable").sum()),
             "mature_outcomes": int(len(o)),
             "derived_peer_labels": int(pd.to_numeric(d.get("peer_excess"), errors="coerce").notna().sum()) if len(d) else 0,
             "directional_peer_labels": int(pd.to_numeric(d.get("signed_peer_excess"), errors="coerce").notna().sum()) if len(d) else 0,
@@ -457,6 +475,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
             "research_only": True,
             "claims_are_immutable": True,
             "claim_time_start_session_is_frozen": True,
+            "missing_claim_time_start_remains_permanently_unevaluable": True,
             "raw_outcomes_are_append_only": True,
             "peer_labels_are_derived_not_frozen_early": True,
             "peer_cross_sections_use_exact_snapshot_cohorts": True,
@@ -469,8 +488,9 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
         "validation_contract": {
             "return_reliability": "compare pre-specified compatible versus single_model sign-normalized peer-excess reliability",
             "risk_reliability": "compare pre-specified risk-tension states on future adverse excursion and path max drawdown",
+            "data_quality_reliability": "retain claim-time outcome eligibility and unavailable reasons as prospective Data-Quality evidence",
             "peer_baseline": "derive inside each immutable scanner snapshot from all currently matured leave-one-symbol-out peers; same currency first, global fallback",
-            "outcome_maturity": "use the immutable claim-time start session and price; day-level target sessions mature only after the target UTC calendar day is complete",
+            "outcome_maturity": "use the immutable claim-time start session and price; claims without one remain permanently unevaluable; day-level target sessions mature only after the target UTC calendar day is complete",
             "fixed_cooldown_sessions": 5,
             "uncertainty": "circular moving observation-date blocks with effective length 2x horizon; full dates stay clustered",
             "minimum_independent_support": "fail closed until at least two time-separated support regions exist",
@@ -516,6 +536,7 @@ def run(
         "as_of": metadata.get("as_of"),
         "run_id": (metadata.get("daily_run") or {}).get("run_id"),
         "new_claims": int(len(claims) - len(existing_claims)),
+        "new_unevaluable_claims": int(new_claims["outcome_eligibility"].astype(str).eq("unevaluable").sum()) if len(new_claims) else 0,
         "new_mature_outcomes": int(len(outcomes) - len(existing_outcomes)),
         "evidence_fingerprint": fingerprints["evidence_fingerprint"],
     }
