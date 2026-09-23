@@ -7,7 +7,7 @@ on:
     paths:
       - 'src/scanner/reports/probability_calibration.py'
       - 'scripts/run_probability_calibration_2.py'
-      - 'tests/test_probability_calibration.py'
+      - 'tests/test_probability_calibration*.py'
       - 'docs/probability_calibration_2.md'
       - '.github/workflows/probability_calibration_2.yml'
       - 'artifacts/research/timing_patterns_1b_frozen.json'
@@ -78,7 +78,7 @@ jobs:
 
       - name: Phase 2 tests
         if: steps.freshness.outputs.should_run == 'true'
-        run: python -m pytest -q tests/test_probability_calibration.py tests/test_timing_patterns.py tests/test_selection_timing.py
+        run: python -m pytest -q tests/test_probability_calibration*.py tests/test_timing_patterns.py tests/test_selection_timing.py
 
       - name: Run Phase 2
         if: steps.freshness.outputs.should_run == 'true'
