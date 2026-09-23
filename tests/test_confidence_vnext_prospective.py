@@ -415,11 +415,13 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["horizons"]["5"]["outcome_unevaluable_claims"] == 0
 
 
-def test_workflow_contract_binds_trigger_and_refreshes_outstanding_symbols():
+def test_workflow_contract_drains_unclaimed_publications_and_refreshes_outstanding_symbols():
     workflow = Path(".github/workflows/confidence_vnext_4e.yml").read_text(encoding="utf-8")
-    assert "EXPECTED_RUN_ID" in workflow
-    assert "workflow_run.id" in workflow
-    assert "run_attempt" in workflow
+    assert "Bind to oldest unclaimed scanner publication" in workflow
+    assert "rev-list', '--reverse', 'origin/main'" in workflow
+    assert "No unclaimed scanner publication exists; Phase 4E is a clean no-op." in workflow
+    assert "backlog_count" in workflow
+    assert "gh workflow run confidence_vnext_4e.yml --ref main" in workflow
     assert "claim_prices.csv" in workflow
     assert "OUTSTANDING_SYMBOLS" in workflow
     assert "prefetch_market_history.py" in workflow
