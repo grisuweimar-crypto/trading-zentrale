@@ -128,7 +128,7 @@ jobs:
 
           candidates = []
           shas = git_text(
-              'rev-list', '--reverse', 'origin/main', '--',
+              'rev-list', '--reverse', 'origin/main', '--first-parent', '--',
               'artifacts/research/history_metadata.json',
           ).splitlines()
           for sha in shas:
@@ -546,7 +546,7 @@ jobs:
 
           remaining = 0
           shas = git_text(
-              'rev-list', '--reverse', 'origin/main', '--',
+              'rev-list', '--reverse', 'origin/main', '--first-parent', '--',
               'artifacts/research/history_metadata.json',
           ).splitlines()
           for sha in shas:
