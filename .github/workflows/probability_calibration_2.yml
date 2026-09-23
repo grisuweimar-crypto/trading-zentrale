@@ -10,52 +10,114 @@ on:
       - 'tests/test_probability_calibration.py'
       - 'docs/probability_calibration_2.md'
       - '.github/workflows/probability_calibration_2.yml'
+      - 'artifacts/research/timing_patterns_1b_frozen.json'
       - 'artifacts/research/history_analysis.csv'
       - 'artifacts/research/price_backfill.csv'
-  push:
-    branches: [main]
-    paths:
-      - 'artifacts/research/history_analysis.csv'
-      - 'artifacts/research/price_backfill.csv'
+  workflow_run:
+    workflows: ['Scanner_vNext Autopilot']
+    types: [completed]
+  schedule:
+    # Fallback falls der Downstream-Trigger eines erfolgreichen Scans ausbleibt.
+    - cron: '45 22 * * *'
+      timezone: Europe/Berlin
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: phase2-probability-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
 
 jobs:
   research:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+
+      - name: Decide whether calibration is stale
+        id: freshness
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          metadata_path = Path('artifacts/research/history_metadata.json')
+          report_path = Path('artifacts/research/probability_calibration_2.json')
+          metadata = json.loads(metadata_path.read_text(encoding='utf-8'))
+          snapshot = metadata.get('snapshot_id')
+          previous = None
+          if report_path.exists():
+              previous = json.loads(report_path.read_text(encoding='utf-8')).get('source', {}).get('snapshot_id')
+
+          event = os.environ['EVENT_NAME']
+          should_run = event in {'pull_request', 'workflow_dispatch'} or not snapshot or snapshot != previous
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as fh:
+              fh.write(f"should_run={'true' if should_run else 'false'}\n")
+          print(json.dumps({'event': event, 'snapshot_id': snapshot, 'previous_snapshot_id': previous, 'should_run': should_run}))
+          PY
+
       - name: Install
+        if: steps.freshness.outputs.should_run == 'true'
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e . pytest
+
       - name: Phase 2 tests
+        if: steps.freshness.outputs.should_run == 'true'
         run: python -m pytest -q tests/test_probability_calibration.py tests/test_timing_patterns.py tests/test_selection_timing.py
+
       - name: Run Phase 2
+        if: steps.freshness.outputs.should_run == 'true'
         run: python scripts/run_probability_calibration_2.py
+
       - name: Validate report
+        if: steps.freshness.outputs.should_run == 'true'
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
           p = json.loads(Path('artifacts/research/probability_calibration_2.json').read_text(encoding='utf-8'))
           assert p['phase'] == '2_probability_calibration'
+          assert p['semantics']['timing_candidates_are_frozen_from_phase1b'] is True
           assert set(p['horizons']) == {'5','20','40','60'}
           for h in ('5','20','40','60'):
-              x=p['horizons'][h]
+              x = p['horizons'][h]
+              timing = x['timing_patterns']
               print('HORIZON', h)
+              print('MATURITY', json.dumps(x['validation_maturity'], sort_keys=True))
               print('SELECTION_VALIDATION', json.dumps(x['selection'].get('validation', {}), sort_keys=True))
-              supported=x['timing_patterns'].get('validation_supported', [])
-              print('TIMING_VALIDATION_SUPPORTED', json.dumps(supported, sort_keys=True))
+              print('ALPHA_SUPPORTED', len(timing.get('alpha_supported', [])))
+              print('JOINT_SUPPORTED', len(timing.get('joint_supported', [])))
+              print('STRONG_SUPPORTED', len(timing.get('strong_supported', [])))
           PY
+
       - name: Upload report
+        if: steps.freshness.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: probability-calibration-2
           path: artifacts/research/probability_calibration_2.json
           if-no-files-found: error
+
+      - name: Persist current Phase 2 research on main
+        if: steps.freshness.outputs.should_run == 'true' && github.event_name != 'pull_request'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add artifacts/research/probability_calibration_2.json
+          if ! git diff --cached --quiet; then
+            git commit -m "📈 Refresh Phase 2 probability calibration [skip ci]"
+            git push
+          fi
