@@ -14,7 +14,7 @@ Every complete scanner publication creates an immutable claim snapshot. A claim 
 
 A later rerun may be idempotent, but it may not reinterpret the same historical snapshot. If the same natural key produces a different claim payload, the recorder fails closed.
 
-The contemporaneously available outcome start session and adjusted close are frozen into the claim itself. They are taken only from the price history that existed at claim time. A later close or a later backfill may not replace that frozen start.
+The contemporaneously available outcome start **session** and adjusted close are frozen into the claim itself. They are taken only from the price history that existed at claim time. A later close or a later backfill may not replace that frozen claim evidence.
 
 If no valid claim-time start session/adjusted close exists, the claim is still archived but marked `outcome_eligibility=unevaluable` with a fixed `outcome_unavailable_reason`. Its start session/price remain empty permanently. That missingness is prospective Data-Quality evidence; it must not abort the whole snapshot and must never be repaired retrospectively.
 
@@ -26,7 +26,7 @@ The compact claim archive stores, among other provenance fields:
 
 - `as_of`, `generated_at`, `run_id`, `snapshot_id`
 - `symbol`, original `currency`, `horizon_sessions`
-- frozen `start_market_date`, `start_adjusted_close`
+- frozen claim-time `start_market_date`, `start_adjusted_close`
 - `outcome_eligibility` and `outcome_unavailable_reason`
 - `evidence_version`
 - exact SHA-256 fingerprints for Phase-4 report, Phase-2 report, Phase-3 report and optional risk-scale audit
@@ -48,10 +48,14 @@ Only claims marked `outcome_eligibility=eligible` may mature. Claims that were u
 
 For each horizon (5/20/40/60 sessions), the immutable raw outcome archive stores after maturity:
 
-- official adjusted-close forward return using the validated daily price-history session arithmetic
+- official adjusted-close forward return using the validated daily session arithmetic
 - future adverse excursion
 - future path maximum drawdown
-- start/end market session and adjusted closes used for the outcome
+- frozen start market session plus the evaluation-basis adjusted closes used for start/end
+
+The claim-time adjusted close is audit evidence, not a value that is spliced into a later adjusted-price series. Yahoo may revise the historical adjustment factor after dividends or splits. Mixing an old frozen adjusted close with a later endpoint would put the two values on different bases and can create a false return. Therefore Phase 4E refreshes a temporary adjusted-price history for all current/open eligible symbols in one pass and uses that **single evaluation-time adjustment basis across the entire frozen-start-session-to-target path**. The immutable claim-time start session is still the anchor; only the numerical adjusted-price basis used for the later outcome is rebased consistently. The claim itself is never rewritten.
+
+A corporate action after the target session may rescale both historical endpoints, but because the full path is refreshed together the start-to-target return remains basis-consistent rather than mixing revisions from different fetch dates.
 
 Peer-relative labels are deliberately **not** frozen when one individual symbol first matures. Different exchanges and holidays can make symbols from the same observation cohort mature on different workflow runs. Freezing a peer median too early would make the result depend on workflow timing.
 
@@ -115,12 +119,16 @@ It is explicitly forbidden to:
 
 ## Publication model
 
-Phase 4E runs separately after successful `Scanner_vNext Autopilot` activity on `main`. For every non-PR invocation it scans the published `history_metadata.json` commit history and selects the **oldest complete scanner publication that does not yet have a Phase-4E claim**. Therefore a successful Scanner workflow that did not actually publish a new snapshot is a clean no-op when no backlog exists.
+Phase 4E listens to every completed `Scanner_vNext Autopilot` workflow on `main`, not only successful ones. A failed/cancelled/no-publication completion cannot itself create a claim, but it is still allowed to execute the backlog-binding step so an already published unclaimed scanner snapshot cannot become stranded merely because GitHub replaced a pending successful trigger. Non-`main` scanner completions use a separate workflow concurrency group and cannot displace the `main` drain queue.
 
-This catch-up rule is intentional. GitHub Actions concurrency may discard an intermediate pending workflow when another run of the same concurrency group is queued. Phase 4E therefore does not rely on one workflow event equalling one preserved snapshot. Instead, each executed Phase-4E run drains the oldest unclaimed post-freeze scanner publication; after a successful shadow publish it checks again and self-dispatches another catch-up run while unclaimed publications remain. Intermediate scanner publications are therefore recovered from repository history instead of being permanently lost because of runner timing.
+For every non-PR invocation Phase 4E scans repository history and selects the **oldest complete, unclaimed, proven Scanner_vNext Autopilot publication** after the Phase-4E freeze. A commit is not accepted merely because it touched `history_metadata.json`. It must carry the exact Autopilot publication commit subject, change the required publication artifacts, contain a `daily_run.run_id` in the expected `github-<workflow_run_id>-<attempt>` form, have a `latest_scanner.csv` whose SHA-256 matches metadata, and introduce a run ID different from the parent metadata. Maintenance commits that retain an older `daily_run` therefore fail closed as candidates.
 
-For the selected publication, Phase 4E reads the exact research bundle from that publication commit, generates the guarded Phase-4B–D registry, appends immutable shadow claims, matures prior eligible claims whose future sessions are available, and commits only the Phase-4E shadow artifacts.
+A Scanner workflow that did not actually publish a new snapshot is consequently a clean no-op when no proven backlog exists.
 
-Open eligible claims keep receiving the price history needed for later 20/40/60-session outcomes even if their symbol subsequently leaves the current scanner universe. Permanently unevaluable claims are excluded from those refresh requests.
+This catch-up rule is intentional. GitHub Actions concurrency may discard an intermediate pending workflow when another run of the same concurrency group is queued. Phase 4E therefore does not rely on one workflow event equalling one preserved snapshot. Instead, each executed Phase-4E run drains the oldest unclaimed proven scanner publication; after a successful shadow publish it checks again and self-dispatches another catch-up run while unclaimed publications remain. Intermediate scanner publications are therefore recovered from repository history instead of being permanently lost because of runner timing.
+
+For the selected publication, Phase 4E reads the exact research bundle from that publication commit, generates the guarded Phase-4B–D registry, appends immutable shadow claims, and evaluates prior eligible claims only when the target session is mature. Outcome pricing is refreshed separately into a temporary one-basis adjusted-price file; that temporary provider view is not published back into the immutable claim evidence.
+
+Open eligible claims keep receiving a fresh evaluation history even if their symbol subsequently leaves the current scanner universe. Permanently unevaluable claims are excluded from those evaluation requests. Missing provider mappings or unavailable prices leave outcomes immature; Phase 4E does not invent a mapping or an adjustment factor.
 
 The final shadow-artifact push remains serialized with the productive scanner publication lock. Because Phase 4E is a separate workflow and failed/no-op shadow runs do not alter Scanner artifacts, it cannot invalidate an already published productive scan. The shadow workflow does not trigger from its own artifact commit.
