@@ -18,6 +18,8 @@ import pandas as pd
 from scanner.reports.selection_timing import (
     HORIZONS,
     Phase1AConfig,
+    _peer_median,
+    _peer_medians,
     _price_rows,
     _scanner_rows,
     build_events,
@@ -227,22 +229,14 @@ def build_timing_events(
 
 
 def _add_peer_excess(events: pd.DataFrame, horizon: int) -> pd.DataFrame:
-    """Attach peer-relative returns before any sampling/cooldown."""
+    """Attach leave-one-symbol-out peer returns before sampling/cooldown."""
     ret = f"return_{horizon}t"
     work = events.copy()
     work[ret] = pd.to_numeric(work[ret], errors="coerce")
-
-    currency_group = work.groupby(["obs_date", "currency"])[ret]
-    currency_median = currency_group.transform("median")
-    currency_count = currency_group.transform("count")
-
-    global_group = work.groupby("obs_date")[ret]
-    global_median = global_group.transform("median")
-    global_count = global_group.transform("count")
-
-    peer_median = currency_median.where(currency_count >= 2)
-    peer_median = peer_median.fillna(global_median.where(global_count >= 2))
-    work[f"peer_excess_{horizon}t"] = work[ret] - peer_median
+    baselines, fallback = _peer_medians(work, ret)
+    work[f"peer_excess_{horizon}t"] = work[ret] - work.apply(
+        lambda row: _peer_median(row, baselines, fallback), axis=1
+    )
     return work
 
 
@@ -667,7 +661,7 @@ def run(
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        json.dumps(result, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
         encoding="utf-8",
     )
     return result
