@@ -1,0 +1,45 @@
+name: Repair Phase 3 moving-block indentation
+
+on:
+  push:
+    branches: [phase3-risk-vnext]
+    paths:
+      - '.github/workflows/fix_phase3_indent.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase3-risk-vnext
+      - name: Repair indentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          src = Path('src/scanner/reports/risk_vnext.py')
+          s = src.read_text(encoding='utf-8')
+          s = s.replace('        if last_start is None or pos - last_start >= block_length:\n  count += 1\n  last_start = pos', '        if last_start is None or pos - last_start >= block_length:\n            count += 1\n            last_start = pos')
+          s = s.replace('        if pos.empty or neg.empty:\n  return None', '        if pos.empty or neg.empty:\n            return None')
+          s = s.replace('        if value is not None:\n  estimates.append(value)', '        if value is not None:\n            estimates.append(value)')
+          src.write_text(s, encoding='utf-8')
+
+          tests = Path('tests/test_risk_vnext.py')
+          t = tests.read_text(encoding='utf-8')
+          t = t.replace('        if i < 5:\n  rows.append({"obs_date": day, "target": -0.1, "risk_group": "low_risk"})', '        if i < 5:\n            rows.append({"obs_date": day, "target": -0.1, "risk_group": "low_risk"})')
+          t = t.replace('        {\n  "obs_date": dates[20:25],\n  "target": [-0.1] * 5,\n  "risk_group": ["low_risk"] * 5,\n        }', '        {\n            "obs_date": dates[20:25],\n            "target": [-0.1] * 5,\n            "risk_group": ["low_risk"] * 5,\n        }')
+          tests.write_text(t, encoding='utf-8')
+
+          Path('.github/workflows/fix_phase3_indent.yml').unlink()
+          PY
+      - name: Commit repair
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add -A
+          git commit -m "Repair Phase 3 moving-block indentation"
+          git push origin HEAD:phase3-risk-vnext
