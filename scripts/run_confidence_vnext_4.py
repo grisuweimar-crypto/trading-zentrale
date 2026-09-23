@@ -13,7 +13,7 @@ from scanner.reports.confidence_vnext import Phase4Config, run
 def _apply_stable_start(history_path: Path, stable_start: str | None) -> tuple[Path, Path | None]:
     """Optionally materialize an inclusive lower-bounded audit input.
 
-    The Phase-4 audit itself defaults to the complete archive.  When a researcher
+    The Phase-4 audit itself defaults to the complete archive. When a researcher
     explicitly supplies --stable-start, filtering happens before the audit so the
     reported row counts, formula epochs and diagnostics genuinely use that window.
     """
@@ -61,6 +61,8 @@ def main() -> int:
 
     history_path = Path(args.history)
     audit_input, cleanup_path = _apply_stable_start(history_path, args.stable_start)
+    # The core audit contract historically carried a stable_start field. Keep it
+    # synchronized with the *actually applied* runner filter; None means full archive.
     config = Phase4Config(stable_start=args.stable_start)
     try:
         result = run(
