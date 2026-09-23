@@ -3,7 +3,10 @@ from __future__ import annotations
 """Phase 4E prospective shadow validation infrastructure.
 
 Research-only. This module freezes the contemporaneous Phase-4B-D evidence
-state as immutable claims and matures outcomes only from later price history.
+state as immutable claims and matures raw outcomes only from later price
+history. Peer-relative labels are derived from the full matured cohort at
+analysis time rather than frozen when individual symbols happen to mature.
+
 It does not create a scalar Confidence score, thresholds, production signals,
 or portfolio actions.
 """
@@ -15,7 +18,14 @@ import json
 import numpy as np
 import pandas as pd
 
-from scanner.reports.selection_timing import HORIZONS, _norm_currency, _peer_median, _peer_medians, _price_rows, _scanner_rows
+from scanner.reports.selection_timing import (
+    HORIZONS,
+    _norm_currency,
+    _peer_median,
+    _peer_medians,
+    _price_rows,
+    _scanner_rows,
+)
 
 
 SCHEMA_VERSION = "phase4e_shadow_v1"
@@ -65,12 +75,23 @@ OUTCOME_COLUMNS = (
     "start_adjusted_close",
     "end_adjusted_close",
     "return",
-    "peer_median_return",
-    "peer_excess",
-    "signed_peer_excess",
-    "direction_hit",
     "adverse_excursion",
     "path_max_drawdown",
+)
+DERIVED_PEER_COLUMNS = (
+    "claim_id",
+    "as_of",
+    "symbol",
+    "currency",
+    "horizon_sessions",
+    "return",
+    "peer_median_return",
+    "peer_excess",
+    "return_claim_direction",
+    "signed_peer_excess",
+    "direction_hit",
+    "agreement_state",
+    "risk_state",
 )
 
 
@@ -142,9 +163,7 @@ def _current_stock_context(latest: pd.DataFrame) -> dict[str, dict[str, object]]
         & ~scanner["is_crypto"]
     ].copy()
     return {
-        str(row["symbol"]): {
-            "currency": _norm_currency(row.get("currency")),
-        }
+        str(row["symbol"]): {"currency": _norm_currency(row.get("currency"))}
         for row in current.to_dict("records")
     }
 
@@ -170,10 +189,19 @@ def build_claim_rows(
         raise ValueError("Phase 4 current as_of does not match metadata as_of")
     if current.get("asset_scope") != "stocks_only":
         raise ValueError("Phase 4E currently accepts stock-only Phase 4 evidence")
-    evidence_version = _required_text((phase4_report.get("config") or {}).get("evidence_version"), "evidence_version")
+    evidence_version = _required_text(
+        (phase4_report.get("config") or {}).get("evidence_version"),
+        "evidence_version",
+    )
     pit = current.get("pit_source_checks") or {}
-    phase2_source_as_of = _required_text(((pit.get("phase2") or {}).get("source_as_of")), "phase2 source_as_of")
-    phase3_source_as_of = _required_text(((pit.get("phase3") or {}).get("source_as_of")), "phase3 source_as_of")
+    phase2_source_as_of = _required_text(
+        ((pit.get("phase2") or {}).get("source_as_of")),
+        "phase2 source_as_of",
+    )
+    phase3_source_as_of = _required_text(
+        ((pit.get("phase3") or {}).get("source_as_of")),
+        "phase3 source_as_of",
+    )
     volatility_status = _required_text(
         (((current.get("risk_metric_applicability") or {}).get("volatility") or {}).get("status")),
         "volatility application status",
@@ -267,7 +295,10 @@ def append_claims(existing: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
             keep.append(idx)
         elif str(previous) != str(row["claim_id"]):
             raise ValueError(f"immutable shadow claim conflict for {key}")
-    combined = pd.concat([old.drop(columns=["_natural_key"]), fresh.loc[keep].drop(columns=["_natural_key"])], ignore_index=True)
+    combined = pd.concat(
+        [old.drop(columns=["_natural_key"]), fresh.loc[keep].drop(columns=["_natural_key"])],
+        ignore_index=True,
+    )
     return combined.loc[:, CLAIM_COLUMNS]
 
 
@@ -279,10 +310,21 @@ def _price_groups(prices: pd.DataFrame) -> dict[str, pd.DataFrame]:
     }
 
 
-def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str) -> dict[str, object] | None:
+def _mature_one(
+    claim: dict[str, object],
+    group: pd.DataFrame,
+    evaluated_at: str,
+) -> dict[str, object] | None:
     obs_date = pd.Timestamp(str(claim["as_of"])).normalize()
     dates = pd.to_datetime(group["date"], errors="coerce")
-    pos = int(np.searchsorted(dates.values.astype("datetime64[ns]"), np.datetime64(obs_date), side="right") - 1)
+    pos = int(
+        np.searchsorted(
+            dates.values.astype("datetime64[ns]"),
+            np.datetime64(obs_date),
+            side="right",
+        )
+        - 1
+    )
     if pos < 0:
         return None
     start_date = pd.Timestamp(dates.iloc[pos]).normalize()
@@ -292,7 +334,10 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
     target = pos + horizon
     if target >= len(group):
         return None
-    path = pd.to_numeric(group.iloc[pos : target + 1]["adj_close"], errors="coerce").to_numpy(dtype=float)
+    path = pd.to_numeric(
+        group.iloc[pos : target + 1]["adj_close"],
+        errors="coerce",
+    ).to_numpy(dtype=float)
     if len(path) != horizon + 1 or not np.isfinite(path).all() or (path <= 0).any():
         return None
     start_value = float(path[0])
@@ -313,13 +358,8 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
         "start_adjusted_close": start_value,
         "end_adjusted_close": end_value,
         "return": end_value / start_value - 1.0,
-        "peer_median_return": np.nan,
-        "peer_excess": np.nan,
-        "signed_peer_excess": np.nan,
-        "direction_hit": np.nan,
         "adverse_excursion": max(0.0, -float(np.min(entry_returns))),
         "path_max_drawdown": max(0.0, -float(np.min(drawdowns))),
-        "return_claim_direction": str(claim.get("return_claim_direction") or ""),
     }
 
 
@@ -329,7 +369,11 @@ def compute_mature_outcomes(
     existing_outcomes: pd.DataFrame,
     evaluated_at: str,
 ) -> pd.DataFrame:
-    existing_ids = set(existing_outcomes["claim_id"].astype(str)) if not existing_outcomes.empty else set()
+    existing_ids = (
+        set(existing_outcomes["claim_id"].astype(str))
+        if not existing_outcomes.empty
+        else set()
+    )
     groups = _price_groups(prices)
     matured: list[dict[str, object]] = []
     for claim in claims.to_dict("records"):
@@ -343,25 +387,7 @@ def compute_mature_outcomes(
             matured.append(row)
     if not matured:
         return pd.DataFrame(columns=OUTCOME_COLUMNS)
-
-    frame = pd.DataFrame(matured)
-    frame["obs_date"] = pd.to_datetime(frame["as_of"], errors="coerce")
-    for horizon, subset in frame.groupby("horizon_sessions", sort=False):
-        baselines, fallback = _peer_medians(subset, "return")
-        indices = subset.index
-        peer = subset.apply(lambda row: _peer_median(row, baselines, fallback), axis=1)
-        frame.loc[indices, "peer_median_return"] = peer.values
-        frame.loc[indices, "peer_excess"] = frame.loc[indices, "return"].to_numpy(dtype=float) - peer.to_numpy(dtype=float)
-
-    for idx, row in frame.iterrows():
-        direction = str(row.get("return_claim_direction") or "")
-        peer_excess = row.get("peer_excess")
-        if direction in {"positive", "negative"} and pd.notna(peer_excess):
-            signed = float(peer_excess) if direction == "positive" else -float(peer_excess)
-            frame.at[idx, "signed_peer_excess"] = signed
-            frame.at[idx, "direction_hit"] = int(signed > 0)
-
-    return frame.loc[:, OUTCOME_COLUMNS]
+    return pd.DataFrame(matured, columns=OUTCOME_COLUMNS)
 
 
 def append_outcomes(existing: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
@@ -375,6 +401,49 @@ def append_outcomes(existing: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([existing, new], ignore_index=True).loc[:, OUTCOME_COLUMNS]
 
 
+def derive_peer_labels(claims: pd.DataFrame, outcomes: pd.DataFrame) -> pd.DataFrame:
+    """Derive peer labels from all currently matured rows in each cohort.
+
+    These labels are intentionally not part of the append-only raw outcome
+    archive. If a slower market/symbol matures later, the peer cohort can become
+    more complete without rewriting the original raw outcomes.
+    """
+    if claims.empty or outcomes.empty:
+        return pd.DataFrame(columns=DERIVED_PEER_COLUMNS)
+    claim_info = claims[
+        ["claim_id", "return_claim_direction", "agreement_state", "risk_state"]
+    ].copy()
+    work = outcomes.merge(claim_info, on="claim_id", how="left", validate="one_to_one")
+    work["obs_date"] = pd.to_datetime(work["as_of"], errors="coerce")
+    work["return"] = pd.to_numeric(work["return"], errors="coerce")
+    work["peer_median_return"] = np.nan
+    work["peer_excess"] = np.nan
+    work["signed_peer_excess"] = np.nan
+    work["direction_hit"] = np.nan
+
+    horizon_values = pd.to_numeric(work["horizon_sessions"], errors="coerce")
+    for horizon in HORIZONS:
+        subset = work.loc[horizon_values.eq(horizon)].copy()
+        if subset.empty:
+            continue
+        baselines, fallback = _peer_medians(subset, "return")
+        peer = subset.apply(lambda row: _peer_median(row, baselines, fallback), axis=1)
+        work.loc[subset.index, "peer_median_return"] = peer.values
+        work.loc[subset.index, "peer_excess"] = (
+            subset["return"].to_numpy(dtype=float) - peer.to_numpy(dtype=float)
+        )
+
+    for idx, row in work.iterrows():
+        direction = str(row.get("return_claim_direction") or "")
+        peer_excess = row.get("peer_excess")
+        if direction in {"positive", "negative"} and pd.notna(peer_excess):
+            signed = float(peer_excess) if direction == "positive" else -float(peer_excess)
+            work.at[idx, "signed_peer_excess"] = signed
+            work.at[idx, "direction_hit"] = int(signed > 0)
+
+    return work.loc[:, DERIVED_PEER_COLUMNS]
+
+
 def _write_csv(frame: pd.DataFrame, path: str | Path, columns: tuple[str, ...]) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -382,13 +451,35 @@ def _write_csv(frame: pd.DataFrame, path: str | Path, columns: tuple[str, ...]) 
 
 
 def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str, object]:
+    derived = derive_peer_labels(claims, outcomes)
     horizons: dict[str, dict[str, object]] = {}
     for horizon in HORIZONS:
-        c = claims.loc[pd.to_numeric(claims["horizon_sessions"], errors="coerce").eq(horizon)] if not claims.empty else claims
-        o = outcomes.loc[pd.to_numeric(outcomes["horizon_sessions"], errors="coerce").eq(horizon)] if not outcomes.empty else outcomes
+        c = (
+            claims.loc[
+                pd.to_numeric(claims["horizon_sessions"], errors="coerce").eq(horizon)
+            ]
+            if not claims.empty
+            else claims
+        )
+        o = (
+            outcomes.loc[
+                pd.to_numeric(outcomes["horizon_sessions"], errors="coerce").eq(horizon)
+            ]
+            if not outcomes.empty
+            else outcomes
+        )
+        d = (
+            derived.loc[
+                pd.to_numeric(derived["horizon_sessions"], errors="coerce").eq(horizon)
+            ]
+            if not derived.empty
+            else derived
+        )
         horizons[str(horizon)] = {
             "claims": int(len(c)),
             "mature_outcomes": int(len(o)),
+            "derived_peer_labels": int(pd.to_numeric(d.get("peer_excess"), errors="coerce").notna().sum()) if len(d) else 0,
+            "directional_peer_labels": int(pd.to_numeric(d.get("signed_peer_excess"), errors="coerce").notna().sum()) if len(d) else 0,
             "observation_dates": int(pd.to_datetime(o["as_of"], errors="coerce").nunique()) if len(o) else 0,
             "block_length_sessions_for_future_inference": int(2 * horizon),
         }
@@ -402,15 +493,18 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
         "semantics": {
             "research_only": True,
             "claims_are_immutable": True,
-            "outcomes_never_rewrite_claims": True,
+            "raw_outcomes_are_append_only": True,
+            "peer_labels_are_derived_not_frozen_early": True,
             "production_confidence_changed": False,
             "scalar_confidence_mapping_created": False,
             "confidence_thresholds_created": False,
             "spent_phase2_phase3_holdout_used_for_phase4e_selection": False,
         },
         "validation_contract": {
-            "return_reliability": "compare pre-specified compatible versus single_model directional peer-excess reliability",
+            "return_reliability": "compare pre-specified compatible versus single_model sign-normalized peer-excess reliability",
             "risk_reliability": "compare pre-specified risk-tension states on future adverse excursion and path max drawdown",
+            "peer_baseline": "derive from all currently matured leave-one-symbol-out peers for the same observation cohort; same currency first, global fallback",
+            "fixed_cooldown_sessions": 5,
             "uncertainty": "circular moving observation-date blocks with effective length 2x horizon; full dates stay clustered",
             "minimum_independent_support": "fail closed until at least two time-separated support regions exist",
             "weights_or_thresholds_may_be_tuned_on_this_stream": False,
@@ -434,7 +528,12 @@ def run(
     metadata = json.loads(Path(metadata_path).read_text(encoding="utf-8"))
     latest = pd.read_csv(latest_path, low_memory=False)
     prices = pd.read_csv(prices_path, low_memory=False)
-    fingerprints = evidence_fingerprints(phase4_report_path, phase2_path, phase3_path, risk_scale_path)
+    fingerprints = evidence_fingerprints(
+        phase4_report_path,
+        phase2_path,
+        phase3_path,
+        risk_scale_path,
+    )
 
     existing_claims = _read_csv(claims_path, CLAIM_COLUMNS)
     new_claims = build_claim_rows(phase4_report, latest, metadata, fingerprints)
@@ -443,7 +542,12 @@ def run(
 
     existing_outcomes = _read_csv(outcomes_path, OUTCOME_COLUMNS)
     evaluated_at = _required_text(metadata.get("generated_at"), "generated_at")
-    new_outcomes = compute_mature_outcomes(claims, prices, existing_outcomes, evaluated_at)
+    new_outcomes = compute_mature_outcomes(
+        claims,
+        prices,
+        existing_outcomes,
+        evaluated_at,
+    )
     outcomes = append_outcomes(existing_outcomes, new_outcomes)
     _write_csv(outcomes, outcomes_path, OUTCOME_COLUMNS)
 
@@ -458,5 +562,8 @@ def run(
     }
     output = Path(summary_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(summary, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
     return summary
