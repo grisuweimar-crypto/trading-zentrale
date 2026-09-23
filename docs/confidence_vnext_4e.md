@@ -115,8 +115,12 @@ It is explicitly forbidden to:
 
 ## Publication model
 
-Phase 4E runs separately after a successful `Scanner_vNext Autopilot` publication on `main`. It binds the shadow calculation to the exact scanner `run_id` publication, reads that exact research bundle, generates the current guarded Phase-4B–D registry, appends immutable shadow claims, matures any prior eligible claims whose future sessions are now available, and commits only the Phase-4E shadow artifacts.
+Phase 4E runs separately after successful `Scanner_vNext Autopilot` activity on `main`. For every non-PR invocation it scans the published `history_metadata.json` commit history and selects the **oldest complete scanner publication that does not yet have a Phase-4E claim**. Therefore a successful Scanner workflow that did not actually publish a new snapshot is a clean no-op when no backlog exists.
+
+This catch-up rule is intentional. GitHub Actions concurrency may discard an intermediate pending workflow when another run of the same concurrency group is queued. Phase 4E therefore does not rely on one workflow event equalling one preserved snapshot. Instead, each executed Phase-4E run drains the oldest unclaimed post-freeze scanner publication; after a successful shadow publish it checks again and self-dispatches another catch-up run while unclaimed publications remain. Intermediate scanner publications are therefore recovered from repository history instead of being permanently lost because of runner timing.
+
+For the selected publication, Phase 4E reads the exact research bundle from that publication commit, generates the guarded Phase-4B–D registry, appends immutable shadow claims, matures prior eligible claims whose future sessions are available, and commits only the Phase-4E shadow artifacts.
 
 Open eligible claims keep receiving the price history needed for later 20/40/60-session outcomes even if their symbol subsequently leaves the current scanner universe. Permanently unevaluable claims are excluded from those refresh requests.
 
-Because it is a separate workflow, a Phase-4E failure cannot invalidate or block the productive scanner publication. The shadow workflow does not trigger from its own artifact commit.
+The final shadow-artifact push remains serialized with the productive scanner publication lock. Because Phase 4E is a separate workflow and failed/no-op shadow runs do not alter Scanner artifacts, it cannot invalidate an already published productive scan. The shadow workflow does not trigger from its own artifact commit.
