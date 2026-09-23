@@ -1,0 +1,85 @@
+name: Apply final Phase 3 bootstrap guard
+on:
+  push:
+    branches: [phase3-risk-vnext]
+    paths:
+      - '.github/workflows/fix_phase3_min_bootstrap.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase3-risk-vnext
+      - name: Patch bootstrap guard and tests
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          src = Path('src/scanner/reports/risk_vnext.py')
+          s = src.read_text(encoding='utf-8')
+          s = s.replace(
+              'RISK_FEATURE_ALIASES: dict[str, tuple[str, ...]] = {',
+              'MIN_BOOTSTRAP_REPS_FOR_INTERVAL = 20\n\n\nRISK_FEATURE_ALIASES: dict[str, tuple[str, ...]] = {',
+              1,
+          )
+          s = s.replace(
+              '        if self.cluster_bootstrap_reps < 0:\n            raise ValueError("cluster_bootstrap_reps must be >= 0")',
+              '        if self.cluster_bootstrap_reps < 0:\n            raise ValueError("cluster_bootstrap_reps must be >= 0")\n        if 0 < self.cluster_bootstrap_reps < MIN_BOOTSTRAP_REPS_FOR_INTERVAL:\n            raise ValueError(\n                f"cluster_bootstrap_reps must be 0 or >= {MIN_BOOTSTRAP_REPS_FOR_INTERVAL}"\n            )',
+              1,
+          )
+          s = s.replace(
+              '    if work.empty or reps <= 0:\n        return None',
+              '    if work.empty or reps < MIN_BOOTSTRAP_REPS_FOR_INTERVAL:\n        return None',
+              1,
+          )
+          s = s.replace(
+              '    if not estimates:\n        return None\n    low, high = np.quantile',
+              '    if len(estimates) < MIN_BOOTSTRAP_REPS_FOR_INTERVAL:\n        return None\n    low, high = np.quantile',
+              1,
+          )
+          s = s.replace(
+              '            "bootstrap_min_group_temporal_support_regions": 2,',
+              '            "bootstrap_min_group_temporal_support_regions": 2,\n            "bootstrap_min_reps_for_interval": MIN_BOOTSTRAP_REPS_FOR_INTERVAL,',
+              1,
+          )
+          src.write_text(s, encoding='utf-8')
+
+          tests = Path('tests/test_risk_vnext.py')
+          t = tests.read_text(encoding='utf-8')
+          t = t.replace(
+              '    interval = _cluster_bootstrap_group_difference(\n        supported, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5\n    )\n    assert interval is not None\n    assert len(interval) == 2',
+              '    interval = _cluster_bootstrap_group_difference(\n        supported, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5\n    )\n    assert interval is not None\n    assert len(interval) == 2\n    assert _cluster_bootstrap_group_difference(\n        supported, "target", "risk_group", "high_risk", "low_risk", 1, 7, 5\n    ) is None',
+              1,
+          )
+          t = t.replace(
+              '    with pytest.raises(ValueError):\n        Phase3Config(cluster_bootstrap_reps=-1)',
+              '    with pytest.raises(ValueError):\n        Phase3Config(cluster_bootstrap_reps=-1)\n    with pytest.raises(ValueError):\n        Phase3Config(cluster_bootstrap_reps=1)\n    with pytest.raises(ValueError):\n        Phase3Config(cluster_bootstrap_reps=19)',
+              1,
+          )
+          tests.write_text(t, encoding='utf-8')
+
+          doc = Path('docs/risk_vnext_3.md')
+          d = doc.read_text(encoding='utf-8')
+          d = d.replace(
+              '- disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval',
+              '- disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval\n- fewer than 20 configured or surviving bootstrap replicates are treated as insufficient for a percentile 95% interval; configuration values 1–19 are rejected',
+              1,
+          )
+          doc.write_text(d, encoding='utf-8')
+
+          Path('.github/workflows/fix_phase3_min_bootstrap.yml').unlink()
+          PY
+      - name: Tests
+        run: |
+          python -m pip install -e . pytest
+          PYTHONPATH=src python -m pytest tests/test_risk_vnext.py -q
+      - name: Commit fix
+        run: |
+          git config user.name "GitHub Action Bot"
+          git config user.email "action@github.com"
+          git add src/scanner/reports/risk_vnext.py tests/test_risk_vnext.py docs/risk_vnext_3.md .github/workflows/fix_phase3_min_bootstrap.yml
+          git commit -m "Reject undersized Phase 3 bootstrap intervals"
+          git push origin HEAD:phase3-risk-vnext
