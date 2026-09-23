@@ -32,11 +32,12 @@ from scanner.reports.selection_timing import (
 SCHEMA_VERSION = "phase4e_shadow_v1"
 CLAIM_COLUMNS = (
     "claim_id", "schema_version", "as_of", "generated_at", "run_id", "snapshot_id",
-    "symbol", "currency", "horizon_sessions", "evidence_version", "evidence_fingerprint",
-    "phase4_report_sha256", "phase2_sha256", "phase3_sha256", "risk_scale_sha256",
-    "phase2_source_as_of", "phase3_source_as_of", "selection_band", "selection_state",
-    "selection_direction", "timing_state", "timing_direction", "timing_patterns", "risk_state",
-    "agreement_state", "agreement_conflicts", "return_claim_direction", "dq_selection_state",
+    "symbol", "currency", "horizon_sessions", "start_market_date", "start_adjusted_close",
+    "evidence_version", "evidence_fingerprint", "phase4_report_sha256", "phase2_sha256",
+    "phase3_sha256", "risk_scale_sha256", "phase2_source_as_of", "phase3_source_as_of",
+    "selection_band", "selection_state", "selection_direction", "timing_state",
+    "timing_direction", "timing_patterns", "risk_state", "agreement_state",
+    "agreement_conflicts", "return_claim_direction", "dq_selection_state",
     "dq_timing_state", "dq_risk_state", "volatility_application_status",
 )
 OUTCOME_COLUMNS = (
@@ -135,11 +136,31 @@ def _current_stock_context(latest: pd.DataFrame) -> dict[str, dict[str, object]]
     }
 
 
+def _claim_start(prices: pd.DataFrame, symbol: str, as_of: str) -> tuple[str, float]:
+    price = _price_rows(prices)
+    group = price.loc[price["symbol"].astype(str).eq(symbol)].copy()
+    if group.empty:
+        raise ValueError(f"claim-time price history missing for {symbol}")
+    group["_date"] = pd.to_datetime(group["date"], errors="coerce")
+    group["_adj"] = pd.to_numeric(group["adj_close"], errors="coerce")
+    obs_date = pd.Timestamp(as_of).normalize()
+    eligible = group.loc[group["_date"].notna() & group["_date"].le(obs_date)].sort_values("_date", kind="mergesort")
+    if eligible.empty:
+        raise ValueError(f"claim-time start session missing for {symbol}")
+    row = eligible.iloc[-1]
+    start_date = pd.Timestamp(row["_date"]).normalize()
+    start_value = float(row["_adj"])
+    if (obs_date - start_date).days > 7 or not np.isfinite(start_value) or start_value <= 0:
+        raise ValueError(f"claim-time start session invalid for {symbol}")
+    return start_date.date().isoformat(), start_value
+
+
 def build_claim_rows(
     phase4_report: dict,
     latest: pd.DataFrame,
     metadata: dict,
     fingerprints: dict[str, str],
+    claim_prices: pd.DataFrame,
 ) -> pd.DataFrame:
     if metadata.get("latest_run_complete") is not True:
         raise ValueError("shadow claims require a complete scanner publication")
@@ -171,6 +192,7 @@ def build_claim_rows(
         "volatility application status",
     )
     context = _current_stock_context(latest)
+    starts = {symbol: _claim_start(claim_prices, symbol, as_of) for symbol in context}
 
     rows: list[dict[str, object]] = []
     for row in current.get("rows") or []:
@@ -180,6 +202,7 @@ def build_claim_rows(
         horizon = int(row.get("horizon_sessions"))
         if horizon not in HORIZONS:
             raise ValueError(f"unsupported horizon: {horizon}")
+        start_market_date, start_adjusted_close = starts[symbol]
         selection = row.get("selection") or {}
         timing = row.get("timing") or {}
         risk = row.get("risk") or {}
@@ -194,6 +217,8 @@ def build_claim_rows(
             "symbol": symbol,
             "currency": context[symbol]["currency"] or "",
             "horizon_sessions": horizon,
+            "start_market_date": start_market_date,
+            "start_adjusted_close": start_adjusted_close,
             "evidence_version": evidence_version,
             **fingerprints,
             "phase2_source_as_of": phase2_source_as_of,
@@ -274,14 +299,19 @@ def _price_groups(prices: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str) -> dict[str, object] | None:
     evaluated = _required_utc_timestamp(evaluated_at, "evaluated_at")
-    obs_date = pd.Timestamp(str(claim["as_of"])).normalize()
+    start_date = pd.Timestamp(_required_text(claim.get("start_market_date"), "start_market_date")).normalize()
+    try:
+        start_value = float(claim.get("start_adjusted_close"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("start_adjusted_close must be numeric") from exc
+    if not np.isfinite(start_value) or start_value <= 0:
+        raise ValueError("start_adjusted_close must be positive")
+
     dates = pd.to_datetime(group["date"], errors="coerce")
-    pos = int(np.searchsorted(dates.values.astype("datetime64[ns]"), np.datetime64(obs_date), side="right") - 1)
-    if pos < 0:
+    matches = np.flatnonzero(dates.dt.normalize().eq(start_date).to_numpy())
+    if len(matches) != 1:
         return None
-    start_date = pd.Timestamp(dates.iloc[pos]).normalize()
-    if (obs_date - start_date).days > 7:
-        return None
+    pos = int(matches[0])
     horizon = int(claim["horizon_sessions"])
     target = pos + horizon
     if target >= len(group):
@@ -291,15 +321,13 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
     if pd.isna(target_date):
         return None
     target_day_utc = target_date.tz_localize("UTC") if target_date.tzinfo is None else target_date.tz_convert("UTC")
-    # Price history stores session dates, not verified close timestamps. Fail closed:
-    # a session is mature only once its calendar day is fully behind evaluated_at.
     if target_day_utc.normalize() >= evaluated.normalize():
         return None
 
     path = pd.to_numeric(group.iloc[pos : target + 1]["adj_close"], errors="coerce").to_numpy(dtype=float)
     if len(path) != horizon + 1 or not np.isfinite(path).all() or (path <= 0).any():
         return None
-    start_value = float(path[0])
+    path[0] = start_value
     end_value = float(path[-1])
     entry_returns = path / start_value - 1.0
     peaks = np.maximum.accumulate(path)
@@ -358,13 +386,6 @@ def append_outcomes(existing: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
 
 
 def derive_peer_labels(claims: pd.DataFrame, outcomes: pd.DataFrame) -> pd.DataFrame:
-    """Derive peer labels inside exact scanner-snapshot cohorts.
-
-    Snapshot grouping prevents multiple complete scanner reruns on the same date
-    from double-weighting symbols in one peer cross-section. The labels are not
-    part of the append-only raw outcome archive; later-maturing symbols can
-    complete their original snapshot cohort without rewriting raw outcomes.
-    """
     if claims.empty or outcomes.empty:
         return pd.DataFrame(columns=DERIVED_PEER_COLUMNS)
     claim_info = claims[
@@ -435,6 +456,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
         "semantics": {
             "research_only": True,
             "claims_are_immutable": True,
+            "claim_time_start_session_is_frozen": True,
             "raw_outcomes_are_append_only": True,
             "peer_labels_are_derived_not_frozen_early": True,
             "peer_cross_sections_use_exact_snapshot_cohorts": True,
@@ -448,7 +470,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
             "return_reliability": "compare pre-specified compatible versus single_model sign-normalized peer-excess reliability",
             "risk_reliability": "compare pre-specified risk-tension states on future adverse excursion and path max drawdown",
             "peer_baseline": "derive inside each immutable scanner snapshot from all currently matured leave-one-symbol-out peers; same currency first, global fallback",
-            "outcome_maturity": "day-level price sessions mature only after the target UTC calendar day is complete",
+            "outcome_maturity": "use the immutable claim-time start session and price; day-level target sessions mature only after the target UTC calendar day is complete",
             "fixed_cooldown_sessions": 5,
             "uncertainty": "circular moving observation-date blocks with effective length 2x horizon; full dates stay clustered",
             "minimum_independent_support": "fail closed until at least two time-separated support regions exist",
@@ -461,6 +483,7 @@ def run(
     phase4_report_path: str | Path,
     latest_path: str | Path,
     metadata_path: str | Path,
+    claim_prices_path: str | Path,
     prices_path: str | Path,
     phase2_path: str | Path,
     phase3_path: str | Path,
@@ -472,11 +495,12 @@ def run(
     phase4_report = json.loads(Path(phase4_report_path).read_text(encoding="utf-8"))
     metadata = json.loads(Path(metadata_path).read_text(encoding="utf-8"))
     latest = pd.read_csv(latest_path, low_memory=False)
+    claim_prices = pd.read_csv(claim_prices_path, low_memory=False)
     prices = pd.read_csv(prices_path, low_memory=False)
     fingerprints = evidence_fingerprints(phase4_report_path, phase2_path, phase3_path, risk_scale_path)
 
     existing_claims = _read_csv(claims_path, CLAIM_COLUMNS)
-    new_claims = build_claim_rows(phase4_report, latest, metadata, fingerprints)
+    new_claims = build_claim_rows(phase4_report, latest, metadata, fingerprints, claim_prices)
     claims = append_claims(existing_claims, new_claims)
     _write_csv(claims, claims_path, CLAIM_COLUMNS)
 
