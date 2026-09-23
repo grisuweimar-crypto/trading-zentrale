@@ -1,0 +1,58 @@
+name: Fix Phase 2 positive moving-block test
+
+on:
+  push:
+    branches: [phase2-uncertainty-hotfix]
+    paths:
+      - '.github/workflows/fix_phase2_positive_test.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase2-uncertainty-hotfix
+      - name: Fix positive support test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tests/test_probability_calibration.py')
+          s = p.read_text(encoding='utf-8')
+          old = '''def test_probability_stats_reports_horizon_robust_uncertainty():
+              dates = pd.bdate_range("2026-05-01", periods=10)
+              baseline = pd.DataFrame(
+                  {
+                      "obs_date": dates.repeat(2),
+                      "symbol": [f"S{i}" for i in range(20)],
+                      "peer_excess_5t": [-0.2, 0.1] * 10,
+                  }
+              )'''
+          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines())
+          new = '''def test_probability_stats_reports_horizon_robust_uncertainty():
+              dates = pd.bdate_range("2026-05-01", periods=20)
+              baseline = pd.DataFrame(
+                  {
+                      "obs_date": dates.repeat(2),
+                      "symbol": [f"S{i}" for i in range(40)],
+                      "peer_excess_5t": [-0.2, 0.1] * 20,
+                  }
+              )'''
+          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines())
+          if old not in s:
+              raise SystemExit('positive moving-block test fixture not found')
+          s = s.replace(old, new, 1)
+          s = s.replace('    assert out["bootstrap_block_count"] == 10\n    assert out["bootstrap_block_length_sessions"] == 10\n', '    assert out["bootstrap_block_count"] == 20\n    assert out["bootstrap_occurrence_block_count"] >= 2\n    assert out["bootstrap_block_length_sessions"] == 10\n', 1)
+          p.write_text(s, encoding='utf-8')
+          Path('.github/workflows/fix_phase2_positive_test.yml').unlink()
+          PY
+      - name: Commit fix
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add -A
+          git commit -m "Fix Phase 2 moving-block positive test"
+          git push origin HEAD:phase2-uncertainty-hotfix
