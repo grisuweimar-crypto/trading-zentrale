@@ -46,6 +46,7 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           git fetch origin main --force
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
           python - <<'PY'
           import csv
           import hashlib
@@ -117,7 +118,7 @@ jobs:
           claimed_run_ids = set()
           raw_claims = git_text(
               'show',
-              'origin/main:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
+              'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
               allow_fail=True,
           )
           if raw_claims:
@@ -263,15 +264,15 @@ jobs:
       - name: Restore latest append-only shadow archives
         if: github.event_name != 'pull_request' && env.PHASE4E_PROCESS == '1'
         run: |
-          git fetch origin main --force
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
           for path in \
             artifacts/research/confidence_vnext_shadow_claims_4e.csv \
             artifacts/research/confidence_vnext_shadow_outcomes_4e.csv \
             artifacts/research/confidence_vnext_shadow_4e.json
           do
-            if git cat-file -e "origin/main:$path" 2>/dev/null; then
+            if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
-              git show "origin/main:$path" > "$path"
+              git show "origin/phase4e-shadow-data:$path" > "$path"
             else
               rm -f "$path"
             fi
@@ -436,14 +437,23 @@ jobs:
     if: needs.shadow.result == 'success' && needs.shadow.outputs.process == 'true' && (github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-latest
     concurrency:
-      group: scanner-daily-publication
+      group: phase4e-shadow-publication
       cancel-in-progress: false
     steps:
-      - name: Checkout latest main after acquiring publication lock
+      - name: Checkout main as shadow branch seed
         uses: actions/checkout@v6
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Prepare dedicated Phase 4E data branch
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
+          if git show-ref --verify --quiet refs/remotes/origin/phase4e-shadow-data; then
+            git checkout -B phase4e-shadow-data origin/phase4e-shadow-data
+          else
+            git checkout -B phase4e-shadow-data
+          fi
 
       - name: Restore shadow publication payload
         uses: actions/download-artifact@v4
@@ -451,7 +461,7 @@ jobs:
           name: phase4e-shadow-publication
           path: artifacts/research
 
-      - name: Publish shadow artifacts without racing scanner publication
+      - name: Publish shadow artifacts to dedicated data branch
         run: |
           git config --local user.email 'action@github.com'
           git config --local user.name 'GitHub Action Bot'
@@ -461,7 +471,7 @@ jobs:
             artifacts/research/confidence_vnext_shadow_4e.json
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Phase 4E shadow update [skip ci]'
-            git push origin HEAD:main
+            git push origin HEAD:refs/heads/phase4e-shadow-data
           fi
 
       - name: Continue Phase 4E catch-up queue if publications remain
@@ -469,6 +479,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           git fetch origin main --force
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
           REMAINING=$(python - <<'PY'
           import csv
           import hashlib
@@ -535,7 +546,7 @@ jobs:
           claimed = set()
           raw_claims = git_text(
               'show',
-              'origin/main:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
+              'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
               allow_fail=True,
           )
           if raw_claims:
