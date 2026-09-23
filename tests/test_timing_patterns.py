@@ -132,11 +132,35 @@ def test_discovery_excludes_outcomes_that_end_after_cutoff():
         {
             "obs_date": pd.to_datetime(["2026-06-01", "2026-07-27", "2026-08-03"]),
             "end_date_60t": pd.to_datetime(["2026-07-30", "2026-10-19", "2026-10-26"]),
+            "currency": ["USD", "USD", "USD"],
+            "return_60t": [0.10, 0.20, 0.30],
         }
     )
     discovery, validation = _strict_windows(work, 60, Phase1BConfig())
     assert discovery["obs_date"].tolist() == [pd.Timestamp("2026-06-01")]
     assert validation["obs_date"].tolist() == [pd.Timestamp("2026-08-03")]
+
+
+def test_discovery_peer_median_excludes_labels_ending_after_cutoff():
+    day = pd.Timestamp("2026-07-20")
+    events = pd.DataFrame(
+        {
+            "obs_date": [day, day, day],
+            "symbol": ["A", "B", "C"],
+            "currency": ["USD", "USD", "USD"],
+            "end_date_5t": pd.to_datetime(
+                ["2026-07-30", "2026-08-03", "2026-07-31"]
+            ),
+            "return_5t": [0.10, 0.90, 0.20],
+        }
+    )
+    pooled = _add_peer_excess(events, 5)
+    assert round(float(pooled.loc[pooled["symbol"] == "A", "peer_excess_5t"].iloc[0]), 8) == -0.10
+
+    discovery, _ = _strict_windows(pooled, 5, Phase1BConfig())
+    assert discovery["symbol"].tolist() == ["A", "C"]
+    assert round(float(discovery.loc[discovery["symbol"] == "A", "peer_excess_5t"].iloc[0]), 8) == -0.05
+    assert round(float(discovery.loc[discovery["symbol"] == "C", "peer_excess_5t"].iloc[0]), 8) == 0.05
 
 
 def test_peer_median_is_computed_before_sampling_and_singletons_fall_back():
