@@ -10,6 +10,7 @@ from scanner.reports.confidence_vnext_prospective import (
     append_outcomes,
     build_claim_rows,
     compute_mature_outcomes,
+    derive_peer_labels,
     validation_summary,
 )
 
@@ -93,8 +94,14 @@ def _phase4_report():
                 row("BBB", "negative", "negative", "compatible"),
             ],
             "pit_source_checks": {
-                "phase2": {"source_as_of": "2026-09-23T00:00:00+00:00", "not_after_current_scan": True},
-                "phase3": {"source_as_of": "2026-09-23T00:00:00+00:00", "not_after_current_scan": True},
+                "phase2": {
+                    "source_as_of": "2026-09-23T00:00:00+00:00",
+                    "not_after_current_scan": True,
+                },
+                "phase3": {
+                    "source_as_of": "2026-09-23T00:00:00+00:00",
+                    "not_after_current_scan": True,
+                },
             },
             "risk_metric_applicability": {
                 "volatility": {"status": "scale_incompatible"},
@@ -113,10 +120,10 @@ def _fingerprints():
     }
 
 
-def _prices(extra_sessions=0):
-    dates = pd.date_range("2026-09-23", periods=6 + extra_sessions, freq="D")
-    aaa = [100, 102, 101, 104, 105, 110] + [111] * extra_sessions
-    bbb = [100, 99, 98, 97, 96, 95] + [94] * extra_sessions
+def _prices():
+    dates = pd.date_range("2026-09-23", periods=6, freq="D")
+    aaa = [100, 102, 101, 104, 105, 110]
+    bbb = [100, 99, 98, 97, 96, 95]
     rows = []
     for symbol, values in (("AAA", aaa), ("BBB", bbb)):
         for day, value in zip(dates, values):
@@ -159,7 +166,7 @@ def test_claim_append_is_idempotent_and_rejects_reinterpretation():
         append_claims(first.astype(str), changed)
 
 
-def test_outcomes_mature_only_when_full_horizon_exists_and_use_peer_excess():
+def test_raw_outcomes_mature_only_when_full_horizon_exists():
     claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
     immature_prices = _prices().loc[lambda x: x["date"] < "2026-09-28"].copy()
     none = compute_mature_outcomes(
@@ -176,11 +183,28 @@ def test_outcomes_mature_only_when_full_horizon_exists_and_use_peer_excess():
         pd.DataFrame(columns=OUTCOME_COLUMNS),
         "2026-09-28T00:00:00+00:00",
     )
+    assert list(outcomes.columns) == list(OUTCOME_COLUMNS)
     assert len(outcomes) == 2
+    assert "peer_excess" not in outcomes.columns
     aaa = outcomes.loc[outcomes["symbol"].eq("AAA")].iloc[0]
     bbb = outcomes.loc[outcomes["symbol"].eq("BBB")].iloc[0]
     assert aaa["return"] == pytest.approx(0.10)
     assert bbb["return"] == pytest.approx(-0.05)
+    assert bbb["adverse_excursion"] == pytest.approx(0.05)
+    assert bbb["path_max_drawdown"] == pytest.approx(0.05)
+
+
+def test_peer_labels_are_derived_from_all_currently_matured_cohort_rows():
+    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    outcomes = compute_mature_outcomes(
+        claims,
+        _prices(),
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-28T00:00:00+00:00",
+    )
+    labels = derive_peer_labels(claims, outcomes)
+    aaa = labels.loc[labels["symbol"].eq("AAA")].iloc[0]
+    bbb = labels.loc[labels["symbol"].eq("BBB")].iloc[0]
     assert aaa["peer_median_return"] == pytest.approx(-0.05)
     assert bbb["peer_median_return"] == pytest.approx(0.10)
     assert aaa["peer_excess"] == pytest.approx(0.15)
@@ -189,8 +213,31 @@ def test_outcomes_mature_only_when_full_horizon_exists_and_use_peer_excess():
     assert bbb["signed_peer_excess"] == pytest.approx(0.15)
     assert int(aaa["direction_hit"]) == 1
     assert int(bbb["direction_hit"]) == 1
-    assert bbb["adverse_excursion"] == pytest.approx(0.05)
-    assert bbb["path_max_drawdown"] == pytest.approx(0.05)
+
+
+def test_late_peer_maturity_improves_derived_label_without_rewriting_raw_outcome():
+    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    outcomes = compute_mature_outcomes(
+        claims,
+        _prices(),
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-28T00:00:00+00:00",
+    )
+    aaa_raw = outcomes.loc[outcomes["symbol"].eq("AAA")].copy()
+    bbb_raw = outcomes.loc[outcomes["symbol"].eq("BBB")].copy()
+
+    early = derive_peer_labels(claims, aaa_raw)
+    assert pd.isna(early.iloc[0]["peer_excess"])
+
+    combined_raw = append_outcomes(aaa_raw, bbb_raw)
+    later = derive_peer_labels(claims, combined_raw)
+    aaa_later = later.loc[later["symbol"].eq("AAA")].iloc[0]
+    assert aaa_later["peer_excess"] == pytest.approx(0.15)
+    pd.testing.assert_frame_equal(
+        aaa_raw.reset_index(drop=True),
+        combined_raw.loc[combined_raw["symbol"].eq("AAA")].reset_index(drop=True),
+        check_dtype=False,
+    )
 
 
 def test_outcomes_are_append_only():
@@ -221,5 +268,8 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["status"] == "collecting_prospective_evidence"
     assert report["semantics"]["scalar_confidence_mapping_created"] is False
     assert report["semantics"]["confidence_thresholds_created"] is False
+    assert report["semantics"]["peer_labels_are_derived_not_frozen_early"] is True
     assert report["validation_contract"]["weights_or_thresholds_may_be_tuned_on_this_stream"] is False
+    assert report["validation_contract"]["fixed_cooldown_sessions"] == 5
     assert report["horizons"]["5"]["block_length_sessions_for_future_inference"] == 10
+    assert report["horizons"]["5"]["derived_peer_labels"] == 2
