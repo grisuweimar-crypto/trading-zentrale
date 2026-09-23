@@ -18,6 +18,7 @@ import pandas as pd
 from scanner.reports.selection_timing import (
     HORIZONS,
     Phase1AConfig,
+    _price_rows,
     _scanner_rows,
     build_events,
     cooldown_events,
@@ -226,17 +227,10 @@ def build_timing_events(
 
 
 def _add_peer_excess(events: pd.DataFrame, horizon: int) -> pd.DataFrame:
-    """Attach peer-relative returns before any sampling/cooldown.
-
-    Same-currency median is used only when at least two valid members exist for
-    that date/currency. Otherwise the full daily cross-section is used when it
-    has at least two members. Singleton days remain unknown instead of creating
-    a self-median of exactly zero.
-    """
+    """Attach peer-relative returns before any sampling/cooldown."""
     ret = f"return_{horizon}t"
     work = events.copy()
-    valid = pd.to_numeric(work[ret], errors="coerce")
-    work[ret] = valid
+    work[ret] = pd.to_numeric(work[ret], errors="coerce")
 
     currency_group = work.groupby(["obs_date", "currency"])[ret]
     currency_median = currency_group.transform("median")
@@ -347,17 +341,51 @@ def _stats_from_occurrences(
     }
 
 
+def _session_position_maps(prices: pd.DataFrame) -> dict[str, dict[pd.Timestamp, int]]:
+    """Build market-session positions once and reuse them for all candidates."""
+    price = _price_rows(prices)
+    return {
+        str(symbol): {
+            pd.Timestamp(day): position
+            for position, day in enumerate(group["date"].tolist())
+        }
+        for symbol, group in price.groupby("symbol", sort=False)
+    }
+
+
 def _cooldown_matching(
     work: pd.DataFrame,
     prices: pd.DataFrame,
     mask: pd.Series,
     sessions: int,
+    position_maps: dict[str, dict[pd.Timestamp, int]] | None = None,
 ) -> pd.DataFrame:
     """Apply cooldown only after a pattern/state occurrence is selected."""
     selected = work.loc[mask].copy()
     if selected.empty:
         return selected
-    return cooldown_events(selected, prices, sessions)
+    if sessions <= 0:
+        return selected.sort_values(["obs_date", "symbol"], kind="mergesort").reset_index(drop=True)
+
+    maps = position_maps if position_maps is not None else _session_position_maps(prices)
+    keep: list[int] = []
+    for symbol, group in selected.groupby("symbol", sort=False):
+        mapping = maps.get(str(symbol), {})
+        last_position: int | None = None
+        for idx, row in group.sort_values("start_market_date", kind="mergesort").iterrows():
+            position = mapping.get(pd.Timestamp(row["start_market_date"]))
+            if position is None:
+                continue
+            if last_position is None or position - last_position >= sessions:
+                keep.append(idx)
+                last_position = position
+    if not keep:
+        return selected.iloc[0:0].copy()
+    return (
+        selected.loc[keep]
+        .sort_values(["obs_date", "symbol"], kind="mergesort")
+        .reset_index(drop=True)
+    )
 
 
 def _candidate_discovery_stats(
@@ -366,12 +394,17 @@ def _candidate_discovery_stats(
     combo: tuple[str, ...],
     target: str,
     config: Phase1BConfig,
+    position_maps: dict[str, dict[pd.Timestamp, int]],
 ) -> dict | None:
     mask = discovery[list(combo)].all(axis=1)
     if int(mask.sum()) < config.min_pattern_discovery_n:
         return None
     occurrences = _cooldown_matching(
-        discovery, prices, mask, config.cooldown_sessions
+        discovery,
+        prices,
+        mask,
+        config.cooldown_sessions,
+        position_maps,
     )
     stats = _stats_from_occurrences(occurrences, discovery, target)
     if not stats or stats["N"] < config.min_pattern_discovery_n:
@@ -390,6 +423,7 @@ def discover_patterns(
     full = _add_peer_excess(events, horizon)
     target = f"peer_excess_{horizon}t"
     discovery, validation = _strict_windows(full, horizon, config)
+    position_maps = _session_position_maps(prices)
 
     all_atoms = [
         name
@@ -397,11 +431,15 @@ def discover_patterns(
         if name in discovery.columns
     ]
 
-    # Discovery-only atom screening. Validation is deliberately not consulted.
     atom_rows: list[tuple[str, dict]] = []
     for name in all_atoms:
         stats = _candidate_discovery_stats(
-            discovery, prices, (name,), target, config
+            discovery,
+            prices,
+            (name,),
+            target,
+            config,
+            position_maps,
         )
         if stats:
             atom_rows.append((name, stats))
@@ -416,7 +454,12 @@ def discover_patterns(
     for size in range(1, config.max_combo_size + 1):
         for combo in combinations(selected_atoms, size):
             stats = _candidate_discovery_stats(
-                discovery, prices, combo, target, config
+                discovery,
+                prices,
+                combo,
+                target,
+                config,
+                position_maps,
             )
             if not stats:
                 continue
@@ -455,7 +498,11 @@ def discover_patterns(
         conditions = tuple(row["conditions"])
         vmask = validation[list(conditions)].all(axis=1)
         validation_occurrences = _cooldown_matching(
-            validation, prices, vmask, config.cooldown_sessions
+            validation,
+            prices,
+            vmask,
+            config.cooldown_sessions,
+            position_maps,
         )
         validation_stats = _stats_from_occurrences(
             validation_occurrences, validation, target
