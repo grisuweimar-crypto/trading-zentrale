@@ -265,6 +265,7 @@ def _probability_stats(
         "block_bootstrap_probability_advantage_95": robust["probability_advantage_95"],
         "bootstrap_block_count": int(robust["block_count"]),
         "bootstrap_occurrence_block_count": int(robust["occurrence_block_count"]),
+        "bootstrap_occurrence_support_region_count": int(robust["occurrence_block_count"]),
         "bootstrap_date_count": int(robust.get("date_count", 0)),
         "bootstrap_block_length_sessions": int(robust.get("block_length", _effective_block_length(horizon))),
         "raw_positive_peer_excess_rate": float(raw_rate),
@@ -279,7 +280,7 @@ def _probability_stats(
         "prior_beta": shrink["prior_beta"],
         "approx_binomial_p_iid_diagnostic": p_value,
         "bonferroni_adjusted_p_iid_diagnostic": bonferroni,
-        "uncertainty_note": "strong-validation decisions use horizon-aware block bootstrap with at least two occurrence-bearing blocks; Wilson/Beta intervals and binomial p-values are iid diagnostics only",
+        "uncertainty_note": "strong-validation decisions use a circular 2x-horizon moving-block bootstrap and require at least two time-separated occurrence support regions; Wilson/Beta intervals and binomial p-values are iid diagnostics only",
     }
 
 
