@@ -64,6 +64,58 @@ The report therefore no longer treats a matching mean-alpha sign alone as proof 
 
 Approximate Wilson/Beta intervals and binomial/Bonferroni values remain iid diagnostics only. Strong validation uses a circular moving observation-date block bootstrap with effective block length 2 × horizon; every eligible date remains a possible block start, and robust intervals require at least two time-separated occurrence support regions. The report records both the base horizon and the effective moving-block length explicitly so the uncertainty method is auditable. Positive regression fixtures likewise span at least two such support regions; sparse one-region evidence must fail closed.
 
+## Final empirical result — snapshot 2026-09-22
+
+### 5 trading sessions
+
+Validation contains **4,970 mature target events**. Of the frozen Phase 1B timing patterns:
+
+- 17 retain the expected mean-alpha direction,
+- 16 retain both alpha and probability direction,
+- **2 remain `strong_validation` after the final circular 10-session moving-block bootstrap.**
+
+The two robust patterns are:
+
+1. `trend200_d10_down & trend200_d1_down & rs3m_d1_up`
+   - validation N: **241**
+   - mean peer excess: **+0.635%**
+   - median peer excess: **+0.694%**
+   - probability advantage vs baseline: **+7.55 pp**
+   - moving-block mean-alpha 95% interval: **+0.202% to +1.047%**
+   - moving-block probability-advantage 95% interval: **+2.56 pp to +11.13 pp**
+   - time-separated occurrence support regions: **4**
+
+2. `trend200_d5_down & trend200_d10_down & rs3m_d1_up`
+   - validation N: **342**
+   - mean peer excess: **+0.611%**
+   - median peer excess: **+0.492%**
+   - probability advantage vs baseline: **+6.00 pp**
+   - moving-block mean-alpha 95% interval: **+0.105% to +0.994%**
+   - moving-block probability-advantage 95% interval: **+0.01 pp to +9.99 pp**
+   - time-separated occurrence support regions: **4**
+
+The second pattern's probability interval is only narrowly above zero, so its statistical margin is materially weaker than the first pattern even though it satisfies the formal `strong_validation` rule.
+
+A pattern that appeared strong under the intermediate fixed-block method, `trend200_d5_down & trend200_d1_down & rs3m_d1_up`, is **not** strong under the final method. Its mean-alpha interval remains positive, but its probability-advantage interval is approximately **-0.27 pp to +8.65 pp**, crossing zero.
+
+### 20 trading sessions
+
+Validation contains **2,487 mature target events**. Eight frozen patterns retain the expected alpha direction and seven retain both alpha and probability direction, but **none is `strong_validation`** under the final 40-session moving-block method.
+
+The strongest selection band remains B5 as a point estimate:
+
+- validation N: **269**
+- mean peer excess: **+2.248%**
+- median peer excess: **+2.424%**
+- Beta-shrunk positive peer-excess probability: **67.00%**
+- probability advantage vs baseline: **+18.83 pp**
+
+However, the validation window contains only **one independent 40-session occurrence-support region** for this B5 sample. Robust moving-block alpha and probability-advantage intervals are therefore correctly reported as unavailable (`None`). The strong point estimates must not be described as confirmed 20T evidence yet.
+
+### 40 / 60 trading sessions
+
+There are currently no mature validation targets for 40T or 60T. These horizons remain `not_yet_mature` rather than failed.
+
 ## Shrinkage
 
 The raw hit rate is not treated as perfectly known. A Beta prior is centred on the contemporaneous baseline rate with default strength 20. A 0.5 shape floor keeps the prior proper even when a finite window's baseline rate is exactly 0 or 1. Configured prior strengths below 1 are rejected.
