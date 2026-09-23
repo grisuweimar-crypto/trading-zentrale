@@ -9,7 +9,7 @@ from scanner.reports.risk_vnext import (
     _attach_future_path_risk,
     _cluster_bootstrap_group_difference,
     _feature_stats,
-    _horizon_time_blocks,
+    _circular_moving_time_blocks,
     analyze,
     risk_feature_rows,
 )
@@ -113,9 +113,12 @@ def test_phase3_is_research_only_and_separates_protection_from_return():
     assert semantics["confidence_changed"] is False
     assert semantics["protection_and_return_effects_kept_separate"] is True
     assert semantics["return_and_protection_samples_decoupled"] is True
-    assert semantics["uncertainty_method"] == "non-overlapping horizon-length observation-date block bootstrap"
+    assert semantics["uncertainty_method"] == "circular moving observation-date block bootstrap"
+    assert semantics["bootstrap_uses_all_eligible_dates"] is True
+    assert semantics["bootstrap_min_group_temporal_support_regions"] == 2
     assert set(result["horizons"]) == {"5", "20", "40", "60"}
-    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 20
+    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 40
+    assert result["horizons"]["20"]["bootstrap"]["method"] == "circular_moving_observation_date_blocks"
 
     stats = result["horizons"]["5"]["discovery"]["aggregate_risk"]
     assert stats is not None
@@ -175,7 +178,7 @@ def test_unavailable_bootstrap_is_not_reported_as_zero_width_95_interval():
     ) is None
 
 
-def test_horizon_blocks_keep_dates_together_and_drop_partial_tail():
+def test_circular_moving_blocks_cross_boundaries_and_keep_trailing_dates():
     dates = pd.bdate_range("2026-08-03", periods=12)
     rows = []
     for day in dates:
@@ -183,40 +186,38 @@ def test_horizon_blocks_keep_dates_together_and_drop_partial_tail():
         rows.append({"obs_date": day, "marker": f"{day.date()}-B"})
     frame = pd.DataFrame(rows)
 
-    blocks = _horizon_time_blocks(frame, 5)
-    assert len(blocks) == 2
-    assert [block["obs_date"].nunique() for block in blocks] == [5, 5]
-    assert [len(block) for block in blocks] == [10, 10]
-    assert blocks[0]["obs_date"].min() == dates[0]
-    assert blocks[0]["obs_date"].max() == dates[4]
-    assert blocks[1]["obs_date"].min() == dates[5]
-    assert blocks[1]["obs_date"].max() == dates[9]
-    assert not any(block["obs_date"].isin(dates[10:]).any() for block in blocks)
+    work, blocks, block_length = _circular_moving_time_blocks(frame, 2)
+    assert block_length == 4
+    assert work["obs_date"].nunique() == 12
+    assert len(blocks) == 12
+    assert all(block["obs_date"].nunique() == 4 for block in blocks)
+    wrapped = list(dict.fromkeys(blocks[-2]["obs_date"].tolist()))
+    assert wrapped == [dates[-2], dates[-1], dates[0], dates[1]]
+    assert any(block["obs_date"].eq(dates[-1]).any() for block in blocks)
 
 
-def test_horizon_block_bootstrap_requires_two_complete_blocks():
-    dates = pd.bdate_range("2026-08-03", periods=9)
-    frame = pd.DataFrame(
-        {
-            "obs_date": np.repeat(dates, 2),
-            "target": np.tile([0.1, -0.1], len(dates)),
-            "risk_group": np.tile(["high_risk", "low_risk"], len(dates)),
-        }
-    )
+def test_moving_block_bootstrap_requires_two_temporal_support_regions_per_group():
+    dates = pd.bdate_range("2026-08-03", periods=25)
+    rows = []
+    for i, day in enumerate(dates):
+        rows.append({"obs_date": day, "target": 0.1 + i * 0.001, "risk_group": "high_risk"})
+        if i < 5:
+  rows.append({"obs_date": day, "target": -0.1, "risk_group": "low_risk"})
+    frame = pd.DataFrame(rows)
     assert _cluster_bootstrap_group_difference(
         frame, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5
     ) is None
 
-    tenth = pd.DataFrame(
+    extra = pd.DataFrame(
         {
-            "obs_date": [pd.bdate_range("2026-08-03", periods=10)[-1]] * 2,
-            "target": [0.1, -0.1],
-            "risk_group": ["high_risk", "low_risk"],
+  "obs_date": dates[20:25],
+  "target": [-0.1] * 5,
+  "risk_group": ["low_risk"] * 5,
         }
     )
-    complete = pd.concat([frame, tenth], ignore_index=True)
+    supported = pd.concat([frame, extra], ignore_index=True)
     interval = _cluster_bootstrap_group_difference(
-        complete, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5
+        supported, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5
     )
     assert interval is not None
     assert len(interval) == 2

@@ -216,27 +216,64 @@ def _stable_seed(base: int, *parts: object) -> int:
     return int((base + int.from_bytes(digest[:4], "big")) % (2**32 - 1))
 
 
-def _horizon_time_blocks(frame: pd.DataFrame, horizon: int) -> list[pd.DataFrame]:
-    """Return complete, non-overlapping observation-date blocks.
+def _effective_block_length(horizon: int) -> int:
+    return max(1, 2 * int(horizon))
 
-    Blocks contain ``horizon`` distinct sorted observation dates. Any trailing
-    incomplete block is dropped. All rows sharing a date stay in the same block,
-    preserving dependence among overlapping forward outcome windows.
+
+def _circular_moving_time_blocks(
+    frame: pd.DataFrame,
+    horizon: int,
+) -> tuple[pd.DataFrame, list[pd.DataFrame], int]:
+    """Return circular moving observation-date blocks of length 2 x horizon.
+
+    All rows sharing an observation date remain together. Every eligible
+    date can be a block start, so trailing dates are retained rather than
+    truncated. Circular wrapping preserves dependence across former fixed
+    block boundaries.
     """
+    block_length = _effective_block_length(horizon)
     if horizon < 1 or frame.empty or "obs_date" not in frame.columns:
-        return []
+        return frame.iloc[0:0].copy(), [], block_length
     work = frame.copy()
     work["obs_date"] = pd.to_datetime(work["obs_date"], errors="coerce")
-    work = work.dropna(subset=["obs_date"])
+    work = work.dropna(subset=["obs_date"]).copy()
     dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
-    complete = (len(dates) // horizon) * horizon
-    if complete == 0:
-        return []
-    dates = dates[:complete]
-    return [
-        work.loc[work["obs_date"].isin(dates[start : start + horizon])].copy()
-        for start in range(0, complete, horizon)
-    ]
+    if not dates:
+        return work, [], block_length
+    span = min(block_length, len(dates))
+    by_day = {
+        day: work.loc[work["obs_date"].eq(day)].copy()
+        for day in dates
+    }
+    blocks: list[pd.DataFrame] = []
+    for start in range(len(dates)):
+        chosen = [dates[(start + offset) % len(dates)] for offset in range(span)]
+        blocks.append(pd.concat([by_day[day] for day in chosen], ignore_index=True))
+    return work, blocks, block_length
+
+
+def _temporal_support_region_count(
+    work: pd.DataFrame,
+    group_column: str,
+    group_name: str,
+    block_length: int,
+) -> int:
+    """Count time-separated support regions for one fixed risk group."""
+    dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
+    if not dates:
+        return 0
+    positions = {day: i for i, day in enumerate(dates)}
+    group_dates = sorted(
+        positions[pd.Timestamp(day)]
+        for day in work.loc[work[group_column].eq(group_name), "obs_date"].unique()
+    )
+    count = 0
+    last_start: int | None = None
+    for pos in group_dates:
+        if last_start is None or pos - last_start >= block_length:
+  count += 1
+  last_start = pos
+    return count
 
 
 def _cluster_bootstrap_group_difference(
@@ -249,44 +286,59 @@ def _cluster_bootstrap_group_difference(
     seed: int,
     horizon: int = 1,
 ) -> list[float] | None:
-    """Horizon-aware block bootstrap of a group mean difference.
+    """Circular moving-block bootstrap of a fixed-group mean difference.
 
-    Returns mean(positive_group) - mean(negative_group). Quantile membership is
-    fixed before resampling. Complete, non-overlapping time blocks containing at
-    least the evaluated forward horizon are resampled with replacement so
-    overlapping outcome windows are not treated as independent dates.
+    Returns mean(positive_group) - mean(negative_group). Quantile
+    membership is fixed before resampling. The effective block length is
+    twice the evaluated forward horizon. Every eligible observation date
+    remains in the bootstrap sampling frame, and uncertainty fails closed
+    unless both groups have support in at least two time-separated regions.
     """
     work = frame[["obs_date", target, group_column]].dropna().copy()
     work = work.loc[work[group_column].isin([positive_group, negative_group])]
     if work.empty or reps <= 0:
         return None
-    blocks = _horizon_time_blocks(work, horizon)
+    work, blocks, block_length = _circular_moving_time_blocks(work, horizon)
     if len(blocks) < 2:
+        return None
+    if _temporal_support_region_count(work, group_column, positive_group, block_length) < 2:
+        return None
+    if _temporal_support_region_count(work, group_column, negative_group, block_length) < 2:
         return None
 
     def difference(sample: pd.DataFrame) -> float | None:
         pos = sample.loc[sample[group_column].eq(positive_group), target]
         neg = sample.loc[sample[group_column].eq(negative_group), target]
         if pos.empty or neg.empty:
-            return None
+  return None
         return float(pos.mean() - neg.mean())
 
     if difference(work) is None:
         return None
+
+    dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
+    day_groups = {
+        day: work.loc[work["obs_date"].eq(day)].copy()
+        for day in dates
+    }
+    block_dates = [
+        list(dict.fromkeys(pd.Timestamp(day) for day in block["obs_date"].tolist()))
+        for block in blocks
+    ]
+    draws_per_rep = int(np.ceil(len(dates) / block_length))
     rng = np.random.default_rng(seed)
     estimates: list[float] = []
-    count = len(blocks)
     for _ in range(reps):
-        chosen = rng.integers(0, count, size=count)
-        sample = pd.concat([blocks[i] for i in chosen], ignore_index=True)
+        chosen = rng.integers(0, len(block_dates), size=draws_per_rep)
+        sampled_dates = [day for idx in chosen for day in block_dates[idx]][: len(dates)]
+        sample = pd.concat([day_groups[day] for day in sampled_dates], ignore_index=True)
         value = difference(sample)
         if value is not None:
-            estimates.append(value)
+  estimates.append(value)
     if not estimates:
         return None
     low, high = np.quantile(np.asarray(estimates, dtype=float), [0.025, 0.975])
     return [float(low), float(high)]
-
 
 def _validation_maturity(frame: pd.DataFrame, horizon: int) -> dict:
     ret = f"return_{horizon}t"
@@ -491,8 +543,10 @@ def analyze(
             "higher_feature_value_interpreted_as_riskier": True,
             "protection_and_return_effects_kept_separate": True,
             "return_and_protection_samples_decoupled": True,
-            "uncertainty_method": "non-overlapping horizon-length observation-date block bootstrap",
-            "uncertainty_block_length_rule": "block length equals evaluated forward horizon in sessions (5/20/40/60)",
+            "uncertainty_method": "circular moving observation-date block bootstrap",
+            "uncertainty_block_length_rule": "effective block length equals 2 x evaluated forward horizon in sessions",
+            "bootstrap_uses_all_eligible_dates": True,
+            "bootstrap_min_group_temporal_support_regions": 2,
             "bootstrap_quantile_membership_fixed": True,
             "danelfin_low_risk_role": "external research reference only; no Danelfin score is imported",
         },
@@ -508,8 +562,11 @@ def analyze(
         validation = cooldown_events(validation, prices, config.cooldown_sessions)
         result["horizons"][str(horizon)] = {
             "bootstrap": {
-                "method": "non_overlapping_horizon_time_blocks",
-                "block_length_sessions": int(horizon),
+                "method": "circular_moving_observation_date_blocks",
+                "base_horizon_sessions": int(horizon),
+                "block_length_sessions": int(_effective_block_length(horizon)),
+                "uses_all_eligible_dates": True,
+                "minimum_group_temporal_support_regions": 2,
             },
             "discovery_maturity": _validation_maturity(discovery, horizon),
             "validation_maturity": _validation_maturity(validation, horizon),

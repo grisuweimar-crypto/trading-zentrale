@@ -60,19 +60,20 @@ Return/alpha and protection outcomes use independent available samples; neither 
 
 Forward outcomes overlap whenever the event cooldown is shorter than the evaluated horizon. Independent per-day bootstrap resampling therefore understates dependence for 20T/40T/60T and can make confidence intervals too narrow.
 
-Phase 3 now uses **complete, non-overlapping horizon-length observation-date blocks**:
+Phase 3 now uses a **circular moving observation-date block bootstrap** with an effective block length of **2 × the evaluated forward horizon**:
 
-- 5T outcomes use blocks of 5 observation sessions
-- 20T outcomes use blocks of 20 observation sessions
-- 40T outcomes use blocks of 40 observation sessions
-- 60T outcomes use blocks of 60 observation sessions
+- 5T outcomes use moving blocks of 10 observation sessions
+- 20T outcomes use moving blocks of 40 observation sessions
+- 40T outcomes use moving blocks of 80 observation sessions
+- 60T outcomes use moving blocks of 120 observation sessions
+- every eligible observation date can be a block start, including trailing dates
+- blocks wrap circularly so dependence is preserved across former fixed block boundaries
 - all observations sharing a date remain together
 - quantile membership is fixed before resampling
-- trailing incomplete blocks are excluded
-- fewer than two complete blocks means uncertainty is reported as unavailable (`None`)
+- uncertainty is unavailable unless both low- and high-risk groups have support in at least two time-separated block-length regions
 - disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval
 
-This is deliberately conservative. The observed means, medians, correlations and group-rate point estimates do not depend on the bootstrap method, but claims about statistical strength do.
+This fails closed when independent temporal support is insufficient. The observed means, medians, correlations and group-rate point estimates do not depend on the bootstrap method, but claims about statistical strength do.
 
 ## Danelfin
 
@@ -139,13 +140,13 @@ Validation contained 638 mature events.
 - 10% tail-drawdown rate: **75.38% high-drawdown vs 13.95% low-drawdown**
 - observed low-risk peer-alpha advantage: **+0.54 pp**
 
-The new horizon-aware block-bootstrap run determines which of these differences can be described as statistically supported.
+The corrected circular moving-block run determines which of these differences can be described as statistically supported.
 
 ### 40 / 60 trading sessions
 
 Discovery observations remain exploratory. The validation window is not yet mature for 40T or 60T, so those horizons must not be treated as confirmed evidence.
 
-### Phase-3 interpretation before final block-bootstrap recomputation
+### Phase-3 interpretation before final moving-block recomputation
 
 1. Volatility has the strongest observed downside-protection relationship among currently testable factors.
 2. Stored drawdown also shows meaningful observed protection separation.
