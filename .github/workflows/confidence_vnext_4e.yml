@@ -19,7 +19,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: phase4e-confidence-shadow-${{ github.event.pull_request.number || github.run_id }}
+  group: phase4e-confidence-shadow-${{ github.event.pull_request.number || 'main' }}
   cancel-in-progress: false
 
 jobs:
@@ -27,11 +27,56 @@ jobs:
     if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout exact source
+      - name: Checkout source
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.event_name == 'workflow_run' && 'main' || github.ref }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+
+      - name: Bind workflow_run to exact scanner publication
+        if: github.event_name == 'workflow_run'
+        env:
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
+          TRIGGER_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: |
+          git fetch origin main --force
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          expected = f"github-{os.environ['TRIGGER_RUN_ID']}-{os.environ['TRIGGER_RUN_ATTEMPT']}"
+          shas = subprocess.check_output(
+              ['git', 'rev-list', 'origin/main', '--', 'artifacts/research/history_metadata.json'],
+              text=True,
+          ).splitlines()
+          match = None
+          for sha in shas:
+              try:
+                  raw = subprocess.check_output(
+                      ['git', 'show', f'{sha}:artifacts/research/history_metadata.json'],
+                      text=True,
+                      stderr=subprocess.DEVNULL,
+                  )
+                  metadata = json.loads(raw)
+              except (subprocess.CalledProcessError, json.JSONDecodeError):
+                  continue
+              run_id = ((metadata.get('daily_run') or {}).get('run_id'))
+              if run_id == expected:
+                  match = sha
+                  break
+          if match is None:
+              raise SystemExit(f'No scanner publication commit found for EXPECTED_RUN_ID={expected}')
+          subprocess.check_call(['git', 'checkout', '--detach', match])
+          metadata = json.loads(open('artifacts/research/history_metadata.json', encoding='utf-8').read())
+          actual = ((metadata.get('daily_run') or {}).get('run_id'))
+          if actual != expected:
+              raise SystemExit(f'Exact publication verification failed: {actual!r} != {expected!r}')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f'EXPECTED_RUN_ID={expected}\n')
+              handle.write(f'TRIGGER_PUBLICATION_COMMIT={match}\n')
+          print('Bound Phase 4E to', match, expected)
+          PY
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -88,6 +133,12 @@ jobs:
           python scripts/run_confidence_vnext_research_4.py \
             --output "$RUNNER_TEMP/confidence_vnext_current_4.json"
 
+      - name: Preserve exact triggering claim inputs
+        run: |
+          cp artifacts/research/latest_scanner.csv "$RUNNER_TEMP/trigger_latest.csv"
+          cp artifacts/research/history_metadata.json "$RUNNER_TEMP/trigger_metadata.json"
+          cp artifacts/research/price_backfill.csv "$RUNNER_TEMP/claim_prices.csv"
+
       - name: Select shadow destinations
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -102,10 +153,68 @@ jobs:
             echo "SUMMARY_PATH=artifacts/research/confidence_vnext_shadow_4e.json" >> "$GITHUB_ENV"
           fi
 
+      - name: Restore latest append-only shadow archives
+        if: github.event_name == 'workflow_run'
+        run: |
+          git fetch origin main --force
+          for path in \
+            artifacts/research/confidence_vnext_shadow_claims_4e.csv \
+            artifacts/research/confidence_vnext_shadow_outcomes_4e.csv \
+            artifacts/research/confidence_vnext_shadow_4e.json
+          do
+            if git cat-file -e "origin/main:$path" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/main:$path" > "$path"
+            else
+              rm -f "$path"
+            fi
+          done
+
+      - name: Determine unresolved claim symbols
+        if: github.event_name != 'pull_request'
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import pandas as pd
+
+          claims_path = Path(os.environ['CLAIMS_PATH'])
+          outcomes_path = Path(os.environ['OUTCOMES_PATH'])
+          symbols = []
+          if claims_path.exists() and claims_path.stat().st_size:
+              claims = pd.read_csv(claims_path, dtype=str, keep_default_na=False)
+              matured = set()
+              if outcomes_path.exists() and outcomes_path.stat().st_size:
+                  outcomes = pd.read_csv(outcomes_path, dtype=str, keep_default_na=False)
+                  matured = set(outcomes.get('claim_id', pd.Series(dtype=str)).astype(str))
+              unresolved = claims.loc[~claims['claim_id'].astype(str).isin(matured)]
+              symbols = sorted(set(unresolved['symbol'].astype(str)) - {''})
+          target = Path(os.environ['RUNNER_TEMP']) / 'outstanding_symbols.txt'
+          target.write_text('\n'.join(symbols) + ('\n' if symbols else ''), encoding='utf-8')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f'OUTSTANDING_SYMBOLS={len(symbols)}\n')
+          print('Outstanding Phase 4E symbols:', len(symbols))
+          PY
+
+      - name: Refresh prices for unresolved removed symbols
+        if: github.event_name != 'pull_request' && env.OUTSTANDING_SYMBOLS != '0'
+        run: |
+          mapfile -t SYMBOLS < "$RUNNER_TEMP/outstanding_symbols.txt"
+          python scripts/prefetch_market_history.py "${SYMBOLS[@]}"
+          python - <<'PY'
+          from pathlib import Path
+          from scanner.reports.research_views import refresh_price_backfill
+          refresh_price_backfill(Path('.'))
+          PY
+
       - name: Run Phase 4E shadow recorder
         run: |
           python scripts/run_confidence_vnext_prospective_4e.py \
             --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
+            --latest "$RUNNER_TEMP/trigger_latest.csv" \
+            --metadata "$RUNNER_TEMP/trigger_metadata.json" \
+            --claim-prices "$RUNNER_TEMP/claim_prices.csv" \
+            --prices artifacts/research/price_backfill.csv \
             --claims "$CLAIMS_PATH" \
             --outcomes "$OUTCOMES_PATH" \
             --summary "$SUMMARY_PATH"
@@ -117,6 +226,10 @@ jobs:
           OUTCOMES_BEFORE=$(sha256sum "$OUTCOMES_PATH" | cut -d' ' -f1)
           python scripts/run_confidence_vnext_prospective_4e.py \
             --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
+            --latest "$RUNNER_TEMP/trigger_latest.csv" \
+            --metadata "$RUNNER_TEMP/trigger_metadata.json" \
+            --claim-prices "$RUNNER_TEMP/claim_prices.csv" \
+            --prices artifacts/research/price_backfill.csv \
             --claims "$CLAIMS_PATH" \
             --outcomes "$OUTCOMES_PATH" \
             --summary "$SUMMARY_PATH"
@@ -132,10 +245,14 @@ jobs:
           report = json.load(open(os.environ['SUMMARY_PATH'], encoding='utf-8'))
           if 'score' in claims.columns:
               raise SystemExit('raw scanner score must not be archived as Confidence strength')
+          if not {'start_market_date', 'start_adjusted_close'}.issubset(claims.columns):
+              raise SystemExit('claim-time start session/price must be frozen in every claim')
           if report['semantics']['production_confidence_changed'] is not False:
               raise SystemExit('Phase 4E must remain research-only')
           if report['semantics']['scalar_confidence_mapping_created'] is not False:
               raise SystemExit('Phase 4E may not create scalar Confidence')
+          if report['semantics']['claim_time_start_session_is_frozen'] is not True:
+              raise SystemExit('Phase 4E must freeze the contemporaneous start session')
           if report['semantics']['outcomes_require_completed_session_day'] is not True:
               raise SystemExit('Phase 4E outcomes must fail closed on same-day/future target sessions')
           if report['validation_contract']['weights_or_thresholds_may_be_tuned_on_this_stream'] is not False:
