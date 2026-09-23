@@ -11,7 +11,7 @@ The central distinction is deliberate:
 - return effect: does a lower current risk reading predict better future
   peer-relative return / outperformance probability?
 
-Those are different questions and are reported separately.
+Those are different questions and are reported on independent available samples.
 """
 
 from dataclasses import dataclass
@@ -96,13 +96,10 @@ def risk_feature_rows(
         (~frame["is_crypto"]) & (frame["date"] >= pd.Timestamp(config.stable_start))
     ].copy()
 
-    sources: dict[str, str | None] = {}
     factor_coverage: dict[str, dict] = {}
     total = int(len(frame))
-
     for canonical, aliases in RISK_FEATURE_ALIASES.items():
         source = _first_column(frame, aliases)
-        sources[canonical] = source
         frame[canonical] = pd.to_numeric(frame[source], errors="coerce") if source else np.nan
         valid = frame[canonical].notna()
         rows = frame.loc[valid]
@@ -171,12 +168,10 @@ def _attach_future_path_risk(events: pd.DataFrame, prices: pd.DataFrame) -> pd.D
                 continue
             start_value = float(path[0])
             entry_returns = path / start_value - 1.0
-            adverse = max(0.0, -float(np.min(entry_returns)))
+            out[adverse_key] = max(0.0, -float(np.min(entry_returns)))
             peaks = np.maximum.accumulate(path)
             drawdowns = path / peaks - 1.0
-            max_drawdown = max(0.0, -float(np.min(drawdowns)))
-            out[adverse_key] = adverse
-            out[drawdown_key] = max_drawdown
+            out[drawdown_key] = max(0.0, -float(np.min(drawdowns)))
         records.append(out)
     return pd.DataFrame(records)
 
@@ -190,10 +185,7 @@ def build_risk_events(
     events = build_events(
         history,
         prices,
-        Phase1AConfig(
-            stable_start=config.stable_start,
-            cooldown_sessions=config.cooldown_sessions,
-        ),
+        Phase1AConfig(stable_start=config.stable_start, cooldown_sessions=config.cooldown_sessions),
     )
     if events.empty:
         return events, coverage
@@ -236,15 +228,16 @@ def _cluster_bootstrap_group_difference(
     """Bootstrap a group mean difference by observation day.
 
     Returns mean(positive_group) - mean(negative_group). Quantile membership is
-    fixed before resampling so the bootstrap measures sampling uncertainty rather
-    than repeatedly re-selecting thresholds.
+    fixed before resampling. If fewer than two observation-day clusters exist or
+    resampling is disabled, a 95% interval is not estimable and ``None`` is
+    returned rather than a zero-width pseudo interval.
     """
     work = frame[["obs_date", target, group_column]].dropna().copy()
     work = work.loc[work[group_column].isin([positive_group, negative_group])]
-    if work.empty:
+    if work.empty or reps <= 0:
         return None
     groups = [g for _, g in work.groupby("obs_date", sort=False)]
-    if not groups:
+    if len(groups) < 2:
         return None
 
     def difference(sample: pd.DataFrame) -> float | None:
@@ -254,12 +247,8 @@ def _cluster_bootstrap_group_difference(
             return None
         return float(pos.mean() - neg.mean())
 
-    observed = difference(work)
-    if observed is None:
+    if difference(work) is None:
         return None
-    if len(groups) < 2 or reps <= 0:
-        return [observed, observed]
-
     rng = np.random.default_rng(seed)
     estimates: list[float] = []
     count = len(groups)
@@ -270,19 +259,44 @@ def _cluster_bootstrap_group_difference(
         if value is not None:
             estimates.append(value)
     if not estimates:
-        return [observed, observed]
+        return None
     low, high = np.quantile(np.asarray(estimates, dtype=float), [0.025, 0.975])
     return [float(low), float(high)]
 
 
 def _validation_maturity(frame: pd.DataFrame, horizon: int) -> dict:
-    target = f"return_{horizon}t"
-    mature = int(frame[target].notna().sum()) if target in frame else 0
+    ret = f"return_{horizon}t"
+    adverse = f"adverse_excursion_{horizon}t"
+    path_dd = f"path_max_drawdown_{horizon}t"
+    return_mature = int(frame[ret].notna().sum()) if ret in frame else 0
+    protection_mature = int(frame[[adverse, path_dd]].notna().all(axis=1).sum()) if adverse in frame and path_dd in frame else 0
     return {
         "rows": int(len(frame)),
-        "mature_target_events": mature,
-        "status": "available" if mature > 0 else "not_yet_mature",
+        "mature_target_events": return_mature,
+        "return_mature_events": return_mature,
+        "protection_mature_events": protection_mature,
+        "status": "available" if (return_mature or protection_mature) else "not_yet_mature",
     }
+
+
+def _quantile_groups(
+    sample: pd.DataFrame,
+    feature: str,
+    config: Phase3Config,
+) -> tuple[str, pd.DataFrame, float | None, float | None]:
+    if len(sample) < config.min_feature_n or sample[feature].nunique() < 3:
+        return "insufficient", sample, None, None
+    low_cut = float(sample[feature].quantile(config.quantile))
+    high_cut = float(sample[feature].quantile(1.0 - config.quantile))
+    if not np.isfinite(low_cut) or not np.isfinite(high_cut) or low_cut >= high_cut:
+        return "insufficient_variation", sample, None, None
+    work = sample.copy()
+    work["risk_group"] = "middle"
+    work.loc[work[feature] <= low_cut, "risk_group"] = "low_risk"
+    work.loc[work[feature] >= high_cut, "risk_group"] = "high_risk"
+    if not work["risk_group"].eq("low_risk").any() or not work["risk_group"].eq("high_risk").any():
+        return "insufficient_groups", work, low_cut, high_cut
+    return "available", work, low_cut, high_cut
 
 
 def _feature_stats(
@@ -292,104 +306,118 @@ def _feature_stats(
     config: Phase3Config,
     seed_key: tuple[object, ...],
 ) -> dict | None:
+    """Evaluate return and protection effects on independent available samples."""
     peer = f"peer_excess_{horizon}t"
     ret = f"return_{horizon}t"
     adverse = f"adverse_excursion_{horizon}t"
     path_dd = f"path_max_drawdown_{horizon}t"
-    required = [feature, peer, ret, adverse, path_dd]
-    if any(column not in cohort.columns for column in required):
+    if feature not in cohort.columns:
         return None
 
-    mature = cohort.dropna(subset=[peer, ret, adverse, path_dd]).copy()
-    values = mature.dropna(subset=[feature]).copy()
-    if values.empty:
+    feature_rows = cohort.dropna(subset=[feature]).copy()
+    if feature_rows.empty:
         return None
+
+    return_sample = feature_rows.dropna(subset=[peer, ret]).copy() if peer in cohort and ret in cohort else feature_rows.iloc[0:0].copy()
+    protection_sample = feature_rows.dropna(subset=[adverse, path_dd]).copy() if adverse in cohort and path_dd in cohort else feature_rows.iloc[0:0].copy()
 
     result: dict = {
-        "N": int(len(values)),
-        "symbols": int(values["symbol"].nunique()),
-        "days": int(values["obs_date"].nunique()),
-        "coverage_of_mature_cohort": float(len(values) / len(mature)) if len(mature) else 0.0,
-        "spearman_risk_vs_peer_excess": _spearman(values[feature], values[peer]),
-        "spearman_risk_vs_forward_return": _spearman(values[feature], values[ret]),
-        "spearman_risk_vs_adverse_excursion": _spearman(values[feature], values[adverse]),
-        "spearman_risk_vs_path_max_drawdown": _spearman(values[feature], values[path_dd]),
+        "N": int(len(feature_rows)),
+        "symbols": int(feature_rows["symbol"].nunique()),
+        "days": int(feature_rows["obs_date"].nunique()),
+        "return_N": int(len(return_sample)),
+        "protection_N": int(len(protection_sample)),
+        "return_symbols": int(return_sample["symbol"].nunique()) if len(return_sample) else 0,
+        "protection_symbols": int(protection_sample["symbol"].nunique()) if len(protection_sample) else 0,
+        "return_days": int(return_sample["obs_date"].nunique()) if len(return_sample) else 0,
+        "protection_days": int(protection_sample["obs_date"].nunique()) if len(protection_sample) else 0,
+        "return_coverage_of_feature_rows": float(len(return_sample) / len(feature_rows)),
+        "protection_coverage_of_feature_rows": float(len(protection_sample) / len(feature_rows)),
+        "spearman_risk_vs_peer_excess": _spearman(return_sample[feature], return_sample[peer]) if len(return_sample) else None,
+        "spearman_risk_vs_forward_return": _spearman(return_sample[feature], return_sample[ret]) if len(return_sample) else None,
+        "spearman_risk_vs_adverse_excursion": _spearman(protection_sample[feature], protection_sample[adverse]) if len(protection_sample) else None,
+        "spearman_risk_vs_path_max_drawdown": _spearman(protection_sample[feature], protection_sample[path_dd]) if len(protection_sample) else None,
     }
-    if len(values) < config.min_feature_n or values[feature].nunique() < 3:
-        result["quantile_status"] = "insufficient"
-        return result
 
-    low_cut = float(values[feature].quantile(config.quantile))
-    high_cut = float(values[feature].quantile(1.0 - config.quantile))
-    if not np.isfinite(low_cut) or not np.isfinite(high_cut) or low_cut >= high_cut:
-        result["quantile_status"] = "insufficient_variation"
-        return result
-
-    values["risk_group"] = "middle"
-    values.loc[values[feature] <= low_cut, "risk_group"] = "low_risk"
-    values.loc[values[feature] >= high_cut, "risk_group"] = "high_risk"
-    low = values.loc[values["risk_group"].eq("low_risk")]
-    high = values.loc[values["risk_group"].eq("high_risk")]
-    if low.empty or high.empty:
-        result["quantile_status"] = "insufficient_groups"
-        return result
-
-    threshold = config.tail_drawdown_threshold
-    protection_gap = float(high[adverse].mean() - low[adverse].mean())
-    path_gap = float(high[path_dd].mean() - low[path_dd].mean())
-    alpha_advantage = float(low[peer].mean() - high[peer].mean())
-
-    result.update(
-        {
-            "quantile_status": "available",
-            "low_risk_cutoff": low_cut,
-            "high_risk_cutoff": high_cut,
-            "low_risk_N": int(len(low)),
-            "high_risk_N": int(len(high)),
-            "low_risk_mean_peer_excess": float(low[peer].mean()),
-            "high_risk_mean_peer_excess": float(high[peer].mean()),
-            "low_risk_median_peer_excess": float(low[peer].median()),
-            "high_risk_median_peer_excess": float(high[peer].median()),
-            "low_risk_outperformance_rate": float((low[peer] > 0).mean()),
-            "high_risk_outperformance_rate": float((high[peer] > 0).mean()),
-            "low_risk_mean_adverse_excursion": float(low[adverse].mean()),
-            "high_risk_mean_adverse_excursion": float(high[adverse].mean()),
-            "low_risk_mean_path_max_drawdown": float(low[path_dd].mean()),
-            "high_risk_mean_path_max_drawdown": float(high[path_dd].mean()),
-            "low_risk_tail_drawdown_rate": float((low[path_dd] >= threshold).mean()),
-            "high_risk_tail_drawdown_rate": float((high[path_dd] >= threshold).mean()),
-            "protection_gap_high_minus_low_adverse_excursion": protection_gap,
-            "path_drawdown_gap_high_minus_low": path_gap,
-            "low_risk_alpha_advantage": alpha_advantage,
-            "protection_gap_bootstrap_95": _cluster_bootstrap_group_difference(
-                values,
-                adverse,
-                "risk_group",
-                "high_risk",
-                "low_risk",
-                config.cluster_bootstrap_reps,
-                _stable_seed(config.random_seed, *seed_key, "adverse"),
-            ),
-            "path_drawdown_gap_bootstrap_95": _cluster_bootstrap_group_difference(
-                values,
-                path_dd,
-                "risk_group",
-                "high_risk",
-                "low_risk",
-                config.cluster_bootstrap_reps,
-                _stable_seed(config.random_seed, *seed_key, "path_dd"),
-            ),
-            "low_risk_alpha_advantage_bootstrap_95": _cluster_bootstrap_group_difference(
-                values,
-                peer,
-                "risk_group",
-                "low_risk",
-                "high_risk",
-                config.cluster_bootstrap_reps,
-                _stable_seed(config.random_seed, *seed_key, "peer"),
-            ),
-        }
+    return_status, return_groups, return_low_cut, return_high_cut = _quantile_groups(return_sample, feature, config)
+    protection_status, protection_groups, protection_low_cut, protection_high_cut = _quantile_groups(protection_sample, feature, config)
+    result["return_quantile_status"] = return_status
+    result["protection_quantile_status"] = protection_status
+    result["quantile_status"] = (
+        "available" if return_status == protection_status == "available"
+        else "partial" if "available" in {return_status, protection_status}
+        else "insufficient"
     )
+
+    if return_status == "available":
+        low = return_groups.loc[return_groups["risk_group"].eq("low_risk")]
+        high = return_groups.loc[return_groups["risk_group"].eq("high_risk")]
+        alpha_advantage = float(low[peer].mean() - high[peer].mean())
+        result.update(
+            {
+                "return_low_risk_cutoff": return_low_cut,
+                "return_high_risk_cutoff": return_high_cut,
+                "return_low_risk_N": int(len(low)),
+                "return_high_risk_N": int(len(high)),
+                "low_risk_mean_peer_excess": float(low[peer].mean()),
+                "high_risk_mean_peer_excess": float(high[peer].mean()),
+                "low_risk_median_peer_excess": float(low[peer].median()),
+                "high_risk_median_peer_excess": float(high[peer].median()),
+                "low_risk_outperformance_rate": float((low[peer] > 0).mean()),
+                "high_risk_outperformance_rate": float((high[peer] > 0).mean()),
+                "low_risk_alpha_advantage": alpha_advantage,
+                "low_risk_alpha_advantage_bootstrap_95": _cluster_bootstrap_group_difference(
+                    return_groups,
+                    peer,
+                    "risk_group",
+                    "low_risk",
+                    "high_risk",
+                    config.cluster_bootstrap_reps,
+                    _stable_seed(config.random_seed, *seed_key, "peer"),
+                ),
+            }
+        )
+
+    if protection_status == "available":
+        low = protection_groups.loc[protection_groups["risk_group"].eq("low_risk")]
+        high = protection_groups.loc[protection_groups["risk_group"].eq("high_risk")]
+        threshold = config.tail_drawdown_threshold
+        protection_gap = float(high[adverse].mean() - low[adverse].mean())
+        path_gap = float(high[path_dd].mean() - low[path_dd].mean())
+        result.update(
+            {
+                "protection_low_risk_cutoff": protection_low_cut,
+                "protection_high_risk_cutoff": protection_high_cut,
+                "protection_low_risk_N": int(len(low)),
+                "protection_high_risk_N": int(len(high)),
+                "low_risk_mean_adverse_excursion": float(low[adverse].mean()),
+                "high_risk_mean_adverse_excursion": float(high[adverse].mean()),
+                "low_risk_mean_path_max_drawdown": float(low[path_dd].mean()),
+                "high_risk_mean_path_max_drawdown": float(high[path_dd].mean()),
+                "low_risk_tail_drawdown_rate": float((low[path_dd] >= threshold).mean()),
+                "high_risk_tail_drawdown_rate": float((high[path_dd] >= threshold).mean()),
+                "protection_gap_high_minus_low_adverse_excursion": protection_gap,
+                "path_drawdown_gap_high_minus_low": path_gap,
+                "protection_gap_bootstrap_95": _cluster_bootstrap_group_difference(
+                    protection_groups,
+                    adverse,
+                    "risk_group",
+                    "high_risk",
+                    "low_risk",
+                    config.cluster_bootstrap_reps,
+                    _stable_seed(config.random_seed, *seed_key, "adverse"),
+                ),
+                "path_drawdown_gap_bootstrap_95": _cluster_bootstrap_group_difference(
+                    protection_groups,
+                    path_dd,
+                    "risk_group",
+                    "high_risk",
+                    "low_risk",
+                    config.cluster_bootstrap_reps,
+                    _stable_seed(config.random_seed, *seed_key, "path_dd"),
+                ),
+            }
+        )
     return result
 
 
@@ -399,10 +427,10 @@ def _cohort_feature_report(
     config: Phase3Config,
     label: str,
 ) -> dict:
-    out: dict[str, dict | None] = {}
-    for feature in RISK_FEATURE_ALIASES:
-        out[feature] = _feature_stats(cohort, feature, horizon, config, (label, horizon, feature))
-    return out
+    return {
+        feature: _feature_stats(cohort, feature, horizon, config, (label, horizon, feature))
+        for feature in RISK_FEATURE_ALIASES
+    }
 
 
 def analyze(
@@ -421,6 +449,7 @@ def analyze(
             "missing_historical_factors_backfilled": False,
             "higher_feature_value_interpreted_as_riskier": True,
             "protection_and_return_effects_kept_separate": True,
+            "return_and_protection_samples_decoupled": True,
             "danelfin_low_risk_role": "external research reference only; no Danelfin score is imported",
         },
         "config": config.__dict__,
