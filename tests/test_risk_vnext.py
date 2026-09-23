@@ -7,6 +7,8 @@ import pytest
 from scanner.reports.risk_vnext import (
     Phase3Config,
     _attach_future_path_risk,
+    _cluster_bootstrap_group_difference,
+    _feature_stats,
     analyze,
     risk_feature_rows,
 )
@@ -40,7 +42,6 @@ def _synthetic_history_prices():
                     "observation_type": "observed_scanner",
                 }
             )
-        # Higher-risk names have a noisier/less favorable path, but remain positive.
         for i, day in enumerate(dates):
             trend = 100.0 + (0.24 - sidx * 0.035) * i
             wave = (sidx + 1) * 0.8 * np.sin(i / 4.0)
@@ -110,16 +111,67 @@ def test_phase3_is_research_only_and_separates_protection_from_return():
     assert semantics["production_score_changed"] is False
     assert semantics["confidence_changed"] is False
     assert semantics["protection_and_return_effects_kept_separate"] is True
+    assert semantics["return_and_protection_samples_decoupled"] is True
     assert set(result["horizons"]) == {"5", "20", "40", "60"}
 
     stats = result["horizons"]["5"]["discovery"]["aggregate_risk"]
     assert stats is not None
     assert stats["N"] >= 10
+    assert "return_N" in stats and "protection_N" in stats
     assert "spearman_risk_vs_adverse_excursion" in stats
     assert "spearman_risk_vs_peer_excess" in stats
     assert stats["quantile_status"] == "available"
     assert "protection_gap_bootstrap_95" in stats
     assert "low_risk_alpha_advantage_bootstrap_95" in stats
+
+
+def test_return_and_protection_samples_are_independent():
+    dates = pd.to_datetime(["2026-08-03"] * 10 + ["2026-08-10"] * 10)
+    frame = pd.DataFrame(
+        {
+            "obs_date": dates,
+            "symbol": [f"S{i}" for i in range(20)],
+            "volatility": np.linspace(0.1, 0.9, 20),
+            "peer_excess_5t": np.linspace(0.05, -0.05, 20),
+            "return_5t": np.linspace(0.06, -0.04, 20),
+            "adverse_excursion_5t": np.linspace(0.01, 0.20, 20),
+            "path_max_drawdown_5t": np.linspace(0.02, 0.25, 20),
+        }
+    )
+    # Return remains valid for all 20 rows; path outcomes are deliberately
+    # unavailable for five rows. The audit must not collapse both to N=15.
+    frame.loc[:4, ["adverse_excursion_5t", "path_max_drawdown_5t"]] = np.nan
+    stats = _feature_stats(
+        frame,
+        "volatility",
+        5,
+        Phase3Config(min_feature_n=5, cluster_bootstrap_reps=10),
+        ("test",),
+    )
+    assert stats is not None
+    assert stats["return_N"] == 20
+    assert stats["protection_N"] == 15
+    assert stats["return_quantile_status"] == "available"
+    assert stats["protection_quantile_status"] == "available"
+
+
+def test_unavailable_bootstrap_is_not_reported_as_zero_width_95_interval():
+    frame = pd.DataFrame(
+        {
+            "obs_date": pd.to_datetime(["2026-08-03"] * 4),
+            "target": [0.1, 0.2, -0.1, -0.2],
+            "risk_group": ["high_risk", "high_risk", "low_risk", "low_risk"],
+        }
+    )
+    assert _cluster_bootstrap_group_difference(
+        frame, "target", "risk_group", "high_risk", "low_risk", 50, 1
+    ) is None
+
+    two_days = frame.copy()
+    two_days.loc[2:, "obs_date"] = pd.Timestamp("2026-08-10")
+    assert _cluster_bootstrap_group_difference(
+        two_days, "target", "risk_group", "high_risk", "low_risk", 0, 1
+    ) is None
 
 
 def test_invalid_phase3_config_rejected():
