@@ -23,7 +23,7 @@ from scanner.reports.selection_timing import HORIZONS
 
 @dataclass(frozen=True)
 class Phase4Config:
-    stable_start: str = "2026-04-15"
+    stable_start: str | None = None
     confidence_alias_fix_date: str = "2026-09-22"
     # Proven from the repository/workflow history during the Phase-4 audit.
     known_post_fix_run_ids: tuple[str, ...] = ("github-35753072370-1",)
