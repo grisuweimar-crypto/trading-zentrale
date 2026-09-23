@@ -62,7 +62,7 @@ def main() -> int:
     history_path = Path(args.history)
     audit_input, cleanup_path = _apply_stable_start(history_path, args.stable_start)
     # The core audit contract historically carried a stable_start field. Keep it
-    # synchronized with the *actually applied* runner filter; None means full archive.
+    # synchronized with the actually applied runner filter; None means full archive.
     config = Phase4Config(stable_start=args.stable_start)
     try:
         result = run(
