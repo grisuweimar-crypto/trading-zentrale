@@ -29,6 +29,7 @@ def _history() -> pd.DataFrame:
                 "roe": 10.0,
                 "margin": 8.0,
                 "debt_ratio": 30.0,
+                "liquidity_risk": None,
             },
             # Earlier same-day run: keep-last semantics must not double count it.
             {
@@ -45,6 +46,7 @@ def _history() -> pd.DataFrame:
                 "roe": 10.0,
                 "margin": 8.0,
                 "debt_ratio": 30.0,
+                "liquidity_risk": None,
             },
             {
                 "date": "2026-02-11",
@@ -60,6 +62,7 @@ def _history() -> pd.DataFrame:
                 "roe": 10.0,
                 "margin": 8.0,
                 "debt_ratio": 30.0,
+                "liquidity_risk": None,
             },
             {
                 "date": "2026-09-22",
@@ -75,6 +78,7 @@ def _history() -> pd.DataFrame:
                 "roe": 11.0,
                 "margin": 9.0,
                 "debt_ratio": 25.0,
+                "liquidity_risk": None,
             },
             {
                 "date": "2026-09-23",
@@ -90,12 +94,13 @@ def _history() -> pd.DataFrame:
                 "roe": 11.0,
                 "margin": 9.0,
                 "debt_ratio": 25.0,
+                "liquidity_risk": None,
             },
         ]
     )
 
 
-def test_history_audit_deduplicates_and_marks_formula_transition():
+def test_history_audit_deduplicates_and_keeps_ambiguous_fix_day_unknown():
     report = audit_history(_history(), Phase4Config())
     assert report["scanner_rows_after_same_day_symbol_dedup"] == 4
     assert report["aggregate_confidence"]["first_observed_non_null_date"] == "2026-02-11"
@@ -105,6 +110,97 @@ def test_history_audit_deduplicates_and_marks_formula_transition():
     assert epochs["transition_unknown"]["rows"] == 1
     assert epochs["post_alias_fix"]["rows"] == 1
     assert epochs["transition_unknown"]["confidence_non_null_rows"] == 1
+
+
+def test_known_2026_09_22_post_fix_run_is_classified_from_provenance():
+    frame = pd.DataFrame(
+        [
+            {
+                "date": "2026-09-22",
+                "symbol": "AAA",
+                "score": 40.0,
+                "confidence": 60.0,
+                "confidence_label": "MED",
+                "run_id": "github-35753072370-1",
+            }
+        ]
+    )
+    report = audit_history(frame)
+    epochs = report["aggregate_confidence"]["formula_epochs"]
+    assert epochs["transition_unknown"]["rows"] == 0
+    assert epochs["post_alias_fix"]["rows"] == 1
+    assert epochs["post_alias_fix"]["classification_reasons"]["known_post_fix_run_id"] == 1
+
+
+def test_unmarked_legacy_scanner_rows_survive_prospective_provenance_columns():
+    frame = pd.DataFrame(
+        [
+            {
+                "date": "2026-04-15",
+                "symbol": "AAA",
+                "score": 20.0,
+                "confidence": 40.0,
+                "observation_type": "",
+                "data_source": "",
+            },
+            {
+                "date": "2026-04-15",
+                "symbol": "PRICE_ONLY",
+                "score": None,
+                "confidence": None,
+                "observation_type": "",
+                "data_source": "",
+            },
+            {
+                "date": "2026-09-23",
+                "symbol": "BBB",
+                "score": 30.0,
+                "confidence": 60.0,
+                "observation_type": "observed_scanner",
+                "data_source": "scanner_run",
+            },
+            {
+                "date": "2026-09-23",
+                "symbol": "MARKET",
+                "score": 50.0,
+                "confidence": 70.0,
+                "observation_type": "market_data",
+                "data_source": "market_data",
+            },
+        ]
+    )
+    report = audit_history(frame)
+    assert report["scanner_rows_after_same_day_symbol_dedup"] == 2
+    assert report["scanner_dates"] == 2
+    assert report["aggregate_confidence"]["first_observed_non_null_date"] == "2026-04-15"
+
+
+def test_raw_factor_presence_proxy_includes_debt_and_liquidity_and_fails_closed():
+    report = audit_history(_history())
+    proxy = report["raw_factor_presence_proxy"]
+    assert "debt_ratio" in proxy["required_factor_fields"]
+    assert "liquidity_risk" in proxy["required_factor_fields"]
+    assert proxy["per_field_presence_rate"]["liquidity_risk"] == 0.0
+    assert proxy["complete_raw_factor_presence_rate"] == 0.0
+
+
+def test_display_label_boundary_mismatch_is_reported_not_silently_normalized():
+    frame = pd.DataFrame(
+        [
+            {
+                "date": "2026-09-18",
+                "symbol": "NOW",
+                "score": 40.0,
+                "confidence": 50.0,
+                "confidence_label": "LOW",
+            }
+        ]
+    )
+    report = audit_history(frame)
+    consistency = report["aggregate_confidence"]["display_label_consistency"]
+    assert consistency["compared_rows"] == 1
+    assert consistency["display_score_label_mismatches"] == 1
+    assert consistency["samples"][0]["label_implied_by_stored_rounded_score"] == "MED"
 
 
 def test_missing_raw_value_is_neutralized_before_legacy_confidence():
@@ -161,7 +257,7 @@ def test_legacy_neutralized_risk_values_are_counted_as_clean():
     assert result["confidence_label"] == "MED"
 
 
-def test_vnext_contract_is_research_only_and_fail_closed():
+def test_vnext_contract_is_research_only_fail_closed_and_does_not_reuse_spent_holdout():
     contract = research_contract()
     semantics = contract["semantics"]
     assert semantics["research_only"] is True
@@ -171,6 +267,7 @@ def test_vnext_contract_is_research_only_and_fail_closed():
     assert semantics["missing_evidence"] == "unknown_or_insufficient_not_neutral"
     assert contract["pillars"]["statistical_confidence"]["uncertainty"]["effective_block_length"] == "2_x_forward_horizon"
     assert contract["pillars"]["statistical_confidence"]["uncertainty"]["minimum_support_regions_for_robust_interval"] == 2
+    assert contract["holdout_policy"]["phase2_phase3_holdout"] == "spent_for_prior_validation_not_for_phase4_weight_or_threshold_selection"
 
 
 def test_testability_does_not_claim_unarchived_components_are_backtestable():
