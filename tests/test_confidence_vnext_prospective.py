@@ -181,7 +181,7 @@ def test_raw_outcomes_mature_only_when_full_horizon_exists():
         claims,
         _prices(),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        "2026-09-28T00:00:00+00:00",
+        "2026-09-29T00:00:00+00:00",
     )
     assert list(outcomes.columns) == list(OUTCOME_COLUMNS)
     assert len(outcomes) == 2
@@ -194,13 +194,41 @@ def test_raw_outcomes_mature_only_when_full_horizon_exists():
     assert bbb["path_max_drawdown"] == pytest.approx(0.05)
 
 
+def test_target_session_must_be_completed_before_evaluation_time():
+    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    same_day = compute_mature_outcomes(
+        claims,
+        _prices(),
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-28T23:59:59+00:00",
+    )
+    assert same_day.empty
+
+    next_day = compute_mature_outcomes(
+        claims,
+        _prices(),
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-29T00:00:00+00:00",
+    )
+    assert len(next_day) == 2
+    assert set(next_day["end_market_date"]) == {"2026-09-28"}
+
+    with pytest.raises(ValueError, match="evaluated_at must be a parseable timestamp"):
+        compute_mature_outcomes(
+            claims,
+            _prices(),
+            pd.DataFrame(columns=OUTCOME_COLUMNS),
+            "not-a-timestamp",
+        )
+
+
 def test_peer_labels_are_derived_from_all_currently_matured_snapshot_rows():
     claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
     outcomes = compute_mature_outcomes(
         claims,
         _prices(),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        "2026-09-28T00:00:00+00:00",
+        "2026-09-29T00:00:00+00:00",
     )
     labels = derive_peer_labels(claims, outcomes)
     assert set(labels["snapshot_id"]) == {"snap-1"}
@@ -222,7 +250,7 @@ def test_same_day_rerun_snapshots_do_not_mix_peer_cross_sections():
         claims,
         _prices(),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        "2026-09-28T00:00:00+00:00",
+        "2026-09-29T00:00:00+00:00",
     )
 
     claims2 = claims.copy()
@@ -255,7 +283,7 @@ def test_late_peer_maturity_improves_derived_label_without_rewriting_raw_outcome
         claims,
         _prices(),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        "2026-09-28T00:00:00+00:00",
+        "2026-09-29T00:00:00+00:00",
     )
     aaa_raw = outcomes.loc[outcomes["symbol"].eq("AAA")].copy()
     bbb_raw = outcomes.loc[outcomes["symbol"].eq("BBB")].copy()
@@ -280,7 +308,7 @@ def test_outcomes_are_append_only():
         claims,
         _prices(),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        "2026-09-28T00:00:00+00:00",
+        "2026-09-29T00:00:00+00:00",
     )
     existing = new.iloc[[0]].copy()
     remaining = new.iloc[[1]].copy()
@@ -296,7 +324,7 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
         claims,
         _prices(),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        "2026-09-28T00:00:00+00:00",
+        "2026-09-29T00:00:00+00:00",
     )
     report = validation_summary(claims, outcomes)
     assert report["status"] == "collecting_prospective_evidence"
@@ -304,6 +332,7 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["semantics"]["confidence_thresholds_created"] is False
     assert report["semantics"]["peer_labels_are_derived_not_frozen_early"] is True
     assert report["semantics"]["peer_cross_sections_use_exact_snapshot_cohorts"] is True
+    assert report["semantics"]["outcomes_require_completed_session_day"] is True
     assert report["validation_contract"]["weights_or_thresholds_may_be_tuned_on_this_stream"] is False
     assert report["validation_contract"]["fixed_cooldown_sessions"] == 5
     assert report["horizons"]["5"]["block_length_sessions_for_future_inference"] == 10
