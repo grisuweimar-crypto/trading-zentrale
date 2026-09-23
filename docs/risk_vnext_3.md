@@ -60,7 +60,7 @@ Return/alpha and protection outcomes use independent available samples; neither 
 
 Forward outcomes overlap whenever the event cooldown is shorter than the evaluated horizon. Independent per-day bootstrap resampling therefore understates dependence for 20T/40T/60T and can make confidence intervals too narrow.
 
-Phase 3 now uses a **circular moving observation-date block bootstrap** with an effective block length of **2 × the evaluated forward horizon**:
+Phase 3 uses a **circular moving observation-date block bootstrap** with an effective block length of **2 × the evaluated forward horizon**:
 
 - 5T outcomes use moving blocks of 10 observation sessions
 - 20T outcomes use moving blocks of 40 observation sessions
@@ -79,9 +79,9 @@ This fails closed when independent temporal support is insufficient. The observe
 
 Danelfin Low Risk remains an external research reference because it was the strongest Danelfin component in the completed benchmark. Phase 3 does **not** import Danelfin's aggregate AI Score, Low Risk score, or weights into Scanner-vNext.
 
-## Baseline result — snapshot 2026-09-22
+## Final empirical result — snapshot 2026-09-22
 
-The first full audit used 18,090 scanner events. Historical coverage is the main limitation:
+The full audit used 18,090 scanner events. Historical coverage is the main limitation:
 
 - `volatility`: 26,472 stored scanner rows, 203 symbols, 2026-04-15 through 2026-09-22 (98.85% coverage)
 - `drawdown`: same coverage as volatility
@@ -93,33 +93,39 @@ The first full audit used 18,090 scanner events. Historical coverage is the main
 
 Therefore only **volatility** and **drawdown** currently have enough point-in-time history for a real discovery/validation test. The other factors are classified as *not yet empirically testable*, not as ineffective.
 
-### Provisional point estimates from the first audit
+### 5 trading sessions — validation
 
-The following observed point estimates remain informative because changing the bootstrap does not change them. Previous independent-day confidence intervals have been withdrawn and must not be used as final evidence.
-
-#### 5 trading sessions — validation
-
-Validation contained 1,153 mature events.
+Validation contained 1,153 mature return and protection events.
 
 **Volatility**:
 
 - Spearman vs future path max drawdown: **+0.398**
 - Spearman vs entry-relative adverse excursion: **+0.247**
 - high-risk minus low-risk path max drawdown: **+4.59 percentage points**
+- moving-block 95% interval: **+3.76 pp to +5.44 pp**
 - high-risk minus low-risk adverse excursion: **+3.38 pp**
+- moving-block 95% interval: **+2.63 pp to +4.40 pp**
 - 10% tail-drawdown rate: **22.94% high-volatility vs 0.43% low-volatility**
+- observed low-risk peer-alpha advantage: **-0.55 pp**
+- alpha moving-block 95% interval: **-3.09 pp to +2.22 pp**
 
 **Stored drawdown**:
 
 - Spearman vs future path max drawdown: **+0.370**
 - Spearman vs adverse excursion: **+0.238**
 - high-risk minus low-risk path max drawdown: **+3.87 pp**
+- moving-block 95% interval: **+3.50 pp to +4.26 pp**
 - high-risk minus low-risk adverse excursion: **+2.91 pp**
+- moving-block 95% interval: **+2.27 pp to +3.65 pp**
 - 10% tail-drawdown rate: **17.80% high-drawdown vs 0.85% low-drawdown**
+- observed low-risk peer-alpha advantage: **-0.75 pp**
+- alpha moving-block 95% interval: **-2.72 pp to +1.66 pp**
 
-#### 20 trading sessions — validation
+**Interpretation:** the 5T downside-protection effect is robust for both historically testable factors. Volatility shows the stronger observed separation. Neither volatility nor stored drawdown has a robust 5T alpha advantage.
 
-Validation contained 638 mature events.
+### 20 trading sessions — validation
+
+Validation contained 638 mature return and protection events.
 
 **Volatility**:
 
@@ -128,7 +134,6 @@ Validation contained 638 mature events.
 - high-risk minus low-risk path max drawdown: **+12.32 pp**
 - high-risk minus low-risk adverse excursion: **+8.09 pp**
 - 10% tail-drawdown rate: **78.91% high-volatility vs 9.38% low-volatility**
-- outperformance rate: **53.13% low-volatility vs 44.53% high-volatility**
 - observed low-risk peer-alpha advantage: **+3.02 pp**
 
 **Stored drawdown**:
@@ -140,20 +145,21 @@ Validation contained 638 mature events.
 - 10% tail-drawdown rate: **75.38% high-drawdown vs 13.95% low-drawdown**
 - observed low-risk peer-alpha advantage: **+0.54 pp**
 
-The corrected circular moving-block run determines which of these differences can be described as statistically supported.
+The 20T point estimates are substantial, but the corrected 40-session moving-block rule does **not** find enough independent temporal support to estimate robust intervals. The 20T effects therefore remain promising observations rather than confirmed statistical evidence.
 
 ### 40 / 60 trading sessions
 
 Discovery observations remain exploratory. The validation window is not yet mature for 40T or 60T, so those horizons must not be treated as confirmed evidence.
 
-### Phase-3 interpretation before final moving-block recomputation
+### Phase-3 conclusion
 
-1. Volatility has the strongest observed downside-protection relationship among currently testable factors.
-2. Stored drawdown also shows meaningful observed protection separation.
-3. Neither factor should be called a reliable alpha generator until the corrected uncertainty analysis is complete.
-4. Aggregate risk, debt, liquidity risk, downside deviation, beta and other production components cannot yet be reweighted because their historical point-in-time coverage is absent or too short.
-5. **No production weights are changed in Phase 3.**
-6. The next data-architecture requirement is to retain every individual production risk component point-in-time so later walk-forward validation can test them without reconstruction or leakage.
+1. **Volatility has a robust 5T downside-protection relationship** and is the strongest currently testable factor.
+2. **Stored drawdown also has a robust 5T downside-protection relationship.**
+3. Neither factor is validated as a reliable alpha generator at 5T.
+4. The 20T protection and alpha point estimates are not yet supported by enough independent temporal regions for robust uncertainty intervals.
+5. Aggregate risk, debt, liquidity risk, downside deviation, beta and other production components cannot yet be reweighted because their historical point-in-time coverage is absent or too short.
+6. **No production weights are changed in Phase 3.**
+7. The next data-architecture requirement is to retain every individual production risk component point-in-time so later walk-forward validation can test them without reconstruction or leakage.
 
 ## Run
 
