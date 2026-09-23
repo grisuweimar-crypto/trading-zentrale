@@ -9,7 +9,7 @@ watchlists and the daily watch remain unchanged.
 
 from dataclasses import dataclass
 from hashlib import sha256
-from math import erfc, sqrt
+from math import erfc, isfinite, sqrt
 from pathlib import Path
 import json
 
@@ -67,11 +67,11 @@ def _beta_shrinkage(successes: int, n: int, baseline_rate: float, prior_strength
     A Beta distribution requires both shape parameters to be strictly positive.
     A 0/1 baseline would otherwise produce an improper prior. We therefore use a
     0.5 shape floor (Jeffreys half-count) while preserving the requested baseline
-    prior mass wherever possible. Strengths below 1 are rejected explicitly.
+    prior mass wherever possible. Strengths must be finite and at least 1.
     """
     strength = float(prior_strength)
-    if strength < 1.0:
-        raise ValueError("prior_strength must be >= 1.0 for a proper Beta prior")
+    if not isfinite(strength) or strength < 1.0:
+        raise ValueError("prior_strength must be finite and >= 1.0 for a proper Beta prior")
     baseline = _clip01(float(baseline_rate))
     prior_alpha = max(0.5, baseline * strength)
     prior_beta = max(0.5, (1.0 - baseline) * strength)
@@ -170,7 +170,7 @@ def _probability_stats(
         "prior_beta": shrink["prior_beta"],
         "approx_binomial_p": p_value,
         "bonferroni_adjusted_p": bonferroni,
-        "multiple_testing_note": "normal approximation; diagnostic only, not an independence-proof significance test",
+        "multiple_testing_note": "normal approximation; Bonferroni diagnostic across the supplied comparison family, not an independence-proof significance test",
     }
 
 
@@ -305,6 +305,7 @@ def timing_pattern_calibration(
     target = f"peer_excess_{horizon}t"
     frozen = list(frozen_horizon.get("frozen_patterns", []))
     comparisons = max(int(frozen_horizon.get("discovery_candidate_count", 0)), 1)
+    validation_comparisons = max(len(frozen), 1)
     calibrated: list[dict] = []
 
     for row in frozen:
@@ -324,7 +325,7 @@ def timing_pattern_calibration(
             target,
             config,
             ("timing", horizon, "validation", row.get("pattern")),
-            1,
+            validation_comparisons,
         )
         calibrated.append(
             {
@@ -380,8 +381,9 @@ def analyze(
     config: Phase2Config = Phase2Config(),
 ) -> dict:
     _validate_frozen_catalog(frozen_patterns, config)
-    if config.prior_strength < 1.0:
-        raise ValueError("prior_strength must be >= 1.0")
+    prior_strength = float(config.prior_strength)
+    if not isfinite(prior_strength) or prior_strength < 1.0:
+        raise ValueError("prior_strength must be finite and >= 1.0")
 
     selection_events = build_events(
         history,
