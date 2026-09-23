@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
+from scanner.reports import timing_patterns as timing_patterns_module
 from scanner.reports.timing_patterns import (
     Phase1BConfig,
     _add_peer_excess,
@@ -37,11 +39,13 @@ def _synthetic():
                 }
             )
         for i, day in enumerate(dates):
+            value = 100 + slope * i
             prices.append(
                 {
                     "date": day.date().isoformat(),
                     "symbol": symbol,
-                    "close": 100 + slope * i,
+                    "close": value,
+                    "adj_close": value,
                     "observation_type": "price_backfill",
                 }
             )
@@ -131,6 +135,7 @@ def test_discovery_excludes_outcomes_that_end_after_cutoff():
     work = pd.DataFrame(
         {
             "obs_date": pd.to_datetime(["2026-06-01", "2026-07-27", "2026-08-03"]),
+            "symbol": ["A", "B", "C"],
             "end_date_60t": pd.to_datetime(["2026-07-30", "2026-10-19", "2026-10-26"]),
             "currency": ["USD", "USD", "USD"],
             "return_60t": [0.10, 0.20, 0.30],
@@ -155,35 +160,40 @@ def test_discovery_peer_median_excludes_labels_ending_after_cutoff():
         }
     )
     pooled = _add_peer_excess(events, 5)
-    assert round(float(pooled.loc[pooled["symbol"] == "A", "peer_excess_5t"].iloc[0]), 8) == -0.10
+    # A excludes itself: median(B=.90, C=.20)=.55.
+    assert round(float(pooled.loc[pooled["symbol"] == "A", "peer_excess_5t"].iloc[0]), 8) == -0.45
 
     discovery, _ = _strict_windows(pooled, 5, Phase1BConfig())
     assert discovery["symbol"].tolist() == ["A", "C"]
-    assert round(float(discovery.loc[discovery["symbol"] == "A", "peer_excess_5t"].iloc[0]), 8) == -0.05
-    assert round(float(discovery.loc[discovery["symbol"] == "C", "peer_excess_5t"].iloc[0]), 8) == 0.05
+    # B is purged before labels are rebuilt. A/C therefore compare only to each other.
+    assert round(float(discovery.loc[discovery["symbol"] == "A", "peer_excess_5t"].iloc[0]), 8) == -0.10
+    assert round(float(discovery.loc[discovery["symbol"] == "C", "peer_excess_5t"].iloc[0]), 8) == 0.10
 
 
-def test_peer_median_is_computed_before_sampling_and_singletons_fall_back():
+def test_peer_median_is_leave_one_out_and_singletons_fall_back_global():
     day = pd.Timestamp("2026-05-01")
     events = pd.DataFrame(
         {
             "obs_date": [day] * 4,
+            "symbol": ["USD1", "USD2", "EUR1", "JPY1"],
             "currency": ["USD", "USD", "EUR", "JPY"],
             "return_5t": [0.10, 0.20, 0.30, 0.40],
         }
     )
     out = _add_peer_excess(events, 5)
-    assert round(float(out.iloc[0]["peer_excess_5t"]), 8) == -0.05
-    assert round(float(out.iloc[1]["peer_excess_5t"]), 8) == 0.05
-    # EUR/JPY are singleton currency cohorts, so they use the global 0.25 median.
-    assert round(float(out.iloc[2]["peer_excess_5t"]), 8) == 0.05
-    assert round(float(out.iloc[3]["peer_excess_5t"]), 8) == 0.15
+    # Same-currency peers exclude the subject.
+    assert round(float(out.iloc[0]["peer_excess_5t"]), 8) == -0.10
+    assert round(float(out.iloc[1]["peer_excess_5t"]), 8) == 0.10
+    # Singleton currencies use global peers excluding themselves.
+    assert round(float(out.iloc[2]["peer_excess_5t"]), 8) == 0.10
+    assert round(float(out.iloc[3]["peer_excess_5t"]), 8) == 0.20
 
 
 def test_pattern_cooldown_is_applied_after_matching_occurrences():
     dates = pd.bdate_range("2026-05-01", periods=15)
+    values = list(range(100, 115))
     prices = pd.DataFrame(
-        {"date": dates, "symbol": "A", "close": range(100, 115)}
+        {"date": dates, "symbol": "A", "close": values, "adj_close": values}
     )
     work = pd.DataFrame(
         {
@@ -220,7 +230,12 @@ def test_validation_cannot_select_or_remove_discovery_candidate():
                     "atom": target,
                 }
             )
-            price_rows.append({"date": day, "symbol": symbol, "close": 100.0})
+            price_rows.append({
+                "date": day,
+                "symbol": symbol,
+                "close": 100.0,
+                "adj_close": 100.0,
+            })
     events = pd.DataFrame(rows)
     prices = pd.DataFrame(price_rows)
     config = Phase1BConfig(
@@ -239,3 +254,14 @@ def test_validation_cannot_select_or_remove_discovery_candidate():
     assert candidate["validation"]["mean_peer_excess"] < 0
     assert candidate["validation_sufficient"]
     assert not candidate["direction_confirmed"]
+
+
+def test_phase1b_writer_rejects_nan_json(tmp_path, monkeypatch):
+    history = tmp_path / "history.csv"
+    prices = tmp_path / "prices.csv"
+    output = tmp_path / "report.json"
+    pd.DataFrame({"x": [1]}).to_csv(history, index=False)
+    pd.DataFrame({"x": [1]}).to_csv(prices, index=False)
+    monkeypatch.setattr(timing_patterns_module, "analyze", lambda *_args, **_kwargs: {"bad": float("nan")})
+    with pytest.raises(ValueError):
+        timing_patterns_module.run(history, prices, output)

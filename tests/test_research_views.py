@@ -93,13 +93,17 @@ class ResearchViewsTests(unittest.TestCase):
         self.assertEqual(before, self.path("history_analysis").read_bytes())
 
     def test_price_allowlist_no_scanner_metrics_and_immutable_values(self):
-        cols = views.PRICE_COLUMNS[:8] + ["score", "rank", "retrieved_at"]
-        row = dict(zip(cols, ["2026-01-01", "P", "USD", "1", "2", "0.5", "1.50", "20", "99", "1", "2026-09-16T10:00:00+00:00"]))
+        cols = views.MARKET_COLUMNS + ["score", "rank"]
+        row = dict(zip(cols, [
+            "2026-01-01", "P", "USD", "1", "2", "0.5", "1.50", "1.40", "20",
+            "2026-09-16T10:00:00+00:00", "99", "1"
+        ]))
         self.write(views.MARKET, cols, [row])
         self.build()
         prices = self.read("price_backfill")
         self.assertEqual(set(prices[0]), set(views.PRICE_COLUMNS))
         self.assertEqual(prices[0]["retrieved_at"], row["retrieved_at"])
+        self.assertEqual(prices[0]["adj_close"], row["adj_close"])
         before = self.path("price_backfill").read_bytes()
         self.write(views.MARKET, cols, [dict(row, close="999")])
         self.build()

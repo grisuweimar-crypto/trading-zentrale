@@ -13,7 +13,7 @@ import pandas as pd
 import yfinance as yf
 
 from scanner.data.enrich.yahoo_prices import ISIN_RE, _pick_symbol
-from scanner.data.price_history import MARKET_COLUMNS, coverage, merge_prices, validated_rows
+from scanner.data.price_history import MARKET_COLUMNS, coverage, merge_prices, number, validated_rows
 from scanner.reports.research_views import atomic_write, encode_csv, parse_csv
 
 DEFAULT_DAYS = 300
@@ -93,7 +93,8 @@ def resolve_mappings(root, latest):
 
 def _download(tickers, *, period=None, start=None, end=None, threads=4):
     # yf.download aggregates errors. Snapshot the pinned 0.2.x error map now;
-    # batches never overlap, including retries.
+    # batches never overlap, including retries. Raw OHLCV stays unadjusted, but
+    # Yahoo Adj Close is persisted separately for research return calculations.
     kwargs = dict(tickers=tickers, interval="1d", auto_adjust=False, repair=False,
                   group_by="column", threads=threads, progress=False, timeout=20,
                   end=end, multi_level_index=True)
@@ -116,16 +117,18 @@ def _download(tickers, *, period=None, start=None, end=None, threads=4):
             if len(tickers) != 1:
                 raise ProviderSchemaError("provider returned an ambiguous multi-ticker schema")
             frame = data
-        frame = frame.rename(columns=str.lower)
+        frame = frame.rename(columns=lambda value: str(value).strip().lower().replace(" ", "_"))
         if "close" not in frame:
             raise ProviderSchemaError("provider response has no close column")
+        if "adj_close" not in frame:
+            raise ProviderSchemaError("provider response has no adjusted close column")
         for timestamp, item in frame.iterrows():
             if pd.isna(item.get("close")):
                 continue
             rows.append({"symbol": ticker, "date": timestamp.date().isoformat(),
                          **{field: "" if pd.isna(item.get(field)) else str(item[field])
-                            for field in ("open", "high", "low", "close", "volume")}})
-    result = pd.DataFrame(rows, columns=["date", "symbol", "open", "high", "low", "close", "volume"])
+                            for field in ("open", "high", "low", "close", "adj_close", "volume")}})
+    result = pd.DataFrame(rows, columns=["date", "symbol", "open", "high", "low", "close", "adj_close", "volume"])
     result.attrs["errors"] = {str(k): str(v) for k, v in errors.items()}
     return result
 
@@ -189,7 +192,8 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     existing_raw = target.read_bytes() if target.exists() else None
     if existing_raw:
         columns, original = parse_csv(existing_raw)
-        if not set(MARKET_COLUMNS[:8]).issubset(columns):
+        required_raw = {"date", "symbol", "currency", "open", "high", "low", "close", "volume"}
+        if not required_raw.issubset(columns):
             raise ValueError("market cache missing required OHLCV columns")
     else:
         original = []
@@ -201,7 +205,7 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     for row in existing:
         grouped[row["symbol"]].append(row)
     # Exclusive end avoids persisting unfinished daily bars. Existing legacy
-    # same-day prices remain unchanged, like all existing valid observations.
+    # same-day raw prices remain unchanged; missing adj_close is enrichment only.
     end = min(now.date(), date.fromisoformat(meta["as_of"]) + timedelta(days=1))
     for row in latest:
         symbol = row["symbol"]
@@ -223,7 +227,16 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
         checked = prior.get("bootstrap_checked_at")
         exhausted = (prior.get("history_exhausted") and prior.get("minimum_sessions_target") == minimum_days
                      and checked and (now.date() - date.fromisoformat(checked)).days < 30)
-        if len(grouped[symbol]) < minimum_days and not exhausted:
+        missing_adjusted = bool(grouped[symbol]) and any(
+            number(item.get("adj_close")) is None or number(item.get("adj_close")) <= 0
+            for item in grouped[symbol]
+        )
+        if missing_adjusted:
+            # One-time migration of the historical research window. Two years is
+            # comfortably wider than the 300-session target and all 60T labels.
+            mode = "adjusted_close_migration"
+            request = ("2y" if minimum_days <= 450 else "5y" if minimum_days <= 1100 else "max", None)
+        elif len(grouped[symbol]) < minimum_days and not exhausted:
             mode = "bootstrap"
             request = ("2y" if minimum_days <= 450 else "5y" if minimum_days <= 1100 else "max", None)
         else:
@@ -284,7 +297,7 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
         counts[row["symbol"]] += 1
     for symbol, detail in details.items():
         detail["validation_issues"].update(issues.get(symbol, {}))
-        if modes.get(symbol) == "bootstrap" and mappings[symbol][0] in successful_providers and detail.get("status") != "provider_error":
+        if modes.get(symbol) in ("bootstrap", "adjusted_close_migration") and mappings[symbol][0] in successful_providers and detail.get("status") != "provider_error":
             detail.update(bootstrap_checked_at=now.date().isoformat(), history_exhausted=counts[symbol] < minimum_days,
                           minimum_sessions_target=minimum_days)
         detail.setdefault("status", "price_data_ok" if counts[symbol] >= minimum_days else "price_data_partial" if counts[symbol] else "price_data_unavailable")
@@ -297,8 +310,10 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
         raise RuntimeError("No resolvable provider mappings for the requested universe")
     if (target.read_bytes() if target.exists() else None) != existing_raw:
         raise RuntimeError("Market cache changed during price download")
-    if merged != original:
-        atomic_write(target, encode_csv(MARKET_COLUMNS, merged))
+    # Re-encode even when only the schema was extended; raw OHLCV remains intact.
+    encoded = encode_csv(MARKET_COLUMNS, merged)
+    if encoded != existing_raw:
+        atomic_write(target, encoded)
     required = {r["symbol"] for r in latest}
     frame = pd.DataFrame([r for r in merged if r["symbol"] in required], columns=MARKET_COLUMNS)
     frame.attrs["coverage"] = coverage(required, merged, minimum_sessions=minimum_days, as_of=meta["as_of"], fetch_state=details)

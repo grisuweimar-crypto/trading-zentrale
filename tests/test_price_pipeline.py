@@ -9,7 +9,14 @@ from unittest.mock import patch
 import pandas as pd
 
 from scripts import prefetch_market_history as fetch
-from scanner.data.price_history import MARKET_COLUMNS, PRICE_COLUMNS, coverage, merge_prices, validated_rows
+from scanner.data.price_history import (
+    LEGACY_PRICE_COLUMNS,
+    MARKET_COLUMNS,
+    PRICE_COLUMNS,
+    coverage,
+    merge_prices,
+    validated_rows,
+)
 from scanner.reports.daily_research import generate_daily_research, validate_daily_research
 from scanner.reports.research_views import ValidationPolicy, build_views, encode_csv, parse_csv, refresh_price_backfill
 from scanner.reports.research_validation import validate_publication
@@ -21,7 +28,8 @@ NOW = datetime(2026, 9, 20, tzinfo=timezone.utc)
 def market_rows(symbol, count=6, start=date(2026, 8, 3)):
     return [{"date": (start + timedelta(days=i)).isoformat(), "symbol": symbol, "currency": "USD",
              "open": str(100 + i), "high": str(101 + i), "low": str(99 + i), "close": str(100 + i),
-             "volume": "100", "retrieved_at": "2026-09-18T00:00:00+00:00"} for i in range(count)]
+             "adj_close": str(100 + i), "volume": "100",
+             "retrieved_at": "2026-09-18T00:00:00+00:00"} for i in range(count)]
 
 
 class PricePipelineTests(unittest.TestCase):
@@ -181,10 +189,34 @@ class PricePipelineTests(unittest.TestCase):
         still_ambiguous, _ = merge_prices(original + [revision], original)
         self.assertEqual(still_ambiguous, [])
 
+    def test_missing_adjusted_close_is_filled_without_rewriting_raw_observation(self):
+        existing = market_rows("AAA", 1)[0]
+        original_retrieved_at = existing["retrieved_at"]
+        existing.pop("adj_close")
+        incoming = dict(existing, adj_close="99.75", retrieved_at="2026-09-20T00:00:00+00:00")
+        rows, issues = merge_prices([existing], [incoming])
+        self.assertFalse(issues)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["close"], "100")
+        self.assertEqual(rows[0]["retrieved_at"], original_retrieved_at)
+        self.assertEqual(rows[0]["adj_close"], "99.75")
+
+    def test_provider_revision_keeps_raw_ohlcv_and_can_enrich_adjusted_close(self):
+        existing = market_rows("AAA", 1)[0]
+        original_retrieved_at = existing["retrieved_at"]
+        existing.pop("adj_close")
+        incoming = dict(existing, close="101", adj_close="100.25", retrieved_at="2026-09-20T00:00:00+00:00")
+        rows, issues = merge_prices([existing], [incoming])
+        self.assertEqual(rows[0]["close"], "100")
+        self.assertEqual(rows[0]["retrieved_at"], original_retrieved_at)
+        self.assertEqual(rows[0]["adj_close"], "100.25")
+        self.assertEqual(issues["AAA"]["provider_revision_kept_existing"], 1)
+
     def test_invalid_ohlcv_is_excluded(self):
         base = market_rows("AAA", 1)[0]
         for changes in ({"symbol": ""}, {"date": "bad"}, {"close": "NaN"}, {"close": "0"},
-                        {"high": "99"}, {"low": "101"}, {"volume": "-1"}, {"open": "Infinity"}):
+                        {"adj_close": "0"}, {"adj_close": "Infinity"}, {"high": "99"}, {"low": "101"},
+                        {"volume": "-1"}, {"open": "Infinity"}):
             rows, issues = validated_rows([dict(base, **changes)])
             self.assertEqual(rows, [])
             self.assertTrue(issues)
@@ -202,6 +234,8 @@ class PricePipelineTests(unittest.TestCase):
         self.assertEqual((report["median_sessions"], report["min_sessions"], report["max_sessions"]), (40, 0, 300))
         self.assertEqual(report["symbols_with_40_or_more_sessions"], 2)
         self.assertEqual(report["symbols_with_300_or_more_sessions"], 1)
+        self.assertEqual(report["symbols"]["AAA"]["adjusted_sessions"], 300)
+        self.assertEqual(report["symbols"]["BBB"]["adjusted_sessions"], 40)
 
     def test_different_exchange_sessions_stay_distinct(self):
         rows = market_rows("US", 3, date(2026, 9, 4))
@@ -213,13 +247,14 @@ class PricePipelineTests(unittest.TestCase):
         self.assertEqual([r["date"] for r in merged if r["symbol"] == "JP"], ["2026-09-04", "2026-09-07", "2026-09-08"])
 
     def test_yahoo_batch_union_does_not_turn_nan_exchange_holidays_into_sessions(self):
-        columns = pd.MultiIndex.from_product([["Open", "High", "Low", "Close", "Volume"], ["AAA", "BBB"]])
+        columns = pd.MultiIndex.from_product([["Open", "High", "Low", "Close", "Adj Close", "Volume"], ["AAA", "BBB"]])
         data = pd.DataFrame(100.0, index=pd.to_datetime(["2026-09-04", "2026-09-07", "2026-09-08"]), columns=columns)
         data.loc[pd.Timestamp("2026-09-07"), (slice(None), "AAA")] = float("nan")
         with patch.object(fetch.yf, "download", return_value=data) as download:
             frame = fetch._download(["AAA", "BBB"], period="2y", end="2026-09-09")
         self.assertEqual(frame[frame.symbol == "AAA"].date.tolist(), ["2026-09-04", "2026-09-08"])
         self.assertEqual(frame[frame.symbol == "BBB"].date.tolist(), ["2026-09-04", "2026-09-07", "2026-09-08"])
+        self.assertEqual(frame[frame.symbol == "AAA"].adj_close.tolist(), ["100.0", "100.0"])
         self.assertEqual(download.call_args.kwargs["threads"], 4)
         self.assertFalse(download.call_args.kwargs["auto_adjust"])
 
@@ -230,6 +265,39 @@ class PricePipelineTests(unittest.TestCase):
         with patch.object(fetch, "_download", side_effect=provider) as download:
             fetch.prefetch_history(self.root, minimum_days=5, batch_size=2, now=NOW, sleep=lambda _: None)
         self.assertEqual([len(c.args[0]) for c in download.call_args_list], [2, 2, 1])
+
+    def test_legacy_price_backfill_header_migrates_only_via_refresh(self):
+        rows = [
+            dict(date="2026-09-18", symbol="AAA", score="50"),
+        ]
+        self.write("artifacts/snapshots/score_history.csv", rows[0].keys(), rows)
+        self.write("artifacts/research/history_analysis.csv", rows[0].keys(), [])
+        meta = build_views(self.root, now=NOW, policy=ValidationPolicy(expected_symbol_count=1))
+
+        price_path = self.root / "artifacts/research/price_backfill.csv"
+        legacy_raw = encode_csv(LEGACY_PRICE_COLUMNS, [])
+        price_path.write_bytes(legacy_raw)
+        meta_path = self.root / "artifacts/research/history_metadata.json"
+        saved = json.loads(meta_path.read_text(encoding="utf-8"))
+        saved["price_backfill"].update(
+            sha256=hashlib.sha256(legacy_raw).hexdigest(), row_count=0, symbol_count=0,
+            start_date=None, end_date=None,
+        )
+        for detail in saved.get("price_coverage", {}).get("symbols", {}).values():
+            detail.pop("adjusted_sessions", None)
+        meta_path.write_text(json.dumps(saved), encoding="utf-8")
+
+        with self.assertRaisesRegex(ValueError, "price allowlist"):
+            validate_publication(self.root)
+        validate_publication(self.root, allow_legacy_price_schema=True)
+
+        self.write(fetch.CACHE, MARKET_COLUMNS, market_rows("AAA", 2))
+        refreshed = refresh_price_backfill(self.root)
+        columns, exported = parse_csv(price_path.read_bytes())
+        self.assertEqual(columns, PRICE_COLUMNS)
+        self.assertEqual([r["adj_close"] for r in exported], ["100", "101"])
+        self.assertEqual(refreshed["price_coverage"]["symbols"]["AAA"]["adjusted_sessions"], 2)
+        validate_publication(self.root)
 
     def test_price_refresh_then_daily_produces_all_four_cross_universe_outcomes(self):
         rows = [dict(date="2026-08-03", symbol="BBB", score="50", rank="1", rank_percentile="0.5", r_code="R4", rs3m="-0.1", trend200="0.1"),
@@ -249,6 +317,7 @@ class PricePipelineTests(unittest.TestCase):
         columns, exported = parse_csv((self.root / "artifacts/research/price_backfill.csv").read_bytes())
         self.assertEqual(columns, PRICE_COLUMNS)
         self.assertEqual(len(exported), 82)
+        self.assertTrue(all(r["adj_close"] for r in exported))
         self.assertEqual(protected, {path: path.read_bytes() for path in protected})
         daily = generate_daily_research(self.root)
         for h in (5, 10, 20, 40):

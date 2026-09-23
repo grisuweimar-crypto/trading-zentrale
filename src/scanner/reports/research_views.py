@@ -19,7 +19,13 @@ from pathlib import Path
 import tempfile
 from uuid import uuid4
 
-from scanner.data.price_history import PRICE_COLUMNS, coverage as price_coverage, merge_prices
+from scanner.data.price_history import (
+    LEGACY_PRICE_COLUMNS,
+    MARKET_COLUMNS,
+    PRICE_COLUMNS,
+    coverage as price_coverage,
+    merge_prices,
+)
 
 SCHEMA_VERSION = "research_views_v1"
 SOURCE = "artifacts/snapshots/score_history.csv"
@@ -286,7 +292,8 @@ def _build(root, paths, meta_path, now, generated, attempt_id, policy, daily_inp
                 pending[history_path] = encode_csv(history_columns, history + appended)
     elif latest:
         warnings.append("published_scanner_views_retained; attempt_id identifies the incomplete attempt")
-    # Price imports use an allowlist and never modify an existing price observation.
+    # Normal publication only accepts the canonical price schema. The exact
+    # legacy schema is accepted exclusively inside refresh_price_backfill().
     if pc and pc != PRICE_COLUMNS:
         raise ValueError("price_backfill_schema_mismatch")
     market_path = root / MARKET
@@ -294,7 +301,7 @@ def _build(root, paths, meta_path, now, generated, attempt_id, policy, daily_inp
     price_issues = {}
     if market_raw is not None:
         mc, market = parse_csv(market_raw)
-        if not set(PRICE_COLUMNS[:8]).issubset(mc):
+        if not set(MARKET_COLUMNS).issubset(mc):
             raise ValueError("market_missing_required_columns")
         prices, price_issues = import_market_prices(prices, market)
         if price_issues:
@@ -346,10 +353,18 @@ def _build(root, paths, meta_path, now, generated, attempt_id, policy, daily_inp
 
 def import_market_prices(prices, market):
     # Explicit allowlist: neither provider nor scanner fields can contaminate
-    # this price-only derived view. Preserve existing valid observations.
-    incoming = [{**{c: row.get(c, "") for c in PRICE_COLUMNS[:8]}, "source": "yahoo_ohlcv",
-                 "retrieved_at": row.get("retrieved_at", ""), "observation_type": "price_backfill"}
-                for row in market]
+    # this price-only derived view. Preserve existing raw observations and carry
+    # adjusted close as an explicit research-return field.
+    raw_fields = [c for c in MARKET_COLUMNS if c != "retrieved_at"]
+    incoming = [
+        {
+            **{c: row.get(c, "") for c in raw_fields},
+            "source": "yahoo_ohlcv",
+            "retrieved_at": row.get("retrieved_at", ""),
+            "observation_type": "price_backfill",
+        }
+        for row in market
+    ]
     return merge_prices(prices, incoming)
 
 
@@ -367,7 +382,9 @@ def refresh_price_backfill(root):
     with lock.open("x"):
         pass
     try:
-        metadata = validate_publication(root)
+        # This is the sole migration entry point allowed to read the exact legacy
+        # price header. Final validation below is always canonical/strict.
+        metadata = validate_publication(root, allow_legacy_price_schema=True)
         if not metadata["latest_run_complete"]:
             raise ValueError("price refresh requires a complete scanner snapshot")
         paths = {n: output / (n + ".csv") for n in NAMES}
@@ -378,9 +395,11 @@ def refresh_price_backfill(root):
         if originals[market_path] is None:
             raise ValueError("market cache missing")
         columns, market = parse_csv(originals[market_path])
-        if not set(PRICE_COLUMNS[:8]).issubset(columns):
+        if columns != MARKET_COLUMNS:
             raise ValueError("market_missing_required_columns")
-        previous = parse_csv(originals[paths["price_backfill"]])[1]
+        previous_columns, previous = parse_csv(originals[paths["price_backfill"]])
+        if previous_columns not in (PRICE_COLUMNS, LEGACY_PRICE_COLUMNS):
+            raise ValueError("price_backfill_schema_mismatch")
         prices, issues = import_market_prices(previous, market)
         latest = parse_csv(originals[paths["latest_scanner"]])[1]
         state = read_price_fetch_state(root)
