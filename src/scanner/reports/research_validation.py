@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 import hashlib
 import json
 from pathlib import Path
-from scanner.data.price_history import coverage, validated_rows
+from scanner.data.price_history import LEGACY_PRICE_COLUMNS, coverage, validated_rows
 
 from scanner.reports.research_views import (
     OUTPUT, PRICE_COLUMNS, SCHEMA_VERSION, VIEW_COLUMNS, as_of, observed, parse_csv, score,
@@ -18,8 +18,12 @@ def require(condition, message):
         raise ValueError("research_integrity: " + message)
 
 
-def validate_bundle(metadata, blobs, archive_before=None):
-    """Validate serialized bytes before publishing the manifest; never repair data."""
+def validate_bundle(metadata, blobs, archive_before=None, *, allow_legacy_price_schema=False):
+    """Validate serialized bytes before publishing the manifest; never repair data.
+
+    The legacy price header may be accepted only by the explicit migration path.
+    Final/public bundles always require the canonical PRICE_COLUMNS schema.
+    """
     frames = {}
     for name in NAMES:
         data = blobs[name]
@@ -34,7 +38,10 @@ def validate_bundle(metadata, blobs, archive_before=None):
         require([{c: r.get(c, "") for c in old_columns} for r in archive[:len(old_rows)]] == old_rows,
                 "historical observations changed")
     pc, prices = frames["price_backfill"]
-    require(pc == PRICE_COLUMNS, "price allowlist violated")
+    allowed_price_schema = pc == PRICE_COLUMNS or (
+        allow_legacy_price_schema and pc == LEGACY_PRICE_COLUMNS
+    )
+    require(allowed_price_schema, "price allowlist violated")
     require(all(r["observation_type"] == "price_backfill" for r in prices), "invalid price provenance")
     valid_prices, price_issues = validated_rows(prices)
     require(not price_issues and len(valid_prices) == len(prices), "invalid or duplicate price sessions")
@@ -55,7 +62,19 @@ def validate_bundle(metadata, blobs, archive_before=None):
         expected = coverage([r["symbol"] for r in latest], prices,
                             minimum_sessions=reported["minimum_sessions_target"],
                             as_of=reported["as_of"], fetch_state=reported["symbols"])
-        require(reported == expected, "price coverage does not match stored sessions")
+        # Legacy metadata predates adjusted_sessions.  During the one-time
+        # migration validate the historically stored fields exactly and permit
+        # only the newly introduced coverage detail to be absent.
+        if allow_legacy_price_schema and pc == LEGACY_PRICE_COLUMNS:
+            def strip_adjusted(payload):
+                payload = json.loads(json.dumps(payload))
+                for detail in payload.get("symbols", {}).values():
+                    detail.pop("adjusted_sessions", None)
+                return payload
+            require(strip_adjusted(reported) == strip_adjusted(expected),
+                    "price coverage does not match stored sessions")
+        else:
+            require(reported == expected, "price coverage does not match stored sessions")
         require(not latest or reported["as_of"] == metadata["last_complete_scan"], "price coverage date mismatch")
     require(len({r["symbol"].strip() for r in latest}) == len(latest), "duplicate latest symbols")
     require(all(r["symbol"].strip() for r in latest), "empty latest symbol")
@@ -82,8 +101,8 @@ def validate_bundle(metadata, blobs, archive_before=None):
     return metadata
 
 
-def validate_publication(root: Path):
+def validate_publication(root: Path, *, allow_legacy_price_schema=False):
     output = root / OUTPUT
     metadata = json.loads((output / "history_metadata.json").read_text(encoding="utf-8"))
     blobs = {n: (output / (n + ".csv")).read_bytes() if (output / (n + ".csv")).exists() else None for n in NAMES}
-    return validate_bundle(metadata, blobs)
+    return validate_bundle(metadata, blobs, allow_legacy_price_schema=allow_legacy_price_schema)
