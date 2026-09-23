@@ -9,7 +9,9 @@ on:
       - 'src/scanner/reports/research_validation.py'
       - 'src/scanner/reports/selection_timing.py'
       - 'src/scanner/reports/timing_patterns.py'
+      - 'tests/test_market_history.py'
       - 'tests/test_price_pipeline.py'
+      - 'tests/test_research_views.py'
       - 'tests/test_selection_timing.py'
       - 'tests/test_timing_patterns.py'
       - '.github/workflows/return_integrity_recheck.yml'
@@ -51,7 +53,9 @@ jobs:
       - name: Targeted return-integrity tests
         run: |
           python -m pytest -q \
+            tests/test_market_history.py \
             tests/test_price_pipeline.py \
+            tests/test_research_views.py \
             tests/test_selection_timing.py \
             tests/test_timing_patterns.py
 
