@@ -194,7 +194,7 @@ def test_raw_outcomes_mature_only_when_full_horizon_exists():
     assert bbb["path_max_drawdown"] == pytest.approx(0.05)
 
 
-def test_peer_labels_are_derived_from_all_currently_matured_cohort_rows():
+def test_peer_labels_are_derived_from_all_currently_matured_snapshot_rows():
     claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
     outcomes = compute_mature_outcomes(
         claims,
@@ -203,6 +203,7 @@ def test_peer_labels_are_derived_from_all_currently_matured_cohort_rows():
         "2026-09-28T00:00:00+00:00",
     )
     labels = derive_peer_labels(claims, outcomes)
+    assert set(labels["snapshot_id"]) == {"snap-1"}
     aaa = labels.loc[labels["symbol"].eq("AAA")].iloc[0]
     bbb = labels.loc[labels["symbol"].eq("BBB")].iloc[0]
     assert aaa["peer_median_return"] == pytest.approx(-0.05)
@@ -213,6 +214,39 @@ def test_peer_labels_are_derived_from_all_currently_matured_cohort_rows():
     assert bbb["signed_peer_excess"] == pytest.approx(0.15)
     assert int(aaa["direction_hit"]) == 1
     assert int(bbb["direction_hit"]) == 1
+
+
+def test_same_day_rerun_snapshots_do_not_mix_peer_cross_sections():
+    claims = build_claim_rows(_phase4_report(), _latest(), _metadata(), _fingerprints())
+    outcomes = compute_mature_outcomes(
+        claims,
+        _prices(),
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-28T00:00:00+00:00",
+    )
+
+    claims2 = claims.copy()
+    claims2["snapshot_id"] = "snap-2"
+    claims2["claim_id"] = [f"snap2-{symbol}" for symbol in claims2["symbol"]]
+    outcomes2 = outcomes.copy()
+    outcomes2["claim_id"] = [f"snap2-{symbol}" for symbol in outcomes2["symbol"]]
+    outcomes2.loc[outcomes2["symbol"].eq("AAA"), "return"] = 0.50
+    outcomes2.loc[outcomes2["symbol"].eq("BBB"), "return"] = 0.40
+
+    labels = derive_peer_labels(
+        pd.concat([claims, claims2], ignore_index=True),
+        pd.concat([outcomes, outcomes2], ignore_index=True),
+    )
+    snap1_aaa = labels.loc[
+        labels["snapshot_id"].eq("snap-1") & labels["symbol"].eq("AAA")
+    ].iloc[0]
+    snap2_aaa = labels.loc[
+        labels["snapshot_id"].eq("snap-2") & labels["symbol"].eq("AAA")
+    ].iloc[0]
+    assert snap1_aaa["peer_median_return"] == pytest.approx(-0.05)
+    assert snap1_aaa["peer_excess"] == pytest.approx(0.15)
+    assert snap2_aaa["peer_median_return"] == pytest.approx(0.40)
+    assert snap2_aaa["peer_excess"] == pytest.approx(0.10)
 
 
 def test_late_peer_maturity_improves_derived_label_without_rewriting_raw_outcome():
@@ -269,7 +303,9 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["semantics"]["scalar_confidence_mapping_created"] is False
     assert report["semantics"]["confidence_thresholds_created"] is False
     assert report["semantics"]["peer_labels_are_derived_not_frozen_early"] is True
+    assert report["semantics"]["peer_cross_sections_use_exact_snapshot_cohorts"] is True
     assert report["validation_contract"]["weights_or_thresholds_may_be_tuned_on_this_stream"] is False
     assert report["validation_contract"]["fixed_cooldown_sessions"] == 5
     assert report["horizons"]["5"]["block_length_sessions_for_future_inference"] == 10
     assert report["horizons"]["5"]["derived_peer_labels"] == 2
+    assert report["horizons"]["5"]["snapshot_cohorts"] == 1
