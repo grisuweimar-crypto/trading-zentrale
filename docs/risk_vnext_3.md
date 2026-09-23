@@ -43,7 +43,7 @@ Repeated observations are thinned with the existing five-session cooldown. Disco
 
 For each available risk factor and horizon, the report includes:
 
-- N, symbols, days and mature-cohort coverage
+- outcome-specific N, symbols, days and coverage
 - Spearman correlation versus peer excess
 - Spearman correlation versus forward return
 - Spearman correlation versus adverse excursion
@@ -52,9 +52,27 @@ For each available risk factor and horizon, the report includes:
 - low-risk outperformance rate versus high-risk outperformance rate
 - high-minus-low protection gaps
 - low-risk-minus-high-risk peer-alpha advantage
-- day-cluster bootstrap intervals for those group differences
+- horizon-aware block-bootstrap uncertainty for group differences
 
-Higher stored values are interpreted as riskier. A useful protection factor should therefore normally have positive association with future adverse excursion/drawdown. A useful return filter would normally show a positive low-risk alpha advantage. These are diagnostics, not trade instructions.
+Return/alpha and protection outcomes use independent available samples; neither is restricted to their complete-case intersection.
+
+## Uncertainty method
+
+Forward outcomes overlap whenever the event cooldown is shorter than the evaluated horizon. Independent per-day bootstrap resampling therefore understates dependence for 20T/40T/60T and can make confidence intervals too narrow.
+
+Phase 3 now uses **complete, non-overlapping horizon-length observation-date blocks**:
+
+- 5T outcomes use blocks of 5 observation sessions
+- 20T outcomes use blocks of 20 observation sessions
+- 40T outcomes use blocks of 40 observation sessions
+- 60T outcomes use blocks of 60 observation sessions
+- all observations sharing a date remain together
+- quantile membership is fixed before resampling
+- trailing incomplete blocks are excluded
+- fewer than two complete blocks means uncertainty is reported as unavailable (`None`)
+- disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval
+
+This is deliberately conservative. The observed means, medians, correlations and group-rate point estimates do not depend on the bootstrap method, but claims about statistical strength do.
 
 ## Danelfin
 
@@ -74,63 +92,67 @@ The first full audit used 18,090 scanner events. Historical coverage is the main
 
 Therefore only **volatility** and **drawdown** currently have enough point-in-time history for a real discovery/validation test. The other factors are classified as *not yet empirically testable*, not as ineffective.
 
-### 5 trading sessions — validation
+### Provisional point estimates from the first audit
 
-Validation contains 1,153 mature events.
+The following observed point estimates remain informative because changing the bootstrap does not change them. Previous independent-day confidence intervals have been withdrawn and must not be used as final evidence.
 
-**Volatility** has a clear protection effect:
+#### 5 trading sessions — validation
+
+Validation contained 1,153 mature events.
+
+**Volatility**:
 
 - Spearman vs future path max drawdown: **+0.398**
 - Spearman vs entry-relative adverse excursion: **+0.247**
-- high-risk minus low-risk path max drawdown: **+4.59 percentage points** (day-cluster bootstrap 95%: **+3.28 to +5.61 pp**)
-- high-risk minus low-risk adverse excursion: **+3.38 pp** (95%: **+2.30 to +4.68 pp**)
+- high-risk minus low-risk path max drawdown: **+4.59 percentage points**
+- high-risk minus low-risk adverse excursion: **+3.38 pp**
 - 10% tail-drawdown rate: **22.94% high-volatility vs 0.43% low-volatility**
 
-**Stored drawdown** is also validated as a protection factor, but somewhat weaker:
+**Stored drawdown**:
 
 - Spearman vs future path max drawdown: **+0.370**
 - Spearman vs adverse excursion: **+0.238**
-- high-risk minus low-risk path max drawdown: **+3.87 pp** (95%: **+3.07 to +4.49 pp**)
-- high-risk minus low-risk adverse excursion: **+2.91 pp** (95%: **+1.72 to +3.67 pp**)
+- high-risk minus low-risk path max drawdown: **+3.87 pp**
+- high-risk minus low-risk adverse excursion: **+2.91 pp**
 - 10% tail-drawdown rate: **17.80% high-drawdown vs 0.85% low-drawdown**
 
-Neither factor has a validated 5T alpha advantage: the low-risk-minus-high-risk peer-alpha bootstrap intervals cross zero.
+#### 20 trading sessions — validation
 
-### 20 trading sessions — validation
-
-Validation contains 638 mature events. The protection effect becomes materially stronger.
+Validation contained 638 mature events.
 
 **Volatility**:
 
 - Spearman vs future path max drawdown: **+0.630**
 - Spearman vs adverse excursion: **+0.260**
-- high-risk minus low-risk path max drawdown: **+12.32 pp** (95%: **+9.18 to +13.40 pp**)
-- high-risk minus low-risk adverse excursion: **+8.09 pp** (95%: **+4.90 to +11.03 pp**)
+- high-risk minus low-risk path max drawdown: **+12.32 pp**
+- high-risk minus low-risk adverse excursion: **+8.09 pp**
 - 10% tail-drawdown rate: **78.91% high-volatility vs 9.38% low-volatility**
 - outperformance rate: **53.13% low-volatility vs 44.53% high-volatility**
-- low-risk peer-alpha advantage: **+3.02 pp**, but its bootstrap interval (**-2.43 to +7.62 pp**) still crosses zero
+- observed low-risk peer-alpha advantage: **+3.02 pp**
 
 **Stored drawdown**:
 
 - Spearman vs future path max drawdown: **+0.533**
 - Spearman vs adverse excursion: **+0.215**
-- high-risk minus low-risk path max drawdown: **+10.29 pp** (95%: **+7.34 to +12.00 pp**)
-- high-risk minus low-risk adverse excursion: **+6.82 pp** (95%: **+1.84 to +10.27 pp**)
+- high-risk minus low-risk path max drawdown: **+10.29 pp**
+- high-risk minus low-risk adverse excursion: **+6.82 pp**
 - 10% tail-drawdown rate: **75.38% high-drawdown vs 13.95% low-drawdown**
-- low-risk peer-alpha advantage: **+0.54 pp**, with a bootstrap interval crossing zero
+- observed low-risk peer-alpha advantage: **+0.54 pp**
+
+The new horizon-aware block-bootstrap run determines which of these differences can be described as statistically supported.
 
 ### 40 / 60 trading sessions
 
-Discovery results strengthen further, especially for volatility, but the validation window is **not yet mature** for 40T or 60T. Those longer-horizon observations remain exploratory and must not be treated as confirmed evidence yet.
+Discovery observations remain exploratory. The validation window is not yet mature for 40T or 60T, so those horizons must not be treated as confirmed evidence.
 
-### Phase-3 interpretation
+### Phase-3 interpretation before final block-bootstrap recomputation
 
-1. **Volatility is currently the strongest validated downside-protection factor in Scanner-vNext.**
-2. **Stored drawdown is also a real protection factor**, but weaker than volatility in the mature holdout.
-3. The evidence does **not** yet justify treating either factor as a reliable alpha generator. Their primary validated role is risk protection.
-4. This is directionally consistent with the earlier Danelfin comparison, where Low Risk was the only Danelfin component with useful longer-horizon behavior, but it does not prove that the two systems measure the same underlying risk mechanism.
-5. Aggregate risk, debt, liquidity risk, downside deviation, beta and other production components cannot yet be reweighted from this audit because their historical point-in-time coverage is absent or too short.
-6. **No production weights are changed in Phase 3.** The next data-architecture requirement is to retain every individual production risk component point-in-time so later walk-forward validation can test them without reconstruction or leakage.
+1. Volatility has the strongest observed downside-protection relationship among currently testable factors.
+2. Stored drawdown also shows meaningful observed protection separation.
+3. Neither factor should be called a reliable alpha generator until the corrected uncertainty analysis is complete.
+4. Aggregate risk, debt, liquidity risk, downside deviation, beta and other production components cannot yet be reweighted because their historical point-in-time coverage is absent or too short.
+5. **No production weights are changed in Phase 3.**
+6. The next data-architecture requirement is to retain every individual production risk component point-in-time so later walk-forward validation can test them without reconstruction or leakage.
 
 ## Run
 
