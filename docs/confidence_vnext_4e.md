@@ -14,6 +14,10 @@ Every complete scanner publication creates an immutable claim snapshot. A claim 
 
 A later rerun may be idempotent, but it may not reinterpret the same historical snapshot. If the same natural key produces a different claim payload, the recorder fails closed.
 
+The contemporaneously available outcome start session and adjusted close are frozen into the claim itself. They are taken only from the price history that existed at claim time. A later close or a later backfill may not replace that frozen start.
+
+If no valid claim-time start session/adjusted close exists, the claim is still archived but marked `outcome_eligibility=unevaluable` with a fixed `outcome_unavailable_reason`. Its start session/price remain empty permanently. That missingness is prospective Data-Quality evidence; it must not abort the whole snapshot and must never be repaired retrospectively.
+
 The claims archive intentionally does **not** contain the raw numerical scanner Score as a Confidence-strength field. Selection is represented only by the already defined B0–B5 backbone state/evidence.
 
 ## Claim fields
@@ -22,6 +26,8 @@ The compact claim archive stores, among other provenance fields:
 
 - `as_of`, `generated_at`, `run_id`, `snapshot_id`
 - `symbol`, original `currency`, `horizon_sessions`
+- frozen `start_market_date`, `start_adjusted_close`
+- `outcome_eligibility` and `outcome_unavailable_reason`
 - `evidence_version`
 - exact SHA-256 fingerprints for Phase-4 report, Phase-2 report, Phase-3 report and optional risk-scale audit
 - Selection band/state/direction
@@ -37,6 +43,8 @@ Crypto remains outside this stream until non-stock evidence is independently val
 ## Outcomes are separate and later
 
 Claims are never overwritten with future information. Matured **raw** outcomes are written to a separate append-only archive keyed by `claim_id`.
+
+Only claims marked `outcome_eligibility=eligible` may mature. Claims that were unevaluable at claim time remain unevaluable even if a suitable historical price becomes available later.
 
 For each horizon (5/20/40/60 sessions), the immutable raw outcome archive stores after maturity:
 
@@ -75,6 +83,8 @@ Low risk is never treated as an extra positive-return vote.
 
 Test whether complete claim-specific provenance/presence states are associated with lower prediction error / fewer unevaluable claims than partial or insufficient states. Missing evidence remains unknown/insufficient, never neutral.
 
+Claim-time price availability is part of this evidence: a missing valid start session is recorded as a permanent unevaluable reason rather than silently repaired later.
+
 ## Dependence and uncertainty
 
 The pre-specified event spacing remains the existing **5-session cooldown**. That reduces serial repetition but does not make longer-horizon outcomes independent.
@@ -97,6 +107,7 @@ At the moment the stream starts, there are no unspent 5T/20T/40T/60T outcomes. T
 It is explicitly forbidden to:
 
 - backfill Phase-4 states into older scanner history using today's evidence
+- backfill a missing claim-time start price later
 - reuse the spent Phase-2/3 holdout to select a Confidence mapping
 - invent a 0–100 score before prospective reliability is demonstrated
 - invent HIGH/MED/LOW thresholds
@@ -104,6 +115,8 @@ It is explicitly forbidden to:
 
 ## Publication model
 
-Phase 4E runs separately after a successful `Scanner_vNext Autopilot` publication on `main`. It reads the just-published research bundle, generates the current guarded Phase-4B–D registry, appends immutable shadow claims, matures any prior claims whose future sessions are now available, and commits only the Phase-4E shadow artifacts.
+Phase 4E runs separately after a successful `Scanner_vNext Autopilot` publication on `main`. It binds the shadow calculation to the exact scanner `run_id` publication, reads that exact research bundle, generates the current guarded Phase-4B–D registry, appends immutable shadow claims, matures any prior eligible claims whose future sessions are now available, and commits only the Phase-4E shadow artifacts.
+
+Open eligible claims keep receiving the price history needed for later 20/40/60-session outcomes even if their symbol subsequently leaves the current scanner universe. Permanently unevaluable claims are excluded from those refresh requests.
 
 Because it is a separate workflow, a Phase-4E failure cannot invalidate or block the productive scanner publication. The shadow workflow does not trigger from its own artifact commit.
