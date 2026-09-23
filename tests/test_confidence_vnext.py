@@ -306,6 +306,7 @@ def test_vnext_contract_is_research_only_fail_closed_and_does_not_reuse_spent_ho
     assert contract["pillars"]["statistical_confidence"]["uncertainty"]["effective_block_length"] == "2_x_forward_horizon"
     assert contract["pillars"]["statistical_confidence"]["uncertainty"]["minimum_support_regions_for_robust_interval"] == 2
     assert contract["holdout_policy"]["phase2_phase3_holdout"] == "spent_for_prior_validation_not_for_phase4_weight_or_threshold_selection"
+    assert contract["config"]["stable_start"] is None
 
 
 def test_testability_does_not_claim_unarchived_components_are_backtestable():
