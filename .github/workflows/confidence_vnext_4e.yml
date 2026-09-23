@@ -120,6 +120,7 @@ jobs:
               handle.write(f'backlog_count={max(0, len(candidates) - 1)}\n')
           with open(env_file, 'a', encoding='utf-8') as handle:
               handle.write('PHASE4E_PROCESS=1\n')
+              handle.write(f'EXPECTED_RUN_ID={run_id}\n')
               handle.write(f'BOUND_RUN_ID={run_id}\n')
               handle.write(f'BOUND_PUBLICATION_COMMIT={sha}\n')
           print('Bound Phase 4E to oldest unclaimed publication:', sha, run_id, snapshot_id)
