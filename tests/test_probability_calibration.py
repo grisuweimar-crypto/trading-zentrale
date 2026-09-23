@@ -66,7 +66,12 @@ def _frozen():
                         "pattern": "score_d1_up",
                         "conditions": ["score_d1_up"],
                         "discovery_direction": "positive",
-                    }
+                    },
+                    {
+                        "pattern": "score_d1_down",
+                        "conditions": ["score_d1_down"],
+                        "discovery_direction": "negative",
+                    },
                 ],
             }
             for h in (5, 20, 40, 60)
@@ -94,8 +99,9 @@ def test_beta_shrinkage_uses_proper_prior_at_boundary_rates():
     assert high["prior_alpha"] > 0 and high["prior_beta"] > 0
     assert low["posterior_interval_95"][1] > 0
     assert high["posterior_interval_95"][0] < 1
-    with pytest.raises(ValueError):
-        _beta_shrinkage(1, 2, 0.5, 0.0)
+    for invalid in (0.0, float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError):
+            _beta_shrinkage(1, 2, 0.5, invalid)
 
 
 def test_probability_stats_reports_raw_shrunk_and_cluster_uncertainty():
@@ -121,7 +127,7 @@ def test_probability_stats_reports_raw_shrunk_and_cluster_uncertainty():
     assert out["shrunk_positive_peer_excess_probability"] < 1.0
     assert out["probability_advantage_vs_baseline"] > 0
     assert len(out["cluster_bootstrap_mean_peer_excess_95"]) == 2
-    assert out["bonferroni_adjusted_p"] >= out["approx_binomial_p"]
+    assert out["bonferroni_adjusted_p"] == pytest.approx(min(1.0, out["approx_binomial_p"] * 4))
 
 
 def test_phase2_keeps_selection_and_timing_separate_and_uses_frozen_candidates():
@@ -142,12 +148,24 @@ def test_phase2_keeps_selection_and_timing_separate_and_uses_frozen_candidates()
     timing = result["horizons"]["5"]["timing_patterns"]
     assert timing["candidate_source"] == "frozen_phase1b"
     assert timing["candidate_selection_uses_validation"] is False
-    assert [row["pattern"] for row in timing["patterns"]] == ["score_d1_up"]
+    assert [row["pattern"] for row in timing["patterns"]] == ["score_d1_up", "score_d1_down"]
     for row in timing["patterns"]:
         assert row["selection_was_discovery_only"] is True
         assert "alpha_direction_confirmed" in row
         assert "probability_direction_confirmed" in row
         assert "strong_validation" in row
+        validation = row["validation"]
+        if validation and validation["approx_binomial_p"] is not None:
+            assert validation["bonferroni_adjusted_p"] == pytest.approx(
+                min(1.0, validation["approx_binomial_p"] * 2)
+            )
+
+
+def test_analyze_rejects_nonfinite_prior_strength_before_research():
+    history, prices = _synthetic()
+    for invalid in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError):
+            analyze(history, prices, _frozen(), Phase2Config(prior_strength=invalid, cluster_bootstrap_reps=0))
 
 
 def test_frozen_catalog_window_must_match_phase2_config():
