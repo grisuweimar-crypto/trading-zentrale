@@ -46,7 +46,7 @@ For each band and window the report contains:
 - Beta-shrunk positive peer-excess probability and approximate 95% interval
 - probability advantage versus the window baseline
 - mean and median peer excess
-- day-cluster bootstrap interval for mean peer excess
+- circular moving-block bootstrap intervals for mean peer excess and probability advantage
 - sample size, distinct symbols/days and top-symbol concentration
 
 ## Timing-pattern calibration
@@ -62,7 +62,7 @@ For every frozen pattern Phase 2 reports discovery and validation statistics and
 
 The report therefore no longer treats a matching mean-alpha sign alone as proof that the probability layer is confirmed.
 
-Approximate binomial and Bonferroni-adjusted values remain diagnostic only; independence is not assumed. Day-cluster bootstrap intervals account for common same-day market shocks more conservatively than treating every row as independent.
+Approximate Wilson/Beta intervals and binomial/Bonferroni values remain iid diagnostics only. Strong validation uses a circular moving observation-date block bootstrap with effective block length 2 × horizon; every eligible date remains a possible block start, and robust intervals require at least two time-separated occurrence support regions.
 
 ## Shrinkage
 

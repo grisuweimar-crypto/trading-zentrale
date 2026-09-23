@@ -101,15 +101,53 @@ def _stable_seed(base: int, *parts: object) -> int:
     return int((base + int.from_bytes(digest[:4], "big")) % (2**32 - 1))
 
 
-def _horizon_date_blocks(frame: pd.DataFrame, horizon: int) -> list[list[pd.Timestamp]]:
-    if horizon < 1 or frame.empty or "obs_date" not in frame.columns:
-        return []
-    dates = pd.to_datetime(frame["obs_date"], errors="coerce").dropna().drop_duplicates().sort_values().tolist()
-    complete = (len(dates) // horizon) * horizon
-    if complete == 0:
-        return []
-    dates = [pd.Timestamp(day) for day in dates[:complete]]
-    return [dates[start : start + horizon] for start in range(0, complete, horizon)]
+def _effective_block_length(horizon: int) -> int:
+    return max(1, 2 * int(horizon))
+
+
+def _moving_date_blocks(
+    baseline: pd.DataFrame,
+    horizon: int,
+) -> tuple[list[pd.Timestamp], list[list[pd.Timestamp]], int]:
+    """Build circular moving date blocks using every eligible baseline date."""
+    block_length = _effective_block_length(horizon)
+    if horizon < 1 or baseline.empty or "obs_date" not in baseline.columns:
+        return [], [], block_length
+    dates = sorted(
+        pd.Timestamp(day)
+        for day in pd.to_datetime(baseline["obs_date"], errors="coerce").dropna().unique()
+    )
+    if not dates:
+        return [], [], block_length
+    span = min(block_length, len(dates))
+    blocks = [
+        [dates[(start + offset) % len(dates)] for offset in range(span)]
+        for start in range(len(dates))
+    ]
+    return dates, blocks, block_length
+
+
+def _occurrence_support_region_count(
+    values: pd.DataFrame,
+    baseline_dates: list[pd.Timestamp],
+    block_length: int,
+) -> int:
+    """Count time-separated occurrence support regions."""
+    if values.empty or not baseline_dates:
+        return 0
+    positions = {day: i for i, day in enumerate(baseline_dates)}
+    occurrence_positions = sorted(
+        positions[pd.Timestamp(day)]
+        for day in pd.to_datetime(values["obs_date"], errors="coerce").dropna().unique()
+        if pd.Timestamp(day) in positions
+    )
+    count = 0
+    last_start: int | None = None
+    for pos in occurrence_positions:
+        if last_start is None or pos - last_start >= block_length:
+  count += 1
+  last_start = pos
+    return count
 
 
 def _block_bootstrap_uncertainty(
@@ -120,50 +158,53 @@ def _block_bootstrap_uncertainty(
     config: Phase2Config,
     seed: int,
 ) -> dict:
-    """Resample complete horizon-length time blocks in sync.
+    """Circular moving-block uncertainty with synchronized baseline sampling.
 
-    Occurrence and baseline rows use the same resampled date blocks, preserving
-    dependence created by overlapping forward windows. Robust intervals are
-    unavailable unless at least two complete baseline blocks and at least two
-    occurrence-bearing blocks exist.
+    The effective block length is twice the evaluated horizon. Occurrence
+    and baseline rows use the same sampled date sequence. Every eligible
+    baseline date is retained as a possible block start. Robust intervals
+    fail closed unless occurrences have support in at least two
+    time-separated block-length regions.
     """
     v = values[["obs_date", target]].dropna().copy()
     b = baseline[["obs_date", target]].dropna().copy()
-    blocks = _horizon_date_blocks(b, horizon)
-    unavailable = {
-        "mean_peer_excess_95": None,
-        "probability_advantage_95": None,
+    dates, blocks, block_length = _moving_date_blocks(b, horizon)
+    support_regions = _occurrence_support_region_count(v, dates, block_length)
+    diagnostics = {
         "block_count": len(blocks),
-        "occurrence_block_count": 0,
+        "occurrence_block_count": support_regions,
+        "date_count": len(dates),
+        "block_length": block_length,
     }
-    if config.cluster_bootstrap_reps <= 0 or len(blocks) < 2 or v.empty or b.empty:
-        return unavailable
+    if config.cluster_bootstrap_reps <= 0 or len(blocks) < 2 or v.empty or b.empty or support_regions < 2:
+        return {"mean_peer_excess_95": None, "probability_advantage_95": None, **diagnostics}
 
     v["obs_date"] = pd.to_datetime(v["obs_date"])
     b["obs_date"] = pd.to_datetime(b["obs_date"])
-    v_by_block = [v.loc[v["obs_date"].isin(days), target].to_numpy(dtype=float) for days in blocks]
-    b_by_block = [b.loc[b["obs_date"].isin(days), target].to_numpy(dtype=float) for days in blocks]
-    occurrence_block_count = sum(1 for part in v_by_block if len(part))
-    if occurrence_block_count < 2:
-        return {
-            **unavailable,
-            "occurrence_block_count": occurrence_block_count,
-        }
+    v_by_day = {
+        day: v.loc[v["obs_date"].eq(day), target].to_numpy(dtype=float)
+        for day in dates
+    }
+    b_by_day = {
+        day: b.loc[b["obs_date"].eq(day), target].to_numpy(dtype=float)
+        for day in dates
+    }
 
     rng = np.random.default_rng(seed)
     mean_estimates: list[float] = []
     advantage_estimates: list[float] = []
-    count = len(blocks)
+    draws_per_rep = int(np.ceil(len(dates) / block_length))
     for _ in range(config.cluster_bootstrap_reps):
-        chosen = rng.integers(0, count, size=count)
-        v_parts = [v_by_block[i] for i in chosen if len(v_by_block[i])]
-        b_parts = [b_by_block[i] for i in chosen if len(b_by_block[i])]
+        chosen = rng.integers(0, len(blocks), size=draws_per_rep)
+        sampled_dates = [day for idx in chosen for day in blocks[idx]][: len(dates)]
+        v_parts = [v_by_day[day] for day in sampled_dates if len(v_by_day[day])]
+        b_parts = [b_by_day[day] for day in sampled_dates if len(b_by_day[day])]
         if not v_parts or not b_parts:
-            continue
+  continue
         v_sample = np.concatenate(v_parts)
         b_sample = np.concatenate(b_parts)
         if len(v_sample) == 0 or len(b_sample) == 0:
-            continue
+  continue
         mean_estimates.append(float(v_sample.mean()))
         baseline_rate = float((b_sample > 0).mean())
         successes = int((v_sample > 0).sum())
@@ -172,17 +213,15 @@ def _block_bootstrap_uncertainty(
 
     def interval(items: list[float]) -> list[float] | None:
         if not items:
-            return None
+  return None
         low, high = np.quantile(np.asarray(items, dtype=float), [0.025, 0.975])
         return [float(low), float(high)]
 
     return {
         "mean_peer_excess_95": interval(mean_estimates),
         "probability_advantage_95": interval(advantage_estimates),
-        "block_count": len(blocks),
-        "occurrence_block_count": occurrence_block_count,
+        **diagnostics,
     }
-
 
 def _probability_stats(
     occurrences: pd.DataFrame,
@@ -472,7 +511,7 @@ def analyze(
             "selection_and_timing_kept_separate": True,
             "timing_candidates_are_frozen_from_phase1b": True,
             "probability_target": "future peer_excess > 0 versus validated leave-one-symbol-out peer benchmark",
-            "strong_validation_uncertainty": "horizon-aware non-overlapping time-block bootstrap",
+            "strong_validation_uncertainty": "circular moving observation-date block bootstrap with 2x-horizon blocks",
             "iid_intervals_and_pvalues_are_diagnostics_only": True,
             "note": "Calibrated research probabilities; not deterministic buy/sell instructions.",
         },
@@ -494,7 +533,7 @@ def analyze(
         s_discovery, s_validation = _windowed_peer_events(selection_events, horizon, config)
         t_discovery, t_validation = _windowed_peer_events(timing_events, horizon, config)
         result["horizons"][str(horizon)] = {
-            "bootstrap": {"method": "non_overlapping_horizon_time_blocks", "block_length_sessions": int(horizon)},
+            "bootstrap": {"method": "circular_moving_observation_date_blocks", "base_horizon_sessions": int(horizon), "block_length_sessions": int(_effective_block_length(horizon)), "uses_all_eligible_dates": True, "minimum_occurrence_support_regions": 2},
             "validation_maturity": _validation_maturity(t_validation, horizon),
             "selection": selection_calibration(s_discovery, s_validation, horizon, config),
             "timing_patterns": timing_pattern_calibration(
