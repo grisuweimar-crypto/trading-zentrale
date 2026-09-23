@@ -1,0 +1,252 @@
+name: Apply Phase 3 moving-block fix
+
+on:
+  push:
+    branches: [phase3-risk-vnext]
+    paths:
+      - '.github/workflows/apply_phase3_moving_fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase3-risk-vnext
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Apply moving-block correction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          src = Path('src/scanner/reports/risk_vnext.py')
+          text = src.read_text(encoding='utf-8')
+          replacement = r'''def _effective_block_length(horizon: int) -> int:
+              return max(1, 2 * int(horizon))
+
+
+          def _circular_moving_time_blocks(
+              frame: pd.DataFrame,
+              horizon: int,
+          ) -> tuple[pd.DataFrame, list[pd.DataFrame], int]:
+              """Return circular moving observation-date blocks of length 2 x horizon.
+
+              All rows sharing an observation date remain together. Every eligible
+              date can be a block start, so trailing dates are retained rather than
+              truncated. Circular wrapping preserves dependence across former fixed
+              block boundaries.
+              """
+              block_length = _effective_block_length(horizon)
+              if horizon < 1 or frame.empty or "obs_date" not in frame.columns:
+                  return frame.iloc[0:0].copy(), [], block_length
+              work = frame.copy()
+              work["obs_date"] = pd.to_datetime(work["obs_date"], errors="coerce")
+              work = work.dropna(subset=["obs_date"]).copy()
+              dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
+              if not dates:
+                  return work, [], block_length
+              span = min(block_length, len(dates))
+              by_day = {
+                  day: work.loc[work["obs_date"].eq(day)].copy()
+                  for day in dates
+              }
+              blocks: list[pd.DataFrame] = []
+              for start in range(len(dates)):
+                  chosen = [dates[(start + offset) % len(dates)] for offset in range(span)]
+                  blocks.append(pd.concat([by_day[day] for day in chosen], ignore_index=True))
+              return work, blocks, block_length
+
+
+          def _temporal_support_region_count(
+              work: pd.DataFrame,
+              group_column: str,
+              group_name: str,
+              block_length: int,
+          ) -> int:
+              """Count time-separated support regions for one fixed risk group."""
+              dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
+              if not dates:
+                  return 0
+              positions = {day: i for i, day in enumerate(dates)}
+              group_dates = sorted(
+                  positions[pd.Timestamp(day)]
+                  for day in work.loc[work[group_column].eq(group_name), "obs_date"].unique()
+              )
+              count = 0
+              last_start: int | None = None
+              for pos in group_dates:
+                  if last_start is None or pos - last_start >= block_length:
+                      count += 1
+                      last_start = pos
+              return count
+
+
+          def _cluster_bootstrap_group_difference(
+              frame: pd.DataFrame,
+              target: str,
+              group_column: str,
+              positive_group: str,
+              negative_group: str,
+              reps: int,
+              seed: int,
+              horizon: int = 1,
+          ) -> list[float] | None:
+              """Circular moving-block bootstrap of a fixed-group mean difference.
+
+              Returns mean(positive_group) - mean(negative_group). Quantile
+              membership is fixed before resampling. The effective block length is
+              twice the evaluated forward horizon. Every eligible observation date
+              remains in the bootstrap sampling frame, and uncertainty fails closed
+              unless both groups have support in at least two time-separated regions.
+              """
+              work = frame[["obs_date", target, group_column]].dropna().copy()
+              work = work.loc[work[group_column].isin([positive_group, negative_group])]
+              if work.empty or reps <= 0:
+                  return None
+              work, blocks, block_length = _circular_moving_time_blocks(work, horizon)
+              if len(blocks) < 2:
+                  return None
+              if _temporal_support_region_count(work, group_column, positive_group, block_length) < 2:
+                  return None
+              if _temporal_support_region_count(work, group_column, negative_group, block_length) < 2:
+                  return None
+
+              def difference(sample: pd.DataFrame) -> float | None:
+                  pos = sample.loc[sample[group_column].eq(positive_group), target]
+                  neg = sample.loc[sample[group_column].eq(negative_group), target]
+                  if pos.empty or neg.empty:
+                      return None
+                  return float(pos.mean() - neg.mean())
+
+              if difference(work) is None:
+                  return None
+
+              dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
+              day_groups = {
+                  day: work.loc[work["obs_date"].eq(day)].copy()
+                  for day in dates
+              }
+              block_dates = [
+                  list(dict.fromkeys(pd.Timestamp(day) for day in block["obs_date"].tolist()))
+                  for block in blocks
+              ]
+              draws_per_rep = int(np.ceil(len(dates) / block_length))
+              rng = np.random.default_rng(seed)
+              estimates: list[float] = []
+              for _ in range(reps):
+                  chosen = rng.integers(0, len(block_dates), size=draws_per_rep)
+                  sampled_dates = [day for idx in chosen for day in block_dates[idx]][: len(dates)]
+                  sample = pd.concat([day_groups[day] for day in sampled_dates], ignore_index=True)
+                  value = difference(sample)
+                  if value is not None:
+                      estimates.append(value)
+              if not estimates:
+                  return None
+              low, high = np.quantile(np.asarray(estimates, dtype=float), [0.025, 0.975])
+              return [float(low), float(high)]
+          '''
+          replacement = '\n'.join(line[10:] if line.startswith('          ') else line for line in replacement.splitlines())
+          pattern = re.compile(r'def _horizon_time_blocks\(.*?\n\ndef _validation_maturity', re.S)
+          if not pattern.search(text):
+              raise SystemExit('bootstrap function block not found')
+          text = pattern.sub(replacement + '\n\ndef _validation_maturity', text)
+          text = text.replace(
+              '"uncertainty_method": "non-overlapping horizon-length observation-date block bootstrap",\n            "uncertainty_block_length_rule": "block length equals evaluated forward horizon in sessions (5/20/40/60)",',
+              '"uncertainty_method": "circular moving observation-date block bootstrap",\n            "uncertainty_block_length_rule": "effective block length equals 2 x evaluated forward horizon in sessions",\n            "bootstrap_uses_all_eligible_dates": True,\n            "bootstrap_min_group_temporal_support_regions": 2,'
+          )
+          text = text.replace(
+              '"method": "non_overlapping_horizon_time_blocks",\n                "block_length_sessions": int(horizon),',
+              '"method": "circular_moving_observation_date_blocks",\n                "base_horizon_sessions": int(horizon),\n                "block_length_sessions": int(_effective_block_length(horizon)),\n                "uses_all_eligible_dates": True,\n                "minimum_group_temporal_support_regions": 2,'
+          )
+          src.write_text(text, encoding='utf-8')
+
+          tests = Path('tests/test_risk_vnext.py')
+          t = tests.read_text(encoding='utf-8')
+          t = t.replace('    _horizon_time_blocks,\n', '    _circular_moving_time_blocks,\n')
+          t = t.replace(
+              '    assert semantics["uncertainty_method"] == "non-overlapping horizon-length observation-date block bootstrap"\n',
+              '    assert semantics["uncertainty_method"] == "circular moving observation-date block bootstrap"\n    assert semantics["bootstrap_uses_all_eligible_dates"] is True\n    assert semantics["bootstrap_min_group_temporal_support_regions"] == 2\n'
+          )
+          t = t.replace(
+              '    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 20\n',
+              '    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 40\n    assert result["horizons"]["20"]["bootstrap"]["method"] == "circular_moving_observation_date_blocks"\n'
+          )
+          old_tests = re.compile(r'def test_horizon_blocks_keep_dates_together_and_drop_partial_tail\(\):.*?\n\ndef test_invalid_phase3_config_rejected', re.S)
+          new_tests = r'''def test_circular_moving_blocks_cross_boundaries_and_keep_trailing_dates():
+              dates = pd.bdate_range("2026-08-03", periods=12)
+              rows = []
+              for day in dates:
+                  rows.append({"obs_date": day, "marker": f"{day.date()}-A"})
+                  rows.append({"obs_date": day, "marker": f"{day.date()}-B"})
+              frame = pd.DataFrame(rows)
+
+              work, blocks, block_length = _circular_moving_time_blocks(frame, 2)
+              assert block_length == 4
+              assert work["obs_date"].nunique() == 12
+              assert len(blocks) == 12
+              assert all(block["obs_date"].nunique() == 4 for block in blocks)
+              wrapped = list(dict.fromkeys(blocks[-2]["obs_date"].tolist()))
+              assert wrapped == [dates[-2], dates[-1], dates[0], dates[1]]
+              assert any(block["obs_date"].eq(dates[-1]).any() for block in blocks)
+
+
+          def test_moving_block_bootstrap_requires_two_temporal_support_regions_per_group():
+              dates = pd.bdate_range("2026-08-03", periods=25)
+              rows = []
+              for i, day in enumerate(dates):
+                  rows.append({"obs_date": day, "target": 0.1 + i * 0.001, "risk_group": "high_risk"})
+                  if i < 5:
+                      rows.append({"obs_date": day, "target": -0.1, "risk_group": "low_risk"})
+              frame = pd.DataFrame(rows)
+              assert _cluster_bootstrap_group_difference(
+                  frame, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5
+              ) is None
+
+              extra = pd.DataFrame(
+                  {
+                      "obs_date": dates[20:25],
+                      "target": [-0.1] * 5,
+                      "risk_group": ["low_risk"] * 5,
+                  }
+              )
+              supported = pd.concat([frame, extra], ignore_index=True)
+              interval = _cluster_bootstrap_group_difference(
+                  supported, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5
+              )
+              assert interval is not None
+              assert len(interval) == 2
+
+
+          def test_invalid_phase3_config_rejected'''
+          new_tests = '\n'.join(line[10:] if line.startswith('          ') else line for line in new_tests.splitlines())
+          if not old_tests.search(t):
+              raise SystemExit('old block tests not found')
+          t = old_tests.sub(new_tests, t)
+          tests.write_text(t, encoding='utf-8')
+
+          docs = Path('docs/risk_vnext_3.md')
+          d = docs.read_text(encoding='utf-8')
+          old = '''Phase 3 now uses **complete, non-overlapping horizon-length observation-date blocks**:\n\n- 5T outcomes use blocks of 5 observation sessions\n- 20T outcomes use blocks of 20 observation sessions\n- 40T outcomes use blocks of 40 observation sessions\n- 60T outcomes use blocks of 60 observation sessions\n- all observations sharing a date remain together\n- quantile membership is fixed before resampling\n- trailing incomplete blocks are excluded\n- fewer than two complete blocks means uncertainty is reported as unavailable (`None`)\n- disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval\n\nThis is deliberately conservative.'''
+          new = '''Phase 3 now uses a **circular moving observation-date block bootstrap** with an effective block length of **2 × the evaluated forward horizon**:\n\n- 5T outcomes use moving blocks of 10 observation sessions\n- 20T outcomes use moving blocks of 40 observation sessions\n- 40T outcomes use moving blocks of 80 observation sessions\n- 60T outcomes use moving blocks of 120 observation sessions\n- every eligible observation date can be a block start, including trailing dates\n- blocks wrap circularly so dependence is preserved across former fixed block boundaries\n- all observations sharing a date remain together\n- quantile membership is fixed before resampling\n- uncertainty is unavailable unless both low- and high-risk groups have support in at least two time-separated block-length regions\n- disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval\n\nThis fails closed when independent temporal support is insufficient.'''
+          if old not in d:
+              raise SystemExit('old docs uncertainty section not found')
+          d = d.replace(old, new)
+          d = d.replace('The new horizon-aware block-bootstrap run determines which of these differences can be described as statistically supported.', 'The corrected circular moving-block run determines which of these differences can be described as statistically supported.')
+          d = d.replace('### Phase-3 interpretation before final block-bootstrap recomputation', '### Phase-3 interpretation before final moving-block recomputation')
+          docs.write_text(d, encoding='utf-8')
+
+          Path('.github/workflows/apply_phase3_moving_fix.yml').unlink()
+          PY
+      - name: Commit corrected Phase 3 implementation
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add -A
+          git commit -m "Fix Phase 3 moving-block uncertainty"
+          git push origin HEAD:phase3-risk-vnext
