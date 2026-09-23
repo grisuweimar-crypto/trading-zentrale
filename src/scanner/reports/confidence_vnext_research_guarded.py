@@ -182,6 +182,35 @@ def _assert_fail_closed_pit_sources(latest: pd.DataFrame, phase2: dict, risk_rep
     return checks
 
 
+def _legacy_pit_compatible_inputs(
+    latest: pd.DataFrame,
+    phase2: dict,
+    risk_report: dict,
+) -> tuple[pd.DataFrame, dict, dict]:
+    """Normalize chronology before the base registry repeats its legacy PIT check.
+
+    The strict guard above already established that all timestamps are present,
+    parseable and not future-derived. The base research registry still performs
+    its older PIT comparison without ``utc=True``. Normalize all chronology to
+    timezone-naive UTC solely for that redundant internal comparison so valid
+    mixtures of offset-aware and offset-less ISO inputs cannot raise a
+    tz-aware/tz-naive TypeError.
+    """
+    normalized_latest = latest.copy()
+    parsed_current = pd.to_datetime(normalized_latest["as_of"], errors="raise", utc=True)
+    normalized_latest["as_of"] = parsed_current.dt.tz_convert(None)
+
+    def normalized_report(report: dict) -> dict:
+        out = dict(report)
+        source = dict(report.get("source") or {})
+        parsed = pd.to_datetime(source.get("as_of"), errors="raise", utc=True)
+        source["as_of"] = pd.Timestamp(parsed).tz_convert(None).isoformat()
+        out["source"] = source
+        return out
+
+    return normalized_latest, normalized_report(phase2), normalized_report(risk_report)
+
+
 def _current_provenance_by_symbol(latest: pd.DataFrame, config: Phase4ResearchConfig) -> dict[str, dict]:
     scanner = _scanner_rows(latest)
     if scanner.empty:
@@ -225,7 +254,8 @@ def analyze(
     config: Phase4ResearchConfig = Phase4ResearchConfig(),
 ) -> dict:
     strict_pit = _assert_fail_closed_pit_sources(latest, phase2, risk_report)
-    result = _base_analyze(history, latest, phase2, risk_report, config)
+    base_latest, base_phase2, base_risk_report = _legacy_pit_compatible_inputs(latest, phase2, risk_report)
+    result = _base_analyze(history, base_latest, base_phase2, base_risk_report, config)
 
     crypto_symbols = set(_crypto_symbols_from_latest(latest))
     provenance_by_symbol = _current_provenance_by_symbol(latest, config)
@@ -238,7 +268,12 @@ def analyze(
         data_quality = _guard_risk_data_quality(dict(row.get("data_quality") or {}), corrected_risk)
         provenance = provenance_by_symbol.get(
             str(row.get("symbol")),
-            {"required": list(config.require_provenance_fields), "present": [], "missing": list(config.require_provenance_fields), "complete": False},
+            {
+                "required": list(config.require_provenance_fields),
+                "present": [],
+                "missing": list(config.require_provenance_fields),
+                "complete": False,
+            },
         )
         row["data_quality"] = _guard_timing_data_quality(data_quality, provenance)
         row["model_agreement"] = _agreement_state(
