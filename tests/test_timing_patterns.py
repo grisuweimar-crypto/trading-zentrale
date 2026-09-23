@@ -163,6 +163,7 @@ def test_pattern_cooldown_is_applied_after_matching_occurrences():
     )
     work = pd.DataFrame(
         {
+            "obs_date": [dates[3], dates[4], dates[10]],
             "symbol": ["A", "A", "A"],
             "start_market_date": [dates[3], dates[4], dates[10]],
             "match": [True, True, True],
