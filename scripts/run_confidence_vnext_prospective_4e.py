@@ -12,6 +12,7 @@ def main() -> int:
     parser.add_argument("--phase4-report", required=True)
     parser.add_argument("--latest", default="artifacts/research/latest_scanner.csv")
     parser.add_argument("--metadata", default="artifacts/research/history_metadata.json")
+    parser.add_argument("--claim-prices", default="artifacts/research/price_backfill.csv")
     parser.add_argument("--prices", default="artifacts/research/price_backfill.csv")
     parser.add_argument("--phase2", default="artifacts/research/probability_calibration_2.json")
     parser.add_argument("--phase3", default="artifacts/research/risk_vnext_3.json")
@@ -26,6 +27,7 @@ def main() -> int:
         Path(args.phase4_report),
         Path(args.latest),
         Path(args.metadata),
+        Path(args.claim_prices),
         Path(args.prices),
         Path(args.phase2),
         Path(args.phase3),
