@@ -44,7 +44,7 @@ Crypto remains outside this stream until non-stock evidence is independently val
 
 Claims are never overwritten with future information. Matured **raw** outcomes are written to a separate append-only archive keyed by `claim_id`.
 
-Only claims marked `outcome_eligibility=eligible` may mature. Claims that were unevaluable at claim time remain unevaluable even if a suitable historical price becomes available later.
+Only claims marked `outcome_eligibility=eligible` may mature. Claims that were unevaluable at claim time remain unevaluable even if a suitable historical price becomes available later. This distinction is intentional: later data can mature an already eligible claim, but it cannot retroactively create the missing entry condition of an unevaluable claim.
 
 For each horizon (5/20/40/60 sessions), the immutable raw outcome archive stores after maturity:
 
