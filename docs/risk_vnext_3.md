@@ -74,7 +74,7 @@ Phase 3 uses a **circular moving observation-date block bootstrap** with an effe
 - disabled resampling also reports uncertainty as unavailable rather than a zero-width pseudo interval
 - fewer than 20 configured or surviving bootstrap replicates are treated as insufficient for a percentile 95% interval; configuration values 1–19 are rejected
 
-This fails closed when independent temporal support is insufficient. The observed means, medians, correlations and group-rate point estimates do not depend on the bootstrap method, but claims about statistical strength do.
+This fails closed when independent temporal support is insufficient. The same fail-closed rule is enforced at configuration time and again on the number of surviving bootstrap estimates. The observed means, medians, correlations and group-rate point estimates do not depend on the bootstrap method, but claims about statistical strength do.
 
 ## Danelfin
 
