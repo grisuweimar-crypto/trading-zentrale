@@ -62,7 +62,7 @@ For every frozen pattern Phase 2 reports discovery and validation statistics and
 
 The report therefore no longer treats a matching mean-alpha sign alone as proof that the probability layer is confirmed.
 
-Approximate Wilson/Beta intervals and binomial/Bonferroni values remain iid diagnostics only. Strong validation uses a circular moving observation-date block bootstrap with effective block length 2 × horizon; every eligible date remains a possible block start, and robust intervals require at least two time-separated occurrence support regions. The report records both the base horizon and the effective moving-block length explicitly so the uncertainty method is auditable.
+Approximate Wilson/Beta intervals and binomial/Bonferroni values remain iid diagnostics only. Strong validation uses a circular moving observation-date block bootstrap with effective block length 2 × horizon; every eligible date remains a possible block start, and robust intervals require at least two time-separated occurrence support regions. The report records both the base horizon and the effective moving-block length explicitly so the uncertainty method is auditable. Positive regression fixtures likewise span at least two such support regions; sparse one-region evidence must fail closed.
 
 ## Shrinkage
 
