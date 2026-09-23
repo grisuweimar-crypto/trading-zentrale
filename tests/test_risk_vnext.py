@@ -202,7 +202,7 @@ def test_moving_block_bootstrap_requires_two_temporal_support_regions_per_group(
     for i, day in enumerate(dates):
         rows.append({"obs_date": day, "target": 0.1 + i * 0.001, "risk_group": "high_risk"})
         if i < 5:
-  rows.append({"obs_date": day, "target": -0.1, "risk_group": "low_risk"})
+            rows.append({"obs_date": day, "target": -0.1, "risk_group": "low_risk"})
     frame = pd.DataFrame(rows)
     assert _cluster_bootstrap_group_difference(
         frame, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5
@@ -210,9 +210,9 @@ def test_moving_block_bootstrap_requires_two_temporal_support_regions_per_group(
 
     extra = pd.DataFrame(
         {
-  "obs_date": dates[20:25],
-  "target": [-0.1] * 5,
-  "risk_group": ["low_risk"] * 5,
+            "obs_date": dates[20:25],
+            "target": [-0.1] * 5,
+            "risk_group": ["low_risk"] * 5,
         }
     )
     supported = pd.concat([frame, extra], ignore_index=True)

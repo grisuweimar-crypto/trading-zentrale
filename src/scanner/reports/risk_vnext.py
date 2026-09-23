@@ -271,8 +271,8 @@ def _temporal_support_region_count(
     last_start: int | None = None
     for pos in group_dates:
         if last_start is None or pos - last_start >= block_length:
-  count += 1
-  last_start = pos
+            count += 1
+            last_start = pos
     return count
 
 
@@ -310,7 +310,7 @@ def _cluster_bootstrap_group_difference(
         pos = sample.loc[sample[group_column].eq(positive_group), target]
         neg = sample.loc[sample[group_column].eq(negative_group), target]
         if pos.empty or neg.empty:
-  return None
+            return None
         return float(pos.mean() - neg.mean())
 
     if difference(work) is None:
@@ -334,7 +334,7 @@ def _cluster_bootstrap_group_difference(
         sample = pd.concat([day_groups[day] for day in sampled_dates], ignore_index=True)
         value = difference(sample)
         if value is not None:
-  estimates.append(value)
+            estimates.append(value)
     if not estimates:
         return None
     low, high = np.quantile(np.asarray(estimates, dtype=float), [0.025, 0.975])
