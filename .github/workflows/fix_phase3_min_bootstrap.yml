@@ -50,6 +50,11 @@ jobs:
           tests = Path('tests/test_risk_vnext.py')
           t = tests.read_text(encoding='utf-8')
           t = t.replace(
+              'Phase3Config(min_feature_n=5, cluster_bootstrap_reps=10)',
+              'Phase3Config(min_feature_n=5, cluster_bootstrap_reps=20)',
+              1,
+          )
+          t = t.replace(
               '    interval = _cluster_bootstrap_group_difference(\n        supported, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5\n    )\n    assert interval is not None\n    assert len(interval) == 2',
               '    interval = _cluster_bootstrap_group_difference(\n        supported, "target", "risk_group", "high_risk", "low_risk", 50, 7, 5\n    )\n    assert interval is not None\n    assert len(interval) == 2\n    assert _cluster_bootstrap_group_difference(\n        supported, "target", "risk_group", "high_risk", "low_risk", 1, 7, 5\n    ) is None',
               1,
