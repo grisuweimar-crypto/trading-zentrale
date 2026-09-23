@@ -11,6 +11,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Phase 2: probability calibration research")
     parser.add_argument("--history", default="artifacts/research/history_analysis.csv")
     parser.add_argument("--prices", default="artifacts/research/price_backfill.csv")
+    parser.add_argument("--frozen-patterns", default="artifacts/research/timing_patterns_1b_frozen.json")
+    parser.add_argument("--metadata", default="artifacts/research/history_metadata.json")
     parser.add_argument("--output", default="artifacts/research/probability_calibration_2.json")
     parser.add_argument("--stable-start", default="2026-04-15")
     parser.add_argument("--discovery-end", default="2026-07-31")
@@ -28,12 +30,25 @@ def main() -> int:
         prior_strength=args.prior_strength,
         cluster_bootstrap_reps=args.bootstrap_reps,
     )
-    result = run(args.history, args.prices, args.output, config)
+    result = run(
+        args.history,
+        args.prices,
+        args.output,
+        config,
+        frozen_patterns_path=args.frozen_patterns,
+        metadata_path=args.metadata,
+    )
     summary = {
         "phase": result["phase"],
+        "source": result.get("source", {}),
         "coverage": result["coverage"],
-        "validation_supported": {
-            h: len(payload.get("timing_patterns", {}).get("validation_supported", []))
+        "validation": {
+            h: {
+                "maturity": payload.get("validation_maturity", {}),
+                "alpha_supported": len(payload.get("timing_patterns", {}).get("alpha_supported", [])),
+                "joint_supported": len(payload.get("timing_patterns", {}).get("joint_supported", [])),
+                "strong_supported": len(payload.get("timing_patterns", {}).get("strong_supported", [])),
+            }
             for h, payload in result["horizons"].items()
         },
         "output": str(Path(args.output)),
