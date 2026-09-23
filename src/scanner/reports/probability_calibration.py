@@ -214,7 +214,7 @@ def selection_calibration(
         bands = [b for b in ("B0_score0", "B1", "B2", "B3", "B4", "B5") if work["selection_band"].eq(b).any()]
         for band in bands:
             stats = _probability_stats(
-                work.loc[work["selection_band"].eq(b)],
+                work.loc[work["selection_band"].eq(band)],
                 work,
                 target,
                 config,
