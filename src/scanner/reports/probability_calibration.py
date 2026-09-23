@@ -57,7 +57,7 @@ def _wilson_interval(successes: int, n: int, z: float = 1.959963984540054) -> li
     z2 = z * z
     denom = 1.0 + z2 / n
     centre = (p + z2 / (2.0 * n)) / denom
-    half = z * sqrt((p * (1.0 - p) / n + z2 / (4.0 * n * n)) / denom)
+    half = z * sqrt(p * (1.0 - p) / n + z2 / (4.0 * n * n)) / denom
     return [_clip01(centre - half), _clip01(centre + half)]
 
 
