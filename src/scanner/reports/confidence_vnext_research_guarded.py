@@ -4,12 +4,15 @@ from __future__ import annotations
 
 The underlying registry keeps the historical evidence inventory intact. This
 module controls whether that evidence is applicable to the *current* scanner
-state. Two facts require fail-closed handling as of 2026-09-23:
+state. Three facts require fail-closed handling as of 2026-09-23:
 
 1. Phase 1-3 validation is stock-only. Crypto rows must not inherit stock
    Selection/Timing/Risk evidence.
 2. Stored ``volatility`` changes scale abruptly on 2026-09-17. Historical
    pre-break cutoffs therefore cannot classify post-break current values.
+3. Phase 2/3 evidence is applicable only when current scanner ``as_of`` and
+   each report ``source.as_of`` are present, parseable and chronologically
+   compatible. Unknown chronology is not PIT-valid evidence.
 
 No conversion factor is guessed. Volatility remains visible as historical
 research evidence but is excluded from current Model Agreement until the new
@@ -26,6 +29,7 @@ import pandas as pd
 from scanner.reports.confidence_vnext_research import (
     Phase4ResearchConfig,
     _agreement_state,
+    _provenance_quality,
     analyze as _base_analyze,
 )
 from scanner.reports.selection_timing import _scanner_rows
@@ -118,6 +122,21 @@ def _guard_risk_data_quality(data_quality: dict, risk: dict) -> dict:
     return out
 
 
+def _guard_timing_data_quality(data_quality: dict, provenance: dict) -> dict:
+    out = dict(data_quality or {})
+    original = dict(out.get("timing") or {})
+    if original.get("state") in {"proxy_complete_no_claim", "proxy_partial_no_claim"}:
+        original["provenance"] = dict(provenance or {})
+        if not provenance.get("complete"):
+            original["state"] = "proxy_insufficient"
+            original["note"] = (
+                "No robust timing claim matched, but required provenance is incomplete; "
+                "the no-claim state therefore fails closed as insufficient evidence."
+            )
+    out["timing"] = original
+    return out
+
+
 def _mark_registry_application_guard(statistical_registry: dict) -> None:
     for horizon in (statistical_registry.get("horizons") or {}).values():
         risk = horizon.get("risk") or {}
@@ -131,6 +150,50 @@ def _mark_registry_application_guard(statistical_registry: dict) -> None:
 def _crypto_symbols_from_latest(latest: pd.DataFrame) -> list[str]:
     scanner = _scanner_rows(latest)
     return sorted(scanner.loc[scanner["is_crypto"], "symbol"].astype(str).unique().tolist())
+
+
+def _assert_fail_closed_pit_sources(latest: pd.DataFrame, phase2: dict, risk_report: dict) -> dict:
+    scanner = _scanner_rows(latest)
+    if scanner.empty:
+        raise ValueError("latest scanner is empty")
+    if "as_of" not in scanner.columns:
+        raise ValueError("PIT unverifiable: current scanner as_of is missing")
+
+    scanner_as_of = pd.to_datetime(scanner["as_of"], errors="coerce", utc=True)
+    if scanner_as_of.isna().any():
+        raise ValueError("PIT unverifiable: current scanner as_of is missing or unparseable")
+    current_as_of = scanner_as_of.max()
+
+    checks: dict[str, object] = {"current_as_of": current_as_of.isoformat()}
+    for label, report in (("phase2", phase2), ("phase3", risk_report)):
+        raw = (report.get("source") or {}).get("as_of")
+        parsed = pd.to_datetime(raw, errors="coerce", utc=True) if raw is not None else pd.NaT
+        if pd.isna(parsed):
+            raise ValueError(f"PIT unverifiable: {label} source.as_of is missing or unparseable")
+        if parsed > current_as_of:
+            raise ValueError(
+                f"PIT violation: {label} evidence as_of {parsed.isoformat()} "
+                f"is after current scanner {current_as_of.isoformat()}"
+            )
+        checks[label] = {
+            "source_as_of": parsed.isoformat(),
+            "not_after_current_scan": True,
+        }
+    return checks
+
+
+def _current_provenance_by_symbol(latest: pd.DataFrame, config: Phase4ResearchConfig) -> dict[str, dict]:
+    scanner = _scanner_rows(latest)
+    if scanner.empty:
+        return {}
+    latest_date = pd.to_datetime(scanner["date"], errors="coerce").max()
+    current = scanner.loc[
+        pd.to_datetime(scanner["date"], errors="coerce").dt.normalize().eq(latest_date.normalize())
+    ]
+    return {
+        str(row.get("symbol")): _provenance_quality(pd.Series(row), config.require_provenance_fields)
+        for row in current.to_dict("records")
+    }
 
 
 def _assert_scale_audit(risk_scale: dict | None) -> dict:
@@ -161,16 +224,23 @@ def analyze(
     risk_scale: dict | None = None,
     config: Phase4ResearchConfig = Phase4ResearchConfig(),
 ) -> dict:
+    strict_pit = _assert_fail_closed_pit_sources(latest, phase2, risk_report)
     result = _base_analyze(history, latest, phase2, risk_report, config)
 
     crypto_symbols = set(_crypto_symbols_from_latest(latest))
+    provenance_by_symbol = _current_provenance_by_symbol(latest, config)
     original_rows = list(result["current"]["rows"])
     stock_rows = [row for row in original_rows if str(row.get("symbol")) not in crypto_symbols]
 
     for row in stock_rows:
         corrected_risk = _risk_state_without_incompatible_volatility(dict(row.get("risk") or {}))
         row["risk"] = corrected_risk
-        row["data_quality"] = _guard_risk_data_quality(dict(row.get("data_quality") or {}), corrected_risk)
+        data_quality = _guard_risk_data_quality(dict(row.get("data_quality") or {}), corrected_risk)
+        provenance = provenance_by_symbol.get(
+            str(row.get("symbol")),
+            {"required": list(config.require_provenance_fields), "present": [], "missing": list(config.require_provenance_fields), "complete": False},
+        )
+        row["data_quality"] = _guard_timing_data_quality(data_quality, provenance)
         row["model_agreement"] = _agreement_state(
             dict(row.get("selection") or {}),
             dict(row.get("timing") or {}),
@@ -178,6 +248,7 @@ def analyze(
         )
 
     _mark_registry_application_guard(result["current"]["statistical_registry"])
+    result["current"]["pit_source_checks"] = strict_pit
     result["current"]["rows"] = stock_rows
     result["current"]["scanner_rows_total"] = int(len(_scanner_rows(latest)))
     result["current"]["scanner_rows"] = int(len({row.get("symbol") for row in stock_rows}))
@@ -201,6 +272,7 @@ def analyze(
             "stock_evidence_applied_to_crypto": False,
             "volatility_current_application": "scale_incompatible_fail_closed",
             "volatility_conversion_applied": False,
+            "pit_unknown_chronology": "fail_closed_unverifiable",
         }
     )
     result["config"] = asdict(config)
