@@ -60,6 +60,17 @@ def _required_text(value: object, label: str) -> str:
     return text
 
 
+def _required_utc_timestamp(value: object, label: str) -> pd.Timestamp:
+    text = _required_text(value, label)
+    try:
+        parsed = pd.to_datetime(text, errors="raise", utc=True)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{label} must be a parseable timestamp") from exc
+    if pd.isna(parsed):
+        raise ValueError(f"{label} must be a parseable timestamp")
+    return pd.Timestamp(parsed)
+
+
 def _sha_file(path: str | Path | None, *, required: bool) -> str:
     if path is None:
         if required:
@@ -262,6 +273,7 @@ def _price_groups(prices: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 
 def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str) -> dict[str, object] | None:
+    evaluated = _required_utc_timestamp(evaluated_at, "evaluated_at")
     obs_date = pd.Timestamp(str(claim["as_of"])).normalize()
     dates = pd.to_datetime(group["date"], errors="coerce")
     pos = int(np.searchsorted(dates.values.astype("datetime64[ns]"), np.datetime64(obs_date), side="right") - 1)
@@ -274,6 +286,16 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
     target = pos + horizon
     if target >= len(group):
         return None
+
+    target_date = pd.Timestamp(dates.iloc[target])
+    if pd.isna(target_date):
+        return None
+    target_day_utc = target_date.tz_localize("UTC") if target_date.tzinfo is None else target_date.tz_convert("UTC")
+    # Price history stores session dates, not verified close timestamps. Fail closed:
+    # a session is mature only once its calendar day is fully behind evaluated_at.
+    if target_day_utc.normalize() >= evaluated.normalize():
+        return None
+
     path = pd.to_numeric(group.iloc[pos : target + 1]["adj_close"], errors="coerce").to_numpy(dtype=float)
     if len(path) != horizon + 1 or not np.isfinite(path).all() or (path <= 0).any():
         return None
@@ -286,12 +308,12 @@ def _mature_one(claim: dict[str, object], group: pd.DataFrame, evaluated_at: str
         "claim_id": str(claim["claim_id"]),
         "schema_version": SCHEMA_VERSION,
         "as_of": str(claim["as_of"]),
-        "evaluated_at": evaluated_at,
+        "evaluated_at": evaluated.isoformat(),
         "symbol": str(claim["symbol"]),
         "currency": str(claim.get("currency") or ""),
         "horizon_sessions": horizon,
         "start_market_date": start_date.date().isoformat(),
-        "end_market_date": pd.Timestamp(dates.iloc[target]).date().isoformat(),
+        "end_market_date": target_date.date().isoformat(),
         "start_adjusted_close": start_value,
         "end_adjusted_close": end_value,
         "return": end_value / start_value - 1.0,
@@ -306,6 +328,7 @@ def compute_mature_outcomes(
     existing_outcomes: pd.DataFrame,
     evaluated_at: str,
 ) -> pd.DataFrame:
+    _required_utc_timestamp(evaluated_at, "evaluated_at")
     existing_ids = set(existing_outcomes["claim_id"].astype(str)) if not existing_outcomes.empty else set()
     groups = _price_groups(prices)
     matured: list[dict[str, object]] = []
@@ -415,6 +438,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
             "raw_outcomes_are_append_only": True,
             "peer_labels_are_derived_not_frozen_early": True,
             "peer_cross_sections_use_exact_snapshot_cohorts": True,
+            "outcomes_require_completed_session_day": True,
             "production_confidence_changed": False,
             "scalar_confidence_mapping_created": False,
             "confidence_thresholds_created": False,
@@ -424,6 +448,7 @@ def validation_summary(claims: pd.DataFrame, outcomes: pd.DataFrame) -> dict[str
             "return_reliability": "compare pre-specified compatible versus single_model sign-normalized peer-excess reliability",
             "risk_reliability": "compare pre-specified risk-tension states on future adverse excursion and path max drawdown",
             "peer_baseline": "derive inside each immutable scanner snapshot from all currently matured leave-one-symbol-out peers; same currency first, global fallback",
+            "outcome_maturity": "day-level price sessions mature only after the target UTC calendar day is complete",
             "fixed_cooldown_sessions": 5,
             "uncertainty": "circular moving observation-date blocks with effective length 2x horizon; full dates stay clustered",
             "minimum_independent_support": "fail closed until at least two time-separated support regions exist",
