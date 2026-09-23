@@ -37,6 +37,7 @@ jobs:
           allowed = {
               '.github/workflows/confidence_vnext_research_4.yml',
               'docs/confidence_vnext_research_4.md',
+              'scripts/audit_phase4_risk_scale.py',
               'scripts/run_confidence_vnext_research_4.py',
               'src/scanner/reports/confidence_vnext_research.py',
               'tests/test_confidence_vnext_research.py',
@@ -61,6 +62,9 @@ jobs:
 
       - name: Regenerate Phase 3 evidence for current snapshot
         run: python scripts/run_risk_vnext_3.py --output artifacts/research/risk_vnext_3.json
+
+      - name: Audit current versus historical risk metric scales
+        run: python scripts/audit_phase4_risk_scale.py
 
       - name: Run Phase 4B-D research
         run: python scripts/run_confidence_vnext_research_4.py
@@ -100,9 +104,11 @@ jobs:
           print('PIT_SOURCE_CHECKS', json.dumps(current['pit_source_checks'], sort_keys=True))
           PY
 
-      - name: Upload Phase 4B-D report
+      - name: Upload Phase 4B-D reports
         uses: actions/upload-artifact@v4
         with:
           name: confidence-vnext-research-4
-          path: artifacts/research/confidence_vnext_research_4.json
+          path: |
+            artifacts/research/confidence_vnext_research_4.json
+            artifacts/research/confidence_vnext_risk_scale_4.json
           if-no-files-found: error
