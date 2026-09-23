@@ -1,0 +1,43 @@
+name: Clarify Phase 2 support-region diagnostics
+
+on:
+  push:
+    branches: [phase2-uncertainty-hotfix]
+    paths:
+      - '.github/workflows/clarify_phase2_support_regions.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase2-uncertainty-hotfix
+      - name: Clarify diagnostic naming
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/scanner/reports/probability_calibration.py')
+          s = p.read_text(encoding='utf-8')
+          old = '        "bootstrap_occurrence_block_count": int(robust["occurrence_block_count"]),\n'
+          new = old + '        "bootstrap_occurrence_support_region_count": int(robust["occurrence_block_count"]),\n'
+          if old not in s:
+              raise SystemExit('occurrence diagnostic line not found')
+          s = s.replace(old, new, 1)
+          old_note = '"uncertainty_note": "strong-validation decisions use horizon-aware block bootstrap with at least two occurrence-bearing blocks; Wilson/Beta intervals and binomial p-values are iid diagnostics only"'
+          new_note = '"uncertainty_note": "strong-validation decisions use a circular 2x-horizon moving-block bootstrap and require at least two time-separated occurrence support regions; Wilson/Beta intervals and binomial p-values are iid diagnostics only"'
+          if old_note not in s:
+              raise SystemExit('old uncertainty note not found')
+          p.write_text(s.replace(old_note, new_note, 1), encoding='utf-8')
+          Path('.github/workflows/clarify_phase2_support_regions.yml').unlink()
+          PY
+      - name: Commit clarification
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add -A
+          git commit -m "Clarify Phase 2 support-region diagnostics"
+          git push origin HEAD:phase2-uncertainty-hotfix
