@@ -145,8 +145,8 @@ def _occurrence_support_region_count(
     last_start: int | None = None
     for pos in occurrence_positions:
         if last_start is None or pos - last_start >= block_length:
-  count += 1
-  last_start = pos
+            count += 1
+            last_start = pos
     return count
 
 
@@ -200,11 +200,11 @@ def _block_bootstrap_uncertainty(
         v_parts = [v_by_day[day] for day in sampled_dates if len(v_by_day[day])]
         b_parts = [b_by_day[day] for day in sampled_dates if len(b_by_day[day])]
         if not v_parts or not b_parts:
-  continue
+            continue
         v_sample = np.concatenate(v_parts)
         b_sample = np.concatenate(b_parts)
         if len(v_sample) == 0 or len(b_sample) == 0:
-  continue
+            continue
         mean_estimates.append(float(v_sample.mean()))
         baseline_rate = float((b_sample > 0).mean())
         successes = int((v_sample > 0).sum())
@@ -213,7 +213,7 @@ def _block_bootstrap_uncertainty(
 
     def interval(items: list[float]) -> list[float] | None:
         if not items:
-  return None
+            return None
         low, high = np.quantile(np.asarray(items, dtype=float), [0.025, 0.975])
         return [float(low), float(high)]
 
