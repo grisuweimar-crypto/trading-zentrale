@@ -216,6 +216,29 @@ def _stable_seed(base: int, *parts: object) -> int:
     return int((base + int.from_bytes(digest[:4], "big")) % (2**32 - 1))
 
 
+def _horizon_time_blocks(frame: pd.DataFrame, horizon: int) -> list[pd.DataFrame]:
+    """Return complete, non-overlapping observation-date blocks.
+
+    Blocks contain ``horizon`` distinct sorted observation dates. Any trailing
+    incomplete block is dropped. All rows sharing a date stay in the same block,
+    preserving dependence among overlapping forward outcome windows.
+    """
+    if horizon < 1 or frame.empty or "obs_date" not in frame.columns:
+        return []
+    work = frame.copy()
+    work["obs_date"] = pd.to_datetime(work["obs_date"], errors="coerce")
+    work = work.dropna(subset=["obs_date"])
+    dates = sorted(pd.Timestamp(day) for day in work["obs_date"].unique())
+    complete = (len(dates) // horizon) * horizon
+    if complete == 0:
+        return []
+    dates = dates[:complete]
+    return [
+        work.loc[work["obs_date"].isin(dates[start : start + horizon])].copy()
+        for start in range(0, complete, horizon)
+    ]
+
+
 def _cluster_bootstrap_group_difference(
     frame: pd.DataFrame,
     target: str,
@@ -224,20 +247,21 @@ def _cluster_bootstrap_group_difference(
     negative_group: str,
     reps: int,
     seed: int,
+    horizon: int = 1,
 ) -> list[float] | None:
-    """Bootstrap a group mean difference by observation day.
+    """Horizon-aware block bootstrap of a group mean difference.
 
     Returns mean(positive_group) - mean(negative_group). Quantile membership is
-    fixed before resampling. If fewer than two observation-day clusters exist or
-    resampling is disabled, a 95% interval is not estimable and ``None`` is
-    returned rather than a zero-width pseudo interval.
+    fixed before resampling. Complete, non-overlapping time blocks containing at
+    least the evaluated forward horizon are resampled with replacement so
+    overlapping outcome windows are not treated as independent dates.
     """
     work = frame[["obs_date", target, group_column]].dropna().copy()
     work = work.loc[work[group_column].isin([positive_group, negative_group])]
     if work.empty or reps <= 0:
         return None
-    groups = [g for _, g in work.groupby("obs_date", sort=False)]
-    if len(groups) < 2:
+    blocks = _horizon_time_blocks(work, horizon)
+    if len(blocks) < 2:
         return None
 
     def difference(sample: pd.DataFrame) -> float | None:
@@ -251,10 +275,10 @@ def _cluster_bootstrap_group_difference(
         return None
     rng = np.random.default_rng(seed)
     estimates: list[float] = []
-    count = len(groups)
+    count = len(blocks)
     for _ in range(reps):
         chosen = rng.integers(0, count, size=count)
-        sample = pd.concat([groups[i] for i in chosen], ignore_index=True)
+        sample = pd.concat([blocks[i] for i in chosen], ignore_index=True)
         value = difference(sample)
         if value is not None:
             estimates.append(value)
@@ -269,7 +293,11 @@ def _validation_maturity(frame: pd.DataFrame, horizon: int) -> dict:
     adverse = f"adverse_excursion_{horizon}t"
     path_dd = f"path_max_drawdown_{horizon}t"
     return_mature = int(frame[ret].notna().sum()) if ret in frame else 0
-    protection_mature = int(frame[[adverse, path_dd]].notna().all(axis=1).sum()) if adverse in frame and path_dd in frame else 0
+    protection_mature = (
+        int(frame[[adverse, path_dd]].notna().all(axis=1).sum())
+        if adverse in frame and path_dd in frame
+        else 0
+    )
     return {
         "rows": int(len(frame)),
         "mature_target_events": return_mature,
@@ -318,8 +346,16 @@ def _feature_stats(
     if feature_rows.empty:
         return None
 
-    return_sample = feature_rows.dropna(subset=[peer, ret]).copy() if peer in cohort and ret in cohort else feature_rows.iloc[0:0].copy()
-    protection_sample = feature_rows.dropna(subset=[adverse, path_dd]).copy() if adverse in cohort and path_dd in cohort else feature_rows.iloc[0:0].copy()
+    return_sample = (
+        feature_rows.dropna(subset=[peer, ret]).copy()
+        if peer in cohort and ret in cohort
+        else feature_rows.iloc[0:0].copy()
+    )
+    protection_sample = (
+        feature_rows.dropna(subset=[adverse, path_dd]).copy()
+        if adverse in cohort and path_dd in cohort
+        else feature_rows.iloc[0:0].copy()
+    )
 
     result: dict = {
         "N": int(len(feature_rows)),
@@ -344,8 +380,10 @@ def _feature_stats(
     result["return_quantile_status"] = return_status
     result["protection_quantile_status"] = protection_status
     result["quantile_status"] = (
-        "available" if return_status == protection_status == "available"
-        else "partial" if "available" in {return_status, protection_status}
+        "available"
+        if return_status == protection_status == "available"
+        else "partial"
+        if "available" in {return_status, protection_status}
         else "insufficient"
     )
 
@@ -374,6 +412,7 @@ def _feature_stats(
                     "high_risk",
                     config.cluster_bootstrap_reps,
                     _stable_seed(config.random_seed, *seed_key, "peer"),
+                    horizon,
                 ),
             }
         )
@@ -406,6 +445,7 @@ def _feature_stats(
                     "low_risk",
                     config.cluster_bootstrap_reps,
                     _stable_seed(config.random_seed, *seed_key, "adverse"),
+                    horizon,
                 ),
                 "path_drawdown_gap_bootstrap_95": _cluster_bootstrap_group_difference(
                     protection_groups,
@@ -415,6 +455,7 @@ def _feature_stats(
                     "low_risk",
                     config.cluster_bootstrap_reps,
                     _stable_seed(config.random_seed, *seed_key, "path_dd"),
+                    horizon,
                 ),
             }
         )
@@ -450,6 +491,9 @@ def analyze(
             "higher_feature_value_interpreted_as_riskier": True,
             "protection_and_return_effects_kept_separate": True,
             "return_and_protection_samples_decoupled": True,
+            "uncertainty_method": "non-overlapping horizon-length observation-date block bootstrap",
+            "uncertainty_block_length_rule": "block length equals evaluated forward horizon in sessions (5/20/40/60)",
+            "bootstrap_quantile_membership_fixed": True,
             "danelfin_low_risk_role": "external research reference only; no Danelfin score is imported",
         },
         "config": config.__dict__,
@@ -463,6 +507,10 @@ def analyze(
         discovery = cooldown_events(discovery, prices, config.cooldown_sessions)
         validation = cooldown_events(validation, prices, config.cooldown_sessions)
         result["horizons"][str(horizon)] = {
+            "bootstrap": {
+                "method": "non_overlapping_horizon_time_blocks",
+                "block_length_sessions": int(horizon),
+            },
             "discovery_maturity": _validation_maturity(discovery, horizon),
             "validation_maturity": _validation_maturity(validation, horizon),
             "discovery": _cohort_feature_report(discovery, horizon, config, "discovery"),
