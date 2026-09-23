@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
+from scripts.run_confidence_vnext_4 import _apply_stable_start
 from scanner.domain.scoring_engine.factors.universe_csv import Universe, scale_from_universe
 from scanner.domain.scoring_engine.quality.confidence import compute_confidence
 from scanner.reports.confidence_vnext import (
@@ -214,6 +216,29 @@ def test_spearman_diagnostic_uses_rank_pearson_without_scipy_dependency():
     result = _spearman_pair(frame, "confidence", "score")
     assert result["N"] == 4
     assert abs(result["spearman"] - 1.0) < 1e-12
+
+
+def test_runner_stable_start_filters_the_actual_audit_input(tmp_path):
+    source = tmp_path / "history.csv"
+    _history().to_csv(source, index=False)
+
+    filtered_path, cleanup = _apply_stable_start(source, "2026-09-22")
+    try:
+        filtered = pd.read_csv(filtered_path)
+        dates = pd.to_datetime(filtered["date"], errors="coerce")
+        assert len(filtered) == 2
+        assert dates.min() == pd.Timestamp("2026-09-22")
+        assert dates.max() == pd.Timestamp("2026-09-23")
+    finally:
+        if cleanup is not None:
+            cleanup.unlink(missing_ok=True)
+
+
+def test_runner_stable_start_rejects_invalid_date(tmp_path):
+    source = tmp_path / "history.csv"
+    _history().to_csv(source, index=False)
+    with pytest.raises(ValueError, match="invalid --stable-start"):
+        _apply_stable_start(source, "not-a-date")
 
 
 def test_missing_raw_value_is_neutralized_before_legacy_confidence():
