@@ -1,0 +1,202 @@
+name: Apply Phase 2 moving-block uncertainty fix
+
+on:
+  push:
+    branches: [phase2-uncertainty-hotfix]
+    paths:
+      - '.github/workflows/apply_phase2_moving_fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase2-uncertainty-hotfix
+      - name: Apply moving-block correction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          src = Path('src/scanner/reports/probability_calibration.py')
+          text = src.read_text(encoding='utf-8')
+          replacement = '''def _effective_block_length(horizon: int) -> int:
+              return max(1, 2 * int(horizon))
+
+
+          def _moving_date_blocks(
+              baseline: pd.DataFrame,
+              horizon: int,
+          ) -> tuple[list[pd.Timestamp], list[list[pd.Timestamp]], int]:
+              """Build circular moving date blocks using every eligible baseline date."""
+              block_length = _effective_block_length(horizon)
+              if horizon < 1 or baseline.empty or "obs_date" not in baseline.columns:
+                  return [], [], block_length
+              dates = sorted(
+                  pd.Timestamp(day)
+                  for day in pd.to_datetime(baseline["obs_date"], errors="coerce").dropna().unique()
+              )
+              if not dates:
+                  return [], [], block_length
+              span = min(block_length, len(dates))
+              blocks = [
+                  [dates[(start + offset) % len(dates)] for offset in range(span)]
+                  for start in range(len(dates))
+              ]
+              return dates, blocks, block_length
+
+
+          def _occurrence_support_region_count(
+              values: pd.DataFrame,
+              baseline_dates: list[pd.Timestamp],
+              block_length: int,
+          ) -> int:
+              """Count time-separated occurrence support regions."""
+              if values.empty or not baseline_dates:
+                  return 0
+              positions = {day: i for i, day in enumerate(baseline_dates)}
+              occurrence_positions = sorted(
+                  positions[pd.Timestamp(day)]
+                  for day in pd.to_datetime(values["obs_date"], errors="coerce").dropna().unique()
+                  if pd.Timestamp(day) in positions
+              )
+              count = 0
+              last_start: int | None = None
+              for pos in occurrence_positions:
+                  if last_start is None or pos - last_start >= block_length:
+                      count += 1
+                      last_start = pos
+              return count
+
+
+          def _block_bootstrap_uncertainty(
+              values: pd.DataFrame,
+              baseline: pd.DataFrame,
+              target: str,
+              horizon: int,
+              config: Phase2Config,
+              seed: int,
+          ) -> dict:
+              """Circular moving-block uncertainty with synchronized baseline sampling.
+
+              The effective block length is twice the evaluated horizon. Occurrence
+              and baseline rows use the same sampled date sequence. Every eligible
+              baseline date is retained as a possible block start. Robust intervals
+              fail closed unless occurrences have support in at least two
+              time-separated block-length regions.
+              """
+              v = values[["obs_date", target]].dropna().copy()
+              b = baseline[["obs_date", target]].dropna().copy()
+              dates, blocks, block_length = _moving_date_blocks(b, horizon)
+              support_regions = _occurrence_support_region_count(v, dates, block_length)
+              diagnostics = {
+                  "block_count": len(blocks),
+                  "occurrence_block_count": support_regions,
+                  "date_count": len(dates),
+                  "block_length": block_length,
+              }
+              if config.cluster_bootstrap_reps <= 0 or len(blocks) < 2 or v.empty or b.empty or support_regions < 2:
+                  return {"mean_peer_excess_95": None, "probability_advantage_95": None, **diagnostics}
+
+              v["obs_date"] = pd.to_datetime(v["obs_date"])
+              b["obs_date"] = pd.to_datetime(b["obs_date"])
+              v_by_day = {
+                  day: v.loc[v["obs_date"].eq(day), target].to_numpy(dtype=float)
+                  for day in dates
+              }
+              b_by_day = {
+                  day: b.loc[b["obs_date"].eq(day), target].to_numpy(dtype=float)
+                  for day in dates
+              }
+
+              rng = np.random.default_rng(seed)
+              mean_estimates: list[float] = []
+              advantage_estimates: list[float] = []
+              draws_per_rep = int(np.ceil(len(dates) / block_length))
+              for _ in range(config.cluster_bootstrap_reps):
+                  chosen = rng.integers(0, len(blocks), size=draws_per_rep)
+                  sampled_dates = [day for idx in chosen for day in blocks[idx]][: len(dates)]
+                  v_parts = [v_by_day[day] for day in sampled_dates if len(v_by_day[day])]
+                  b_parts = [b_by_day[day] for day in sampled_dates if len(b_by_day[day])]
+                  if not v_parts or not b_parts:
+                      continue
+                  v_sample = np.concatenate(v_parts)
+                  b_sample = np.concatenate(b_parts)
+                  if len(v_sample) == 0 or len(b_sample) == 0:
+                      continue
+                  mean_estimates.append(float(v_sample.mean()))
+                  baseline_rate = float((b_sample > 0).mean())
+                  successes = int((v_sample > 0).sum())
+                  shrink = _beta_shrinkage(successes, len(v_sample), baseline_rate, config.prior_strength)
+                  advantage_estimates.append(float(shrink["posterior_mean"] - baseline_rate))
+
+              def interval(items: list[float]) -> list[float] | None:
+                  if not items:
+                      return None
+                  low, high = np.quantile(np.asarray(items, dtype=float), [0.025, 0.975])
+                  return [float(low), float(high)]
+
+              return {
+                  "mean_peer_excess_95": interval(mean_estimates),
+                  "probability_advantage_95": interval(advantage_estimates),
+                  **diagnostics,
+              }
+          '''
+          replacement = '\n'.join(line[10:] if line.startswith('          ') else line for line in replacement.splitlines())
+          pattern = re.compile(r'def _horizon_date_blocks\(.*?\n\ndef _probability_stats', re.S)
+          if not pattern.search(text):
+              raise SystemExit('Phase 2 block bootstrap section not found')
+          text = pattern.sub(replacement + '\n\ndef _probability_stats', text)
+          text = text.replace(
+              '"bootstrap_block_count": int(robust["block_count"]),\n        "bootstrap_occurrence_block_count": int(robust.get("occurrence_block_count", 0)),\n        "bootstrap_block_length_sessions": int(horizon),',
+              '"bootstrap_block_count": int(robust["block_count"]),\n        "bootstrap_occurrence_block_count": int(robust.get("occurrence_block_count", 0)),\n        "bootstrap_date_count": int(robust.get("date_count", 0)),\n        "bootstrap_block_length_sessions": int(robust.get("block_length", _effective_block_length(horizon))),'
+          )
+          text = text.replace(
+              '"strong_validation_uncertainty": "horizon-aware non-overlapping time-block bootstrap",',
+              '"strong_validation_uncertainty": "circular moving observation-date block bootstrap with 2x-horizon blocks",'
+          )
+          text = text.replace(
+              '"bootstrap": {"method": "non_overlapping_horizon_time_blocks", "block_length_sessions": int(horizon)},',
+              '"bootstrap": {"method": "circular_moving_observation_date_blocks", "base_horizon_sessions": int(horizon), "block_length_sessions": int(_effective_block_length(horizon)), "uses_all_eligible_dates": True, "minimum_occurrence_support_regions": 2},'
+          )
+          src.write_text(text, encoding='utf-8')
+
+          tests = Path('tests/test_probability_calibration.py')
+          t = tests.read_text(encoding='utf-8')
+          t = t.replace('    _horizon_date_blocks,\n', '    _moving_date_blocks,\n')
+          t = t.replace('def test_horizon_blocks_are_complete_and_nonoverlapping():\n    dates = pd.bdate_range("2026-05-01", periods=12)\n    frame = pd.DataFrame({"obs_date": dates})\n    blocks = _horizon_date_blocks(frame, 5)\n    assert len(blocks) == 2\n    assert blocks[0] == list(dates[:5])\n    assert blocks[1] == list(dates[5:10])\n    assert dates[10] not in blocks[0] + blocks[1]\n', 'def test_moving_blocks_are_circular_and_keep_trailing_dates():\n    dates = pd.bdate_range("2026-05-01", periods=12)\n    frame = pd.DataFrame({"obs_date": dates})\n    used_dates, blocks, block_length = _moving_date_blocks(frame, 2)\n    assert block_length == 4\n    assert used_dates == list(dates)\n    assert len(blocks) == 12\n    assert blocks[-2] == [dates[-2], dates[-1], dates[0], dates[1]]\n')
+          t = t.replace('    assert out["bootstrap_block_count"] == 2\n', '    assert out["bootstrap_block_count"] == 10\n    assert out["bootstrap_block_length_sessions"] == 10\n')
+          t = t.replace('def test_block_uncertainty_unavailable_with_fewer_than_two_complete_blocks():', 'def test_block_uncertainty_unavailable_without_two_temporal_support_regions():')
+          t = t.replace('    assert out["block_count"] == 1\n', '    assert out["occurrence_block_count"] < 2\n')
+          t = t.replace('    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 20\n', '    assert result["horizons"]["20"]["bootstrap"]["block_length_sessions"] == 40\n    assert result["horizons"]["20"]["bootstrap"]["method"] == "circular_moving_observation_date_blocks"\n')
+          tests.write_text(t, encoding='utf-8')
+
+          sparse = Path('tests/test_probability_calibration_sparse_blocks.py')
+          st = sparse.read_text(encoding='utf-8')
+          st = st.replace('def test_block_uncertainty_requires_two_occurrence_bearing_blocks():', 'def test_block_uncertainty_requires_two_time_separated_occurrence_regions():')
+          st = st.replace('    dates = pd.bdate_range("2026-05-01", periods=10)', '    dates = pd.bdate_range("2026-05-01", periods=25)')
+          st = st.replace('            "peer_excess_5t": [-0.2, 0.1] * 10,', '            "peer_excess_5t": [-0.2, 0.1] * 25,')
+          st = st.replace('    first_block_dates = set(dates[:5])', '    first_block_dates = set(dates[:5])')
+          st = st.replace('    assert out["block_count"] == 2', '    assert out["block_count"] == 25\n    assert out["occurrence_block_count"] == 1')
+          sparse.write_text(st, encoding='utf-8')
+
+          docs = Path('docs/probability_calibration_2.md')
+          if docs.exists():
+              d = docs.read_text(encoding='utf-8')
+              d = d.replace('day-cluster bootstrap interval for mean peer excess', 'circular moving-block bootstrap intervals for mean peer excess and probability advantage')
+              d = d.replace('Approximate binomial and Bonferroni-adjusted values remain diagnostic only; independence is not assumed. Day-cluster bootstrap intervals account for common same-day market shocks more conservatively than treating every row as independent.', 'Approximate Wilson/Beta intervals and binomial/Bonferroni values remain iid diagnostics only. Strong validation uses a circular moving observation-date block bootstrap with effective block length 2 × horizon; every eligible date remains a possible block start, and robust intervals require at least two time-separated occurrence support regions.')
+              docs.write_text(d, encoding='utf-8')
+
+          Path('.github/workflows/apply_phase2_moving_fix.yml').unlink()
+          PY
+      - name: Commit corrected Phase 2 implementation
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add -A
+          git commit -m "Fix Phase 2 moving-block uncertainty"
+          git push origin HEAD:phase2-uncertainty-hotfix
