@@ -118,12 +118,12 @@ def test_moving_blocks_are_circular_and_keep_trailing_dates():
 
 
 def test_probability_stats_reports_horizon_robust_uncertainty():
-    dates = pd.bdate_range("2026-05-01", periods=10)
+    dates = pd.bdate_range("2026-05-01", periods=20)
     baseline = pd.DataFrame(
         {
             "obs_date": dates.repeat(2),
-            "symbol": [f"S{i}" for i in range(20)],
-            "peer_excess_5t": [-0.2, 0.1] * 10,
+            "symbol": [f"S{i}" for i in range(40)],
+            "peer_excess_5t": [-0.2, 0.1] * 20,
         }
     )
     occurrences = baseline.loc[baseline["peer_excess_5t"] > 0].copy()
@@ -140,7 +140,8 @@ def test_probability_stats_reports_horizon_robust_uncertainty():
     assert out["raw_positive_peer_excess_rate"] == 1.0
     assert out["shrunk_positive_peer_excess_probability"] < 1.0
     assert out["probability_advantage_vs_baseline"] > 0
-    assert out["bootstrap_block_count"] == 10
+    assert out["bootstrap_block_count"] == 20
+    assert out["bootstrap_occurrence_block_count"] >= 2
     assert out["bootstrap_block_length_sessions"] == 10
     assert len(out["block_bootstrap_mean_peer_excess_95"]) == 2
     assert len(out["block_bootstrap_probability_advantage_95"]) == 2
