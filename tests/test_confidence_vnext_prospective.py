@@ -449,6 +449,7 @@ def test_workflow_contract_drains_only_proven_scanner_publications_and_uses_one_
     workflow = Path(".github/workflows/confidence_vnext_4e.yml").read_text(encoding="utf-8")
     assert "Bind to oldest unclaimed scanner publication" in workflow
     assert "rev-list', '--reverse', 'origin/main'" in workflow
+    assert workflow.count("'rev-list', '--reverse', 'origin/main', '--first-parent', '--'") == 2
     assert "No unclaimed scanner publication exists; Phase 4E is a clean no-op." in workflow
     assert "backlog_count" in workflow
     assert "gh workflow run confidence_vnext_4e.yml --ref main" in workflow
