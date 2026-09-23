@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 
@@ -50,6 +52,28 @@ def _synthetic():
     return pd.DataFrame(scanner), pd.DataFrame(prices)
 
 
+def _frozen():
+    return {
+        "schema_version": "phase1b_frozen_patterns_v1",
+        "source_phase": "1B_timing_patterns",
+        "source_events": 1,
+        "horizons": {
+            str(h): {
+                "discovery_window": ["2026-04-15", "2026-07-31"],
+                "discovery_candidate_count": 10,
+                "frozen_patterns": [
+                    {
+                        "pattern": "score_d1_up",
+                        "conditions": ["score_d1_up"],
+                        "discovery_direction": "positive",
+                    }
+                ],
+            }
+            for h in (5, 20, 40, 60)
+        },
+    }
+
+
 def test_wilson_interval_matches_standard_formula():
     low, high = _wilson_interval(5, 10)
     assert low == pytest.approx(0.2366, abs=0.001)
@@ -61,6 +85,17 @@ def test_beta_shrinkage_pulls_small_sample_toward_baseline():
     assert out["posterior_mean"] < 0.80
     assert out["posterior_mean"] > 0.50
     assert out["posterior_interval_95"][0] < out["posterior_mean"] < out["posterior_interval_95"][1]
+
+
+def test_beta_shrinkage_uses_proper_prior_at_boundary_rates():
+    low = _beta_shrinkage(0, 5, 0.0, 20.0)
+    high = _beta_shrinkage(5, 5, 1.0, 20.0)
+    assert low["prior_alpha"] > 0 and low["prior_beta"] > 0
+    assert high["prior_alpha"] > 0 and high["prior_beta"] > 0
+    assert low["posterior_interval_95"][1] > 0
+    assert high["posterior_interval_95"][0] < 1
+    with pytest.raises(ValueError):
+        _beta_shrinkage(1, 2, 0.5, 0.0)
 
 
 def test_probability_stats_reports_raw_shrunk_and_cluster_uncertainty():
@@ -89,11 +124,12 @@ def test_probability_stats_reports_raw_shrunk_and_cluster_uncertainty():
     assert out["bonferroni_adjusted_p"] >= out["approx_binomial_p"]
 
 
-def test_phase2_keeps_selection_and_timing_separate():
+def test_phase2_keeps_selection_and_timing_separate_and_uses_frozen_candidates():
     history, prices = _synthetic()
     result = analyze(
         history,
         prices,
+        _frozen(),
         Phase2Config(
             min_pattern_discovery_n=5,
             min_pattern_validation_n=3,
@@ -101,20 +137,35 @@ def test_phase2_keeps_selection_and_timing_separate():
         ),
     )
     assert result["semantics"]["selection_and_timing_kept_separate"] is True
-    assert set(result["horizons"]["5"]) == {"selection", "timing_patterns"}
-    assert set(result["horizons"]["5"]["selection"]) == {"discovery", "validation"}
+    assert result["semantics"]["timing_candidates_are_frozen_from_phase1b"] is True
+    assert set(result["horizons"]["5"]) == {"validation_maturity", "selection", "timing_patterns"}
     timing = result["horizons"]["5"]["timing_patterns"]
+    assert timing["candidate_source"] == "frozen_phase1b"
     assert timing["candidate_selection_uses_validation"] is False
+    assert [row["pattern"] for row in timing["patterns"]] == ["score_d1_up"]
     for row in timing["patterns"]:
         assert row["selection_was_discovery_only"] is True
+        assert "alpha_direction_confirmed" in row
+        assert "probability_direction_confirmed" in row
+        assert "strong_validation" in row
+
+
+def test_frozen_catalog_window_must_match_phase2_config():
+    history, prices = _synthetic()
+    frozen = _frozen()
+    frozen["horizons"]["5"]["discovery_window"] = ["2026-05-01", "2026-07-31"]
+    with pytest.raises(ValueError):
+        analyze(history, prices, frozen, Phase2Config(cluster_bootstrap_reps=0))
 
 
 def test_writer_rejects_nan_json(tmp_path, monkeypatch):
     history = tmp_path / "history.csv"
     prices = tmp_path / "prices.csv"
+    frozen = tmp_path / "frozen.json"
     output = tmp_path / "report.json"
     pd.DataFrame({"x": [1]}).to_csv(history, index=False)
     pd.DataFrame({"x": [1]}).to_csv(prices, index=False)
+    frozen.write_text(json.dumps(_frozen()), encoding="utf-8")
     monkeypatch.setattr(module, "analyze", lambda *_args, **_kwargs: {"bad": float("nan")})
     with pytest.raises(ValueError):
-        module.run(history, prices, output)
+        module.run(history, prices, output, frozen_patterns_path=frozen, metadata_path=None)
