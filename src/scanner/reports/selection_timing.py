@@ -22,7 +22,7 @@ import pandas as pd
 HORIZONS = (5, 20, 40, 60)
 EVENT_BASE_COLUMNS = (
     "obs_date", "symbol", "score", "score_pct_full", "currency", "r_code",
-    "start_market_date", "start_close",
+    "start_market_date", "start_close", "start_adjusted_close",
 )
 
 
@@ -118,9 +118,18 @@ def _scanner_rows(history: pd.DataFrame) -> pd.DataFrame:
 
 
 def _price_rows(prices: pd.DataFrame) -> pd.DataFrame:
+    """Return observed sessions with raw and split/dividend-adjusted closes.
+
+    Raw close establishes the trading-session calendar.  Research returns use
+    adj_close only; absence of the field is a migration error, never a reason to
+    silently fall back to raw close.
+    """
+    if "adj_close" not in prices.columns:
+        raise ValueError("adjusted_close_required: refresh price history before research")
     frame = prices.copy()
     frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
     frame["close"] = pd.to_numeric(frame["close"], errors="coerce")
+    frame["adj_close"] = pd.to_numeric(frame["adj_close"], errors="coerce")
     frame["symbol"] = frame["symbol"].astype(str)
     return (
         frame.dropna(subset=["date", "symbol", "close"])
@@ -151,7 +160,7 @@ def build_events(
     scanner["price_symbol"] = scanner["symbol"].astype(str)
 
     price_groups = {
-        symbol: group[["date", "close"]].sort_values("date", kind="mergesort").reset_index(drop=True)
+        symbol: group[["date", "close", "adj_close"]].sort_values("date", kind="mergesort").reset_index(drop=True)
         for symbol, group in price.groupby("symbol")
     }
 
@@ -168,6 +177,11 @@ def build_events(
         start_date = pd.Timestamp(dates[position])
         if (pd.Timestamp(row.date).normalize() - start_date.normalize()).days > 7:
             continue
+        start_adjusted = series.iloc[position]["adj_close"]
+        if pd.isna(start_adjusted) or float(start_adjusted) <= 0:
+            # Keep session arithmetic honest: do not collapse missing adjusted
+            # sessions and do not substitute the raw close.
+            continue
 
         event = {
             "obs_date": pd.Timestamp(row.date).normalize(),
@@ -178,13 +192,17 @@ def build_events(
             "r_code": getattr(row, "r_code", None),
             "start_market_date": start_date,
             "start_close": float(series.iloc[position]["close"]),
+            "start_adjusted_close": float(start_adjusted),
         }
         for horizon in HORIZONS:
             target = position + horizon
             if target < len(series):
                 event[f"end_date_{horizon}t"] = series.iloc[target]["date"]
+                target_adjusted = series.iloc[target]["adj_close"]
                 event[f"return_{horizon}t"] = (
-                    float(series.iloc[target]["close"]) / event["start_close"] - 1.0
+                    float(target_adjusted) / event["start_adjusted_close"] - 1.0
+                    if pd.notna(target_adjusted) and float(target_adjusted) > 0
+                    else np.nan
                 )
             else:
                 event[f"end_date_{horizon}t"] = pd.NaT
@@ -281,6 +299,8 @@ def future_rank_bands(events: pd.DataFrame, horizon: int, min_n: int = 20) -> di
     )
     out = {}
     for band, group in z.groupby("quality_band", observed=False):
+        if group.empty:
+            continue
         out[str(band)] = {
             "N": int(len(group)),
             "mean_future_rank": float(group["future_pct"].mean()),
@@ -357,18 +377,31 @@ def r_score_backbone_summary(events: pd.DataFrame, horizon: int, min_n: int = 20
 
 
 def _peer_medians(events: pd.DataFrame, ret: str):
-    by_currency = events.groupby(["obs_date", "currency"], dropna=True)[ret].median()
-    global_daily = events.groupby("obs_date")[ret].median()
-    return by_currency, global_daily
+    """Leave-one-symbol-out peer baseline keyed by (obs_date, symbol)."""
+    baselines: dict[tuple[pd.Timestamp, str], float] = {}
+    columns = ["obs_date", "symbol", "currency", ret]
+    work = events[columns].copy()
+    work[ret] = pd.to_numeric(work[ret], errors="coerce")
+    for day, day_group in work.groupby("obs_date", sort=False):
+        for row in day_group.itertuples(index=False):
+            subject = str(row.symbol)
+            peers = day_group.loc[day_group["symbol"].astype(str).ne(subject)].dropna(subset=[ret])
+            if peers.empty:
+                continue
+            current_currency = _norm_currency(row.currency)
+            same_currency = (
+                peers.loc[peers["currency"].map(_norm_currency).eq(current_currency), ret]
+                if current_currency is not None
+                else pd.Series(dtype=float)
+            )
+            values = same_currency if len(same_currency) else peers[ret]
+            if len(values):
+                baselines[(pd.Timestamp(day), subject)] = float(values.median())
+    return baselines, None
 
 
-def _peer_median(row, by_currency, global_daily):
-    cur = row.get("currency")
-    if cur is not None:
-        key = (row["obs_date"], cur)
-        if key in by_currency.index:
-            return by_currency.loc[key]
-    return global_daily.get(row["obs_date"], np.nan)
+def _peer_median(row, by_currency, global_daily=None):
+    return by_currency.get((pd.Timestamp(row["obs_date"]), str(row["symbol"])), np.nan)
 
 
 def within_stock_summary(
@@ -408,7 +441,7 @@ def within_stock_summary(
         "median_symbol_spearman_score_vs_peer_excess": float(np.median(arr)),
         "mean_symbol_spearman_score_vs_peer_excess": float(np.mean(arr)),
         "positive_symbol_rate": float(np.mean(arr > 0)),
-        "peer_baseline": "same-currency daily median; global daily median fallback",
+        "peer_baseline": "leave-one-symbol-out same-currency median; leave-one-out global fallback",
     }
 
 
@@ -437,8 +470,8 @@ def point_in_time_own_score(
 
     cd = cooldown_events(daily, prices, config.cooldown_sessions)
     by_currency, global_daily = _peer_medians(events, ret)
-    work = cd[["obs_date", "currency", "own_score_pct_prior", ret]].dropna(
-        subset=["obs_date", "own_score_pct_prior", ret]
+    work = cd[["obs_date", "symbol", "currency", "own_score_pct_prior", ret]].dropna(
+        subset=["obs_date", "symbol", "own_score_pct_prior", ret]
     ).copy()
     work["peer_excess"] = work[ret] - work.apply(
         lambda row: _peer_median(row, by_currency, global_daily), axis=1
@@ -458,7 +491,7 @@ def point_in_time_own_score(
         ),
         "own_low_positive_peer_excess_rate": float((low["peer_excess"] > 0).mean()) if len(low) else None,
         "own_high_positive_peer_excess_rate": float((high["peer_excess"] > 0).mean()) if len(high) else None,
-        "peer_baseline": "same-currency daily median; global daily median fallback",
+        "peer_baseline": "leave-one-symbol-out same-currency median; leave-one-out global fallback",
     }
 
 
@@ -544,7 +577,7 @@ def run(
         path = Path(output_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
-            json.dumps(result, indent=2, ensure_ascii=False) + "\n",
+            json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
             encoding="utf-8",
         )
     return result
