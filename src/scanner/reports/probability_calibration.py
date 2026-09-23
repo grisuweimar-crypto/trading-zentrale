@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Phase 2: calibrated probability and uncertainty research.
 
-Research-only. This module does not modify scanner scoring, R0-R5, watchlists,
-or the daily watch. It preserves the Phase 1 split between cross-sectional
-selection quality and within-stock timing patterns.
+Research-only. Phase 2 consumes the candidates frozen by completed Phase 1B;
+it never re-discovers timing patterns from holdout data. Scanner scoring, R0-R5,
+watchlists and the daily watch remain unchanged.
 """
 
 from dataclasses import dataclass
@@ -16,12 +16,7 @@ import json
 import numpy as np
 import pandas as pd
 
-from scanner.reports.selection_timing import (
-    HORIZONS,
-    Phase1AConfig,
-    _r_score_backbone,
-    build_events,
-)
+from scanner.reports.selection_timing import HORIZONS, Phase1AConfig, _r_score_backbone, build_events
 from scanner.reports.timing_patterns import (
     Phase1BConfig,
     _add_peer_excess,
@@ -29,7 +24,6 @@ from scanner.reports.timing_patterns import (
     _session_position_maps,
     _strict_windows,
     build_timing_events,
-    discover_patterns,
 )
 
 
@@ -50,6 +44,12 @@ def _clip01(value: float) -> float:
     return float(min(1.0, max(0.0, value)))
 
 
+def _direction(value: float | None) -> str | None:
+    if value is None or value == 0:
+        return None
+    return "positive" if value > 0 else "negative"
+
+
 def _wilson_interval(successes: int, n: int, z: float = 1.959963984540054) -> list[float] | None:
     if n <= 0:
         return None
@@ -62,24 +62,32 @@ def _wilson_interval(successes: int, n: int, z: float = 1.959963984540054) -> li
 
 
 def _beta_shrinkage(successes: int, n: int, baseline_rate: float, prior_strength: float) -> dict:
+    """Shrink a binomial rate toward the baseline using a proper Beta prior.
+
+    A Beta distribution requires both shape parameters to be strictly positive.
+    A 0/1 baseline would otherwise produce an improper prior. We therefore use a
+    0.5 shape floor (Jeffreys half-count) while preserving the requested baseline
+    prior mass wherever possible. Strengths below 1 are rejected explicitly.
+    """
+    strength = float(prior_strength)
+    if strength < 1.0:
+        raise ValueError("prior_strength must be >= 1.0 for a proper Beta prior")
     baseline = _clip01(float(baseline_rate))
-    strength = max(float(prior_strength), 0.0)
-    alpha = successes + baseline * strength
-    beta = (n - successes) + (1.0 - baseline) * strength
+    prior_alpha = max(0.5, baseline * strength)
+    prior_beta = max(0.5, (1.0 - baseline) * strength)
+    alpha = float(successes) + prior_alpha
+    beta = float(n - successes) + prior_beta
     total = alpha + beta
-    if total <= 0:
-        return {
-            "posterior_mean": baseline,
-            "posterior_interval_95": [baseline, baseline],
-            "prior_strength": strength,
-        }
     mean = alpha / total
-    variance = (alpha * beta) / (total * total * (total + 1.0)) if total > 1 else 0.0
+    variance = (alpha * beta) / (total * total * (total + 1.0))
     half = 1.959963984540054 * sqrt(max(variance, 0.0))
     return {
         "posterior_mean": float(mean),
         "posterior_interval_95": [_clip01(mean - half), _clip01(mean + half)],
-        "prior_strength": strength,
+        "configured_prior_strength": strength,
+        "effective_prior_strength": float(prior_alpha + prior_beta),
+        "prior_alpha": float(prior_alpha),
+        "prior_beta": float(prior_beta),
     }
 
 
@@ -103,8 +111,8 @@ def _cluster_bootstrap_mean(values: pd.DataFrame, target: str, reps: int, seed: 
         mean = float(work[target].mean())
         return [mean, mean]
     rng = np.random.default_rng(seed)
-    means = np.empty(reps, dtype=float)
     count = len(groups)
+    means = np.empty(reps, dtype=float)
     for i in range(reps):
         chosen = rng.integers(0, count, size=count)
         sample = np.concatenate([groups[j] for j in chosen])
@@ -115,8 +123,7 @@ def _cluster_bootstrap_mean(values: pd.DataFrame, target: str, reps: int, seed: 
 
 def _stable_seed(base: int, *parts: object) -> int:
     digest = sha256("|".join(map(str, parts)).encode("utf-8")).digest()
-    offset = int.from_bytes(digest[:4], "big")
-    return int((base + offset) % (2**32 - 1))
+    return int((base + int.from_bytes(digest[:4], "big")) % (2**32 - 1))
 
 
 def _probability_stats(
@@ -149,10 +156,7 @@ def _probability_stats(
         "mean_peer_excess": float(values[target].mean()),
         "median_peer_excess": float(values[target].median()),
         "cluster_bootstrap_mean_peer_excess_95": _cluster_bootstrap_mean(
-            values,
-            target,
-            config.cluster_bootstrap_reps,
-            _stable_seed(config.random_seed, *seed_key),
+            values, target, config.cluster_bootstrap_reps, _stable_seed(config.random_seed, *seed_key)
         ),
         "raw_positive_peer_excess_rate": float(raw_rate),
         "raw_rate_wilson_95": _wilson_interval(successes, n),
@@ -160,15 +164,18 @@ def _probability_stats(
         "shrunk_positive_peer_excess_probability": shrink["posterior_mean"],
         "shrunk_probability_interval_95": shrink["posterior_interval_95"],
         "probability_advantage_vs_baseline": float(shrink["posterior_mean"] - baseline_rate),
-        "prior_strength": shrink["prior_strength"],
+        "configured_prior_strength": shrink["configured_prior_strength"],
+        "effective_prior_strength": shrink["effective_prior_strength"],
+        "prior_alpha": shrink["prior_alpha"],
+        "prior_beta": shrink["prior_beta"],
         "approx_binomial_p": p_value,
         "bonferroni_adjusted_p": bonferroni,
         "multiple_testing_note": "normal approximation; diagnostic only, not an independence-proof significance test",
     }
 
 
-def _windowed_peer_events(events: pd.DataFrame, horizon: int, config: Phase2Config) -> tuple[pd.DataFrame, pd.DataFrame]:
-    phase1b = Phase1BConfig(
+def _phase1b_config(config: Phase2Config) -> Phase1BConfig:
+    return Phase1BConfig(
         stable_start=config.stable_start,
         discovery_end=config.discovery_end,
         validation_start=config.validation_start,
@@ -176,8 +183,11 @@ def _windowed_peer_events(events: pd.DataFrame, horizon: int, config: Phase2Conf
         min_pattern_discovery_n=config.min_pattern_discovery_n,
         min_pattern_validation_n=config.min_pattern_validation_n,
     )
+
+
+def _windowed_peer_events(events: pd.DataFrame, horizon: int, config: Phase2Config) -> tuple[pd.DataFrame, pd.DataFrame]:
     full = _add_peer_excess(events, horizon)
-    return _strict_windows(full, horizon, phase1b)
+    return _strict_windows(full, horizon, _phase1b_config(config))
 
 
 def _selection_band_rows(frame: pd.DataFrame) -> pd.Series:
@@ -189,30 +199,27 @@ def _selection_band_rows(frame: pd.DataFrame) -> pd.Series:
 
 
 def selection_calibration(
-    events: pd.DataFrame,
+    discovery: pd.DataFrame,
+    validation: pd.DataFrame,
     horizon: int,
     config: Phase2Config,
 ) -> dict:
-    discovery, validation = _windowed_peer_events(events, horizon, config)
     target = f"peer_excess_{horizon}t"
     out: dict[str, dict] = {"discovery": {}, "validation": {}}
-    for label, work in (("discovery", discovery), ("validation", validation)):
+    for label, source in (("discovery", discovery), ("validation", validation)):
+        work = source.dropna(subset=[target]).copy()
         if work.empty:
             continue
-        work = work.copy()
         work["selection_band"] = _selection_band_rows(work)
-        baseline = work
-        bands = [b for b in ("B0_score0", "B1", "B2", "B3", "B4", "B5") if (work["selection_band"] == b).any()]
-        comparisons = max(len(bands), 1)
+        bands = [b for b in ("B0_score0", "B1", "B2", "B3", "B4", "B5") if work["selection_band"].eq(b).any()]
         for band in bands:
-            group = work.loc[work["selection_band"].eq(band)]
             stats = _probability_stats(
-                group,
-                baseline,
+                work.loc[work["selection_band"].eq(b)],
+                work,
                 target,
                 config,
                 ("selection", horizon, label, band),
-                comparisons,
+                max(len(bands), 1),
             )
             if stats:
                 out[label][band] = stats
@@ -228,45 +235,83 @@ def _pattern_occurrences(
 ) -> pd.DataFrame:
     if not conditions or any(c not in work.columns for c in conditions):
         return work.iloc[0:0].copy()
-    mask = work[conditions].all(axis=1)
     return _cooldown_matching(
         work,
         prices,
-        mask,
+        work[conditions].all(axis=1),
         config.cooldown_sessions,
         position_maps,
     )
 
 
+def _interval_supports_direction(interval: list[float] | None, direction: str | None, reference: float = 0.0) -> bool:
+    if not interval or direction not in {"positive", "negative"}:
+        return False
+    return bool(interval[0] > reference) if direction == "positive" else bool(interval[1] < reference)
+
+
+def _validation_flags(
+    discovery_direction: str | None,
+    validation: dict | None,
+    min_n: int,
+) -> dict:
+    sufficient = bool(validation and validation["N"] >= min_n)
+    if not validation or discovery_direction not in {"positive", "negative"}:
+        return {
+            "validation_sufficient": sufficient,
+            "alpha_direction_confirmed": False,
+            "probability_direction_confirmed": False,
+            "joint_direction_confirmed": False,
+            "alpha_interval_confirmed": False,
+            "probability_interval_confirmed": False,
+            "strong_validation": False,
+        }
+    alpha_direction = _direction(validation["mean_peer_excess"])
+    probability_direction = _direction(validation["probability_advantage_vs_baseline"])
+    alpha_confirmed = alpha_direction == discovery_direction
+    probability_confirmed = probability_direction == discovery_direction
+    baseline = validation["baseline_positive_peer_excess_rate"]
+    probability_interval = validation["shrunk_probability_interval_95"]
+    return {
+        "validation_sufficient": sufficient,
+        "alpha_direction_confirmed": alpha_confirmed,
+        "probability_direction_confirmed": probability_confirmed,
+        "joint_direction_confirmed": bool(sufficient and alpha_confirmed and probability_confirmed),
+        "alpha_interval_confirmed": _interval_supports_direction(
+            validation["cluster_bootstrap_mean_peer_excess_95"], discovery_direction, 0.0
+        ),
+        "probability_interval_confirmed": _interval_supports_direction(
+            probability_interval, discovery_direction, baseline
+        ),
+        "strong_validation": bool(
+            sufficient
+            and alpha_confirmed
+            and probability_confirmed
+            and _interval_supports_direction(validation["cluster_bootstrap_mean_peer_excess_95"], discovery_direction, 0.0)
+            and _interval_supports_direction(probability_interval, discovery_direction, baseline)
+        ),
+    }
+
+
 def timing_pattern_calibration(
-    events: pd.DataFrame,
+    discovery: pd.DataFrame,
+    validation: pd.DataFrame,
     prices: pd.DataFrame,
-    coverage: dict,
+    frozen_horizon: dict,
     horizon: int,
     config: Phase2Config,
+    position_maps: dict[str, dict[pd.Timestamp, int]],
 ) -> dict:
-    phase1b = Phase1BConfig(
-        stable_start=config.stable_start,
-        discovery_end=config.discovery_end,
-        validation_start=config.validation_start,
-        cooldown_sessions=config.cooldown_sessions,
-        min_pattern_discovery_n=config.min_pattern_discovery_n,
-        min_pattern_validation_n=config.min_pattern_validation_n,
-    )
-    frozen_report = discover_patterns(events, prices, horizon, coverage, phase1b)
-    discovery, validation = _windowed_peer_events(events, horizon, config)
     target = f"peer_excess_{horizon}t"
-    position_maps = _session_position_maps(prices)
-    frozen = frozen_report.get("frozen_positive", []) + frozen_report.get("frozen_negative", [])
-    comparisons = max(int(frozen_report.get("discovery_candidate_count", 0)), 1)
+    frozen = list(frozen_horizon.get("frozen_patterns", []))
+    comparisons = max(int(frozen_horizon.get("discovery_candidate_count", 0)), 1)
+    calibrated: list[dict] = []
 
-    calibrated = []
     for row in frozen:
         conditions = list(row.get("conditions", []))
-        d_occ = _pattern_occurrences(discovery, prices, conditions, config, position_maps)
-        v_occ = _pattern_occurrences(validation, prices, conditions, config, position_maps)
+        discovery_direction = row.get("discovery_direction")
         d_stats = _probability_stats(
-            d_occ,
+            _pattern_occurrences(discovery, prices, conditions, config, position_maps),
             discovery,
             target,
             config,
@@ -274,19 +319,13 @@ def timing_pattern_calibration(
             comparisons,
         )
         v_stats = _probability_stats(
-            v_occ,
+            _pattern_occurrences(validation, prices, conditions, config, position_maps),
             validation,
             target,
             config,
             ("timing", horizon, "validation", row.get("pattern")),
             1,
         )
-        discovery_direction = None
-        if d_stats and d_stats["mean_peer_excess"] != 0:
-            discovery_direction = "positive" if d_stats["mean_peer_excess"] > 0 else "negative"
-        validation_direction = None
-        if v_stats and v_stats["mean_peer_excess"] != 0:
-            validation_direction = "positive" if v_stats["mean_peer_excess"] > 0 else "negative"
         calibrated.append(
             {
                 "pattern": row.get("pattern"),
@@ -294,47 +333,63 @@ def timing_pattern_calibration(
                 "discovery_direction": discovery_direction,
                 "discovery": d_stats,
                 "validation": v_stats,
-                "validation_sufficient": bool(v_stats and v_stats["N"] >= config.min_pattern_validation_n),
-                "direction_confirmed": bool(discovery_direction and validation_direction == discovery_direction),
                 "selection_was_discovery_only": True,
+                **_validation_flags(discovery_direction, v_stats, config.min_pattern_validation_n),
             }
         )
 
     return {
-        "discovery_window": [config.stable_start, config.discovery_end],
-        "validation_window": [config.validation_start, str(events["obs_date"].max().date()) if len(events) else None],
+        "candidate_source": "frozen_phase1b",
         "candidate_selection_uses_validation": False,
-        "discovery_candidate_count": int(frozen_report.get("discovery_candidate_count", 0)),
+        "discovery_candidate_count": int(frozen_horizon.get("discovery_candidate_count", 0)),
         "frozen_pattern_count": len(calibrated),
         "patterns": calibrated,
-        "validation_supported": [
-            row for row in calibrated if row["validation_sufficient"] and row["direction_confirmed"]
-        ],
+        "alpha_supported": [row for row in calibrated if row["validation_sufficient"] and row["alpha_direction_confirmed"]],
+        "joint_supported": [row for row in calibrated if row["joint_direction_confirmed"]],
+        "strong_supported": [row for row in calibrated if row["strong_validation"]],
     }
+
+
+def _validation_maturity(validation: pd.DataFrame, horizon: int) -> dict:
+    target = f"peer_excess_{horizon}t"
+    mature = int(validation[target].notna().sum()) if target in validation else 0
+    return {
+        "validation_rows": int(len(validation)),
+        "mature_target_events": mature,
+        "status": "available" if mature > 0 else "not_yet_mature",
+    }
+
+
+def _validate_frozen_catalog(catalog: dict, config: Phase2Config) -> None:
+    if catalog.get("schema_version") != "phase1b_frozen_patterns_v1":
+        raise ValueError("unsupported frozen Phase 1B pattern schema")
+    horizons = catalog.get("horizons", {})
+    missing = {str(h) for h in HORIZONS} - set(horizons)
+    if missing:
+        raise ValueError(f"frozen Phase 1B catalog missing horizons: {sorted(missing)}")
+    for horizon in HORIZONS:
+        window = horizons[str(horizon)].get("discovery_window")
+        if window != [config.stable_start, config.discovery_end]:
+            raise ValueError(f"frozen Phase 1B discovery window mismatch for {horizon}T")
 
 
 def analyze(
     history: pd.DataFrame,
     prices: pd.DataFrame,
+    frozen_patterns: dict,
     config: Phase2Config = Phase2Config(),
 ) -> dict:
+    _validate_frozen_catalog(frozen_patterns, config)
+    if config.prior_strength < 1.0:
+        raise ValueError("prior_strength must be >= 1.0")
+
     selection_events = build_events(
         history,
         prices,
         Phase1AConfig(stable_start=config.stable_start, cooldown_sessions=config.cooldown_sessions),
     )
-    timing_events, coverage = build_timing_events(
-        history,
-        prices,
-        Phase1BConfig(
-            stable_start=config.stable_start,
-            discovery_end=config.discovery_end,
-            validation_start=config.validation_start,
-            cooldown_sessions=config.cooldown_sessions,
-            min_pattern_discovery_n=config.min_pattern_discovery_n,
-            min_pattern_validation_n=config.min_pattern_validation_n,
-        ),
-    )
+    timing_events, coverage = build_timing_events(history, prices, _phase1b_config(config))
+    position_maps = _session_position_maps(prices)
 
     result = {
         "phase": "2_probability_calibration",
@@ -343,10 +398,16 @@ def analyze(
             "score_is_trade_signal": False,
             "r_code_is_trade_signal": False,
             "selection_and_timing_kept_separate": True,
+            "timing_candidates_are_frozen_from_phase1b": True,
             "probability_target": "future peer_excess > 0 versus validated leave-one-symbol-out peer benchmark",
-            "note": "These are calibrated research probabilities, not deterministic buy/sell instructions.",
+            "note": "Calibrated research probabilities; not deterministic buy/sell instructions.",
         },
         "config": config.__dict__,
+        "frozen_pattern_source": {
+            "schema_version": frozen_patterns.get("schema_version"),
+            "source_phase": frozen_patterns.get("source_phase"),
+            "source_events": frozen_patterns.get("source_events"),
+        },
         "coverage": {
             "selection_events": int(len(selection_events)),
             "timing_events": int(len(timing_events)),
@@ -354,16 +415,41 @@ def analyze(
         },
         "horizons": {},
     }
+
     for horizon in HORIZONS:
+        s_discovery, s_validation = _windowed_peer_events(selection_events, horizon, config)
+        t_discovery, t_validation = _windowed_peer_events(timing_events, horizon, config)
         result["horizons"][str(horizon)] = {
-            "selection": selection_calibration(selection_events, horizon, config) if len(selection_events) else {},
-            "timing_patterns": (
-                timing_pattern_calibration(timing_events, prices, coverage, horizon, config)
-                if len(timing_events)
-                else {}
+            "validation_maturity": _validation_maturity(t_validation, horizon),
+            "selection": selection_calibration(s_discovery, s_validation, horizon, config),
+            "timing_patterns": timing_pattern_calibration(
+                t_discovery,
+                t_validation,
+                prices,
+                frozen_patterns["horizons"][str(horizon)],
+                horizon,
+                config,
+                position_maps,
             ),
         }
     return result
+
+
+def _source_snapshot(metadata_path: str | Path | None) -> dict:
+    if not metadata_path:
+        return {}
+    path = Path(metadata_path)
+    if not path.exists():
+        return {}
+    meta = json.loads(path.read_text(encoding="utf-8"))
+    daily = meta.get("daily_run", {})
+    return {
+        "snapshot_id": meta.get("snapshot_id"),
+        "as_of": meta.get("as_of"),
+        "generated_at": meta.get("generated_at"),
+        "scanner_run_id": daily.get("run_id"),
+        "scanner_status": daily.get("scanner_status"),
+    }
 
 
 def run(
@@ -371,14 +457,15 @@ def run(
     price_path: str | Path,
     output_path: str | Path,
     config: Phase2Config = Phase2Config(),
+    frozen_patterns_path: str | Path = "artifacts/research/timing_patterns_1b_frozen.json",
+    metadata_path: str | Path | None = "artifacts/research/history_metadata.json",
 ) -> dict:
     history = pd.read_csv(history_path, low_memory=False)
     prices = pd.read_csv(price_path, low_memory=False)
-    result = analyze(history, prices, config)
+    frozen = json.loads(Path(frozen_patterns_path).read_text(encoding="utf-8"))
+    result = analyze(history, prices, frozen, config)
+    result["source"] = _source_snapshot(metadata_path)
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(
-        json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    output.write_text(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     return result
