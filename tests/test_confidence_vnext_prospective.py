@@ -181,7 +181,7 @@ def test_claim_append_is_idempotent_and_rejects_reinterpretation():
         append_claims(first.astype(str), changed)
 
 
-def test_claim_start_price_is_frozen_before_later_same_day_close_exists():
+def test_claim_start_session_is_frozen_before_later_same_day_close_exists():
     claim_prices = pd.DataFrame(
         [
             {"date": "2026-09-22", "symbol": "AAA", "open": 90, "high": 90, "low": 90, "close": 90, "adj_close": 90, "volume": 1, "observation_type": "price_backfill"},
@@ -193,9 +193,9 @@ def test_claim_start_price_is_frozen_before_later_same_day_close_exists():
     assert aaa_claim["start_market_date"] == "2026-09-22"
     assert float(aaa_claim["start_adjusted_close"]) == pytest.approx(90.0)
 
-    revised_start = claim_prices.copy()
-    revised_start.loc[revised_start["symbol"].eq("AAA"), ["open", "high", "low", "close", "adj_close"]] = 95
-    future = pd.concat([revised_start, _prices()], ignore_index=True)
+    evaluation = claim_prices.copy()
+    evaluation.loc[evaluation["symbol"].eq("AAA"), ["open", "high", "low", "close", "adj_close"]] = 95
+    future = pd.concat([evaluation, _prices()], ignore_index=True)
     outcomes = compute_mature_outcomes(
         claims,
         future,
@@ -203,11 +203,40 @@ def test_claim_start_price_is_frozen_before_later_same_day_close_exists():
         "2026-09-28T00:00:00+00:00",
     )
     aaa = outcomes.loc[outcomes["symbol"].eq("AAA")].iloc[0]
+    # The immutable session remains 2026-09-22; the raw claim audit price remains 90.
+    # Outcome prices may be rebased together later, so the evaluation-basis start is 95.
     assert aaa["start_market_date"] == "2026-09-22"
-    assert aaa["start_adjusted_close"] == pytest.approx(90.0)
+    assert float(aaa_claim["start_adjusted_close"]) == pytest.approx(90.0)
+    assert aaa["start_adjusted_close"] == pytest.approx(95.0)
     assert aaa["end_market_date"] == "2026-09-27"
     assert aaa["end_adjusted_close"] == pytest.approx(105.0)
-    assert aaa["return"] == pytest.approx(105.0 / 90.0 - 1.0)
+    assert aaa["return"] == pytest.approx(105.0 / 95.0 - 1.0)
+
+
+def test_corporate_action_rebases_entire_outcome_path_on_one_adjustment_basis():
+    claims = _claims()
+    aaa_claim = claims.loc[claims["symbol"].eq("AAA")].iloc[0]
+    assert float(aaa_claim["start_adjusted_close"]) == pytest.approx(100.0)
+
+    evaluation = _prices().copy()
+    # Simulate a later provider adjustment after a split/dividend: the historical
+    # start and every path point are now expressed on a new common basis.
+    mask = evaluation["symbol"].eq("AAA")
+    evaluation.loc[mask, "adj_close"] = [50.0, 51.0, 50.5, 52.0, 52.5, 55.0]
+
+    outcomes = compute_mature_outcomes(
+        claims,
+        evaluation,
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-29T00:00:00+00:00",
+    )
+    aaa = outcomes.loc[outcomes["symbol"].eq("AAA")].iloc[0]
+    assert aaa["start_market_date"] == "2026-09-23"
+    assert aaa["start_adjusted_close"] == pytest.approx(50.0)
+    assert aaa["end_adjusted_close"] == pytest.approx(55.0)
+    assert aaa["return"] == pytest.approx(0.10)
+    assert aaa["adverse_excursion"] == pytest.approx(0.0)
+    assert aaa["path_max_drawdown"] == pytest.approx(0.5 / 51.0)
 
 
 def test_missing_claim_time_price_is_permanently_unevaluable_not_backfilled():
@@ -406,6 +435,7 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["semantics"]["peer_labels_are_derived_not_frozen_early"] is True
     assert report["semantics"]["peer_cross_sections_use_exact_snapshot_cohorts"] is True
     assert report["semantics"]["outcomes_require_completed_session_day"] is True
+    assert report["semantics"]["outcome_adjusted_prices_share_one_evaluation_basis"] is True
     assert report["validation_contract"]["weights_or_thresholds_may_be_tuned_on_this_stream"] is False
     assert report["validation_contract"]["fixed_cooldown_sessions"] == 5
     assert report["horizons"]["5"]["block_length_sessions_for_future_inference"] == 10
@@ -415,13 +445,20 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["horizons"]["5"]["outcome_unevaluable_claims"] == 0
 
 
-def test_workflow_contract_drains_unclaimed_publications_and_refreshes_outstanding_symbols():
+def test_workflow_contract_drains_only_proven_scanner_publications_and_uses_one_basis_prices():
     workflow = Path(".github/workflows/confidence_vnext_4e.yml").read_text(encoding="utf-8")
     assert "Bind to oldest unclaimed scanner publication" in workflow
     assert "rev-list', '--reverse', 'origin/main'" in workflow
     assert "No unclaimed scanner publication exists; Phase 4E is a clean no-op." in workflow
     assert "backlog_count" in workflow
     assert "gh workflow run confidence_vnext_4e.yml --ref main" in workflow
+    assert "github.event.workflow_run.head_branch == 'main'" in workflow
+    assert "github.event.workflow_run.conclusion == 'success'" not in workflow
+    assert "github.event.workflow_run.head_branch || github.ref_name" in workflow
+    assert "📊 Autopilot: artifacts update [skip ci]" in workflow
+    assert "diff-tree" in workflow
+    assert "hashlib.sha256(latest_raw).hexdigest()" in workflow
     assert "claim_prices.csv" in workflow
-    assert "OUTSTANDING_SYMBOLS" in workflow
-    assert "prefetch_market_history.py" in workflow
+    assert "evaluation_symbols.txt" in workflow
+    assert "phase4e_evaluation_prices.csv" in workflow
+    assert "prefetch_history" in workflow
