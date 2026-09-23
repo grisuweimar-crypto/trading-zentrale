@@ -2,22 +2,11 @@ name: Phase 1A Selection vs Timing
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'src/scanner/reports/selection_timing.py'
-      - 'scripts/run_selection_timing_1a.py'
-      - 'tests/test_selection_timing.py'
-      - 'docs/selection_timing_1a.md'
-      - '.github/workflows/selection_timing_1a.yml'
   push:
     branches: [main]
     paths:
-      - 'src/scanner/reports/selection_timing.py'
-      - 'scripts/run_selection_timing_1a.py'
-      - 'tests/test_selection_timing.py'
       - 'artifacts/research/history_analysis.csv'
       - 'artifacts/research/price_backfill.csv'
-      - '.github/workflows/selection_timing_1a.yml'
 
 permissions:
   contents: read
