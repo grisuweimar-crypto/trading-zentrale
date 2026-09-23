@@ -124,8 +124,8 @@ def _fingerprints():
 
 def _prices():
     dates = pd.date_range("2026-09-23", periods=6, freq="D")
-    aaa = [100, 102, 101, 104, 105, 110]
-    bbb = [100, 99, 98, 97, 96, 95]
+    aaa = [100.0, 102.0, 101.0, 104.0, 105.0, 110.0]
+    bbb = [100.0, 99.0, 98.0, 97.0, 96.0, 95.0]
     rows = []
     for symbol, values in (("AAA", aaa), ("BBB", bbb)):
         for day, value in zip(dates, values):
@@ -463,3 +463,9 @@ def test_workflow_contract_drains_only_proven_scanner_publications_and_uses_one_
     assert "evaluation_symbols.txt" in workflow
     assert "phase4e_evaluation_prices.csv" in workflow
     assert "prefetch_history" in workflow
+    assert "phase4e-shadow-data" in workflow
+    assert "group: phase4e-shadow-publication" in workflow
+    assert "group: scanner-daily-publication" not in workflow
+    assert "git push origin HEAD:refs/heads/phase4e-shadow-data" in workflow
+    assert "git push origin HEAD:main" not in workflow
+    assert "origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv" in workflow
