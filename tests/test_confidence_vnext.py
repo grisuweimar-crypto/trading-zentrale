@@ -6,6 +6,7 @@ from scanner.domain.scoring_engine.factors.universe_csv import Universe, scale_f
 from scanner.domain.scoring_engine.quality.confidence import compute_confidence
 from scanner.reports.confidence_vnext import (
     Phase4Config,
+    _spearman_pair,
     audit_history,
     research_contract,
     testability_matrix as confidence_testability_matrix,
@@ -201,6 +202,18 @@ def test_display_label_boundary_mismatch_is_reported_not_silently_normalized():
     assert consistency["compared_rows"] == 1
     assert consistency["display_score_label_mismatches"] == 1
     assert consistency["samples"][0]["label_implied_by_stored_rounded_score"] == "MED"
+
+
+def test_spearman_diagnostic_uses_rank_pearson_without_scipy_dependency():
+    frame = pd.DataFrame(
+        {
+            "confidence": [10.0, 20.0, 30.0, 40.0],
+            "score": [1.0, 2.0, 3.0, 4.0],
+        }
+    )
+    result = _spearman_pair(frame, "confidence", "score")
+    assert result["N"] == 4
+    assert abs(result["spearman"] - 1.0) < 1e-12
 
 
 def test_missing_raw_value_is_neutralized_before_legacy_confidence():
