@@ -149,7 +149,7 @@ def test_return_and_protection_samples_are_independent():
         frame,
         "volatility",
         5,
-        Phase3Config(min_feature_n=5, cluster_bootstrap_reps=10),
+        Phase3Config(min_feature_n=5, cluster_bootstrap_reps=20),
         ("test",),
     )
     assert stats is not None
@@ -221,6 +221,9 @@ def test_moving_block_bootstrap_requires_two_temporal_support_regions_per_group(
     )
     assert interval is not None
     assert len(interval) == 2
+    assert _cluster_bootstrap_group_difference(
+        supported, "target", "risk_group", "high_risk", "low_risk", 1, 7, 5
+    ) is None
 
 
 def test_invalid_phase3_config_rejected():
@@ -228,5 +231,9 @@ def test_invalid_phase3_config_rejected():
         Phase3Config(quantile=0.6)
     with pytest.raises(ValueError):
         Phase3Config(cluster_bootstrap_reps=-1)
+    with pytest.raises(ValueError):
+        Phase3Config(cluster_bootstrap_reps=1)
+    with pytest.raises(ValueError):
+        Phase3Config(cluster_bootstrap_reps=19)
     with pytest.raises(ValueError):
         Phase3Config(tail_drawdown_threshold=1.0)

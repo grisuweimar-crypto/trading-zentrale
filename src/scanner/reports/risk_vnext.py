@@ -34,6 +34,9 @@ from scanner.reports.selection_timing import (
 from scanner.reports.timing_patterns import Phase1BConfig, _strict_windows
 
 
+MIN_BOOTSTRAP_REPS_FOR_INTERVAL = 20
+
+
 RISK_FEATURE_ALIASES: dict[str, tuple[str, ...]] = {
     "aggregate_risk": ("risk", "risk_score"),
     "volatility": ("volatility", "Volatility"),
@@ -64,6 +67,10 @@ class Phase3Config:
             raise ValueError("cooldown_sessions and min_feature_n must be positive")
         if self.cluster_bootstrap_reps < 0:
             raise ValueError("cluster_bootstrap_reps must be >= 0")
+        if 0 < self.cluster_bootstrap_reps < MIN_BOOTSTRAP_REPS_FOR_INTERVAL:
+            raise ValueError(
+                f"cluster_bootstrap_reps must be 0 or >= {MIN_BOOTSTRAP_REPS_FOR_INTERVAL}"
+            )
         if not 0 < self.tail_drawdown_threshold < 1:
             raise ValueError("tail_drawdown_threshold must be between 0 and 1")
 
@@ -296,7 +303,7 @@ def _cluster_bootstrap_group_difference(
     """
     work = frame[["obs_date", target, group_column]].dropna().copy()
     work = work.loc[work[group_column].isin([positive_group, negative_group])]
-    if work.empty or reps <= 0:
+    if work.empty or reps < MIN_BOOTSTRAP_REPS_FOR_INTERVAL:
         return None
     work, blocks, block_length = _circular_moving_time_blocks(work, horizon)
     if len(blocks) < 2:
@@ -335,7 +342,7 @@ def _cluster_bootstrap_group_difference(
         value = difference(sample)
         if value is not None:
             estimates.append(value)
-    if not estimates:
+    if len(estimates) < MIN_BOOTSTRAP_REPS_FOR_INTERVAL:
         return None
     low, high = np.quantile(np.asarray(estimates, dtype=float), [0.025, 0.975])
     return [float(low), float(high)]
@@ -547,6 +554,7 @@ def analyze(
             "uncertainty_block_length_rule": "effective block length equals 2 x evaluated forward horizon in sessions",
             "bootstrap_uses_all_eligible_dates": True,
             "bootstrap_min_group_temporal_support_regions": 2,
+            "bootstrap_min_reps_for_interval": MIN_BOOTSTRAP_REPS_FOR_INTERVAL,
             "bootstrap_quantile_membership_fixed": True,
             "danelfin_low_risk_role": "external research reference only; no Danelfin score is imported",
         },
