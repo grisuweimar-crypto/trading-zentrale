@@ -251,7 +251,13 @@ def _strict_windows(
     horizon: int,
     config: Phase1BConfig,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Return purged discovery and later validation windows."""
+    """Return purged windows with peer labels rebuilt inside each cohort.
+
+    Discovery peers must be horizon-eligible before they can contribute to a
+    same-currency or global daily median. This prevents a row whose target ends
+    after the discovery cutoff from leaking its future return into an eligible
+    row's discovery peer excess. Peer labels are still built before cooldown.
+    """
     discovery_end = pd.Timestamp(config.discovery_end)
     validation_start = pd.Timestamp(config.validation_start)
     end_col = f"end_date_{horizon}t"
@@ -262,6 +268,14 @@ def _strict_windows(
         & (end_date <= discovery_end)
     ].copy()
     validation = work.loc[work["obs_date"] >= validation_start].copy()
+
+    peer_col = f"peer_excess_{horizon}t"
+    discovery = _add_peer_excess(
+        discovery.drop(columns=[peer_col], errors="ignore"), horizon
+    )
+    validation = _add_peer_excess(
+        validation.drop(columns=[peer_col], errors="ignore"), horizon
+    )
     return discovery, validation
 
 
