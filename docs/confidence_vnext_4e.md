@@ -36,16 +36,24 @@ Crypto remains outside this stream until non-stock evidence is independently val
 
 ## Outcomes are separate and later
 
-Claims are never overwritten with future information. Matured outcomes are written to a separate append-only archive keyed by `claim_id`.
+Claims are never overwritten with future information. Matured **raw** outcomes are written to a separate append-only archive keyed by `claim_id`.
 
-For each horizon (5/20/40/60 sessions), Phase 4E records after maturity:
+For each horizon (5/20/40/60 sessions), the immutable raw outcome archive stores after maturity:
 
 - official adjusted-close forward return using the validated daily price-history session arithmetic
-- leave-one-symbol-out same-currency peer median with global peer fallback when no same-currency peer exists, matching the established research convention
-- peer excess
-- sign-normalized peer excess and directional hit only when the frozen claim had one unambiguous return direction
 - future adverse excursion
 - future path maximum drawdown
+- start/end market session and adjusted closes used for the outcome
+
+Peer-relative labels are deliberately **not** frozen when one individual symbol first matures. Different exchanges and holidays can make symbols from the same observation cohort mature on different workflow runs. Freezing a peer median too early would make the result depend on workflow timing.
+
+Instead, the analysis view derives from **all currently matured rows in the same observation cohort**:
+
+- leave-one-symbol-out same-currency peer median, with global peer fallback when no same-currency peer exists
+- peer excess
+- sign-normalized peer excess and directional hit only when the frozen claim had one unambiguous return direction
+
+When another symbol from that historical cohort matures later, the derived peer view may become more complete, but the original raw outcome rows and the frozen claims are never rewritten.
 
 The price outcome is a daily research target, not an execution-price/PnL simulation.
 
@@ -68,6 +76,8 @@ Low risk is never treated as an extra positive-return vote.
 Test whether complete claim-specific provenance/presence states are associated with lower prediction error / fewer unevaluable claims than partial or insufficient states. Missing evidence remains unknown/insufficient, never neutral.
 
 ## Dependence and uncertainty
+
+The pre-specified event spacing remains the existing **5-session cooldown**. That reduces serial repetition but does not make longer-horizon outcomes independent.
 
 Overlapping outcomes are not independent. Final inference must reuse the corrected Phase-2/3 method:
 
@@ -94,6 +104,6 @@ It is explicitly forbidden to:
 
 ## Publication model
 
-Phase 4E runs separately after a successful `Scanner_vNext Autopilot` publication. It reads the just-published research bundle, generates the current guarded Phase-4B–D registry, appends immutable shadow claims, matures any prior claims whose future sessions are now available, and commits only the Phase-4E shadow artifacts.
+Phase 4E runs separately after a successful `Scanner_vNext Autopilot` publication on `main`. It reads the just-published research bundle, generates the current guarded Phase-4B–D registry, appends immutable shadow claims, matures any prior claims whose future sessions are now available, and commits only the Phase-4E shadow artifacts.
 
-Because it is a separate workflow, a Phase-4E failure cannot invalidate or block the productive scanner publication.
+Because it is a separate workflow, a Phase-4E failure cannot invalidate or block the productive scanner publication. The shadow workflow does not trigger from its own artifact commit.
