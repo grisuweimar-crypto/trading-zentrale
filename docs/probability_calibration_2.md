@@ -41,9 +41,9 @@ Selection remains a cross-sectional quality question. Phase 2 reports the score-
 
 For each band and window the report contains:
 
-- raw positive peer-excess rate and Wilson 95% interval
+- raw positive peer-excess rate and Wilson 95% interval as an iid diagnostic
 - baseline positive peer-excess rate
-- Beta-shrunk positive peer-excess probability and approximate 95% interval
+- Beta-shrunk positive peer-excess probability and approximate 95% interval as an iid diagnostic
 - probability advantage versus the window baseline
 - mean and median peer excess
 - circular moving-block bootstrap intervals for mean peer excess and probability advantage
@@ -56,9 +56,9 @@ For every frozen pattern Phase 2 reports discovery and validation statistics and
 - `alpha_direction_confirmed`: mean peer excess in validation has the Phase 1B discovery direction
 - `probability_direction_confirmed`: probability advantage has that same direction
 - `joint_direction_confirmed`: both are true and the validation sample meets minimum N
-- `alpha_interval_confirmed`: clustered alpha interval stays entirely on the expected side of zero
-- `probability_interval_confirmed`: probability interval stays entirely on the expected side of the validation baseline
-- `strong_validation`: sufficient N plus joint direction plus both interval checks
+- `alpha_interval_confirmed`: moving-block alpha interval stays entirely on the expected side of zero
+- `probability_interval_confirmed`: moving-block probability-advantage interval stays entirely on the expected side of zero
+- `strong_validation`: sufficient N plus joint direction plus both robust interval checks
 
 The report therefore no longer treats a matching mean-alpha sign alone as proof that the probability layer is confirmed.
 
