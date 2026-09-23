@@ -162,6 +162,8 @@ def test_claim_snapshot_is_stock_only_compact_and_score_free():
     assert "score" not in claims.columns
     assert set(claims["return_claim_direction"]) == {"positive", "negative"}
     assert set(claims["volatility_application_status"]) == {"scale_incompatible"}
+    assert set(claims["outcome_eligibility"]) == {"eligible"}
+    assert set(claims["outcome_unavailable_reason"]) == {""}
     assert claims["claim_id"].nunique() == 2
     assert set(claims["start_market_date"]) == {"2026-09-23"}
 
@@ -206,6 +208,33 @@ def test_claim_start_price_is_frozen_before_later_same_day_close_exists():
     assert aaa["end_market_date"] == "2026-09-27"
     assert aaa["end_adjusted_close"] == pytest.approx(105.0)
     assert aaa["return"] == pytest.approx(105.0 / 90.0 - 1.0)
+
+
+def test_missing_claim_time_price_is_permanently_unevaluable_not_backfilled():
+    claim_prices = _prices().loc[lambda x: x["symbol"].eq("AAA")].copy()
+    claims = _claims(claim_prices)
+    bbb = claims.loc[claims["symbol"].eq("BBB")].iloc[0]
+    assert bbb["outcome_eligibility"] == "unevaluable"
+    assert bbb["outcome_unavailable_reason"] == "claim_time_price_history_missing"
+    assert bbb["start_market_date"] == ""
+    assert pd.isna(bbb["start_adjusted_close"])
+
+    outcomes = compute_mature_outcomes(
+        claims,
+        _prices(),
+        pd.DataFrame(columns=OUTCOME_COLUMNS),
+        "2026-09-29T00:00:00+00:00",
+    )
+    assert set(outcomes["symbol"]) == {"AAA"}
+
+    later_reinterpreted = _claims(_prices())
+    with pytest.raises(ValueError, match="immutable shadow claim conflict"):
+        append_claims(claims.astype(str), later_reinterpreted)
+
+    report = validation_summary(claims, outcomes)
+    assert report["horizons"]["5"]["outcome_eligible_claims"] == 1
+    assert report["horizons"]["5"]["outcome_unevaluable_claims"] == 1
+    assert report["semantics"]["missing_claim_time_start_remains_permanently_unevaluable"] is True
 
 
 def test_raw_outcomes_mature_only_when_full_horizon_exists():
@@ -373,6 +402,7 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["semantics"]["scalar_confidence_mapping_created"] is False
     assert report["semantics"]["confidence_thresholds_created"] is False
     assert report["semantics"]["claim_time_start_session_is_frozen"] is True
+    assert report["semantics"]["missing_claim_time_start_remains_permanently_unevaluable"] is True
     assert report["semantics"]["peer_labels_are_derived_not_frozen_early"] is True
     assert report["semantics"]["peer_cross_sections_use_exact_snapshot_cohorts"] is True
     assert report["semantics"]["outcomes_require_completed_session_day"] is True
@@ -381,6 +411,8 @@ def test_validation_summary_cannot_create_scalar_confidence_or_tune_thresholds()
     assert report["horizons"]["5"]["block_length_sessions_for_future_inference"] == 10
     assert report["horizons"]["5"]["derived_peer_labels"] == 2
     assert report["horizons"]["5"]["snapshot_cohorts"] == 1
+    assert report["horizons"]["5"]["outcome_eligible_claims"] == 2
+    assert report["horizons"]["5"]["outcome_unevaluable_claims"] == 0
 
 
 def test_workflow_contract_binds_trigger_and_refreshes_outstanding_symbols():
