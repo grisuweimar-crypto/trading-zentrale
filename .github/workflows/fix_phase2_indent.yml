@@ -1,0 +1,39 @@
+name: Repair Phase 2 moving-block indentation
+
+on:
+  push:
+    branches: [phase2-uncertainty-hotfix]
+    paths:
+      - '.github/workflows/fix_phase2_indent.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: phase2-uncertainty-hotfix
+      - name: Repair indentation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          src = Path('src/scanner/reports/probability_calibration.py')
+          s = src.read_text(encoding='utf-8')
+          s = s.replace('        if last_start is None or pos - last_start >= block_length:\n  count += 1\n  last_start = pos', '        if last_start is None or pos - last_start >= block_length:\n            count += 1\n            last_start = pos')
+          s = s.replace('        if not v_parts or not b_parts:\n  continue', '        if not v_parts or not b_parts:\n            continue')
+          s = s.replace('        if len(v_sample) == 0 or len(b_sample) == 0:\n  continue', '        if len(v_sample) == 0 or len(b_sample) == 0:\n            continue')
+          s = s.replace('        if not items:\n  return None', '        if not items:\n            return None')
+          src.write_text(s, encoding='utf-8')
+          Path('.github/workflows/fix_phase2_indent.yml').unlink()
+          PY
+      - name: Commit repair
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add -A
+          git commit -m "Repair Phase 2 moving-block indentation"
+          git push origin HEAD:phase2-uncertainty-hotfix
