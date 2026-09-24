@@ -1,0 +1,221 @@
+name: Phase 5C Progressive Learning
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/confidence_vnext_5c.yml'
+      - 'docs/confidence_vnext_5c.md'
+      - 'scripts/run_confidence_vnext_progressive_5c.py'
+      - 'src/scanner/reports/confidence_vnext_progressive.py'
+      - 'tests/test_confidence_vnext_progressive.py'
+  workflow_run:
+    workflows: ['Phase 5B Frozen Baseline v2']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: phase5c-progressive-${{ github.event.pull_request.number || github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      shadow_available: ${{ steps.restore.outputs.shadow_available }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+
+      - name: Verify Phase 5C PR scope
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          allowed = {
+              '.github/workflows/confidence_vnext_5c.yml',
+              'docs/confidence_vnext_5c.md',
+              'scripts/run_confidence_vnext_progressive_5c.py',
+              'src/scanner/reports/confidence_vnext_progressive.py',
+              'tests/test_confidence_vnext_progressive.py',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
+              text=True,
+          ).splitlines())
+          unexpected = sorted(changed - allowed)
+          if unexpected:
+              raise SystemExit(f'unexpected Phase 5C paths: {unexpected}')
+          if not changed:
+              raise SystemExit('Phase 5C PR has no changed files')
+          print('Phase 5C scope ok:', sorted(changed))
+          PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Phase 5C and inherited contract tests
+        run: |
+          python -m pytest -q \
+            tests/test_confidence_vnext_progressive.py \
+            tests/test_confidence_vnext_prospective_v2.py \
+            tests/test_confidence_vnext_frozen_baseline.py \
+            tests/test_confidence_vnext_walkforward.py
+
+      - name: Restore prospective v2 evidence and existing 5C versions
+        id: restore
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
+          SHADOW_AVAILABLE=false
+          if git show-ref --verify --quiet refs/remotes/origin/phase4e-shadow-data; then
+            for path in \
+              artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv \
+              artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv \
+              artifacts/research/confidence_vnext_model_versions_5c.jsonl \
+              artifacts/research/confidence_vnext_progressive_5c.json
+            do
+              if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
+                mkdir -p "$(dirname "$path")"
+                git show "origin/phase4e-shadow-data:$path" > "$path"
+              else
+                rm -f "$path"
+              fi
+            done
+            if git cat-file -e "origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv" 2>/dev/null; then
+              SHADOW_AVAILABLE=true
+            fi
+          fi
+          echo "shadow_available=$SHADOW_AVAILABLE" >> "$GITHUB_OUTPUT"
+
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          from scanner.reports.confidence_vnext_prospective_v2 import CLAIM_COLUMNS_V2, OUTCOME_COLUMNS_V2
+
+          sources = (
+              (Path('artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv'), CLAIM_COLUMNS_V2),
+              (Path('artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv'), OUTCOME_COLUMNS_V2),
+          )
+          for path, columns in sources:
+              if not path.exists() or path.stat().st_size == 0:
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  pd.DataFrame(columns=columns).to_csv(path, index=False)
+          PY
+
+      - name: Run progressive horizon-specific learner
+        run: |
+          python scripts/run_confidence_vnext_progressive_5c.py
+
+      - name: Validate Phase 5C fail-closed contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('artifacts/research/confidence_vnext_progressive_5c.json').read_text(encoding='utf-8'))
+          assert report['phase'] == '5C_progressive_learning'
+          semantics = report['semantics']
+          assert semantics['research_only'] is True
+          assert semantics['dynamic_horizon_specific_learning'] is True
+          assert semantics['learning_waits_for_own_mature_horizon_labels'] is True
+          assert semantics['shorter_horizon_labels_borrowed'] is False
+          assert semantics['fixed_event_spacing_sessions'] == 5
+          assert semantics['claim_first_spacing_membership'] is True
+          assert semantics['overlapping_forward_windows_treated_as_independent'] is False
+          assert semantics['state_names_assumed_ordinal'] is False
+          assert semantics['scalar_confidence_mapping_created'] is False
+          assert semantics['adaptive_production_weights_created'] is False
+          assert semantics['production_confidence_changed'] is False
+          assert semantics['portfolio_or_depot_watch_changed'] is False
+          assert set(report['horizons']) == {'5', '20', '40', '60'}
+          for horizon, item in report['horizons'].items():
+              assert item['stage'] in {
+                  'collecting',
+                  'mature_outcomes_accumulating',
+                  'pilot_learning',
+                  'robust_learning_base',
+              }
+              assert item['requirements']['fixed_event_spacing_sessions'] == 5
+              assert item['requirements']['robust_block_length_observation_dates'] == 2 * int(horizon)
+          print('Phase 5C contract validated:', report['status'], report['new_model_versions'])
+          PY
+
+      - name: Upload Phase 5C diagnostic artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5c-progressive-diagnostics
+          path: |
+            artifacts/research/confidence_vnext_progressive_5c.json
+            artifacts/research/confidence_vnext_model_versions_5c.jsonl
+          if-no-files-found: error
+
+      - name: Stage isolated Phase 5C publication
+        if: github.event_name != 'pull_request' && steps.restore.outputs.shadow_available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5c-progressive-publication
+          path: |
+            artifacts/research/confidence_vnext_progressive_5c.json
+            artifacts/research/confidence_vnext_model_versions_5c.jsonl
+          if-no-files-found: error
+
+  publish:
+    needs: analyze
+    if: needs.analyze.result == 'success' && needs.analyze.outputs.shadow_available == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: phase4e-shadow-publication
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout shadow branch seed
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Prepare isolated shadow branch
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          git checkout -B phase4e-shadow-data origin/phase4e-shadow-data
+
+      - name: Restore Phase 5C payload
+        uses: actions/download-artifact@v4
+        with:
+          name: phase5c-progressive-publication
+          path: artifacts/research
+
+      - name: Publish Phase 5C without touching main or v2 archives
+        run: |
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add \
+            artifacts/research/confidence_vnext_progressive_5c.json \
+            artifacts/research/confidence_vnext_model_versions_5c.jsonl
+          if ! git diff --cached --quiet; then
+            git commit -m '🧠 Phase 5C progressive learning update [skip ci]'
+            git push origin HEAD:refs/heads/phase4e-shadow-data
+          fi
