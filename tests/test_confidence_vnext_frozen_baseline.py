@@ -72,12 +72,13 @@ def _claim(claim_id: str, symbol: str, snapshot: str, as_of: str, forbidden: lis
 def _outcome(claim: dict[str, object], end: str, ret: float, adverse: float, drawdown: float):
     start_price = 100.0
     end_price = start_price * (1.0 + ret)
+    evaluated_at = (pd.Timestamp(end) + pd.Timedelta(days=1)).tz_localize("UTC").isoformat()
     payload = {
         "claim_id": claim["claim_id"],
         "schema_version": SCHEMA_VERSION,
         "source_commit": claim["source_commit"],
         "as_of": claim["as_of"],
-        "evaluated_at": f"{end}T23:00:00+00:00",
+        "evaluated_at": evaluated_at,
         "symbol": claim["symbol"],
         "currency": "USD",
         "horizon_sessions": 5,
