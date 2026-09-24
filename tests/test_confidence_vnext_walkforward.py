@@ -334,6 +334,15 @@ def test_promotion_requires_distinct_nonoverlapping_market_date_epochs():
     )
     assert same_day["status"] == "insufficient_evidence"
 
+    same_declared_market_day_with_offset = promotion_assessment(
+        walkforward_evaluations=[
+            _evaluation("v1", "2026-10-20T00:00:00-05:00", "2026-11-20T00:00:00-05:00"),
+            _evaluation("v2", "2026-11-20T23:00:00-05:00", "2026-12-20T23:00:00-05:00"),
+        ],
+        **gates,
+    )
+    assert same_declared_market_day_with_offset["status"] == "insufficient_evidence"
+
     good = promotion_assessment(
         walkforward_evaluations=[
             _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z"),
