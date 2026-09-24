@@ -472,3 +472,73 @@ def test_promotion_gate_requires_distinct_non_overlapping_walkforward_epochs():
     assert eligible["status"] == "eligible_for_separate_promotion_review"
     assert eligible["gates"]["multiple_walkforward_evaluations"] is True
     assert eligible["production_change_performed"] is False
+
+
+def test_readiness_rejects_attempts_to_weaken_fixed_contract_constants():
+    from scanner.reports.confidence_vnext_walkforward import Phase5WalkForwardConfig
+
+    claims = pd.DataFrame(columns=CLAIM_COLUMNS)
+    outcomes = pd.DataFrame(columns=OUTCOME_COLUMNS)
+    weakened = [
+        Phase5WalkForwardConfig(require_statistical_context_for_adaptation=False),
+        Phase5WalkForwardConfig(uncertainty_block_multiplier=1),
+        Phase5WalkForwardConfig(minimum_time_separated_support_regions=1),
+        Phase5WalkForwardConfig(fixed_event_spacing_sessions=4),
+        Phase5WalkForwardConfig(schema_version="weakened"),
+    ]
+    for config in weakened:
+        with pytest.raises(ValueError, match="contract constants are immutable"):
+            readiness_audit(claims, outcomes, config=config)
+
+
+def test_unevaluable_claim_dates_do_not_inflate_temporal_support():
+    observation_dates = pd.bdate_range("2026-10-01", periods=12)
+    rows = []
+    for i, day in enumerate(observation_dates):
+        iso = day.strftime("%Y-%m-%d")
+        row = _claim(f"u{i}", f"us{i}", "AAA" if i == 0 else "BBB", iso, iso)
+        if i not in {0, 11}:
+            row["outcome_eligibility"] = "unevaluable"
+            row["outcome_unavailable_reason"] = "claim_time_price_history_missing"
+        rows.append(row)
+    claims = _with_statistical_context(pd.DataFrame(rows, columns=CLAIM_COLUMNS))
+    last_day = observation_dates[11].strftime("%Y-%m-%d")
+    outcomes = pd.DataFrame(
+        [
+            _outcome("u0", "AAA", "2026-10-01", "2026-10-01", "2026-10-08", "2026-10-09T00:00:00Z"),
+            _outcome("u11", "BBB", last_day, last_day, "2026-10-23", "2026-10-24T00:00:00Z"),
+        ],
+        columns=OUTCOME_COLUMNS,
+    )
+    result = readiness_audit(claims, outcomes)
+    assert result["horizons"]["5"]["non_overlapping_outcome_support_regions"] == 1
+    assert result["horizons"]["5"]["walkforward_evaluation_ready"] is False
+
+
+def test_empty_evidence_fingerprint_attests_column_dtypes():
+    empty_float = pd.DataFrame({"feature": pd.Series(dtype="float64")})
+    empty_int = pd.DataFrame({"feature": pd.Series(dtype="int64")})
+    empty_string = pd.DataFrame({"feature": pd.Series(dtype="string")})
+    assert evidence_fingerprint(empty_float) != evidence_fingerprint(empty_int)
+    assert evidence_fingerprint(empty_float) != evidence_fingerprint(empty_string)
+    assert evidence_fingerprint(empty_int) != evidence_fingerprint(empty_string)
+
+
+def test_promotion_rejects_epochs_sharing_the_same_market_date():
+    common = {
+        "pit_leakage_audit_passed": True,
+        "reproducible_versions": True,
+        "robust_uncertainty_available": True,
+        "concentration_check_passed": True,
+        "temporal_stability_check_passed": True,
+        "baseline_advantage_demonstrated": True,
+    }
+    same_market_date = promotion_assessment(
+        walkforward_evaluations=[
+            _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z"),
+            _evaluation("v2", "2026-11-20T16:00:00Z", "2026-12-20T16:00:00Z"),
+        ],
+        **common,
+    )
+    assert same_market_date["status"] == "insufficient_evidence"
+    assert same_market_date["gates"]["multiple_walkforward_evaluations"] is False
