@@ -159,6 +159,13 @@ def test_claim_hash_and_schema_are_authenticated():
         readiness_audit(wrong_schema, outcomes)
 
 
+def test_claim_archive_rejects_unsupported_horizon_without_outcome():
+    claim = _claim(horizon=10)
+    claims, outcomes = _frames([claim], [])
+    with pytest.raises(ValueError, match="unsupported Phase 4E claim horizon_sessions"):
+        readiness_audit(claims, outcomes)
+
+
 def test_claim_generation_must_be_contemporaneous_not_retroactive():
     retro = _claim(generated_at="2026-10-14T16:00:00+00:00")
     claims, outcomes = _frames([retro], [])
@@ -189,6 +196,30 @@ def test_raw_outcome_labels_require_finite_consistent_values():
 
     impossible_risk = _outcome(claim, adverse=1.5)
     claims, outcomes = _frames([claim], [impossible_risk])
+    with pytest.raises(ValueError, match="outcome chronology/labels"):
+        readiness_audit(claims, outcomes)
+
+
+def test_raw_outcome_path_risk_labels_must_be_internally_possible():
+    claim = _claim()
+
+    missing_endpoint_loss = _outcome(
+        claim,
+        end_price=50.0,
+        ret=-0.5,
+        adverse=0.0,
+        drawdown=0.0,
+    )
+    claims, outcomes = _frames([claim], [missing_endpoint_loss])
+    with pytest.raises(ValueError, match="outcome chronology/labels"):
+        readiness_audit(claims, outcomes)
+
+    drawdown_below_adverse = _outcome(
+        claim,
+        adverse=0.04,
+        drawdown=0.03,
+    )
+    claims, outcomes = _frames([claim], [drawdown_below_adverse])
     with pytest.raises(ValueError, match="outcome chronology/labels"):
         readiness_audit(claims, outcomes)
 
