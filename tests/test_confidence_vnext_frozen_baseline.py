@@ -98,27 +98,56 @@ def _outcome(claim: dict[str, object], end: str, ret: float, adverse: float, dra
 
 
 def test_fixed_spacing_rejects_same_symbol_occurrence_inside_five_sessions():
-    dates = ["2026-10-01", "2026-10-02", "2026-10-07"]
-    rows = []
-    for i, date in enumerate(dates):
-        forbidden = dates[max(0, i - 4) : i + 1]
-        row = {
-            "claim_id": f"c{i}",
-            "snapshot_id": f"s{i}",
-            "as_of": date,
+    rows = [
+        {
+            "claim_id": "c0",
+            "snapshot_id": "s0",
+            "as_of": "2026-10-01",
             "symbol": "AAA",
-            "start_market_date": date,
-            "cooldown_forbidden_start_dates": json.dumps(forbidden),
+            "start_market_date": "2026-10-01",
+            "cooldown_forbidden_start_dates": json.dumps(
+                ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"]
+            ),
             "cooldown_context_complete": True,
-        }
-        rows.append(row)
+        },
+        {
+            "claim_id": "c1",
+            "snapshot_id": "s1",
+            "as_of": "2026-10-02",
+            "symbol": "AAA",
+            "start_market_date": "2026-10-02",
+            "cooldown_forbidden_start_dates": json.dumps(
+                ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02"]
+            ),
+            "cooldown_context_complete": True,
+        },
+        {
+            "claim_id": "c2",
+            "snapshot_id": "s2",
+            "as_of": "2026-10-08",
+            "symbol": "AAA",
+            "start_market_date": "2026-10-08",
+            "cooldown_forbidden_start_dates": json.dumps(
+                ["2026-10-02", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08"]
+            ),
+            "cooldown_context_complete": True,
+        },
+    ]
     spaced = apply_fixed_event_spacing(pd.DataFrame(rows))
     assert list(spaced["claim_id"]) == ["c0", "c2"]
 
 
 def test_frozen_baseline_reports_exact_states_without_assuming_ordinal_order():
-    first = _claim("ignored", "AAA", "s1", "2026-10-01", ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"], selection_state="robust")
-    second = _claim("ignored", "BBB", "s1", "2026-10-01", ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"], selection_state="directional_only")
+    first = _claim(
+        "ignored", "AAA", "s1", "2026-10-01",
+        ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"],
+        selection_state="robust",
+    )
+    second = _claim(
+        "ignored", "BBB", "s1", "2026-10-01",
+        ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"],
+        selection_state="directional_only",
+    )
     claims = pd.DataFrame([first, second], columns=CLAIM_COLUMNS_V2)
     outcomes = pd.DataFrame(
         [
