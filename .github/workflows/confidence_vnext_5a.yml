@@ -92,17 +92,21 @@ jobs:
           assert report["contract"]["scalar_confidence_mapping_created"] is False
           assert report["contract"]["confidence_thresholds_created"] is False
           assert report["contract"]["portfolio_or_depot_watch_changed"] is False
-          assert report["contract"]["fixed_event_spacing_applied_before_evaluation"] is True
+          assert report["contract"]["fixed_event_spacing_sessions"] == 5
+          assert report["contract"]["shadow_v1_outcomes_certified_for_training"] is False
           assert report["config"]["uncertainty_block_multiplier"] == 2
           assert report["config"]["minimum_time_separated_support_regions"] == 2
           assert report["config"]["fixed_event_spacing_sessions"] == 5
           assert report["config"]["require_statistical_context_for_adaptation"] is True
           assert report["statistical_context_complete"] is False
           assert "claim_level_phase4c_timing_and_risk_states_not_archived" in report["blockers"]
+          assert "phase4e_shadow_v1_lacks_integrity_bound_elapsed_session_count" in report["blockers"]
           for horizon in ("5", "20", "40", "60"):
               assert horizon in report["horizons"]
               assert report["horizons"][horizon]["robust_uncertainty_block_length_sessions"] == 2 * int(horizon)
               assert report["horizons"][horizon]["fixed_event_spacing_sessions"] == 5
+              assert report["horizons"][horizon]["walkforward_evaluation_ready"] is False
+              assert report["horizons"][horizon]["horizon_session_provenance_verified"] is False
           print("Phase 5A contract validation ok")
           PY
 
