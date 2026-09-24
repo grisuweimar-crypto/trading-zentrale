@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Elliott vNext module output v2",
+  "type": "object",
+  "required": [
+    "symbol", "as_of", "timeframe", "degree", "primary_scenario",
+    "alternative_scenarios", "pivots", "fibonacci", "current_wave_stage",
+    "projection_zones", "wave_cycle_map", "hard_invalidations",
+    "structural_fit", "confirmation_strength", "historical_expectancy",
+    "routing_triggers", "swing_routing", "warnings"
+  ],
+  "properties": {
+    "symbol": {"type": "string"},
+    "as_of": {"type": "string", "format": "date"},
+    "timeframe": {"enum": ["daily", "weekly"]},
+    "degree": {"type": "string"},
+    "primary_scenario": {"type": "object"},
+    "alternative_scenarios": {"type": "array", "items": {"type": "object"}},
+    "current_wave_stage": {
+      "enum": [
+        "possible_wave_2_completion",
+        "wave_3_in_progress",
+        "wave_3_target_approach",
+        "possible_wave_3_exhaustion",
+        "wave_4_in_progress",
+        "wave_4_target_zone",
+        "possible_wave_4_completion",
+        "wave_5_in_progress",
+        "wave_5_target_approach",
+        "possible_wave_5_completion",
+        "post_wave_5_higher_degree_correction_risk",
+        "uncertain"
+      ]
+    },
+    "pivots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pivot_time", "confirmed_time", "price", "kind"],
+        "properties": {
+          "pivot_time": {"type": "string", "format": "date"},
+          "confirmed_time": {"type": "string", "format": "date"},
+          "price": {"type": "number"},
+          "kind": {"enum": ["high", "low"]}
+        }
+      }
+    },
+    "fibonacci": {
+      "type": "object",
+      "required": ["anchor_start", "anchor_end", "zones"],
+      "properties": {
+        "anchor_start": {"type": "object"},
+        "anchor_end": {"type": "object"},
+        "zones": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "projection_zones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "scenario_id", "wave_role", "projection_type", "price_low", "price_high",
+          "basis", "available_from", "status"
+        ],
+        "properties": {
+          "scenario_id": {"type": "string"},
+          "wave_role": {"enum": ["wave_3", "wave_4", "wave_5", "higher_degree_correction"]},
+          "projection_type": {"type": "string"},
+          "price_low": {"type": "number"},
+          "price_high": {"type": "number"},
+          "basis": {"type": "object"},
+          "available_from": {"type": "string", "format": "date"},
+          "status": {"enum": ["projected", "approaching", "inside", "reached", "invalidated", "superseded"]},
+          "distance_to_zone_pct": {"type": ["number", "null"]},
+          "research_only": {"type": "boolean"}
+        }
+      }
+    },
+    "wave_cycle_map": {
+      "type": "object",
+      "required": ["current_stage", "next_expected_structures", "scenario_maps"],
+      "properties": {
+        "current_stage": {"type": "string"},
+        "next_expected_structures": {"type": "array", "items": {"type": "string"}},
+        "scenario_maps": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "swing_routing": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trigger", "review_context", "reason"],
+        "properties": {
+          "trigger": {"type": "string"},
+          "review_context": {
+            "enum": [
+              "entry_or_add_review",
+              "hold_review",
+              "partial_reduce_review",
+              "reentry_or_add_review",
+              "profit_protection_review",
+              "larger_reduce_or_exit_review"
+            ]
+          },
+          "reason": {"type": "string"},
+          "requires_external_confirmation": {"type": "boolean"}
+        }
+      }
+    },
+    "hard_invalidations": {"type": "array", "items": {"type": "object"}},
+    "rule_violations": {"type": "array", "items": {"type": "string"}},
+    "structural_fit": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "confirmation_strength": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "historical_expectancy": {"type": ["object", "null"]},
+    "market_context": {"type": ["object", "null"]},
+    "relative_strength": {"type": ["object", "null"]},
+    "routing_triggers": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "trade_decision": {"not": {}},
+    "order_instruction": {"not": {}}
+  },
+  "additionalProperties": true
+}
