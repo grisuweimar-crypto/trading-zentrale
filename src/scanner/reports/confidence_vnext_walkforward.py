@@ -725,3 +725,184 @@ def promotion_assessment(
         "gates": gates,
         "production_change_performed": False,
     }
+
+
+# Final Phase-5A contract hardening.  These definitions intentionally override
+# the earlier helpers at module load so every caller, including the baseline
+# evaluator and manifest builder above, receives the stricter immutable
+# contract without introducing a second implementation surface.
+def _validate_phase5_contract_config(config: Phase5WalkForwardConfig) -> None:
+    fixed = {
+        "schema_version": SCHEMA_VERSION,
+        "uncertainty_block_multiplier": 2,
+        "minimum_time_separated_support_regions": 2,
+        "fixed_event_spacing_sessions": 5,
+        "require_statistical_context_for_adaptation": True,
+    }
+    observed = asdict(config)
+    mismatches = {key: (observed.get(key), value) for key, value in fixed.items() if observed.get(key) != value}
+    if mismatches:
+        raise ValueError(f"Phase 5A contract constants are immutable: {mismatches}")
+
+
+def _time_separated_outcome_support_regions(
+    claims: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    block_length: int,
+) -> int:
+    """Count support only on eligible Phase-4 observation dates."""
+
+    if claims.empty or outcomes.empty or block_length < 1:
+        return 0
+    if claims["claim_id"].astype(str).duplicated().any():
+        raise ValueError("duplicate claim_id in readiness evidence")
+    if outcomes["claim_id"].astype(str).duplicated().any():
+        raise ValueError("duplicate claim_id in matured outcomes")
+    if "outcome_eligibility" not in claims.columns:
+        raise ValueError("claims lack outcome_eligibility for temporal support")
+
+    eligible = claims.loc[claims["outcome_eligibility"].astype(str).eq("eligible")].copy()
+    if eligible.empty:
+        return 0
+    baseline_dates = sorted(
+        pd.Timestamp(day).normalize()
+        for day in pd.to_datetime(eligible["as_of"], errors="coerce").dropna().unique()
+    )
+    if not baseline_dates:
+        return 0
+    positions = {day: index for index, day in enumerate(baseline_dates)}
+
+    observed = eligible[["claim_id", "as_of"]].copy()
+    observed["_obs_date"] = pd.to_datetime(observed["as_of"], errors="coerce").dt.normalize()
+    matured = outcomes[["claim_id", "start_market_date", "end_market_date"]].merge(
+        observed[["claim_id", "_obs_date"]],
+        on="claim_id",
+        how="inner",
+        validate="one_to_one",
+    )
+    matured["_start"] = pd.to_datetime(matured["start_market_date"], errors="coerce").dt.normalize()
+    matured["_end"] = pd.to_datetime(matured["end_market_date"], errors="coerce").dt.normalize()
+    matured = matured.loc[
+        matured["_obs_date"].notna()
+        & matured["_start"].notna()
+        & matured["_end"].notna()
+        & matured["_end"].ge(matured["_start"])
+    ].copy()
+    if matured.empty:
+        return 0
+
+    cohorts = (
+        matured.groupby("_obs_date", as_index=False)
+        .agg(_start=("_start", "min"), _end=("_end", "max"))
+        .sort_values("_obs_date", kind="mergesort")
+    )
+    regions = 0
+    last_position: int | None = None
+    last_end: pd.Timestamp | None = None
+    for obs_date_value, start_value, end_value in cohorts[["_obs_date", "_start", "_end"]].itertuples(
+        index=False, name=None
+    ):
+        obs_date = pd.Timestamp(obs_date_value)
+        position = positions.get(obs_date)
+        if position is None:
+            continue
+        start = pd.Timestamp(start_value)
+        end = pd.Timestamp(end_value)
+        separated = last_position is None or position - last_position >= int(block_length)
+        non_overlapping = last_end is None or start > last_end
+        if separated and non_overlapping:
+            regions += 1
+            last_position = position
+            last_end = end
+    return regions
+
+
+def _fingerprint_dtype(series: pd.Series) -> dict[str, object]:
+    dtype = series.dtype
+    descriptor: dict[str, object] = {
+        "class": f"{type(dtype).__module__}.{type(dtype).__qualname__}",
+        "name": str(dtype),
+        "repr": repr(dtype),
+    }
+    if isinstance(dtype, pd.CategoricalDtype):
+        descriptor["ordered"] = bool(dtype.ordered)
+        descriptor["categories"] = [_fingerprint_scalar(value) for value in dtype.categories.tolist()]
+    return descriptor
+
+
+def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
+    """Hash every typed value and the exact column schema, including dtypes."""
+
+    if training_pairs.columns.duplicated().any():
+        raise ValueError("training evidence contains duplicate column names")
+    if any(not isinstance(column, str) for column in training_pairs.columns):
+        raise ValueError("training evidence column names must be strings")
+
+    columns = sorted(training_pairs.columns)
+    schema = [
+        {"name": column, "dtype": _fingerprint_dtype(training_pairs[column])}
+        for column in columns
+    ]
+    canonical_rows: list[list[dict[str, object]]] = []
+    for row in training_pairs.loc[:, columns].itertuples(index=False, name=None):
+        canonical_rows.append([_fingerprint_scalar(value) for value in row])
+    canonical_rows.sort(
+        key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    )
+    payload = json.dumps(
+        {"schema": schema, "rows": canonical_rows},
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _has_multiple_genuine_walkforward_epochs(
+    walkforward_evaluations: list[dict[str, object]],
+) -> bool:
+    """Require distinct versions and non-overlapping market-date epochs."""
+
+    if len(walkforward_evaluations) < 2:
+        return False
+    parsed: list[tuple[str, pd.Timestamp, pd.Timestamp]] = []
+    for evaluation in walkforward_evaluations:
+        version_id = str(evaluation.get("version_id") or "").strip()
+        start = pd.to_datetime(evaluation.get("evaluation_start"), errors="coerce", utc=True)
+        end = pd.to_datetime(evaluation.get("evaluation_end"), errors="coerce", utc=True)
+        if not version_id or pd.isna(start) or pd.isna(end):
+            return False
+        start_day = pd.Timestamp(start).normalize()
+        end_day = pd.Timestamp(end).normalize()
+        if start_day > end_day:
+            return False
+        parsed.append((version_id, start_day, end_day))
+
+    version_ids = [item[0] for item in parsed]
+    if len(set(version_ids)) != len(version_ids):
+        return False
+    ordered = sorted(parsed, key=lambda item: (item[1], item[2], item[0]))
+    return all(current[1] > previous[2] for previous, current in zip(ordered, ordered[1:]))
+
+
+_readiness_audit_before_final_contract_hardening = readiness_audit
+
+
+def readiness_audit(
+    claims: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    *,
+    freeze_commit: str | None = None,
+    freeze_time: str | None = None,
+    config: Phase5WalkForwardConfig = Phase5WalkForwardConfig(),
+) -> dict[str, object]:
+    """Run readiness only under the immutable Phase-5A research contract."""
+
+    _validate_phase5_contract_config(config)
+    return _readiness_audit_before_final_contract_hardening(
+        claims,
+        outcomes,
+        freeze_commit=freeze_commit,
+        freeze_time=freeze_time,
+        config=config,
+    )
