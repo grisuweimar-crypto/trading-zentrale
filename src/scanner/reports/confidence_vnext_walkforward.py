@@ -26,7 +26,10 @@ from scanner.reports.selection_timing import HORIZONS
 
 
 SCHEMA_VERSION = "phase5_walkforward_v1"
+PHASE5_FREEZE_COMMIT = "fb038c78682e4e9fe87f11a1c3c9472b763bd3c4"
+PHASE5_FREEZE_TIME = "2026-09-24T01:12:14Z"
 ORDINAL_EVIDENCE_STATES = ("robust", "directional_only", "immature", "mixed", "unavailable")
+STATISTICAL_CONTEXT_COLUMNS = ("timing_statistical_state", "risk_statistical_state")
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,43 @@ def _date_span(values: pd.Series) -> dict[str, str | None]:
     }
 
 
+def _required_utc(value: object, label: str) -> pd.Timestamp:
+    parsed = pd.to_datetime(value, errors="coerce", utc=True)
+    if pd.isna(parsed):
+        raise ValueError(f"{label} must be a parseable UTC timestamp")
+    return pd.Timestamp(parsed)
+
+
+def _assert_post_freeze_claims(claims: pd.DataFrame, freeze_time: str = PHASE5_FREEZE_TIME) -> None:
+    """Reject any evidence not provably generated strictly after the Phase-5 freeze."""
+
+    if claims.empty:
+        return
+    if "generated_at" not in claims.columns:
+        raise ValueError("claims lack generated_at freeze provenance")
+    freeze = _required_utc(freeze_time, "freeze_time")
+    generated = pd.to_datetime(claims["generated_at"], errors="coerce", utc=True)
+    invalid = generated.isna() | generated.le(freeze)
+    if invalid.any():
+        examples = claims.loc[invalid, "claim_id"].astype(str).head(3).tolist()
+        raise ValueError(f"pre-freeze or unprovable Phase 5 claims are forbidden: {examples}")
+
+
+def _statistical_context_complete(claims: pd.DataFrame) -> bool:
+    """Derive completeness from archived ordinal evidence, never operator assertion."""
+
+    if claims.empty:
+        return False
+    if any(column not in claims.columns for column in STATISTICAL_CONTEXT_COLUMNS):
+        return False
+    valid = set(ORDINAL_EVIDENCE_STATES)
+    for column in STATISTICAL_CONTEXT_COLUMNS:
+        values = claims[column].astype(str)
+        if values.empty or not values.map(lambda value: value in valid).all():
+            return False
+    return True
+
+
 def _outcome_overlap_regions(outcomes: pd.DataFrame) -> int:
     """Count connected non-overlapping outcome-time regions.
 
@@ -113,13 +153,29 @@ def _outcome_overlap_regions(outcomes: pd.DataFrame) -> int:
 
 
 def _distribution_audit(claims: pd.DataFrame) -> dict[str, object]:
-    """Report only states actually frozen in the Phase-4E claim schema.
-
-    selection_state is the claim's Phase-4C selection evidence state.
-    timing_state and risk_state are current model states, not the underlying
-    Phase-4C ordinal statistical-evidence states. They are therefore kept in a
-    separate section and must not be silently relabelled.
-    """
+    statistical = {
+        "selection_phase4c_state": _value_counts(claims, "selection_state"),
+    }
+    if _statistical_context_complete(claims):
+        statistical.update(
+            {
+                "timing_phase4c_state": _value_counts(claims, "timing_statistical_state"),
+                "risk_phase4c_state": _value_counts(claims, "risk_statistical_state"),
+            }
+        )
+    else:
+        statistical.update(
+            {
+                "timing_phase4c_state": {
+                    "status": "not_archived_claim_level",
+                    "reason": "phase4e timing_state stores model claim state, not robust/directional_only/immature/mixed/unavailable",
+                },
+                "risk_phase4c_state": {
+                    "status": "not_archived_claim_level",
+                    "reason": "phase4e risk_state stores current downside model state, not the Phase-4C evidence state",
+                },
+            }
+        )
 
     return {
         "data_quality": {
@@ -127,17 +183,7 @@ def _distribution_audit(claims: pd.DataFrame) -> dict[str, object]:
             "timing": _value_counts(claims, "dq_timing_state"),
             "risk": _value_counts(claims, "dq_risk_state"),
         },
-        "statistical_confidence": {
-            "selection_phase4c_state": _value_counts(claims, "selection_state"),
-            "timing_phase4c_state": {
-                "status": "not_archived_claim_level",
-                "reason": "phase4e timing_state stores model claim state, not robust/directional_only/immature/mixed/unavailable",
-            },
-            "risk_phase4c_state": {
-                "status": "not_archived_claim_level",
-                "reason": "phase4e risk_state stores current downside model state, not the Phase-4C evidence state",
-            },
-        },
+        "statistical_confidence": statistical,
         "model_agreement": _value_counts(claims, "agreement_state"),
         "model_state_diagnostics_not_phase4c_confidence": {
             "timing_state": _value_counts(claims, "timing_state"),
@@ -153,18 +199,23 @@ def readiness_audit(
     freeze_commit: str | None = None,
     freeze_time: str | None = None,
     config: Phase5WalkForwardConfig = Phase5WalkForwardConfig(),
-    statistical_context_complete: bool = False,
 ) -> dict[str, object]:
-    if not claims.empty and list(claims.columns) != list(CLAIM_COLUMNS):
-        raise ValueError("claims do not match the immutable Phase-4E schema")
+    missing_claim_columns = set(CLAIM_COLUMNS) - set(claims.columns)
+    if not claims.empty and missing_claim_columns:
+        raise ValueError(f"claims lack immutable Phase-4E columns: {sorted(missing_claim_columns)}")
     if not outcomes.empty and list(outcomes.columns) != list(OUTCOME_COLUMNS):
         raise ValueError("outcomes do not match the immutable Phase-4E schema")
+
+    effective_freeze_time = freeze_time or PHASE5_FREEZE_TIME
+    effective_freeze_commit = freeze_commit or PHASE5_FREEZE_COMMIT
+    _assert_post_freeze_claims(claims, effective_freeze_time)
 
     if not outcomes.empty:
         unknown_outcomes = set(outcomes["claim_id"].astype(str)) - set(claims["claim_id"].astype(str))
         if unknown_outcomes:
             raise ValueError("Phase 4E outcomes exist without matching immutable claims")
 
+    statistical_context_complete = _statistical_context_complete(claims)
     horizons: dict[str, object] = {}
     any_walkforward_ready = False
     blockers: set[str] = set()
@@ -181,15 +232,20 @@ def readiness_audit(
         ].copy() if not outcomes.empty else _empty_outcomes()
 
         eligibility = c["outcome_eligibility"].astype(str) if not c.empty else pd.Series(dtype=str)
+        mature_ids = set(o["claim_id"].astype(str)) if not o.empty else set()
+        mature_claims = c.loc[c["claim_id"].astype(str).isin(mature_ids)].copy() if not c.empty else c
         regions = _outcome_overlap_regions(o)
         support_ok = regions >= config.minimum_time_separated_support_regions
         snapshots = int(c["snapshot_id"].astype(str).replace("", np.nan).nunique()) if not c.empty else 0
+        mature_snapshots = int(
+            mature_claims["snapshot_id"].astype(str).replace("", np.nan).nunique()
+        ) if not mature_claims.empty else 0
         symbols = int(c["symbol"].astype(str).replace("", np.nan).nunique()) if not c.empty else 0
         mature_symbols = int(o["symbol"].astype(str).replace("", np.nan).nunique()) if not o.empty else 0
 
         horizon_ready = bool(
             len(o) > 0
-            and snapshots >= 2
+            and mature_snapshots >= 2
             and mature_symbols >= 2
             and support_ok
             and (
@@ -203,6 +259,8 @@ def readiness_audit(
             blockers.add(f"{horizon}T_no_claims")
         elif len(o) == 0:
             blockers.add(f"{horizon}T_no_mature_outcomes")
+        if mature_snapshots < 2:
+            blockers.add(f"{horizon}T_insufficient_mature_snapshot_cohorts")
         if not support_ok:
             blockers.add(f"{horizon}T_insufficient_time_separated_support")
 
@@ -214,6 +272,7 @@ def readiness_audit(
             "symbols": symbols,
             "mature_symbols": mature_symbols,
             "snapshots": snapshots,
+            "mature_snapshots": mature_snapshots,
             "claim_time_span": _date_span(c["as_of"]) if not c.empty else {"start": None, "end": None},
             "mature_outcome_time_span": _date_span(o["evaluated_at"]) if not o.empty else {"start": None, "end": None},
             "outcome_end_span": _date_span(o["end_market_date"]) if not o.empty else {"start": None, "end": None},
@@ -228,8 +287,9 @@ def readiness_audit(
         "schema_version": config.schema_version,
         "status": "ready_for_walkforward_evaluation" if any_walkforward_ready else "insufficient_evidence",
         "freeze": {
-            "main_commit": freeze_commit,
-            "time": freeze_time,
+            "main_commit": effective_freeze_commit,
+            "time": _required_utc(effective_freeze_time, "freeze_time").isoformat(),
+            "enforced_on_claim_generated_at": True,
         },
         "shadow_archive": {
             "claims": int(len(claims)),
@@ -250,7 +310,7 @@ def readiness_audit(
             "robust_uncertainty": "circular moving observation-date bootstrap with full date clusters and effective block length 2 x horizon",
             "unknown_or_insufficient_is_neutral": False,
         },
-        "statistical_context_complete": bool(statistical_context_complete),
+        "statistical_context_complete": statistical_context_complete,
         "config": asdict(config),
     }
 
@@ -262,19 +322,17 @@ def purged_training_pairs(
     horizon: int,
     training_cutoff: str,
     evaluation_start: str,
+    freeze_time: str = PHASE5_FREEZE_TIME,
 ) -> pd.DataFrame:
-    """Return only evidence fully knowable before the evaluation period.
-
-    The purge is horizon-specific because actual stored end_market_date is used.
-    Any training outcome whose path reaches the evaluation period is excluded.
-    """
+    """Return only post-freeze evidence fully knowable before evaluation."""
 
     if horizon not in HORIZONS:
         raise ValueError(f"unsupported horizon: {horizon}")
-    cutoff = pd.to_datetime(training_cutoff, errors="raise", utc=True)
-    eval_start = pd.to_datetime(evaluation_start, errors="raise", utc=True)
+    cutoff = _required_utc(training_cutoff, "training_cutoff")
+    eval_start = _required_utc(evaluation_start, "evaluation_start")
     if cutoff >= eval_start:
         raise ValueError("training_cutoff must be before evaluation_start")
+    _assert_post_freeze_claims(claims, freeze_time)
     if claims.empty or outcomes.empty:
         return pd.DataFrame()
 
@@ -296,10 +354,14 @@ def purged_training_pairs(
     )
     evaluated_at = pd.to_datetime(merged["evaluated_at"], errors="coerce", utc=True)
     end_market = pd.to_datetime(merged["end_market_date"], errors="coerce", utc=True)
+    claim_generated = pd.to_datetime(merged["generated_at"], errors="coerce", utc=True)
     claim_as_of = pd.to_datetime(merged["as_of_claim"], errors="coerce", utc=True)
+    freeze = _required_utc(freeze_time, "freeze_time")
 
     keep = (
-        evaluated_at.notna()
+        claim_generated.notna()
+        & claim_generated.gt(freeze)
+        & evaluated_at.notna()
         & evaluated_at.le(cutoff)
         & end_market.notna()
         & end_market.lt(eval_start.normalize())
@@ -330,6 +392,55 @@ def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
     return sha256(payload.encode("utf-8")).hexdigest()
 
 
+def _validate_purged_training_pairs(
+    training_pairs: pd.DataFrame,
+    *,
+    horizons: list[int],
+    training_cutoff: pd.Timestamp,
+    evaluation_start: pd.Timestamp,
+    freeze_time: str,
+) -> None:
+    """Re-validate the purged evidence at the immutable manifest boundary."""
+
+    if training_pairs.empty:
+        return
+    required = {
+        "claim_id",
+        "generated_at",
+        "evaluated_at",
+        "end_market_date",
+        "as_of_claim",
+        "horizon_sessions_claim",
+    }
+    missing = required - set(training_pairs.columns)
+    if missing:
+        raise ValueError(f"training evidence cannot prove purging: missing {sorted(missing)}")
+
+    freeze = _required_utc(freeze_time, "freeze_time")
+    generated = pd.to_datetime(training_pairs["generated_at"], errors="coerce", utc=True)
+    evaluated = pd.to_datetime(training_pairs["evaluated_at"], errors="coerce", utc=True)
+    end_market = pd.to_datetime(training_pairs["end_market_date"], errors="coerce", utc=True)
+    claim_as_of = pd.to_datetime(training_pairs["as_of_claim"], errors="coerce", utc=True)
+    row_horizons = pd.to_numeric(training_pairs["horizon_sessions_claim"], errors="coerce")
+    allowed_horizons = set(int(h) for h in horizons)
+
+    invalid = (
+        generated.isna()
+        | generated.le(freeze)
+        | evaluated.isna()
+        | evaluated.gt(training_cutoff)
+        | end_market.isna()
+        | end_market.ge(evaluation_start.normalize())
+        | claim_as_of.isna()
+        | claim_as_of.ge(evaluation_start)
+        | row_horizons.isna()
+        | ~row_horizons.astype("Int64").isin(allowed_horizons)
+    )
+    if invalid.any():
+        examples = training_pairs.loc[invalid, "claim_id"].astype(str).head(3).tolist()
+        raise ValueError(f"training evidence violates purged walk-forward contract: {examples}")
+
+
 def model_version_manifest(
     *,
     version_id: str,
@@ -342,22 +453,32 @@ def model_version_manifest(
     evaluation_start: str,
     evaluation_end: str,
     status: str = "candidate",
+    freeze_time: str = PHASE5_FREEZE_TIME,
 ) -> dict[str, object]:
     if not version_id.strip():
         raise ValueError("version_id is required")
     invalid = sorted(set(horizons) - set(HORIZONS))
     if invalid:
         raise ValueError(f"unsupported horizons: {invalid}")
-    start = pd.to_datetime(evaluation_start, errors="raise", utc=True)
-    end = pd.to_datetime(evaluation_end, errors="raise", utc=True)
-    cutoff = pd.to_datetime(training_cutoff, errors="raise", utc=True)
+    start = _required_utc(evaluation_start, "evaluation_start")
+    end = _required_utc(evaluation_end, "evaluation_end")
+    cutoff = _required_utc(training_cutoff, "training_cutoff")
     if not cutoff < start <= end:
         raise ValueError("require training_cutoff < evaluation_start <= evaluation_end")
+
+    _validate_purged_training_pairs(
+        training_pairs,
+        horizons=horizons,
+        training_cutoff=cutoff,
+        evaluation_start=start,
+        freeze_time=freeze_time,
+    )
 
     return {
         "schema_version": SCHEMA_VERSION,
         "version_id": version_id,
         "training_cutoff": cutoff.isoformat(),
+        "freeze_time": _required_utc(freeze_time, "freeze_time").isoformat(),
         "evidence_fingerprint": evidence_fingerprint(training_pairs),
         "training_rows": int(len(training_pairs)),
         "horizons": sorted(int(h) for h in horizons),
@@ -378,11 +499,7 @@ def frozen_baseline_evaluator(
     *,
     horizon: int,
 ) -> dict[str, object]:
-    """Descriptive Phase-4 frozen-baseline reliability metrics.
-
-    Robust uncertainty and promotion decisions are deliberately not inferred
-    here. Those require enough prospective temporal support.
-    """
+    """Descriptive Phase-4 frozen-baseline reliability metrics."""
 
     if horizon not in HORIZONS:
         raise ValueError(f"unsupported horizon: {horizon}")
