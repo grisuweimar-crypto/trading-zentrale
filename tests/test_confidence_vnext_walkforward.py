@@ -123,6 +123,13 @@ def _frames():
     return claims, outcomes
 
 
+def _with_statistical_context(claims: pd.DataFrame) -> pd.DataFrame:
+    enriched = claims.copy()
+    enriched["timing_statistical_state"] = "robust"
+    enriched["risk_statistical_state"] = "robust"
+    return enriched
+
+
 def _evaluation(version_id: str, start: str, end: str) -> dict[str, object]:
     return {
         "version_id": version_id,
@@ -143,21 +150,49 @@ def test_empty_readiness_is_fail_closed_and_reports_archive_gap():
     assert "claim_level_phase4c_timing_and_risk_states_not_archived" in result["blockers"]
     assert result["horizons"]["5"]["mature_outcomes"] == 0
     assert result["horizons"]["5"]["walkforward_evaluation_ready"] is False
+    assert result["freeze"]["enforced_on_claim_generated_at"] is True
 
 
-def test_readiness_requires_explicit_statistical_context_and_time_support():
+def test_readiness_derives_statistical_context_and_counts_only_mature_snapshots():
     claims, outcomes = _frames()
     blocked = readiness_audit(claims, outcomes)
     five = blocked["horizons"]["5"]
     assert five["non_overlapping_outcome_support_regions"] == 2
+    assert five["mature_snapshots"] == 2
     assert five["walkforward_evaluation_ready"] is False
     assert five["claim_time_span"]["start"].startswith("2026-10-01")
     assert five["mature_outcome_time_span"]["start"].startswith("2026-10-09")
     assert five["mature_outcome_time_span"]["end"].startswith("2026-10-28")
 
-    ready = readiness_audit(claims, outcomes, statistical_context_complete=True)
+    ready = readiness_audit(_with_statistical_context(claims), outcomes)
+    assert ready["statistical_context_complete"] is True
     assert ready["horizons"]["5"]["walkforward_evaluation_ready"] is True
     assert ready["status"] == "ready_for_walkforward_evaluation"
+
+    one_mature_snapshot = readiness_audit(
+        _with_statistical_context(claims),
+        outcomes.loc[outcomes["claim_id"].isin(["c1", "c2"])].copy(),
+    )
+    assert one_mature_snapshot["horizons"]["5"]["snapshots"] == 2
+    assert one_mature_snapshot["horizons"]["5"]["mature_snapshots"] == 1
+    assert one_mature_snapshot["horizons"]["5"]["walkforward_evaluation_ready"] is False
+
+
+def test_pre_freeze_claims_are_rejected_from_readiness_and_training():
+    claims, outcomes = _frames()
+    claims.loc[claims["claim_id"].eq("c1"), "generated_at"] = "2026-09-24T01:12:14Z"
+
+    with pytest.raises(ValueError, match="pre-freeze"):
+        readiness_audit(claims, outcomes)
+
+    with pytest.raises(ValueError, match="pre-freeze"):
+        purged_training_pairs(
+            claims,
+            outcomes,
+            horizon=5,
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            evaluation_start="2026-10-20T00:00:00+00:00",
+        )
 
 
 def test_purged_training_uses_only_fully_known_pre_evaluation_outcomes():
@@ -181,7 +216,7 @@ def test_purged_training_uses_only_fully_known_pre_evaluation_outcomes():
         )
 
 
-def test_model_manifest_fingerprints_every_training_column_and_value():
+def test_model_manifest_fingerprints_every_training_column_and_revalidates_purge():
     claims, outcomes = _frames()
     training = purged_training_pairs(
         claims,
@@ -216,6 +251,36 @@ def test_model_manifest_fingerprints_every_training_column_and_value():
     assert manifest["evidence_fingerprint"] == first
     assert manifest["training_rows"] == 2
     assert manifest["immutable_after_evaluation_start"] is True
+
+    late = training.copy()
+    late["evaluated_at"] = "2026-10-16T00:00:00Z"
+    with pytest.raises(ValueError, match="purged walk-forward"):
+        model_version_manifest(
+            version_id="late",
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            training_pairs=late,
+            horizons=[5],
+            feature_definition={},
+            parameters={},
+            hyperparameters={},
+            evaluation_start="2026-10-20T00:00:00+00:00",
+            evaluation_end="2026-11-20T00:00:00+00:00",
+        )
+
+    wrong_horizon = training.copy()
+    wrong_horizon["horizon_sessions_claim"] = 20
+    with pytest.raises(ValueError, match="purged walk-forward"):
+        model_version_manifest(
+            version_id="wrong-horizon",
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            training_pairs=wrong_horizon,
+            horizons=[5],
+            feature_definition={},
+            parameters={},
+            hyperparameters={},
+            evaluation_start="2026-10-20T00:00:00+00:00",
+            evaluation_end="2026-11-20T00:00:00+00:00",
+        )
 
 
 def test_frozen_baseline_is_descriptive_and_does_not_create_confidence_mapping():
