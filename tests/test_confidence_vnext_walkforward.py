@@ -123,6 +123,14 @@ def _frames():
     return claims, outcomes
 
 
+def _evaluation(version_id: str, start: str, end: str) -> dict[str, object]:
+    return {
+        "version_id": version_id,
+        "evaluation_start": start,
+        "evaluation_end": end,
+    }
+
+
 def test_empty_readiness_is_fail_closed_and_reports_archive_gap():
     result = readiness_audit(
         pd.DataFrame(columns=CLAIM_COLUMNS),
@@ -140,8 +148,12 @@ def test_empty_readiness_is_fail_closed_and_reports_archive_gap():
 def test_readiness_requires_explicit_statistical_context_and_time_support():
     claims, outcomes = _frames()
     blocked = readiness_audit(claims, outcomes)
-    assert blocked["horizons"]["5"]["non_overlapping_outcome_support_regions"] == 2
-    assert blocked["horizons"]["5"]["walkforward_evaluation_ready"] is False
+    five = blocked["horizons"]["5"]
+    assert five["non_overlapping_outcome_support_regions"] == 2
+    assert five["walkforward_evaluation_ready"] is False
+    assert five["claim_time_span"]["start"].startswith("2026-10-01")
+    assert five["mature_outcome_time_span"]["start"].startswith("2026-10-09")
+    assert five["mature_outcome_time_span"]["end"].startswith("2026-10-28")
 
     ready = readiness_audit(claims, outcomes, statistical_context_complete=True)
     assert ready["horizons"]["5"]["walkforward_evaluation_ready"] is True
@@ -169,7 +181,7 @@ def test_purged_training_uses_only_fully_known_pre_evaluation_outcomes():
         )
 
 
-def test_model_manifest_fingerprints_exact_training_evidence():
+def test_model_manifest_fingerprints_every_training_column_and_value():
     claims, outcomes = _frames()
     training = purged_training_pairs(
         claims,
@@ -181,6 +193,14 @@ def test_model_manifest_fingerprints_exact_training_evidence():
     first = evidence_fingerprint(training)
     second = evidence_fingerprint(training.sample(frac=1.0, random_state=7))
     assert first == second
+
+    changed_feature = training.copy()
+    changed_feature.loc[changed_feature["claim_id"].eq("c1"), "agreement_state"] = "conflict"
+    assert evidence_fingerprint(changed_feature) != first
+
+    engineered = training.copy()
+    engineered["engineered_reliability_feature"] = [0.1, 0.2]
+    assert evidence_fingerprint(engineered) != first
 
     manifest = model_version_manifest(
         version_id="phase5-candidate-0001",
@@ -208,26 +228,49 @@ def test_frozen_baseline_is_descriptive_and_does_not_create_confidence_mapping()
     assert result["groups"]["agreement_state"]["compatible"]["N"] == 4
 
 
-def test_promotion_gate_fails_closed_until_all_structural_requirements_pass():
-    insufficient = promotion_assessment(
-        walkforward_evaluations=[{"epoch": 1}],
-        pit_leakage_audit_passed=True,
-        reproducible_versions=True,
-        robust_uncertainty_available=True,
-        concentration_check_passed=True,
-        temporal_stability_check_passed=True,
-        baseline_advantage_demonstrated=True,
+def test_promotion_gate_requires_distinct_non_overlapping_walkforward_epochs():
+    common = {
+        "pit_leakage_audit_passed": True,
+        "reproducible_versions": True,
+        "robust_uncertainty_available": True,
+        "concentration_check_passed": True,
+        "temporal_stability_check_passed": True,
+        "baseline_advantage_demonstrated": True,
+    }
+
+    one = promotion_assessment(
+        walkforward_evaluations=[
+            _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z")
+        ],
+        **common,
     )
-    assert insufficient["status"] == "insufficient_evidence"
+    assert one["status"] == "insufficient_evidence"
+
+    duplicate = promotion_assessment(
+        walkforward_evaluations=[
+            _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z"),
+            _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z"),
+        ],
+        **common,
+    )
+    assert duplicate["status"] == "insufficient_evidence"
+
+    overlapping = promotion_assessment(
+        walkforward_evaluations=[
+            _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z"),
+            _evaluation("v2", "2026-11-15T00:00:00Z", "2026-12-15T00:00:00Z"),
+        ],
+        **common,
+    )
+    assert overlapping["status"] == "insufficient_evidence"
 
     eligible = promotion_assessment(
-        walkforward_evaluations=[{"epoch": 1}, {"epoch": 2}],
-        pit_leakage_audit_passed=True,
-        reproducible_versions=True,
-        robust_uncertainty_available=True,
-        concentration_check_passed=True,
-        temporal_stability_check_passed=True,
-        baseline_advantage_demonstrated=True,
+        walkforward_evaluations=[
+            _evaluation("v1", "2026-10-20T00:00:00Z", "2026-11-20T00:00:00Z"),
+            _evaluation("v2", "2026-11-21T00:00:00Z", "2026-12-21T00:00:00Z"),
+        ],
+        **common,
     )
     assert eligible["status"] == "eligible_for_separate_promotion_review"
+    assert eligible["gates"]["multiple_walkforward_evaluations"] is True
     assert eligible["production_change_performed"] is False
