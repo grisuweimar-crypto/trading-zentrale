@@ -1,0 +1,69 @@
+{
+  "schema_version": "market_context_history_v1",
+  "artifact": "artifacts/research/market_context_history.csv",
+  "purpose": "Point-in-Time-safe external market/sector/theme/commodity context history, separate from scanner observations.",
+  "primary_key": ["date", "context_id"],
+  "required_columns": [
+    "date",
+    "context_id",
+    "context_type",
+    "name",
+    "symbol",
+    "proxy_kind",
+    "open",
+    "high",
+    "low",
+    "close",
+    "currency",
+    "data_source",
+    "retrieved_at",
+    "quality"
+  ],
+  "optional_columns": [
+    "volume",
+    "valid_from",
+    "valid_to",
+    "source_url",
+    "provider_symbol",
+    "notes"
+  ],
+  "context_type_enum": [
+    "market",
+    "region",
+    "sector",
+    "industry",
+    "theme",
+    "commodity",
+    "peer_basket"
+  ],
+  "proxy_kind_enum": [
+    "official_index",
+    "broad_index",
+    "sector_index",
+    "industry_index",
+    "theme_index",
+    "etf",
+    "commodity_spot",
+    "commodity_future",
+    "synthetic_peer_basket"
+  ],
+  "quality_enum": [
+    "sufficient",
+    "limited",
+    "unreliable",
+    "unavailable"
+  ],
+  "rules": {
+    "scanner_universe_must_not_define_real_sector_by_default": true,
+    "point_in_time_membership_required_for_synthetic_peer_basket": true,
+    "unreliable_or_unavailable_must_not_emit_sector_wave": true,
+    "original_currency_preferred": true,
+    "historical_rows_must_not_be_overwritten_by_later_revisions_without_explicit_versioning": true
+  },
+  "derived_views": [
+    "weekly_ohlcv",
+    "stock_vs_benchmark_relative_strength",
+    "stock_vs_sector_relative_strength",
+    "sector_vs_market_relative_strength"
+  ]
+}
