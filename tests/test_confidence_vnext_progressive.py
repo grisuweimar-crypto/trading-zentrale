@@ -186,6 +186,29 @@ def test_spacing_membership_is_fixed_from_claims_not_available_outcomes():
     assert list(frame["claim_id"]) == [c2["claim_id"]]
 
 
+def test_spacing_tie_uses_claim_chronology_before_snapshot_id():
+    earlier = _claim(
+        "AAA", "z-snapshot", "2026-10-01", 5,
+        ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"],
+    )
+    later = _claim(
+        "AAA", "a-snapshot", "2026-10-02", 5,
+        ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02"],
+    )
+    # The later claim points to the same stale market session but has a snapshot
+    # ID that sorts before the earlier claim. Claim chronology must still win.
+    later["start_market_date"] = "2026-10-01"
+    later_payload = dict(later)
+    later_payload.pop("claim_id")
+    later["claim_id"] = _sha_payload(later_payload)
+
+    claims = pd.DataFrame([later, earlier], columns=CLAIM_COLUMNS_V2)
+    membership = claim_spacing_membership(claims)
+
+    assert earlier["claim_id"] in membership
+    assert later["claim_id"] not in membership
+
+
 def test_historical_cutoff_filters_late_peer_before_peer_baseline_derivation():
     forbidden = ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"]
     a = _claim("AAA", "s0", "2026-10-01", 5, forbidden)
