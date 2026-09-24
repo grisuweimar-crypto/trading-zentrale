@@ -186,13 +186,14 @@ def _time_separated_outcome_support_regions(
     regions = 0
     last_position: int | None = None
     last_end: pd.Timestamp | None = None
-    for row in cohorts.itertuples(index=False):
-        obs_date = pd.Timestamp(row._obs_date)
+    cohort_rows = cohorts[["_obs_date", "_start", "_end"]].itertuples(index=False, name=None)
+    for obs_date_value, start_value, end_value in cohort_rows:
+        obs_date = pd.Timestamp(obs_date_value)
         position = positions.get(obs_date)
         if position is None:
             continue
-        start = pd.Timestamp(row._start)
-        end = pd.Timestamp(row._end)
+        start = pd.Timestamp(start_value)
+        end = pd.Timestamp(end_value)
         separated = last_position is None or position - last_position >= int(block_length)
         non_overlapping = last_end is None or start > last_end
         if separated and non_overlapping:
