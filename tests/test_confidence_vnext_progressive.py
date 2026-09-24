@@ -73,10 +73,18 @@ def _claim(symbol: str, snapshot: str, as_of: str, horizon: int, forbidden: list
     return payload
 
 
-def _outcome(claim: dict[str, object], end: str, ret: float):
+def _outcome(
+    claim: dict[str, object],
+    end: str,
+    ret: float,
+    *,
+    evaluated_at: str | None = None,
+):
     start = 100.0
     end_price = start * (1.0 + ret)
-    evaluated = (pd.Timestamp(end) + pd.Timedelta(days=1)).tz_localize("UTC").isoformat()
+    evaluated = evaluated_at or (
+        (pd.Timestamp(end) + pd.Timedelta(days=1)).tz_localize("UTC").isoformat()
+    )
     horizon = int(claim["horizon_sessions"])
     payload = {
         "claim_id": claim["claim_id"],
@@ -178,6 +186,33 @@ def test_spacing_membership_is_fixed_from_claims_not_available_outcomes():
     assert list(frame["claim_id"]) == [c2["claim_id"]]
 
 
+def test_historical_cutoff_filters_late_peer_before_peer_baseline_derivation():
+    forbidden = ["2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01"]
+    a = _claim("AAA", "s0", "2026-10-01", 5, forbidden)
+    b = _claim("BBB", "s0", "2026-10-01", 5, forbidden)
+    c = _claim("CCC", "s0", "2026-10-01", 5, forbidden)
+    claims = pd.DataFrame([a, b, c], columns=CLAIM_COLUMNS_V2)
+    outcomes = pd.DataFrame(
+        [
+            _outcome(a, "2026-10-08", 0.01, evaluated_at="2026-10-09T16:00:00Z"),
+            _outcome(b, "2026-10-08", 0.03, evaluated_at="2026-10-09T16:00:00Z"),
+            _outcome(c, "2026-10-09", 0.50, evaluated_at="2026-10-10T16:00:00Z"),
+        ],
+        columns=OUTCOME_COLUMNS_V2,
+    )
+
+    historical = progressive_training_frame(
+        claims,
+        outcomes,
+        horizon=5,
+        knowable_by="2026-10-09T23:00:00Z",
+    )
+    assert set(historical["symbol"]) == {"AAA", "BBB"}
+    by_symbol = historical.set_index("symbol")
+    assert float(by_symbol.loc["AAA", "peer_median_return"]) == pytest.approx(0.03)
+    assert float(by_symbol.loc["BBB", "peer_median_return"]) == pytest.approx(0.01)
+
+
 def test_5t_can_start_learning_while_20t_is_still_collecting():
     claims, outcomes = _two_date_fixture(include_20t_outcomes=False)
     five = progressive_training_frame(claims, outcomes, horizon=5)
@@ -224,6 +259,7 @@ def test_progressive_runner_is_idempotent_for_unchanged_evidence(tmp_path):
     assert second["model_versions"] == first["model_versions"] == 1
     assert second["version_chain_tip"] == first["version_chain_tip"]
     assert second["semantics"]["dynamic_horizon_specific_learning"] is True
+    assert second["semantics"]["historical_cutoff_applied_before_peer_label_derivation"] is True
     assert second["semantics"]["model_version_archive_hash_chained"] is True
     assert second["semantics"]["production_confidence_changed"] is False
 
