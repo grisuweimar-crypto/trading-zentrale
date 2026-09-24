@@ -1,267 +1,298 @@
 # Projektübergabe – Trading-Zentrale / Scanner-vNext
 
-## Modul 6: Elliott vNext
+## Modul 6: Elliott vNext – Full Cycle / Swing & Positionsmanagement
 
 Stand: 24.09.2026
 
 Repository: `grisuweimar-crypto/trading-zentrale`
 
-Wichtig: Modul 6 wird erst nach vollständigem Abschluss von Modul 5 gebaut. Die Grundlagen wurden auf einem separaten Branch vorbereitet und dürfen Modul 5 nicht verändern.
-
 Vorbereitungs-Branch: `module6-elliott-vnext-foundations-v2`
+
+Wichtig: Modul 6 wird erst nach vollständigem Abschluss von Modul 5 gebaut. Die Grundlagen wurden auf einem separaten Branch vorbereitet und dürfen Modul 5 nicht verändern.
 
 ## 1. Grundprinzipien des Gesamtprojekts
 
 Weiterhin verbindlich:
-
 - strikt empirisch arbeiten,
 - keine erfundenen Kurse, Scannerwerte, Ergebnisse oder Quellen,
 - fehlende Daten ausdrücklich als fehlend behandeln,
 - Point-in-Time-Regel strikt einhalten,
-- keine heutigen Fundamentals, Risiken oder sonstigen Daten rückwirkend in historische Scannerzustände einbauen,
+- keine heutigen Informationen rückwirkend in historische Zustände einbauen,
 - Originalwährungen verwenden,
-- Selection, Timing, Risk, Probability und Confidence konzeptionell getrennt halten,
-- Discovery und Validation sauber trennen,
+- Selection, Timing, Risk, Probability und Confidence getrennt halten,
+- Discovery, Validation und Holdout sauber trennen,
 - Holdout niemals zur nachträglichen Musterauswahl benutzen,
-- überlappende Forward-Windows statistisch nicht als unabhängige Beobachtungen behandeln,
-- historische Punktwerte und statistische Sicherheit klar unterscheiden.
+- überlappende Forward-Windows nicht als unabhängige Beobachtungen behandeln,
+- statistische Sicherheit und eigentliche Signal-/Punktwerte unterscheiden.
 
 ## 2. Rolle von Modul 6
 
-Elliott vNext ist kein autonomes Handelssystem. Es darf niemals allein `buy`, `hold` oder `sell` ausgeben.
+Elliott vNext ist kein autonomes Handelssystem.
 
-Das spätere Gesamturteil entsteht aus dem gesamten System, u. a.:
+Das Modul darf niemals allein `BUY`, `HOLD`, `REDUCE` oder `SELL` entscheiden und keine konkrete Orderanweisung erzeugen.
 
-- Selection,
-- Timing,
-- Risk,
-- Probability,
-- Confidence,
-- Fundamentals,
-- Markt-/Sektor-/Themenkontext,
-- relativer Stärke,
-- Elliott/Fibonacci,
-- weiteren später validierten Modulen,
-- orchestriert durch den späteren Decision-Layer bzw. die tägliche Wertpapierdepot-Watch.
+Das finale Urteil entsteht erst aus dem gesamten System: Selection, Timing, Risk, Probability, Confidence, Fundamentals, Markt-/Sektor-/Themenkontext, relative Stärke, Elliott/Fibonacci und weiteren validierten Modulen; orchestriert durch den späteren globalen Decision-Layer bzw. die tägliche Wertpapierdepot-Watch.
 
-Elliott/Fibonacci liefert nur strukturierte Evidenz und Trigger für tiefere Analysen.
+Neu: Elliott vNext soll nicht nur W1→W2-Einstiege erkennen, sondern den vollständigen Zyklus als prospektive Handlungskarte führen:
+
+`W1 → W2 → W3 → W4 → W5 → Korrektur höheren Grades`
 
 ## 3. Verbindliche Regelquelle
 
-Für die Elliott-v1-Regeln ist das Kompendium von ElliottWaver.live die Arbeitsreferenz:
+Arbeitsreferenz: `https://elliottwaver.live/kompendium/`
 
-`https://elliottwaver.live/kompendium/`
+Harte Kernregeln für klassischen Impuls:
+- W2 darf den Ursprung von W1 nicht überschreiten.
+- W3 darf nicht die kürzeste der Impulswellen W1/W3/W5 sein.
+- W4 darf beim klassischen Impuls nicht in W1-Preisgebiet eindringen.
 
-Wichtige Regeln:
+Zusätzlich:
+- Leading/Ending Diagonal als eigener Regelzweig; 4/1-Überlappung dort nicht pauschal invalidieren.
+- Truncated fifth muss möglich bleiben; W5 muss nicht zwingend ein neues Extrem erzeugen.
+- Korrekturklassen: Zigzag, Flat, Triangle, Double Three, Triple Three.
+- Nicht jede Bewegung in fünf Wellen zwängen.
+- Primär- und Alternativszenarien führen.
 
-- Welle 2 darf im klassischen Impuls den Ursprung von Welle 1 nicht überschreiten.
-- Welle 3 darf nicht die kürzeste der Impulswellen 1, 3 und 5 sein.
-- Welle 4 darf im klassischen Impuls nicht in das Preisgebiet von Welle 1 eindringen.
-- Leading/Ending Diagonals sind ein eigener Zweig; 4/1-Überlappung darf dort nicht pauschal invalidieren.
-- Eine truncated fifth muss möglich bleiben; Welle 5 muss nicht zwingend ein neues Extrem ausbilden.
-- Korrekturen können Zigzag, Flat, Triangle, Double Three und Triple Three sein; nicht jede Bewegung darf in einen 5er-Impuls gezwungen werden.
-- Primär- und Alternativszenarien sind ausdrücklich erwünscht.
+## 4. Kausale Pivot- und Projektionslogik
 
-## 4. Kausale Pivot-Erkennung
+Jeder Pivot benötigt:
+- `pivot_time`,
+- `confirmed_time`.
 
-Dies ist eine harte technische Anforderung.
+Ein historischer Count darf einen Pivot erst ab `confirmed_time` verwenden.
 
-Jeder Pivot benötigt mindestens:
+Jede prospektive Zielzone benötigt zusätzlich `available_from`: den frühesten Zeitpunkt, an dem alle nötigen Anker kausal verfügbar waren.
 
-- `pivot_time`: tatsächlicher Zeitpunkt des Hochs/Tiefs,
-- `confirmed_time`: erster Zeitpunkt, an dem der Pivot mit den damals bekannten Daten erkannt werden durfte.
-
-Historische Counts und Fibonacci-Level dürfen einen Pivot erst ab `confirmed_time` benutzen.
-
-Kein rückwirkendes Verschönern historischer Counts mit später bekannten Swingpunkten.
+Keine historischen Zielkarten rückwirkend mit später bekannten Ankern verbessern.
 
 ## 5. Fraktale Architektur
 
-Normalweg: top-down.
-
-1. Weekly / grober Tagesgrad: übergeordnete Struktur bestimmen.
-2. Mittlerer Tagesgrad: Parent-Struktur und relevante Korrektur identifizieren.
-3. Feiner Tagesgrad: Unterwellen und Reaktion prüfen.
+Normalweg top-down:
+1. Weekly / grober Tagesgrad,
+2. mittlerer Tagesgrad,
+3. feiner Tagesgrad.
 
 Zusätzlich bottom-up:
+- statistisch auffälliges Scannerereignis → `EW_BOTTOM_UP_SCAN`,
+- lokale Elliott-Struktur → Parent-Kontext herauszoomen,
+- Elliott-Struktur darf umgekehrt Scanner-Deep-Scan auslösen.
 
-- Ein starkes statistisches Scannerereignis darf `EW_BOTTOM_UP_SCAN` auslösen.
-- Dann lokal Elliott-Struktur prüfen und anschließend herauszoomen, um Parent-Kontext zu bestimmen.
-- Umgekehrt darf eine Elliott-Struktur einen Scanner-Deep-Scan auslösen.
+Mehrere Wellengrade und mehrere Szenarien dürfen gleichzeitig bestehen.
 
-Mehrere Wellengrade dürfen gleichzeitig gültige Szenarien führen.
+## 6. Fibonacci-Grundsatz
 
-## 6. Fibonacci
-
-Fibonacci wird niemals verwendet, um eine Wellenzählung passend zu machen.
-
-Reihenfolge:
-
+Reihenfolge zwingend:
 1. strukturell zulässige Welle erkennen,
 2. kausal bestätigte Anker bestimmen,
 3. Fibonacci daran ansetzen,
-4. Retracement/Extension als Geometrie ausgeben,
-5. Bestätigung durch Scanner, Momentum, relative Stärke oder Marktkontext getrennt bewerten.
+4. Retracement/Extension als Zone ausgeben,
+5. Bestätigung durch Scanner/Momentum/RS/Marktkontext getrennt bewerten.
 
-Fibonacci-Zonen statt exakter Linien.
+Fib darf niemals den Count auswählen.
 
-Zonendicke soll mindestens ATR/Volatilität, Preisniveau und Wellengrad berücksichtigen.
+Zonendicke mindestens abhängig von ATR/Volatilität, Preisniveau und Wellengrad.
 
-W2-Zonen zunächst:
+## 7. W2 – Einstieg/Aufstockung
 
-- 38,2 % = PREWATCH / früher Routing-Trigger,
-- 50–78,6 % = Kernbereich,
-- 78,6–88,7 % = tiefe Zone,
-- >88,7 % bei intaktem W1-Ursprung = Danger / Alternativcount hochstufen,
-- Bruch des W1-Ursprungs = harte Invalidierung des konkreten Counts.
+Vorläufige Routing-Zonen:
+- 38,2 % → `EW_PREWATCH_382`,
+- 50 % → `EW_DEEP_SCAN_500`,
+- 50–78,6 % → `EW_W2_CORE`,
+- 78,6–88,7 % → `EW_W2_DEEP`,
+- >88,7 % bei intaktem W1-Ursprung → `EW_W2_DANGER`,
+- Bruch W1-Ursprung → `EW_INVALIDATED`.
 
-88,7 % ist ausdrücklich keine harte Elliott-Invalidierung.
+88,7 % ist keine harte Elliott-Invalidierung.
 
-## 7. Routing-Trigger
+## 8. W3 – Swing-Teilgewinn / Überdehnung
 
-Vorläufige, später historisch zu validierende Zustände:
+Nach kausal ausreichend bestimmtem W2-Ende mehrere W3-Projektionszonen erzeugen.
 
-- `EW_CONTEXT`
-- `EW_PREWATCH_382`
-- `EW_DEEP_SCAN_500`
-- `EW_W2_CORE`
-- `EW_W2_DEEP`
-- `EW_W2_DANGER`
-- `EW_INVALIDATED`
-- `EW_BOTTOM_UP_SCAN`
+Erste Research-Kandidaten für W1-basierte Extensions: 1,0 / 1,618 / 2,0 / 2,618 / 3,236. Diese sind Research-Hypothesen, keine eingefrorenen Produktionsregeln.
 
-Diese Zustände sind keine Handelssignale.
+Zustände:
+- `wave_3_in_progress`,
+- `EW_W3_TARGET_APPROACH`,
+- `EW_W3_EXHAUSTION`.
 
-## 8. Cross-System-Research
+W3-Zielnähe darf maximal eine Prüfung `hold vs partial reduce` priorisieren.
 
-Untersuchen:
+Eine W3-Zielzone allein ist niemals Verkaufsgrund.
 
-- Redundancy: liefert Elliott nur bereits bekannte Scannerinformation?
-- Confirmation: verstärken sich unabhängig erzeugte Signale?
-- Elliott Rescue: findet Elliott gute Situationen ohne Scannertrigger?
-- Scanner Rescue: erkennt der Scanner Bewegungen früher als Elliott?
-- Conflict: sind widersprüchliche Zustände selbst informativ?
-- Lead/Lag: welches System reagiert typischerweise zuerst?
+## 9. W4 – Rückkauf/Aufstockung
 
-Lead/Lag nicht nur am selben Tag messen, sondern in Ereignisfenstern, zunächst etwa -20T bis +20T.
+Nach ausreichend bestätigtem W3-Ende mögliche W4-Retracementzonen der W3-Strecke kartieren.
 
-Bestehende Scannerphasen dürfen dafür nicht rückwirkend neu optimiert werden.
+Zustände:
+- `wave_4_in_progress`,
+- `EW_W4_TARGET_ZONE`,
+- `EW_W4_COMPLETION`.
 
-## 9. Evidenzdimensionen getrennt halten
+W4 kann nach einem taktischen W3-Teilverkauf als möglicher Rückkauf-/Aufstockungskontext dienen.
 
-Nicht eine scheinpräzise Elliott-Confidence erzeugen.
+## 10. W5 – Gewinnsicherung / größere Reduktion
 
-Mindestens getrennt:
+Nach plausiblem W4-Ende mehrere W5-Projektionsmethoden empirisch vergleichen.
 
-- `structural_fit`: formale Passung zum Elliott-Regelwerk,
-- `confirmation_strength`: externe/reaktive Bestätigung,
-- `historical_expectancy`: empirischer Verlauf vergleichbarer historischer Setups.
+Die numerischen W5-Level sind ausdrücklich noch nicht eingefroren.
 
-Diese Größen dürfen erst später kalibriert zusammengeführt werden, wenn der empirische Mehrwert belegt ist.
+Mindestens untersuchen:
+- W1-Länge relativ zum W4-Ende,
+- W1→W3-Struktur relativ zum W4-Ende.
 
-## 10. Markt-, Branchen- und Themenkontext
+Zustände:
+- `wave_5_in_progress`,
+- `EW_W5_TARGET_APPROACH`,
+- `EW_W5_COMPLETION_RISK`,
+- `post_wave_5_higher_degree_correction_risk`.
 
-Keine Branche aus wenigen Scannerwerten erfinden.
+W5-Ende ist positionsstrategisch anders als W3-Ende: Eine mögliche W5-Vollendung kann eine stärkere Gewinnsicherungs-/Reduktionsprüfung rechtfertigen, weil eine Korrektur höheren Grades folgen kann.
 
-Scanner-Peers sind nur `scanner_peer_context`, niemals automatisch reale Branchenrepräsentation.
+Truncated fifth weiterhin zulassen.
 
-Externe Kontextreihen getrennt von `history_analysis.csv` führen.
+## 11. Prospektive Preiszonen
 
-Zielartefakt:
+Jede Zielzone mindestens mit:
+- `scenario_id`,
+- `wave_role`,
+- `projection_type`,
+- `price_low`,
+- `price_high`,
+- `basis`,
+- `available_from`,
+- `status`,
+- optional `distance_to_zone_pct`.
 
-`artifacts/research/market_context_history.csv`
+Verboten:
+- ein scheinexaktes Einzelkursziel,
+- Zielzone als sichere Prognose darstellen,
+- Projektion mit damals unbekannten Ankern,
+- Zielzonen verschiedener Szenarien unmarkiert vermischen.
 
-Registry:
+## 12. Swing-Routing statt Handelsentscheidung
 
-`data/inputs/market_context_registry.csv`
+Erlaubte Review-Kontexte:
+- `entry_or_add_review`,
+- `hold_review`,
+- `partial_reduce_review`,
+- `reentry_or_add_review`,
+- `profit_protection_review`,
+- `larger_reduce_or_exit_review`.
 
-Qualitätszustände:
+Diese sind ausdrücklich keine finalen Entscheidungen.
 
-- `sufficient`
-- `limited`
-- `unreliable`
-- `unavailable`
+Beispiel:
+- W3-Zone + Scanner weiter stark → eher Hold-Review.
+- W3-Zone + Overextension + Momentumbruch → Partial-Reduce-Review.
+- W4-Zone + Scanner-Turn positiv → Reentry/Add-Review.
+- W5-Zone + Unterwellenabschluss + Scanner kippt → Larger-Reduce/Exit-Review.
 
-Nur `sufficient` und nach dokumentierter Einschränkung `limited` dürfen als reale Markt-/Sektorevidenz verwendet werden.
+## 13. Cross-System-Research
 
-Bevorzugte Proxy-Hierarchie:
+Mindestens untersuchen:
+- Redundancy,
+- Confirmation,
+- Elliott Rescue,
+- Scanner Rescue,
+- Conflict,
+- Lead/Lag,
+- stage-specific incremental value,
+- swing-routing value.
 
+Lead/Lag nicht nur am selben Tag messen, sondern zunächst ungefähr -20T bis +20T um Ereignisse.
+
+Scanner-/Elliott-Interaktionen getrennt nach W2/W3/W4/W5 analysieren.
+
+## 14. Markt-/Branchen-/Themenkontext
+
+Keine reale Branche aus wenigen Scannerwerten konstruieren.
+
+Externe Kontextdaten separat in `artifacts/research/market_context_history.csv` führen.
+
+Registry: `data/inputs/market_context_registry.csv`.
+
+Qualität: `sufficient`, `limited`, `unreliable`, `unavailable`.
+
+Nur `sufficient` und dokumentiert `limited` dürfen echte Markt-/Sektorevidenz liefern.
+
+Proxy-Hierarchie:
 1. offizieller/breiter Index,
 2. breiter liquider Branchen-/Themen-ETF,
-3. extern definierter, Point-in-Time-versionierter Peer-Korb,
-4. Scanner-Peers nur als interner Zusatzkontext.
+3. extern definierter PIT-versionierter Peer-Korb,
+4. Scanner-Peers nur interner Zusatzkontext.
 
-Die Registry ist absichtlich noch leer. Keine Benchmarks ohne Prüfung eintragen.
+## 15. Relative Stärke
 
-## 11. Relative Stärke
+Nach verfügbaren validen Kontextdaten untersuchen:
+- `stock_vs_benchmark_rs`,
+- `stock_vs_sector_rs`,
+- `sector_vs_market_rs`.
 
-Nach Verfügbarkeit valider Kontextdaten untersuchen:
+Zustände: `leader`, `follower`, `divergence`, `synchronized`.
 
-- `stock_vs_benchmark_rs`
-- `stock_vs_sector_rs`
-- `sector_vs_market_rs`
+## 16. Historische Forschungsfragen für Swing/Exit
 
-Mögliche Zustände:
+Mindestens:
+- Wie oft erreicht ein valides W2-Szenario die W3-Zonen?
+- Wie oft folgt auf W3-Zielnähe eine relevante W4-Korrektur?
+- Welche W4-Tiefen sind je Wellengrad typisch?
+- Bringt Teilverkauf an W3 + Rückkauf in W4 gegenüber einfachem Halten Mehrwert?
+- Welche W5-Projektionsmethoden besitzen echte Trennschärfe?
+- Wie tief/oft korrigiert der Kurs nach möglichem W5-Ende?
+- Welche Scanner-/RS-/Marktkontextsignale unterscheiden Zielberührung von tatsächlicher Wende?
+- Wie stark beeinflussen Spread, Gebühren und Bestätigungslatenz den theoretischen Swing-Vorteil?
 
-- `leader`
-- `follower`
-- `divergence`
-- `synchronized`
+## 17. Evidenzdimensionen getrennt halten
 
-Diese Zustände separat berechnen und erst danach mit Elliott-/Scannerzuständen kombinieren, um Doppelzählung zu vermeiden.
+Mindestens:
+- `structural_fit`,
+- `confirmation_strength`,
+- `historical_expectancy`.
 
-## 12. Bereits gewonnene Research-Erkenntnisse
+Keine unkalibrierte Gesamt-Confidence daraus konstruieren.
 
-Explorative History- und Depottests haben folgende Hypothesen gestützt, aber noch nicht produktiv validiert:
+## 18. Aktuelle Research-Hypothesen
 
-- grobe/übergeordnete Elliott-Strukturen sind stabiler als sehr feine Counts,
-- ein top-down Ansatz reduziert scheinbare Fehlstrukturen,
-- 38,2 % eignet sich als günstiger Vorwarn-/Routing-Punkt,
-- 50 % ist ein plausibler Startpunkt für tiefe Analyse,
-- erst bei 61,8 % zu starten wäre häufig zu spät,
-- Elliott und Scanner scheinen nicht vollständig redundant,
-- Lead/Lag zwischen Scanner-Timing und Elliott/Fib ist wahrscheinlich wichtiger als reine Gleichzeitigkeit,
-- Fib-Schönheit darf die Auswahl des Counts nicht beeinflussen.
+Explorativ gestützt, noch nicht produktiv validiert:
+- grobe Strukturen stabiler als sehr feine,
+- top-down als Normalweg sinnvoll,
+- 38,2 % als Prewatch,
+- 50 % als Deep-Scan-Schwelle,
+- Elliott und Scanner nicht vollständig redundant,
+- Lead/Lag wichtiger als reine Gleichzeitigkeit,
+- W3/W4/W5 machen Elliott erst zu einem echten Positionsmanagement-Sensor.
 
-Diese Punkte sind Forschungsstand, keine eingefrorenen Performancebehauptungen.
-
-## 13. V1-Umfang
-
-V1 zunächst bewusst begrenzen:
-
-- Daily + daraus abgeleitet Weekly,
-- kausal bestätigte Pivots,
-- klassische Impulse,
-- Zigzag und Flat vollständig,
-- Diagonalen als eigener konservativer Zweig,
-- komplexere Korrekturen mindestens als Alternativ-/Unsicherheitszustände,
-- Fibonacci-Zonen,
-- Primär- und Alternativszenarien,
-- harte Invalidierung getrennt von weicher Evidenz,
-- Scanner↔Elliott Cross-System-Research,
-- externer Kontext nur bei ausreichender Qualität,
-- kein autonomes Handelsurteil.
-
-## 14. Vorbereitete Dateien
-
-Auf dem Foundation-Branch liegen:
+## 19. Verbindliche v2-Dateien
 
 - `docs/elliott_vnext_6_foundations.md`
 - `docs/elliott_vnext_6_research_plan.md`
 - `docs/module6_elliott_vnext_handover.md`
-- `configs/elliott_vnext_contract_v1.json`
-- `configs/elliott_vnext_output_schema_v1.json`
+- `configs/elliott_vnext_contract_v2.json`
+- `configs/elliott_vnext_output_schema_v2.json`
 - `configs/market_context_history_schema_v1.json`
 - `data/inputs/market_context_registry.csv`
 - `tests/test_elliott_vnext_foundations.py`
 
-## 15. Startauftrag für den neuen Chat
+## 20. Arbeitsplan nach Modul 5
 
-1. Zuerst prüfen, dass Modul 5 vollständig abgeschlossen und `main` sauber ist.
-2. Foundation-Branch mit aktuellem `main` vergleichen; Foundations ggf. auf frischen Modul-6-Arbeitsbranch übernehmen.
-3. Keine früheren Phasen erneut aufrollen, sofern für Modul 6 nicht zwingend nötig.
-4. Mit 6A beginnen: kausaler Pivot-/Wellengrad-Layer.
-5. Danach 6B Szenario-Generator/Regelprüfer, 6C Fibonacci-Geometrie, 6D Cross-System-Research, 6E Marktkontext, 6F Validierung, 6G Output/Integration.
-6. Jede Phase mit Tests, reproduzierbaren Artefakten und sauberem PR abschließen.
+6A Daten-/Pivot-Layer
+→ 6B Szenario-/Regelparser
+→ 6C Fibonacci + prospektive Wellenkarte
+→ 6D Swing-Routing
+→ 6E Scanner↔Elliott
+→ 6F Markt-/Sektorkontext
+→ 6G historische Validation
+→ 6H Output/Integration.
 
-Ziel: Elliott/Fibonacci als erklärbaren, empirisch geprüften Sensor in das Gesamtsystem integrieren, ohne die finale Entscheidungsgewalt aus dem globalen Decision-Layer herauszulösen.
+## 21. Startauftrag im neuen Chat
+
+1. Tatsächlichen Repo-Zustand prüfen.
+2. Sicherstellen, dass Modul 5 vollständig abgeschlossen ist.
+3. Foundation-Branch gegen dann aktuelles `main` vergleichen.
+4. Foundations auf sauberen Modul-6-Arbeitsbranch übernehmen/aktualisieren.
+5. v2-Verträge als verbindliche Basis benutzen.
+6. Mit 6A beginnen und jede Teilphase reproduzierbar testen.
+7. Frühere Phasen nicht unnötig neu aufrollen.
+8. Keine Regeln, Counts, Kursziele oder Ergebnisse erfinden.
+
+Ziel: Elliott/Fibonacci als empirisch geprüften Full-Cycle-Struktur-, Timing- und Positionsmanagement-Sensor integrieren, ohne die finale Entscheidungsgewalt aus dem globalen Decision-Layer herauszulösen.
