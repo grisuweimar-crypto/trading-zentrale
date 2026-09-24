@@ -27,7 +27,7 @@ At the Phase-5A audit start, `main` still pointed to the Phase-4E merge commit
 and `phase4e-shadow-data` did not yet exist. Consequently the honest readiness
 state was:
 
-| Horizon | Claims | Evaluable | Mature outcomes | Symbols | Mature snapshots | Independent/time-separated support |
+| Horizon | Claims | Evaluable | Mature outcomes | Symbols | Mature snapshots | Block-separated support regions |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 5T | 0 | 0 | 0 | 0 | 0 | 0 |
 | 20T | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -76,34 +76,59 @@ fields whose values are valid Phase-4C ordinal states. Because no real Phase-4E
 claims existed when this gap was discovered, the archive can still be extended
 prospectively without rewriting historical claims.
 
+## Temporal-support rule
+
+Phase 5 mirrors the Phase-4 robust-uncertainty support semantics rather than
+using calendar distance as a proxy. For each horizon, all eligible claim
+`as_of` dates form the ordered observation-date baseline. Mature outcome
+cohorts count as separate temporal support only when their observation
+positions are at least the effective uncertainty block length apart:
+
+`block_length = 2 x horizon`
+
+The counted forward outcome intervals must also not overlap. Therefore two
+calendar-distant mature snapshots do not automatically become two support
+regions if the prospective archive contains too few intervening observation
+dates. This is a conservative support count; it is not a claim of statistical
+independence.
+
 ## Purged walk-forward contract
 
 For each horizon separately:
 
 1. A model version has a unique immutable version ID.
 2. Training may use only post-freeze Phase-4E claims with fully matured outcomes.
-3. The outcome must already have been known by `training_cutoff`.
-4. Its stored `end_market_date` must be strictly before `evaluation_start`.
-5. Claim time must itself precede the evaluation period.
-6. Parameters, feature definitions and hyperparameters are frozen before the
+3. A claim must have been generated no later than `training_cutoff`.
+4. An outcome may only be considered mature when `evaluated_at` is on or after
+   its stored `end_market_date`, and it must have been evaluated no later than
+   `training_cutoff`.
+5. Its stored `end_market_date` must be strictly before `evaluation_start`.
+6. Claim time must itself precede the evaluation period.
+7. A manifest may contain each `claim_id` at most once.
+8. Parameters, feature definitions and hyperparameters are frozen before the
    evaluation period starts.
-7. Evaluation uses only the next untouched period.
-8. That period may enter training only for a later model version, after it has
-   completely ended and matured.
-9. 5T/20T/40T/60T are never pooled into a shared maturity assumption.
-10. Overlapping forward windows are not counted as independent observations.
-11. Robust uncertainty continues to use circular moving observation-date
+9. Evaluation uses only the next untouched period.
+10. That period may enter training only for a later model version, after it has
+    completely ended and matured.
+11. 5T/20T/40T/60T are never pooled into a shared maturity assumption.
+12. Overlapping forward windows are not counted as independent observations.
+13. Robust uncertainty continues to use circular moving observation-date
     blocks with full date clusters and effective block length `2 x horizon`.
 
 Purging is validated twice: once when training pairs are built and again when
 an immutable model manifest is constructed. The manifest builder rejects rows
-that are pre-freeze, matured after the training cutoff, overlap the evaluation
-period, or belong to a horizon not declared by that model version.
+that are pre-freeze, generated after the training cutoff, evaluated before
+their market-end date, matured after the training cutoff, overlap the
+evaluation period, duplicate a claim ID, or belong to a horizon not declared
+by that model version.
 
 The exact training evidence used by each model version is hashed into an
 `evidence_fingerprint`. The fingerprint covers every training column and value,
-including later engineered features, rather than a fixed allowlist. A model
-manifest records:
+including later engineered features, rather than a fixed allowlist. Missing
+values are encoded separately from literal strings and numeric values remain
+distinct from their string representations. Even a zero-row evidence frame
+hashes its exact column schema, so different empty schemas cannot share the
+same evidence fingerprint. A model manifest records:
 
 - version ID;
 - training cutoff and freeze time;
