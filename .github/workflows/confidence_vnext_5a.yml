@@ -1,0 +1,106 @@
+name: Phase 5A Confidence Readiness
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/confidence_vnext_5a.yml'
+      - 'docs/confidence_vnext_5a.md'
+      - 'scripts/run_confidence_vnext_readiness_5.py'
+      - 'src/scanner/reports/confidence_vnext_walkforward.py'
+      - 'tests/test_confidence_vnext_walkforward.py'
+  workflow_run:
+    workflows: ['Phase 4E Confidence Prospective Shadow']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase5a-readiness-${{ github.event.pull_request.number || github.event.workflow_run.id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  readiness:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Phase 5A tests
+        run: |
+          python -m pytest -q \
+            tests/test_confidence_vnext_walkforward.py \
+            tests/test_confidence_vnext_prospective.py \
+            tests/test_confidence_vnext_research.py \
+            tests/test_confidence_vnext_research_guards.py
+
+      - name: Restore Phase 4E shadow archives when available
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
+          for path in \
+            artifacts/research/confidence_vnext_shadow_claims_4e.csv \
+            artifacts/research/confidence_vnext_shadow_outcomes_4e.csv \
+            artifacts/research/confidence_vnext_shadow_4e.json
+          do
+            if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/phase4e-shadow-data:$path" > "$path"
+            else
+              rm -f "$path"
+            fi
+          done
+
+      - name: Run Phase 5A readiness audit
+        run: |
+          python scripts/run_confidence_vnext_readiness_5.py \
+            --freeze-commit fb038c78682e4e9fe87f11a1c3c9472b763bd3c4 \
+            --freeze-time 2026-09-24T01:12:14Z \
+            --output "$RUNNER_TEMP/confidence_vnext_readiness_5a.json"
+
+      - name: Validate fail-closed research contract
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(os.environ["RUNNER_TEMP"]) / "confidence_vnext_readiness_5a.json"
+          report = json.loads(path.read_text(encoding="utf-8"))
+
+          assert report["phase"] == "5A_readiness_walkforward_contract"
+          assert report["freeze"]["main_commit"] == "fb038c78682e4e9fe87f11a1c3c9472b763bd3c4"
+          assert report["contract"]["production_changes_allowed"] is False
+          assert report["contract"]["adaptive_weights_created"] is False
+          assert report["contract"]["scalar_confidence_mapping_created"] is False
+          assert report["contract"]["confidence_thresholds_created"] is False
+          assert report["contract"]["portfolio_or_depot_watch_changed"] is False
+          for horizon in ("5", "20", "40", "60"):
+              assert horizon in report["horizons"]
+              assert report["horizons"][horizon]["robust_uncertainty_block_length_sessions"] == 2 * int(horizon)
+          print("Phase 5A contract validation ok")
+          PY
+
+      - name: Upload readiness report
+        uses: actions/upload-artifact@v7
+        with:
+          name: confidence-vnext-readiness-5a
+          path: ${{ runner.temp }}/confidence_vnext_readiness_5a.json
+          if-no-files-found: error
