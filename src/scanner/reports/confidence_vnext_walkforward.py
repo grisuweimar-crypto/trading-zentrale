@@ -129,29 +129,76 @@ def _statistical_context_complete(claims: pd.DataFrame) -> bool:
     return True
 
 
-def _outcome_overlap_regions(outcomes: pd.DataFrame) -> int:
-    """Count connected non-overlapping outcome-time regions conservatively."""
+def _time_separated_outcome_support_regions(
+    claims: pd.DataFrame,
+    outcomes: pd.DataFrame,
+    block_length: int,
+) -> int:
+    """Count conservative support regions using Phase-4 observation-position semantics.
 
-    if outcomes.empty:
+    Phase 4 defines temporal support on the ordered set of eligible observation
+    dates: a new occurrence region is counted only after at least one full
+    uncertainty block. Phase 5 mirrors that rule with claim ``as_of`` dates as
+    the observation-date baseline and additionally requires the counted forward
+    outcome windows themselves not to overlap.
+    """
+
+    if claims.empty or outcomes.empty or block_length < 1:
         return 0
-    starts = pd.to_datetime(outcomes["start_market_date"], errors="coerce")
-    ends = pd.to_datetime(outcomes["end_market_date"], errors="coerce")
-    intervals = sorted(
-        (pd.Timestamp(start).normalize(), pd.Timestamp(end).normalize())
-        for start, end in zip(starts, ends)
-        if not pd.isna(start) and not pd.isna(end) and end >= start
+    if claims["claim_id"].astype(str).duplicated().any():
+        raise ValueError("duplicate claim_id in readiness evidence")
+    if outcomes["claim_id"].astype(str).duplicated().any():
+        raise ValueError("duplicate claim_id in matured outcomes")
+
+    baseline_dates = sorted(
+        pd.Timestamp(day).normalize()
+        for day in pd.to_datetime(claims["as_of"], errors="coerce").dropna().unique()
     )
-    if not intervals:
+    if not baseline_dates:
         return 0
+    positions = {day: index for index, day in enumerate(baseline_dates)}
+
+    observed = claims[["claim_id", "as_of"]].copy()
+    observed["_obs_date"] = pd.to_datetime(observed["as_of"], errors="coerce").dt.normalize()
+    matured = outcomes[["claim_id", "start_market_date", "end_market_date"]].merge(
+        observed[["claim_id", "_obs_date"]],
+        on="claim_id",
+        how="inner",
+        validate="one_to_one",
+    )
+    matured["_start"] = pd.to_datetime(matured["start_market_date"], errors="coerce").dt.normalize()
+    matured["_end"] = pd.to_datetime(matured["end_market_date"], errors="coerce").dt.normalize()
+    matured = matured.loc[
+        matured["_obs_date"].notna()
+        & matured["_start"].notna()
+        & matured["_end"].notna()
+        & matured["_end"].ge(matured["_start"])
+    ].copy()
+    if matured.empty:
+        return 0
+
+    cohorts = (
+        matured.groupby("_obs_date", as_index=False)
+        .agg(_start=("_start", "min"), _end=("_end", "max"))
+        .sort_values("_obs_date", kind="mergesort")
+    )
 
     regions = 0
-    current_end: pd.Timestamp | None = None
-    for start, end in intervals:
-        if current_end is None or start > current_end:
+    last_position: int | None = None
+    last_end: pd.Timestamp | None = None
+    for row in cohorts.itertuples(index=False):
+        obs_date = pd.Timestamp(row._obs_date)
+        position = positions.get(obs_date)
+        if position is None:
+            continue
+        start = pd.Timestamp(row._start)
+        end = pd.Timestamp(row._end)
+        separated = last_position is None or position - last_position >= int(block_length)
+        non_overlapping = last_end is None or start > last_end
+        if separated and non_overlapping:
             regions += 1
-            current_end = end
-        elif end > current_end:
-            current_end = end
+            last_position = position
+            last_end = end
     return regions
 
 
@@ -237,7 +284,8 @@ def readiness_audit(
         eligibility = c["outcome_eligibility"].astype(str) if not c.empty else pd.Series(dtype=str)
         mature_ids = set(o["claim_id"].astype(str)) if not o.empty else set()
         mature_claims = c.loc[c["claim_id"].astype(str).isin(mature_ids)].copy() if not c.empty else c
-        regions = _outcome_overlap_regions(o)
+        block_length = int(config.uncertainty_block_multiplier * horizon)
+        regions = _time_separated_outcome_support_regions(c, o, block_length)
         support_ok = regions >= config.minimum_time_separated_support_regions
         snapshots = int(c["snapshot_id"].astype(str).replace("", np.nan).nunique()) if not c.empty else 0
         mature_snapshots = int(
@@ -280,7 +328,7 @@ def readiness_audit(
             "mature_outcome_time_span": _date_span(o["evaluated_at"]) if not o.empty else {"start": None, "end": None},
             "outcome_end_span": _date_span(o["end_market_date"]) if not o.empty else {"start": None, "end": None},
             "non_overlapping_outcome_support_regions": regions,
-            "robust_uncertainty_block_length_sessions": int(config.uncertainty_block_multiplier * horizon),
+            "robust_uncertainty_block_length_sessions": block_length,
             "distributions": _distribution_audit(c),
             "walkforward_evaluation_ready": horizon_ready,
         }
@@ -364,7 +412,9 @@ def purged_training_pairs(
     keep = (
         claim_generated.notna()
         & claim_generated.gt(freeze)
+        & claim_generated.le(cutoff)
         & evaluated_at.notna()
+        & evaluated_at.ge(end_market)
         & evaluated_at.le(cutoff)
         & end_market.notna()
         & end_market.lt(eval_start.normalize())
@@ -399,12 +449,12 @@ def _fingerprint_scalar(value: object) -> dict[str, object]:
 def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
     """Hash every typed column/value in the exact immutable training evidence."""
 
-    if training_pairs.empty:
-        return sha256(b"").hexdigest()
     if training_pairs.columns.duplicated().any():
         raise ValueError("training evidence contains duplicate column names")
+    if any(not isinstance(column, str) for column in training_pairs.columns):
+        raise ValueError("training evidence column names must be strings")
 
-    columns = sorted(str(column) for column in training_pairs.columns)
+    columns = sorted(training_pairs.columns)
     canonical_rows: list[list[dict[str, object]]] = []
     for row in training_pairs.loc[:, columns].itertuples(index=False, name=None):
         canonical_rows.append([_fingerprint_scalar(value) for value in row])
@@ -443,6 +493,8 @@ def _validate_purged_training_pairs(
     missing = required - set(training_pairs.columns)
     if missing:
         raise ValueError(f"training evidence cannot prove purging: missing {sorted(missing)}")
+    if training_pairs["claim_id"].astype(str).duplicated().any():
+        raise ValueError("training evidence violates purged walk-forward contract: duplicate claim_id")
 
     freeze = _immutable_freeze_time()
     generated = pd.to_datetime(training_pairs["generated_at"], errors="coerce", utc=True)
@@ -464,7 +516,9 @@ def _validate_purged_training_pairs(
     invalid = (
         generated.isna()
         | generated.le(freeze)
+        | generated.gt(training_cutoff)
         | evaluated.isna()
+        | evaluated.lt(end_market)
         | evaluated.gt(training_cutoff)
         | end_market.isna()
         | end_market.ge(evaluation_start.normalize())
@@ -598,11 +652,16 @@ def frozen_baseline_evaluator(
             for key, group in merged.groupby(column, dropna=False, sort=True)
         }
 
+    block_length = int(Phase5WalkForwardConfig().uncertainty_block_multiplier * horizon)
     return {
         "horizon_sessions": horizon,
         "status": "descriptive_only",
         "N": int(len(merged)),
-        "support_regions": _outcome_overlap_regions(h_outcomes),
+        "support_regions": _time_separated_outcome_support_regions(
+            h_claims,
+            h_outcomes,
+            block_length,
+        ),
         "groups": groups,
         "notes": {
             "frozen_baseline_only": True,
