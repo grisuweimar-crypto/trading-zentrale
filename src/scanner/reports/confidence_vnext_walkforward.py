@@ -35,7 +35,7 @@ STATISTICAL_CONTEXT_COLUMNS = ("timing_statistical_state", "risk_statistical_sta
 
 @dataclass(frozen=True)
 class Phase5WalkForwardConfig:
-    """Pre-algorithm contract with no adaptive weights or scalar thresholds."""
+    """Immutable pre-algorithm contract; no adaptive weights or scalar thresholds."""
 
     schema_version: str = SCHEMA_VERSION
     uncertainty_block_multiplier: int = 2
@@ -101,13 +101,36 @@ def _immutable_freeze_commit(value: str | None = None) -> str:
     return PHASE5_FREEZE_COMMIT
 
 
+def _validate_phase5_contract_config(config: Phase5WalkForwardConfig) -> None:
+    fixed = {
+        "schema_version": SCHEMA_VERSION,
+        "uncertainty_block_multiplier": 2,
+        "minimum_time_separated_support_regions": 2,
+        "fixed_event_spacing_sessions": 5,
+        "require_statistical_context_for_adaptation": True,
+    }
+    observed = asdict(config)
+    mismatches = {
+        key: (observed.get(key), value)
+        for key, value in fixed.items()
+        if observed.get(key) != value
+    }
+    if mismatches:
+        raise ValueError(f"Phase 5A contract constants are immutable: {mismatches}")
+
+
+def _assert_exact_shadow_schema(claims: pd.DataFrame, outcomes: pd.DataFrame) -> None:
+    if list(claims.columns) != list(CLAIM_COLUMNS):
+        raise ValueError("claims do not match the immutable Phase-4E claim schema")
+    if list(outcomes.columns) != list(OUTCOME_COLUMNS):
+        raise ValueError("outcomes do not match the immutable Phase-4E outcome schema")
+
+
 def _assert_post_freeze_claims(claims: pd.DataFrame) -> None:
     """Reject any evidence not provably generated strictly after the Phase-5 freeze."""
 
     if claims.empty:
         return
-    if "generated_at" not in claims.columns:
-        raise ValueError("claims lack generated_at freeze provenance")
     freeze = _immutable_freeze_time()
     generated = pd.to_datetime(claims["generated_at"], errors="coerce", utc=True)
     invalid = generated.isna() | generated.le(freeze)
@@ -117,50 +140,162 @@ def _assert_post_freeze_claims(claims: pd.DataFrame) -> None:
 
 
 def _statistical_context_complete(claims: pd.DataFrame) -> bool:
-    """Derive completeness from archived ordinal evidence, never operator assertion."""
+    """Require Statistical Context to be part of the immutable claim schema.
 
-    if claims.empty or any(column not in claims.columns for column in STATISTICAL_CONTEXT_COLUMNS):
-        return False
-    valid = set(ORDINAL_EVIDENCE_STATES)
-    for column in STATISTICAL_CONTEXT_COLUMNS:
-        values = claims[column].astype(str)
-        if values.empty or not values.map(lambda value: value in valid).all():
-            return False
-    return True
-
-
-def _time_separated_outcome_support_regions(
-    claims: pd.DataFrame,
-    outcomes: pd.DataFrame,
-    block_length: int,
-) -> int:
-    """Count conservative support regions using Phase-4 observation-position semantics.
-
-    Phase 4 defines temporal support on the ordered set of eligible observation
-    dates: a new occurrence region is counted only after at least one full
-    uncertainty block. Phase 5 mirrors that rule with claim ``as_of`` dates as
-    the observation-date baseline and additionally requires the counted forward
-    outcome windows themselves not to overlap.
+    Phase4E shadow-v1 does not archive claim-level Timing/Risk Phase-4C ordinal
+    states. Merely appending similarly named DataFrame columns must never turn
+    that missing evidence into an integrity-bound claim. A future archive
+    schema must add the fields to its immutable claim schema and claim hash
+    before this gate can become true.
     """
 
-    if claims.empty or outcomes.empty or block_length < 1:
-        return 0
+    if claims.empty:
+        return False
+    if not set(STATISTICAL_CONTEXT_COLUMNS).issubset(set(CLAIM_COLUMNS)):
+        return False
+    valid = set(ORDINAL_EVIDENCE_STATES)
+    return all(
+        claims[column].astype(str).map(lambda value: value in valid).all()
+        for column in STATISTICAL_CONTEXT_COLUMNS
+    )
+
+
+def _validate_outcome_archive(claims: pd.DataFrame, outcomes: pd.DataFrame) -> None:
+    """Validate that every stored outcome is a genuine matured Phase-4E label."""
+
+    if outcomes.empty:
+        return
     if claims["claim_id"].astype(str).duplicated().any():
         raise ValueError("duplicate claim_id in readiness evidence")
     if outcomes["claim_id"].astype(str).duplicated().any():
         raise ValueError("duplicate claim_id in matured outcomes")
 
+    unknown = set(outcomes["claim_id"].astype(str)) - set(claims["claim_id"].astype(str))
+    if unknown:
+        raise ValueError("Phase 4E outcomes exist without matching immutable claims")
+
+    claim_info = claims[
+        [
+            "claim_id",
+            "as_of",
+            "symbol",
+            "horizon_sessions",
+            "start_market_date",
+            "outcome_eligibility",
+        ]
+    ].copy()
+    joined = outcomes.merge(
+        claim_info,
+        on="claim_id",
+        how="left",
+        validate="one_to_one",
+        suffixes=("_outcome", "_claim"),
+    )
+
+    evaluated = pd.to_datetime(joined["evaluated_at"], errors="coerce", utc=True)
+    end_market = pd.to_datetime(joined["end_market_date"], errors="coerce", utc=True).dt.normalize()
+    start_claim = pd.to_datetime(joined["start_market_date_claim"], errors="coerce", utc=True).dt.normalize()
+    start_outcome = pd.to_datetime(joined["start_market_date_outcome"], errors="coerce", utc=True).dt.normalize()
+    as_of_claim = pd.to_datetime(joined["as_of_claim"], errors="coerce", utc=True).dt.normalize()
+    as_of_outcome = pd.to_datetime(joined["as_of_outcome"], errors="coerce", utc=True).dt.normalize()
+    h_claim = pd.to_numeric(joined["horizon_sessions_claim"], errors="coerce")
+    h_outcome = pd.to_numeric(joined["horizon_sessions_outcome"], errors="coerce")
+
+    invalid = (
+        ~joined["outcome_eligibility"].astype(str).eq("eligible")
+        | evaluated.isna()
+        | end_market.isna()
+        | start_claim.isna()
+        | start_outcome.isna()
+        | as_of_claim.isna()
+        | as_of_outcome.isna()
+        | ~start_claim.eq(start_outcome)
+        | start_claim.gt(as_of_claim)
+        | end_market.le(as_of_claim)
+        | evaluated.dt.normalize().le(end_market)
+        | ~as_of_claim.eq(as_of_outcome)
+        | ~joined["symbol_claim"].astype(str).eq(joined["symbol_outcome"].astype(str))
+        | h_claim.isna()
+        | h_outcome.isna()
+        | ~h_claim.eq(h_outcome)
+        | ~h_claim.isin(HORIZONS)
+    )
+    if invalid.any():
+        examples = joined.loc[invalid, "claim_id"].astype(str).head(3).tolist()
+        raise ValueError(f"invalid Phase 4E outcome chronology/provenance: {examples}")
+
+
+def _apply_fixed_event_spacing(claims: pd.DataFrame, sessions: int = 5) -> pd.DataFrame:
+    """Apply the inherited per-symbol five-session cooldown to eligible claims.
+
+    Session positions come from immutable claim-time start sessions represented
+    by that symbol in the archive, never from calendar-day distance. Missing
+    scanner publications therefore make spacing conservative rather than
+    inventing unobserved sessions. Multiple reruns on one market session share
+    one position and only the first eligible occurrence can survive.
+    """
+
+    if claims.empty:
+        return claims.copy()
+    eligible = claims.loc[claims["outcome_eligibility"].astype(str).eq("eligible")].copy()
+    if eligible.empty:
+        return eligible
+    eligible["_session"] = pd.to_datetime(
+        eligible["start_market_date"], errors="coerce", utc=True
+    ).dt.normalize()
+    eligible = eligible.loc[eligible["_session"].notna()].copy()
+    if eligible.empty:
+        return eligible.drop(columns=["_session"], errors="ignore")
+
+    keep: list[int] = []
+    sort_columns = ["_session", "as_of", "snapshot_id", "claim_id"]
+    for _, group in eligible.groupby("symbol", sort=False):
+        session_dates = sorted(pd.Timestamp(day) for day in group["_session"].unique())
+        positions = {day: pos for pos, day in enumerate(session_dates)}
+        last_position: int | None = None
+        for idx, row in group.sort_values(sort_columns, kind="mergesort").iterrows():
+            position = positions.get(pd.Timestamp(row["_session"]))
+            if position is None:
+                continue
+            if last_position is None or position - last_position >= sessions:
+                keep.append(idx)
+                last_position = position
+
+    if not keep:
+        return eligible.iloc[0:0].drop(columns=["_session"], errors="ignore")
+    return (
+        eligible.loc[keep]
+        .drop(columns=["_session"], errors="ignore")
+        .sort_values(["as_of", "symbol", "snapshot_id", "claim_id"], kind="mergesort")
+        .reset_index(drop=True)
+    )
+
+
+def _time_separated_outcome_support_regions(
+    spaced_claims: pd.DataFrame,
+    spaced_outcomes: pd.DataFrame,
+    block_length: int,
+) -> int:
+    """Count support regions after event spacing using observation positions."""
+
+    if spaced_claims.empty or spaced_outcomes.empty or block_length < 1:
+        return 0
+    if spaced_claims["claim_id"].astype(str).duplicated().any():
+        raise ValueError("duplicate claim_id in spaced readiness evidence")
+    if spaced_outcomes["claim_id"].astype(str).duplicated().any():
+        raise ValueError("duplicate claim_id in spaced matured outcomes")
+
     baseline_dates = sorted(
         pd.Timestamp(day).normalize()
-        for day in pd.to_datetime(claims["as_of"], errors="coerce").dropna().unique()
+        for day in pd.to_datetime(spaced_claims["as_of"], errors="coerce").dropna().unique()
     )
     if not baseline_dates:
         return 0
     positions = {day: index for index, day in enumerate(baseline_dates)}
 
-    observed = claims[["claim_id", "as_of"]].copy()
+    observed = spaced_claims[["claim_id", "as_of"]].copy()
     observed["_obs_date"] = pd.to_datetime(observed["as_of"], errors="coerce").dt.normalize()
-    matured = outcomes[["claim_id", "start_market_date", "end_market_date"]].merge(
+    matured = spaced_outcomes[["claim_id", "start_market_date", "end_market_date"]].merge(
         observed[["claim_id", "_obs_date"]],
         on="claim_id",
         how="inner",
@@ -186,8 +321,9 @@ def _time_separated_outcome_support_regions(
     regions = 0
     last_position: int | None = None
     last_end: pd.Timestamp | None = None
-    cohort_rows = cohorts[["_obs_date", "_start", "_end"]].itertuples(index=False, name=None)
-    for obs_date_value, start_value, end_value in cohort_rows:
+    for obs_date_value, start_value, end_value in cohorts[["_obs_date", "_start", "_end"]].itertuples(
+        index=False, name=None
+    ):
         obs_date = pd.Timestamp(obs_date_value)
         position = positions.get(obs_date)
         if position is None:
@@ -206,28 +342,15 @@ def _time_separated_outcome_support_regions(
 def _distribution_audit(claims: pd.DataFrame) -> dict[str, object]:
     statistical: dict[str, object] = {
         "selection_phase4c_state": _value_counts(claims, "selection_state"),
+        "timing_phase4c_state": {
+            "status": "not_archived_claim_level",
+            "reason": "phase4e_shadow_v1 does not integrity-bind claim-level Timing Phase-4C ordinal state",
+        },
+        "risk_phase4c_state": {
+            "status": "not_archived_claim_level",
+            "reason": "phase4e_shadow_v1 does not integrity-bind claim-level Risk Phase-4C ordinal state",
+        },
     }
-    if _statistical_context_complete(claims):
-        statistical.update(
-            {
-                "timing_phase4c_state": _value_counts(claims, "timing_statistical_state"),
-                "risk_phase4c_state": _value_counts(claims, "risk_statistical_state"),
-            }
-        )
-    else:
-        statistical.update(
-            {
-                "timing_phase4c_state": {
-                    "status": "not_archived_claim_level",
-                    "reason": "phase4e timing_state stores model claim state, not robust/directional_only/immature/mixed/unavailable",
-                },
-                "risk_phase4c_state": {
-                    "status": "not_archived_claim_level",
-                    "reason": "phase4e risk_state stores current downside model state, not the Phase-4C evidence state",
-                },
-            }
-        )
-
     return {
         "data_quality": {
             "selection": _value_counts(claims, "dq_selection_state"),
@@ -251,27 +374,21 @@ def readiness_audit(
     freeze_time: str | None = None,
     config: Phase5WalkForwardConfig = Phase5WalkForwardConfig(),
 ) -> dict[str, object]:
-    missing_claim_columns = set(CLAIM_COLUMNS) - set(claims.columns)
-    if not claims.empty and missing_claim_columns:
-        raise ValueError(f"claims lack immutable Phase-4E columns: {sorted(missing_claim_columns)}")
-    if not outcomes.empty and list(outcomes.columns) != list(OUTCOME_COLUMNS):
-        raise ValueError("outcomes do not match the immutable Phase-4E schema")
+    """Audit prospective readiness under the immutable Phase-5A contract."""
 
+    _validate_phase5_contract_config(config)
+    _assert_exact_shadow_schema(claims, outcomes)
     effective_freeze_time = _immutable_freeze_time(freeze_time)
     effective_freeze_commit = _immutable_freeze_commit(freeze_commit)
     _assert_post_freeze_claims(claims)
-
-    if not outcomes.empty:
-        unknown_outcomes = set(outcomes["claim_id"].astype(str)) - set(claims["claim_id"].astype(str))
-        if unknown_outcomes:
-            raise ValueError("Phase 4E outcomes exist without matching immutable claims")
+    _validate_outcome_archive(claims, outcomes)
 
     statistical_context_complete = _statistical_context_complete(claims)
     horizons: dict[str, object] = {}
     any_walkforward_ready = False
     blockers: set[str] = set()
 
-    if config.require_statistical_context_for_adaptation and not statistical_context_complete:
+    if not statistical_context_complete:
         blockers.add("claim_level_phase4c_timing_and_risk_states_not_archived")
 
     for horizon in HORIZONS:
@@ -283,27 +400,36 @@ def readiness_audit(
         ].copy() if not outcomes.empty else _empty_outcomes()
 
         eligibility = c["outcome_eligibility"].astype(str) if not c.empty else pd.Series(dtype=str)
-        mature_ids = set(o["claim_id"].astype(str)) if not o.empty else set()
-        mature_claims = c.loc[c["claim_id"].astype(str).isin(mature_ids)].copy() if not c.empty else c
+        spaced_claims = _apply_fixed_event_spacing(c, config.fixed_event_spacing_sessions)
+        spaced_ids = set(spaced_claims["claim_id"].astype(str)) if not spaced_claims.empty else set()
+        spaced_outcomes = o.loc[o["claim_id"].astype(str).isin(spaced_ids)].copy() if not o.empty else o
+        mature_ids = set(spaced_outcomes["claim_id"].astype(str)) if not spaced_outcomes.empty else set()
+        mature_claims = spaced_claims.loc[
+            spaced_claims["claim_id"].astype(str).isin(mature_ids)
+        ].copy() if not spaced_claims.empty else spaced_claims
+
         block_length = int(config.uncertainty_block_multiplier * horizon)
-        regions = _time_separated_outcome_support_regions(c, o, block_length)
+        regions = _time_separated_outcome_support_regions(
+            spaced_claims,
+            spaced_outcomes,
+            block_length,
+        )
         support_ok = regions >= config.minimum_time_separated_support_regions
         snapshots = int(c["snapshot_id"].astype(str).replace("", np.nan).nunique()) if not c.empty else 0
         mature_snapshots = int(
             mature_claims["snapshot_id"].astype(str).replace("", np.nan).nunique()
         ) if not mature_claims.empty else 0
         symbols = int(c["symbol"].astype(str).replace("", np.nan).nunique()) if not c.empty else 0
-        mature_symbols = int(o["symbol"].astype(str).replace("", np.nan).nunique()) if not o.empty else 0
+        mature_symbols = int(
+            spaced_outcomes["symbol"].astype(str).replace("", np.nan).nunique()
+        ) if not spaced_outcomes.empty else 0
 
         horizon_ready = bool(
-            len(o) > 0
+            len(spaced_outcomes) > 0
             and mature_snapshots >= 2
             and mature_symbols >= 2
             and support_ok
-            and (
-                statistical_context_complete
-                or not config.require_statistical_context_for_adaptation
-            )
+            and statistical_context_complete
         )
         any_walkforward_ready = any_walkforward_ready or horizon_ready
 
@@ -321,6 +447,8 @@ def readiness_audit(
             "evaluable_claims": int(eligibility.eq("eligible").sum()),
             "unevaluable_claims": int(eligibility.eq("unevaluable").sum()),
             "mature_outcomes": int(len(o)),
+            "spaced_evaluable_claims": int(len(spaced_claims)),
+            "spaced_mature_outcomes": int(len(spaced_outcomes)),
             "symbols": symbols,
             "mature_symbols": mature_symbols,
             "snapshots": snapshots,
@@ -330,6 +458,7 @@ def readiness_audit(
             "outcome_end_span": _date_span(o["end_market_date"]) if not o.empty else {"start": None, "end": None},
             "non_overlapping_outcome_support_regions": regions,
             "robust_uncertainty_block_length_sessions": block_length,
+            "fixed_event_spacing_sessions": config.fixed_event_spacing_sessions,
             "distributions": _distribution_audit(c),
             "walkforward_evaluation_ready": horizon_ready,
         }
@@ -359,6 +488,7 @@ def readiness_audit(
             "portfolio_or_depot_watch_changed": False,
             "training_requires_fully_mature_prior_outcomes": True,
             "evaluation_must_be_future_to_training_cutoff": True,
+            "fixed_event_spacing_applied_before_evaluation": True,
             "overlapping_forward_windows_treated_as_independent": False,
             "robust_uncertainty": "circular moving observation-date bootstrap with full date clusters and effective block length 2 x horizon",
             "unknown_or_insufficient_is_neutral": False,
@@ -376,25 +506,31 @@ def purged_training_pairs(
     training_cutoff: str,
     evaluation_start: str,
 ) -> pd.DataFrame:
-    """Return only post-freeze evidence fully knowable before evaluation."""
+    """Return only post-freeze, spaced evidence fully knowable before evaluation."""
 
     if horizon not in HORIZONS:
         raise ValueError(f"unsupported horizon: {horizon}")
+    _assert_exact_shadow_schema(claims, outcomes)
     cutoff = _required_utc(training_cutoff, "training_cutoff")
     eval_start = _required_utc(evaluation_start, "evaluation_start")
     if cutoff >= eval_start:
         raise ValueError("training_cutoff must be before evaluation_start")
     _assert_post_freeze_claims(claims)
+    _validate_outcome_archive(claims, outcomes)
     if claims.empty or outcomes.empty:
         return pd.DataFrame()
 
-    c = claims.copy()
-    o = outcomes.copy()
-    c["_h"] = pd.to_numeric(c["horizon_sessions"], errors="coerce")
-    o["_h"] = pd.to_numeric(o["horizon_sessions"], errors="coerce")
-    c = c.loc[c["_h"].eq(horizon)].drop(columns=["_h"])
-    o = o.loc[o["_h"].eq(horizon)].drop(columns=["_h"])
+    c = claims.loc[
+        pd.to_numeric(claims["horizon_sessions"], errors="coerce").eq(horizon)
+    ].copy()
+    o = outcomes.loc[
+        pd.to_numeric(outcomes["horizon_sessions"], errors="coerce").eq(horizon)
+    ].copy()
+    c = _apply_fixed_event_spacing(c, 5)
     if c.empty or o.empty:
+        return pd.DataFrame()
+    o = o.loc[o["claim_id"].astype(str).isin(set(c["claim_id"].astype(str)))].copy()
+    if o.empty:
         return pd.DataFrame()
 
     merged = c.merge(
@@ -404,20 +540,20 @@ def purged_training_pairs(
         validate="one_to_one",
         suffixes=("_claim", "_outcome"),
     )
-    evaluated_at = pd.to_datetime(merged["evaluated_at"], errors="coerce", utc=True)
+    evaluated = pd.to_datetime(merged["evaluated_at"], errors="coerce", utc=True)
     end_market = pd.to_datetime(merged["end_market_date"], errors="coerce", utc=True)
-    claim_generated = pd.to_datetime(merged["generated_at"], errors="coerce", utc=True)
+    generated = pd.to_datetime(merged["generated_at"], errors="coerce", utc=True)
     claim_as_of = pd.to_datetime(merged["as_of_claim"], errors="coerce", utc=True)
     freeze = _immutable_freeze_time()
 
     keep = (
-        claim_generated.notna()
-        & claim_generated.gt(freeze)
-        & claim_generated.le(cutoff)
-        & evaluated_at.notna()
-        & evaluated_at.ge(end_market)
-        & evaluated_at.le(cutoff)
+        generated.notna()
+        & generated.gt(freeze)
+        & generated.le(cutoff)
+        & evaluated.notna()
         & end_market.notna()
+        & evaluated.dt.normalize().gt(end_market.dt.normalize())
+        & evaluated.le(cutoff)
         & end_market.lt(eval_start.normalize())
         & claim_as_of.notna()
         & claim_as_of.lt(eval_start)
@@ -428,8 +564,6 @@ def purged_training_pairs(
 
 
 def _fingerprint_scalar(value: object) -> dict[str, object]:
-    """Typed JSON-safe scalar encoding; null never collides with a literal string."""
-
     missing = pd.isna(value)
     if isinstance(missing, (bool, np.bool_)) and bool(missing):
         return {"type": "null", "value": None}
@@ -447,8 +581,21 @@ def _fingerprint_scalar(value: object) -> dict[str, object]:
     }
 
 
+def _fingerprint_dtype(series: pd.Series) -> dict[str, object]:
+    dtype = series.dtype
+    descriptor: dict[str, object] = {
+        "class": f"{type(dtype).__module__}.{type(dtype).__qualname__}",
+        "name": str(dtype),
+        "repr": repr(dtype),
+    }
+    if isinstance(dtype, pd.CategoricalDtype):
+        descriptor["ordered"] = bool(dtype.ordered)
+        descriptor["categories"] = [_fingerprint_scalar(value) for value in dtype.categories.tolist()]
+    return descriptor
+
+
 def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
-    """Hash every typed column/value in the exact immutable training evidence."""
+    """Hash every typed value and the exact column schema, including dtypes."""
 
     if training_pairs.columns.duplicated().any():
         raise ValueError("training evidence contains duplicate column names")
@@ -456,6 +603,10 @@ def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
         raise ValueError("training evidence column names must be strings")
 
     columns = sorted(training_pairs.columns)
+    schema = [
+        {"name": column, "dtype": _fingerprint_dtype(training_pairs[column])}
+        for column in columns
+    ]
     canonical_rows: list[list[dict[str, object]]] = []
     for row in training_pairs.loc[:, columns].itertuples(index=False, name=None):
         canonical_rows.append([_fingerprint_scalar(value) for value in row])
@@ -463,7 +614,7 @@ def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
         key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     )
     payload = json.dumps(
-        {"columns": columns, "rows": canonical_rows},
+        {"schema": schema, "rows": canonical_rows},
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=False,
@@ -478,7 +629,7 @@ def _validate_purged_training_pairs(
     training_cutoff: pd.Timestamp,
     evaluation_start: pd.Timestamp,
 ) -> None:
-    """Re-validate the purged evidence at the immutable manifest boundary."""
+    """Re-validate exact Phase-4 chronology at the immutable manifest boundary."""
 
     if training_pairs.empty:
         return
@@ -488,6 +639,11 @@ def _validate_purged_training_pairs(
         "evaluated_at",
         "end_market_date",
         "as_of_claim",
+        "as_of_outcome",
+        "start_market_date_claim",
+        "start_market_date_outcome",
+        "symbol_claim",
+        "symbol_outcome",
         "horizon_sessions_claim",
         "horizon_sessions_outcome",
     }
@@ -500,8 +656,11 @@ def _validate_purged_training_pairs(
     freeze = _immutable_freeze_time()
     generated = pd.to_datetime(training_pairs["generated_at"], errors="coerce", utc=True)
     evaluated = pd.to_datetime(training_pairs["evaluated_at"], errors="coerce", utc=True)
-    end_market = pd.to_datetime(training_pairs["end_market_date"], errors="coerce", utc=True)
-    claim_as_of = pd.to_datetime(training_pairs["as_of_claim"], errors="coerce", utc=True)
+    end_market = pd.to_datetime(training_pairs["end_market_date"], errors="coerce", utc=True).dt.normalize()
+    claim_as_of = pd.to_datetime(training_pairs["as_of_claim"], errors="coerce", utc=True).dt.normalize()
+    outcome_as_of = pd.to_datetime(training_pairs["as_of_outcome"], errors="coerce", utc=True).dt.normalize()
+    start_claim = pd.to_datetime(training_pairs["start_market_date_claim"], errors="coerce", utc=True).dt.normalize()
+    start_outcome = pd.to_datetime(training_pairs["start_market_date_outcome"], errors="coerce", utc=True).dt.normalize()
     claim_horizons = pd.to_numeric(training_pairs["horizon_sessions_claim"], errors="coerce")
     outcome_horizons = pd.to_numeric(training_pairs["horizon_sessions_outcome"], errors="coerce")
     allowed_horizons = set(int(h) for h in horizons)
@@ -512,22 +671,29 @@ def _validate_purged_training_pairs(
     outcome_horizon_valid = outcome_horizons.map(
         lambda value: pd.notna(value) and float(value).is_integer() and int(value) in allowed_horizons
     )
-    horizon_equal = claim_horizons.eq(outcome_horizons)
 
     invalid = (
         generated.isna()
         | generated.le(freeze)
         | generated.gt(training_cutoff)
         | evaluated.isna()
-        | evaluated.lt(end_market)
-        | evaluated.gt(training_cutoff)
         | end_market.isna()
+        | evaluated.dt.normalize().le(end_market)
+        | evaluated.gt(training_cutoff)
         | end_market.ge(evaluation_start.normalize())
         | claim_as_of.isna()
-        | claim_as_of.ge(evaluation_start)
+        | outcome_as_of.isna()
+        | claim_as_of.ge(evaluation_start.normalize())
+        | ~claim_as_of.eq(outcome_as_of)
+        | start_claim.isna()
+        | start_outcome.isna()
+        | ~start_claim.eq(start_outcome)
+        | start_claim.gt(claim_as_of)
+        | end_market.le(claim_as_of)
+        | ~training_pairs["symbol_claim"].astype(str).eq(training_pairs["symbol_outcome"].astype(str))
         | ~claim_horizon_valid
         | ~outcome_horizon_valid
-        | ~horizon_equal
+        | ~claim_horizons.eq(outcome_horizons)
     )
     if invalid.any():
         examples = training_pairs.loc[invalid, "claim_id"].astype(str).head(3).tolist()
@@ -549,9 +715,9 @@ def model_version_manifest(
 ) -> dict[str, object]:
     if not version_id.strip():
         raise ValueError("version_id is required")
-    invalid = sorted(set(horizons) - set(HORIZONS))
-    if invalid:
-        raise ValueError(f"unsupported horizons: {invalid}")
+    invalid_horizons = sorted(set(horizons) - set(HORIZONS))
+    if invalid_horizons:
+        raise ValueError(f"unsupported horizons: {invalid_horizons}")
     start = _required_utc(evaluation_start, "evaluation_start")
     end = _required_utc(evaluation_end, "evaluation_end")
     cutoff = _required_utc(training_cutoff, "training_cutoff")
@@ -591,10 +757,13 @@ def frozen_baseline_evaluator(
     *,
     horizon: int,
 ) -> dict[str, object]:
-    """Descriptive Phase-4 frozen-baseline reliability metrics."""
+    """Descriptive Phase-4 frozen-baseline reliability metrics after cooldown."""
 
     if horizon not in HORIZONS:
         raise ValueError(f"unsupported horizon: {horizon}")
+    _assert_exact_shadow_schema(claims, outcomes)
+    _assert_post_freeze_claims(claims)
+    _validate_outcome_archive(claims, outcomes)
     if claims.empty or outcomes.empty:
         return {"horizon_sessions": horizon, "status": "insufficient_evidence", "N": 0, "groups": {}}
 
@@ -604,9 +773,17 @@ def frozen_baseline_evaluator(
     h_outcomes = outcomes.loc[
         pd.to_numeric(outcomes["horizon_sessions"], errors="coerce").eq(horizon)
     ].copy()
+    if h_claims.empty or h_outcomes.empty:
+        return {"horizon_sessions": horizon, "status": "insufficient_evidence", "N": 0, "groups": {}}
+
+    # Peer labels remain based on the complete matured immutable snapshot cohort.
     derived = derive_peer_labels(h_claims, h_outcomes)
-    merged = h_outcomes.merge(
-        h_claims[
+    spaced_claims = _apply_fixed_event_spacing(h_claims, 5)
+    spaced_ids = set(spaced_claims["claim_id"].astype(str))
+    spaced_outcomes = h_outcomes.loc[h_outcomes["claim_id"].astype(str).isin(spaced_ids)].copy()
+
+    merged = spaced_outcomes.merge(
+        spaced_claims[
             [
                 "claim_id",
                 "selection_state",
@@ -653,19 +830,21 @@ def frozen_baseline_evaluator(
             for key, group in merged.groupby(column, dropna=False, sort=True)
         }
 
-    block_length = int(Phase5WalkForwardConfig().uncertainty_block_multiplier * horizon)
+    block_length = int(2 * horizon)
     return {
         "horizon_sessions": horizon,
         "status": "descriptive_only",
         "N": int(len(merged)),
         "support_regions": _time_separated_outcome_support_regions(
-            h_claims,
-            h_outcomes,
+            spaced_claims,
+            spaced_outcomes,
             block_length,
         ),
         "groups": groups,
         "notes": {
             "frozen_baseline_only": True,
+            "fixed_event_spacing_sessions": 5,
+            "peer_labels_use_complete_snapshot_cohort_before_spacing": True,
             "no_adaptive_weights": True,
             "no_scalar_confidence": True,
             "no_robust_interval_claimed": True,
@@ -676,24 +855,24 @@ def frozen_baseline_evaluator(
 def _has_multiple_genuine_walkforward_epochs(
     walkforward_evaluations: list[dict[str, object]],
 ) -> bool:
-    """Require at least two valid, distinct and non-overlapping evaluation epochs."""
-
     if len(walkforward_evaluations) < 2:
         return False
-
     parsed: list[tuple[str, pd.Timestamp, pd.Timestamp]] = []
     for evaluation in walkforward_evaluations:
         version_id = str(evaluation.get("version_id") or "").strip()
         start = pd.to_datetime(evaluation.get("evaluation_start"), errors="coerce", utc=True)
         end = pd.to_datetime(evaluation.get("evaluation_end"), errors="coerce", utc=True)
-        if not version_id or pd.isna(start) or pd.isna(end) or start > end:
+        if not version_id or pd.isna(start) or pd.isna(end):
             return False
-        parsed.append((version_id, pd.Timestamp(start), pd.Timestamp(end)))
+        start_day = pd.Timestamp(start).normalize()
+        end_day = pd.Timestamp(end).normalize()
+        if start_day > end_day:
+            return False
+        parsed.append((version_id, start_day, end_day))
 
     version_ids = [item[0] for item in parsed]
     if len(set(version_ids)) != len(version_ids):
         return False
-
     ordered = sorted(parsed, key=lambda item: (item[1], item[2], item[0]))
     return all(current[1] > previous[2] for previous, current in zip(ordered, ordered[1:]))
 
@@ -725,184 +904,3 @@ def promotion_assessment(
         "gates": gates,
         "production_change_performed": False,
     }
-
-
-# Final Phase-5A contract hardening.  These definitions intentionally override
-# the earlier helpers at module load so every caller, including the baseline
-# evaluator and manifest builder above, receives the stricter immutable
-# contract without introducing a second implementation surface.
-def _validate_phase5_contract_config(config: Phase5WalkForwardConfig) -> None:
-    fixed = {
-        "schema_version": SCHEMA_VERSION,
-        "uncertainty_block_multiplier": 2,
-        "minimum_time_separated_support_regions": 2,
-        "fixed_event_spacing_sessions": 5,
-        "require_statistical_context_for_adaptation": True,
-    }
-    observed = asdict(config)
-    mismatches = {key: (observed.get(key), value) for key, value in fixed.items() if observed.get(key) != value}
-    if mismatches:
-        raise ValueError(f"Phase 5A contract constants are immutable: {mismatches}")
-
-
-def _time_separated_outcome_support_regions(
-    claims: pd.DataFrame,
-    outcomes: pd.DataFrame,
-    block_length: int,
-) -> int:
-    """Count support only on eligible Phase-4 observation dates."""
-
-    if claims.empty or outcomes.empty or block_length < 1:
-        return 0
-    if claims["claim_id"].astype(str).duplicated().any():
-        raise ValueError("duplicate claim_id in readiness evidence")
-    if outcomes["claim_id"].astype(str).duplicated().any():
-        raise ValueError("duplicate claim_id in matured outcomes")
-    if "outcome_eligibility" not in claims.columns:
-        raise ValueError("claims lack outcome_eligibility for temporal support")
-
-    eligible = claims.loc[claims["outcome_eligibility"].astype(str).eq("eligible")].copy()
-    if eligible.empty:
-        return 0
-    baseline_dates = sorted(
-        pd.Timestamp(day).normalize()
-        for day in pd.to_datetime(eligible["as_of"], errors="coerce").dropna().unique()
-    )
-    if not baseline_dates:
-        return 0
-    positions = {day: index for index, day in enumerate(baseline_dates)}
-
-    observed = eligible[["claim_id", "as_of"]].copy()
-    observed["_obs_date"] = pd.to_datetime(observed["as_of"], errors="coerce").dt.normalize()
-    matured = outcomes[["claim_id", "start_market_date", "end_market_date"]].merge(
-        observed[["claim_id", "_obs_date"]],
-        on="claim_id",
-        how="inner",
-        validate="one_to_one",
-    )
-    matured["_start"] = pd.to_datetime(matured["start_market_date"], errors="coerce").dt.normalize()
-    matured["_end"] = pd.to_datetime(matured["end_market_date"], errors="coerce").dt.normalize()
-    matured = matured.loc[
-        matured["_obs_date"].notna()
-        & matured["_start"].notna()
-        & matured["_end"].notna()
-        & matured["_end"].ge(matured["_start"])
-    ].copy()
-    if matured.empty:
-        return 0
-
-    cohorts = (
-        matured.groupby("_obs_date", as_index=False)
-        .agg(_start=("_start", "min"), _end=("_end", "max"))
-        .sort_values("_obs_date", kind="mergesort")
-    )
-    regions = 0
-    last_position: int | None = None
-    last_end: pd.Timestamp | None = None
-    for obs_date_value, start_value, end_value in cohorts[["_obs_date", "_start", "_end"]].itertuples(
-        index=False, name=None
-    ):
-        obs_date = pd.Timestamp(obs_date_value)
-        position = positions.get(obs_date)
-        if position is None:
-            continue
-        start = pd.Timestamp(start_value)
-        end = pd.Timestamp(end_value)
-        separated = last_position is None or position - last_position >= int(block_length)
-        non_overlapping = last_end is None or start > last_end
-        if separated and non_overlapping:
-            regions += 1
-            last_position = position
-            last_end = end
-    return regions
-
-
-def _fingerprint_dtype(series: pd.Series) -> dict[str, object]:
-    dtype = series.dtype
-    descriptor: dict[str, object] = {
-        "class": f"{type(dtype).__module__}.{type(dtype).__qualname__}",
-        "name": str(dtype),
-        "repr": repr(dtype),
-    }
-    if isinstance(dtype, pd.CategoricalDtype):
-        descriptor["ordered"] = bool(dtype.ordered)
-        descriptor["categories"] = [_fingerprint_scalar(value) for value in dtype.categories.tolist()]
-    return descriptor
-
-
-def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
-    """Hash every typed value and the exact column schema, including dtypes."""
-
-    if training_pairs.columns.duplicated().any():
-        raise ValueError("training evidence contains duplicate column names")
-    if any(not isinstance(column, str) for column in training_pairs.columns):
-        raise ValueError("training evidence column names must be strings")
-
-    columns = sorted(training_pairs.columns)
-    schema = [
-        {"name": column, "dtype": _fingerprint_dtype(training_pairs[column])}
-        for column in columns
-    ]
-    canonical_rows: list[list[dict[str, object]]] = []
-    for row in training_pairs.loc[:, columns].itertuples(index=False, name=None):
-        canonical_rows.append([_fingerprint_scalar(value) for value in row])
-    canonical_rows.sort(
-        key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    )
-    payload = json.dumps(
-        {"schema": schema, "rows": canonical_rows},
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    )
-    return sha256(payload.encode("utf-8")).hexdigest()
-
-
-def _has_multiple_genuine_walkforward_epochs(
-    walkforward_evaluations: list[dict[str, object]],
-) -> bool:
-    """Require distinct versions and non-overlapping market-date epochs."""
-
-    if len(walkforward_evaluations) < 2:
-        return False
-    parsed: list[tuple[str, pd.Timestamp, pd.Timestamp]] = []
-    for evaluation in walkforward_evaluations:
-        version_id = str(evaluation.get("version_id") or "").strip()
-        start = pd.to_datetime(evaluation.get("evaluation_start"), errors="coerce", utc=True)
-        end = pd.to_datetime(evaluation.get("evaluation_end"), errors="coerce", utc=True)
-        if not version_id or pd.isna(start) or pd.isna(end):
-            return False
-        start_day = pd.Timestamp(start).normalize()
-        end_day = pd.Timestamp(end).normalize()
-        if start_day > end_day:
-            return False
-        parsed.append((version_id, start_day, end_day))
-
-    version_ids = [item[0] for item in parsed]
-    if len(set(version_ids)) != len(version_ids):
-        return False
-    ordered = sorted(parsed, key=lambda item: (item[1], item[2], item[0]))
-    return all(current[1] > previous[2] for previous, current in zip(ordered, ordered[1:]))
-
-
-_readiness_audit_before_final_contract_hardening = readiness_audit
-
-
-def readiness_audit(
-    claims: pd.DataFrame,
-    outcomes: pd.DataFrame,
-    *,
-    freeze_commit: str | None = None,
-    freeze_time: str | None = None,
-    config: Phase5WalkForwardConfig = Phase5WalkForwardConfig(),
-) -> dict[str, object]:
-    """Run readiness only under the immutable Phase-5A research contract."""
-
-    _validate_phase5_contract_config(config)
-    return _readiness_audit_before_final_contract_hardening(
-        claims,
-        outcomes,
-        freeze_commit=freeze_commit,
-        freeze_time=freeze_time,
-        config=config,
-    )
