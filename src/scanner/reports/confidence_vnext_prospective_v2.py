@@ -60,12 +60,12 @@ OUTCOME_COLUMNS_V2 = (
 
 DERIVED_COLUMNS_V2 = (
     "claim_id", "snapshot_id", "as_of", "symbol", "currency", "horizon_sessions",
-    "start_market_date", "return", "peer_median_return", "peer_excess",
-    "return_claim_direction", "signed_peer_excess", "direction_hit",
-    "selection_statistical_state", "timing_matched_states", "risk_evidence_states",
-    "agreement_state", "timing_model_state", "risk_model_state", "dq_selection_state",
-    "dq_timing_state", "dq_risk_state", "cooldown_forbidden_start_dates",
-    "cooldown_context_complete",
+    "start_market_date", "return", "adverse_excursion", "path_max_drawdown",
+    "peer_median_return", "peer_excess", "return_claim_direction", "signed_peer_excess",
+    "direction_hit", "selection_statistical_state", "timing_matched_states",
+    "risk_evidence_states", "agreement_state", "timing_model_state", "risk_model_state",
+    "dq_selection_state", "dq_timing_state", "dq_risk_state",
+    "cooldown_forbidden_start_dates", "cooldown_context_complete",
 )
 
 _RECORD_INT_FIELDS = {"horizon_sessions", "elapsed_market_sessions", "path_session_count"}
