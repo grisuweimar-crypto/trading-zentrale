@@ -123,6 +123,27 @@ def _frames():
     return claims, outcomes
 
 
+def _support_ready_frames():
+    observation_dates = pd.bdate_range("2026-10-01", periods=12)
+    claims = []
+    for i, day in enumerate(observation_dates):
+        iso = day.strftime("%Y-%m-%d")
+        symbol = "AAA" if i % 2 == 0 else "BBB"
+        claims.append(_claim(f"r{i}", f"rs{i}", symbol, iso, iso))
+    claim_frame = pd.DataFrame(claims, columns=CLAIM_COLUMNS)
+
+    second_day = observation_dates[10].strftime("%Y-%m-%d")
+    outcomes = pd.DataFrame(
+        [
+            _outcome("r0", "AAA", "2026-10-01", "2026-10-01", "2026-10-08", "2026-10-09T00:00:00+00:00"),
+            _outcome("r10", "AAA", second_day, second_day, "2026-10-22", "2026-10-23T00:00:00+00:00"),
+        ],
+        columns=OUTCOME_COLUMNS,
+    )
+    outcomes.loc[outcomes["claim_id"].eq("r10"), "symbol"] = "BBB"
+    return claim_frame, outcomes
+
+
 def _with_statistical_context(claims: pd.DataFrame) -> pd.DataFrame:
     enriched = claims.copy()
     enriched["timing_statistical_state"] = "robust"
@@ -173,15 +194,21 @@ def test_readiness_derives_statistical_context_and_counts_only_mature_snapshots(
     claims, outcomes = _frames()
     blocked = readiness_audit(claims, outcomes)
     five = blocked["horizons"]["5"]
-    assert five["non_overlapping_outcome_support_regions"] == 2
+    assert five["non_overlapping_outcome_support_regions"] == 1
     assert five["mature_snapshots"] == 2
     assert five["walkforward_evaluation_ready"] is False
     assert five["claim_time_span"]["start"].startswith("2026-10-01")
     assert five["mature_outcome_time_span"]["start"].startswith("2026-10-09")
     assert five["mature_outcome_time_span"]["end"].startswith("2026-10-28")
 
-    ready = readiness_audit(_with_statistical_context(claims), outcomes)
-    assert ready["statistical_context_complete"] is True
+    statistical_only = readiness_audit(_with_statistical_context(claims), outcomes)
+    assert statistical_only["statistical_context_complete"] is True
+    assert statistical_only["horizons"]["5"]["walkforward_evaluation_ready"] is False
+    assert "5T_insufficient_time_separated_support" in statistical_only["blockers"]
+
+    ready_claims, ready_outcomes = _support_ready_frames()
+    ready = readiness_audit(_with_statistical_context(ready_claims), ready_outcomes)
+    assert ready["horizons"]["5"]["non_overlapping_outcome_support_regions"] == 2
     assert ready["horizons"]["5"]["walkforward_evaluation_ready"] is True
     assert ready["status"] == "ready_for_walkforward_evaluation"
 
@@ -192,6 +219,19 @@ def test_readiness_derives_statistical_context_and_counts_only_mature_snapshots(
     assert one_mature_snapshot["horizons"]["5"]["snapshots"] == 2
     assert one_mature_snapshot["horizons"]["5"]["mature_snapshots"] == 1
     assert one_mature_snapshot["horizons"]["5"]["walkforward_evaluation_ready"] is False
+
+
+def test_support_regions_use_observation_positions_not_calendar_gap():
+    claims, outcomes = _frames()
+    result = readiness_audit(_with_statistical_context(claims), outcomes)
+    five = result["horizons"]["5"]
+    assert five["robust_uncertainty_block_length_sessions"] == 10
+    assert five["non_overlapping_outcome_support_regions"] == 1
+    assert five["walkforward_evaluation_ready"] is False
+
+    ready_claims, ready_outcomes = _support_ready_frames()
+    ready = readiness_audit(_with_statistical_context(ready_claims), ready_outcomes)
+    assert ready["horizons"]["5"]["non_overlapping_outcome_support_regions"] == 2
 
 
 def test_pre_freeze_claims_are_rejected_from_readiness_and_training():
@@ -265,6 +305,11 @@ def test_model_manifest_fingerprints_every_training_column_and_revalidates_purge
     string_feature["typed_feature"] = ["1", "2"]
     assert evidence_fingerprint(numeric_feature) != evidence_fingerprint(string_feature)
 
+    empty_one = pd.DataFrame(columns=["claim_id", "feature_a"])
+    empty_two = pd.DataFrame(columns=["claim_id", "feature_b"])
+    assert evidence_fingerprint(empty_one) != evidence_fingerprint(empty_two)
+    assert evidence_fingerprint(empty_one) == evidence_fingerprint(empty_one.copy())
+
     manifest = model_version_manifest(
         version_id="phase5-candidate-0001",
         training_cutoff="2026-10-15T00:00:00+00:00",
@@ -287,6 +332,50 @@ def test_model_manifest_fingerprints_every_training_column_and_revalidates_purge
             version_id="late",
             training_cutoff="2026-10-15T00:00:00+00:00",
             training_pairs=late,
+            horizons=[5],
+            feature_definition={},
+            parameters={},
+            hyperparameters={},
+            evaluation_start="2026-10-20T00:00:00+00:00",
+            evaluation_end="2026-11-20T00:00:00+00:00",
+        )
+
+    future_generated = training.copy()
+    future_generated["generated_at"] = "2026-10-15T01:00:00Z"
+    with pytest.raises(ValueError, match="purged walk-forward"):
+        model_version_manifest(
+            version_id="future-generated",
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            training_pairs=future_generated,
+            horizons=[5],
+            feature_definition={},
+            parameters={},
+            hyperparameters={},
+            evaluation_start="2026-10-20T00:00:00+00:00",
+            evaluation_end="2026-11-20T00:00:00+00:00",
+        )
+
+    evaluated_before_end = training.copy()
+    evaluated_before_end["evaluated_at"] = "2026-10-07T00:00:00Z"
+    with pytest.raises(ValueError, match="purged walk-forward"):
+        model_version_manifest(
+            version_id="premature-label",
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            training_pairs=evaluated_before_end,
+            horizons=[5],
+            feature_definition={},
+            parameters={},
+            hyperparameters={},
+            evaluation_start="2026-10-20T00:00:00+00:00",
+            evaluation_end="2026-11-20T00:00:00+00:00",
+        )
+
+    duplicate_claim = pd.concat([training, training.iloc[[0]]], ignore_index=True)
+    with pytest.raises(ValueError, match="duplicate claim_id"):
+        model_version_manifest(
+            version_id="duplicate-claim",
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            training_pairs=duplicate_claim,
             horizons=[5],
             feature_definition={},
             parameters={},
@@ -331,6 +420,7 @@ def test_frozen_baseline_is_descriptive_and_does_not_create_confidence_mapping()
     result = frozen_baseline_evaluator(claims, outcomes, horizon=5)
     assert result["status"] == "descriptive_only"
     assert result["N"] == 4
+    assert result["support_regions"] == 1
     assert result["notes"]["no_adaptive_weights"] is True
     assert result["notes"]["no_scalar_confidence"] is True
     assert result["groups"]["agreement_state"]["compatible"]["N"] == 4
