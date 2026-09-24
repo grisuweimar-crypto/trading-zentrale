@@ -142,15 +142,31 @@ def test_empty_readiness_is_fail_closed_and_reports_archive_gap():
     result = readiness_audit(
         pd.DataFrame(columns=CLAIM_COLUMNS),
         pd.DataFrame(columns=OUTCOME_COLUMNS),
-        freeze_commit="abc",
-        freeze_time="2026-09-24T01:12:14+00:00",
     )
     assert result["status"] == "insufficient_evidence"
     assert result["shadow_archive"]["claims"] == 0
     assert "claim_level_phase4c_timing_and_risk_states_not_archived" in result["blockers"]
     assert result["horizons"]["5"]["mature_outcomes"] == 0
     assert result["horizons"]["5"]["walkforward_evaluation_ready"] is False
+    assert result["freeze"]["immutable"] is True
     assert result["freeze"]["enforced_on_claim_generated_at"] is True
+
+
+def test_freeze_metadata_cannot_be_weakened_by_caller():
+    empty_claims = pd.DataFrame(columns=CLAIM_COLUMNS)
+    empty_outcomes = pd.DataFrame(columns=OUTCOME_COLUMNS)
+    with pytest.raises(ValueError, match="freeze_time is immutable"):
+        readiness_audit(
+            empty_claims,
+            empty_outcomes,
+            freeze_time="2026-09-23T00:00:00Z",
+        )
+    with pytest.raises(ValueError, match="freeze_commit is immutable"):
+        readiness_audit(
+            empty_claims,
+            empty_outcomes,
+            freeze_commit="not-the-phase4e-merge",
+        )
 
 
 def test_readiness_derives_statistical_context_and_counts_only_mature_snapshots():
