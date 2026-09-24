@@ -169,6 +169,12 @@ def _validate_claim_archive(claims: pd.DataFrame) -> None:
     if not claims["schema_version"].astype(str).eq(PHASE4E_SCHEMA_VERSION).all():
         raise ValueError("unexpected Phase 4E claim schema_version")
 
+    claim_horizons = pd.to_numeric(claims["horizon_sessions"], errors="coerce")
+    unsupported_horizons = claim_horizons.isna() | ~claim_horizons.isin(HORIZONS)
+    if unsupported_horizons.any():
+        examples = claims.loc[unsupported_horizons, "horizon_sessions"].astype(str).head(3).tolist()
+        raise ValueError(f"unsupported Phase 4E claim horizon_sessions: {examples}")
+
     expected = claims.apply(_expected_claim_id, axis=1)
     supplied = claims["claim_id"].astype(str)
     if not supplied.eq(expected).all():
@@ -285,6 +291,9 @@ def _validate_outcome_archive(claims: pd.DataFrame, outcomes: pd.DataFrame) -> N
         ),
         index=work.index,
     )
+    path_tolerance = 1e-12
+    adverse_consistent = adverse + path_tolerance >= np.maximum(0.0, -returns)
+    drawdown_consistent = drawdown + path_tolerance >= adverse
     weekday_feasible = pd.Series(
         [
             _minimum_weekday_gap(start, end) >= int(h) if pd.notna(h) else False
@@ -322,6 +331,8 @@ def _validate_outcome_archive(claims: pd.DataFrame, outcomes: pd.DataFrame) -> N
         | drawdown.lt(0)
         | drawdown.gt(1)
         | ~return_consistent
+        | ~adverse_consistent
+        | ~drawdown_consistent
         | ~weekday_feasible
     )
     if invalid.any():
