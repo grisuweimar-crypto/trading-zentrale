@@ -1,0 +1,58 @@
+{
+  "schema_version": "elliott_vnext_output_v1",
+  "required": [
+    "symbol",
+    "as_of",
+    "degree",
+    "primary_scenario",
+    "alternative_scenarios",
+    "structural_fit",
+    "confirmation_strength",
+    "historical_expectancy",
+    "hard_invalidations",
+    "warnings"
+  ],
+  "fields": {
+    "symbol": "string",
+    "as_of": "date",
+    "timeframe": "daily|weekly",
+    "degree": "coarse|medium|fine|custom",
+    "primary_scenario": "string",
+    "alternative_scenarios": "array",
+    "structural_bias": "bullish|bearish|neutral|mixed|unknown",
+    "structural_fit": "number_0_1_or_null",
+    "confirmation_strength": "number_0_1_or_null",
+    "historical_expectancy": "object_or_null",
+    "pivots": "array_of_pivot_objects",
+    "fib_state": "object_or_null",
+    "hard_invalidations": "array",
+    "rule_violations": "array",
+    "routing_triggers": "array",
+    "market_context": "object_or_null",
+    "relative_strength_context": "object_or_null",
+    "warnings": "array"
+  },
+  "pivot_object_required": [
+    "pivot_time",
+    "confirmed_time",
+    "price",
+    "kind",
+    "degree"
+  ],
+  "fib_state_required_when_present": [
+    "measurement_type",
+    "anchor_start",
+    "anchor_end",
+    "ratio",
+    "zone_lower",
+    "zone_upper",
+    "anchor_confirmed_at"
+  ],
+  "constraints": {
+    "trade_decision_field_forbidden": true,
+    "single_confidence_field_without_decomposition_forbidden": true,
+    "fib_anchor_must_reference_confirmed_structure": true,
+    "primary_and_alternative_scenarios_must_obey_hard_rules": true,
+    "market_context_quality_required_when_market_context_present": true
+  }
+}
