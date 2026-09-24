@@ -70,17 +70,19 @@ The readiness report exposes this as:
 
 `claim_level_phase4c_timing_and_risk_states_not_archived`
 
-This gate cannot be cleared by a command-line assertion. Readiness derives it
-only from archived `timing_statistical_state` and `risk_statistical_state`
-fields whose values are valid Phase-4C ordinal states. Because no real Phase-4E
-claims existed when this gap was discovered, the archive can still be extended
-prospectively without rewriting historical claims.
+This gate cannot be cleared by a command-line or programmatic configuration
+assertion. The Phase-5A contract requires Statistical Context unconditionally;
+attempts to disable that gate are rejected. Readiness derives completeness
+only from archived evidence, never from an operator override. Because no real
+Phase-4E claims existed when this gap was discovered, the archive can still be
+extended prospectively without rewriting historical claims.
 
 ## Temporal-support rule
 
 Phase 5 mirrors the Phase-4 robust-uncertainty support semantics rather than
-using calendar distance as a proxy. For each horizon, all eligible claim
-`as_of` dates form the ordered observation-date baseline. Mature outcome
+using calendar distance as a proxy. For each horizon, only claims whose
+`outcome_eligibility` is `eligible` form the ordered observation-date baseline.
+Unevaluable claim dates can never create artificial spacing. Mature outcome
 cohorts count as separate temporal support only when their observation
 positions are at least the effective uncertainty block length apart:
 
@@ -88,9 +90,19 @@ positions are at least the effective uncertainty block length apart:
 
 The counted forward outcome intervals must also not overlap. Therefore two
 calendar-distant mature snapshots do not automatically become two support
-regions if the prospective archive contains too few intervening observation
-dates. This is a conservative support count; it is not a claim of statistical
-independence.
+regions if the eligible prospective archive contains too few intervening
+observation dates. This is a conservative support count; it is not a claim of
+statistical independence.
+
+The Phase-4 support constants are contractual rather than tunable in Phase 5A:
+
+- uncertainty block multiplier: `2`;
+- minimum time-separated support regions: `2`;
+- fixed event spacing: `5` sessions;
+- Statistical Context gate: mandatory.
+
+Supplying weaker values fails closed instead of changing the interpretation of
+the readiness report.
 
 ## Purged walk-forward contract
 
@@ -126,9 +138,10 @@ The exact training evidence used by each model version is hashed into an
 `evidence_fingerprint`. The fingerprint covers every training column and value,
 including later engineered features, rather than a fixed allowlist. Missing
 values are encoded separately from literal strings and numeric values remain
-distinct from their string representations. Even a zero-row evidence frame
-hashes its exact column schema, so different empty schemas cannot share the
-same evidence fingerprint. A model manifest records:
+distinct from their string representations. Column dtypes are part of the
+schema fingerprint as well. Even a zero-row evidence frame therefore hashes
+its exact names and dtypes, so equal column names with different empty dtypes
+cannot share the same evidence fingerprint. A model manifest records:
 
 - version ID;
 - training cutoff and freeze time;
@@ -171,7 +184,10 @@ A candidate can only become eligible for a separate promotion review after all
 of the following are true:
 
 - multiple genuine walk-forward evaluation epochs exist;
-- their version IDs are distinct and their evaluation windows do not overlap;
+- their version IDs are distinct;
+- their evaluation windows do not overlap on a market-date basis; an epoch
+  ending and another starting on the same market date still overlap even when
+  the timestamps differ intraday;
 - PIT/leakage audit passes;
 - model versions are reproducible;
 - robust uncertainty is available;
