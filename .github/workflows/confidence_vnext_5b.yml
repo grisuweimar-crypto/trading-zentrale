@@ -1,0 +1,462 @@
+name: Phase 5B Frozen Baseline v2
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/confidence_vnext_5b.yml'
+      - 'docs/confidence_vnext_5b.md'
+      - 'scripts/run_confidence_vnext_prospective_5b.py'
+      - 'src/scanner/reports/confidence_vnext_prospective_v2.py'
+      - 'src/scanner/reports/confidence_vnext_frozen_baseline.py'
+      - 'tests/test_confidence_vnext_prospective_v2.py'
+      - 'tests/test_confidence_vnext_frozen_baseline.py'
+  workflow_run:
+    workflows: ['Phase 4E Confidence Prospective Shadow']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: phase5b-v2-${{ github.event.pull_request.number || github.event.workflow_run.head_branch || github.ref_name || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  v2:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      process: ${{ steps.bind.outputs.process }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+
+      - name: Verify Phase 5B PR scope
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          allowed = {
+              '.github/workflows/confidence_vnext_5b.yml',
+              'docs/confidence_vnext_5b.md',
+              'scripts/run_confidence_vnext_prospective_5b.py',
+              'src/scanner/reports/confidence_vnext_prospective_v2.py',
+              'src/scanner/reports/confidence_vnext_frozen_baseline.py',
+              'tests/test_confidence_vnext_prospective_v2.py',
+              'tests/test_confidence_vnext_frozen_baseline.py',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']], text=True
+          ).splitlines())
+          unexpected = sorted(changed - allowed)
+          if unexpected:
+              raise SystemExit(f'unexpected Phase 5B paths: {unexpected}')
+          if not changed:
+              raise SystemExit('Phase 5B PR has no changed files')
+          print('Phase 5B scope ok:', sorted(changed))
+          PY
+
+      - name: Bind to oldest Phase 4E snapshot not yet represented in v2
+        id: bind
+        if: github.event_name != 'pull_request'
+        run: |
+          git fetch origin main --force
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
+          python - <<'PY'
+          import csv
+          import io
+          import json
+          import os
+          import subprocess
+
+          V1 = 'artifacts/research/confidence_vnext_shadow_claims_4e.csv'
+          V2 = 'artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv'
+          output = os.environ['GITHUB_OUTPUT']
+          env_file = os.environ['GITHUB_ENV']
+
+          def text(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(['git', *args], text=True, stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          if text('show-ref', '--verify', 'refs/remotes/origin/phase4e-shadow-data', allow_fail=True) is None:
+              with open(output, 'a', encoding='utf-8') as handle:
+                  handle.write('process=false\n')
+              with open(env_file, 'a', encoding='utf-8') as handle:
+                  handle.write('PHASE5B_PROCESS=0\n')
+              print('No Phase 4E shadow branch exists; Phase 5B is a clean no-op.')
+              raise SystemExit(0)
+
+          raw_v1 = text('show', f'origin/phase4e-shadow-data:{V1}', allow_fail=True)
+          if not raw_v1:
+              with open(output, 'a', encoding='utf-8') as handle:
+                  handle.write('process=false\n')
+              with open(env_file, 'a', encoding='utf-8') as handle:
+                  handle.write('PHASE5B_PROCESS=0\n')
+              print('No Phase 4E v1 claims exist; Phase 5B is a clean no-op.')
+              raise SystemExit(0)
+
+          v1_run_ids = []
+          for row in csv.DictReader(io.StringIO(raw_v1)):
+              run_id = str(row.get('run_id') or '').strip()
+              if run_id and run_id not in v1_run_ids:
+                  v1_run_ids.append(run_id)
+
+          claimed = set()
+          raw_v2 = text('show', f'origin/phase4e-shadow-data:{V2}', allow_fail=True)
+          if raw_v2:
+              for row in csv.DictReader(io.StringIO(raw_v2)):
+                  run_id = str(row.get('run_id') or '').strip()
+                  if run_id:
+                      claimed.add(run_id)
+
+          publication_by_run = {}
+          commits = text(
+              'rev-list', '--reverse', 'origin/main', '--first-parent', '--',
+              'artifacts/research/history_metadata.json',
+          ).splitlines()
+          for sha in commits:
+              # No retrospective v2 reconstruction: only scanner publications
+              # whose exact commit already contains the Phase-5B contract qualify.
+              if text('cat-file', '-e', f'{sha}:.github/workflows/confidence_vnext_5b.yml', allow_fail=True) is None:
+                  continue
+              raw = text('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
+              if not raw:
+                  continue
+              try:
+                  metadata = json.loads(raw)
+              except json.JSONDecodeError:
+                  continue
+              daily = metadata.get('daily_run') or {}
+              run_id = str(daily.get('run_id') or '').strip()
+              if metadata.get('latest_run_complete') is True and daily.get('scanner_status') == 'success' and run_id:
+                  publication_by_run[run_id] = sha
+
+          candidates = [run_id for run_id in v1_run_ids if run_id not in claimed and run_id in publication_by_run]
+          if not candidates:
+              with open(output, 'a', encoding='utf-8') as handle:
+                  handle.write('process=false\n')
+              with open(env_file, 'a', encoding='utf-8') as handle:
+                  handle.write('PHASE5B_PROCESS=0\n')
+              print('No post-Phase-5B unclaimed v1 snapshot exists; clean no-op.')
+              raise SystemExit(0)
+
+          run_id = candidates[0]
+          sha = publication_by_run[run_id]
+          subprocess.check_call(['git', 'checkout', '--detach', sha])
+          selected = json.loads(open('artifacts/research/history_metadata.json', encoding='utf-8').read())
+          actual = str(((selected.get('daily_run') or {}).get('run_id')) or '').strip()
+          if actual != run_id:
+              raise SystemExit(f'Phase 5B publication binding mismatch: {actual!r} != {run_id!r}')
+
+          with open(output, 'a', encoding='utf-8') as handle:
+              handle.write('process=true\n')
+              handle.write(f'bound_run_id={run_id}\n')
+              handle.write(f'bound_commit={sha}\n')
+          with open(env_file, 'a', encoding='utf-8') as handle:
+              handle.write('PHASE5B_PROCESS=1\n')
+              handle.write(f'BOUND_RUN_ID={run_id}\n')
+              handle.write(f'BOUND_PUBLICATION_COMMIT={sha}\n')
+          print('Bound Phase 5B to:', sha, run_id)
+          PY
+
+      - name: Set up Python
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Phase 5B and inherited contract tests
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: |
+          python -m pytest -q \
+            tests/test_confidence_vnext_prospective_v2.py \
+            tests/test_confidence_vnext_frozen_baseline.py \
+            tests/test_confidence_vnext_walkforward.py \
+            tests/test_confidence_vnext_prospective.py \
+            tests/test_confidence_vnext_research.py \
+            tests/test_confidence_vnext_research_guards.py
+
+      - name: Regenerate Phase 3 evidence for bound snapshot
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: python scripts/run_risk_vnext_3.py --output artifacts/research/risk_vnext_3.json
+
+      - name: Audit current versus historical risk metric scales
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: python scripts/audit_phase4_risk_scale.py
+
+      - name: Build exact frozen Phase 4 registry
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: python scripts/run_confidence_vnext_research_4.py --output "$RUNNER_TEMP/confidence_vnext_current_4.json"
+
+      - name: Restore existing v2 append-only archives
+        if: github.event_name != 'pull_request' && env.PHASE5B_PROCESS == '1'
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          for path in \
+            artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv \
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv \
+            artifacts/research/confidence_vnext_frozen_baseline_5b.json
+          do
+            if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/phase4e-shadow-data:$path" > "$path"
+            else
+              rm -f "$path"
+            fi
+          done
+
+      - name: Select v2 evaluation symbols
+        if: github.event_name != 'pull_request' && env.PHASE5B_PROCESS == '1'
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          import pandas as pd
+
+          report = json.loads((Path(os.environ['RUNNER_TEMP']) / 'confidence_vnext_current_4.json').read_text(encoding='utf-8'))
+          current = {
+              str(row.get('symbol') or '').strip()
+              for row in ((report.get('current') or {}).get('rows') or [])
+              if str(row.get('symbol') or '').strip()
+          }
+          claims_path = Path('artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv')
+          outcomes_path = Path('artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv')
+          outstanding = set()
+          if claims_path.exists() and claims_path.stat().st_size:
+              claims = pd.read_csv(claims_path, dtype=str, keep_default_na=False)
+              matured = set()
+              if outcomes_path.exists() and outcomes_path.stat().st_size:
+                  outcomes = pd.read_csv(outcomes_path, dtype=str, keep_default_na=False)
+                  matured = set(outcomes['claim_id'].astype(str))
+              unresolved = claims.loc[
+                  claims['outcome_eligibility'].astype(str).eq('eligible')
+                  & ~claims['claim_id'].astype(str).isin(matured)
+              ]
+              outstanding = set(unresolved['symbol'].astype(str)) - {''}
+          symbols = sorted(current | outstanding)
+          target = Path(os.environ['RUNNER_TEMP']) / 'phase5b_symbols.txt'
+          target.write_text('\n'.join(symbols) + ('\n' if symbols else ''), encoding='utf-8')
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f'PHASE5B_SYMBOLS={len(symbols)}\n')
+          print('Phase 5B evaluation symbols:', len(symbols))
+          PY
+
+      - name: Build one-basis v2 evaluation history
+        if: github.event_name != 'pull_request' && env.PHASE5B_PROCESS == '1' && env.PHASE5B_SYMBOLS != '0'
+        run: |
+          export EVALUATION_PRICES="$RUNNER_TEMP/phase5b_evaluation_prices.csv"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import pandas as pd
+          from scanner.data.price_history import MARKET_COLUMNS
+          from scripts.prefetch_market_history import prefetch_history
+
+          symbols = [line.strip() for line in (Path(os.environ['RUNNER_TEMP']) / 'phase5b_symbols.txt').read_text().splitlines() if line.strip()]
+          target = Path(os.environ['EVALUATION_PRICES'])
+          try:
+              prefetch_history(Path('.'), tuple(symbols), minimum_days=300, output=target)
+          except RuntimeError as exc:
+              print('Evaluation prefetch unavailable; outcomes remain immature:', exc)
+              pd.DataFrame(columns=MARKET_COLUMNS).to_csv(target, index=False)
+          PY
+          echo "EVALUATION_PRICES=$EVALUATION_PRICES" >> "$GITHUB_ENV"
+
+      - name: Use local prices for PR dry-run
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "EVALUATION_PRICES=artifacts/research/price_backfill.csv" >> "$GITHUB_ENV"
+          echo "BOUND_PUBLICATION_COMMIT=${{ github.event.pull_request.head.sha }}" >> "$GITHUB_ENV"
+          echo "V2_CLAIMS=$RUNNER_TEMP/confidence_vnext_shadow_claims_5b_v2.csv" >> "$GITHUB_ENV"
+          echo "V2_OUTCOMES=$RUNNER_TEMP/confidence_vnext_shadow_outcomes_5b_v2.csv" >> "$GITHUB_ENV"
+          echo "V2_BASELINE=$RUNNER_TEMP/confidence_vnext_frozen_baseline_5b.json" >> "$GITHUB_ENV"
+
+      - name: Select runtime v2 destinations
+        if: github.event_name != 'pull_request' && env.PHASE5B_PROCESS == '1'
+        run: |
+          echo "V2_CLAIMS=artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv" >> "$GITHUB_ENV"
+          echo "V2_OUTCOMES=artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv" >> "$GITHUB_ENV"
+          echo "V2_BASELINE=artifacts/research/confidence_vnext_frozen_baseline_5b.json" >> "$GITHUB_ENV"
+          if [ -z "$EVALUATION_PRICES" ]; then
+            echo "EVALUATION_PRICES=$RUNNER_TEMP/phase5b_evaluation_prices.csv" >> "$GITHUB_ENV"
+            python - <<'PY'
+          import os
+          from pathlib import Path
+          import pandas as pd
+          from scanner.data.price_history import MARKET_COLUMNS
+          target = Path(os.environ['RUNNER_TEMP']) / 'phase5b_evaluation_prices.csv'
+          pd.DataFrame(columns=MARKET_COLUMNS).to_csv(target, index=False)
+          PY
+          fi
+
+      - name: Run prospective v2 and Frozen Baseline
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: |
+          python scripts/run_confidence_vnext_prospective_5b.py \
+            --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
+            --source-commit "$BOUND_PUBLICATION_COMMIT" \
+            --prices "$EVALUATION_PRICES" \
+            --claims "$V2_CLAIMS" \
+            --outcomes "$V2_OUTCOMES" \
+            --baseline "$V2_BASELINE" \
+            --bootstrap-reps 100
+
+      - name: Validate Phase 5B fail-closed contract
+        if: github.event_name == 'pull_request' || env.PHASE5B_PROCESS == '1'
+        run: |
+          python - <<'PY'
+          import json, os
+          import pandas as pd
+          from scanner.reports.confidence_vnext_prospective_v2 import CLAIM_COLUMNS_V2, OUTCOME_COLUMNS_V2, validate_v2_archives
+
+          claims = pd.read_csv(os.environ['V2_CLAIMS'], dtype=str, keep_default_na=False)
+          outcomes = pd.read_csv(os.environ['V2_OUTCOMES'], dtype=str, keep_default_na=False)
+          validate_v2_archives(claims, outcomes)
+          if list(claims.columns) != list(CLAIM_COLUMNS_V2) or list(outcomes.columns) != list(OUTCOME_COLUMNS_V2):
+              raise SystemExit('v2 schemas are not exact')
+          forbidden = {'score', 'opportunity', 'risk', 'confidence', 'confidence_label'}
+          if forbidden & set(claims.columns):
+              raise SystemExit('raw scanner opportunity/confidence fields must not become Phase-5 Confidence strength')
+          report = json.load(open(os.environ['V2_BASELINE'], encoding='utf-8'))
+          semantics = report['semantics']
+          required_false = ('state_names_assumed_ordinal', 'adaptive_weights_created', 'scalar_confidence_mapping_created', 'production_confidence_changed')
+          if any(semantics[key] is not False for key in required_false):
+              raise SystemExit('Phase 5B research-only contract violated')
+          if semantics['fixed_event_spacing_sessions'] != 5 or semantics['minimum_time_separated_support_regions'] != 2:
+              raise SystemExit('inherited temporal contract changed')
+          print('Phase 5B contract validated:', len(claims), 'claims,', len(outcomes), 'outcomes')
+          PY
+
+      - name: Verify PR idempotence
+        if: github.event_name == 'pull_request'
+        run: |
+          CLAIMS_BEFORE=$(sha256sum "$V2_CLAIMS" | cut -d' ' -f1)
+          OUTCOMES_BEFORE=$(sha256sum "$V2_OUTCOMES" | cut -d' ' -f1)
+          python scripts/run_confidence_vnext_prospective_5b.py \
+            --phase4-report "$RUNNER_TEMP/confidence_vnext_current_4.json" \
+            --source-commit "$BOUND_PUBLICATION_COMMIT" \
+            --prices "$EVALUATION_PRICES" \
+            --claims "$V2_CLAIMS" \
+            --outcomes "$V2_OUTCOMES" \
+            --baseline "$V2_BASELINE" \
+            --bootstrap-reps 20
+          test "$CLAIMS_BEFORE" = "$(sha256sum "$V2_CLAIMS" | cut -d' ' -f1)"
+          test "$OUTCOMES_BEFORE" = "$(sha256sum "$V2_OUTCOMES" | cut -d' ' -f1)"
+
+      - name: Stage v2 publication payload
+        if: github.event_name != 'pull_request' && env.PHASE5B_PROCESS == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5b-v2-publication
+          path: |
+            artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv
+            artifacts/research/confidence_vnext_frozen_baseline_5b.json
+          if-no-files-found: error
+
+  publish:
+    needs: v2
+    if: needs.v2.result == 'success' && needs.v2.outputs.process == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: phase4e-shadow-publication
+      cancel-in-progress: false
+    steps:
+      - name: Checkout shadow branch seed
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Prepare isolated shadow branch
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          git checkout -B phase4e-shadow-data origin/phase4e-shadow-data
+
+      - name: Restore v2 payload
+        uses: actions/download-artifact@v4
+        with:
+          name: phase5b-v2-publication
+          path: artifacts/research
+
+      - name: Publish v2 without touching main or v1 files
+        run: |
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add \
+            artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv \
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv \
+            artifacts/research/confidence_vnext_frozen_baseline_5b.json
+          if ! git diff --cached --quiet; then
+            git commit -m '🧪 Phase 5B v2 shadow update [skip ci]'
+            git push origin HEAD:refs/heads/phase4e-shadow-data
+          fi
+
+      - name: Continue v2 catch-up queue when needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main --force
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          REMAINING=$(python - <<'PY'
+          import csv, io, json, subprocess
+
+          def text(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(['git', *args], text=True, stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          v1_raw = text('show', 'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv', allow_fail=True) or ''
+          v2_raw = text('show', 'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv', allow_fail=True) or ''
+          v1 = []
+          for row in csv.DictReader(io.StringIO(v1_raw)):
+              run_id = str(row.get('run_id') or '').strip()
+              if run_id and run_id not in v1:
+                  v1.append(run_id)
+          v2 = {str(row.get('run_id') or '').strip() for row in csv.DictReader(io.StringIO(v2_raw)) if str(row.get('run_id') or '').strip()}
+
+          eligible = set()
+          commits = text('rev-list', '--reverse', 'origin/main', '--first-parent', '--', 'artifacts/research/history_metadata.json').splitlines()
+          for sha in commits:
+              if text('cat-file', '-e', f'{sha}:.github/workflows/confidence_vnext_5b.yml', allow_fail=True) is None:
+                  continue
+              raw = text('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
+              if not raw:
+                  continue
+              try:
+                  metadata = json.loads(raw)
+              except json.JSONDecodeError:
+                  continue
+              run_id = str(((metadata.get('daily_run') or {}).get('run_id')) or '').strip()
+              if run_id:
+                  eligible.add(run_id)
+          print(sum(1 for run_id in v1 if run_id in eligible and run_id not in v2))
+          PY
+          )
+          echo "Unclaimed post-5B snapshots remaining: $REMAINING"
+          if [ "$REMAINING" -gt 0 ]; then
+            gh workflow run confidence_vnext_5b.yml --ref main
+          fi
