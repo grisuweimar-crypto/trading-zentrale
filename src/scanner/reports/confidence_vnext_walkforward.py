@@ -181,8 +181,6 @@ def readiness_audit(
         ].copy() if not outcomes.empty else _empty_outcomes()
 
         eligibility = c["outcome_eligibility"].astype(str) if not c.empty else pd.Series(dtype=str)
-        mature_ids = set(o["claim_id"].astype(str)) if not o.empty else set()
-        mature_claims = c.loc[c["claim_id"].astype(str).isin(mature_ids)].copy() if not c.empty else c
         regions = _outcome_overlap_regions(o)
         support_ok = regions >= config.minimum_time_separated_support_regions
         snapshots = int(c["snapshot_id"].astype(str).replace("", np.nan).nunique()) if not c.empty else 0
@@ -217,7 +215,7 @@ def readiness_audit(
             "mature_symbols": mature_symbols,
             "snapshots": snapshots,
             "claim_time_span": _date_span(c["as_of"]) if not c.empty else {"start": None, "end": None},
-            "mature_outcome_time_span": _date_span(o["as_of"]) if not o.empty else {"start": None, "end": None},
+            "mature_outcome_time_span": _date_span(o["evaluated_at"]) if not o.empty else {"start": None, "end": None},
             "outcome_end_span": _date_span(o["end_market_date"]) if not o.empty else {"start": None, "end": None},
             "non_overlapping_outcome_support_regions": regions,
             "robust_uncertainty_block_length_sessions": int(config.uncertainty_block_multiplier * horizon),
@@ -314,24 +312,20 @@ def purged_training_pairs(
 
 
 def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
-    """Hash the exact training evidence used by one immutable model version."""
+    """Hash every column and value in the exact immutable training evidence."""
 
     if training_pairs.empty:
         return sha256(b"").hexdigest()
-    preferred = [
-        "claim_id",
-        "evidence_fingerprint",
-        "horizon_sessions_claim",
-        "as_of_claim",
-        "snapshot_id",
-        "symbol_claim",
-        "end_market_date",
-        "return",
-        "adverse_excursion",
-        "path_max_drawdown",
-    ]
-    columns = [column for column in preferred if column in training_pairs.columns]
-    canonical = training_pairs.loc[:, columns].astype(str).sort_values(columns, kind="mergesort")
+    if training_pairs.columns.duplicated().any():
+        raise ValueError("training evidence contains duplicate column names")
+
+    columns = sorted(str(column) for column in training_pairs.columns)
+    canonical = training_pairs.loc[:, columns].copy()
+    for column in columns:
+        canonical[column] = canonical[column].map(
+            lambda value: "<NA>" if pd.isna(value) else str(value)
+        )
+    canonical = canonical.sort_values(columns, kind="mergesort").reset_index(drop=True)
     payload = canonical.to_csv(index=False, lineterminator="\n")
     return sha256(payload.encode("utf-8")).hexdigest()
 
@@ -470,6 +464,31 @@ def frozen_baseline_evaluator(
     }
 
 
+def _has_multiple_genuine_walkforward_epochs(
+    walkforward_evaluations: list[dict[str, object]],
+) -> bool:
+    """Require at least two valid, distinct and non-overlapping evaluation epochs."""
+
+    if len(walkforward_evaluations) < 2:
+        return False
+
+    parsed: list[tuple[str, pd.Timestamp, pd.Timestamp]] = []
+    for evaluation in walkforward_evaluations:
+        version_id = str(evaluation.get("version_id") or "").strip()
+        start = pd.to_datetime(evaluation.get("evaluation_start"), errors="coerce", utc=True)
+        end = pd.to_datetime(evaluation.get("evaluation_end"), errors="coerce", utc=True)
+        if not version_id or pd.isna(start) or pd.isna(end) or start > end:
+            return False
+        parsed.append((version_id, pd.Timestamp(start), pd.Timestamp(end)))
+
+    version_ids = [item[0] for item in parsed]
+    if len(set(version_ids)) != len(version_ids):
+        return False
+
+    ordered = sorted(parsed, key=lambda item: (item[1], item[2], item[0]))
+    return all(current[1] > previous[2] for previous, current in zip(ordered, ordered[1:]))
+
+
 def promotion_assessment(
     *,
     walkforward_evaluations: list[dict[str, object]],
@@ -481,7 +500,9 @@ def promotion_assessment(
     baseline_advantage_demonstrated: bool,
 ) -> dict[str, object]:
     gates = {
-        "multiple_walkforward_evaluations": len(walkforward_evaluations) >= 2,
+        "multiple_walkforward_evaluations": _has_multiple_genuine_walkforward_epochs(
+            walkforward_evaluations
+        ),
         "pit_leakage_audit_passed": bool(pit_leakage_audit_passed),
         "reproducible_versions": bool(reproducible_versions),
         "robust_uncertainty_available": bool(robust_uncertainty_available),
