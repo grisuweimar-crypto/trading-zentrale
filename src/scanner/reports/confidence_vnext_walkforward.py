@@ -12,6 +12,7 @@ training cutoff. Evaluation periods remain untouched until they end.
 
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+import json
 from pathlib import Path
 
 import numpy as np
@@ -375,8 +376,28 @@ def purged_training_pairs(
     ).reset_index(drop=True)
 
 
+def _fingerprint_scalar(value: object) -> dict[str, object]:
+    """Typed JSON-safe scalar encoding; null never collides with a literal string."""
+
+    missing = pd.isna(value)
+    if isinstance(missing, (bool, np.bool_)) and bool(missing):
+        return {"type": "null", "value": None}
+    if isinstance(value, (bool, np.bool_)):
+        return {"type": "bool", "value": bool(value)}
+    if isinstance(value, (int, np.integer)) and not isinstance(value, (bool, np.bool_)):
+        return {"type": "int", "value": str(int(value))}
+    if isinstance(value, (float, np.floating)):
+        return {"type": "float", "value": repr(float(value))}
+    if isinstance(value, pd.Timestamp):
+        return {"type": "timestamp", "value": value.isoformat()}
+    return {
+        "type": f"{type(value).__module__}.{type(value).__qualname__}",
+        "value": str(value),
+    }
+
+
 def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
-    """Hash every column and value in the exact immutable training evidence."""
+    """Hash every typed column/value in the exact immutable training evidence."""
 
     if training_pairs.empty:
         return sha256(b"").hexdigest()
@@ -384,13 +405,18 @@ def evidence_fingerprint(training_pairs: pd.DataFrame) -> str:
         raise ValueError("training evidence contains duplicate column names")
 
     columns = sorted(str(column) for column in training_pairs.columns)
-    canonical = training_pairs.loc[:, columns].copy()
-    for column in columns:
-        canonical[column] = canonical[column].map(
-            lambda value: "<NA>" if pd.isna(value) else str(value)
-        )
-    canonical = canonical.sort_values(columns, kind="mergesort").reset_index(drop=True)
-    payload = canonical.to_csv(index=False, lineterminator="\n")
+    canonical_rows: list[list[dict[str, object]]] = []
+    for row in training_pairs.loc[:, columns].itertuples(index=False, name=None):
+        canonical_rows.append([_fingerprint_scalar(value) for value in row])
+    canonical_rows.sort(
+        key=lambda row: json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    )
+    payload = json.dumps(
+        {"columns": columns, "rows": canonical_rows},
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
     return sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -412,6 +438,7 @@ def _validate_purged_training_pairs(
         "end_market_date",
         "as_of_claim",
         "horizon_sessions_claim",
+        "horizon_sessions_outcome",
     }
     missing = required - set(training_pairs.columns)
     if missing:
@@ -422,11 +449,17 @@ def _validate_purged_training_pairs(
     evaluated = pd.to_datetime(training_pairs["evaluated_at"], errors="coerce", utc=True)
     end_market = pd.to_datetime(training_pairs["end_market_date"], errors="coerce", utc=True)
     claim_as_of = pd.to_datetime(training_pairs["as_of_claim"], errors="coerce", utc=True)
-    row_horizons = pd.to_numeric(training_pairs["horizon_sessions_claim"], errors="coerce")
+    claim_horizons = pd.to_numeric(training_pairs["horizon_sessions_claim"], errors="coerce")
+    outcome_horizons = pd.to_numeric(training_pairs["horizon_sessions_outcome"], errors="coerce")
     allowed_horizons = set(int(h) for h in horizons)
-    horizon_valid = row_horizons.map(
+
+    claim_horizon_valid = claim_horizons.map(
         lambda value: pd.notna(value) and float(value).is_integer() and int(value) in allowed_horizons
     )
+    outcome_horizon_valid = outcome_horizons.map(
+        lambda value: pd.notna(value) and float(value).is_integer() and int(value) in allowed_horizons
+    )
+    horizon_equal = claim_horizons.eq(outcome_horizons)
 
     invalid = (
         generated.isna()
@@ -437,7 +470,9 @@ def _validate_purged_training_pairs(
         | end_market.ge(evaluation_start.normalize())
         | claim_as_of.isna()
         | claim_as_of.ge(evaluation_start)
-        | ~horizon_valid
+        | ~claim_horizon_valid
+        | ~outcome_horizon_valid
+        | ~horizon_equal
     )
     if invalid.any():
         examples = training_pairs.loc[invalid, "claim_id"].astype(str).head(3).tolist()
