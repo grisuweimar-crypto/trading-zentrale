@@ -34,10 +34,7 @@ STATISTICAL_CONTEXT_COLUMNS = ("timing_statistical_state", "risk_statistical_sta
 
 @dataclass(frozen=True)
 class Phase5WalkForwardConfig:
-    """Pre-algorithm contract.
-
-    No adaptive weights or scalar Confidence thresholds are defined here.
-    """
+    """Pre-algorithm contract with no adaptive weights or scalar thresholds."""
 
     schema_version: str = SCHEMA_VERSION
     uncertainty_block_multiplier: int = 2
@@ -78,10 +75,7 @@ def _date_span(values: pd.Series) -> dict[str, str | None]:
     parsed = parsed.loc[parsed.notna()]
     if parsed.empty:
         return {"start": None, "end": None}
-    return {
-        "start": parsed.min().isoformat(),
-        "end": parsed.max().isoformat(),
-    }
+    return {"start": parsed.min().isoformat(), "end": parsed.max().isoformat()}
 
 
 def _required_utc(value: object, label: str) -> pd.Timestamp:
@@ -91,14 +85,29 @@ def _required_utc(value: object, label: str) -> pd.Timestamp:
     return pd.Timestamp(parsed)
 
 
-def _assert_post_freeze_claims(claims: pd.DataFrame, freeze_time: str = PHASE5_FREEZE_TIME) -> None:
+def _immutable_freeze_time(value: str | None = None) -> pd.Timestamp:
+    expected = _required_utc(PHASE5_FREEZE_TIME, "PHASE5_FREEZE_TIME")
+    if value:
+        supplied = _required_utc(value, "freeze_time")
+        if supplied != expected:
+            raise ValueError("Phase 5 freeze_time is immutable")
+    return expected
+
+
+def _immutable_freeze_commit(value: str | None = None) -> str:
+    if value and str(value).strip() != PHASE5_FREEZE_COMMIT:
+        raise ValueError("Phase 5 freeze_commit is immutable")
+    return PHASE5_FREEZE_COMMIT
+
+
+def _assert_post_freeze_claims(claims: pd.DataFrame) -> None:
     """Reject any evidence not provably generated strictly after the Phase-5 freeze."""
 
     if claims.empty:
         return
     if "generated_at" not in claims.columns:
         raise ValueError("claims lack generated_at freeze provenance")
-    freeze = _required_utc(freeze_time, "freeze_time")
+    freeze = _immutable_freeze_time()
     generated = pd.to_datetime(claims["generated_at"], errors="coerce", utc=True)
     invalid = generated.isna() | generated.le(freeze)
     if invalid.any():
@@ -109,9 +118,7 @@ def _assert_post_freeze_claims(claims: pd.DataFrame, freeze_time: str = PHASE5_F
 def _statistical_context_complete(claims: pd.DataFrame) -> bool:
     """Derive completeness from archived ordinal evidence, never operator assertion."""
 
-    if claims.empty:
-        return False
-    if any(column not in claims.columns for column in STATISTICAL_CONTEXT_COLUMNS):
+    if claims.empty or any(column not in claims.columns for column in STATISTICAL_CONTEXT_COLUMNS):
         return False
     valid = set(ORDINAL_EVIDENCE_STATES)
     for column in STATISTICAL_CONTEXT_COLUMNS:
@@ -122,12 +129,7 @@ def _statistical_context_complete(claims: pd.DataFrame) -> bool:
 
 
 def _outcome_overlap_regions(outcomes: pd.DataFrame) -> int:
-    """Count connected non-overlapping outcome-time regions.
-
-    This intentionally does not call overlapping forward windows independent.
-    It is a conservative structural support count, not a replacement for the
-    required circular moving observation-date bootstrap.
-    """
+    """Count connected non-overlapping outcome-time regions conservatively."""
 
     if outcomes.empty:
         return 0
@@ -153,7 +155,7 @@ def _outcome_overlap_regions(outcomes: pd.DataFrame) -> int:
 
 
 def _distribution_audit(claims: pd.DataFrame) -> dict[str, object]:
-    statistical = {
+    statistical: dict[str, object] = {
         "selection_phase4c_state": _value_counts(claims, "selection_state"),
     }
     if _statistical_context_complete(claims):
@@ -206,9 +208,9 @@ def readiness_audit(
     if not outcomes.empty and list(outcomes.columns) != list(OUTCOME_COLUMNS):
         raise ValueError("outcomes do not match the immutable Phase-4E schema")
 
-    effective_freeze_time = freeze_time or PHASE5_FREEZE_TIME
-    effective_freeze_commit = freeze_commit or PHASE5_FREEZE_COMMIT
-    _assert_post_freeze_claims(claims, effective_freeze_time)
+    effective_freeze_time = _immutable_freeze_time(freeze_time)
+    effective_freeze_commit = _immutable_freeze_commit(freeze_commit)
+    _assert_post_freeze_claims(claims)
 
     if not outcomes.empty:
         unknown_outcomes = set(outcomes["claim_id"].astype(str)) - set(claims["claim_id"].astype(str))
@@ -288,7 +290,8 @@ def readiness_audit(
         "status": "ready_for_walkforward_evaluation" if any_walkforward_ready else "insufficient_evidence",
         "freeze": {
             "main_commit": effective_freeze_commit,
-            "time": _required_utc(effective_freeze_time, "freeze_time").isoformat(),
+            "time": effective_freeze_time.isoformat(),
+            "immutable": True,
             "enforced_on_claim_generated_at": True,
         },
         "shadow_archive": {
@@ -322,7 +325,6 @@ def purged_training_pairs(
     horizon: int,
     training_cutoff: str,
     evaluation_start: str,
-    freeze_time: str = PHASE5_FREEZE_TIME,
 ) -> pd.DataFrame:
     """Return only post-freeze evidence fully knowable before evaluation."""
 
@@ -332,7 +334,7 @@ def purged_training_pairs(
     eval_start = _required_utc(evaluation_start, "evaluation_start")
     if cutoff >= eval_start:
         raise ValueError("training_cutoff must be before evaluation_start")
-    _assert_post_freeze_claims(claims, freeze_time)
+    _assert_post_freeze_claims(claims)
     if claims.empty or outcomes.empty:
         return pd.DataFrame()
 
@@ -356,7 +358,7 @@ def purged_training_pairs(
     end_market = pd.to_datetime(merged["end_market_date"], errors="coerce", utc=True)
     claim_generated = pd.to_datetime(merged["generated_at"], errors="coerce", utc=True)
     claim_as_of = pd.to_datetime(merged["as_of_claim"], errors="coerce", utc=True)
-    freeze = _required_utc(freeze_time, "freeze_time")
+    freeze = _immutable_freeze_time()
 
     keep = (
         claim_generated.notna()
@@ -398,7 +400,6 @@ def _validate_purged_training_pairs(
     horizons: list[int],
     training_cutoff: pd.Timestamp,
     evaluation_start: pd.Timestamp,
-    freeze_time: str,
 ) -> None:
     """Re-validate the purged evidence at the immutable manifest boundary."""
 
@@ -416,13 +417,16 @@ def _validate_purged_training_pairs(
     if missing:
         raise ValueError(f"training evidence cannot prove purging: missing {sorted(missing)}")
 
-    freeze = _required_utc(freeze_time, "freeze_time")
+    freeze = _immutable_freeze_time()
     generated = pd.to_datetime(training_pairs["generated_at"], errors="coerce", utc=True)
     evaluated = pd.to_datetime(training_pairs["evaluated_at"], errors="coerce", utc=True)
     end_market = pd.to_datetime(training_pairs["end_market_date"], errors="coerce", utc=True)
     claim_as_of = pd.to_datetime(training_pairs["as_of_claim"], errors="coerce", utc=True)
     row_horizons = pd.to_numeric(training_pairs["horizon_sessions_claim"], errors="coerce")
     allowed_horizons = set(int(h) for h in horizons)
+    horizon_valid = row_horizons.map(
+        lambda value: pd.notna(value) and float(value).is_integer() and int(value) in allowed_horizons
+    )
 
     invalid = (
         generated.isna()
@@ -433,8 +437,7 @@ def _validate_purged_training_pairs(
         | end_market.ge(evaluation_start.normalize())
         | claim_as_of.isna()
         | claim_as_of.ge(evaluation_start)
-        | row_horizons.isna()
-        | ~row_horizons.astype("Int64").isin(allowed_horizons)
+        | ~horizon_valid
     )
     if invalid.any():
         examples = training_pairs.loc[invalid, "claim_id"].astype(str).head(3).tolist()
@@ -453,7 +456,6 @@ def model_version_manifest(
     evaluation_start: str,
     evaluation_end: str,
     status: str = "candidate",
-    freeze_time: str = PHASE5_FREEZE_TIME,
 ) -> dict[str, object]:
     if not version_id.strip():
         raise ValueError("version_id is required")
@@ -471,14 +473,14 @@ def model_version_manifest(
         horizons=horizons,
         training_cutoff=cutoff,
         evaluation_start=start,
-        freeze_time=freeze_time,
     )
 
     return {
         "schema_version": SCHEMA_VERSION,
         "version_id": version_id,
         "training_cutoff": cutoff.isoformat(),
-        "freeze_time": _required_utc(freeze_time, "freeze_time").isoformat(),
+        "freeze_time": _immutable_freeze_time().isoformat(),
+        "freeze_commit": _immutable_freeze_commit(),
         "evidence_fingerprint": evidence_fingerprint(training_pairs),
         "training_rows": int(len(training_pairs)),
         "horizons": sorted(int(h) for h in horizons),
@@ -504,12 +506,7 @@ def frozen_baseline_evaluator(
     if horizon not in HORIZONS:
         raise ValueError(f"unsupported horizon: {horizon}")
     if claims.empty or outcomes.empty:
-        return {
-            "horizon_sessions": horizon,
-            "status": "insufficient_evidence",
-            "N": 0,
-            "groups": {},
-        }
+        return {"horizon_sessions": horizon, "status": "insufficient_evidence", "N": 0, "groups": {}}
 
     h_claims = claims.loc[
         pd.to_numeric(claims["horizon_sessions"], errors="coerce").eq(horizon)
