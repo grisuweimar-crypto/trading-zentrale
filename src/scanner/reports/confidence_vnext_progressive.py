@@ -147,20 +147,43 @@ def progressive_training_frame(
     horizon: int,
     knowable_by: str | None = None,
 ) -> pd.DataFrame:
-    """Return only claim-spaced, fully matured evidence knowable by the cutoff."""
+    """Return only claim-spaced, fully matured evidence knowable by the cutoff.
+
+    For historical reconstruction the cutoff is applied to claims and outcomes
+    *before* peer labels are derived. This prevents a later-matured peer from
+    changing a baseline that was not knowable at the historical cutoff.
+    """
 
     if horizon not in HORIZONS:
         raise ValueError(f"unsupported horizon: {horizon}")
     validate_v2_archives(claims, outcomes)
-    if claims.empty or outcomes.empty:
+
+    known_claims = claims.copy()
+    known_outcomes = outcomes.copy()
+    if knowable_by is not None:
+        cutoff = _required_utc(knowable_by, "knowable_by")
+        claim_known = pd.to_datetime(
+            known_claims["generated_at"], errors="coerce", utc=True
+        ).le(cutoff)
+        known_claims = known_claims.loc[claim_known].copy()
+        known_ids = set(known_claims["claim_id"].astype(str))
+        outcome_known = pd.to_datetime(
+            known_outcomes["evaluated_at"], errors="coerce", utc=True
+        ).le(cutoff)
+        known_outcomes = known_outcomes.loc[
+            outcome_known & known_outcomes["claim_id"].astype(str).isin(known_ids)
+        ].copy()
+        validate_v2_archives(known_claims, known_outcomes)
+
+    if known_claims.empty or known_outcomes.empty:
         return pd.DataFrame()
 
-    membership = claim_spacing_membership(claims)
-    derived = derive_peer_labels_v2(claims, outcomes)
+    membership = claim_spacing_membership(known_claims)
+    derived = derive_peer_labels_v2(known_claims, known_outcomes)
     if derived.empty:
         return derived
 
-    availability = outcomes[["claim_id", "evaluated_at", "end_market_date"]].copy()
+    availability = known_outcomes[["claim_id", "evaluated_at", "end_market_date"]].copy()
     frame = derived.merge(availability, on="claim_id", how="inner", validate="one_to_one")
     frame = frame.loc[
         frame["claim_id"].astype(str).isin(membership)
@@ -168,10 +191,6 @@ def progressive_training_frame(
     ].copy()
     frame["_evaluated_at"] = pd.to_datetime(frame["evaluated_at"], errors="coerce", utc=True)
     frame = frame.loc[frame["_evaluated_at"].notna()].copy()
-
-    if knowable_by is not None:
-        cutoff = _required_utc(knowable_by, "knowable_by")
-        frame = frame.loc[frame["_evaluated_at"].le(cutoff)].copy()
 
     return (
         frame.sort_values(["_evaluated_at", "as_of", "symbol", "claim_id"], kind="mergesort")
@@ -434,10 +453,7 @@ def _write_versions(path: str | Path, versions: list[dict[str, object]]) -> None
     _validate_versions(versions)
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    text = "".join(
-        _canonical_json(item) + "\n"
-        for item in versions
-    )
+    text = "".join(_canonical_json(item) + "\n" for item in versions)
     p.write_text(text, encoding="utf-8")
 
 
@@ -532,6 +548,7 @@ def run_progressive_learning(
             "shorter_horizon_labels_borrowed": False,
             "fixed_event_spacing_sessions": FIXED_EVENT_SPACING_SESSIONS,
             "claim_first_spacing_membership": True,
+            "historical_cutoff_applied_before_peer_label_derivation": True,
             "overlapping_forward_windows_treated_as_independent": False,
             "state_names_assumed_ordinal": False,
             "scalar_confidence_mapping_created": False,
