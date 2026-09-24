@@ -19,8 +19,12 @@ permissions:
   contents: read
   actions: read
 
+# Non-PR runs share the same lock as Phase 4E/5B shadow publication for the
+# entire read -> learn -> publish transaction. This prevents a second 5C run
+# from learning against a stale version archive and later overwriting a newer
+# append-only chain. PR validation stays independent.
 concurrency:
-  group: phase5c-progressive-${{ github.event.pull_request.number || github.event.workflow_run.id || github.run_id }}
+  group: ${{ github.event_name == 'pull_request' && format('phase5c-pr-{0}', github.event.pull_request.number) || 'phase4e-shadow-publication' }}
   cancel-in-progress: false
 
 jobs:
@@ -141,12 +145,15 @@ jobs:
           assert semantics['shorter_horizon_labels_borrowed'] is False
           assert semantics['fixed_event_spacing_sessions'] == 5
           assert semantics['claim_first_spacing_membership'] is True
+          assert semantics['historical_cutoff_applied_before_peer_label_derivation'] is True
           assert semantics['overlapping_forward_windows_treated_as_independent'] is False
           assert semantics['state_names_assumed_ordinal'] is False
           assert semantics['scalar_confidence_mapping_created'] is False
           assert semantics['adaptive_production_weights_created'] is False
           assert semantics['production_confidence_changed'] is False
           assert semantics['portfolio_or_depot_watch_changed'] is False
+          assert semantics['model_version_archive_hash_chained'] is True
+          assert semantics['previous_report_anchors_append_only_prefix'] is True
           assert set(report['horizons']) == {'5', '20', '40', '60'}
           for horizon, item in report['horizons'].items():
               assert item['stage'] in {
@@ -186,9 +193,6 @@ jobs:
     permissions:
       contents: write
       actions: read
-    concurrency:
-      group: phase4e-shadow-publication
-      cancel-in-progress: false
 
     steps:
       - name: Checkout shadow branch seed
