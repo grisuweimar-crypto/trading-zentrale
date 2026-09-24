@@ -18,8 +18,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
+  actions: read
 
 concurrency:
   group: phase5b-v2-${{ github.event.pull_request.number || github.event.workflow_run.head_branch || github.ref_name || github.run_id }}
@@ -74,13 +74,20 @@ jobs:
           git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
           python - <<'PY'
           import csv
+          import hashlib
           import io
           import json
           import os
+          import re
           import subprocess
 
           V1 = 'artifacts/research/confidence_vnext_shadow_claims_4e.csv'
           V2 = 'artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv'
+          SCANNER_SUBJECT = '📊 Autopilot: artifacts update [skip ci]'
+          REQUIRED_PUBLICATION_PATHS = {
+              'artifacts/research/history_metadata.json',
+              'artifacts/research/latest_scanner.csv',
+          }
           output = os.environ['GITHUB_OUTPUT']
           env_file = os.environ['GITHUB_ENV']
 
@@ -91,6 +98,57 @@ jobs:
                   if allow_fail:
                       return None
                   raise
+
+          def raw_bytes(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(['git', *args], stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          def scanner_publication(sha):
+              subject = text('show', '-s', '--format=%s', sha, allow_fail=True)
+              if subject is None or subject.strip() != SCANNER_SUBJECT:
+                  return None
+              changed = set((text(
+                  'diff-tree', '--no-commit-id', '--name-only', '-r', sha, allow_fail=True
+              ) or '').splitlines())
+              if not REQUIRED_PUBLICATION_PATHS.issubset(changed):
+                  return None
+              metadata_raw = raw_bytes(
+                  'show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True
+              )
+              latest_raw = raw_bytes(
+                  'show', f'{sha}:artifacts/research/latest_scanner.csv', allow_fail=True
+              )
+              if not metadata_raw or not latest_raw:
+                  return None
+              try:
+                  metadata = json.loads(metadata_raw.decode('utf-8'))
+              except (UnicodeDecodeError, json.JSONDecodeError):
+                  return None
+              daily = metadata.get('daily_run') or {}
+              run_id = str(daily.get('run_id') or '').strip()
+              if not re.fullmatch(r'github-\d+-\d+', run_id):
+                  return None
+              latest_meta = metadata.get('latest_scanner') or {}
+              if latest_meta.get('sha256') != hashlib.sha256(latest_raw).hexdigest():
+                  return None
+              parent_raw = raw_bytes(
+                  'show', f'{sha}^:artifacts/research/history_metadata.json', allow_fail=True
+              )
+              if parent_raw:
+                  try:
+                      parent = json.loads(parent_raw.decode('utf-8'))
+                  except (UnicodeDecodeError, json.JSONDecodeError):
+                      parent = {}
+                  parent_run_id = str(((parent.get('daily_run') or {}).get('run_id')) or '').strip()
+                  if parent_run_id == run_id:
+                      return None
+              if metadata.get('latest_run_complete') is not True or daily.get('scanner_status') != 'success':
+                  return None
+              return metadata
 
           if text('show-ref', '--verify', 'refs/remotes/origin/phase4e-shadow-data', allow_fail=True) is None:
               with open(output, 'a', encoding='utf-8') as handle:
@@ -129,33 +187,33 @@ jobs:
               'artifacts/research/history_metadata.json',
           ).splitlines()
           for sha in commits:
-              # No retrospective v2 reconstruction: only scanner publications
-              # whose exact commit already contains the Phase-5B contract qualify.
+              # Prospective v2 starts only with scanner publications whose exact
+              # commit already contains the Phase-5B contract.
               if text('cat-file', '-e', f'{sha}:.github/workflows/confidence_vnext_5b.yml', allow_fail=True) is None:
                   continue
-              raw = text('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
-              if not raw:
+              metadata = scanner_publication(sha)
+              if metadata is None:
                   continue
-              try:
-                  metadata = json.loads(raw)
-              except json.JSONDecodeError:
-                  continue
-              daily = metadata.get('daily_run') or {}
-              run_id = str(daily.get('run_id') or '').strip()
-              if metadata.get('latest_run_complete') is True and daily.get('scanner_status') == 'success' and run_id:
-                  publication_by_run[run_id] = sha
+              run_id = str(((metadata.get('daily_run') or {}).get('run_id')) or '').strip()
+              publication_by_run.setdefault(run_id, sha)
 
-          candidates = [run_id for run_id in v1_run_ids if run_id not in claimed and run_id in publication_by_run]
+          candidates = [
+              run_id for run_id in v1_run_ids
+              if run_id not in claimed and run_id in publication_by_run
+          ]
           if not candidates:
               with open(output, 'a', encoding='utf-8') as handle:
                   handle.write('process=false\n')
               with open(env_file, 'a', encoding='utf-8') as handle:
                   handle.write('PHASE5B_PROCESS=0\n')
-              print('No post-Phase-5B unclaimed v1 snapshot exists; clean no-op.')
+              print('No post-Phase-5B unclaimed proven scanner publication exists; clean no-op.')
               raise SystemExit(0)
 
           run_id = candidates[0]
           sha = publication_by_run[run_id]
+          metadata = scanner_publication(sha)
+          if metadata is None:
+              raise SystemExit(f'Phase 5B lost scanner-publication proof for {sha}')
           subprocess.check_call(['git', 'checkout', '--detach', sha])
           selected = json.loads(open('artifacts/research/history_metadata.json', encoding='utf-8').read())
           actual = str(((selected.get('daily_run') or {}).get('run_id')) or '').strip()
@@ -170,7 +228,7 @@ jobs:
               handle.write('PHASE5B_PROCESS=1\n')
               handle.write(f'BOUND_RUN_ID={run_id}\n')
               handle.write(f'BOUND_PUBLICATION_COMMIT={sha}\n')
-          print('Bound Phase 5B to:', sha, run_id)
+          print('Bound Phase 5B to proven scanner publication:', sha, run_id)
           PY
 
       - name: Set up Python
@@ -378,6 +436,9 @@ jobs:
     needs: v2
     if: needs.v2.result == 'success' && needs.v2.outputs.process == 'true' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     concurrency:
       group: phase4e-shadow-publication
       cancel-in-progress: false
@@ -419,7 +480,18 @@ jobs:
           git fetch origin main --force
           git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
           REMAINING=$(python - <<'PY'
-          import csv, io, json, subprocess
+          import csv
+          import hashlib
+          import io
+          import json
+          import re
+          import subprocess
+
+          SCANNER_SUBJECT = '📊 Autopilot: artifacts update [skip ci]'
+          REQUIRED_PUBLICATION_PATHS = {
+              'artifacts/research/history_metadata.json',
+              'artifacts/research/latest_scanner.csv',
+          }
 
           def text(*args, allow_fail=False):
               try:
@@ -429,34 +501,95 @@ jobs:
                       return None
                   raise
 
-          v1_raw = text('show', 'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv', allow_fail=True) or ''
-          v2_raw = text('show', 'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv', allow_fail=True) or ''
+          def raw_bytes(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(['git', *args], stderr=subprocess.DEVNULL)
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          def scanner_publication(sha):
+              subject = text('show', '-s', '--format=%s', sha, allow_fail=True)
+              if subject is None or subject.strip() != SCANNER_SUBJECT:
+                  return None
+              changed = set((text(
+                  'diff-tree', '--no-commit-id', '--name-only', '-r', sha, allow_fail=True
+              ) or '').splitlines())
+              if not REQUIRED_PUBLICATION_PATHS.issubset(changed):
+                  return None
+              metadata_raw = raw_bytes(
+                  'show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True
+              )
+              latest_raw = raw_bytes(
+                  'show', f'{sha}:artifacts/research/latest_scanner.csv', allow_fail=True
+              )
+              if not metadata_raw or not latest_raw:
+                  return None
+              try:
+                  metadata = json.loads(metadata_raw.decode('utf-8'))
+              except (UnicodeDecodeError, json.JSONDecodeError):
+                  return None
+              daily = metadata.get('daily_run') or {}
+              run_id = str(daily.get('run_id') or '').strip()
+              if not re.fullmatch(r'github-\d+-\d+', run_id):
+                  return None
+              latest_meta = metadata.get('latest_scanner') or {}
+              if latest_meta.get('sha256') != hashlib.sha256(latest_raw).hexdigest():
+                  return None
+              parent_raw = raw_bytes(
+                  'show', f'{sha}^:artifacts/research/history_metadata.json', allow_fail=True
+              )
+              if parent_raw:
+                  try:
+                      parent = json.loads(parent_raw.decode('utf-8'))
+                  except (UnicodeDecodeError, json.JSONDecodeError):
+                      parent = {}
+                  parent_run_id = str(((parent.get('daily_run') or {}).get('run_id')) or '').strip()
+                  if parent_run_id == run_id:
+                      return None
+              if metadata.get('latest_run_complete') is not True or daily.get('scanner_status') != 'success':
+                  return None
+              return metadata
+
+          v1_raw = text(
+              'show',
+              'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
+              allow_fail=True,
+          ) or ''
+          v2_raw = text(
+              'show',
+              'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv',
+              allow_fail=True,
+          ) or ''
           v1 = []
           for row in csv.DictReader(io.StringIO(v1_raw)):
               run_id = str(row.get('run_id') or '').strip()
               if run_id and run_id not in v1:
                   v1.append(run_id)
-          v2 = {str(row.get('run_id') or '').strip() for row in csv.DictReader(io.StringIO(v2_raw)) if str(row.get('run_id') or '').strip()}
+          v2 = {
+              str(row.get('run_id') or '').strip()
+              for row in csv.DictReader(io.StringIO(v2_raw))
+              if str(row.get('run_id') or '').strip()
+          }
 
           eligible = set()
-          commits = text('rev-list', '--reverse', 'origin/main', '--first-parent', '--', 'artifacts/research/history_metadata.json').splitlines()
+          commits = text(
+              'rev-list', '--reverse', 'origin/main', '--first-parent', '--',
+              'artifacts/research/history_metadata.json',
+          ).splitlines()
           for sha in commits:
               if text('cat-file', '-e', f'{sha}:.github/workflows/confidence_vnext_5b.yml', allow_fail=True) is None:
                   continue
-              raw = text('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
-              if not raw:
-                  continue
-              try:
-                  metadata = json.loads(raw)
-              except json.JSONDecodeError:
+              metadata = scanner_publication(sha)
+              if metadata is None:
                   continue
               run_id = str(((metadata.get('daily_run') or {}).get('run_id')) or '').strip()
-              if run_id:
-                  eligible.add(run_id)
+              eligible.add(run_id)
           print(sum(1 for run_id in v1 if run_id in eligible and run_id not in v2))
           PY
           )
-          echo "Unclaimed post-5B snapshots remaining: $REMAINING"
+          echo "Unclaimed post-5B proven scanner publications remaining: $REMAINING"
           if [ "$REMAINING" -gt 0 ]; then
             gh workflow run confidence_vnext_5b.yml --ref main
           fi
