@@ -614,18 +614,25 @@ def frozen_baseline_evaluator(
     }
 
 
+def _declared_market_date(value: object):
+    """Preserve the calendar date declared by the epoch boundary itself."""
+
+    parsed = pd.to_datetime(value, errors="coerce")
+    if pd.isna(parsed):
+        return None
+    return pd.Timestamp(parsed).date()
+
+
 def _has_multiple_genuine_walkforward_epochs(evaluations: list[dict[str, object]]) -> bool:
     if len(evaluations) < 2:
         return False
-    parsed: list[tuple[str, pd.Timestamp, pd.Timestamp]] = []
+    parsed: list[tuple[str, object, object]] = []
     for evaluation in evaluations:
         version_id = str(evaluation.get("version_id") or "").strip()
-        start = pd.to_datetime(evaluation.get("evaluation_start"), errors="coerce", utc=True)
-        end = pd.to_datetime(evaluation.get("evaluation_end"), errors="coerce", utc=True)
-        if not version_id or pd.isna(start) or pd.isna(end):
+        start_day = _declared_market_date(evaluation.get("evaluation_start"))
+        end_day = _declared_market_date(evaluation.get("evaluation_end"))
+        if not version_id or start_day is None or end_day is None:
             return False
-        start_day = pd.Timestamp(start).normalize()
-        end_day = pd.Timestamp(end).normalize()
         if start_day > end_day:
             return False
         parsed.append((version_id, start_day, end_day))
