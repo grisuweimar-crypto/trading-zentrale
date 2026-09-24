@@ -29,11 +29,6 @@ def main() -> int:
     parser.add_argument("--output", default="artifacts/research/confidence_vnext_readiness_5a.json")
     parser.add_argument("--freeze-commit", default="")
     parser.add_argument("--freeze-time", default="")
-    parser.add_argument(
-        "--statistical-context-complete",
-        action="store_true",
-        help="Only set when claim-level Phase-4C timing and risk ordinal states were frozen prospectively.",
-    )
     args = parser.parse_args()
 
     claims = read_shadow_csv(args.claims, CLAIM_COLUMNS)
@@ -46,7 +41,6 @@ def main() -> int:
         freeze_commit=args.freeze_commit or None,
         freeze_time=args.freeze_time or None,
         config=config,
-        statistical_context_complete=args.statistical_context_complete,
     )
     result["frozen_baseline"] = {
         str(horizon): frozen_baseline_evaluator(claims, outcomes, horizon=horizon)
