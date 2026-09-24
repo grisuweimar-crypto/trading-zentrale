@@ -1,0 +1,88 @@
+{
+  "phase": "4E_prospective_shadow_validation",
+  "schema_version": "phase4e_shadow_v1",
+  "status": "collecting_prospective_evidence",
+  "claims": 812,
+  "mature_outcomes": 0,
+  "horizons": {
+    "5": {
+      "claims": 203,
+      "outcome_eligible_claims": 201,
+      "outcome_unevaluable_claims": 2,
+      "mature_outcomes": 0,
+      "derived_peer_labels": 0,
+      "directional_peer_labels": 0,
+      "observation_dates": 0,
+      "snapshot_cohorts": 0,
+      "block_length_sessions_for_future_inference": 10
+    },
+    "20": {
+      "claims": 203,
+      "outcome_eligible_claims": 201,
+      "outcome_unevaluable_claims": 2,
+      "mature_outcomes": 0,
+      "derived_peer_labels": 0,
+      "directional_peer_labels": 0,
+      "observation_dates": 0,
+      "snapshot_cohorts": 0,
+      "block_length_sessions_for_future_inference": 40
+    },
+    "40": {
+      "claims": 203,
+      "outcome_eligible_claims": 201,
+      "outcome_unevaluable_claims": 2,
+      "mature_outcomes": 0,
+      "derived_peer_labels": 0,
+      "directional_peer_labels": 0,
+      "observation_dates": 0,
+      "snapshot_cohorts": 0,
+      "block_length_sessions_for_future_inference": 80
+    },
+    "60": {
+      "claims": 203,
+      "outcome_eligible_claims": 201,
+      "outcome_unevaluable_claims": 2,
+      "mature_outcomes": 0,
+      "derived_peer_labels": 0,
+      "directional_peer_labels": 0,
+      "observation_dates": 0,
+      "snapshot_cohorts": 0,
+      "block_length_sessions_for_future_inference": 120
+    }
+  },
+  "semantics": {
+    "research_only": true,
+    "claims_are_immutable": true,
+    "claim_time_start_session_is_frozen": true,
+    "missing_claim_time_start_remains_permanently_unevaluable": true,
+    "raw_outcomes_are_append_only": true,
+    "peer_labels_are_derived_not_frozen_early": true,
+    "peer_cross_sections_use_exact_snapshot_cohorts": true,
+    "outcomes_require_completed_session_day": true,
+    "outcome_adjusted_prices_share_one_evaluation_basis": true,
+    "production_confidence_changed": false,
+    "scalar_confidence_mapping_created": false,
+    "confidence_thresholds_created": false,
+    "spent_phase2_phase3_holdout_used_for_phase4e_selection": false
+  },
+  "validation_contract": {
+    "return_reliability": "compare pre-specified compatible versus single_model sign-normalized peer-excess reliability",
+    "risk_reliability": "compare pre-specified risk-tension states on future adverse excursion and path max drawdown",
+    "data_quality_reliability": "retain claim-time outcome eligibility and unavailable reasons as prospective Data-Quality evidence",
+    "peer_baseline": "derive inside each immutable scanner snapshot from all currently matured leave-one-symbol-out peers; same currency first, global fallback",
+    "outcome_maturity": "freeze the claim-time start session and audit price; mature only eligible claims after the target day, using one freshly evaluated adjusted-close basis across the full frozen-session-to-target path",
+    "fixed_cooldown_sessions": 5,
+    "uncertainty": "circular moving observation-date blocks with effective length 2x horizon; full dates stay clustered",
+    "minimum_independent_support": "fail closed until at least two time-separated support regions exist",
+    "weights_or_thresholds_may_be_tuned_on_this_stream": false
+  },
+  "current_snapshot": {
+    "snapshot_id": "80634446-9faf-4de8-bfa1-81ab2c7a0461",
+    "as_of": "2026-09-24",
+    "run_id": "github-36045280392-1",
+    "new_claims": 812,
+    "new_unevaluable_claims": 8,
+    "new_mature_outcomes": 0,
+    "evidence_fingerprint": "e5a1072ba3754f9a7e6d60fde5003b579f6a2f73c41b846532159559ad84eb77"
+  }
+}
