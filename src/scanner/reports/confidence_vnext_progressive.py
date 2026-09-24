@@ -2,13 +2,13 @@ from __future__ import annotations
 
 """Phase 5C progressive, horizon-specific research learning.
 
-This module consumes only prospective Phase-5B shadow-v2 evidence.  It starts
+This module consumes only prospective Phase-5B shadow-v2 evidence. It starts
 learning separately for 5T/20T/40T/60T as each horizon accumulates enough of
-its own fully matured outcomes.  Shorter-horizon labels are never substituted
+its own fully matured outcomes. Shorter-horizon labels are never substituted
 for longer-horizon labels.
 
 The first learning product is deliberately transparent: immutable, versioned
-state-reliability tables.  Phase 5C does not create production Confidence,
+state-reliability tables. Phase 5C does not create production Confidence,
 production thresholds, portfolio actions, or a scalar 0-100 score.
 """
 
@@ -33,8 +33,8 @@ from scanner.reports.selection_timing import HORIZONS
 SCHEMA_VERSION = "phase5c_progressive_learning_v1"
 FIXED_EVENT_SPACING_SESSIONS = 5
 MIN_PILOT_OBSERVATION_DATES = 2
-MIN_PILOT_DIRECTIONAL_ROWS = 20
-MIN_PILOT_DIRECTIONAL_SYMBOLS = 10
+MIN_PILOT_TRAINING_ROWS = 20
+MIN_PILOT_SYMBOLS = 10
 MIN_ROBUST_SUPPORT_REGIONS = 2
 
 SINGLE_STATE_FIELDS = (
@@ -65,6 +65,16 @@ TRAINING_FINGERPRINT_COLUMNS = (
     *SINGLE_STATE_FIELDS,
     *MULTI_STATE_FIELDS,
 )
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    )
 
 
 def _read_csv(path: str | Path, columns: tuple[str, ...]) -> pd.DataFrame:
@@ -102,7 +112,7 @@ def claim_spacing_membership(claims: pd.DataFrame) -> set[str]:
     """Freeze 5-session membership from claims, never from outcome availability.
 
     A delayed outcome must not retroactively change which claim is eligible for
-    learning.  Membership therefore depends only on immutable claim-time fields.
+    learning. Membership therefore depends only on immutable claim-time fields.
     """
 
     empty_outcomes = pd.DataFrame(columns=OUTCOME_COLUMNS_V2)
@@ -192,7 +202,9 @@ def _support_regions(frame: pd.DataFrame, horizon: int) -> int:
 
 
 def _numeric(frame: pd.DataFrame, column: str) -> pd.Series:
-    return pd.to_numeric(frame[column], errors="coerce") if column in frame.columns else pd.Series(dtype=float)
+    if column not in frame.columns:
+        return pd.Series(dtype=float)
+    return pd.to_numeric(frame[column], errors="coerce")
 
 
 def _state_summary(frame: pd.DataFrame, horizon: int) -> dict[str, object]:
@@ -246,14 +258,15 @@ def _multi_state_table(frame: pd.DataFrame, field: str, horizon: int) -> dict[st
 def horizon_readiness(frame: pd.DataFrame, horizon: int) -> dict[str, object]:
     directional = frame.loc[_numeric(frame, "direction_hit").notna()].copy() if not frame.empty else frame
     observation_dates = int(pd.to_datetime(frame["as_of"], errors="coerce").nunique()) if not frame.empty else 0
+    symbols = int(frame["symbol"].astype(str).nunique()) if not frame.empty else 0
     directional_symbols = int(directional["symbol"].astype(str).nunique()) if not directional.empty else 0
     directional_rows = int(len(directional))
     support_regions = int(_support_regions(frame, horizon))
 
     pilot_ready = (
         observation_dates >= MIN_PILOT_OBSERVATION_DATES
-        and directional_rows >= MIN_PILOT_DIRECTIONAL_ROWS
-        and directional_symbols >= MIN_PILOT_DIRECTIONAL_SYMBOLS
+        and len(frame) >= MIN_PILOT_TRAINING_ROWS
+        and symbols >= MIN_PILOT_SYMBOLS
     )
     robust_base = pilot_ready and support_regions >= MIN_ROBUST_SUPPORT_REGIONS
 
@@ -271,14 +284,15 @@ def horizon_readiness(frame: pd.DataFrame, horizon: int) -> dict[str, object]:
         "pilot_ready": bool(pilot_ready),
         "robust_learning_base": bool(robust_base),
         "training_rows": int(len(frame)),
+        "symbols": symbols,
         "directional_rows": directional_rows,
         "directional_symbols": directional_symbols,
         "observation_dates": observation_dates,
         "support_regions": support_regions,
         "requirements": {
             "minimum_pilot_observation_dates": MIN_PILOT_OBSERVATION_DATES,
-            "minimum_pilot_directional_rows": MIN_PILOT_DIRECTIONAL_ROWS,
-            "minimum_pilot_directional_symbols": MIN_PILOT_DIRECTIONAL_SYMBOLS,
+            "minimum_pilot_training_rows": MIN_PILOT_TRAINING_ROWS,
+            "minimum_pilot_symbols": MIN_PILOT_SYMBOLS,
             "minimum_robust_support_regions": MIN_ROBUST_SUPPORT_REGIONS,
             "fixed_event_spacing_sessions": FIXED_EVENT_SPACING_SESSIONS,
             "robust_block_length_observation_dates": 2 * int(horizon),
@@ -302,6 +316,10 @@ def _version_id(horizon: int, fingerprint: str) -> str:
     return f"phase5c-{horizon}T-{suffix}"
 
 
+def _version_sha256(version_without_hash: dict[str, object]) -> str:
+    return sha256(_canonical_json(version_without_hash).encode("utf-8")).hexdigest()
+
+
 def _learned_tables(frame: pd.DataFrame, horizon: int) -> dict[str, object]:
     tables = {
         field: _single_state_table(frame, field, horizon)
@@ -314,7 +332,12 @@ def _learned_tables(frame: pd.DataFrame, horizon: int) -> dict[str, object]:
     return tables
 
 
-def build_candidate_version(frame: pd.DataFrame, *, horizon: int) -> dict[str, object] | None:
+def build_candidate_version(
+    frame: pd.DataFrame,
+    *,
+    horizon: int,
+    previous_version_sha256: str = "",
+) -> dict[str, object] | None:
     readiness = horizon_readiness(frame, horizon)
     if not readiness["pilot_ready"]:
         return None
@@ -322,17 +345,20 @@ def build_candidate_version(frame: pd.DataFrame, *, horizon: int) -> dict[str, o
     fingerprint = _training_fingerprint(frame)
     evaluated = pd.to_datetime(frame["evaluated_at"], errors="coerce", utc=True).dropna()
     as_of = pd.to_datetime(frame["as_of"], errors="coerce", utc=True).dropna()
-    if evaluated.empty or as_of.empty:
+    end_dates = pd.to_datetime(frame["end_market_date"], errors="coerce").dropna()
+    if evaluated.empty or as_of.empty or end_dates.empty:
         raise ValueError("Phase 5C candidate requires valid evidence chronology")
 
-    return {
+    version: dict[str, object] = {
         "schema_version": SCHEMA_VERSION,
         "version_id": _version_id(horizon, fingerprint),
+        "previous_version_sha256": str(previous_version_sha256 or ""),
         "horizon_sessions": int(horizon),
         "source_schema_version": V2_SCHEMA_VERSION,
         "training_cutoff": evaluated.max().isoformat(),
         "training_claim_start": as_of.min().date().isoformat(),
         "training_claim_end": as_of.max().date().isoformat(),
+        "training_outcome_end": pd.Timestamp(end_dates.max()).date().isoformat(),
         "evidence_fingerprint": fingerprint,
         "training_rows": int(len(frame)),
         "readiness": readiness,
@@ -340,7 +366,7 @@ def build_candidate_version(frame: pd.DataFrame, *, horizon: int) -> dict[str, o
         "evaluation": {
             "status": "awaiting_strictly_future_evidence",
             "training_rows_may_never_be_reused_for_evaluation": True,
-            "evaluation_claims_must_be_after_training_cutoff": True,
+            "evaluation_claim_generated_at_must_be_after_training_cutoff": True,
         },
         "semantics": {
             "research_only": True,
@@ -354,6 +380,37 @@ def build_candidate_version(frame: pd.DataFrame, *, horizon: int) -> dict[str, o
             "portfolio_or_depot_watch_changed": False,
         },
     }
+    version["version_sha256"] = _version_sha256(version)
+    return version
+
+
+def _validate_versions(versions: list[dict[str, object]]) -> None:
+    ids: list[str] = []
+    expected_previous = ""
+    for line_no, item in enumerate(versions, start=1):
+        if item.get("schema_version") != SCHEMA_VERSION:
+            raise ValueError(f"unexpected Phase 5C version schema at line {line_no}")
+        supplied_hash = str(item.get("version_sha256") or "")
+        if len(supplied_hash) != 64:
+            raise ValueError(f"invalid Phase 5C version hash at line {line_no}")
+        payload = dict(item)
+        payload.pop("version_sha256", None)
+        if supplied_hash != _version_sha256(payload):
+            raise ValueError(f"Phase 5C version integrity failure at line {line_no}")
+        if str(item.get("previous_version_sha256") or "") != expected_previous:
+            raise ValueError(f"Phase 5C version chain failure at line {line_no}")
+
+        horizon = int(item.get("horizon_sessions", -1))
+        fingerprint = str(item.get("evidence_fingerprint") or "")
+        expected_id = _version_id(horizon, fingerprint)
+        version_id = str(item.get("version_id") or "")
+        if horizon not in HORIZONS or version_id != expected_id:
+            raise ValueError(f"Phase 5C deterministic version identity failure at line {line_no}")
+        ids.append(version_id)
+        expected_previous = supplied_hash
+
+    if len(ids) != len(set(ids)):
+        raise ValueError("Phase 5C model-version archive is not unique")
 
 
 def _read_versions(path: str | Path) -> list[dict[str, object]]:
@@ -364,24 +421,51 @@ def _read_versions(path: str | Path) -> list[dict[str, object]]:
     for line_no, line in enumerate(p.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
             continue
-        item = json.loads(line)
-        if item.get("schema_version") != SCHEMA_VERSION:
-            raise ValueError(f"unexpected Phase 5C version schema at line {line_no}")
+        try:
+            item = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"invalid Phase 5C version JSON at line {line_no}") from exc
         versions.append(item)
-    ids = [str(item.get("version_id") or "") for item in versions]
-    if any(not value for value in ids) or len(ids) != len(set(ids)):
-        raise ValueError("Phase 5C model-version archive is not unique")
+    _validate_versions(versions)
     return versions
 
 
 def _write_versions(path: str | Path, versions: list[dict[str, object]]) -> None:
+    _validate_versions(versions)
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(
-        json.dumps(item, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\n"
+        _canonical_json(item) + "\n"
         for item in versions
     )
     p.write_text(text, encoding="utf-8")
+
+
+def _validate_previous_report_anchor(
+    report_path: str | Path,
+    versions: list[dict[str, object]],
+) -> None:
+    path = Path(report_path)
+    if not path.exists() or path.stat().st_size == 0:
+        return
+    try:
+        previous = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("invalid previous Phase 5C report") from exc
+    if previous.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("unexpected previous Phase 5C report schema")
+
+    prior_count = int(previous.get("model_versions", 0))
+    prior_tip = str(previous.get("version_chain_tip") or "")
+    if prior_count < 0 or len(versions) < prior_count:
+        raise ValueError("Phase 5C model-version archive was truncated")
+    if prior_count == 0:
+        if prior_tip:
+            raise ValueError("Phase 5C zero-version report has a non-empty chain tip")
+        return
+    observed_tip = str(versions[prior_count - 1].get("version_sha256") or "")
+    if observed_tip != prior_tip:
+        raise ValueError("Phase 5C historical model-version prefix changed")
 
 
 def run_progressive_learning(
@@ -394,6 +478,7 @@ def run_progressive_learning(
     outcomes = _read_csv(outcomes_path, OUTCOME_COLUMNS_V2)
     validate_v2_archives(claims, outcomes)
     versions = _read_versions(versions_path)
+    _validate_previous_report_anchor(report_path, versions)
     known_ids = {str(item["version_id"]) for item in versions}
 
     horizons: dict[str, object] = {}
@@ -401,12 +486,18 @@ def run_progressive_learning(
     for horizon in HORIZONS:
         frame = progressive_training_frame(claims, outcomes, horizon=horizon)
         readiness = horizon_readiness(frame, horizon)
-        candidate = build_candidate_version(frame, horizon=horizon)
+        previous_hash = str(versions[-1]["version_sha256"]) if versions else ""
+        candidate = build_candidate_version(
+            frame,
+            horizon=horizon,
+            previous_version_sha256=previous_hash,
+        )
         version_id = None
         if candidate is not None:
             version_id = str(candidate["version_id"])
             if version_id not in known_ids:
                 versions.append(candidate)
+                _validate_versions(versions)
                 known_ids.add(version_id)
                 new_versions.append(version_id)
 
@@ -432,6 +523,7 @@ def run_progressive_learning(
         "mature_outcomes": int(len(outcomes)),
         "horizons": horizons,
         "model_versions": int(len(versions)),
+        "version_chain_tip": str(versions[-1]["version_sha256"]) if versions else None,
         "new_model_versions": new_versions,
         "semantics": {
             "research_only": True,
@@ -446,6 +538,8 @@ def run_progressive_learning(
             "adaptive_production_weights_created": False,
             "production_confidence_changed": False,
             "portfolio_or_depot_watch_changed": False,
+            "model_version_archive_hash_chained": True,
+            "previous_report_anchors_append_only_prefix": True,
         },
     }
     output = Path(report_path)
