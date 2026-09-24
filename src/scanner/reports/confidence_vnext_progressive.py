@@ -113,6 +113,9 @@ def claim_spacing_membership(claims: pd.DataFrame) -> set[str]:
 
     A delayed outcome must not retroactively change which claim is eligible for
     learning. Membership therefore depends only on immutable claim-time fields.
+    Claims that point to the same market session are ordered by immutable claim
+    chronology before deterministic identifiers, so later snapshots cannot
+    evict an earlier spacing decision merely because their IDs sort first.
     """
 
     empty_outcomes = pd.DataFrame(columns=OUTCOME_COLUMNS_V2)
@@ -125,12 +128,16 @@ def claim_spacing_membership(claims: pd.DataFrame) -> set[str]:
         & claims["cooldown_context_complete"].map(_parse_bool)
     ].copy()
     work["_start"] = pd.to_datetime(work["start_market_date"], errors="coerce").dt.normalize()
-    work = work.loc[work["_start"].notna()].copy()
+    work["_generated"] = pd.to_datetime(work["generated_at"], errors="coerce", utc=True)
+    work = work.loc[work["_start"].notna() & work["_generated"].notna()].copy()
 
     keep: set[str] = set()
     for (_, _), group in work.groupby(["horizon_sessions", "symbol"], sort=False):
         last_start: str | None = None
-        ordered = group.sort_values(["_start", "snapshot_id", "claim_id"], kind="mergesort")
+        ordered = group.sort_values(
+            ["_start", "_generated", "as_of", "snapshot_id", "claim_id"],
+            kind="mergesort",
+        )
         for _, row in ordered.iterrows():
             start_text = pd.Timestamp(row["_start"]).date().isoformat()
             forbidden = _forbidden_dates(row.get("cooldown_forbidden_start_dates"))
