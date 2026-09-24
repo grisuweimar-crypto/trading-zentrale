@@ -253,6 +253,18 @@ def test_model_manifest_fingerprints_every_training_column_and_revalidates_purge
     engineered["engineered_reliability_feature"] = [0.1, 0.2]
     assert evidence_fingerprint(engineered) != first
 
+    missing_feature = training.copy()
+    missing_feature["engineered_state"] = [pd.NA, "x"]
+    literal_feature = training.copy()
+    literal_feature["engineered_state"] = ["<NA>", "x"]
+    assert evidence_fingerprint(missing_feature) != evidence_fingerprint(literal_feature)
+
+    numeric_feature = training.copy()
+    numeric_feature["typed_feature"] = [1, 2]
+    string_feature = training.copy()
+    string_feature["typed_feature"] = ["1", "2"]
+    assert evidence_fingerprint(numeric_feature) != evidence_fingerprint(string_feature)
+
     manifest = model_version_manifest(
         version_id="phase5-candidate-0001",
         training_cutoff="2026-10-15T00:00:00+00:00",
@@ -283,13 +295,28 @@ def test_model_manifest_fingerprints_every_training_column_and_revalidates_purge
             evaluation_end="2026-11-20T00:00:00+00:00",
         )
 
-    wrong_horizon = training.copy()
-    wrong_horizon["horizon_sessions_claim"] = 20
+    wrong_claim_horizon = training.copy()
+    wrong_claim_horizon["horizon_sessions_claim"] = 20
     with pytest.raises(ValueError, match="purged walk-forward"):
         model_version_manifest(
-            version_id="wrong-horizon",
+            version_id="wrong-claim-horizon",
             training_cutoff="2026-10-15T00:00:00+00:00",
-            training_pairs=wrong_horizon,
+            training_pairs=wrong_claim_horizon,
+            horizons=[5],
+            feature_definition={},
+            parameters={},
+            hyperparameters={},
+            evaluation_start="2026-10-20T00:00:00+00:00",
+            evaluation_end="2026-11-20T00:00:00+00:00",
+        )
+
+    wrong_outcome_horizon = training.copy()
+    wrong_outcome_horizon["horizon_sessions_outcome"] = 20
+    with pytest.raises(ValueError, match="purged walk-forward"):
+        model_version_manifest(
+            version_id="wrong-outcome-horizon",
+            training_cutoff="2026-10-15T00:00:00+00:00",
+            training_pairs=wrong_outcome_horizon,
             horizons=[5],
             feature_definition={},
             parameters={},
