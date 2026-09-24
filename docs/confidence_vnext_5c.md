@@ -41,8 +41,10 @@ These stages are evidence maturity states, not quality scores and not trade sign
 The pilot floor is fixed before observing Phase-5C outcomes and is not tuned to maximize performance:
 
 - at least 2 distinct claim observation dates after fixed event spacing;
-- at least 20 directional training rows;
-- at least 10 distinct symbols with directional training targets.
+- at least 20 mature training rows;
+- at least 10 distinct symbols.
+
+The floor deliberately uses **all valid mature evidence**, not only rows with an explicit directional claim. This allows Phase 5C to begin learning prospective Risk / adverse-excursion / drawdown reliability even when directional claims are still sparse. Directional row and symbol counts remain separately reported and directional metrics remain unavailable where no directional target exists.
 
 The purpose is simply to prevent a model version from being created from one time slice or a tiny handful of names. These values are operational safeguards, not claims of statistical robustness.
 
@@ -83,8 +85,8 @@ For each exact state, Phase 5C records prospective support and observed reliabil
 
 - N and directional N;
 - symbols and observation dates;
-- directional hit rate;
-- mean and median signed peer excess;
+- directional hit rate when a directional target exists;
+- mean and median signed peer excess when a directional target exists;
 - adverse excursion;
 - path maximum drawdown;
 - temporal support regions.
@@ -101,7 +103,7 @@ Every candidate version records:
 
 - horizon;
 - training cutoff;
-- claim-time span;
+- claim-time span and matured outcome end;
 - evidence fingerprint;
 - row/support counts;
 - readiness state;
@@ -114,6 +116,8 @@ The version archive is append-only:
 
 - `artifacts/research/confidence_vnext_model_versions_5c.jsonl`
 
+Every model version hashes its complete payload and binds the hash of the previous version. The current report stores the chain tip and prior report state anchors the already published prefix. A changed historical version, broken link or truncated archive therefore fails closed on the next run instead of silently becoming a new history.
+
 The current status report is:
 
 - `artifacts/research/confidence_vnext_progressive_5c.json`
@@ -124,7 +128,7 @@ Both remain on the isolated `phase4e-shadow-data` branch, not `main`.
 
 A candidate version may learn only from outcomes knowable by its recorded training cutoff.
 
-Its own training rows may never be reused as evaluation rows. Evaluation must use strictly later prospective claims/outcomes. This prevents the learner from being judged on the data that created it.
+Its own training rows may never be reused as evaluation rows. Evaluation claims must have `generated_at` strictly after the candidate's training cutoff. This prevents the learner from being judged on data that created the version, including same-snapshot evidence that happened to mature later in the processing chain.
 
 Later Phase-5C work can evaluate frozen versions against subsequent evidence and compare them with the Frozen Phase-4 baseline. Promotion still requires the Phase-5A gates: multiple genuine non-overlapping walk-forward epochs, PIT/leakage audit, reproducibility, robust uncertainty, concentration checks, temporal stability and reproducible baseline advantage.
 
@@ -132,6 +136,6 @@ Passing those gates only means `eligible_for_separate_promotion_review`; it neve
 
 ## Automation
 
-The Phase-5C workflow runs after successful `Phase 5B Frozen Baseline v2` completion. It restores v2 claims/outcomes from `phase4e-shadow-data`, runs the progressive learner, tests the inherited contracts and publishes only the Phase-5C research report/version archive back to the isolated shadow branch.
+The Phase-5C workflow runs after successful `Phase 5B Frozen Baseline v2` completion. It restores v2 claims/outcomes plus the existing version chain from `phase4e-shadow-data`, runs the progressive learner, tests the inherited contracts and publishes only the Phase-5C research report/version archive back to the isolated shadow branch.
 
 No productive scanner artifact is modified.
