@@ -2,203 +2,126 @@
 
 Status: 2026-09-24
 
-Phase 5 is research-only. It does not replace productive Confidence, modify
-Selection/Timing/Probability/Risk, change R0-R5, touch Depot-Watch, or create
-portfolio actions.
+Phase 5 is research-only. It does not replace productive Confidence, modify Selection/Timing/Probability/Risk, change R0-R5, touch Depot-Watch, or create portfolio actions.
 
-## Freeze and current readiness
+## Freeze and starting readiness
 
-Phase 4E entered `main` at merge commit:
+Phase 4E entered `main` at merge commit `fb038c78682e4e9fe87f11a1c3c9472b763bd3c4` at `2026-09-24T01:12:14Z`. This commit/time is the immutable Phase-5 prospective freeze boundary.
 
-`fb038c78682e4e9fe87f11a1c3c9472b763bd3c4`
+Every claim consumed by Phase 5A must have a parseable `generated_at` strictly after that freeze. Pre-freeze or temporally unprovable claims fail closed.
 
-Merge time:
+At Phase-5A start, `phase4e-shadow-data` did not yet exist. The honest initial state was therefore 0 claims and 0 mature outcomes on 5T/20T/40T/60T, with status `insufficient_evidence`. No empirical adaptive result was invented from that state.
 
-`2026-09-24T01:12:14Z`
+## Statistical-Context gap
 
-This commit/time is the Phase-5 prospective freeze boundary. The Phase-4E
-workflow only accepts scanner publications whose first-parent commit already
-contains the Phase-4E workflow. Phase 5 additionally enforces the boundary in
-its own consumers: every claim used for readiness or training must have a
-parseable `generated_at` strictly after the freeze. Pre-freeze or temporally
-unprovable claims fail closed.
+The Phase-4E `phase4e_shadow_v1` claim schema integrity-binds Data-Quality states, Selection state/direction, current Timing model state/direction and matched robust patterns, current Risk model state, Model Agreement, fingerprints and PIT source timestamps.
 
-At the Phase-5A audit start, `main` still pointed to the Phase-4E merge commit
-and `phase4e-shadow-data` did not yet exist. Consequently the honest readiness
-state was:
+It does **not** integrity-bind claim-level Phase-4C Timing/Risk ordinal Statistical-Confidence states (`robust / directional_only / immature / mixed / unavailable`). `timing_state` and `risk_state` are model/application states and must not be relabelled as Phase-4C Statistical Confidence.
 
-| Horizon | Claims | Evaluable | Mature outcomes | Symbols | Mature snapshots | Block-separated support regions |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 5T | 0 | 0 | 0 | 0 | 0 | 0 |
-| 20T | 0 | 0 | 0 | 0 | 0 | 0 |
-| 40T | 0 | 0 | 0 | 0 | 0 | 0 |
-| 60T | 0 | 0 | 0 | 0 | 0 | 0 |
-
-No adaptive result can be estimated from this state. The correct result is
-`insufficient_evidence`.
-
-The first legitimate claims can only appear after a new
-`Scanner_vNext Autopilot` publication on `main` after the freeze. 5T outcomes
-will mature first; 20T/40T/60T must mature on their own clocks.
-
-## Readiness gap discovered before the first claim
-
-The immutable Phase-4E claim schema correctly freezes:
-
-- Data-Quality proxy states for Selection, Timing and Risk;
-- current Selection state/direction;
-- current Timing model state/direction and matched robust patterns;
-- current Risk model state;
-- Model Agreement and conflicts;
-- claim-time evidence fingerprints and PIT source timestamps.
-
-However, two Phase-4C ordinal states are not frozen at claim level:
-
-- `timing_state` is a current model state such as `robust_claim`, `unknown` or
-  `internal_conflict`; it is not the Phase-4C state
-  `robust / directional_only / immature / mixed / unavailable`.
-- `risk_state` is a current downside-model state such as `elevated`, `middle`,
-  `low` or `unknown`; it is not the Phase-4C statistical-evidence state.
-
-`selection_state` does preserve the claim's Phase-4C ordinal state.
-
-Phase 5 must not silently reinterpret the Timing/Risk model states as
-Statistical Confidence. Until a prospective claim-level Statistical Confidence
-context is frozen, adaptive weighting of the full
-Data Quality / Statistical Confidence / Model Agreement triad remains blocked.
-The readiness report exposes this as:
+Accordingly, Phase 5A now treats this gap as structurally unresolvable inside shadow-v1:
 
 `claim_level_phase4c_timing_and_risk_states_not_archived`
 
-This gate cannot be cleared by a command-line or programmatic configuration
-assertion. The Phase-5A contract requires Statistical Context unconditionally;
-attempts to disable that gate are rejected. Readiness derives completeness
-only from archived evidence, never from an operator override. Because no real
-Phase-4E claims existed when this gap was discovered, the archive can still be
-extended prospectively without rewriting historical claims.
+Adding similarly named columns to an in-memory DataFrame cannot clear this gate. Phase 5A requires the exact immutable Phase-4E schema and rejects extra columns. A later prospective archive schema must add the Statistical Context to its immutable claim payload and claim hash before this gate can ever become true.
+
+This means current shadow-v1 evidence can still be audited descriptively, but it cannot become eligible for adaptive learning merely through an operator/configuration assertion.
+
+## Maturity and provenance validation
+
+Before a stored outcome may count as mature evidence, Phase 5A verifies against its immutable claim that:
+
+- the claim was outcome-eligible;
+- claim and outcome IDs are unique;
+- claim/outcome symbol, horizon, `as_of` and start market session agree;
+- the claim-time start session is not after claim `as_of`;
+- `end_market_date` is after the claim date;
+- `evaluated_at` is after the completed target market date;
+- outcome provenance is therefore genuinely forward in time.
+
+Invalid chronology/provenance fails closed before mature snapshots, symbols, support regions or baseline estimates are counted.
+
+## Five-session event spacing
+
+The inherited Phase-4/4E event spacing is a real contract, not a label:
+
+`fixed_event_spacing_sessions = 5`
+
+Phase 5A applies the cooldown per symbol before forming the evaluated/readiness cohort. Repeated daily or same-session claims therefore cannot overweight descriptive estimates or artificially increase temporal-support distance.
+
+Spacing uses ordered immutable claim-time start sessions represented for that symbol, never calendar-day distance. Multiple reruns on the same market session share one session position. Missing scanner publications make the spacing conservative rather than inventing unseen sessions.
+
+Peer labels remain derived from the complete matured immutable snapshot cohort first; the five-session cooldown is applied to the evaluated claim cohort afterwards. This preserves the Phase-4E peer-baseline definition while preventing repeated events from being overcounted.
 
 ## Temporal-support rule
 
-Phase 5 mirrors the Phase-4 robust-uncertainty support semantics rather than
-using calendar distance as a proxy. For each horizon, only claims whose
-`outcome_eligibility` is `eligible` form the ordered observation-date baseline.
-Unevaluable claim dates can never create artificial spacing. Mature outcome
-cohorts count as separate temporal support only when their observation
-positions are at least the effective uncertainty block length apart:
+After the five-session cooldown, Phase 5A mirrors the Phase-4 robust-uncertainty support semantics. A new mature support cohort is counted only when its observation position is at least the effective uncertainty block length after the previous counted cohort:
 
 `block_length = 2 x horizon`
 
-The counted forward outcome intervals must also not overlap. Therefore two
-calendar-distant mature snapshots do not automatically become two support
-regions if the eligible prospective archive contains too few intervening
-observation dates. This is a conservative support count; it is not a claim of
-statistical independence.
+Counted forward outcome windows must also not overlap. Calendar distance alone is not temporal support, and overlapping forward windows are never described as independent.
 
-The Phase-4 support constants are contractual rather than tunable in Phase 5A:
+The fixed Phase-4 constants are immutable in Phase 5A:
 
 - uncertainty block multiplier: `2`;
 - minimum time-separated support regions: `2`;
 - fixed event spacing: `5` sessions;
 - Statistical Context gate: mandatory.
 
-Supplying weaker values fails closed instead of changing the interpretation of
-the readiness report.
+Supplying weaker values raises instead of changing readiness semantics.
 
 ## Purged walk-forward contract
 
 For each horizon separately:
 
-1. A model version has a unique immutable version ID.
-2. Training may use only post-freeze Phase-4E claims with fully matured outcomes.
-3. A claim must have been generated no later than `training_cutoff`.
-4. An outcome may only be considered mature when `evaluated_at` is on or after
-   its stored `end_market_date`, and it must have been evaluated no later than
-   `training_cutoff`.
-5. Its stored `end_market_date` must be strictly before `evaluation_start`.
-6. Claim time must itself precede the evaluation period.
-7. A manifest may contain each `claim_id` at most once.
-8. Parameters, feature definitions and hyperparameters are frozen before the
-   evaluation period starts.
-9. Evaluation uses only the next untouched period.
-10. That period may enter training only for a later model version, after it has
-    completely ended and matured.
-11. 5T/20T/40T/60T are never pooled into a shared maturity assumption.
-12. Overlapping forward windows are not counted as independent observations.
-13. Robust uncertainty continues to use circular moving observation-date
-    blocks with full date clusters and effective block length `2 x horizon`.
+1. Training may use only post-freeze Phase-4E evidence.
+2. Claims must be generated no later than `training_cutoff`.
+3. Only fully matured outcomes known by `training_cutoff` may enter training.
+4. Claim and outcome must share horizon, symbol, claim date and start-market provenance.
+5. `end_market_date` must be genuinely after the claim and before `evaluation_start`.
+6. `evaluated_at` must be after the completed outcome date and no later than `training_cutoff`.
+7. Duplicate `claim_id` rows are forbidden.
+8. Five-session spacing is applied to training claims as well.
+9. 5T/20T/40T/60T remain separate.
+10. Evaluation uses only the next untouched period.
+11. That period may enter later training only after it has fully ended and matured.
+12. Forward-window overlap is not treated as independence.
+13. Robust uncertainty continues to use circular moving observation-date blocks with effective block length `2 x horizon`.
 
-Purging is validated twice: once when training pairs are built and again when
-an immutable model manifest is constructed. The manifest builder rejects rows
-that are pre-freeze, generated after the training cutoff, evaluated before
-their market-end date, matured after the training cutoff, overlap the
-evaluation period, duplicate a claim ID, or belong to a horizon not declared
-by that model version.
+Purging is checked when training pairs are created and revalidated again at immutable model-manifest construction.
 
-The exact training evidence used by each model version is hashed into an
-`evidence_fingerprint`. The fingerprint covers every training column and value,
-including later engineered features, rather than a fixed allowlist. Missing
-values are encoded separately from literal strings and numeric values remain
-distinct from their string representations. Column dtypes are part of the
-schema fingerprint as well. Even a zero-row evidence frame therefore hashes
-its exact names and dtypes, so equal column names with different empty dtypes
-cannot share the same evidence fingerprint. A model manifest records:
+## Immutable evidence fingerprints and model manifests
 
-- version ID;
-- training cutoff and freeze time;
+The training evidence fingerprint covers every column/value with typed, null-safe encoding. Literal strings cannot collide with missing values, numeric values cannot collide with string representations, and the exact column schema including dtypes is hashed even for zero-row frames.
+
+Every model version records at least:
+
+- unique version ID;
+- training cutoff;
+- Phase-5 freeze commit/time;
 - evidence fingerprint;
 - horizons;
 - feature definition;
-- parameters;
-- hyperparameters;
+- parameters and hyperparameters;
 - evaluation start/end;
-- result;
-- promotion/reject status.
+- result and promotion/reject status.
 
-Historical manifests must not be rewritten after evaluation starts.
+Historical manifests are immutable after evaluation starts.
 
 ## Frozen baseline
 
-The Phase-4 architecture is the non-adaptive baseline. The Phase-5 evaluator
-can report descriptive prospective reliability by:
+The current Phase-4 architecture remains the non-adaptive reference. The Phase-5A evaluator is descriptive only and can report prospective reliability grouped by Selection state, Model Agreement and Data-Quality states using directional hit rate, signed peer excess, adverse excursion and path max drawdown.
 
-- Selection Statistical Confidence state;
-- Model Agreement state;
-- Data-Quality states;
-- directional hit rate where a directional claim exists;
-- signed peer excess;
-- adverse excursion;
-- path max drawdown.
+The baseline evaluator applies the five-session event spacing to the evaluated cohort. It does not create adaptive weights, a scalar Confidence mapping, HIGH/MED/LOW thresholds or a production decision.
 
-Descriptive point estimates are not robust evidence. No scalar Confidence,
-weights, HIGH/MED/LOW thresholds, or promotion decision is created by the
-baseline evaluator.
-
-Readiness counts mature snapshot cohorts from claims that actually have mature
-outcomes. Merely having additional unevaluated claim snapshots cannot satisfy
-the temporal-cohort gate. The reported maturity time span uses `evaluated_at`,
-not the original claim date.
+Robust intervals are not claimed until the temporal-support contract is actually satisfied.
 
 ## Promotion gate
 
-A candidate can only become eligible for a separate promotion review after all
-of the following are true:
+A candidate can only become eligible for a separate promotion review after all structural gates pass, including multiple genuine walk-forward epochs, distinct version IDs, non-overlapping market-date evaluation windows, PIT/leakage audit, reproducibility, robust uncertainty, concentration checks, temporal stability and reproducible advantage over the frozen baseline.
 
-- multiple genuine walk-forward evaluation epochs exist;
-- their version IDs are distinct;
-- their evaluation windows do not overlap on a market-date basis; an epoch
-  ending and another starting on the same market date still overlap even when
-  the timestamps differ intraday;
-- PIT/leakage audit passes;
-- model versions are reproducible;
-- robust uncertainty is available;
-- concentration checks pass;
-- temporal stability checks pass;
-- a reproducible advantage over the frozen baseline is demonstrated.
+Even then Phase 5A only returns `eligible_for_separate_promotion_review`; it never changes production.
 
-Even when all structural gates pass, the Phase-5A code only returns
-`eligible_for_separate_promotion_review`. It does not change production.
-
-## Files introduced by Phase 5A
+## Phase-5A files
 
 - `src/scanner/reports/confidence_vnext_walkforward.py`
 - `scripts/run_confidence_vnext_readiness_5.py`
@@ -206,6 +129,4 @@ Even when all structural gates pass, the Phase-5A code only returns
 - `.github/workflows/confidence_vnext_5a.yml`
 - `docs/confidence_vnext_5a.md`
 
-The workflow is read-only with respect to repository contents. It may fetch the
-dedicated Phase-4E shadow branch, run the audit, and upload a report artifact,
-but it never pushes to `main` or to `phase4e-shadow-data`.
+The Phase-5A workflow is read-only with respect to repository contents. It may fetch `phase4e-shadow-data`, run the audit and upload a report artifact, but it cannot push to `main` or the shadow branch.
