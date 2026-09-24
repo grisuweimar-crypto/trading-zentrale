@@ -16,16 +16,18 @@ Merge time:
 
 `2026-09-24T01:12:14Z`
 
-This commit is the Phase-5 prospective freeze boundary. The Phase-4E workflow
-only accepts scanner publications whose first-parent commit already contains
-the Phase-4E workflow. Therefore scanner publications before this merge cannot
-become Phase-5 evidence.
+This commit/time is the Phase-5 prospective freeze boundary. The Phase-4E
+workflow only accepts scanner publications whose first-parent commit already
+contains the Phase-4E workflow. Phase 5 additionally enforces the boundary in
+its own consumers: every claim used for readiness or training must have a
+parseable `generated_at` strictly after the freeze. Pre-freeze or temporally
+unprovable claims fail closed.
 
 At the Phase-5A audit start, `main` still pointed to the Phase-4E merge commit
 and `phase4e-shadow-data` did not yet exist. Consequently the honest readiness
 state was:
 
-| Horizon | Claims | Evaluable | Mature outcomes | Symbols | Snapshots | Independent/time-separated support |
+| Horizon | Claims | Evaluable | Mature outcomes | Symbols | Mature snapshots | Independent/time-separated support |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 5T | 0 | 0 | 0 | 0 | 0 | 0 |
 | 20T | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -68,7 +70,10 @@ The readiness report exposes this as:
 
 `claim_level_phase4c_timing_and_risk_states_not_archived`
 
-Because no real Phase-4E claims existed at discovery time, this can be fixed
+This gate cannot be cleared by a command-line assertion. Readiness derives it
+only from archived `timing_statistical_state` and `risk_statistical_state`
+fields whose values are valid Phase-4C ordinal states. Because no real Phase-4E
+claims existed when this gap was discovered, the archive can still be extended
 prospectively without rewriting historical claims.
 
 ## Purged walk-forward contract
@@ -76,26 +81,32 @@ prospectively without rewriting historical claims.
 For each horizon separately:
 
 1. A model version has a unique immutable version ID.
-2. Training may use only Phase-4E claims with fully matured outcomes.
+2. Training may use only post-freeze Phase-4E claims with fully matured outcomes.
 3. The outcome must already have been known by `training_cutoff`.
 4. Its stored `end_market_date` must be strictly before `evaluation_start`.
-   This is the primary purge rule and prevents an outcome path from leaking
-   into the evaluation period.
-5. Parameters, feature definitions and hyperparameters are frozen before the
+5. Claim time must itself precede the evaluation period.
+6. Parameters, feature definitions and hyperparameters are frozen before the
    evaluation period starts.
-6. Evaluation uses only the next untouched period.
-7. That period may enter training only for a later model version, after it has
+7. Evaluation uses only the next untouched period.
+8. That period may enter training only for a later model version, after it has
    completely ended and matured.
-8. 5T/20T/40T/60T are never pooled into a shared maturity assumption.
-9. Overlapping forward windows are not counted as independent observations.
-10. Robust uncertainty continues to use circular moving observation-date
+9. 5T/20T/40T/60T are never pooled into a shared maturity assumption.
+10. Overlapping forward windows are not counted as independent observations.
+11. Robust uncertainty continues to use circular moving observation-date
     blocks with full date clusters and effective block length `2 x horizon`.
 
+Purging is validated twice: once when training pairs are built and again when
+an immutable model manifest is constructed. The manifest builder rejects rows
+that are pre-freeze, matured after the training cutoff, overlap the evaluation
+period, or belong to a horizon not declared by that model version.
+
 The exact training evidence used by each model version is hashed into an
-`evidence_fingerprint`. A model manifest records:
+`evidence_fingerprint`. The fingerprint covers every training column and value,
+including later engineered features, rather than a fixed allowlist. A model
+manifest records:
 
 - version ID;
-- training cutoff;
+- training cutoff and freeze time;
 - evidence fingerprint;
 - horizons;
 - feature definition;
@@ -124,12 +135,18 @@ Descriptive point estimates are not robust evidence. No scalar Confidence,
 weights, HIGH/MED/LOW thresholds, or promotion decision is created by the
 baseline evaluator.
 
+Readiness counts mature snapshot cohorts from claims that actually have mature
+outcomes. Merely having additional unevaluated claim snapshots cannot satisfy
+the temporal-cohort gate. The reported maturity time span uses `evaluated_at`,
+not the original claim date.
+
 ## Promotion gate
 
 A candidate can only become eligible for a separate promotion review after all
 of the following are true:
 
 - multiple genuine walk-forward evaluation epochs exist;
+- their version IDs are distinct and their evaluation windows do not overlap;
 - PIT/leakage audit passes;
 - model versions are reproducible;
 - robust uncertainty is available;
