@@ -350,3 +350,70 @@ def test_evaluation_archive_hash_detects_mutation(tmp_path):
 
     with pytest.raises(ValueError, match="evaluation integrity failure"):
         run_walkforward_evaluation(*paths, bootstrap_reps=5)
+
+
+def test_archived_epoch_rerun_and_append_preserves_chain(tmp_path):
+    claims, outcomes = _future_fixture()
+    v1 = _version(5, "2026-10-01T16:00:00Z", "a" * 64)
+    v2 = _version(
+        5,
+        "2026-10-12T16:00:00Z",
+        "b" * 64,
+        previous_hash=v1["version_sha256"],
+    )
+    paths = _write_sources(tmp_path, claims, outcomes, [v1, v2])
+
+    first = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert first["finalized_evaluations"] == 1
+    first_text = paths[3].read_text(encoding="utf-8")
+    first_record = json.loads(first_text.splitlines()[0])
+    first_hash = first_record["evaluation_sha256"]
+
+    second = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert second["new_finalized_evaluations"] == []
+    assert paths[3].read_text(encoding="utf-8") == first_text
+
+    c = _claim("CCC", "future-2", "2026-10-13", 5)
+    d = _claim("DDD", "future-2", "2026-10-13", 5)
+    claims = pd.concat(
+        [claims, pd.DataFrame([c, d], columns=CLAIM_COLUMNS_V2)],
+        ignore_index=True,
+    )
+    outcomes = pd.concat(
+        [
+            outcomes,
+            pd.DataFrame(
+                [
+                    _outcome(c, "2026-10-20", 0.04, "2026-10-21T16:00:00Z"),
+                    _outcome(d, "2026-10-20", 0.02, "2026-10-21T16:00:00Z"),
+                ],
+                columns=OUTCOME_COLUMNS_V2,
+            ),
+        ],
+        ignore_index=True,
+    )
+    claims.to_csv(paths[0], index=False)
+    outcomes.to_csv(paths[1], index=False)
+
+    v3 = _version(
+        5,
+        "2026-10-25T16:00:00Z",
+        "c" * 64,
+        previous_hash=v2["version_sha256"],
+    )
+    _write_versions(paths[2], [v1, v2, v3])
+
+    third = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert len(third["new_finalized_evaluations"]) == 1
+    records = [
+        json.loads(line)
+        for line in paths[3].read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(records) == 2
+    assert records[0] == first_record
+    assert records[1]["previous_evaluation_sha256"] == first_hash
+
+    stable_text = paths[3].read_text(encoding="utf-8")
+    fourth = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert fourth["new_finalized_evaluations"] == []
+    assert paths[3].read_text(encoding="utf-8") == stable_text
