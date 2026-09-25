@@ -1,0 +1,34 @@
+name: Module 6A Elliott causal pivots
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/elliott_vnext/**"
+      - "tests/test_elliott_vnext_foundations.py"
+      - "tests/test_elliott_vnext_pivots.py"
+      - "configs/elliott_vnext_contract_v2.json"
+      - "configs/elliott_vnext_output_schema_v2.json"
+      - "docs/elliott_vnext_6a.md"
+      - ".github/workflows/elliott_vnext_6a.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Module 6 foundation and 6A tests
+        run: >-
+          pytest -q
+          tests/test_elliott_vnext_foundations.py
+          tests/test_elliott_vnext_pivots.py
