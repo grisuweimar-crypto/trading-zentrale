@@ -6,7 +6,11 @@ that topology into a portfolio-independent Universal Stance. 7E adds research-
 only hysteresis while preserving raw stance. 7F is the first position-aware
 layer and maps preserved stance/transition context into review-only Portfolio
 Action and Swing Management. 7G adds faithful Reliability & Explainability over
-those preserved outputs without changing the stance, transition or action.
+those preserved outputs without changing the stance, transition or action. 7H
+integrates those preserved states into a private-runtime Depot-Watch without
+ranking holdings or generating execution instructions. 7I freezes the
+validation/promotion boundary and distinguishes technical shadow readiness from
+prospective empirical promotion readiness.
 """
 
 from .input_contract import (
@@ -82,6 +86,31 @@ from .reliability_explainability import (
     build_reliability_explanation,
     validate_reliability_explanation,
 )
+from .promotion_validation import (
+    SCHEMA_VERSION as VALIDATION_PROMOTION_SCHEMA_VERSION,
+    TRACE_SUMMARY_SCHEMA_VERSION,
+    READINESS_STATES,
+    PromotionValidationError,
+    build_promotion_report,
+    run_promotion_review,
+    validate_promotion_report,
+    validate_shadow_trace_summary,
+)
+from .depot_watch import (
+    SCHEMA_VERSION as DEPOT_WATCH_SCHEMA_VERSION,
+    POSITION_BOOK_SCHEMA_VERSION,
+    BUNDLE_SCHEMA_VERSION,
+    AVAILABILITY_STATES,
+    WATCH_STATUSES,
+    PRESENTATION_GROUPS,
+    DepotWatchError,
+    build_depot_watch,
+    validate_depot_watch,
+    validate_daily_research_snapshot,
+    validate_position_book,
+    validate_decision_bundle,
+    validate_bundle_set,
+)
 
 __all__ = [
     "ADMISSION_STATES",
@@ -139,4 +168,25 @@ __all__ = [
     "ReliabilityExplainabilityError",
     "build_reliability_explanation",
     "validate_reliability_explanation",
+    "VALIDATION_PROMOTION_SCHEMA_VERSION",
+    "TRACE_SUMMARY_SCHEMA_VERSION",
+    "READINESS_STATES",
+    "PromotionValidationError",
+    "build_promotion_report",
+    "run_promotion_review",
+    "validate_promotion_report",
+    "validate_shadow_trace_summary",
+    "DEPOT_WATCH_SCHEMA_VERSION",
+    "POSITION_BOOK_SCHEMA_VERSION",
+    "BUNDLE_SCHEMA_VERSION",
+    "AVAILABILITY_STATES",
+    "WATCH_STATUSES",
+    "PRESENTATION_GROUPS",
+    "DepotWatchError",
+    "build_depot_watch",
+    "validate_depot_watch",
+    "validate_daily_research_snapshot",
+    "validate_position_book",
+    "validate_decision_bundle",
+    "validate_bundle_set",
 ]

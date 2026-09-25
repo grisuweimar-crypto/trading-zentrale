@@ -1,0 +1,41 @@
+name: Phase 7I Validation and Promotion
+
+on:
+  pull_request:
+    paths:
+      - "configs/decision_validation_promotion_v1.json"
+      - "configs/decision_*"
+      - "src/scanner/research/decision_layer/**"
+      - "tests/test_decision_validation_promotion_7i.py"
+      - "scripts/run_decision_promotion_7i.py"
+      - "docs/decision_layer_7i.md"
+      - ".github/workflows/decision_layer_7i.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 7I regression tests
+        run: pytest -q tests/test_decision_validation_promotion_7i.py
+      - name: Smoke-test 7I CLI
+        run: python scripts/run_decision_promotion_7i.py --help
+      - name: Build 7I report at the frozen pre-prospective cutoff
+        run: >-
+          python scripts/run_decision_promotion_7i.py
+          --as-of 2026-09-25
+          --output /tmp/decision_promotion_7i.json
+      - name: Validate frozen 7I disposition
+        run: >-
+          python -c "import json, pathlib; d=json.loads(pathlib.Path('/tmp/decision_promotion_7i.json').read_text()); assert d['readiness']['state'] == 'pre_prospective_start'; assert d['technical_readiness']['contract_consistency_gate_passed'] is True; assert d['technical_readiness']['shadow_collection_eligible'] is True; assert d['promotion']['promotion_review_eligible'] is False; assert d['promotion']['productive_promotion_approved'] is False; assert d['execution_allowed'] is False; assert d['semantics']['spent_data_used_for_empirical_confirmation'] is False"
