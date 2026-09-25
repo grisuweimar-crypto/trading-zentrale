@@ -483,11 +483,11 @@ def run_walkforward_evaluation(
     versions = _read_versions(versions_path)
     evaluations = _read_evaluations(evaluations_path)
 
-    known_pairs = {
+    archived_by_pair = {
         (
             str(record["version_id"]),
             str(record["successor_version_id"]),
-        ): str(record["evaluation_sha256"])
+        ): record
         for record in evaluations
     }
     current_known_at: str | None = None
@@ -532,15 +532,21 @@ def run_walkforward_evaluation(
                 training_cutoff=start.isoformat(),
                 evaluation_known_by=end.isoformat(),
             )
+            archived_record = archived_by_pair.get(pair)
+            predecessor_hash = (
+                str(archived_record["previous_evaluation_sha256"])
+                if archived_record is not None
+                else (
+                    str(evaluations[-1]["evaluation_sha256"])
+                    if evaluations
+                    else ""
+                )
+            )
             record = _build_finalized_record(
                 version,
                 successor,
                 frame,
-                previous_evaluation_sha256=(
-                    str(evaluations[-1]["evaluation_sha256"])
-                    if evaluations
-                    else ""
-                ),
+                previous_evaluation_sha256=predecessor_hash,
                 bootstrap_reps=bootstrap_reps,
                 random_seed=random_seed,
             )
@@ -556,13 +562,12 @@ def run_walkforward_evaluation(
                 continue
 
             supplied_hash = str(record["evaluation_sha256"])
-            previous_hash = known_pairs.get(pair)
-            if previous_hash is None:
+            if archived_record is None:
                 evaluations.append(record)
                 _validate_evaluations(evaluations)
-                known_pairs[pair] = supplied_hash
+                archived_by_pair[pair] = record
                 new_evaluations.append(str(record["evaluation_id"]))
-            elif previous_hash != supplied_hash:
+            elif str(archived_record["evaluation_sha256"]) != supplied_hash:
                 raise ValueError(
                     f"immutable Phase 5D evaluation conflict for {pair}"
                 )
