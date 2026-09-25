@@ -142,6 +142,17 @@ def test_spent_packet_is_explicitly_replay_only() -> None:
     assert result["validation"]["promotion_eligible"] is False
 
 
+def test_partition_boundary_uses_packet_calendar_date_not_utc_conversion() -> None:
+    result = compute_universal_stance(
+        _packet(
+            [_timing("tim", "positive")],
+            as_of="2026-09-26T00:30:00+02:00",
+        )
+    )
+    assert result["research_partition"] == "prospective_unspent"
+    assert result["validation"]["status"] == "prospective_unconfirmed"
+
+
 def test_validator_rejects_portfolio_or_action_fields() -> None:
     result = compute_universal_stance(_packet([_timing("tim", "positive")]))
     bad = copy.deepcopy(result)

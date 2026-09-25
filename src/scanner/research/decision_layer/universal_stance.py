@@ -6,7 +6,7 @@ portfolio action, hysteresis engine or order generator.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime
 from typing import Mapping
 
 from scanner.research.decision_layer.input_contract import validate_input_packet
@@ -27,7 +27,13 @@ class UniversalStanceError(ValueError):
     """Raised when a 7D stance object is structurally inconsistent."""
 
 
-def _timestamp(value: object) -> datetime:
+def _calendar_date(value: object) -> date:
+    """Return the calendar date encoded by the packet timestamp.
+
+    The Phase-7 spent/unspent freeze is defined by observation calendar date,
+    not by a UTC instant. Preserve the timestamp's own offset when deciding
+    whether an observation belongs to 2026-09-25 or 2026-09-26.
+    """
     text = str(value or "").strip()
     if text.endswith("Z"):
         text = text[:-1] + "+00:00"
@@ -35,9 +41,7 @@ def _timestamp(value: object) -> datetime:
         parsed = datetime.fromisoformat(text)
     except ValueError as exc:
         raise UniversalStanceError("invalid_as_of") from exc
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+    return parsed.date()
 
 
 def _forbidden_paths(value: object, path: str = "$") -> list[str]:
@@ -55,8 +59,12 @@ def _forbidden_paths(value: object, path: str = "$") -> list[str]:
 
 
 def _research_partition(as_of: object) -> str:
-    cutoff = datetime(2026, 9, 26, tzinfo=timezone.utc)
-    return "prospective_unspent" if _timestamp(as_of) >= cutoff else "legacy_replay_spent"
+    cutoff = date(2026, 9, 26)
+    return (
+        "prospective_unspent"
+        if _calendar_date(as_of) >= cutoff
+        else "legacy_replay_spent"
+    )
 
 
 def _support_structure(relation_state: str) -> str:
