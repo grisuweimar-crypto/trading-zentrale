@@ -3,8 +3,9 @@
 Phase 7A defines the typed evidence-admission boundary. Phase 7B adds the
 point-in-time Decision Research Dataset plus a separate prospective typed-
 evidence archive. Phase 7C studies confirmation/conflict topology. Phase 7D
-maps that topology into a portfolio-independent, research-only Universal Stance
-without hysteresis, portfolio action or order generation.
+maps that topology into a portfolio-independent, research-only Universal Stance.
+Phase 7E adds research-only hysteresis/state-transition mechanics while preserving
+the raw 7D stance and still forbidding portfolio action or order generation.
 """
 
 from .input_contract import (
@@ -52,6 +53,16 @@ from .universal_stance import (
     compute_universal_stance,
     validate_universal_stance,
 )
+from .state_transition import (
+    SCHEMA_VERSION as STATE_TRANSITION_SCHEMA_VERSION,
+    CANDIDATE_DEPTHS,
+    DEFAULT_MIN_CONSECUTIVE,
+    TRANSITION_STATUSES,
+    StateTransitionError,
+    build_state_transition_history,
+    compare_confirmation_depths,
+    validate_state_transition,
+)
 
 __all__ = [
     "ADMISSION_STATES",
@@ -87,4 +98,12 @@ __all__ = [
     "UniversalStanceError",
     "compute_universal_stance",
     "validate_universal_stance",
+    "STATE_TRANSITION_SCHEMA_VERSION",
+    "CANDIDATE_DEPTHS",
+    "DEFAULT_MIN_CONSECUTIVE",
+    "TRANSITION_STATUSES",
+    "StateTransitionError",
+    "build_state_transition_history",
+    "compare_confirmation_depths",
+    "validate_state_transition",
 ]

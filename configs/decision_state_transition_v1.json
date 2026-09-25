@@ -1,0 +1,65 @@
+{
+  "schema_version": "decision_state_transition_v1",
+  "phase": "7E",
+  "name": "Universal Stance hysteresis and state-transition contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "frozen_on": "2026-09-25",
+  "input_schema": "decision_universal_stance_v1",
+  "raw_stance_preserved": true,
+  "directional_anchor_states": ["positive", "negative"],
+  "blocking_raw_states": ["conflicted", "insufficient_evidence"],
+  "transition_statuses": [
+    "bootstrap_pending",
+    "bootstrap_confirmed",
+    "stable_confirmed",
+    "transition_pending",
+    "transition_confirmed",
+    "blocked_conflict",
+    "blocked_insufficient"
+  ],
+  "candidate_rule": {
+    "rule_id": "minimal_repeat_candidate_v1",
+    "min_consecutive_directional_observations": 2,
+    "require_distinct_calendar_dates": true,
+    "require_distinct_source_snapshot_ids": true,
+    "reset_pending_on_conflicted": true,
+    "reset_pending_on_insufficient_evidence": true,
+    "selection_basis": "minimal_nonzero_hysteresis_for_prospective_research_not_optimized",
+    "empirically_validated": false,
+    "production_eligible": false
+  },
+  "comparison_candidates": [1, 2, 3, 5],
+  "comparison_policy": {
+    "winner_selection_allowed": false,
+    "historical_churn_reduction_is_not_outcome_validation": true,
+    "future_mature_outcomes_required_for_promotion": true
+  },
+  "guards": {
+    "raw_7d_stance_must_not_be_rewritten": true,
+    "conflicted_is_not_neutral": true,
+    "insufficient_evidence_is_not_neutral": true,
+    "stable_anchor_is_not_a_replacement_for_current_raw_stance": true,
+    "no_weighted_super_score": true,
+    "no_portfolio_state": true,
+    "no_portfolio_action": true,
+    "no_buy_hold_sell": true,
+    "no_position_sizing": true,
+    "no_order_generation": true,
+    "no_threshold_optimization_on_spent_data": true
+  },
+  "research_partition": {
+    "legacy_replay_spent_through": "2026-09-25",
+    "prospective_unspent_from": "2026-09-26",
+    "promotion_requires_future_mature_outcomes": true
+  },
+  "forbidden_keys_recursive": [
+    "portfolio_action",
+    "trade_decision",
+    "order_instruction",
+    "buy_signal",
+    "sell_signal",
+    "position_size",
+    "target_weight"
+  ]
+}
