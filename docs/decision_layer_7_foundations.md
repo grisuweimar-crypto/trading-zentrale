@@ -6,39 +6,33 @@ Phase 7 ist der ursprünglich als Phase 6 geplante Interpretation-/Decision-Laye
 
 ## 1. Grundprinzip
 
-Die upstream Module bleiben semantisch getrennt:
-- Selection beantwortet, wie attraktiv ein Titel relativ zum Universe ist.
-- Timing beantwortet, ob der aktuelle Zeitpunkt historisch günstig oder ungünstig ist.
-- Probability kalibriert Selection-/Timing-Zustände und ist kein zusätzlicher Richtungs-Vote.
-- Risk beschreibt Downside-/Fehlerrisiko und ist kein Return-Vote.
-- Confidence beschreibt Zuverlässigkeit/Belastbarkeit der vorhandenen Aussagen und ist kein Opportunity-Score.
-- Adaptive Learning darf nur bereits definierte Beziehungen, Zuverlässigkeiten, Konfliktstrafen und Horizon-Mappings lernen; es darf upstream Definitionen nicht stillschweigend verändern.
-- Elliott vNext liefert Struktur, Wellengrad, Szenarien, Ziel-/Korrekturzonen und Swing-/Review-Kontext. Elliott erzeugt keinen autonomen BUY/HOLD/SELL-Befehl.
-- Markt-/Sektorkontext und relative Stärke dürfen nur verwendet werden, wenn ihre Datenqualität und Point-in-Time-Eignung dokumentiert sind.
+Die Upstream-Module bleiben semantisch getrennt:
+- Selection: relative Attraktivität / Richtung im Universe.
+- Timing: Zeitpunkt / kurzfristigere Richtung innerhalb eines Titels.
+- Probability: Kalibrierung von Selection-/Timing-Zuständen, kein zusätzlicher Richtungs-Vote.
+- Risk: Downside-/Fehlerrisiko, kein Return-Vote.
+- Confidence: Zuverlässigkeit der vorhandenen Aussagen, kein Opportunity-Score und keine Richtung.
+- Adaptive Learning: darf nur bereits definierte Beziehungen, Reliability, Konfliktstrafen und Horizon-Mappings nach Phase-5-Regeln anpassen.
+- Elliott vNext: Struktur, Wellengrad, Primär-/Alternativszenarien, Invalidation, Ziel-/Korrekturzonen und Swing-/Review-Kontext; kein autonomer Trade-Befehl.
+- Markt-/Sektorkontext und Relative Strength: nur bei dokumentierter Datenqualität und Point-in-Time-Eignung.
 
-Phase 7 interpretiert diese Evidenz gemeinsam, ohne die ursprüngliche Bedeutung der Module zu verwischen.
+Phase 7 interpretiert diese Evidenz gemeinsam, ohne die ursprüngliche Bedeutung der Module zu verwischen oder dieselbe Evidenz mehrfach zu zählen.
 
 ## 2. Zwei strikt getrennte Entscheidungsstufen
 
 ### 2.1 Universal Stance
 
-Für jeden Titel des Scanneruniversums wird ein universeller Zustand erzeugt, unabhängig davon, ob der Titel im Portfolio liegt.
-
-Zielzustände:
+Für jeden Titel des Scanneruniversums, unabhängig vom realen Depot:
 - `BUY`
 - `HOLD`
 - `SELL`
 - `INSUFFICIENT_EVIDENCE`
 
-`INSUFFICIENT_EVIDENCE` ist kein neutrales HOLD. Es ist ein fail-closed Zustand für fehlende, widersprüchliche oder nicht ausreichend belastbare Evidenz.
-
-Der Universal Stance darf keine Portfoliogröße, Einstandskurse, persönliche Depotkonzentration oder bestehende Position verwenden.
+Portfolioinformationen dürfen weder die Kalibrierung noch das Training des Universal Stance beeinflussen.
 
 ### 2.2 Portfolio Action Overlay
 
-Erst nach dem Universal Stance wird die reale Depotposition berücksichtigt.
-
-Mögliche Empfehlungen:
+Erst nach Universal Stance wird die reale Position berücksichtigt:
 - `OPEN`
 - `ADD`
 - `HOLD`
@@ -47,15 +41,55 @@ Mögliche Empfehlungen:
 - `NO_ACTION`
 - `INSUFFICIENT_EVIDENCE`
 
-Das Portfolio Overlay darf eine universell positive Bewertung aus Risiko-/Konzentrationsgründen zu `HOLD` oder `NO_ACTION` begrenzen, aber niemals rückwirkend den Universal Stance umetikettieren.
+Ein Portfolio-Constraint darf eine Aktion begrenzen, aber den Universal Stance nicht rückwirkend umetikettieren.
 
-Portfolioinformationen bleiben vollständig außerhalb des Trainings/der Kalibrierung des Universal-Stance-Modells.
+Beispiel:
+- Universal Stance: `BUY`
+- Portfolio Action: `NO_ACTION`
+- Portfolio Reason: `MAX_POSITION_CONCENTRATION`
 
-## 3. Evidence Bundle
+Nicht erlaubt:
+- Universal Stance: `HOLD`, nur weil die Position bereits groß ist.
 
-Phase 7 beginnt nicht mit einem Super-Score. Für jeden Titel wird zunächst ein PIT-sauberes Evidence Bundle erzeugt.
+## 3. HOLD-Semantik
 
-Pflichtblöcke soweit verfügbar:
+`HOLD` darf nicht mehrere ununterscheidbare Bedeutungen tragen. Intern ist bei Universal `HOLD` ein Detailzustand Pflicht:
+
+- `HOLD_CONSTRUCTIVE`: Titel bleibt grundsätzlich konstruktiv, aber aktuell kein neuer Einstieg bzw. keine neue Richtungsaktion.
+- `HOLD_NEUTRAL`: keine klare positive oder negative Handlungsevidenz.
+- `HOLD_UNRESOLVED`: relevante Sensoren widersprechen sich; Beobachtung statt Aktion.
+
+`HOLD_PORTFOLIO_CONSTRAINED` ist als Universal-Stance-Untertyp verboten. Portfolioeinschränkungen gehören ausschließlich ins nachgelagerte Portfolio Overlay.
+
+## 4. INSUFFICIENT_EVIDENCE
+
+`INSUFFICIENT_EVIDENCE` ist ein aktiver fail-closed Zustand und niemals ein neutrales HOLD.
+
+Ursachen-Codes:
+- `INSUFFICIENT_DATA`
+- `INSUFFICIENT_MODEL_COVERAGE`
+- `INSUFFICIENT_CONSENSUS`
+- `INSUFFICIENT_VALIDATION`
+- `OUTSIDE_VALIDATED_DOMAIN`
+- `STALE_OR_INCOMPATIBLE_INPUT`
+- `INPUT_CONTRACT_VIOLATION`
+
+Mögliche Auslöser:
+- erforderliche Historientiefe fehlt,
+- Pflichtmodul liefert keinen gültigen Output,
+- Datenqualität liegt unter Mindestanforderung,
+- Modell/Teilmodell ist nicht validiert oder nicht promotet,
+- entscheidungsrelevanter Konflikt ist nicht auflösbar,
+- Asset/Markt/Benchmark liegt außerhalb der validierten Domäne,
+- kritischer Input ist veraltet oder versionsinkompatibel.
+
+Vertragliche Fälle wie inkompatible Versionen dürfen deterministisch fail-closed sein. Empirische Mindestschwellen für Historientiefe, Coverage oder Consensus werden erst in Phase 7 validiert und nicht vorab erfunden.
+
+## 5. Evidence Bundle
+
+Phase 7 beginnt nicht mit einem Super-Score. Pro Titel wird zunächst ein PIT-sauberes Evidence Bundle erzeugt.
+
+Blöcke soweit verfügbar:
 - Selection
 - Timing
 - Probability
@@ -68,46 +102,50 @@ Pflichtblöcke soweit verfügbar:
 - Data Quality / Provenance
 
 Jeder Block behält:
-- eigenen Wert/Zustand,
-- eigenen Zeitstempel `as_of`,
-- eigene Version,
-- eigene Verfügbarkeit,
-- eigene Unsicherheit bzw. Evidenzstärke.
+- Wert/Zustand,
+- `as_of`,
+- Version,
+- Verfügbarkeit,
+- Unsicherheit/Evidenzstärke.
 
-Kein Modul darf durch bloßes Umkopieren in Phase 7 doppelt gezählt werden.
+Kein Modul darf durch Umkopieren oder semantische Überlappung doppelt gezählt werden.
 
-## 4. Semantische Rollen in der Fusion
+## 6. Semantische Rollen in der Fusion
 
-### 4.1 Directional Evidence
+### 6.1 Directional Evidence
 
-Richtungsaussagen dürfen primär aus Selection und Timing sowie später empirisch validierten strukturellen Elliott-Zuständen abgeleitet werden.
+Richtungsaussagen dürfen primär aus Selection und Timing sowie später empirisch validierter struktureller Elliott-Evidenz entstehen.
 
-Probability ist Kalibrierung dieser Richtung, nicht ein zweiter Richtungsbeweis.
+Probability kalibriert diese Richtung und ist kein zweiter oder dritter Richtungsbeweis.
 
-### 4.2 Risk
+### 6.2 Risk
 
-Risk begrenzt bzw. verschärft Entscheidungen. Risk darf ein attraktives Setup als zu asymmetrisch/gefährlich kennzeichnen, aber nicht als eigenständiges Kaufsignal wirken.
+Risk darf Aktionen begrenzen, Positionsgrößen reduzieren oder eine Lage als asymmetrisch/gefährlich kennzeichnen. Risk darf die Richtung nicht allein invertieren.
 
-### 4.3 Confidence
+Insbesondere gilt:
+- hohe Downside bei ansonsten positiver Evidenz kann `OPEN`/`ADD` verhindern,
+- daraus folgt nicht automatisch Universal `SELL`.
 
-Confidence steuert, wie stark vorhandene Aussagen vertraut werden dürfen. Niedrige Confidence darf nicht automatisch bearish interpretiert werden.
+### 6.3 Confidence
 
-### 4.4 Elliott vNext
+Upstream Confidence steuert, wie stark einer bereits vorhandenen Aussage vertraut werden darf. Niedrige Confidence ist nicht bearish.
+
+### 6.4 Elliott vNext
 
 Elliott ist Stage-/Structure-Evidence:
-- W2-/W4-Komplettierung kann Entry/Add-Kontext liefern.
-- W3-Exhaustion kann Partial-Reduce-Kontext liefern.
-- W5-Completion-Risk kann stärkere Profit-Protection/Exit-Prüfung auslösen.
-- Zielzonen allein sind keine Trade-Entscheidung.
-- Primary/Alternative Szenarien und Invalidation müssen erhalten bleiben.
+- mögliche W2-/W4-Komplettierung kann Entry/Add-Kontext liefern,
+- W3-Exhaustion kann Partial-Reduce-Kontext liefern,
+- W5-Completion-Risk kann stärkere Profit-Protection/Exit-Prüfung auslösen,
+- Zielzonen allein sind keine Trade-Entscheidung,
+- Primary/Alternative Szenarien und Invalidation bleiben sichtbar.
 
-Phase 7 konsumiert die endgültige, nach Phase 6 eingefrorene Elliott-Ausgabe. Bis Phase 6 abgeschlossen ist, werden keine konkreten Feldnamen außer stabilen Vertragsgrenzen fest verdrahtet.
+Phase 7 konsumiert den final eingefrorenen Phase-6-Vertrag. Vor Abschluss von Phase 6 werden keine instabilen Elliott-Feldnamen hart verdrahtet.
 
-## 5. Conflict / Confirmation Engine
+## 7. Conflict / Confirmation Engine
 
-Phase 7 muss Konfluenz und Widerspruch explizit modellieren.
+Conflict/Confirmation wird vor der Stance Policy definiert und untersucht.
 
-Vorgesehene Zustände:
+Top-Level-Zustände:
 - `CONFIRMED`
 - `MIXED`
 - `CONFLICT`
@@ -115,59 +153,122 @@ Vorgesehene Zustände:
 - `TIMING_WARNING`
 - `INSUFFICIENT_EVIDENCE`
 
+Konfliktarten mindestens:
+- `SELECTION_TIMING_CONFLICT`
+- `DIRECTION_STRUCTURE_CONFLICT`
+- `PRIMARY_ALTERNATIVE_STRUCTURE_CONFLICT`
+- `MARKET_CONTEXT_DIVERGENCE`
+- `RELATIVE_STRENGTH_DIVERGENCE`
+- `RISK_CONSTRAINT_NOT_DIRECTIONAL_CONFLICT`
+- `RELIABILITY_OR_COVERAGE_CONFLICT`
+- `DATA_OR_VERSION_CONFLICT`
+
 Beispiele:
-- starke Selection + positives Timing + unterstützender Elliott-Zustand = mögliche Confirmation.
-- starke Selection + W5-Completion-Risk = Selection/Structure-Conflict, nicht automatisch SELL.
-- schwache Selection + günstige W2-Geometrie = Elliott-Rescue-Kandidat, nicht automatisch BUY.
+- starke Selection + positives Timing + unterstützende Struktur: mögliche Confirmation.
+- starke Selection + W5-Completion-Risk: Direction/Structure Conflict, nicht automatisch SELL.
+- schwache Selection + günstige W2-Geometrie: Rescue-Kandidat, nicht automatisch BUY.
+- hohe Downside: Risk Constraint, nicht automatisch Directional Conflict.
 
-Konfliktregeln werden empirisch kalibriert; keine willkürlichen Gewichte vorab.
+Konfliktgewichte werden nicht manuell vorgegeben, sondern empirisch kalibriert.
 
-## 6. Keine erfundene Einheitsmetrik
+## 8. Keine erfundene Einheitsmetrik
 
 Phase 7 startet ausdrücklich ohne `decision_score_0_100`.
 
-Verboten als Foundation-Shortcut:
-- feste Prozentgewichte ohne empirische Kalibrierung,
-- Score + Risk + Confidence + Elliott zu einer beliebigen Summenformel addieren,
+Verboten:
+- feste Prozentgewichte ohne empirische Herleitung,
 - Probability als unabhängigen Vote doppelt zählen,
-- niedrige Confidence als bearish behandeln,
-- Portfolioinformationen in Universal-Stance-Training verwenden.
+- Risk als Kaufsignal oder alleinige Richtungsinversion,
+- niedrige Confidence als bearish,
+- Elliott-Zielzone allein als Trade-Signal,
+- Portfolioinformationen im Universal-Stance-Training.
 
-Falls später eine verdichtete Kennzahl nachweislich Mehrwert besitzt, muss sie aus Discovery/Validation hervorgehen und interpretiert bleiben.
+Falls später eine verdichtete Kennzahl nachweislich Mehrwert besitzt, muss sie aus Discovery/Validation hervorgehen und interpretierbar bleiben.
 
-## 7. Zustandsübergänge und Hysterese
+## 9. Decision Reliability
 
-Nicht nur der heutige Zustand ist relevant. Phase 7 führt pro Titel mindestens:
+Decision Reliability ist ein eigener Vertrag und ausdrücklich nicht Phase-4-Confidence.
+
+Pflichtkomponenten:
+- `level`: HIGH / MEDIUM / LOW / INSUFFICIENT
+- `coverage`
+- `data_quality`
+- `module_agreement`
+- `conflict_severity`
+- `walk_forward_support`
+- `reason_codes`
+
+Ein interner numerischer Research-Wert 0–1 darf später verwendet werden, wenn er empirisch kalibriert ist. Er darf weder als objektive Wahrheit noch als Richtungsaussage präsentiert werden.
+
+BUY + LOW Reliability und SELL + LOW Reliability sind beide zulässige Zustände. Reliability beschreibt Sicherheit/Belastbarkeit, nicht Richtung.
+
+## 10. Zustandsübergänge und Hysterese
+
+Pro Titel mindestens:
 - `previous_stance`
 - `current_stance`
 - `transition`
 - `transition_reasons`
 - `days_in_current_stance`
 
-Zu untersuchen:
-- `HOLD -> BUY`
-- `BUY -> HOLD`
-- `HOLD -> SELL`
-- `SELL -> HOLD`
-- Persistenz vs. kurzlebige Flips
+Drei Mechanismen getrennt testen:
+1. `confirmation_window`: neuer Zustand benötigt Bestätigung über mehrere Beobachtungen.
+2. `evidence_margin`: neue Evidenz muss die bisherige Entscheidung ausreichend übertreffen.
+3. `exception_override`: harte Ereignisse dürfen Hysterese sofort übersteuern.
 
-Hysterese-/Cooldown-Regeln dürfen nicht manuell erfunden werden; sie werden auf Wechselkosten, Fehlflip-Rate und Opportunitätsverlust geprüft.
+N und Evidence Margin werden nicht vorab eingefroren.
 
-## 8. Swing-/Positionsmanagement
+Override-Kandidaten:
+- Input Contract Violation,
+- stale/incompatible critical input,
+- harte strukturelle Invalidation,
+- harte Risk-/Domain-Invalidation.
+
+Hysterese darf niemals einen klar invalidierten Zustand künstlich fortschreiben.
+
+## 11. Swing-/Positionsmanagement
 
 Phase 7 ist der Ort, an dem Elliott-Swing-Kontext mit den übrigen Modulen zu einer Depotaktion werden kann.
 
-Beispielhafte, noch zu validierende Pfade:
-- W2 completion + positives Timing + ausreichende Reliability -> `OPEN`/`ADD` prüfen.
-- W3 exhaustion + Overextension/Momentumverschlechterung -> `PARTIAL_REDUCE` prüfen.
-- W4 completion + erneute Timing-Bestätigung -> `ADD`/Re-Add prüfen.
-- W5 completion risk + negative Bestätigung -> `PARTIAL_REDUCE` oder `EXIT` prüfen.
+Zu validierende Pfade:
+- W2/W4 + positive Bestätigung -> `OPEN` / `ADD` / Re-Add prüfen.
+- W3 exhaustion + weitere Ermüdung -> `PARTIAL_REDUCE` prüfen.
+- W5 completion risk + negative Bestätigung -> stärkere Reduce-/Exit-Prüfung.
 
-Transaktionskosten, Slippage und Re-Entry-Kosten müssen in der späteren Swing-Validierung enthalten sein. Ein Swing-Pfad muss gegen einfaches Halten verglichen werden.
+Nicht erlaubt:
+- W2 = automatisch kaufen,
+- W3 = automatisch reduzieren,
+- W4 = automatisch nachkaufen,
+- W5 = automatisch verkaufen.
 
-## 9. Forschung und Validierung
+Jeder aktive Swingpfad muss gegen No-Swing/Hold verglichen werden.
 
-Phase 7 darf keine upstream Module neu optimieren.
+Kosten mindestens:
+- Gebühren,
+- Spread soweit material,
+- Slippage soweit material,
+- Re-Entry-Kosten,
+- verpasste Rebounds,
+- Opportunity Cost geringeren Exposures in starken Trendphasen,
+- Steuer-/Realisierungseffekte nur soweit belastbar modellierbar.
+
+## 12. Kanonischer Decision-State-Katalog
+
+Vor produktivem Policy-Code wird ein ausführbarer State-Katalog geführt:
+
+`configs/decision_state_catalog_v1.json`
+
+Foundation: 24 kanonische Fälle.
+
+Falltypen:
+- `contract_deterministic`: semantische Regeln, die unabhängig von der späteren Policy gelten.
+- `research_pending_policy`: Forschungsfälle/Kandidatenaktionen, deren finales Urteil noch nicht eingefroren wird.
+
+Der Katalog wird parametrisch getestet. Neue Stance-/Reason-/Conflict-Zustände müssen Katalog und Tests gemeinsam aktualisieren.
+
+## 13. Forschung und Validierung
+
+Phase 7 darf keine Upstream-Module neu optimieren.
 
 Für alle Kombinationen gilt:
 - Point-in-Time strikt,
@@ -175,10 +276,10 @@ Für alle Kombinationen gilt:
 - Discovery / Validation / Holdout getrennt,
 - überlappende Forward-Windows nicht als unabhängig behandeln,
 - purged/walk-forward wo erforderlich,
-- frozen Baseline vor Policy-Lernen,
+- Frozen Baseline vor Policy-Lernen,
 - Effektstärke, Unsicherheit, Stichprobengröße und Konzentration berichten.
 
-Die zu optimierende Policy muss explizit zwischen mindestens folgenden Zielgrößen unterscheiden:
+Zu bewerten:
 - Forward Return / Alpha,
 - Downside / Drawdown,
 - Fehlentscheidungskosten,
@@ -186,51 +287,58 @@ Die zu optimierende Policy muss explizit zwischen mindestens folgenden Zielgrö�
 - Transaktionskosten,
 - Stabilität der Entscheidung.
 
-## 10. Baseline
+## 14. Baseline
 
-Vor dem eigentlichen Phase-7-Research wird der letzte Zustand vor Phase 7 eingefroren:
+Vor dem eigentlichen Phase-7-Research wird eingefroren:
 - produktive Scanner-/Watch-Logik,
 - finale Outputs der Phasen 1–6,
 - aktuelle manuelle/regelbasierte Decision-Routine der Depot-Watch soweit reproduzierbar.
 
-Diese Baseline dient dem Vergleich. Phase 7 darf ihre Schwellen nicht nachträglich anhand des Holdouts verändern.
+Diese Baseline ist der Vergleichspunkt. Phase 7 darf Schwellen nicht nachträglich am Holdout anpassen.
 
-## 11. Phase 8 bleibt getrennt
+## 15. Phase 8 bleibt getrennt
 
-Externe Faktoren bleiben die nachgelagerte Phase 8, z. B. zusätzliche PIT-fähige Quellen wie Sentiment, EPS-Revisionen, Short Interest oder weitere externe Daten.
+Externe Faktoren bleiben die nachgelagerte Phase 8, z. B. Sentiment, EPS-Revisionen, Short Interest oder weitere PIT-fähige Daten.
 
 Phase 7 Core muss ohne Phase-8-Daten reproduzierbar funktionieren.
 
-Live-News oder nicht sauber historisierte Informationen dürfen höchstens als separater Watch-Overlay erscheinen und nicht heimlich das historische Core-Modell beeinflussen.
+Nicht historisierte Live-Information darf höchstens als separater Watch-Overlay erscheinen und nicht heimlich das historische Core-Modell beeinflussen.
 
-## 12. Geplanter Output
+## 16. Geplanter Output
 
-Zielartefakt zunächst:
+Zielartefakt:
 `artifacts/research/decision_snapshot.json`
 
 Pro Titel mindestens:
 - Evidence Coverage
-- Conflict/Confirmation State
+- Conflict/Confirmation State + Conflict Types
 - Universal Stance
-- Decision Reliability / Evidence Sufficiency (getrennt von upstream Confidence)
+- Stance Detail bei HOLD
+- Insufficient-Evidence-Reasons bei fehlender Entscheidbarkeit
+- strukturierte Decision Reliability
 - Reasons
 - Counter Evidence
 - Previous/Current State + Transition
-- Portfolio Action, falls Portfolio-Kontext vorhanden
+- Portfolio Action + Portfolio Reason Codes, falls Portfolio-Kontext vorhanden
 - Provenance/Versions
 
-## 13. Abnahmekriterien
+## 17. Abnahmekriterien
 
 Phase 7 ist erst produktionsreif, wenn:
-- alle Upstream-Semantiken unverändert bleiben,
+- Upstream-Semantiken unverändert bleiben,
+- HOLD/NO_ACTION/INSUFFICIENT semantisch eindeutig und testbar sind,
 - Probability nicht doppelt zählt,
 - Risk und Confidence nicht als Directional Votes missbraucht werden,
-- Portfolio-Overlay nach Universal Stance erfolgt,
+- Portfolio Overlay nach Universal Stance erfolgt,
+- Portfolio-Constraints den Universal Stance nicht umetikettieren,
 - fehlende Evidenz fail-closed bleibt,
 - Entscheidungshistorie PIT-reproduzierbar ist,
 - Konflikt-/Konfluenzlogik empirisch validiert ist,
-- Swing-Management gegen Buy-and-Hold/No-Swing mit Kosten verglichen wurde,
-- Transition/Hysterese auf Flips und Opportunitätskosten geprüft wurde,
+- Decision Reliability strukturiert und nicht-directional bleibt,
+- Swing-Management gegen No-Swing/Hold inklusive Kosten verglichen wurde,
+- Hysterese auf Flips, Latenz und Opportunitätskosten geprüft wurde,
+- harte Invalidierungen Hysterese übersteuern,
 - Holdout unangetastet bleibt,
 - Output erklärbar ist und Reasons/Counter-Evidence enthält,
+- State Catalog und Contract-Tests bestanden sind,
 - Phase-8-Daten nicht versehentlich in den Core gelangen.
