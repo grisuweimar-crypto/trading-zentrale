@@ -1,0 +1,54 @@
+{
+  "schema_version": "elliott_vnext_integration_contract_v1",
+  "module": "6H_module_output",
+  "base_output_schema": "configs/elliott_vnext_output_schema_v2.json",
+  "producer_chain": ["6A", "6B", "6C", "6D", "6E", "6F", "6G", "6H"],
+  "decision_authority": "future_global_decision_layer_or_orchestrating_depot_watch",
+  "productive_integration_enabled": false,
+  "research_only": true,
+  "required_guards": {
+    "single_true_count_claimed": false,
+    "fibonacci_selects_wave_count": false,
+    "routing_is_trade_decision": false,
+    "decision_layer_required": true,
+    "automatic_validation_promotion_allowed": false,
+    "technical_completion_equals_empirical_validation": false,
+    "missing_evidence_must_remain_missing": true,
+    "scanner_peer_fallback_for_external_context": false
+  },
+  "forbidden_output_keys_recursive": ["trade_decision", "order_instruction"],
+  "uncalibrated_fields": {
+    "structural_fit": null,
+    "confirmation_strength": null,
+    "policy": "remain_null_until_a_separate_frozen_empirical_calibration_exists"
+  },
+  "historical_expectancy_policy": {
+    "source": "6G_validation_report_only",
+    "match_dimensions": ["degree", "primary_wave_stage", "expected_next_wave_role"],
+    "legacy_development_data_can_support_promotion": false,
+    "formal_promotion_partition": "prospective_unspent",
+    "automatic_promotion": false,
+    "rules_frozen_through": "2026-09-25"
+  },
+  "market_context_policy": {
+    "source": "6F_causal_context_snapshot_only",
+    "usable_context_quality": ["sufficient", "limited"],
+    "unreliable_or_unavailable_as_real_evidence": false,
+    "missing_context_stays_missing": true,
+    "scanner_peer_fallback_used": false
+  },
+  "integration_boundary": {
+    "allowed": [
+      "research_display",
+      "research_archive",
+      "future_global_decision_layer_input_after_separate_integration_review"
+    ],
+    "not_allowed": [
+      "direct_broker_order",
+      "autonomous_buy_sell_hold_reduce_decision",
+      "silent_production_scanner_score_change",
+      "silent_r_code_change",
+      "silent_depot_watch_decision_change"
+    ]
+  }
+}
