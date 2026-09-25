@@ -6,13 +6,18 @@ Risk, Confidence, Elliott and the Phase-7 Decision Layer.
 
 from .fundamental_change import (
     asof_latest_rows,
+    build_debt_to_equity,
+    build_derived_yoy_changes,
     build_free_cash_flow,
+    build_growth_acceleration,
     build_operating_margin,
     build_yoy_changes,
     first_release_rows,
     is_pit_usable,
     metric_for_row,
+    resolve_debt_values,
 )
+from .fundamental_coverage import measure_concept_coverage
 from .sec_edgar import (
     build_acceptance_index,
     classify_publication_stage,
@@ -33,7 +38,10 @@ __all__ = [
     "asof_latest_rows",
     "assemble_full_submission_history",
     "build_acceptance_index",
+    "build_debt_to_equity",
+    "build_derived_yoy_changes",
     "build_free_cash_flow",
+    "build_growth_acceleration",
     "build_operating_margin",
     "build_yoy_changes",
     "classify_publication_stage",
@@ -45,7 +53,9 @@ __all__ = [
     "historical_submission_file_specs",
     "historical_submission_file_url",
     "is_pit_usable",
+    "measure_concept_coverage",
     "metric_for_row",
     "normalize_cik",
+    "resolve_debt_values",
     "submission_rows",
 ]
