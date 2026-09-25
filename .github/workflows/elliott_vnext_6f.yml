@@ -10,7 +10,7 @@ on:
       - "tests/test_elliott_vnext_fibonacci.py"
       - "tests/test_elliott_vnext_routing.py"
       - "tests/test_elliott_vnext_cross_system.py"
-      - "tests/test_elliott_vnext_market_context.py"
+      - "tests/test_elliott_vnext_market_context*.py"
       - "configs/elliott_vnext_contract_v2.json"
       - "configs/elliott_vnext_output_schema_v2.json"
       - "configs/market_context_history_schema_v1.json"
@@ -49,5 +49,6 @@ jobs:
           tests/test_elliott_vnext_routing.py
           tests/test_elliott_vnext_cross_system.py
           tests/test_elliott_vnext_market_context.py
+          tests/test_elliott_vnext_market_context_versioning.py
       - name: Smoke-test empty verified-context builder
         run: python scripts/run_elliott_market_context_6f.py
