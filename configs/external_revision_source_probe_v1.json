@@ -1,0 +1,105 @@
+{
+  "schema_version": "external_revision_source_probe_v1",
+  "as_of": "2026-09-26",
+  "purpose": "determine whether Phase 8B can start without violating historical point-in-time rules",
+  "required_for_retrospective_8B": {
+    "historical_consensus_vintages": true,
+    "observation_or_publication_timestamp": true,
+    "historical_asof_reconstruction": true,
+    "access_license_cleared": true,
+    "economic_access_cleared": true
+  },
+  "candidates": [
+    {
+      "source_id": "alphavantage_earnings_estimates",
+      "documented_parameters": ["function", "symbol", "apikey"],
+      "historical_asof_parameter": false,
+      "record_date_semantics": "not_documented_as_observation_timestamp",
+      "historical_consensus_vintages": false,
+      "observation_or_publication_timestamp": false,
+      "historical_asof_reconstruction": false,
+      "access_license_cleared": false,
+      "economic_access_cleared": false,
+      "retrospective_8B_eligible": false,
+      "verdict": "UNSAFE_RETROSPECTIVE",
+      "reason_codes": [
+        "NO_ASOF_PARAMETER",
+        "NO_PROVEN_OBSERVATION_TIMESTAMP",
+        "CURRENT_RESPONSE_RETROJECTION_FORBIDDEN"
+      ],
+      "evidence_urls": [
+        "https://www.alphavantage.co/documentation/#earnings-estimates"
+      ]
+    },
+    {
+      "source_id": "eodhd_calendar_trends",
+      "documented_parameters": ["symbols", "api_token", "fmt"],
+      "historical_asof_parameter": false,
+      "record_date_semantics": "fiscal_period_end",
+      "historical_consensus_vintages": false,
+      "observation_or_publication_timestamp": false,
+      "historical_asof_reconstruction": false,
+      "access_license_cleared": false,
+      "economic_access_cleared": false,
+      "retrospective_8B_eligible": false,
+      "verdict": "UNSAFE_RETROSPECTIVE",
+      "reason_codes": [
+        "NO_ASOF_PARAMETER",
+        "DATE_IS_FISCAL_PERIOD_NOT_VINTAGE",
+        "ESTIMATE_FIELDS_MUTATE_WITH_ANALYST_UPDATES",
+        "CURRENT_RESPONSE_RETROJECTION_FORBIDDEN"
+      ],
+      "evidence_urls": [
+        "https://eodhd.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits"
+      ]
+    },
+    {
+      "source_id": "intrinio_zacks_estimates",
+      "documented_parameters": ["identifier", "start_date", "end_date", "fiscal_year", "fiscal_period", "calendar_year", "calendar_period"],
+      "historical_asof_parameter": true,
+      "record_date_semantics": "historical_estimate_records",
+      "historical_consensus_vintages": true,
+      "observation_or_publication_timestamp": true,
+      "historical_asof_reconstruction": true,
+      "access_license_cleared": false,
+      "economic_access_cleared": false,
+      "retrospective_8B_eligible": false,
+      "verdict": "PIT_CAPABLE_BUT_NOT_ACCESS_CLEARED",
+      "reason_codes": [
+        "ENTERPRISE_ONLY",
+        "HISTORY_REQUIRES_SEPARATE_COMMERCIAL_ACCESS",
+        "LICENSE_COST_NOT_CLEARED"
+      ],
+      "evidence_urls": [
+        "https://intrinio.com/products/eps-estimates",
+        "https://docs.intrinio.com/documentation/web_api/get_zacks_eps_estimates_v2",
+        "https://intrinio.com/pricing"
+      ]
+    },
+    {
+      "source_id": "fmp_analyst_estimates",
+      "documented_parameters": [],
+      "historical_asof_parameter": false,
+      "record_date_semantics": "fiscal_period_consensus_not_proven_vintage",
+      "historical_consensus_vintages": false,
+      "observation_or_publication_timestamp": false,
+      "historical_asof_reconstruction": false,
+      "access_license_cleared": false,
+      "economic_access_cleared": false,
+      "retrospective_8B_eligible": false,
+      "verdict": "UNSAFE_RETROSPECTIVE",
+      "reason_codes": [
+        "NO_PROVEN_HISTORICAL_CONSENSUS_VINTAGES"
+      ],
+      "evidence_urls": [
+        "https://site.financialmodelingprep.com/developer/docs/stable/financial-estimates"
+      ]
+    }
+  ],
+  "decision_rule": {
+    "if_any_candidate_retrospective_8B_eligible": "OPEN_8B",
+    "otherwise": "PROCEED_8C"
+  },
+  "decision": "PROCEED_8C",
+  "phase8b_status": "DEFERRED_NOT_CANCELLED"
+}
