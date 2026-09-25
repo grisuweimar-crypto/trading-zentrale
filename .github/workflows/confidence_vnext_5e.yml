@@ -1,0 +1,204 @@
+name: Phase 5E Adaptive Shadow and Promotion
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/confidence_vnext_5e.yml'
+      - 'docs/confidence_vnext_5e.md'
+      - 'scripts/run_confidence_vnext_promotion_5e.py'
+      - 'src/scanner/reports/confidence_vnext_promotion.py'
+      - 'tests/test_confidence_vnext_promotion.py'
+  workflow_run:
+    workflows: ['Phase 5D Walk-forward Evaluation']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('phase5e-pr-{0}', github.event.pull_request.number) || 'phase4e-shadow-publication' }}
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      shadow_available: ${{ steps.restore.outputs.shadow_available }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+
+      - name: Verify Phase 5E PR scope
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          allowed = {
+              '.github/workflows/confidence_vnext_5e.yml',
+              'docs/confidence_vnext_5e.md',
+              'scripts/run_confidence_vnext_promotion_5e.py',
+              'src/scanner/reports/confidence_vnext_promotion.py',
+              'tests/test_confidence_vnext_promotion.py',
+          }
+          changed = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
+              text=True,
+          ).splitlines())
+          unexpected = sorted(changed - allowed)
+          if unexpected:
+              raise SystemExit(f'unexpected Phase 5E paths: {unexpected}')
+          if not changed:
+              raise SystemExit('Phase 5E PR has no changed files')
+          print('Phase 5E scope ok:', sorted(changed))
+          PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Phase 5E and inherited Phase 5 contract tests
+        run: |
+          python -m pytest -q \
+            tests/test_confidence_vnext_promotion.py \
+            tests/test_confidence_vnext_walkforward_v2.py \
+            tests/test_confidence_vnext_progressive.py \
+            tests/test_confidence_vnext_prospective_v2.py \
+            tests/test_confidence_vnext_frozen_baseline.py \
+            tests/test_confidence_vnext_walkforward.py
+
+      - name: Restore prospective evidence and Phase 5C/5D archives
+        id: restore
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
+          SHADOW_AVAILABLE=false
+          if git show-ref --verify --quiet refs/remotes/origin/phase4e-shadow-data; then
+            for path in \
+              artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv \
+              artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv \
+              artifacts/research/confidence_vnext_model_versions_5c.jsonl \
+              artifacts/research/confidence_vnext_walkforward_evaluations_5d.jsonl
+            do
+              if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
+                mkdir -p "$(dirname "$path")"
+                git show "origin/phase4e-shadow-data:$path" > "$path"
+              else
+                rm -f "$path"
+              fi
+            done
+            if git cat-file -e "origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv" 2>/dev/null; then
+              SHADOW_AVAILABLE=true
+            fi
+          fi
+          echo "shadow_available=$SHADOW_AVAILABLE" >> "$GITHUB_OUTPUT"
+
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          from scanner.reports.confidence_vnext_prospective_v2 import CLAIM_COLUMNS_V2, OUTCOME_COLUMNS_V2
+
+          for path, columns in (
+              (Path('artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv'), CLAIM_COLUMNS_V2),
+              (Path('artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv'), OUTCOME_COLUMNS_V2),
+          ):
+              if not path.exists() or path.stat().st_size == 0:
+                  path.parent.mkdir(parents=True, exist_ok=True)
+                  pd.DataFrame(columns=columns).to_csv(path, index=False)
+          PY
+
+      - name: Run Phase 5 completion and promotion assessment
+        run: |
+          python scripts/run_confidence_vnext_promotion_5e.py
+
+      - name: Validate Phase 5E fail-closed contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('artifacts/research/confidence_vnext_promotion_5e.json').read_text(encoding='utf-8'))
+          assert report['phase'] == '5E_adaptive_shadow_and_promotion'
+          assert report['technical_phase5_complete'] is True
+          semantics = report['semantics']
+          assert semantics['research_only'] is True
+          assert semantics['adaptive_shadow_inference_active'] is True
+          assert semantics['promotion_is_horizon_specific'] is True
+          assert semantics['latest_provisional_phase5d_epoch_counts_as_promotion_evidence'] is False
+          assert semantics['state_names_assumed_ordinal'] is False
+          assert semantics['raw_scanner_score_used_for_shadow_policy'] is False
+          assert semantics['evaluation_outcome_used_to_choose_shadow_action'] is False
+          assert semantics['shorter_horizon_labels_borrowed'] is False
+          assert semantics['production_confidence_changed'] is False
+          assert semantics['production_change_performed'] is False
+          assert set(report['horizons']) == {'5', '20', '40', '60'}
+          assert len(report['policy']['sha256']) == 64
+          print('Phase 5E contract validated:', report['status'])
+          PY
+
+      - name: Upload Phase 5E diagnostic artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5e-promotion-diagnostics
+          path: artifacts/research/confidence_vnext_promotion_5e.json
+          if-no-files-found: error
+
+      - name: Stage isolated Phase 5E publication
+        if: github.event_name != 'pull_request' && steps.restore.outputs.shadow_available == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5e-promotion-publication
+          path: artifacts/research/confidence_vnext_promotion_5e.json
+          if-no-files-found: error
+
+  publish:
+    needs: analyze
+    if: needs.analyze.result == 'success' && needs.analyze.outputs.shadow_available == 'true' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout shadow branch seed
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Prepare isolated shadow branch
+        run: |
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          git checkout -B phase4e-shadow-data origin/phase4e-shadow-data
+
+      - name: Restore Phase 5E payload
+        uses: actions/download-artifact@v4
+        with:
+          name: phase5e-promotion-publication
+          path: artifacts/research
+
+      - name: Publish Phase 5E without touching main or prior Phase 5 archives
+        run: |
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add artifacts/research/confidence_vnext_promotion_5e.json
+          if ! git diff --cached --quiet; then
+            git commit -m '🧭 Phase 5E adaptive shadow promotion update [skip ci]'
+            git push origin HEAD:refs/heads/phase4e-shadow-data
+          fi
