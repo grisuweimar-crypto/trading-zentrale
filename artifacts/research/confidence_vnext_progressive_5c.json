@@ -1,0 +1,119 @@
+{
+  "phase": "5C_progressive_learning",
+  "schema_version": "phase5c_progressive_learning_v1",
+  "status": "collecting_prospective_evidence",
+  "source_schema_version": "phase5b_shadow_v2",
+  "claims": 1636,
+  "mature_outcomes": 0,
+  "horizons": {
+    "5": {
+      "stage": "collecting",
+      "pilot_ready": false,
+      "robust_learning_base": false,
+      "training_rows": 0,
+      "symbols": 0,
+      "directional_rows": 0,
+      "directional_symbols": 0,
+      "observation_dates": 0,
+      "support_regions": 0,
+      "requirements": {
+        "minimum_pilot_observation_dates": 2,
+        "minimum_pilot_training_rows": 20,
+        "minimum_pilot_symbols": 10,
+        "minimum_robust_support_regions": 2,
+        "fixed_event_spacing_sessions": 5,
+        "robust_block_length_observation_dates": 10
+      },
+      "latest_candidate_version": null,
+      "candidate_version_from_current_evidence": null,
+      "version_count": 0
+    },
+    "20": {
+      "stage": "collecting",
+      "pilot_ready": false,
+      "robust_learning_base": false,
+      "training_rows": 0,
+      "symbols": 0,
+      "directional_rows": 0,
+      "directional_symbols": 0,
+      "observation_dates": 0,
+      "support_regions": 0,
+      "requirements": {
+        "minimum_pilot_observation_dates": 2,
+        "minimum_pilot_training_rows": 20,
+        "minimum_pilot_symbols": 10,
+        "minimum_robust_support_regions": 2,
+        "fixed_event_spacing_sessions": 5,
+        "robust_block_length_observation_dates": 40
+      },
+      "latest_candidate_version": null,
+      "candidate_version_from_current_evidence": null,
+      "version_count": 0
+    },
+    "40": {
+      "stage": "collecting",
+      "pilot_ready": false,
+      "robust_learning_base": false,
+      "training_rows": 0,
+      "symbols": 0,
+      "directional_rows": 0,
+      "directional_symbols": 0,
+      "observation_dates": 0,
+      "support_regions": 0,
+      "requirements": {
+        "minimum_pilot_observation_dates": 2,
+        "minimum_pilot_training_rows": 20,
+        "minimum_pilot_symbols": 10,
+        "minimum_robust_support_regions": 2,
+        "fixed_event_spacing_sessions": 5,
+        "robust_block_length_observation_dates": 80
+      },
+      "latest_candidate_version": null,
+      "candidate_version_from_current_evidence": null,
+      "version_count": 0
+    },
+    "60": {
+      "stage": "collecting",
+      "pilot_ready": false,
+      "robust_learning_base": false,
+      "training_rows": 0,
+      "symbols": 0,
+      "directional_rows": 0,
+      "directional_symbols": 0,
+      "observation_dates": 0,
+      "support_regions": 0,
+      "requirements": {
+        "minimum_pilot_observation_dates": 2,
+        "minimum_pilot_training_rows": 20,
+        "minimum_pilot_symbols": 10,
+        "minimum_robust_support_regions": 2,
+        "fixed_event_spacing_sessions": 5,
+        "robust_block_length_observation_dates": 120
+      },
+      "latest_candidate_version": null,
+      "candidate_version_from_current_evidence": null,
+      "version_count": 0
+    }
+  },
+  "model_versions": 0,
+  "version_chain_tip": null,
+  "new_model_versions": [],
+  "semantics": {
+    "research_only": true,
+    "dynamic_horizon_specific_learning": true,
+    "learning_waits_for_own_mature_horizon_labels": true,
+    "shorter_horizon_labels_borrowed": false,
+    "fixed_event_spacing_sessions": 5,
+    "claim_first_spacing_membership": true,
+    "historical_cutoff_applied_before_peer_label_derivation": true,
+    "training_cutoff_binds_peer_label_dependencies": true,
+    "overlapping_forward_windows_treated_as_independent": false,
+    "state_names_assumed_ordinal": false,
+    "scalar_confidence_mapping_created": false,
+    "adaptive_production_weights_created": false,
+    "production_confidence_changed": false,
+    "portfolio_or_depot_watch_changed": false,
+    "model_version_archive_hash_chained": true,
+    "previous_report_anchors_append_only_prefix": true
+  }
+}
