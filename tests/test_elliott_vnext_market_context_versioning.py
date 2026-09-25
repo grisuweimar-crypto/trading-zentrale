@@ -1,6 +1,9 @@
+import numpy as np
 import pandas as pd
+import pytest
 
 from scanner.research.elliott_vnext.market_context import (
+    MarketContextInputError,
     build_context_snapshot,
     build_market_context_history,
     normalize_context_assignments,
@@ -91,3 +94,37 @@ def test_new_proxy_version_does_not_reuse_old_proxy_history():
     assert len(snapshot) == 1
     assert snapshot.iloc[0]["status"] == "missing_context_history"
     assert pd.isna(snapshot.iloc[0]["context_date"])
+
+
+def test_nonfinite_ohlc_is_rejected_before_context_history_is_written():
+    registry = pd.DataFrame(
+        [
+            {
+                "context_id": "ctx",
+                "context_type": "market",
+                "name": "Market",
+                "symbol": "IDX",
+                "proxy_kind": "official_or_broad_index",
+                "source": "source",
+                "context_quality": "sufficient",
+                "price_basis": "raw",
+                "valid_from": "2020-01-01",
+                "valid_to": "",
+            }
+        ]
+    )
+    raw = pd.DataFrame(
+        [
+            {
+                "date": "2026-09-01",
+                "context_id": "ctx",
+                "open": 99.0,
+                "high": np.inf,
+                "low": 98.0,
+                "close": 100.0,
+                "volume": 1000,
+            }
+        ]
+    )
+    with pytest.raises(MarketContextInputError, match="nonfinite_or_nonpositive_history_high"):
+        build_market_context_history(raw, registry)
