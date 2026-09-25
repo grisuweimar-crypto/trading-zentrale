@@ -1,0 +1,116 @@
+{
+  "schema_version": "decision_layer_7_contract_v1",
+  "phase": "7_interpretation_decision_layer",
+  "status": "foundation_only_not_productive",
+  "former_roadmap_position": "phase_6_before_elliott_insertion",
+  "purpose": "combine frozen upstream evidence into reproducible universal stance and portfolio action without redefining upstream semantics",
+  "upstream_semantics": {
+    "selection": "directional_cross_sectional_attractiveness",
+    "timing": "directional_within_instrument_timing_evidence",
+    "probability": "calibration_of_selection_and_timing_not_independent_vote",
+    "risk": "downside_and_failure_risk_not_return_vote",
+    "confidence": "reliability_of_existing_claims_not_directional_vote",
+    "adaptive_learning": "may_adjust_reliability_conflict_penalties_and_horizon_mapping_only_after_phase5_promotion_rules",
+    "elliott_vnext": "structural_stage_scenario_and_swing_review_context_not_autonomous_trade_decision",
+    "market_context": "usable_only_when_point_in_time_and_quality_gated",
+    "relative_strength": "separate_context_evidence_not_double_counted_inside_selection"
+  },
+  "decision_layers": {
+    "universal_stance": {
+      "portfolio_independent": true,
+      "states": ["BUY", "HOLD", "SELL", "INSUFFICIENT_EVIDENCE"],
+      "required_for_every_universe_row": true,
+      "fail_closed_state": "INSUFFICIENT_EVIDENCE"
+    },
+    "portfolio_action": {
+      "computed_after_universal_stance": true,
+      "states": ["OPEN", "ADD", "HOLD", "PARTIAL_REDUCE", "EXIT", "NO_ACTION", "INSUFFICIENT_EVIDENCE"],
+      "portfolio_data_may_train_universal_stance": false,
+      "may_limit_action_without_relabeling_universal_stance": true
+    }
+  },
+  "evidence_bundle": {
+    "preserve_upstream_values": true,
+    "preserve_as_of": true,
+    "preserve_version": true,
+    "preserve_availability": true,
+    "preserve_uncertainty": true,
+    "double_counting_forbidden": true,
+    "required_blocks_when_available": [
+      "selection",
+      "timing",
+      "probability",
+      "risk",
+      "confidence",
+      "adaptive_learning",
+      "elliott_vnext",
+      "market_context",
+      "relative_strength",
+      "data_quality_provenance"
+    ]
+  },
+  "fusion_policy": {
+    "fixed_manual_weighted_super_score_allowed": false,
+    "probability_independent_directional_vote_allowed": false,
+    "risk_independent_buy_vote_allowed": false,
+    "low_confidence_is_bearish_allowed": false,
+    "elliott_target_zone_alone_is_trade_decision_allowed": false,
+    "policy_must_be_empirically_calibrated": true,
+    "interpretable_policy_required": true,
+    "upstream_reoptimization_forbidden": true
+  },
+  "conflict_confirmation": {
+    "states": ["CONFIRMED", "MIXED", "CONFLICT", "STRUCTURAL_WARNING", "TIMING_WARNING", "INSUFFICIENT_EVIDENCE"],
+    "empirical_calibration_required": true,
+    "manual_preassigned_conflict_weights_allowed": false
+  },
+  "transition_policy": {
+    "required_fields": ["previous_stance", "current_stance", "transition", "transition_reasons", "days_in_current_stance"],
+    "hysteresis_must_be_empirically_validated": true,
+    "manual_flip_suppression_without_validation_allowed": false
+  },
+  "swing_management": {
+    "allowed_portfolio_actions": ["OPEN", "ADD", "HOLD", "PARTIAL_REDUCE", "EXIT", "NO_ACTION"],
+    "elliott_stage_can_route_review": true,
+    "elliott_stage_alone_can_decide_action": false,
+    "must_compare_against_no_swing_baseline": true,
+    "transaction_costs_required": true,
+    "slippage_required_when_material": true,
+    "reentry_costs_required": true
+  },
+  "research_policy": {
+    "point_in_time_required": true,
+    "discovery_validation_holdout_separation_required": true,
+    "purged_walk_forward_when_overlap_requires_it": true,
+    "overlapping_forward_windows_independent": false,
+    "freeze_baseline_before_policy_learning": true,
+    "report_sample_size": true,
+    "report_uncertainty": true,
+    "report_concentration": true,
+    "report_effect_size": true,
+    "candidate_objectives": ["forward_return_or_alpha", "drawdown", "decision_error_cost", "turnover", "transaction_cost", "decision_stability"]
+  },
+  "phase8_boundary": {
+    "external_factor_phase": 8,
+    "examples": ["sentiment", "eps_revisions", "short_interest", "additional_external_point_in_time_data"],
+    "phase7_core_must_work_without_phase8": true,
+    "unhistorized_live_information_may_train_core": false,
+    "live_watch_overlay_must_remain_separate": true
+  },
+  "output": {
+    "target_artifact": "artifacts/research/decision_snapshot.json",
+    "explainability_required": true,
+    "reasons_required": true,
+    "counter_evidence_required": true,
+    "provenance_required": true
+  },
+  "forbidden_shortcuts": [
+    "invent_manual_module_weights",
+    "collapse_selection_timing_probability_risk_confidence_into_opaque_score",
+    "treat_missing_evidence_as_neutral_hold",
+    "use_portfolio_positions_to_train_universal_stance",
+    "use_phase8_live_data_inside_historical_core",
+    "use_holdout_for_policy_selection",
+    "reoptimize_upstream_modules_inside_phase7"
+  ]
+}
