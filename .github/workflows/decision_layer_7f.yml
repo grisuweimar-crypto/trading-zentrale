@@ -1,0 +1,38 @@
+name: Phase 7F Portfolio Action and Swing Management
+
+on:
+  pull_request:
+    paths:
+      - "configs/decision_portfolio_action_v1.json"
+      - "src/scanner/research/decision_layer/**"
+      - "tests/test_decision_portfolio_action_7f.py"
+      - "tests/test_decision_state_transitions_7e.py"
+      - "tests/test_decision_universal_stance_7d.py"
+      - "scripts/run_portfolio_action_7f.py"
+      - "docs/decision_layer_7f.md"
+      - ".github/workflows/decision_layer_7f.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 7D 7E and 7F regression tests
+        run: >-
+          pytest -q
+          tests/test_decision_universal_stance_7d.py
+          tests/test_decision_state_transitions_7e.py
+          tests/test_decision_portfolio_action_7f.py
+      - name: Smoke-test 7F CLI
+        run: python scripts/run_portfolio_action_7f.py --help
