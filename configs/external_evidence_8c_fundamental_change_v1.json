@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8c_fundamental_change_v1",
   "phase": "8C_C_fundamental_change_engine",
-  "status": "FEATURE_DEFINITION_ACTIVE_OUTCOMES_DISABLED",
+  "status": "COVERAGE_AND_FEATURE_EXTENSION_ACTIVE_OUTCOMES_DISABLED",
   "purpose": "build deterministic PIT-safe fundamental change observations without assigning predictive direction",
   "outcome_research_enabled": false,
   "decision_integration_enabled": false,
@@ -57,6 +57,15 @@
       "concepts": ["LongTermDebt", "LongTermDebtCurrent", "LongTermDebtNoncurrent"]
     }
   },
+  "coverage_policy": {
+    "measurement_required_before_feature_domain_freeze": true,
+    "coverage_is_descriptive_not_feature_selection": true,
+    "custom_taxonomy_auto_mapping_forbidden": true,
+    "unmapped_us_gaap_concepts_must_remain_visible": true,
+    "metric_entity_coverage_required": true,
+    "metric_concept_coverage_required": true,
+    "coverage_may_not_use_market_outcomes": true
+  },
   "context_rules": {
     "pit_safe_required": true,
     "valid_from_required": true,
@@ -71,6 +80,19 @@
     "same_start_end_required_for_duration_ratio_components": true,
     "same_end_required_for_instant_ratio_components": true
   },
+  "debt_resolution_policy": {
+    "goal": "avoid silent double counting when SEC debt total and component concepts coexist",
+    "accepted_modes": [
+      "TOTAL_ONLY",
+      "CURRENT_PLUS_NONCURRENT"
+    ],
+    "total_only_rule": "exactly one LongTermDebt fact and no LongTermDebtCurrent/LongTermDebtNoncurrent facts in the same accession/end/unit context",
+    "component_pair_rule": "no LongTermDebt fact and exactly one LongTermDebtCurrent plus exactly one LongTermDebtNoncurrent fact in the same accession/end/unit context",
+    "total_and_components_coexist": "CONFLICTING_SOURCES",
+    "duplicate_same_concept_in_context": "CONFLICTING_SOURCES",
+    "incomplete_component_pair": "UNKNOWN",
+    "guess_authoritative_representation": false
+  },
   "change_candidates": {
     "revenue_yoy_change": {
       "type": "yoy_pct_change",
@@ -81,7 +103,8 @@
     "revenue_growth_acceleration": {
       "type": "difference_of_yoy_growth",
       "metric": "revenue",
-      "requires_two_consecutive_yoy_growth_observations": true
+      "requires_two_consecutive_yoy_growth_observations": true,
+      "consecutive_definition": "current previous_end must equal prior growth current_end"
     },
     "operating_margin": {
       "type": "ratio",
@@ -103,8 +126,9 @@
     },
     "debt_to_equity": {
       "type": "ratio",
-      "numerator": "debt",
-      "denominator": "equity"
+      "numerator": "resolved_debt",
+      "denominator": "equity",
+      "requires_debt_resolution_status": "KNOWN"
     },
     "debt_to_equity_change": {
       "type": "yoy_absolute_change",
@@ -130,6 +154,10 @@
     "select_tag_fallback_based_on_future_coverage_or_returns",
     "assign_bullish_bearish_direction_from_arithmetic_sign",
     "select_feature_thresholds_before_hypothesis_freeze",
-    "inspect_market_outcomes_during_8c_c_feature_construction"
+    "inspect_market_outcomes_during_8c_c_feature_construction",
+    "sum_debt_total_and_components",
+    "choose_debt_representation_when_total_and_components_conflict",
+    "auto_map_custom_taxonomy_from_name_similarity",
+    "drop_unmapped_rows_from_coverage_reporting"
   ]
 }
