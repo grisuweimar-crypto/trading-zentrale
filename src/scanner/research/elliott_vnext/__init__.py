@@ -34,6 +34,14 @@ from .fibonacci import (
     build_wave2_retracement_map,
     wave2_depth_trigger,
 )
+from .routing import (
+    ALLOWED_REVIEW_CONTEXTS,
+    TRIGGER_POLICY,
+    ExecutionCostSpec,
+    RoutingInputError,
+    attach_swing_routing,
+    route_wave2_monitor,
+)
 
 __all__ = [
     "DEFAULT_PIVOT_SPECS",
@@ -60,4 +68,10 @@ __all__ = [
     "attach_fibonacci_geometry",
     "build_wave2_retracement_map",
     "wave2_depth_trigger",
+    "ALLOWED_REVIEW_CONTEXTS",
+    "TRIGGER_POLICY",
+    "ExecutionCostSpec",
+    "RoutingInputError",
+    "attach_swing_routing",
+    "route_wave2_monitor",
 ]

@@ -1,0 +1,72 @@
+{
+  "schema_version": "elliott_vnext_swing_routing_research_v1",
+  "module": "6d_swing_routing",
+  "status": "research_only_not_productive",
+  "pipeline_order": ["6a_pivots", "6b_scenarios", "6c_fibonacci_geometry", "6d_review_routing"],
+  "routing_is_trade_decision": false,
+  "scenario_order_may_be_changed_by_routing": false,
+  "final_decision_owner": "global_decision_layer_or_depot_watch",
+  "allowed_review_contexts": [
+    "entry_or_add_review",
+    "hold_review",
+    "partial_reduce_review",
+    "reentry_or_add_review",
+    "profit_protection_review",
+    "larger_reduce_or_exit_review"
+  ],
+  "trigger_policy": {
+    "EW_PREWATCH_382": "hold_review",
+    "EW_DEEP_SCAN_500": "entry_or_add_review",
+    "EW_W2_CORE": "entry_or_add_review",
+    "EW_W2_DEEP": "entry_or_add_review",
+    "EW_W2_DANGER": "hold_review",
+    "EW_INVALIDATED": "larger_reduce_or_exit_review",
+    "EW_W3_TARGET_APPROACH": "partial_reduce_review",
+    "EW_W3_EXHAUSTION": "partial_reduce_review",
+    "EW_W4_TARGET_ZONE": "reentry_or_add_review",
+    "EW_W4_COMPLETION": "reentry_or_add_review",
+    "EW_W5_TARGET_APPROACH": "profit_protection_review",
+    "EW_W5_COMPLETION_RISK": "larger_reduce_or_exit_review"
+  },
+  "causality": {
+    "confirmed_endpoint_route_available_from": "scenario_available_from",
+    "current_price_projection_route_available_from": "scenario_set_as_of",
+    "projection_creation_time_must_not_be_used_as_trigger_observation_time": true,
+    "historical_routes_must_be_reconstructed_walk_forward": true
+  },
+  "projection_frontier_policy": {
+    "active_statuses": ["approaching", "inside"],
+    "all_candidates_reached_may_remain_active": true,
+    "single_early_candidate_reached_does_not_create_permanent_route": true
+  },
+  "w2_policy": {
+    "confirmed_wave2_depth_uses": "confirmed_wave_2_endpoint_price",
+    "preconfirmation_monitor_uses": "explicit_6c_wave2_monitor_current_price",
+    "w2_0_887_is_hard_invalidation": false,
+    "hard_invalidation": "wave_1_origin_crossed"
+  },
+  "conflict_policy": {
+    "primary_alternative_conflicts_are_preserved": true,
+    "within_scenario_multiple_review_contexts_are_preserved": true,
+    "routing_must_not_select_a_winner": true
+  },
+  "transaction_cost_policy": {
+    "cost_sensitive_contexts": [
+      "entry_or_add_review",
+      "partial_reduce_review",
+      "reentry_or_add_review",
+      "profit_protection_review",
+      "larger_reduce_or_exit_review"
+    ],
+    "round_trip_formula_bps": "spread_bps + 2 * (commission_bps_per_side + slippage_bps_per_side)",
+    "missing_cost_model_blocks_net_benefit_claim": true,
+    "cost_model_itself_does_not_validate_routing_edge": true
+  },
+  "research_guards": {
+    "requires_external_confirmation": true,
+    "historical_net_benefit_not_evaluated_in_6d": true,
+    "historical_outperformance_claim_forbidden": true,
+    "buy_hold_reduce_sell_output_forbidden": true,
+    "order_instruction_forbidden": true
+  }
+}
