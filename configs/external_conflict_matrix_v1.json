@@ -1,0 +1,30 @@
+{
+  "schema_version": "external_conflict_matrix_v1",
+  "status": "descriptive_not_policy",
+  "core_states": ["POSITIVE", "NEGATIVE", "CONFLICTED", "INSUFFICIENT_EVIDENCE"],
+  "external_states": ["POSITIVE", "NEGATIVE", "MIXED", "UNKNOWN", "INSUFFICIENT_EXTERNAL"],
+  "relations": [
+    {"core": "POSITIVE", "external": "POSITIVE", "relation": "CONFIRMING"},
+    {"core": "POSITIVE", "external": "NEGATIVE", "relation": "CONFLICTING"},
+    {"core": "POSITIVE", "external": "MIXED", "relation": "MIXED_EXTERNAL"},
+    {"core": "POSITIVE", "external": "UNKNOWN", "relation": "UNKNOWN"},
+    {"core": "POSITIVE", "external": "INSUFFICIENT_EXTERNAL", "relation": "INSUFFICIENT_EXTERNAL"},
+    {"core": "NEGATIVE", "external": "NEGATIVE", "relation": "CONFIRMING"},
+    {"core": "NEGATIVE", "external": "POSITIVE", "relation": "CONFLICTING"},
+    {"core": "NEGATIVE", "external": "MIXED", "relation": "MIXED_EXTERNAL"},
+    {"core": "NEGATIVE", "external": "UNKNOWN", "relation": "UNKNOWN"},
+    {"core": "NEGATIVE", "external": "INSUFFICIENT_EXTERNAL", "relation": "INSUFFICIENT_EXTERNAL"},
+    {"core": "CONFLICTED", "external": "POSITIVE", "relation": "EXTERNAL_ONLY"},
+    {"core": "CONFLICTED", "external": "NEGATIVE", "relation": "EXTERNAL_ONLY"},
+    {"core": "CONFLICTED", "external": "MIXED", "relation": "MIXED_EXTERNAL"},
+    {"core": "INSUFFICIENT_EVIDENCE", "external": "POSITIVE", "relation": "EXTERNAL_ONLY"},
+    {"core": "INSUFFICIENT_EVIDENCE", "external": "NEGATIVE", "relation": "EXTERNAL_ONLY"},
+    {"core": "INSUFFICIENT_EVIDENCE", "external": "UNKNOWN", "relation": "UNKNOWN"}
+  ],
+  "policy_boundary": {
+    "relation_may_change_phase7_stance_directly": false,
+    "confirming_is_not_automatic_promotion": true,
+    "conflicting_is_not_automatic_demotion": true,
+    "external_only_is_not_a_trade_signal": true
+  }
+}
