@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Elliott vNext Module 6G validation report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "module",
+    "rules_frozen_through",
+    "horizons_sessions",
+    "evidence_policy",
+    "coverage",
+    "structure_validation",
+    "projection_summary",
+    "route_summary",
+    "cross_system_validation",
+    "market_context_validation",
+    "promotion_status",
+    "automatic_promotion_allowed",
+    "technical_completion_is_empirical_validation",
+    "round_trip_pnl_evaluated",
+    "numeric_w5_levels_promoted",
+    "research_only"
+  ],
+  "properties": {
+    "schema_version": {"const": "elliott_vnext_validation_v1"},
+    "module": {"const": "6G_historical_validation"},
+    "rules_frozen_through": {"type": "string", "format": "date"},
+    "horizons_sessions": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 1},
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "promotion_status": {
+      "enum": [
+        "awaiting_unspent_prospective_evidence",
+        "prospective_evidence_accumulating_no_automatic_promotion"
+      ]
+    },
+    "automatic_promotion_allowed": {"const": false},
+    "technical_completion_is_empirical_validation": {"const": false},
+    "round_trip_pnl_evaluated": {"const": false},
+    "numeric_w5_levels_promoted": {"const": false},
+    "trade_decision": {"type": ["null"]},
+    "order_instruction": {"type": ["null"]},
+    "research_only": {"const": true}
+  },
+  "additionalProperties": true
+}
