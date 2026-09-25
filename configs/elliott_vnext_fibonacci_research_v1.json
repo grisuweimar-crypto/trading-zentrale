@@ -1,0 +1,64 @@
+{
+  "schema_version": "elliott_vnext_fibonacci_research_v1",
+  "module": "6C_fibonacci_geometry",
+  "status": "research_only_not_productive",
+  "count_selection_by_fibonacci": false,
+  "wave_2": {
+    "levels": [0.382, 0.5, 0.618, 0.786, 0.887],
+    "routing_labels": [
+      "EW_PREWATCH_382",
+      "EW_DEEP_SCAN_500",
+      "EW_W2_CORE",
+      "EW_W2_DEEP",
+      "EW_W2_DANGER"
+    ],
+    "hard_invalidation": "wave_1_origin_crossed",
+    "level_0_887_is_hard_invalidation": false
+  },
+  "wave_3": {
+    "basis": "wave_1_length_projected_from_confirmed_wave_2",
+    "levels": [1.0, 1.618, 2.0, 2.618, 3.236],
+    "validated": false
+  },
+  "wave_4": {
+    "basis": "confirmed_wave_3_retracement",
+    "levels": [0.146, 0.236, 0.382, 0.5],
+    "validated": false
+  },
+  "wave_5": {
+    "numeric_levels_frozen_for_production": false,
+    "research_candidates": [
+      {
+        "basis": "wave_1_length_relative_to_wave_4",
+        "level": 1.0,
+        "source": "ElliottWaver.live Kompendium verified 2026-09-25",
+        "validated": false
+      },
+      {
+        "basis": "wave_1_to_wave_3_structure_relative_to_wave_4",
+        "level": 0.618,
+        "source": "ElliottWaver.live Kompendium verified 2026-09-25",
+        "validated": false
+      }
+    ]
+  },
+  "zone_width": {
+    "formula": "max(atr * atr_multiplier, abs(price) * price_fraction_floor)",
+    "parameters_validated": false,
+    "degrees": {
+      "minor": {"atr_multiplier": 0.2, "price_fraction_floor": 0.001},
+      "intermediate": {"atr_multiplier": 0.3, "price_fraction_floor": 0.0015},
+      "major": {"atr_multiplier": 0.45, "price_fraction_floor": 0.0025},
+      "primary": {"atr_multiplier": 0.6, "price_fraction_floor": 0.004}
+    },
+    "missing_atr_policy": "suppress_projection_no_synthetic_fallback"
+  },
+  "causality": {
+    "wave_3_available_from": "wave_2.confirmed_time",
+    "wave_4_available_from": "wave_3.confirmed_time",
+    "wave_5_available_from": "wave_4.confirmed_time",
+    "completed_wave_5_backfill_forbidden": true
+  },
+  "trade_decision_allowed": false,
+  "order_instruction_allowed": false
+}
