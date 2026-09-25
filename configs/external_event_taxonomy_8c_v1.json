@@ -1,0 +1,53 @@
+{
+  "schema_version": "external_event_taxonomy_8c_v1",
+  "status": "FILING_LEVEL_ONLY_NOT_DIRECTIONAL",
+  "source": "SEC_EDGAR_SUBMISSIONS",
+  "forms": {
+    "8-K": "CURRENT_REPORT",
+    "8-K/A": "AMENDMENT",
+    "6-K": "CURRENT_REPORT",
+    "6-K/A": "AMENDMENT",
+    "10-Q": "PERIODIC_REPORT",
+    "10-Q/A": "AMENDMENT",
+    "10-K": "PERIODIC_REPORT",
+    "10-K/A": "AMENDMENT",
+    "20-F": "PERIODIC_REPORT",
+    "20-F/A": "AMENDMENT",
+    "40-F": "PERIODIC_REPORT",
+    "40-F/A": "AMENDMENT"
+  },
+  "8k_item_candidates": {
+    "1.01": "MATERIAL_AGREEMENT",
+    "1.02": "MATERIAL_AGREEMENT_TERMINATION",
+    "2.01": "ASSET_ACQUISITION_OR_DISPOSITION",
+    "2.02": "RESULTS_OF_OPERATIONS_RELEASE",
+    "2.03": "DIRECT_FINANCIAL_OBLIGATION",
+    "2.04": "DEBT_TRIGGERING_EVENT",
+    "2.05": "EXIT_OR_DISPOSAL_PLAN",
+    "2.06": "MATERIAL_IMPAIRMENT",
+    "3.02": "UNREGISTERED_SECURITIES_SALE",
+    "5.02": "MANAGEMENT_OR_DIRECTOR_CHANGE",
+    "5.07": "SHAREHOLDER_VOTE",
+    "7.01": "REGULATION_FD_DISCLOSURE",
+    "8.01": "OTHER_EVENT",
+    "9.01": "FINANCIAL_STATEMENTS_AND_EXHIBITS"
+  },
+  "interpretation_boundary": {
+    "candidate_type_is_event_direction": false,
+    "candidate_type_is_materiality_score": false,
+    "candidate_type_is_trade_signal": false,
+    "8k_item_2_02_means_earnings_beat": false,
+    "8k_item_3_02_means_bearish_capital_raise": false,
+    "8k_item_5_02_means_negative_management_change": false,
+    "8k_item_8_01_has_fixed_semantics": false,
+    "6k_without_items_may_be_guessed": false
+  },
+  "semantic_extraction_states": [
+    "FILING_ITEM_ONLY",
+    "CONTENT_CLASSIFIED",
+    "CONFLICTING_CONTENT",
+    "UNKNOWN"
+  ],
+  "default_semantic_state": "FILING_ITEM_ONLY",
+  "default_direction": "UNKNOWN"
+}
