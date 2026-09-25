@@ -1,10 +1,15 @@
 # Phase 8 – External Evidence Layer: Research- und Bauplan
 
-Status: vorbereitet. Start der eigentlichen Implementierung nach Abschluss von Phase 7.
+Status: vorbereitet. Phase 7A–7I ist technisch abgeschlossen; der Phase-7I-Validierungsvertrag wurde am 2026-09-25 eingefroren. Die eigentliche Phase-8-Implementierung beginnt erst nach gesondertem Startauftrag.
 
 ## Ziel
 
 Phase 8 prüft externe Informationsfamilien ausschließlich auf inkrementellen Point-in-Time-Zusatznutzen gegenüber dem eingefrorenen Phase-7-Core.
+
+Verbindliche Baseline:
+- `configs/decision_validation_promotion_v1.json`
+- Freeze: `2026-09-25`
+- `prospective_unspent` ab: `2026-09-26`
 
 ## 8A – External Source & PIT Contract
 
@@ -13,12 +18,14 @@ Ziel:
 - PIT-Tauglichkeit nach Datenfamilie prüfen,
 - Lizenz- und Kostenstatus dokumentieren,
 - Coverage/History/Publication/Vintage/Restatement erfassen,
-- `external_source_registry_v1` befüllen.
+- `external_source_registry_v1` befüllen,
+- ein As-of-Universe-/Coverage-Ledger definieren, das historische Mitgliedschaft, Ein-/Ausschlussgründe, Listing/Delisting und damalige Datenverfügbarkeit nachvollziehbar macht.
 
 Abnahme:
 - Quelle ist entweder `SAFE`, `PARTIAL`, `UNSAFE` oder `UNKNOWN`,
 - nur `SAFE` und ausdrücklich begründete `PARTIAL`-Quellen dürfen in Research-Datasets gelangen,
-- aktuelle Werte ohne historische Vintages dürfen nicht rückprojiziert werden.
+- aktuelle Werte ohne historische Vintages dürfen nicht rückprojiziert werden,
+- aktuelle Universe-Mitgliedschaft darf historische Zugehörigkeit nicht ersetzen.
 
 ## 8B – Revisions Single-Family Pilot
 
@@ -115,9 +122,18 @@ Pflichtmetriken:
 - Missingness-Robustheit,
 - Turnover-/Cost-Effekt wenn handlungsrelevant,
 - Unsicherheit und Stichprobengröße,
-- Multiple-Testing-Kontrolle.
+- Multiple-Testing-Kontrolle,
+- Konzentration nach Datum, Symbol und soweit sinnvoll Sektor/Domain.
 
 Promotion nur nach bestandenen Gates.
+
+## Research Governance
+
+Vor confirmatory Tests werden Hypothesen familienweise registriert und eingefroren. Exploratory und confirmatory Analysen bleiben getrennt.
+
+Menschliche Outcome-Inspektionen, die zu einer Regel-, Schwellen- oder Featureänderung führen, werden protokolliert. Die dabei betrachtete Evidenz gilt anschließend als `spent_for_design` und darf nicht erneut als unabhängige Bestätigung verwendet werden.
+
+Präventive QA-Änderungen ohne Betrachtung zukünftiger Outcomes dürfen dokumentiert werden, ohne automatisch die prospektive Evidenz zu verbrauchen.
 
 ## 8H – Cross-Factor Interaction
 
@@ -130,7 +146,7 @@ Beispiele:
 - Sector/Market × Commodity Exposure,
 - Core Stance × External Conflict.
 
-Interaktionen werden vorab registriert und dürfen keine erneute ungehemmte Feature-Suche eröffnen.
+Interaktionen werden vorab registriert und dürfen keine erneute ungehemmte Feature-Suche eröffnen. Eine Interaktion darf weder Phase-7-Elliott noch eine andere unpromotete Komponente rückwirkend durch Proxy „validieren“.
 
 ## 8I – Decision Layer Extension
 
@@ -156,6 +172,8 @@ Alle müssen erfüllt sein:
 6. vertretbarer Daten-/Handelskosten-Nutzen
 7. Multiple-Testing-Schutz
 8. nachvollziehbare Provenance und Lizenzlage
+9. As-of-Universe-/Survivorship-Nachweis für die verwendete Research-Domäne
+10. dokumentierter Evidence-Consumption-Status der confirmatory Evidenz
 
 ## Empfohlene Reihenfolge
 
