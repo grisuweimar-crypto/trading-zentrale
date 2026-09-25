@@ -1,0 +1,92 @@
+{
+  "schema_version": "elliott_vnext_market_context_research_v1",
+  "module": "6F_external_market_sector_context",
+  "research_only": true,
+  "history_artifact": "artifacts/research/market_context_history.csv",
+  "registry": "data/inputs/market_context_registry.csv",
+  "assignment_registry": "data/inputs/market_context_assignments.csv",
+  "separate_from_scanner_history": true,
+  "allowed_context_types": [
+    "market",
+    "sector",
+    "industry",
+    "theme",
+    "commodity",
+    "peer_basket",
+    "scanner_peer_context"
+  ],
+  "proxy_priority": [
+    "official_or_broad_index",
+    "broad_liquid_sector_or_theme_etf",
+    "externally_defined_point_in_time_peer_basket",
+    "scanner_peer_context_only"
+  ],
+  "real_market_evidence_quality": ["sufficient", "limited"],
+  "unusable_as_real_market_evidence": ["unreliable", "unavailable"],
+  "scanner_peer_context_is_external_market_evidence": false,
+  "pit_assignment_required": true,
+  "assignment_validity_fields": ["valid_from", "valid_to"],
+  "history_required_fields": [
+    "date",
+    "context_id",
+    "context_type",
+    "name",
+    "symbol",
+    "open",
+    "high",
+    "low",
+    "close",
+    "currency",
+    "source",
+    "retrieved_at",
+    "context_quality",
+    "proxy_kind",
+    "valid_from",
+    "valid_to",
+    "usable_as_real_market_evidence"
+  ],
+  "ohlcv_rules": {
+    "synthetic_sessions_allowed": false,
+    "conflicting_duplicate_rows_allowed": false,
+    "negative_or_zero_prices_allowed": false,
+    "negative_volume_allowed": false,
+    "high_must_cover_open_close_low": true,
+    "low_must_cover_open_close_high": true
+  },
+  "price_basis_policy": {
+    "raw": "allowed for index/spot-like series when the registry explicitly declares raw geometry appropriate",
+    "adjusted": "requires complete adjusted-close coverage and coherent OHLC scaling",
+    "provider_adjusted": "allowed only when the source explicitly documents the supplied OHLC as already adjusted/continuous",
+    "not_eligible_for_elliott": "may be retained as descriptive context but cannot generate a context Elliott wave"
+  },
+  "context_elliott_policy": {
+    "requires_real_market_evidence": true,
+    "requires_context_quality": ["sufficient", "limited"],
+    "unreliable_or_unavailable_must_fail_closed": true,
+    "scanner_peer_context_must_not_generate_real_market_wave": true,
+    "future_context_rows_must_be_invisible": true
+  },
+  "research_questions": [
+    "benchmark_elliott_structure",
+    "asset_sector_market_relative_strength",
+    "leader_follower_divergence_synchronized",
+    "asset_context_lead_lag",
+    "stage_specific_w3_w4_w5_context"
+  ],
+  "forbidden_shortcuts": [
+    "manual_small_scanner_basket_presented_as_sector",
+    "today_sector_assignment_retrojected_without_valid_pit_interval",
+    "unreliable_context_generates_real_market_wave",
+    "unavailable_context_generates_real_market_wave",
+    "scanner_peer_context_presented_as_external_sector_evidence",
+    "adjusted_price_basis_silently_falls_back_to_raw",
+    "future_context_row_visible_before_its_market_date",
+    "context_state_emits_trade_decision"
+  ],
+  "decision_boundary": {
+    "may_emit_trade_decision": false,
+    "may_emit_order_instruction": false,
+    "may_emit_context_evidence": true,
+    "final_decision_owned_by_global_layer": true
+  }
+}
