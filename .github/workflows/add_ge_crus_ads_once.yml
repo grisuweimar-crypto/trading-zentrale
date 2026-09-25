@@ -1,0 +1,58 @@
+name: Add GE CRUS ADS once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add_ge_crus_ads_once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  add-stocks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Add missing stocks to universe master
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('data/inputs/universe_master.csv')
+          text = p.read_text(encoding='utf-8')
+          if not text.endswith('\n'):
+              text += '\n'
+
+          rows = [
+              '1,GE,GE Aerospace,US3696043013,stock,,Industrials,Aerospace & Defense,United States,USD,S20 Sicherheit & Verteidigung,pillar,81.0,manual addition via ChatGPT,"defense, aerospace, security"',
+              '1,CRUS,Cirrus Logic Inc.,US1727551004,stock,Tech 💻,Technology,Semiconductors,United States,USD,S2 Gehirn,pillar,85.0,manual addition via ChatGPT,"ai, semis, software"',
+              '1,ADS.DE,adidas AG,DE000A1EWWW0,stock,Konsum & Lifestyle,Consumer Cyclical,Footwear & Accessories,Germany,EUR,S12 Luxus & Marken,pillar,78.0,manual addition via ChatGPT,"luxury, brands, premium consumption"',
+          ]
+
+          for row in rows:
+              symbol = row.split(',', 3)[1]
+              isin = row.split(',', 4)[3]
+              symbol_exists = any(line.startswith(f'1,{symbol},') for line in text.splitlines())
+              isin_exists = any(f',{isin},' in line for line in text.splitlines())
+              if symbol_exists or isin_exists:
+                  print(f'{symbol} / {isin} already present; skipping')
+              else:
+                  text += row + '\n'
+                  print(f'Added {symbol}')
+
+          p.write_text(text, encoding='utf-8')
+      - name: Commit additions if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- data/inputs/universe_master.csv; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/inputs/universe_master.csv
+          git commit -m "Add GE Aerospace, Cirrus Logic and adidas to scanner universe"
+          git push origin HEAD:main
