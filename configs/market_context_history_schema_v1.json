@@ -5,7 +5,8 @@
   "required": [
     "date", "context_id", "context_type", "name", "symbol", "open", "high",
     "low", "close", "currency", "source", "retrieved_at", "context_quality",
-    "valid_from", "valid_to"
+    "proxy_kind", "price_basis", "valid_from", "valid_to",
+    "usable_as_real_market_evidence"
   ],
   "properties": {
     "date": {"type": "string", "format": "date"},
@@ -17,19 +18,28 @@
     "high": {"type": "number"},
     "low": {"type": "number"},
     "close": {"type": "number"},
+    "adj_close": {"type": ["number", "null"]},
     "volume": {"type": ["number", "null"]},
     "currency": {"type": ["string", "null"]},
     "source": {"type": "string"},
     "retrieved_at": {"type": ["string", "null"]},
     "context_quality": {"enum": ["sufficient", "limited", "unreliable", "unavailable"]},
     "proxy_kind": {"enum": ["official_or_broad_index", "broad_liquid_sector_or_theme_etf", "externally_defined_point_in_time_peer_basket", "scanner_peer_context_only"]},
+    "price_basis": {"enum": ["raw", "adjusted", "provider_adjusted", "not_eligible_for_elliott"]},
     "valid_from": {"type": ["string", "null"], "format": "date"},
     "valid_to": {"type": ["string", "null"], "format": "date"},
+    "usable_as_real_market_evidence": {"type": "boolean"},
     "notes": {"type": ["string", "null"]}
   },
   "allOf": [
     {
-      "if": {"properties": {"context_quality": {"enum": ["unreliable", "unavailable"]}}},
+      "if": {
+        "anyOf": [
+          {"properties": {"context_quality": {"enum": ["unreliable", "unavailable"]}}},
+          {"properties": {"proxy_kind": {"const": "scanner_peer_context_only"}}},
+          {"properties": {"context_type": {"const": "scanner_peer_context"}}}
+        ]
+      },
       "then": {"properties": {"usable_as_real_market_evidence": {"const": false}}}
     }
   ],

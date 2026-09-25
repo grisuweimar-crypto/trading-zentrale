@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Market context assignment row",
+  "type": "object",
+  "required": [
+    "symbol",
+    "context_id",
+    "relationship",
+    "source",
+    "assignment_quality",
+    "pit_verified",
+    "valid_from",
+    "valid_to"
+  ],
+  "properties": {
+    "symbol": {"type": "string"},
+    "context_id": {"type": "string"},
+    "relationship": {"enum": ["market", "sector", "industry", "theme", "commodity", "peer_basket", "scanner_peer_context"]},
+    "source": {"type": "string"},
+    "assignment_quality": {"enum": ["sufficient", "limited", "unreliable", "unavailable"]},
+    "pit_verified": {"type": "boolean"},
+    "valid_from": {"type": ["string", "null"], "format": "date"},
+    "valid_to": {"type": ["string", "null"], "format": "date"},
+    "retrieved_at": {"type": ["string", "null"]},
+    "classification_version": {"type": ["string", "null"]},
+    "notes": {"type": ["string", "null"]},
+    "usable_for_historical_context": {"type": "boolean"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          {"properties": {"assignment_quality": {"enum": ["unreliable", "unavailable"]}}},
+          {"properties": {"pit_verified": {"const": false}}}
+        ]
+      },
+      "then": {"properties": {"usable_for_historical_context": {"const": false}}}
+    }
+  ],
+  "additionalProperties": true
+}
