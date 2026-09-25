@@ -1,0 +1,51 @@
+{
+  "schema_version": "external_evidence_8c_current_universe_coverage_v1",
+  "phase": "8C_C_current_universe_coverage",
+  "status": "FEASIBILITY_MEASUREMENT_ONLY",
+  "scope": "CURRENT_SCANNER_SNAPSHOT_FEASIBILITY_ONLY_NOT_HISTORICAL_UNIVERSE",
+  "scanner_source": "artifacts/research/latest_scanner.csv",
+  "identity_policy": {
+    "sec_source": "https://www.sec.gov/files/company_tickers.json",
+    "exact_current_ticker_match_only": true,
+    "fuzzy_company_name_match_forbidden": true,
+    "exchange_suffix_stripping_forbidden": true,
+    "adr_native_listing_substitution_forbidden": true,
+    "historical_identity_claim": false,
+    "unmatched_status": "UNKNOWN"
+  },
+  "data_policy": {
+    "full_submissions_history_required_per_matched_cik": true,
+    "companyfacts_accession_resolution_required": true,
+    "first_release_basis_for_feature_feasibility": true,
+    "later_restatement_retrojection_forbidden": true,
+    "market_outcomes_may_be_read": false,
+    "feature_direction_may_be_assigned": false
+  },
+  "coverage_outputs": [
+    "exact_sec_match_count",
+    "unmatched_count",
+    "processing_errors",
+    "research_ready_company_count",
+    "mapped_share_of_usable_facts",
+    "mapped_share_of_us_gaap_facts",
+    "metric_entity_counts",
+    "metric_row_counts",
+    "feature_entity_counts",
+    "feature_row_counts",
+    "top_unmapped_us_gaap_concepts",
+    "custom_taxonomies"
+  ],
+  "interpretation_rules": {
+    "unmatched_current_symbol_is_not_proof_of_no_sec_filing": true,
+    "current_ticker_match_is_not_historical_identifier_mapping": true,
+    "coverage_result_may_expand_mapping_only_from_accounting_semantics": true,
+    "coverage_result_may_not_select_features_from_future_returns": true,
+    "coverage_result_may_not_define_historical_universe": true
+  },
+  "research_gate": {
+    "outcome_research_enabled": false,
+    "decision_integration_enabled": false,
+    "historical_backtest_enabled": false,
+    "feature_domain_freeze_enabled": false
+  }
+}
