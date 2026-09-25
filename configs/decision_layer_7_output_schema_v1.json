@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Phase 7 Decision Layer Snapshot",
+  "type": "object",
+  "required": ["schema_version", "as_of", "source_snapshot_ids", "symbols"],
+  "properties": {
+    "schema_version": {"const": "decision_layer_7_output_v1"},
+    "as_of": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string"},
+    "source_snapshot_ids": {"type": "object"},
+    "phase_versions": {"type": "object"},
+    "symbols": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "evidence_coverage",
+          "evidence_bundle",
+          "conflict_confirmation",
+          "universal_stance",
+          "decision_reliability",
+          "reasons",
+          "counter_evidence",
+          "transition",
+          "provenance"
+        ],
+        "properties": {
+          "evidence_coverage": {
+            "type": "object",
+            "required": ["state", "missing_blocks"],
+            "properties": {
+              "state": {"enum": ["sufficient", "limited", "insufficient"]},
+              "missing_blocks": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "evidence_bundle": {
+            "type": "object",
+            "properties": {
+              "selection": {"type": ["object", "null"]},
+              "timing": {"type": ["object", "null"]},
+              "probability": {"type": ["object", "null"]},
+              "risk": {"type": ["object", "null"]},
+              "confidence": {"type": ["object", "null"]},
+              "adaptive_learning": {"type": ["object", "null"]},
+              "elliott_vnext": {"type": ["object", "null"]},
+              "market_context": {"type": ["object", "null"]},
+              "relative_strength": {"type": ["object", "null"]},
+              "data_quality_provenance": {"type": ["object", "null"]}
+            },
+            "additionalProperties": true
+          },
+          "conflict_confirmation": {
+            "type": "object",
+            "required": ["state", "supporting_evidence", "conflicting_evidence"],
+            "properties": {
+              "state": {"enum": ["CONFIRMED", "MIXED", "CONFLICT", "STRUCTURAL_WARNING", "TIMING_WARNING", "INSUFFICIENT_EVIDENCE"]},
+              "supporting_evidence": {"type": "array", "items": {"type": "string"}},
+              "conflicting_evidence": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "universal_stance": {"enum": ["BUY", "HOLD", "SELL", "INSUFFICIENT_EVIDENCE"]},
+          "decision_reliability": {
+            "type": "object",
+            "required": ["state", "basis"],
+            "properties": {
+              "state": {"enum": ["high", "medium", "low", "insufficient"]},
+              "basis": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "counter_evidence": {"type": "array", "items": {"type": "string"}},
+          "transition": {
+            "type": "object",
+            "required": ["previous_stance", "current_stance", "transition", "transition_reasons", "days_in_current_stance"],
+            "properties": {
+              "previous_stance": {"type": ["string", "null"]},
+              "current_stance": {"type": "string"},
+              "transition": {"type": "string"},
+              "transition_reasons": {"type": "array", "items": {"type": "string"}},
+              "days_in_current_stance": {"type": ["integer", "null"], "minimum": 0}
+            }
+          },
+          "portfolio_overlay": {
+            "type": ["object", "null"],
+            "properties": {
+              "position_present": {"type": "boolean"},
+              "portfolio_action": {"enum": ["OPEN", "ADD", "HOLD", "PARTIAL_REDUCE", "EXIT", "NO_ACTION", "INSUFFICIENT_EVIDENCE"]},
+              "constraints": {"type": "array", "items": {"type": "string"}},
+              "swing_context": {"type": ["object", "null"]}
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "required": ["as_of", "input_versions"],
+            "properties": {
+              "as_of": {"type": "string", "format": "date"},
+              "input_versions": {"type": "object"},
+              "policy_version": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
