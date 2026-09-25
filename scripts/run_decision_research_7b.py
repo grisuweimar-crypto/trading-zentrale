@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from scanner.research.decision_layer import DecisionDatasetConfig, run_dataset_build
+from scanner.research.decision_layer.evidence_archive import load_evidence_archive
 
 
 def main() -> int:
@@ -14,6 +15,7 @@ def main() -> int:
     parser.add_argument("--history", default="artifacts/research/history_analysis.csv")
     parser.add_argument("--prices", default="artifacts/research/price_backfill.csv")
     parser.add_argument("--timing-catalog", default="artifacts/research/timing_patterns_1b_frozen.json")
+    parser.add_argument("--evidence-archive", default="artifacts/research/decision_evidence_7a.jsonl")
     parser.add_argument("--contract", default="configs/decision_research_dataset_v1.json")
     parser.add_argument("--output", default="artifacts/research/decision_research_7b.csv")
     parser.add_argument("--metadata", default="artifacts/research/decision_research_7b_metadata.json")
@@ -29,6 +31,18 @@ def main() -> int:
         args.metadata,
         config,
     )
+    _, archive_metadata = load_evidence_archive(
+        args.evidence_archive,
+        prospective_start=config.prospective_unspent_start,
+        missing_ok=True,
+    )
+    metadata["prospective_evidence_archive"] = {
+        "path": args.evidence_archive,
+        **archive_metadata,
+    }
+    Path(args.metadata).write_text(
+        json.dumps(metadata, indent=2, sort_keys=True), encoding="utf-8"
+    )
     print(json.dumps({
         "schema_version": metadata["schema_version"],
         "rows": metadata["rows"],
@@ -36,6 +50,8 @@ def main() -> int:
         "date_min": metadata["date_min"],
         "date_max": metadata["date_max"],
         "partitions": metadata["partitions"],
+        "prospective_evidence_packets": archive_metadata["packet_count"],
+        "prospective_evidence_status": archive_metadata["status"],
         "output": args.output,
         "metadata": args.metadata,
     }, ensure_ascii=False))
