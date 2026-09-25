@@ -6,7 +6,8 @@
   "stable_start": "2026-04-15",
   "legacy_replay_spent_through": "2026-09-25",
   "prospective_unspent_start": "2026-09-26",
-  "timing_catalog_available_from": "2026-09-23",
+  "timing_catalog_frozen_on": "2026-09-23",
+  "timing_catalog_available_from": "2026-09-24",
   "asset_scope": "stocks_only_v1",
   "crypto_deferred": true,
   "horizons_sessions": [5, 20, 40, 60],
@@ -31,8 +32,9 @@
     },
     "timing": {
       "historical_mode": "retrospective_replay_of_frozen_phase1b_catalog",
-      "catalog_available_from": "2026-09-23",
-      "notes": "Pattern matches before catalog availability are replay-only/spent evidence, not claims that the pattern was known at that historical date."
+      "catalog_frozen_on": "2026-09-23",
+      "catalog_available_from": "2026-09-24",
+      "notes": "The catalog was frozen on 2026-09-23, but exact intraday ordering relative to scanner observations is not guaranteed. Fail closed: 2026-09-23 remains replay-only; first unambiguous as-of availability is 2026-09-24."
     },
     "probability": {
       "historical_mode": "not_retrojected",
