@@ -1,0 +1,94 @@
+{
+  "schema_version": "decision_research_dataset_v1",
+  "phase": "7B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "stable_start": "2026-04-15",
+  "legacy_replay_spent_through": "2026-09-25",
+  "prospective_unspent_start": "2026-09-26",
+  "timing_catalog_frozen_on": "2026-09-23",
+  "timing_catalog_available_from": "2026-09-24",
+  "asset_scope": "stocks_only_v1",
+  "crypto_deferred": true,
+  "horizons_sessions": [5, 20, 40, 60],
+  "row_identity": ["symbol", "obs_date", "start_market_date"],
+  "required_inputs": {
+    "history": "artifacts/research/history_analysis.csv",
+    "prices": "artifacts/research/price_backfill.csv",
+    "timing_catalog": "artifacts/research/timing_patterns_1b_frozen.json"
+  },
+  "prospective_inputs": {
+    "typed_evidence_archive": "artifacts/research/decision_evidence_7a.jsonl",
+    "archive_schema": "decision_evidence_archive_7a_v1",
+    "missing_archive_before_first_prospective_packet": "explicit_zero_coverage_not_error"
+  },
+  "feature_time_rule": "Every feature column must be observable or reconstructible from information available no later than obs_date. Current validation knowledge must never be injected retroactively.",
+  "label_time_rule": "Forward outcomes are labels, never features. label_available_from_H equals the horizon end market date and may be used only after that date.",
+  "research_partitions": {
+    "legacy_replay_spent": "obs_date <= 2026-09-25; may be used for replay, diagnostics and rule discovery but never as fresh confirmation for a Phase-7 rule selected with knowledge of this partition",
+    "prospective_unspent": "obs_date >= 2026-09-26; reserved for genuinely future evaluation after the Phase-7B freeze",
+    "embargo_gap": "any configured gap between the spent cutoff and prospective start; must not be silently reassigned"
+  },
+  "family_policy": {
+    "selection": {
+      "historical_mode": "point_in_time_replay",
+      "fields": ["score", "score_percentile", "quality_band", "r_code", "score_status", "trend_ok", "liquidity_ok"],
+      "notes": "R-code is used only where actually stored. B4/B5 quality bands are not relabelled as exact historical R4/R5."
+    },
+    "timing": {
+      "historical_mode": "retrospective_replay_of_frozen_phase1b_catalog",
+      "catalog_frozen_on": "2026-09-23",
+      "catalog_available_from": "2026-09-24",
+      "notes": "The catalog was frozen on 2026-09-23, but exact intraday ordering relative to scanner observations is not guaranteed. Fail closed: 2026-09-23 remains replay-only; first unambiguous as-of availability is 2026-09-24."
+    },
+    "probability": {
+      "historical_mode": "not_retrojected",
+      "prospective_mode": "typed_7a_packet_archive",
+      "notes": "Current Phase-2 calibrated probabilities are not copied onto older rows. Prospective typed 7A packets preserve them only from the time they genuinely exist."
+    },
+    "risk": {
+      "historical_mode": "raw_point_in_time_state_only",
+      "prospective_mode": "typed_7a_packet_archive_plus_raw_state",
+      "fields": ["aggregate_risk", "volatility", "drawdown", "debt_ratio", "liquidity_risk", "downside_dev", "beta"],
+      "notes": "Current Phase-3 validation strength is not retrojected. Missing components stay missing."
+    },
+    "confidence": {
+      "historical_mode": "legacy_diagnostic_only",
+      "prospective_mode": "typed_7a_packet_archive",
+      "fields": ["legacy_confidence", "legacy_confidence_label"],
+      "notes": "Historical legacy Confidence is preserved only as a version-sensitive diagnostic. It is not renamed Confidence-vNext and does not become a reliability feature by implication."
+    },
+    "elliott": {
+      "historical_mode": "not_retrojected",
+      "prospective_mode": "typed_7a_packet_archive",
+      "notes": "Legacy Elliott-like columns are not treated as Module-6H evidence. Genuine 6H evidence enters only through prospective typed 7A packets."
+    }
+  },
+  "prospective_alignment_rule": "Typed evidence packets remain a sidecar archive until their source_snapshot_id can be matched to a sufficiently strong scanner snapshot identity. Date-only joining is forbidden because intraday ordering could otherwise leak later evidence into an earlier observation.",
+  "forward_labels": {
+    "return": "adjusted-close total-return proxy over exact trading-session horizon",
+    "peer_excess": "return minus leave-one-symbol-out same-currency daily peer median, with validated global fallback",
+    "adverse_excursion": "maximum entry-relative loss within the forward adjusted-price path",
+    "path_max_drawdown": "maximum peak-to-trough drawdown within the forward adjusted-price path"
+  },
+  "dependency_rule": "Overlapping forward windows remain dependent observations. Phase 7C+ must retain date-cluster/block-bootstrap logic and must not treat daily rows as iid.",
+  "forbidden_dataset_columns": [
+    "universal_stance",
+    "portfolio_action",
+    "trade_decision",
+    "order_instruction",
+    "buy_signal",
+    "sell_signal",
+    "position_size",
+    "target_weight"
+  ],
+  "phase_7b_non_goals": [
+    "no_evidence_fusion",
+    "no_conflict_resolution",
+    "no_universal_stance",
+    "no_hysteresis",
+    "no_portfolio_logic",
+    "no_trade_or_order_generation",
+    "no_weight_or_threshold_optimization"
+  ]
+}
