@@ -17,15 +17,17 @@ from scanner.research.decision_layer.promotion_validation import (
 
 
 START = "2026-09-26"
+LAYERS = ["7D", "7E", "7F", "7G", "7H"]
 
 
 def _archive(packets=0):
     return {"prospective_packet_count": packets}
 
 
-def _dataset(rows=0, mature=0):
+def _dataset(rows=0, mature=0, comparison_ready=False):
     return {
         "prospective_rows": rows,
+        "all_pre_registered_comparisons_data_ready": comparison_ready,
         "horizons": {
             "5": {"mature_peer_excess_rows": mature},
             "20": {"mature_peer_excess_rows": 0},
@@ -35,10 +37,12 @@ def _dataset(rows=0, mature=0):
     }
 
 
-def _trace(rows=0, layers=None):
+def _trace(rows=0, layers=None, metrics_ready=False):
+    captured = list(layers or [])
     return {
         "trace_rows": rows,
-        "captured_layers": layers or [],
+        "captured_layers": captured,
+        "layer_metrics_ready": {layer: metrics_ready for layer in captured},
     }
 
 
@@ -77,8 +81,8 @@ def test_pre_prospective_start_blocks_even_if_future_counts_are_supplied():
         date(2026, 9, 25),
         START,
         _archive(100),
-        _dataset(100, 100),
-        _trace(100, ["7D", "7E", "7F", "7G", "7H"]),
+        _dataset(100, 100, comparison_ready=True),
+        _trace(100, LAYERS, metrics_ready=True),
     )
     assert state == "pre_prospective_start"
 
@@ -107,26 +111,50 @@ def test_mature_outcomes_are_required():
     ) == "awaiting_mature_outcomes"
 
 
-def test_downstream_trace_is_required_after_outcomes_mature():
+def test_one_mature_outcome_does_not_make_metrics_ready():
     assert _review_state(
-        date(2026, 10, 20), START, _archive(10), _dataset(20, 4), _trace()
+        date(2026, 10, 5),
+        START,
+        _archive(5),
+        _dataset(10, 1, comparison_ready=False),
+        _trace(),
+    ) == "collecting_prospective_comparison_support"
+
+
+def test_downstream_trace_is_required_after_frozen_comparison_support():
+    assert _review_state(
+        date(2027, 3, 20),
+        START,
+        _archive(100),
+        _dataset(500, 100, comparison_ready=True),
+        _trace(),
     ) == "awaiting_downstream_shadow_trace"
 
 
-def test_metrics_ready_requires_all_downstream_layers():
+def test_captured_layers_without_ready_layer_metrics_remain_blocked():
     assert _review_state(
-        date(2026, 10, 20),
+        date(2027, 3, 20),
         START,
-        _archive(10),
-        _dataset(20, 4),
-        _trace(10, ["7D", "7E", "7F", "7G", "7H"]),
+        _archive(100),
+        _dataset(500, 100, comparison_ready=True),
+        _trace(100, LAYERS, metrics_ready=False),
+    ) == "awaiting_downstream_shadow_trace"
+
+
+def test_metrics_ready_requires_frozen_support_and_all_downstream_layer_metrics():
+    assert _review_state(
+        date(2027, 3, 20),
+        START,
+        _archive(100),
+        _dataset(500, 100, comparison_ready=True),
+        _trace(100, LAYERS, metrics_ready=True),
     ) == "metrics_ready_for_promotion_review"
     assert _review_state(
-        date(2026, 10, 20),
+        date(2027, 3, 20),
         START,
-        _archive(10),
-        _dataset(20, 4),
-        _trace(10, ["7D", "7E", "7F", "7G"]),
+        _archive(100),
+        _dataset(500, 100, comparison_ready=True),
+        _trace(100, ["7D", "7E", "7F", "7G"], metrics_ready=True),
     ) == "awaiting_downstream_shadow_trace"
 
 
@@ -137,8 +165,27 @@ def test_shadow_trace_summary_rejects_raw_position_values():
                 "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
                 "trace_rows": 1,
                 "symbols": 1,
-                "captured_layers": ["7D", "7E", "7F", "7G", "7H"],
+                "captured_layers": LAYERS,
+                "layer_metrics_ready": {layer: True for layer in LAYERS},
                 "contains_raw_position_values": True,
+                "public_repository_persistence": False,
+                "as_of_min": "2026-09-26",
+                "as_of_max": "2026-09-26",
+            },
+            prospective_start=START,
+            reviewed_as_of=date(2026, 9, 26),
+        )
+
+
+def test_shadow_trace_summary_requires_layer_metric_readiness_when_rows_exist():
+    with pytest.raises(PromotionValidationError, match="layer_metrics_ready_required"):
+        validate_shadow_trace_summary(
+            {
+                "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+                "trace_rows": 1,
+                "symbols": 1,
+                "captured_layers": LAYERS,
+                "contains_raw_position_values": False,
                 "public_repository_persistence": False,
                 "as_of_min": "2026-09-26",
                 "as_of_max": "2026-09-26",
@@ -155,7 +202,8 @@ def test_shadow_trace_summary_rejects_preprospective_rows():
                 "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
                 "trace_rows": 1,
                 "symbols": 1,
-                "captured_layers": ["7D", "7E", "7F", "7G", "7H"],
+                "captured_layers": LAYERS,
+                "layer_metrics_ready": {layer: True for layer in LAYERS},
                 "contains_raw_position_values": False,
                 "public_repository_persistence": False,
                 "as_of_min": "2026-09-25",
