@@ -1,0 +1,84 @@
+{
+  "schema_version": "elliott_vnext_cross_system_research_v1",
+  "module": "6e_scanner_elliott_cross_system",
+  "status": "research_only_not_productive",
+  "event_window_sessions": 20,
+  "stable_start": "2026-04-15",
+  "legacy_partitions": {
+    "discovery_reference_end": "2026-07-31",
+    "spent_validation_start": "2026-08-01",
+    "spent_validation_policy": "descriptive_overlap_only_not_rule_selection_or_tuning",
+    "new_unspent_or_prospective_evidence_required_for_incremental_claim": true
+  },
+  "elliott_source_contract": {
+    "allowed_source": "observed_6d_route_or_snapshot_stream_with_causal_available_from",
+    "present_day_hindsight_reconstruction_for_historical_6e": false,
+    "missing_historical_elliott_evidence": "missing_not_imputed"
+  },
+  "scanner_source_contract": {
+    "same_day_reruns": "last_published_state",
+    "missing_fields": "unknown_not_imputed",
+    "score_semantics": "quality_regime_descriptor_not_trade_signal",
+    "r_code_semantics": "quality_class_not_trade_signal",
+    "numeric_features": ["score", "opportunity", "risk", "rs3m", "trend200", "cycle"],
+    "deltas": [1, 5, 10],
+    "lead_lag_transitions": [
+      "score_turn_up", "score_turn_down",
+      "opportunity_turn_up", "opportunity_turn_down",
+      "risk_turn_up", "risk_turn_down",
+      "rs3m_turn_up", "rs3m_turn_down",
+      "trend200_turn_up", "trend200_turn_down",
+      "cycle_turn_up", "cycle_turn_down",
+      "trend200_cross_up", "trend200_cross_down",
+      "cycle_cross_up_25", "cycle_cross_down_25",
+      "cycle_cross_up_50", "cycle_cross_down_50",
+      "cycle_cross_up_75", "cycle_cross_down_75",
+      "r_upgrade", "r_downgrade"
+    ]
+  },
+  "frozen_model_claim_contract": {
+    "required_fields": ["symbol", "model", "claim_id", "model_version", "available_from", "stance", "maturity"],
+    "stances": ["supportive", "cautionary", "neutral", "unknown"],
+    "maturity": ["mature", "directional_but_immature", "insufficient_evidence", "unavailable"],
+    "claims_after_elliott_event_visible_at_event_time": false,
+    "current_phase2_phase3_phase4_evidence_may_be_retrojected": false
+  },
+  "relation_labels": {
+    "confirmation_candidate": "mature scanner claim and Elliott review orientation are compatible at the event boundary",
+    "redundancy_candidate": "compatible mature scanner claim already existed before Elliott event",
+    "elliott_rescue_candidate": "directional Elliott review exists while scanner claim is missing or immature",
+    "scanner_rescue_candidate": "Elliott review is neutral while mature scanner claim is directional",
+    "conflict": "mature scanner claim and directional Elliott review point to incompatible review orientations",
+    "insufficient_or_neutral": "neither side supports a directional cross-system comparison"
+  },
+  "lead_lag_sign_convention": {
+    "negative_relative_session": "scanner_transition_before_elliott",
+    "zero": "same_scanner_session",
+    "positive_relative_session": "scanner_transition_after_elliott_retrospective_only"
+  },
+  "research_questions": [
+    "redundancy",
+    "confirmation",
+    "elliott_rescue",
+    "scanner_rescue",
+    "conflict",
+    "lead_lag",
+    "stage_specific_incremental_value",
+    "swing_routing_value"
+  ],
+  "deferred_to_6g": [
+    "forward_return_effects",
+    "peer_alpha_effects",
+    "stage_specific_incremental_performance",
+    "moving_block_uncertainty",
+    "swing_routing_vs_hold_or_buy_and_hold"
+  ],
+  "forbidden": [
+    "reoptimize_existing_scanner_or_phase1_to_phase5_logic",
+    "select_6e_rules_on_spent_validation",
+    "treat_post_event_scanner_rows_as_event_time_information",
+    "call_overlap_or_lead_lag_incremental_predictive_value",
+    "emit_trade_decision",
+    "emit_order_instruction"
+  ]
+}
