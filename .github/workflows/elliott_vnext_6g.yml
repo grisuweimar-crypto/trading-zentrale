@@ -1,0 +1,50 @@
+name: Module 6G Elliott validation
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/elliott_vnext/**"
+      - "tests/test_elliott_vnext_foundations.py"
+      - "tests/test_elliott_vnext_pivots.py"
+      - "tests/test_elliott_vnext_scenarios.py"
+      - "tests/test_elliott_vnext_fibonacci.py"
+      - "tests/test_elliott_vnext_routing.py"
+      - "tests/test_elliott_vnext_cross_system.py"
+      - "tests/test_elliott_vnext_market_context.py"
+      - "tests/test_elliott_vnext_market_context_versioning.py"
+      - "tests/test_elliott_vnext_validation.py"
+      - "configs/elliott_vnext_contract_v2.json"
+      - "configs/elliott_vnext_output_schema_v2.json"
+      - "configs/elliott_vnext_validation_v1.json"
+      - "configs/elliott_vnext_validation_output_schema_v1.json"
+      - "docs/elliott_vnext_6g.md"
+      - ".github/workflows/elliott_vnext_6g.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Module 6 foundation through 6G tests
+        run: >-
+          pytest -q
+          tests/test_elliott_vnext_foundations.py
+          tests/test_elliott_vnext_pivots.py
+          tests/test_elliott_vnext_scenarios.py
+          tests/test_elliott_vnext_fibonacci.py
+          tests/test_elliott_vnext_routing.py
+          tests/test_elliott_vnext_cross_system.py
+          tests/test_elliott_vnext_market_context.py
+          tests/test_elliott_vnext_market_context_versioning.py
+          tests/test_elliott_vnext_validation.py
