@@ -97,6 +97,13 @@ from .validation import (
     validation_partition,
 )
 from .validation_replay import replay_symbol_states, replay_universe_states
+from .output import (
+    FORBIDDEN_OUTPUT_KEYS,
+    REQUIRED_OUTPUT_FIELDS,
+    ModuleOutputError,
+    build_module_output,
+    validate_module_output,
+)
 
 __all__ = [
     "DEFAULT_PIVOT_SPECS",
@@ -179,4 +186,9 @@ __all__ = [
     "validation_partition",
     "replay_symbol_states",
     "replay_universe_states",
+    "FORBIDDEN_OUTPUT_KEYS",
+    "REQUIRED_OUTPUT_FIELDS",
+    "ModuleOutputError",
+    "build_module_output",
+    "validate_module_output",
 ]
