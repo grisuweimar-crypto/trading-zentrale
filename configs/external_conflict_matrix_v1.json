@@ -17,9 +17,13 @@
     {"core": "CONFLICTED", "external": "POSITIVE", "relation": "EXTERNAL_ONLY"},
     {"core": "CONFLICTED", "external": "NEGATIVE", "relation": "EXTERNAL_ONLY"},
     {"core": "CONFLICTED", "external": "MIXED", "relation": "MIXED_EXTERNAL"},
+    {"core": "CONFLICTED", "external": "UNKNOWN", "relation": "UNKNOWN"},
+    {"core": "CONFLICTED", "external": "INSUFFICIENT_EXTERNAL", "relation": "INSUFFICIENT_EXTERNAL"},
     {"core": "INSUFFICIENT_EVIDENCE", "external": "POSITIVE", "relation": "EXTERNAL_ONLY"},
     {"core": "INSUFFICIENT_EVIDENCE", "external": "NEGATIVE", "relation": "EXTERNAL_ONLY"},
-    {"core": "INSUFFICIENT_EVIDENCE", "external": "UNKNOWN", "relation": "UNKNOWN"}
+    {"core": "INSUFFICIENT_EVIDENCE", "external": "MIXED", "relation": "MIXED_EXTERNAL"},
+    {"core": "INSUFFICIENT_EVIDENCE", "external": "UNKNOWN", "relation": "UNKNOWN"},
+    {"core": "INSUFFICIENT_EVIDENCE", "external": "INSUFFICIENT_EXTERNAL", "relation": "INSUFFICIENT_EXTERNAL"}
   ],
   "policy_boundary": {
     "relation_may_change_phase7_stance_directly": false,
