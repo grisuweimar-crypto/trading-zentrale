@@ -339,6 +339,37 @@ def _write_evaluations(path: str | Path, records: list[dict[str, object]]) -> No
     )
 
 
+def _validate_previous_report_anchor(
+    report_path: str | Path,
+    evaluations: list[dict[str, object]],
+) -> None:
+    path = Path(report_path)
+    if not path.exists() or path.stat().st_size == 0:
+        return
+    try:
+        previous = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("invalid previous Phase 5D report") from exc
+    if previous.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("unexpected previous Phase 5D report schema")
+
+    prior_count = int(previous.get("finalized_evaluations", 0))
+    prior_tip = str(previous.get("evaluation_chain_tip") or "")
+    if prior_count < 0 or len(evaluations) < prior_count:
+        raise ValueError("Phase 5D evaluation archive was truncated")
+    if prior_count == 0:
+        if prior_tip:
+            raise ValueError(
+                "Phase 5D zero-evaluation report has a non-empty chain tip"
+            )
+        return
+    observed_tip = str(
+        evaluations[prior_count - 1].get("evaluation_sha256") or ""
+    )
+    if observed_tip != prior_tip:
+        raise ValueError("Phase 5D historical evaluation prefix changed")
+
+
 def _build_finalized_record(
     version: dict[str, object],
     successor: dict[str, object],
@@ -482,6 +513,7 @@ def run_walkforward_evaluation(
     validate_v2_archives(claims, outcomes)
     versions = _read_versions(versions_path)
     evaluations = _read_evaluations(evaluations_path)
+    _validate_previous_report_anchor(report_path, evaluations)
 
     archived_by_pair = {
         (
@@ -653,6 +685,7 @@ def run_walkforward_evaluation(
             "production_confidence_changed": False,
             "portfolio_or_depot_watch_changed": False,
             "evaluation_archive_hash_chained": True,
+            "previous_report_anchors_append_only_prefix": True,
         },
     }
     output = Path(report_path)
