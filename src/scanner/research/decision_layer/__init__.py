@@ -37,10 +37,13 @@ from .conflict_research import (
     DecisionConflictResearchError,
     analyze_conflicts,
     attach_timing_topology,
-    packet_relation_graph,
     run_conflict_research,
     timing_topology,
     validate_conflict_report,
+)
+from .relation_graph import (
+    RELATION_GRAPH_SCHEMA_VERSION,
+    packet_relation_graph,
 )
 
 __all__ = [
@@ -67,8 +70,9 @@ __all__ = [
     "DecisionConflictResearchError",
     "analyze_conflicts",
     "attach_timing_topology",
-    "packet_relation_graph",
     "run_conflict_research",
     "timing_topology",
     "validate_conflict_report",
+    "RELATION_GRAPH_SCHEMA_VERSION",
+    "packet_relation_graph",
 ]
