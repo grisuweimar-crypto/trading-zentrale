@@ -1,0 +1,109 @@
+{
+  "schema_version": "decision_validation_promotion_v1",
+  "phase": "7I",
+  "name": "Decision Layer validation and promotion review protocol",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "frozen_on": "2026-09-25",
+  "legacy_replay_spent_through": "2026-09-25",
+  "prospective_unspent_from": "2026-09-26",
+  "purpose": "Separate technical readiness, prospective empirical evidence and explicit promotion review without allowing replay data or a passing CI suite to promote the Decision Layer automatically.",
+  "required_contracts": {
+    "7A": {"path": "configs/decision_layer_input_contract_v1.json", "schema_version": "decision_layer_input_contract_v1"},
+    "7B": {"path": "configs/decision_research_dataset_v1.json", "schema_version": "decision_research_dataset_v1"},
+    "7C": {"path": "configs/decision_conflict_research_v1.json", "schema_version": "decision_conflict_research_v1"},
+    "7D": {"path": "configs/decision_universal_stance_v1.json", "schema_version": "decision_universal_stance_v1"},
+    "7E": {"path": "configs/decision_state_transition_v1.json", "schema_version": "decision_state_transition_v1"},
+    "7F": {"path": "configs/decision_portfolio_action_v1.json", "schema_version": "decision_portfolio_action_v1"},
+    "7G": {"path": "configs/decision_reliability_explainability_v1.json", "schema_version": "decision_reliability_explainability_v1"},
+    "7H": {"path": "configs/decision_depot_watch_v1.json", "schema_version": "decision_depot_watch_v1"}
+  },
+  "authoritative_research_inputs": {
+    "history": "artifacts/research/history_analysis.csv",
+    "prices": "artifacts/research/price_backfill.csv",
+    "timing_catalog": "artifacts/research/timing_patterns_1b_frozen.json",
+    "publication_metadata": "artifacts/research/history_metadata.json",
+    "typed_evidence_archive": "artifacts/research/decision_evidence_7a.jsonl"
+  },
+  "readiness_states": [
+    "pre_prospective_start",
+    "shadow_capture_not_started",
+    "collecting_prospective_evidence",
+    "collecting_prospective_dataset",
+    "awaiting_mature_outcomes",
+    "awaiting_downstream_shadow_trace",
+    "metrics_ready_for_promotion_review"
+  ],
+  "technical_readiness": {
+    "passing_contract_and_regression_tests_is_required": true,
+    "passing_tests_is_empirical_validation": false,
+    "all_7a_through_7h_contracts_must_remain_research_only_at_freeze": true,
+    "all_7a_through_7h_productive_integration_flags_must_remain_false_at_freeze": true,
+    "7f_and_7h_execution_must_remain_false": true,
+    "technical_readiness_may_enable_shadow_collection_only": true
+  },
+  "prospective_validation": {
+    "spent_replay_may_satisfy_empirical_gate": false,
+    "prospective_partition_required": "prospective_unspent",
+    "typed_7a_packets_required": true,
+    "mature_forward_outcomes_required": true,
+    "downstream_7d_through_7h_shadow_trace_required": true,
+    "date_only_join_allowed": false,
+    "snapshot_identity_required_where_available": true,
+    "future_information_allowed": false,
+    "zero_prospective_coverage_is_failure": false,
+    "zero_prospective_coverage_blocks_promotion_review": true
+  },
+  "inherited_statistical_rules": {
+    "source_contract": "decision_conflict_research_v1",
+    "minimum_group_n": 30,
+    "minimum_temporal_support_regions": 2,
+    "uncertainty": "circular_moving_observation_date_blocks",
+    "block_length_rule": "2 x evaluated horizon sessions",
+    "horizons_sessions": [5, 20, 40, 60],
+    "new_performance_thresholds_added_by_7i": false,
+    "winner_selection_from_spent_data_allowed": false
+  },
+  "layer_review_requirements": {
+    "7C": "Re-run only the frozen pre-registered comparisons on prospective-unspent mature outcomes; discovery support never becomes confirmation by relabelling.",
+    "7D": "Evaluate preserved positive/negative/conflicted/insufficient stance behavior on prospective traces and mature outcomes without redefining the stance mapping after outcomes are known.",
+    "7E": "Evaluate the frozen depth-2 candidate and comparison depths 1/3/5 prospectively; historical churn reduction alone cannot validate outcome quality or choose a winner.",
+    "7F": "Evaluate review actions separately from Universal Stance using prospective private-runtime position-state traces; no cost or P/L proxy may be invented.",
+    "7G": "Validate explanation fidelity structurally and assess reliability-state outcome stratification prospectively without converting reliability into a numeric success probability.",
+    "7H": "Validate same-snapshot integration and missing-data behavior prospectively; real portfolio inputs and traces remain private and must not be committed to the public repository."
+  },
+  "shadow_trace_summary": {
+    "schema_version": "decision_shadow_trace_summary_v1",
+    "optional_runtime_input": true,
+    "required_for_7d_through_7h_empirical_review": true,
+    "must_not_contain_raw_position_values": true,
+    "public_repository_persistence_allowed": false,
+    "required_captured_layers": ["7D", "7E", "7F", "7G", "7H"]
+  },
+  "promotion_policy": {
+    "shadow_collection_requires_explicit_empirical_edge": false,
+    "shadow_collection_requires_technical_readiness": true,
+    "promotion_review_requires_prospective_mature_evidence": true,
+    "promotion_review_is_automatic_promotion": false,
+    "automatic_promotion_allowed": false,
+    "automatic_contract_mutation_allowed": false,
+    "productive_integration_requires_separate_explicit_change_after_review": true,
+    "broker_execution_can_be_enabled_by_7i": false,
+    "position_sizing_can_be_enabled_by_7i": false,
+    "target_weight_can_be_enabled_by_7i": false
+  },
+  "hard_guards": {
+    "no_replay_as_independent_confirmation": true,
+    "no_holdout_reuse_for_rule_selection": true,
+    "no_overlapping_windows_as_iid": true,
+    "no_missing_as_neutral": true,
+    "no_weighted_super_score": true,
+    "no_numeric_reliability_probability": true,
+    "no_stance_recompute_in_7i": true,
+    "no_transition_recompute_in_7i": true,
+    "no_portfolio_action_recompute_in_7i": true,
+    "no_order_generation": true,
+    "no_public_real_position_trace": true
+  }
+}
