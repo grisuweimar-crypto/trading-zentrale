@@ -1,0 +1,228 @@
+{
+  "schema_version": "decision_layer_input_contract_v1",
+  "phase": "7A",
+  "name": "Interpretation / Decision Layer input and coverage contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "purpose": "Admit typed, point-in-time evidence into the future Decision Layer without performing evidence fusion, stance selection, portfolio actions or order generation.",
+  "decision_authority": "later_phase_7_fusion_and_action_layers",
+  "non_goals": [
+    "no_universal_stance",
+    "no_portfolio_action",
+    "no_hysteresis",
+    "no_position_sizing",
+    "no_order_instruction",
+    "no_super_score",
+    "no_weight_tuning"
+  ],
+  "packet": {
+    "required_fields": [
+      "schema_version",
+      "symbol",
+      "as_of",
+      "source_snapshot_id",
+      "evidence"
+    ],
+    "admission_states": [
+      "admissible",
+      "admissible_with_gaps",
+      "insufficient_directional_evidence",
+      "rejected"
+    ],
+    "coverage_states": [
+      "available",
+      "limited",
+      "insufficient",
+      "unavailable",
+      "invalid"
+    ],
+    "maturity_states": [
+      "robust",
+      "directional_but_immature",
+      "not_yet_mature",
+      "insufficient_evidence",
+      "unavailable",
+      "not_applicable"
+    ],
+    "pit_states": [
+      "verified",
+      "partial",
+      "unverified",
+      "invalid"
+    ],
+    "integration_modes": [
+      "production_existing",
+      "research_only",
+      "shadow_only",
+      "eligible_after_promotion_review"
+    ]
+  },
+  "common_evidence_fields": [
+    "family",
+    "claim_id",
+    "as_of",
+    "available_from",
+    "source_version",
+    "coverage_state",
+    "maturity_state",
+    "pit_state",
+    "integration_mode",
+    "payload"
+  ],
+  "evidence_families": {
+    "selection": {
+      "role": "directional_backbone_candidate_not_trade_action",
+      "directional_authority": true,
+      "allowed_current_fields": [
+        "score",
+        "score_percentile",
+        "quality_band",
+        "r_code",
+        "score_status",
+        "trend_ok",
+        "liquidity_ok"
+      ],
+      "guards": [
+        "scanner_score_is_not_buy_sell_recommendation",
+        "r_code_is_not_trade_signal",
+        "historical_r_code_must_not_be_invented",
+        "b4_b5_backbone_must_not_be_relabelled_as_exact_r4_r5"
+      ]
+    },
+    "timing": {
+      "role": "directional_claim_from_frozen_point_in_time_pattern",
+      "directional_authority": true,
+      "required_payload_fields": [
+        "pattern_id",
+        "horizon_sessions",
+        "pattern_frozen",
+        "match_from_pit_features"
+      ],
+      "guards": [
+        "pattern_definition_must_be_frozen_before_validation",
+        "current_match_must_use_point_in_time_features",
+        "discovery_statistics_alone_do_not_establish_maturity"
+      ]
+    },
+    "probability": {
+      "role": "calibration_attachment_to_existing_claim_not_independent_vote",
+      "directional_authority": false,
+      "required_fields": [
+        "claim_ref"
+      ],
+      "required_payload_fields": [
+        "horizon_sessions"
+      ],
+      "forbidden_payload_fields": [
+        "direction",
+        "stance",
+        "vote"
+      ],
+      "guards": [
+        "must_reference_an_existing_selection_or_timing_claim",
+        "not_yet_mature_is_not_failure",
+        "iid_diagnostics_do_not_establish_strong_validation",
+        "robust_evidence_requires_time_separated_support"
+      ]
+    },
+    "risk": {
+      "role": "downside_protection_and_path_risk_not_directional_vote",
+      "directional_authority": false,
+      "currently_validated_short_horizon_factors": [
+        "volatility",
+        "drawdown"
+      ],
+      "forbidden_payload_fields": [
+        "direction",
+        "stance",
+        "vote"
+      ],
+      "guards": [
+        "risk_does_not_invert_thesis_direction",
+        "protection_effect_is_separate_from_alpha_effect",
+        "missing_historical_risk_components_are_not_reconstructed"
+      ]
+    },
+    "confidence": {
+      "role": "claim_reliability_not_attractiveness_or_direction",
+      "directional_authority": false,
+      "required_fields": [
+        "claim_ref"
+      ],
+      "forbidden_payload_fields": [
+        "direction",
+        "stance",
+        "vote",
+        "attractiveness"
+      ],
+      "guards": [
+        "confidence_attaches_to_claim_and_horizon",
+        "legacy_confidence_formula_epochs_must_not_be_pooled_as_one_invariant_metric",
+        "missing_evidence_is_unknown_not_neutral",
+        "shadow_or_research_confidence_is_not_silently_promoted"
+      ]
+    },
+    "elliott": {
+      "role": "structural_scenario_and_review_context_sensor",
+      "directional_authority": false,
+      "required_payload_guards": {
+        "decision_layer_required": true,
+        "productive_integration_enabled": false,
+        "direct_ordering_allowed": false
+      },
+      "forbidden_keys_recursive": [
+        "trade_decision",
+        "order_instruction"
+      ],
+      "guards": [
+        "routing_context_is_review_only_not_action",
+        "single_true_wave_count_is_not_claimed",
+        "uncalibrated_structural_fit_and_confirmation_strength_remain_missing",
+        "legacy_development_evidence_cannot_support_promotion",
+        "missing_market_context_stays_missing"
+      ]
+    }
+  },
+  "cross_family_rules": {
+    "probability_may_not_be_counted_as_an_independent_directional_model": true,
+    "risk_may_not_be_counted_as_an_independent_directional_model": true,
+    "confidence_may_not_be_counted_as_an_independent_directional_model": true,
+    "elliott_may_not_be_a_sole_trade_decision_maker": true,
+    "portfolio_state_forbidden_in_7a": true,
+    "missing_family_does_not_become_neutral_evidence": true,
+    "research_only_input_may_enter_research_dataset_but_not_productive_action_path": true
+  },
+  "directional_families": [
+    "selection",
+    "timing"
+  ],
+  "forbidden_keys_recursive": [
+    "universal_stance",
+    "portfolio_action",
+    "trade_decision",
+    "order_instruction",
+    "buy_signal",
+    "sell_signal",
+    "position_size",
+    "target_weight"
+  ],
+  "admission_policy": {
+    "rejected_if": [
+      "schema_or_family_contract_violation",
+      "future_information_relative_to_packet_as_of",
+      "forbidden_action_or_order_field_present",
+      "probability_or_confidence_claim_ref_missing_or_unresolved",
+      "elliott_integration_guards_violated"
+    ],
+    "insufficient_directional_evidence_if": "no admissible selection or timing evidence is present",
+    "admissible_with_gaps_if": "directional evidence exists but one or more evidence families are unavailable, insufficient, invalid or not yet mature",
+    "admissible_if": "directional evidence exists, no hard violations exist, and all supplied evidence is contract-valid; maturity still remains claim-specific"
+  },
+  "source_boundaries": {
+    "selection_timing": "Phase 1A/1B semantics and frozen timing definitions",
+    "probability": "Phase 2 calibrated claim/horizon evidence",
+    "risk": "Phase 3 protection evidence",
+    "confidence": "Phase 4/5 claim-reliability research with explicit production/shadow status",
+    "elliott": "Module 6H output plus frozen integration contract"
+  }
+}
