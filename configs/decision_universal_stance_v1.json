@@ -1,0 +1,77 @@
+{
+  "schema_version": "decision_universal_stance_v1",
+  "phase": "7D",
+  "name": "Portfolio-independent Universal Stance contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "frozen_on": "2026-09-25",
+  "prospective_confirmation_start": "2026-09-26",
+  "input_packet_schema": "decision_layer_input_contract_v1",
+  "relation_graph_schema": "decision_relation_graph_v1",
+  "output_states": [
+    "positive",
+    "negative",
+    "conflicted",
+    "insufficient_evidence"
+  ],
+  "neutral_state_policy": "not_emitted_in_v1_without_explicit_neutral_direction_semantics",
+  "directional_authority": [
+    "selection",
+    "timing"
+  ],
+  "annotation_families": [
+    "probability",
+    "confidence"
+  ],
+  "context_families": [
+    "risk",
+    "elliott"
+  ],
+  "mapping": {
+    "conflict_present": "conflicted",
+    "insufficient_directional_relation": "insufficient_evidence",
+    "single_direction_or_unopposed": "direction_of_eligible_claims",
+    "correlated_same_family_support": "direction_of_eligible_claims",
+    "cross_family_confirmation_present": "direction_of_eligible_claims"
+  },
+  "support_structures": [
+    "cross_family_confirmation",
+    "same_family_correlated_support",
+    "single_direction_or_unopposed",
+    "unresolved_conflict",
+    "insufficient_directional_relation"
+  ],
+  "guards": {
+    "no_weighted_super_score": true,
+    "no_numeric_vote_counting": true,
+    "probability_is_not_independent_vote": true,
+    "confidence_is_not_independent_vote": true,
+    "risk_is_not_directional_vote": true,
+    "elliott_is_not_directional_vote": true,
+    "same_family_timing_is_correlated_not_independent": true,
+    "missing_or_unknown_is_not_neutral": true,
+    "conflict_is_not_neutral": true,
+    "conflict_is_not_resolved_in_7d": true,
+    "historical_7c_discovery_is_not_validation": true,
+    "portfolio_state_forbidden": true,
+    "portfolio_action_forbidden": true,
+    "hysteresis_forbidden": true,
+    "order_generation_forbidden": true
+  },
+  "research_partition": {
+    "legacy_replay_spent_through": "2026-09-25",
+    "prospective_unspent_from": "2026-09-26",
+    "promotion_requires_future_mature_outcomes": true
+  },
+  "forbidden_keys_recursive": [
+    "portfolio_action",
+    "trade_decision",
+    "order_instruction",
+    "buy_signal",
+    "sell_signal",
+    "position_size",
+    "target_weight",
+    "previous_stance",
+    "hysteresis_state"
+  ]
+}
