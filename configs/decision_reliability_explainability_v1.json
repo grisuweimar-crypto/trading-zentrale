@@ -1,0 +1,77 @@
+{
+  "schema_version": "decision_reliability_explainability_v1",
+  "phase": "7G",
+  "name": "Decision Layer reliability and explainability contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "frozen_on": "2026-09-25",
+  "inputs": [
+    "decision_layer_input_contract_v1",
+    "decision_universal_stance_v1",
+    "decision_state_transition_v1",
+    "decision_portfolio_action_v1"
+  ],
+  "source_consistency": {
+    "same_symbol_required": true,
+    "same_as_of_required": true,
+    "same_source_snapshot_id_required": true,
+    "7d_coverage_must_match_7a_packet": true,
+    "7e_raw_stance_must_match_7d": true,
+    "7f_stance_and_transition_context_must_match_upstream": true,
+    "fail_closed_on_mismatch": true
+  },
+  "reliability_states": [
+    "blocked_conflict",
+    "blocked_insufficient",
+    "pending_confirmation",
+    "provisional_cross_family_support",
+    "provisional_same_family_support",
+    "provisional_unopposed_support"
+  ],
+  "reliability_policy": {
+    "numeric_reliability_score_allowed": false,
+    "weighted_super_score_allowed": false,
+    "assessment_is_success_probability": false,
+    "cross_family_support_is_not_empirical_validation": true,
+    "same_family_support_is_correlated_not_independent": true,
+    "single_unopposed_direction_remains_provisional": true,
+    "prospective_mature_outcomes_required": true
+  },
+  "explanation_policy": {
+    "supporting_directional_evidence_listed": true,
+    "counter_directional_evidence_listed": true,
+    "positive_negative_conflict_sides_preserved": true,
+    "probability_and_confidence_are_annotations_not_votes": true,
+    "risk_and_elliott_are_context_not_votes": true,
+    "missing_and_limited_evidence_listed": true,
+    "decision_path_lists_7d_7e_7f": true,
+    "source_reported_scalar_facts_may_be_exposed_without_reinterpretation": true
+  },
+  "trigger_policy": {
+    "decision_change_triggers_are_descriptive": true,
+    "decision_change_triggers_require_upstream_recompute": true,
+    "information_completion_triggers_cannot_change_direction_directly": true,
+    "missing_cost_model_is_information_gap_not_directional_vote": true,
+    "missing_pnl_is_information_gap_not_directional_vote": true,
+    "missing_add_capacity_must_not_be_invented": true
+  },
+  "guards": {
+    "no_stance_recompute": true,
+    "no_conflict_resolution": true,
+    "no_transition_recompute": true,
+    "no_portfolio_action_change": true,
+    "no_new_portfolio_action": true,
+    "no_position_sizing": true,
+    "no_target_weight": true,
+    "no_order_generation": true,
+    "no_buy_sell_signal": true,
+    "no_missing_as_neutral": true,
+    "explanation_is_descriptive_not_predictive": true
+  },
+  "validation": {
+    "reliability_model_empirically_validated": false,
+    "future_mature_outcomes_required": true,
+    "promotion_eligible": false,
+    "execution_allowed": false
+  }
+}
