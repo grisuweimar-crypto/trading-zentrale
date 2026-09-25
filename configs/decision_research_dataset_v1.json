@@ -17,6 +17,11 @@
     "prices": "artifacts/research/price_backfill.csv",
     "timing_catalog": "artifacts/research/timing_patterns_1b_frozen.json"
   },
+  "prospective_inputs": {
+    "typed_evidence_archive": "artifacts/research/decision_evidence_7a.jsonl",
+    "archive_schema": "decision_evidence_archive_7a_v1",
+    "missing_archive_before_first_prospective_packet": "explicit_zero_coverage_not_error"
+  },
   "feature_time_rule": "Every feature column must be observable or reconstructible from information available no later than obs_date. Current validation knowledge must never be injected retroactively.",
   "label_time_rule": "Forward outcomes are labels, never features. label_available_from_H equals the horizon end market date and may be used only after that date.",
   "research_partitions": {
@@ -38,23 +43,28 @@
     },
     "probability": {
       "historical_mode": "not_retrojected",
-      "notes": "Current Phase-2 calibrated probabilities are not copied onto older rows. Prospective typed 7A packets must archive them as-of when available."
+      "prospective_mode": "typed_7a_packet_archive",
+      "notes": "Current Phase-2 calibrated probabilities are not copied onto older rows. Prospective typed 7A packets preserve them only from the time they genuinely exist."
     },
     "risk": {
       "historical_mode": "raw_point_in_time_state_only",
+      "prospective_mode": "typed_7a_packet_archive_plus_raw_state",
       "fields": ["aggregate_risk", "volatility", "drawdown", "debt_ratio", "liquidity_risk", "downside_dev", "beta"],
       "notes": "Current Phase-3 validation strength is not retrojected. Missing components stay missing."
     },
     "confidence": {
       "historical_mode": "legacy_diagnostic_only",
+      "prospective_mode": "typed_7a_packet_archive",
       "fields": ["legacy_confidence", "legacy_confidence_label"],
       "notes": "Historical legacy Confidence is preserved only as a version-sensitive diagnostic. It is not renamed Confidence-vNext and does not become a reliability feature by implication."
     },
     "elliott": {
       "historical_mode": "not_retrojected",
+      "prospective_mode": "typed_7a_packet_archive",
       "notes": "Legacy Elliott-like columns are not treated as Module-6H evidence. Genuine 6H evidence enters only through prospective typed 7A packets."
     }
   },
+  "prospective_alignment_rule": "Typed evidence packets remain a sidecar archive until their source_snapshot_id can be matched to a sufficiently strong scanner snapshot identity. Date-only joining is forbidden because intraday ordering could otherwise leak later evidence into an earlier observation.",
   "forward_labels": {
     "return": "adjusted-close total-return proxy over exact trading-session horizon",
     "peer_excess": "return minus leave-one-symbol-out same-currency daily peer median, with validated global fallback",
