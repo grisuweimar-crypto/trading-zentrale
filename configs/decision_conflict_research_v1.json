@@ -1,0 +1,136 @@
+{
+  "schema_version": "decision_conflict_research_v1",
+  "phase": "7C",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "frozen_on": "2026-09-25",
+  "discovery_partition": "legacy_replay_spent",
+  "prospective_confirmation_partition": "prospective_unspent",
+  "prospective_confirmation_start": "2026-09-26",
+  "asset_scope": "stocks_only_v1",
+  "horizons_sessions": [
+    5,
+    20,
+    40,
+    60
+  ],
+  "min_group_n": 30,
+  "bootstrap_reps": 1000,
+  "random_seed": 20260925,
+  "directional_families": [
+    "selection",
+    "timing"
+  ],
+  "annotation_families": [
+    "probability",
+    "confidence"
+  ],
+  "context_families": [
+    "risk",
+    "elliott"
+  ],
+  "timing_topologies": [
+    "none",
+    "positive_only",
+    "negative_only",
+    "mixed_conflict"
+  ],
+  "pre_registered_comparisons": [
+    {
+      "id": "timing_positive_only_vs_none_5t",
+      "horizon_sessions": 5,
+      "left": "positive_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "positive"
+    },
+    {
+      "id": "timing_positive_only_vs_none_20t",
+      "horizon_sessions": 20,
+      "left": "positive_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "positive"
+    },
+    {
+      "id": "timing_positive_only_vs_none_40t",
+      "horizon_sessions": 40,
+      "left": "positive_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "positive"
+    },
+    {
+      "id": "timing_positive_only_vs_none_60t",
+      "horizon_sessions": 60,
+      "left": "positive_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "positive"
+    },
+    {
+      "id": "timing_negative_only_vs_none_5t",
+      "horizon_sessions": 5,
+      "left": "negative_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "negative"
+    },
+    {
+      "id": "timing_negative_only_vs_none_20t",
+      "horizon_sessions": 20,
+      "left": "negative_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "negative"
+    },
+    {
+      "id": "timing_negative_only_vs_none_40t",
+      "horizon_sessions": 40,
+      "left": "negative_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "negative"
+    },
+    {
+      "id": "timing_negative_only_vs_none_60t",
+      "horizon_sessions": 60,
+      "left": "negative_only",
+      "right": "none",
+      "target": "peer_excess",
+      "expected_direction": "negative"
+    }
+  ],
+  "non_directional_diagnostics": [
+    "mixed_conflict topology is characterized but receives no expected return direction",
+    "selection quality bands remain context strata and are not converted into buy/sell votes",
+    "risk remains a non-directional modifier and is not inverted into attractiveness",
+    "probability and confidence annotate referenced claims and never count as independent votes",
+    "elliott remains research-only context and never becomes a direct decision vote",
+    "multiple timing patterns from one family are correlated evidence, not independent confirmations"
+  ],
+  "statistical_rules": {
+    "uncertainty": "circular_moving_observation_date_blocks",
+    "block_length_rule": "2 x evaluated horizon sessions",
+    "minimum_temporal_support_regions": 2,
+    "overlapping_rows_are_iid": false,
+    "discovery_support_is_independent_confirmation": false
+  },
+  "promotion_gate": {
+    "status": "prospective_confirmation_required",
+    "discovery_data_may_promote_to_production": false,
+    "prospective_confirmation_required": true,
+    "earliest_confirmation_partition": "prospective_unspent"
+  },
+  "forbidden_outputs": [
+    "universal_stance",
+    "portfolio_action",
+    "trade_decision",
+    "order_instruction",
+    "buy_signal",
+    "sell_signal",
+    "position_size",
+    "target_weight",
+    "super_score"
+  ]
+}
