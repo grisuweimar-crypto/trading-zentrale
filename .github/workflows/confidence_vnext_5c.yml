@@ -223,3 +223,18 @@ jobs:
             git commit -m '🧠 Phase 5C progressive learning update [skip ci]'
             git push origin HEAD:refs/heads/phase4e-shadow-data
           fi
+
+  dispatch_phase5d:
+    needs: publish
+    if: needs.publish.result == 'success' && github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Reset workflow_run depth and dispatch Phase 5D
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run confidence_vnext_5d.yml --ref main
+          echo 'Phase 5D dispatched as a new workflow root; its existing workflow_run trigger can continue to Phase 5E.'
