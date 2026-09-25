@@ -1,11 +1,11 @@
 """Research-only Interpretation / Decision Layer building blocks.
 
-Phase 7A defines the typed evidence-admission boundary. Phase 7B adds the
-point-in-time Decision Research Dataset plus a separate prospective typed-
-evidence archive. Phase 7C studies confirmation/conflict topology. Phase 7D
-maps that topology into a portfolio-independent, research-only Universal Stance.
-Phase 7E adds research-only hysteresis/state-transition mechanics while preserving
-the raw 7D stance and still forbidding portfolio action or order generation.
+Phase 7A defines typed evidence admission. 7B adds the PIT research dataset and
+prospective evidence archive. 7C studies confirmation/conflict topology. 7D maps
+that topology into a portfolio-independent Universal Stance. 7E adds research-
+only hysteresis while preserving raw stance. 7F is the first position-aware
+layer and maps preserved stance/transition context into review-only Portfolio
+Action and Swing Management without broker order generation.
 """
 
 from .input_contract import (
@@ -63,6 +63,17 @@ from .state_transition import (
     compare_confirmation_depths,
     validate_state_transition,
 )
+from .portfolio_action import (
+    SCHEMA_VERSION as PORTFOLIO_ACTION_SCHEMA_VERSION,
+    POSITION_SCHEMA_VERSION,
+    ACTION_STATES,
+    POSITION_STATES,
+    SWING_CONTEXTS,
+    PortfolioActionError,
+    compute_portfolio_action,
+    validate_portfolio_action,
+    validate_position_snapshot,
+)
 
 __all__ = [
     "ADMISSION_STATES",
@@ -106,4 +117,13 @@ __all__ = [
     "build_state_transition_history",
     "compare_confirmation_depths",
     "validate_state_transition",
+    "PORTFOLIO_ACTION_SCHEMA_VERSION",
+    "POSITION_SCHEMA_VERSION",
+    "ACTION_STATES",
+    "POSITION_STATES",
+    "SWING_CONTEXTS",
+    "PortfolioActionError",
+    "compute_portfolio_action",
+    "validate_portfolio_action",
+    "validate_position_snapshot",
 ]

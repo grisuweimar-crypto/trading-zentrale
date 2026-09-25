@@ -1,0 +1,81 @@
+{
+  "schema_version": "decision_portfolio_action_v1",
+  "phase": "7F",
+  "name": "Portfolio Action and Swing Management contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "input_transition_schema": "decision_state_transition_v1",
+  "position_snapshot_schema": "decision_position_snapshot_v1",
+  "supported_position_states": ["flat", "long"],
+  "action_states": [
+    "NO_ACTION",
+    "WAIT_CONFIRMATION",
+    "ENTER_REVIEW",
+    "HOLD",
+    "ADD_REVIEW",
+    "REDUCE_REVIEW",
+    "EXIT_REVIEW"
+  ],
+  "swing_review_contexts": [
+    "entry_or_add_review",
+    "hold_review",
+    "partial_reduce_review",
+    "reentry_or_add_review",
+    "profit_protection_review",
+    "larger_reduce_or_exit_review"
+  ],
+  "mapping_policy": {
+    "pending_transition": "WAIT_CONFIRMATION",
+    "flat_positive_confirmed": "ENTER_REVIEW",
+    "flat_negative_confirmed": "NO_ACTION",
+    "flat_blocked": "NO_ACTION",
+    "long_positive_confirmed": "HOLD",
+    "long_negative_confirmed": "EXIT_REVIEW",
+    "long_blocked": "HOLD",
+    "positive_long_add_context_with_explicit_capacity": "ADD_REVIEW",
+    "positive_long_reduce_or_profit_protection_context": "REDUCE_REVIEW",
+    "simultaneous_add_and_reduce_context": "HOLD_with_context_conflict"
+  },
+  "position_policy": {
+    "position_state_never_changes_universal_stance": true,
+    "book_profit_or_loss_never_changes_universal_stance": true,
+    "missing_prices_remain_missing": true,
+    "score_must_never_be_used_as_price_proxy": true,
+    "add_capacity_must_be_explicit": true,
+    "short_positions_supported": false,
+    "position_sizing_generated": false,
+    "target_weight_generated": false
+  },
+  "swing_policy": {
+    "elliott_review_context_is_not_directional_vote": true,
+    "elliott_review_context_is_not_order_instruction": true,
+    "elliott_cannot_reverse_universal_stance": true,
+    "elliott_cannot_force_exit_against_positive_confirmed_stance": true,
+    "larger_reduce_or_exit_review_under_positive_stance_maps_at_most_to_reduce_review": true,
+    "conflicting_swing_contexts_are_preserved_not_resolved": true
+  },
+  "cost_policy": {
+    "cost_sensitive_actions": ["ENTER_REVIEW", "ADD_REVIEW", "REDUCE_REVIEW", "EXIT_REVIEW"],
+    "missing_cost_model_blocks_net_benefit_claim": true,
+    "cost_model_does_not_validate_action_edge": true,
+    "net_benefit_claim_generated": false
+  },
+  "guards": {
+    "raw_7d_stance_preserved": true,
+    "7e_transition_preserved": true,
+    "no_weighted_super_score": true,
+    "no_broker_order_generation": true,
+    "execution_allowed": false,
+    "no_automatic_position_sizing": true,
+    "no_automatic_target_weight": true,
+    "no_score_as_price": true,
+    "no_profit_loss_thesis_override": true,
+    "portfolio_action_rule_empirically_validated": false,
+    "promotion_requires_future_mature_outcomes": true
+  },
+  "research_partition": {
+    "legacy_replay_spent_through": "2026-09-25",
+    "prospective_unspent_from": "2026-09-26",
+    "promotion_requires_future_mature_outcomes": true
+  }
+}
