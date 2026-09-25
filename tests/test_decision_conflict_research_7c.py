@@ -5,9 +5,9 @@ import pandas as pd
 from scanner.research.decision_layer.conflict_research import (
     ConflictResearchConfig,
     analyze_conflicts,
-    packet_relation_graph,
     timing_topology,
 )
+from scanner.research.decision_layer.relation_graph import packet_relation_graph
 
 
 def _dataset() -> pd.DataFrame:
@@ -180,7 +180,7 @@ def test_probability_and_confidence_do_not_turn_one_timing_claim_into_confirmati
     }
     graph = packet_relation_graph(packet)
     assert graph["relation_state"] == "single_direction_or_unopposed"
-    assert graph["confirmations"] == []
+    assert graph["support_relations"] == []
     assert len(graph["annotations"]) == 2
 
 
@@ -207,3 +207,32 @@ def test_missing_direction_is_unknown_not_neutral() -> None:
     assert graph["relation_state"] == "insufficient_directional_relation"
     assert graph["unknown_direction_claim_ids"] == ["tim"]
     assert graph["missing_direction_is_neutral"] is False
+
+
+def test_ineligible_directional_claim_cannot_create_conflict() -> None:
+    unavailable_selection = _common("selection", "sel", {"direction": "positive"})
+    unavailable_selection["coverage_state"] = "unavailable"
+    packet = {
+        "schema_version": "decision_layer_input_contract_v1",
+        "symbol": "TEST",
+        "as_of": "2026-09-26T18:00:00Z",
+        "source_snapshot_id": "snap-4",
+        "evidence": [
+            unavailable_selection,
+            _common(
+                "timing",
+                "tim",
+                {
+                    "direction": "negative",
+                    "pattern_id": "p1",
+                    "horizon_sessions": 20,
+                    "pattern_frozen": True,
+                    "match_from_pit_features": True,
+                },
+            ),
+        ],
+    }
+    graph = packet_relation_graph(packet)
+    assert graph["relation_state"] == "single_direction_or_unopposed"
+    assert graph["conflicts"] == []
+    assert [row["claim_id"] for row in graph["ineligible_directional_claims"]] == ["sel"]
