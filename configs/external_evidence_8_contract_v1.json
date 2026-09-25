@@ -90,12 +90,25 @@
   },
   "baseline_policy": {
     "baseline": "frozen_phase7_core",
+    "phase7_validation_contract": "configs/decision_validation_promotion_v1.json",
+    "phase7_frozen_on": "2026-09-25",
+    "phase7_prospective_unspent_from": "2026-09-26",
     "single_family_first": true,
     "multi_family_joint_test_before_single_family_promotion_allowed": false,
     "incremental_value_required": true,
     "out_of_sample_required": true,
     "regime_checks_required": true,
     "domain_checks_required": true
+  },
+  "research_governance": {
+    "as_of_universe_ledger_required": true,
+    "historical_membership_and_exclusion_reasons_required": true,
+    "survivorship_by_current_membership_forbidden": true,
+    "hypothesis_family_registry_required": true,
+    "confirmatory_family_freeze_required_before_outcome_inspection": true,
+    "human_outcome_inspection_log_required": true,
+    "outcome_driven_design_change_marks_evidence_spent_for_design": true,
+    "preventive_qa_change_without_future_outcome_inspection_may_preserve_unspent_status": true
   },
   "relation_to_phase7": {
     "states": [
@@ -133,6 +146,8 @@
     "use_external_evidence_as_direct_buy_sell_vote",
     "optimize_on_holdout",
     "promote_from_discovery_only",
+    "use_current_universe_membership_as_historical_membership",
+    "reuse_outcome_inspected_evidence_as_unspent_design_confirmation",
     "ignore_license_restrictions"
   ]
 }
