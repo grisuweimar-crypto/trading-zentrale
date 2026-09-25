@@ -1,0 +1,76 @@
+{
+  "schema_version": "elliott_vnext_validation_v1",
+  "module": "6G_historical_validation",
+  "status": "research_only",
+  "rules_frozen_through": "2026-09-25",
+  "formal_unspent_evidence": {
+    "claim_available_after": "2026-09-25",
+    "legacy_data_role": "development_and_descriptive_backtest_only",
+    "legacy_data_can_support_promotion": false,
+    "prospective_evidence_required_for_promotion": true
+  },
+  "horizons_sessions": [5, 10, 20, 40, 60],
+  "price_policy": {
+    "outcome_return_requires_adjusted_close": true,
+    "raw_close_fallback_for_returns": false,
+    "path_excursions_require_adjusted_high_low": true,
+    "projection_hit_window_begins_next_session": true,
+    "same_session_pre_signal_high_low_must_not_count_as_future_hit": true
+  },
+  "walkforward_replay": {
+    "prefix_only": true,
+    "future_rows_must_not_change_prior_state": true,
+    "pivot_visible_only_from_confirmed_time": true,
+    "projection_visible_only_from_available_from": true,
+    "fibonacci_must_not_select_wave_count": true,
+    "default_replay_price_basis": "adjusted"
+  },
+  "structure_validation": {
+    "separate_from_performance": true,
+    "measure_stage_progression": true,
+    "measure_later_hard_invalidation": true,
+    "unresolved_is_not_failure": true
+  },
+  "projection_validation": {
+    "measure_zone_hit": true,
+    "measure_first_hit_session": true,
+    "measure_mfe_mae": true,
+    "zones_already_inside_or_reached_at_creation_are_not_clean_future_hit_claims": true,
+    "wave5_candidates_remain_research_candidates": true,
+    "module6g_must_not_freeze_or_promote_wave5_numeric_levels": true
+  },
+  "routing_validation": {
+    "review_context_not_trade_instruction": true,
+    "directional_review_correctness_may_be_measured": true,
+    "round_trip_pnl_requires_explicit_execution_policy": true,
+    "default_execution_policy": null,
+    "must_not_invent_position_fraction_or_reentry_size": true
+  },
+  "cross_system_validation": {
+    "consume_only_causal_6e_relations": true,
+    "future_model_claims_forbidden": true,
+    "compare_relation_groups_against_same_event_class_baseline": true,
+    "legacy_spent_holdout_descriptive_only": true
+  },
+  "market_context_validation": {
+    "consume_only_6f_quality_gated_context": true,
+    "scanner_peer_fallback_for_external_context": false,
+    "missing_verified_context_stays_missing": true,
+    "alpha_only_when_causal_usable_context_exists": true
+  },
+  "uncertainty": {
+    "method": "circular_moving_observation_date_blocks",
+    "effective_block_length_sessions": "2_x_evaluated_horizon",
+    "complete_date_clusters_stay_together": true,
+    "minimum_time_separated_support_regions": 2,
+    "bootstrap_repetitions": 1000,
+    "random_seed": 20260925,
+    "iid_intervals_must_not_establish_robust_evidence": true
+  },
+  "promotion_boundary": {
+    "automatic_promotion_allowed": false,
+    "technical_completion_is_not_empirical_validation": true,
+    "trade_decision_allowed": false,
+    "order_instruction_allowed": false
+  }
+}
