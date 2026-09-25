@@ -1,0 +1,32 @@
+name: Phase 7A Decision Layer input contract
+
+on:
+  pull_request:
+    paths:
+      - "configs/decision_layer_input_contract_v1.json"
+      - "src/scanner/research/decision_layer/**"
+      - "tests/test_decision_layer_input_contract.py"
+      - "scripts/run_decision_input_7a.py"
+      - "docs/decision_layer_7a.md"
+      - ".github/workflows/decision_layer_7a.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 7A contract tests
+        run: pytest -q tests/test_decision_layer_input_contract.py
+      - name: Smoke-test Phase 7A validator CLI
+        run: python scripts/run_decision_input_7a.py --help
