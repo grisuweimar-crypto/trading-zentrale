@@ -6,8 +6,11 @@ on:
       - "configs/decision_research_dataset_v1.json"
       - "src/scanner/research/decision_layer/**"
       - "tests/test_decision_research_dataset_7b.py"
+      - "tests/test_decision_evidence_archive_7b.py"
       - "scripts/run_decision_research_7b.py"
+      - "scripts/archive_decision_input_7a.py"
       - "docs/decision_layer_7b.md"
+      - "docs/decision_layer_7b_prospective_archive.md"
       - ".github/workflows/decision_layer_7b.yml"
   workflow_dispatch:
 
@@ -31,8 +34,11 @@ jobs:
           pytest -q
           tests/test_decision_layer_input_contract.py
           tests/test_decision_research_dataset_7b.py
-      - name: Smoke-test 7B CLI help
-        run: python scripts/run_decision_research_7b.py --help
+          tests/test_decision_evidence_archive_7b.py
+      - name: Smoke-test 7B CLIs
+        run: >-
+          python scripts/run_decision_research_7b.py --help
+          && python scripts/archive_decision_input_7a.py --help
       - name: Build 7B dataset from repository research inputs
         run: >-
           python scripts/run_decision_research_7b.py
@@ -40,4 +46,4 @@ jobs:
           --metadata /tmp/decision_research_7b_metadata.json
       - name: Validate real-input output exists
         run: >-
-          python -c "import json, pathlib; p=pathlib.Path('/tmp/decision_research_7b_metadata.json'); d=json.loads(p.read_text()); assert d['rows'] > 0; assert d['symbols'] > 0; assert d['guards']['universal_stance_computed'] is False"
+          python -c "import json, pathlib; p=pathlib.Path('/tmp/decision_research_7b_metadata.json'); d=json.loads(p.read_text()); assert d['rows'] > 0; assert d['symbols'] > 0; assert d['guards']['universal_stance_computed'] is False; assert d['prospective_evidence_archive']['historical_retrojection_permitted'] is False"
