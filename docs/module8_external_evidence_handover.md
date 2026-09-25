@@ -107,3 +107,6 @@ Ab dem neuen Startauftrag:
 - `configs/external_source_registry_schema_v1.json`
 - `configs/external_conflict_matrix_v1.json`
 - `tests/test_external_evidence_8_foundations.py`
+- `.github/workflows/external_evidence_8_foundations.yml`
+
+Der eigene Foundation-CI-Workflow führt ausschließlich die Phase-8-Guard-Tests aus und verändert keine produktiven Artefakte.
