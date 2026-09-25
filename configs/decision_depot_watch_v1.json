@@ -1,0 +1,118 @@
+{
+  "schema_version": "decision_depot_watch_v1",
+  "phase": "7H",
+  "name": "Decision Layer Depot-Watch integration contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Present already-computed same-snapshot Decision-Layer states for explicitly supplied portfolio positions without recomputing stance, transition or action.",
+  "authoritative_daily_snapshot": "artifacts/research/daily_research.json",
+  "inputs": {
+    "daily_research": "validated current research snapshot",
+    "positions": "explicit decision_position_snapshot_v1 records supplied at runtime",
+    "decision_bundles": {
+      "schema_version": "decision_chain_bundle_v1",
+      "required_members": [
+        "decision_layer_input_contract_v1",
+        "decision_universal_stance_v1",
+        "decision_state_transition_v1",
+        "decision_portfolio_action_v1",
+        "decision_reliability_explainability_v1"
+      ]
+    }
+  },
+  "availability_states": [
+    "decision_available",
+    "symbol_not_in_daily_research",
+    "decision_bundle_missing",
+    "decision_bundle_snapshot_mismatch",
+    "decision_bundle_invalid",
+    "position_context_mismatch"
+  ],
+  "watch_statuses": [
+    "complete",
+    "partial",
+    "unavailable"
+  ],
+  "presentation_groups": [
+    "review_now",
+    "waiting_confirmation",
+    "hold_or_no_action",
+    "unavailable"
+  ],
+  "review_actions": [
+    "ENTER_REVIEW",
+    "ADD_REVIEW",
+    "REDUCE_REVIEW",
+    "EXIT_REVIEW"
+  ],
+  "waiting_actions": [
+    "WAIT_CONFIRMATION"
+  ],
+  "passive_actions": [
+    "HOLD",
+    "NO_ACTION"
+  ],
+  "snapshot_policy": {
+    "daily_research_snapshot_id_is_authoritative": true,
+    "daily_research_as_of_is_authoritative": true,
+    "decision_bundle_snapshot_id_must_match_daily_research": true,
+    "decision_bundle_as_of_must_match_daily_research": true,
+    "position_snapshot_may_precede_decision_as_of": true,
+    "future_position_snapshot_forbidden": true,
+    "same_date_without_snapshot_identity_is_insufficient": true,
+    "old_freshness_gates_are_not_used": true,
+    "history_recent_is_not_a_freshness_gate": true
+  },
+  "position_policy": {
+    "explicit_runtime_position_input_required": true,
+    "model_portfolio_is_not_actual_position_source": true,
+    "legacy_holdings_are_not_actual_position_source": true,
+    "fuzzy_symbol_matching_allowed": false,
+    "missing_position_fields_are_not_invented": true,
+    "original_currency_preserved": true
+  },
+  "decision_policy": {
+    "7h_may_recompute_stance": false,
+    "7h_may_recompute_transition": false,
+    "7h_may_change_portfolio_action": false,
+    "7h_may_resolve_conflict": false,
+    "7h_may_create_numeric_reliability_score": false,
+    "7h_may_rank_holdings_by_reliability_or_action": false,
+    "daily_scanner_fields_may_replace_missing_decision_evidence": false,
+    "missing_decision_bundle_means_no_actionable_decision": true,
+    "unavailable_row_may_not_expose_action": true
+  },
+  "privacy_and_persistence": {
+    "real_positions_should_not_be_committed_to_public_repository": true,
+    "generated_real_depot_watch_should_not_be_committed_by_default": true,
+    "public_autopilot_commit_enabled": false,
+    "cli_requires_explicit_position_input": true
+  },
+  "output_policy": {
+    "copy_daily_scanner_context_as_context_only": true,
+    "copy_7d_stance": true,
+    "copy_7e_transition": true,
+    "copy_7f_action": true,
+    "copy_7g_structural_reliability": true,
+    "copy_7g_explanation_id": true,
+    "copy_7g_change_triggers": true,
+    "grouping_is_not_ranking": true,
+    "watch_integrity_hash_required": true
+  },
+  "guards": {
+    "no_broker_order": true,
+    "no_position_sizing": true,
+    "no_target_weight": true,
+    "no_buy_sell_signal": true,
+    "no_score_as_price_proxy": true,
+    "no_missing_as_neutral": true,
+    "no_unverified_cross_snapshot_join": true
+  },
+  "validation": {
+    "integration_empirically_validated": false,
+    "future_mature_outcomes_required": true,
+    "phase_7i_promotion_review_required": true,
+    "promotion_eligible": false
+  }
+}
