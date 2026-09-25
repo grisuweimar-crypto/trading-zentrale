@@ -1,6 +1,6 @@
 """Phase 7A typed evidence admission for the future Decision Layer.
 
-This module deliberately stops before evidence fusion.  Its job is to preserve
+This module deliberately stops before evidence fusion. Its job is to preserve
 semantic boundaries, point-in-time validity and explicit coverage/maturity so a
 later phase cannot accidentally turn missing or research-only evidence into an
 action.
@@ -202,11 +202,15 @@ def _validate_elliott(evidence: Mapping[str, object]) -> None:
     assert isinstance(payload, Mapping)
     if evidence.get("integration_mode") != "research_only":
         raise DecisionInputError("elliott_6h_must_remain_research_only")
+    if payload.get("schema_version") != "elliott_vnext_output_v2" or payload.get("module") != "6H_module_output":
+        raise DecisionInputError("elliott_6h_source_identity_invalid")
     if payload.get("research_only") is not True:
         raise DecisionInputError("elliott_6h_research_only_guard_missing")
     integration = payload.get("integration")
     if not isinstance(integration, Mapping):
         raise DecisionInputError("elliott_integration_guard_missing")
+    if integration.get("contract_version") != "elliott_vnext_integration_contract_v1":
+        raise DecisionInputError("elliott_integration_contract_version_invalid")
     if integration.get("decision_layer_required") is not True:
         raise DecisionInputError("elliott_decision_layer_requirement_missing")
     if integration.get("productive_integration_enabled") is not False:
@@ -222,7 +226,7 @@ def _validate_elliott(evidence: Mapping[str, object]) -> None:
 def validate_input_packet(packet: Mapping[str, object]) -> dict[str, object]:
     """Validate and return a defensive copy of one Phase-7A evidence packet.
 
-    Hard contract violations raise ``DecisionInputError``.  Missing or immature
+    Hard contract violations raise ``DecisionInputError``. Missing or immature
     evidence is not a hard error; it is preserved for the coverage summary and
     later Decision-Layer research.
     """
