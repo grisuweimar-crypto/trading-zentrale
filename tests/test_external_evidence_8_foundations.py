@@ -97,12 +97,17 @@ def test_external_relation_is_descriptive_not_trade_policy():
     assert c["relation_to_phase7"]["external_direction_alone_is_trade_decision"] is False
 
 
-def test_conflict_matrix_preserves_unknown_and_conflict():
+def test_conflict_matrix_is_complete_and_preserves_unknown_and_conflict():
     m = load_conflict_matrix()
     rows = {(x["core"], x["external"]): x["relation"] for x in m["relations"]}
+    expected_pairs = {(core, external) for core in m["core_states"] for external in m["external_states"]}
+    assert set(rows) == expected_pairs
+    assert len(m["relations"]) == len(expected_pairs)
     assert rows[("POSITIVE", "NEGATIVE")] == "CONFLICTING"
     assert rows[("POSITIVE", "UNKNOWN")] == "UNKNOWN"
     assert rows[("NEGATIVE", "POSITIVE")] == "CONFLICTING"
+    assert rows[("CONFLICTED", "UNKNOWN")] == "UNKNOWN"
+    assert rows[("INSUFFICIENT_EVIDENCE", "INSUFFICIENT_EXTERNAL")] == "INSUFFICIENT_EXTERNAL"
     assert m["policy_boundary"]["relation_may_change_phase7_stance_directly"] is False
 
 
