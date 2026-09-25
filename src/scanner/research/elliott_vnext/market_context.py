@@ -2,12 +2,12 @@ from __future__ import annotations
 
 """Module 6F: external market / sector context research layer.
 
-The module is deliberately separate from scanner history.  It validates a
-versioned context registry, point-in-time context assignments, and observed
-OHLC(V) rows.  Only externally defined context with sufficient/limited quality
-may become real market evidence.  Scanner peers remain internal context only.
+The module is deliberately separate from scanner history. It validates a
+versioned context registry, point-in-time asset→context assignments, and
+observed OHLC(V) rows. Only externally defined context with sufficient/limited
+quality may become real market evidence. Scanner peers remain internal context.
 
-No function in this module emits a trade decision or an order instruction.
+No function emits a trade decision or order instruction.
 """
 
 from dataclasses import dataclass
@@ -16,14 +16,8 @@ from typing import Iterable
 import numpy as np
 import pandas as pd
 
-
 CONTEXT_TYPES = (
-    "market",
-    "sector",
-    "industry",
-    "theme",
-    "commodity",
-    "peer_basket",
+    "market", "sector", "industry", "theme", "commodity", "peer_basket",
     "scanner_peer_context",
 )
 PROXY_KINDS = (
@@ -37,64 +31,29 @@ REAL_EVIDENCE_QUALITIES = frozenset({"sufficient", "limited"})
 PRICE_BASES = ("raw", "adjusted", "provider_adjusted", "not_eligible_for_elliott")
 
 REGISTRY_REQUIRED = (
-    "context_id",
-    "context_type",
-    "name",
-    "symbol",
-    "proxy_kind",
-    "source",
-    "context_quality",
-    "price_basis",
-    "valid_from",
-    "valid_to",
+    "context_id", "context_type", "name", "symbol", "proxy_kind", "source",
+    "context_quality", "price_basis", "valid_from", "valid_to",
 )
 ASSIGNMENT_REQUIRED = (
-    "symbol",
-    "context_id",
-    "relationship",
-    "source",
-    "assignment_quality",
-    "pit_verified",
-    "valid_from",
-    "valid_to",
+    "symbol", "context_id", "relationship", "source", "assignment_quality",
+    "pit_verified", "valid_from", "valid_to",
 )
 HISTORY_RAW_REQUIRED = ("date", "context_id", "open", "high", "low", "close")
 HISTORY_COLUMNS = (
-    "date",
-    "context_id",
-    "context_type",
-    "name",
-    "symbol",
-    "open",
-    "high",
-    "low",
-    "close",
-    "adj_close",
-    "volume",
-    "currency",
-    "source",
-    "retrieved_at",
-    "context_quality",
-    "proxy_kind",
-    "price_basis",
-    "valid_from",
-    "valid_to",
-    "usable_as_real_market_evidence",
-    "notes",
+    "date", "context_id", "context_type", "name", "symbol", "open", "high",
+    "low", "close", "adj_close", "volume", "currency", "source", "retrieved_at",
+    "context_quality", "proxy_kind", "price_basis", "valid_from", "valid_to",
+    "usable_as_real_market_evidence", "notes",
 )
 
 
 class MarketContextInputError(ValueError):
-    """Raised when 6F input would violate provenance, PIT, or OHLC rules."""
+    """Raised when 6F input violates provenance, PIT, or OHLC rules."""
 
 
 @dataclass(frozen=True)
 class ContextSnapshotConfig:
-    """Optional descriptive freshness annotation.
-
-    ``stale_after_calendar_days`` does not exclude data.  It only annotates the
-    snapshot; 6G may later pre-register a horizon-specific freshness rule.
-    """
+    """Optional descriptive freshness annotation, never a predictive gate."""
 
     stale_after_calendar_days: int | None = None
 
@@ -109,18 +68,26 @@ def _required(frame: pd.DataFrame, names: Iterable[str], label: str) -> None:
         raise MarketContextInputError(f"{label}_missing_columns:{','.join(missing)}")
 
 
+def _missing(value: object) -> bool:
+    if value is None:
+        return True
+    try:
+        result = pd.isna(value)
+        return bool(result) if np.isscalar(result) else False
+    except (TypeError, ValueError):
+        return False
+
+
 def _text(value: object) -> str:
-    if value is None or (isinstance(value, float) and pd.isna(value)):
-        return ""
-    return str(value).strip()
+    return "" if _missing(value) else str(value).strip()
 
 
 def _date_series(series: pd.Series, field: str, *, allow_null: bool) -> pd.Series:
     parsed = pd.to_datetime(series, errors="coerce").dt.normalize()
     if not allow_null and parsed.isna().any():
         raise MarketContextInputError(f"invalid_or_missing_{field}")
-    raw_nonempty = series.map(_text).ne("")
-    if (raw_nonempty & parsed.isna()).any():
+    supplied = series.map(lambda value: not _missing(value) and _text(value) != "")
+    if (supplied & parsed.isna()).any():
         raise MarketContextInputError(f"invalid_{field}")
     return parsed
 
@@ -147,11 +114,12 @@ def _assert_intervals_do_not_overlap(frame: pd.DataFrame, keys: list[str], label
     if frame.empty:
         return
     sentinel = pd.Timestamp.max.normalize()
-    for _, group in frame.sort_values(keys + ["valid_from"], kind="mergesort").groupby(keys, dropna=False, sort=False):
+    ordered = frame.sort_values(keys + ["valid_from"], kind="mergesort")
+    for _, group in ordered.groupby(keys, dropna=False, sort=False):
         previous_end: pd.Timestamp | None = None
         for row in group.itertuples(index=False):
-            start = row.valid_from
-            end = row.valid_to if pd.notna(row.valid_to) else sentinel
+            start = pd.Timestamp(row.valid_from).normalize()
+            end = pd.Timestamp(row.valid_to).normalize() if pd.notna(row.valid_to) else sentinel
             if previous_end is not None and start <= previous_end:
                 raise MarketContextInputError(f"overlapping_{label}_validity")
             previous_end = end
@@ -173,7 +141,11 @@ def normalize_context_registry(registry: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return frame.assign(usable_as_real_market_evidence=pd.Series(dtype=bool))
 
-    for col in ("context_id", "context_type", "name", "symbol", "proxy_kind", "source", "context_quality", "price_basis"):
+    text_cols = (
+        "context_id", "context_type", "name", "symbol", "proxy_kind", "source",
+        "context_quality", "price_basis",
+    )
+    for col in text_cols:
         frame[col] = frame[col].map(_text)
         if frame[col].eq("").any():
             raise MarketContextInputError(f"blank_registry_{col}")
@@ -191,8 +163,8 @@ def normalize_context_registry(registry: pd.DataFrame) -> pd.DataFrame:
     frame["valid_to"] = _date_series(frame["valid_to"], "registry_valid_to", allow_null=True)
     if (frame["valid_to"].notna() & (frame["valid_to"] < frame["valid_from"])).any():
         raise MarketContextInputError("registry_valid_to_before_valid_from")
-
     _assert_intervals_do_not_overlap(frame, ["context_id"], "context_registry")
+
     frame["usable_as_real_market_evidence"] = frame.apply(_real_registry_evidence, axis=1).astype(bool)
     return frame.sort_values(["context_id", "valid_from"], kind="mergesort").reset_index(drop=True)
 
@@ -212,7 +184,6 @@ def normalize_context_assignments(
         frame[col] = frame[col].map(_text)
         if frame[col].eq("").any():
             raise MarketContextInputError(f"blank_assignment_{col}")
-
     if (~frame["relationship"].isin(CONTEXT_TYPES)).any():
         raise MarketContextInputError("unsupported_assignment_relationship")
     if (~frame["assignment_quality"].isin(CONTEXT_QUALITIES)).any():
@@ -223,23 +194,22 @@ def normalize_context_assignments(
     frame["valid_to"] = _date_series(frame["valid_to"], "assignment_valid_to", allow_null=True)
     if (frame["valid_to"].notna() & (frame["valid_to"] < frame["valid_from"])).any():
         raise MarketContextInputError("assignment_valid_to_before_valid_from")
-
     _assert_intervals_do_not_overlap(
-        frame,
-        ["symbol", "context_id", "relationship"],
-        "context_assignment",
+        frame, ["symbol", "context_id", "relationship"], "context_assignment"
     )
+
     frame["usable_for_historical_context"] = (
         frame["pit_verified"] & frame["assignment_quality"].isin(REAL_EVIDENCE_QUALITIES)
     )
-
     if registry is not None:
         reg = normalize_context_registry(registry)
         unknown = sorted(set(frame["context_id"]) - set(reg["context_id"]))
         if unknown:
             raise MarketContextInputError(f"assignment_unknown_context_id:{','.join(unknown)}")
 
-    return frame.sort_values(["symbol", "relationship", "context_id", "valid_from"], kind="mergesort").reset_index(drop=True)
+    return frame.sort_values(
+        ["symbol", "relationship", "context_id", "valid_from"], kind="mergesort"
+    ).reset_index(drop=True)
 
 
 def _registry_row(registry: pd.DataFrame, context_id: str, day: pd.Timestamp) -> pd.Series:
@@ -268,11 +238,7 @@ def build_market_context_history(
     *,
     as_of: str | pd.Timestamp | None = None,
 ) -> pd.DataFrame:
-    """Create validated context history using the registry as authoritative metadata.
-
-    The function never fabricates missing sessions and never maps a row to a
-    registry version outside its validity interval.
-    """
+    """Build registry-backed context history without fabricating sessions."""
 
     raw = raw_rows.copy()
     _required(raw, HISTORY_RAW_REQUIRED, "market_context_history")
@@ -282,23 +248,21 @@ def build_market_context_history(
 
     raw["date"] = _date_series(raw["date"], "context_date", allow_null=False)
     if as_of is not None:
-        cutoff = pd.Timestamp(as_of).normalize()
-        raw = raw.loc[raw["date"] <= cutoff].copy()
+        raw = raw.loc[raw["date"] <= pd.Timestamp(as_of).normalize()].copy()
     if raw.empty:
         return pd.DataFrame(columns=HISTORY_COLUMNS)
 
     raw["context_id"] = raw["context_id"].map(_text)
     if raw["context_id"].eq("").any():
         raise MarketContextInputError("blank_history_context_id")
-
     for col in ("open", "high", "low", "close"):
         raw[col] = _numeric(raw, col, required=True)
         if (raw[col] <= 0).any():
             raise MarketContextInputError(f"nonpositive_history_{col}")
     raw["adj_close"] = _numeric(raw, "adj_close", required=False)
+    raw["volume"] = _numeric(raw, "volume", required=False)
     if (raw["adj_close"].notna() & (raw["adj_close"] <= 0)).any():
         raise MarketContextInputError("nonpositive_history_adj_close")
-    raw["volume"] = _numeric(raw, "volume", required=False)
     if (raw["volume"].notna() & (raw["volume"] < 0)).any():
         raise MarketContextInputError("negative_history_volume")
 
@@ -307,13 +271,11 @@ def build_market_context_history(
     if bad_high.any() or bad_low.any():
         raise MarketContextInputError("invalid_history_ohlc_geometry")
 
-    compare_cols = ["open", "high", "low", "close", "adj_close", "volume"]
-    for (_, _), group in raw.groupby(["context_id", "date"], sort=False):
+    for _, group in raw.groupby(["context_id", "date"], sort=False):
         if len(group) <= 1:
             continue
-        for col in compare_cols:
-            values = group[col].dropna().unique()
-            if len(values) > 1:
+        for col in ("open", "high", "low", "close", "adj_close", "volume"):
+            if len(group[col].dropna().unique()) > 1:
                 raise MarketContextInputError("conflicting_duplicate_context_history_row")
     raw = raw.drop_duplicates(["context_id", "date"], keep="last")
 
@@ -322,7 +284,6 @@ def build_market_context_history(
         day = pd.Timestamp(row.date).normalize()
         context_id = str(row.context_id)
         meta = _registry_row(reg, context_id, day)
-
         for optional_meta in ("symbol", "source"):
             if optional_meta in raw.columns:
                 supplied = _text(getattr(row, optional_meta, ""))
@@ -333,32 +294,31 @@ def build_market_context_history(
         adj_close = getattr(row, "adj_close", np.nan)
         if price_basis == "adjusted" and pd.isna(adj_close):
             raise MarketContextInputError(f"adjusted_context_missing_adj_close:{context_id}:{day.date()}")
-
-        record = {
-            "date": day,
-            "context_id": context_id,
-            "context_type": str(meta["context_type"]),
-            "name": str(meta["name"]),
-            "symbol": str(meta["symbol"]),
-            "open": float(row.open),
-            "high": float(row.high),
-            "low": float(row.low),
-            "close": float(row.close),
-            "adj_close": float(adj_close) if pd.notna(adj_close) else np.nan,
-            "volume": float(row.volume) if pd.notna(row.volume) else np.nan,
-            "currency": _text(getattr(row, "currency", "")) or None,
-            "source": str(meta["source"]),
-            "retrieved_at": _text(getattr(row, "retrieved_at", "")) or _text(meta.get("retrieved_at", "")) or None,
-            "context_quality": str(meta["context_quality"]),
-            "proxy_kind": str(meta["proxy_kind"]),
-            "price_basis": price_basis,
-            "valid_from": pd.Timestamp(meta["valid_from"]).normalize(),
-            "valid_to": pd.Timestamp(meta["valid_to"]).normalize() if pd.notna(meta["valid_to"]) else pd.NaT,
-            "usable_as_real_market_evidence": bool(meta["usable_as_real_market_evidence"]),
-            "notes": _text(meta.get("notes", "")) or None,
-        }
-        records.append(record)
-
+        records.append(
+            {
+                "date": day,
+                "context_id": context_id,
+                "context_type": str(meta["context_type"]),
+                "name": str(meta["name"]),
+                "symbol": str(meta["symbol"]),
+                "open": float(row.open),
+                "high": float(row.high),
+                "low": float(row.low),
+                "close": float(row.close),
+                "adj_close": float(adj_close) if pd.notna(adj_close) else np.nan,
+                "volume": float(row.volume) if pd.notna(row.volume) else np.nan,
+                "currency": _text(getattr(row, "currency", "")) or None,
+                "source": str(meta["source"]),
+                "retrieved_at": _text(getattr(row, "retrieved_at", "")) or _text(meta.get("retrieved_at", "")) or None,
+                "context_quality": str(meta["context_quality"]),
+                "proxy_kind": str(meta["proxy_kind"]),
+                "price_basis": price_basis,
+                "valid_from": pd.Timestamp(meta["valid_from"]).normalize(),
+                "valid_to": pd.Timestamp(meta["valid_to"]).normalize() if pd.notna(meta["valid_to"]) else pd.NaT,
+                "usable_as_real_market_evidence": bool(meta["usable_as_real_market_evidence"]),
+                "notes": _text(meta.get("notes", "")) or None,
+            }
+        )
     return pd.DataFrame(records, columns=HISTORY_COLUMNS).sort_values(
         ["context_id", "date"], kind="mergesort"
     ).reset_index(drop=True)
@@ -372,7 +332,7 @@ def resolve_context_assignments(
     as_of: str | pd.Timestamp,
     include_unusable: bool = False,
 ) -> pd.DataFrame:
-    """Resolve only context assignments valid for ``symbol`` at ``as_of``."""
+    """Resolve context assignments valid for one asset at one historical date."""
 
     day = pd.Timestamp(as_of).normalize()
     reg = normalize_context_registry(registry)
@@ -393,6 +353,8 @@ def resolve_context_assignments(
                 "proxy_kind": meta["proxy_kind"],
                 "context_quality": meta["context_quality"],
                 "price_basis": meta["price_basis"],
+                "context_valid_from": meta["valid_from"],
+                "context_valid_to": meta["valid_to"],
                 "usable_as_real_market_evidence": bool(
                     row["usable_for_historical_context"]
                     and meta["usable_as_real_market_evidence"]
@@ -416,14 +378,11 @@ def build_context_snapshot(
     config: ContextSnapshotConfig = ContextSnapshotConfig(),
     include_unusable_assignments: bool = False,
 ) -> pd.DataFrame:
-    """Return the last causally visible context observation per active assignment."""
+    """Return the last causally visible row from the active context version."""
 
     day = pd.Timestamp(as_of).normalize()
     resolved = resolve_context_assignments(
-        assignments,
-        registry,
-        symbol=symbol,
-        as_of=day,
+        assignments, registry, symbol=symbol, as_of=day,
         include_unusable=include_unusable_assignments,
     )
     if resolved.empty:
@@ -437,7 +396,21 @@ def build_context_snapshot(
     records: list[dict[str, object]] = []
     for _, assignment in resolved.iterrows():
         context_id = str(assignment["context_id"])
-        rows = hist.loc[hist["context_id"].eq(context_id)].sort_values("date", kind="mergesort")
+        assignment_start = pd.Timestamp(assignment["valid_from"]).normalize()
+        context_start = pd.Timestamp(assignment["context_valid_from"]).normalize()
+        lower = max(assignment_start, context_start)
+        upper_candidates = [day]
+        if pd.notna(assignment["valid_to"]):
+            upper_candidates.append(pd.Timestamp(assignment["valid_to"]).normalize())
+        if pd.notna(assignment["context_valid_to"]):
+            upper_candidates.append(pd.Timestamp(assignment["context_valid_to"]).normalize())
+        upper = min(upper_candidates)
+
+        rows = hist.loc[
+            hist["context_id"].eq(context_id)
+            & (hist["date"] >= lower)
+            & (hist["date"] <= upper)
+        ].sort_values("date", kind="mergesort")
         base = {
             "asset_symbol": str(symbol),
             "as_of": day,
@@ -452,12 +425,12 @@ def build_context_snapshot(
             base.update({"status": "missing_context_history", "context_date": pd.NaT, "age_calendar_days": None})
             records.append(base)
             continue
+
         latest = rows.iloc[-1]
+        row_usable = bool(latest["usable_as_real_market_evidence"])
+        base["usable_as_real_market_evidence"] = bool(base["usable_as_real_market_evidence"] and row_usable)
         age = int((day - pd.Timestamp(latest["date"]).normalize()).days)
-        stale = (
-            config.stale_after_calendar_days is not None
-            and age > config.stale_after_calendar_days
-        )
+        stale = config.stale_after_calendar_days is not None and age > config.stale_after_calendar_days
         base.update(
             {
                 "status": "observed",
@@ -485,12 +458,7 @@ def prepare_context_ohlcv_for_elliott(
     context_id: str,
     as_of: str | pd.Timestamp | None = None,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
-    """Prepare one real external context series for the existing 6A pivot layer.
-
-    For ``adjusted`` series, OHLC is scaled coherently by ``adj_close / close``.
-    There is no silent fallback to raw data.  ``scanner_peer_context`` and
-    unreliable/unavailable rows fail closed.
-    """
+    """Prepare one eligible real external context series for the 6A pivot layer."""
 
     frame = history.loc[history["context_id"].astype(str).eq(str(context_id))].copy()
     if frame.empty:
@@ -505,10 +473,12 @@ def prepare_context_ohlcv_for_elliott(
 
     if (~frame["usable_as_real_market_evidence"].astype(bool)).any():
         raise MarketContextInputError(f"context_contains_unusable_real_market_evidence:{context_id}")
-    qualities = set(frame["context_quality"].astype(str))
-    if not qualities <= REAL_EVIDENCE_QUALITIES:
+    if not set(frame["context_quality"].astype(str)) <= REAL_EVIDENCE_QUALITIES:
         raise MarketContextInputError(f"context_quality_not_eligible_for_elliott:{context_id}")
-    if set(frame["proxy_kind"].astype(str)) == {"scanner_peer_context_only"} or set(frame["context_type"].astype(str)) == {"scanner_peer_context"}:
+    if (
+        "scanner_peer_context_only" in set(frame["proxy_kind"].astype(str))
+        or "scanner_peer_context" in set(frame["context_type"].astype(str))
+    ):
         raise MarketContextInputError("scanner_peer_context_cannot_generate_real_market_wave")
 
     bases = set(frame["price_basis"].astype(str))
@@ -532,7 +502,6 @@ def prepare_context_ohlcv_for_elliott(
         frame["close"] = frame["adj_close"]
         six_a_basis = "adjusted"
     else:
-        # Raw index/spot or source-documented already-adjusted/continuous OHLC.
         frame["adj_close"] = np.nan
         six_a_basis = "raw"
 
@@ -559,8 +528,6 @@ def prepare_context_ohlcv_for_elliott(
         "declared_price_basis": price_basis,
         "six_a_price_basis": six_a_basis,
         "research_only": True,
-        "trade_decision": None,
-        "order_instruction": None,
     }
     return out, metadata
 
@@ -591,8 +558,7 @@ def summarize_market_context(
         "history_date_max": str(hist["date"].max().date()) if len(hist) else None,
         "quality_counts": (
             {str(k): int(v) for k, v in hist["context_quality"].value_counts(dropna=False).items()}
-            if len(hist)
-            else {}
+            if len(hist) else {}
         ),
         "predictive_value_evaluated": False,
         "incremental_value_evaluated": False,
