@@ -1,0 +1,33 @@
+name: Phase 8C Fundamentals and Structured Events
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8c_contract_v1.json"
+      - "configs/external_event_taxonomy_8c_v1.json"
+      - "src/scanner/research/external_evidence/**"
+      - "scripts/run_external_evidence_8c_probe.py"
+      - "tests/test_external_evidence_8c_pit.py"
+      - "docs/external_evidence_8c.md"
+      - ".github/workflows/external_evidence_8c.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 8C PIT and normalization guards
+        run: python -m pytest -q tests/test_external_evidence_8c_pit.py
+      - name: Run deterministic Phase 8C probe self-test
+        run: python scripts/run_external_evidence_8c_probe.py --self-test
