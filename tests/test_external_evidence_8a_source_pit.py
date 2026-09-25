@@ -12,14 +12,19 @@ def load_universe_contract():
     return json.loads((ROOT / "configs" / "external_universe_coverage_contract_v1.json").read_text(encoding="utf-8"))
 
 
+def load_revision_probe():
+    return json.loads((ROOT / "configs" / "external_revision_source_probe_v1.json").read_text(encoding="utf-8"))
+
+
 def sources_by_id():
     r = load_registry()
     return {s["source_id"]: s for s in r["sources"]}
 
 
-def test_registry_has_expected_schema_and_no_promoted_source_yet():
+def test_registry_is_closed_and_no_source_is_promoted_yet():
     r = load_registry()
     assert r["schema_version"] == "external_source_registry_v1"
+    assert r["registry_status"] == "8A_CLOSED_NEXT_PHASE_8C"
     assert r["8A_decision"]["no_source_is_promoted_yet"] is True
     assert all(s["promotion_eligible"] is False for s in r["sources"])
 
@@ -38,19 +43,58 @@ def test_registry_contains_all_initial_evidence_families():
 
 def test_revisions_candidates_do_not_bypass_pit_or_license_gate():
     src = sources_by_id()
-    assert src["alphavantage_earnings_estimates"]["pit_status"] == "PARTIAL"
-    assert src["eodhd_calendar_trends"]["pit_status"] == "PARTIAL"
+    assert src["alphavantage_earnings_estimates"]["pit_status"] == "UNSAFE"
+    assert src["eodhd_calendar_trends"]["pit_status"] == "UNSAFE"
     assert src["intrinio_zacks_estimates"]["pit_status"] == "SAFE"
     assert src["intrinio_zacks_estimates"]["license_status"] == "RESTRICTED"
     assert src["fmp_analyst_estimates"]["pit_status"] == "UNSAFE"
-    assert src["fmp_analyst_estimates"]["promotion_eligible"] is False
+    assert all(src[k]["promotion_eligible"] is False for k in [
+        "alphavantage_earnings_estimates",
+        "eodhd_calendar_trends",
+        "intrinio_zacks_estimates",
+        "fmp_analyst_estimates",
+    ])
 
 
-def test_current_estimate_retrojection_is_not_allowed_via_8a_decision():
-    r = load_registry()
-    decision = r["8A_decision"]
-    assert decision["revisions_pilot_status"] == "CANDIDATE_VALIDATION_REQUIRED"
+def test_phase8b_is_deferred_and_8c_is_next():
+    decision = load_registry()["8A_decision"]
+    assert decision["revisions_pilot_status"] == "DEFERRED_NO_PIT_SAFE_USABLE_SOURCE"
+    assert decision["phase8b_status"] == "DEFERRED_NOT_CANCELLED"
+    assert decision["next_phase"] == "8C_FUNDAMENTALS_AND_STRUCTURED_CORPORATE_EVENTS"
     assert decision["no_source_is_promoted_yet"] is True
+
+
+def test_revision_probe_has_no_retrospective_8b_eligible_source():
+    p = load_revision_probe()
+    assert p["decision"] == "PROCEED_8C"
+    assert p["phase8b_status"] == "DEFERRED_NOT_CANCELLED"
+    assert not any(c["retrospective_8B_eligible"] for c in p["candidates"])
+
+
+def test_revision_probe_requires_full_pit_and_access_clearance():
+    req = load_revision_probe()["required_for_retrospective_8B"]
+    assert req["historical_consensus_vintages"] is True
+    assert req["observation_or_publication_timestamp"] is True
+    assert req["historical_asof_reconstruction"] is True
+    assert req["access_license_cleared"] is True
+    assert req["economic_access_cleared"] is True
+
+
+def test_alpha_vantage_and_eodhd_are_rejected_for_specific_pit_reasons():
+    p = {c["source_id"]: c for c in load_revision_probe()["candidates"]}
+    assert "NO_ASOF_PARAMETER" in p["alphavantage_earnings_estimates"]["reason_codes"]
+    assert "NO_PROVEN_OBSERVATION_TIMESTAMP" in p["alphavantage_earnings_estimates"]["reason_codes"]
+    assert "NO_ASOF_PARAMETER" in p["eodhd_calendar_trends"]["reason_codes"]
+    assert "DATE_IS_FISCAL_PERIOD_NOT_VINTAGE" in p["eodhd_calendar_trends"]["reason_codes"]
+
+
+def test_intrinio_is_not_promoted_despite_pit_capability():
+    p = {c["source_id"]: c for c in load_revision_probe()["candidates"]}
+    intrinio = p["intrinio_zacks_estimates"]
+    assert intrinio["historical_asof_reconstruction"] is True
+    assert intrinio["access_license_cleared"] is False
+    assert intrinio["economic_access_cleared"] is False
+    assert intrinio["retrospective_8B_eligible"] is False
 
 
 def test_sec_companyfacts_requires_versioned_accession_reconstruction():
