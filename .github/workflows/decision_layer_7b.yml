@@ -1,0 +1,43 @@
+name: Phase 7B Decision Research Dataset
+
+on:
+  pull_request:
+    paths:
+      - "configs/decision_research_dataset_v1.json"
+      - "src/scanner/research/decision_layer/**"
+      - "tests/test_decision_research_dataset_7b.py"
+      - "scripts/run_decision_research_7b.py"
+      - "docs/decision_layer_7b.md"
+      - ".github/workflows/decision_layer_7b.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 7A and 7B regression tests
+        run: >-
+          pytest -q
+          tests/test_decision_layer_input_contract.py
+          tests/test_decision_research_dataset_7b.py
+      - name: Smoke-test 7B CLI help
+        run: python scripts/run_decision_research_7b.py --help
+      - name: Build 7B dataset from repository research inputs
+        run: >-
+          python scripts/run_decision_research_7b.py
+          --output /tmp/decision_research_7b.csv
+          --metadata /tmp/decision_research_7b_metadata.json
+      - name: Validate real-input output exists
+        run: >-
+          python -c "import json, pathlib; p=pathlib.Path('/tmp/decision_research_7b_metadata.json'); d=json.loads(p.read_text()); assert d['rows'] > 0; assert d['symbols'] > 0; assert d['guards']['universal_stance_computed'] is False"
