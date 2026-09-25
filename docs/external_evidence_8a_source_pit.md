@@ -1,10 +1,10 @@
 # Phase 8A – External Source & PIT Contract
 
-Status: ACTIVE / initial source classification completed on 2026-09-26.
+Status: **COMPLETE** on 2026-09-26. Next active work: **8C – Fundamentals & Structured Corporate Events**. Phase 8B is deferred, not cancelled.
 
 ## Objective
 
-Phase 8A establishes which external data may enter Phase-8 research at all. It does not test predictive value yet and it does not modify the frozen Phase-7 Core.
+Phase 8A establishes which external data may enter Phase-8 research at all. It does not test predictive value and it does not modify the frozen Phase-7 Core.
 
 Every source is classified on coverage, point-in-time semantics, license/access, history, publication timing, revision/restatement behaviour and validated domain. A source being interesting or inexpensive is not enough.
 
@@ -14,61 +14,70 @@ A value may be joined to a historical scanner observation only if the project ca
 
 Current values may never be retrojected merely because they refer to a historical quarter, settlement date or company.
 
-## Initial source inventory
+## Revisions field/provenance probe
 
-The machine-readable inventory lives in `configs/external_source_registry_v1.json`.
+The reproducible decision contract is `configs/external_revision_source_probe_v1.json`; `scripts/run_external_revision_source_probe_8a.py` evaluates the contract without consulting outcomes.
 
-### Revisions
+### Alpha Vantage Earnings Estimates – `UNSAFE` for retrospective 8B
 
-1. **Alpha Vantage Earnings Estimates** – `PARTIAL`
-   - official documentation states EPS/revenue estimates, analyst count and revision history;
-   - documentation reviewed so far does not prove immutable historical as-of snapshots with per-observation publication timestamps;
-   - candidate for a low-friction field-level validation, not yet a backtest source.
+Official documentation lists only `function`, `symbol` and `apikey` for `EARNINGS_ESTIMATES`. It does not expose a historical `date`/`as_of` parameter and does not establish an immutable observation/publication timestamp for each consensus vintage.
 
-2. **EODHD Earnings Trends** – `PARTIAL`
-   - exposes current consensus, 7/30/60/90-day EPS trend values and revision counts;
-   - documentation describes a historical set of fiscal-period records, but fiscal-period `date` is not enough to establish the timestamp of the estimate observation;
-   - requires a licensed sample and vintage-stability test.
+The endpoint may still be useful prospectively if responses are archived from ingestion onward, but a current response may not be assigned to a historical scanner date.
 
-3. **Intrinio/Zacks Estimates** – `SAFE` for source semantics, `RESTRICTED` for access/license
-   - vendor explicitly documents historical estimate/revision data and long history;
-   - this is the strongest PIT candidate found in the first survey;
-   - it is not usable by the project until commercial access and field-level timestamps/terms are confirmed.
+### EODHD Earnings Trends – `UNSAFE` for retrospective 8B
 
-4. **FMP Analyst Estimates** – `UNSAFE` for historical revisions under the currently documented endpoint
-   - current/future fiscal-period consensus does not establish a historical consensus time series;
-   - historical ratings are not a substitute for dated EPS/revenue estimate vintages.
+The provider explicitly documents that the trends endpoint has no date parameters; supplying `from`/`to` does not change the response. The response `date` is the fiscal period end, while estimate fields move as analysts publish. The 7/30/60/90-day values describe movement relative to the response state; they are not a queryable historical vintage ledger.
 
-**8B is therefore not opened yet.** The next 8A task is to validate Alpha Vantage and EODHD at field level. If both fail strict PIT and Intrinio is not economically acceptable, the pre-authorised fallback is to move 8C Fundamentals/Structured Corporate Events ahead of 8B.
+This also remains a possible prospective source if snapshots are stored from now onward.
 
-### Fundamentals
+### Intrinio/Zacks Estimates – PIT-capable, but not access/economically cleared
 
-**SEC EDGAR Company Facts/XBRL** is currently `PARTIAL` rather than `SAFE`.
+Intrinio documents historical estimate/revision feeds with date filtering and 20+ years of history. However, EPS estimates are Enterprise-only and historical access requires separate commercial access/payment. Therefore source semantics can be PIT-capable while the project still correctly rejects it for current 8B use.
 
-The source has filing/accession metadata and real-time dissemination, but the aggregate Company Facts endpoint is not itself a ready-made PIT panel. The Phase-8 ingestion path must reconstruct first-known values by accession/filed time and preserve amendments/restatements as later versions.
+### Financial Modeling Prep Analyst Estimates – `UNSAFE` for retrospective 8B
 
-### Structured Corporate Events
+The documented analyst-estimate endpoint does not establish immutable historical consensus vintages suitable for the Phase-8 contract. Current fiscal-period estimates may not be retrojected.
 
-**SEC EDGAR submissions (8-K/6-K and related forms)** are `SAFE` for filing timestamp/accession identity. This does not validate an event classifier. Event extraction and taxonomy remain a later Phase-8C/8E problem.
+## Final 8A revisions decision
 
-### Positioning
+No revisions source found in 8A satisfies all of the following simultaneously:
 
-**FINRA Equity Short Interest** is `PARTIAL` for historical PIT research.
+1. historical consensus vintages;
+2. observation/publication timestamp or equivalent strict as-of reconstruction;
+3. usable historical access;
+4. acceptable license/access status;
+5. economically cleared access for this project.
 
-The settlement date and publication date are explicitly different and `valid_from` must be the publication date. FINRA also states that corrections may replace prior values and only the most recent corrected value is available in the interactive/API data. Without archived original releases, a corrected historical row can contaminate a backtest. Prospective ingestion can be made PIT-safe by storing every publication as received.
+Therefore:
 
-### Macro
+- **8B Revisions Single-Family Pilot is DEFERRED, not cancelled.**
+- **8C Fundamentals & Structured Corporate Events becomes the next active Phase-8 workstream.**
+- 8B may reopen if a PIT-safe historical revisions feed is obtained under acceptable terms, or after a sufficiently long prospective revisions ledger has been accumulated without retrojection.
 
-**FRED/ALFRED** is `SAFE` at the data-vintage layer because real-time periods/vintage dates are explicit. It is not yet promotable evidence because:
-- underlying-series licenses must be checked per series;
-- a versioned security-to-macro exposure mapping does not yet exist;
-- macro data cannot become evidence merely by theoretical sector intuition.
+This is a data-validity decision, not an outcome/performance decision. No revisions outcomes were inspected to choose this route.
+
+## Why 8C is viable now
+
+### SEC EDGAR Company Facts/XBRL – `PARTIAL`, usable after versioned reconstruction
+
+The source carries filing/accession metadata, but aggregate Company Facts is not treated as a ready-made PIT panel. 8C must reconstruct first-known values by accession/filed time and preserve amendments/restatements as later versions.
+
+### SEC EDGAR submissions / 8-K / 6-K – `SAFE` for publication identity and filing time
+
+Filing timestamp/accession identity are suitable anchors for structured corporate-event research. This does not yet validate an event classifier; event extraction remains separate.
+
+This combination gives 8C a low-cost, auditable starting point without violating the frozen Phase-7 baseline.
+
+## Positioning and Macro retained for later work
+
+**FINRA Equity Short Interest** remains `PARTIAL`: settlement and publication dates differ, and corrected values can overwrite prior values unless original releases were archived.
+
+**FRED/ALFRED** remains `SAFE` at the vintage layer, but macro evidence still requires a versioned security-to-exposure map and series-specific license checks.
 
 ## As-of Universe / Coverage Ledger
 
-`configs/external_universe_coverage_contract_v1.json` is mandatory before any family backtest.
+`configs/external_universe_coverage_contract_v1.json` remains mandatory for all later family backtests. It prevents:
 
-It prevents four major leakage paths:
 1. keeping only symbols that still exist today;
 2. keeping only symbols for which a vendor has data today;
 3. silently dropping renamed/delisted instruments;
@@ -78,17 +87,16 @@ Historical project observability comes first from the scanner/history itself. Ex
 
 ## 8A acceptance state
 
-Completed in this initial slice:
-- source-registry instance exists;
+Completed:
+- source-registry instance and schema exist;
 - PIT/access/coverage classifications are explicit;
-- no source is promoted;
-- revisions decision remains gated;
 - As-of-Universe/Coverage contract exists;
-- failure states stay visible instead of becoming neutral.
+- revision-source probe is reproducible and outcome-independent;
+- Alpha Vantage/EODHD retrospective PIT failure is explicit;
+- Intrinio access/economic restriction is explicit;
+- no source is silently promoted;
+- missing/unknown remains non-neutral;
+- automated guards enforce the route decision;
+- final route is frozen as **8C next**.
 
-Still required before 8A can close:
-- field-level API validation for the preferred revisions candidates;
-- exact access/license/cost decision for whichever source survives;
-- sample coverage measurement against the project universe;
-- ingestion fixture proving `published_at`, `valid_from`, vintage and identifier mapping;
-- automated registry/ledger guards green on CI.
+8A is closed. The next branch should implement 8C's versioned SEC fundamental/event ingestion contract before any predictive-value research is performed.
