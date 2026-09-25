@@ -22,6 +22,18 @@ from .scenarios import (
     evaluate_motive_window,
     generate_scenario_sets,
 )
+from .fibonacci import (
+    DEFAULT_ZONE_WIDTH_SPECS,
+    W2_LEVELS,
+    W3_LEVELS,
+    W4_LEVELS,
+    W5_RESEARCH_CANDIDATES,
+    FibonacciInputError,
+    ZoneWidthSpec,
+    attach_fibonacci_geometry,
+    build_wave2_retracement_map,
+    wave2_depth_trigger,
+)
 
 __all__ = [
     "DEFAULT_PIVOT_SPECS",
@@ -38,4 +50,14 @@ __all__ = [
     "evaluate_correction_window",
     "evaluate_motive_window",
     "generate_scenario_sets",
+    "DEFAULT_ZONE_WIDTH_SPECS",
+    "W2_LEVELS",
+    "W3_LEVELS",
+    "W4_LEVELS",
+    "W5_RESEARCH_CANDIDATES",
+    "FibonacciInputError",
+    "ZoneWidthSpec",
+    "attach_fibonacci_geometry",
+    "build_wave2_retracement_map",
+    "wave2_depth_trigger",
 ]
