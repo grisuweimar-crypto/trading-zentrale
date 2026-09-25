@@ -5,6 +5,8 @@
   "required": ["schema_version", "sources"],
   "properties": {
     "schema_version": {"const": "external_source_registry_v1"},
+    "as_of": {"type": "string"},
+    "registry_status": {"type": "string"},
     "sources": {
       "type": "array",
       "items": {
@@ -43,6 +45,18 @@
         },
         "additionalProperties": true
       }
+    },
+    "8A_decision": {
+      "type": "object",
+      "required": ["revisions_pilot_status", "no_source_is_promoted_yet"],
+      "properties": {
+        "revisions_pilot_status": {"type": "string"},
+        "preferred_low_friction_validation_order": {"type": "array", "items": {"type": "string"}},
+        "reason": {"type": "string"},
+        "fallback_to_8C_trigger": {"type": "string"},
+        "no_source_is_promoted_yet": {"type": "boolean"}
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": false

@@ -1,0 +1,226 @@
+{
+  "schema_version": "external_source_registry_v1",
+  "as_of": "2026-09-26",
+  "registry_status": "8A_CLOSED_NEXT_PHASE_8C",
+  "sources": [
+    {
+      "source_id": "sec_edgar_companyfacts",
+      "family": "fundamentals",
+      "provider": "U.S. SEC EDGAR",
+      "coverage_status": "HIGH",
+      "pit_status": "PARTIAL",
+      "license_status": "USABLE",
+      "history_start": "2009-01-01",
+      "history_end": null,
+      "geography": ["US", "foreign_private_issuers_filing_with_SEC"],
+      "instrument_types": ["equity"],
+      "validated_domain": [],
+      "publication_semantics": "EDGAR submissions and XBRL APIs update as filings are disseminated; individual facts carry filing/accession metadata but aggregate Company Facts must be reconstructed by filing/accession to preserve first-known values.",
+      "restatement_policy": "both_versioned",
+      "revision_history_available": true,
+      "estimated_cost": 0,
+      "cost_unit": "USD",
+      "documentation_url": "https://www.sec.gov/search-filings/edgar-application-programming-interfaces",
+      "source_quality_notes": [
+        "No authentication/API key required for data.sec.gov.",
+        "Current aggregate Company Facts must not be treated as a ready-made PIT panel.",
+        "8C ingestion must key facts by accession/filed timestamp and preserve later amendments/restatements as later versions."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "sec_edgar_submissions_8k_6k",
+      "family": "structured_events",
+      "provider": "U.S. SEC EDGAR",
+      "coverage_status": "HIGH",
+      "pit_status": "SAFE",
+      "license_status": "USABLE",
+      "history_start": "1994-01-01",
+      "history_end": null,
+      "geography": ["US", "foreign_private_issuers_filing_with_SEC"],
+      "instrument_types": ["equity"],
+      "validated_domain": ["filing_timestamp", "filing_form", "accession_identity"],
+      "publication_semantics": "Submission history is disseminated by EDGAR and can be anchored no earlier than the public filing acceptance/dissemination time. Event meaning still requires a separate deterministic extractor and source hierarchy.",
+      "restatement_policy": "both_versioned",
+      "revision_history_available": true,
+      "estimated_cost": 0,
+      "cost_unit": "USD",
+      "documentation_url": "https://www.sec.gov/search-filings/edgar-application-programming-interfaces",
+      "source_quality_notes": [
+        "SAFE refers only to filing/publication timestamp and accession identity, not to any yet-unvalidated event classifier.",
+        "A later amended filing must remain a new version and may not overwrite the original event record."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "alphavantage_earnings_estimates",
+      "family": "revisions",
+      "provider": "Alpha Vantage",
+      "coverage_status": "UNKNOWN",
+      "pit_status": "UNSAFE",
+      "license_status": "UNKNOWN",
+      "history_start": null,
+      "history_end": null,
+      "geography": [],
+      "instrument_types": ["equity"],
+      "validated_domain": [],
+      "publication_semantics": "The documented EARNINGS_ESTIMATES endpoint returns annual/quarterly EPS and revenue estimates with analyst counts and revision history, but accepts only function, symbol and API key. It exposes no historical as-of/date parameter and the official documentation does not establish immutable per-observation publication timestamps.",
+      "restatement_policy": "not_applicable",
+      "revision_history_available": true,
+      "estimated_cost": null,
+      "cost_unit": null,
+      "documentation_url": "https://www.alphavantage.co/documentation/#earnings-estimates",
+      "source_quality_notes": [
+        "UNSAFE classification is for retrospective Phase-8B backtesting, not for prospective snapshot collection.",
+        "A current response cannot be assigned to an earlier scanner date merely because it contains revision-history fields.",
+        "Could be reconsidered for a future prospective-only revision ledger if snapshots are archived from ingestion time onward."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "eodhd_calendar_trends",
+      "family": "revisions",
+      "provider": "EOD Historical Data (EODHD)",
+      "coverage_status": "HIGH",
+      "pit_status": "UNSAFE",
+      "license_status": "RESTRICTED",
+      "history_start": "2017-01-01",
+      "history_end": null,
+      "geography": ["global"],
+      "instrument_types": ["equity"],
+      "validated_domain": [],
+      "publication_semantics": "The trends endpoint exposes current EPS/revenue consensus, 7/30/60/90-day prior trend values and revision counts for many fiscal periods, but the endpoint has no date/as-of parameters. Its `date` field is explicitly the fiscal period end, not the observation/vintage timestamp, and estimate fields move as analysts publish.",
+      "restatement_policy": "not_applicable",
+      "revision_history_available": true,
+      "estimated_cost": null,
+      "cost_unit": null,
+      "documentation_url": "https://eodhd.com/financial-apis/calendar-upcoming-earnings-ipos-and-splits",
+      "source_quality_notes": [
+        "UNSAFE for reconstructing what the scanner could have known on an arbitrary historical date.",
+        "7/30/60/90-day trend fields are relative to the response state, not a queryable historical vintage.",
+        "Could support prospective collection only if every response is archived with ingestion/publication semantics from now onward."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "intrinio_zacks_estimates",
+      "family": "revisions",
+      "provider": "Intrinio / Zacks",
+      "coverage_status": "MEDIUM",
+      "pit_status": "SAFE",
+      "license_status": "RESTRICTED",
+      "history_start": "2006-01-01",
+      "history_end": null,
+      "geography": ["US", "Canada"],
+      "instrument_types": ["equity"],
+      "validated_domain": ["historical_estimate_records", "revision_tracking"],
+      "publication_semantics": "Provider documents historical estimate/revision feeds with date filters and 20+ years of history. Historical access is Enterprise-only and history requires separate commercial access/payment.",
+      "restatement_policy": "not_applicable",
+      "revision_history_available": true,
+      "estimated_cost": null,
+      "cost_unit": null,
+      "documentation_url": "https://intrinio.com/products/eps-estimates",
+      "source_quality_notes": [
+        "Best-documented PIT revisions source found in 8A.",
+        "Not economically/access-cleared for this project: Enterprise access is required and historical data is not included in default plans.",
+        "SAFE source semantics do not override RESTRICTED access/license status."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "fmp_analyst_estimates",
+      "family": "revisions",
+      "provider": "Financial Modeling Prep",
+      "coverage_status": "HIGH",
+      "pit_status": "UNSAFE",
+      "license_status": "RESTRICTED",
+      "history_start": null,
+      "history_end": null,
+      "geography": ["global_by_plan"],
+      "instrument_types": ["equity"],
+      "validated_domain": [],
+      "publication_semantics": "Financial Estimates documentation exposes forward consensus by fiscal date, but does not establish dated historical EPS/revenue consensus snapshots suitable for strict revision backtesting.",
+      "restatement_policy": "not_applicable",
+      "revision_history_available": false,
+      "estimated_cost": null,
+      "cost_unit": null,
+      "documentation_url": "https://site.financialmodelingprep.com/developer/docs/stable/financial-estimates",
+      "source_quality_notes": [
+        "Do not use current analyst-estimate rows to reconstruct past consensus.",
+        "Historical ratings are not a substitute for historical EPS/revenue estimate vintages."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "finra_equity_short_interest",
+      "family": "positioning",
+      "provider": "FINRA",
+      "coverage_status": "HIGH",
+      "pit_status": "PARTIAL",
+      "license_status": "USABLE",
+      "history_start": null,
+      "history_end": null,
+      "geography": ["US"],
+      "instrument_types": ["equity", "OTC_equity"],
+      "validated_domain": ["settlement_date", "publication_schedule"],
+      "publication_semantics": "Short interest is reported twice monthly and publicly disseminated later; research valid_from must be the publication date, never the settlement date. Corrections can replace prior values with revision flags.",
+      "restatement_policy": "latest_revised",
+      "revision_history_available": false,
+      "estimated_cost": 0,
+      "cost_unit": "USD",
+      "documentation_url": "https://www.finra.org/finra-data/browse-catalog/equity-short-interest",
+      "source_quality_notes": [
+        "Historical PIT use is contaminated if a later correction is retrojected without an archived original release.",
+        "Prospective use can be clean if every publication is stored as received."
+      ],
+      "promotion_eligible": false
+    },
+    {
+      "source_id": "fred_alfred_realtime",
+      "family": "macro_exposure",
+      "provider": "Federal Reserve Bank of St. Louis FRED/ALFRED",
+      "coverage_status": "HIGH",
+      "pit_status": "SAFE",
+      "license_status": "UNKNOWN",
+      "history_start": null,
+      "history_end": null,
+      "geography": ["US", "international_series_depending_on_source"],
+      "instrument_types": ["macro_series"],
+      "validated_domain": ["vintage_dates", "realtime_periods"],
+      "publication_semantics": "ALFRED explicitly stores real-time periods/vintage dates so observations can be queried as known on a historical date. Research must use the real-time period/vintage rather than release date alone.",
+      "restatement_policy": "both_versioned",
+      "revision_history_available": true,
+      "estimated_cost": 0,
+      "cost_unit": "USD",
+      "documentation_url": "https://fred.stlouisfed.org/docs/api/fred/alfred.html",
+      "source_quality_notes": [
+        "PIT-safe at the data-vintage level.",
+        "License/copyright must be checked per underlying series/source before persistent redistribution.",
+        "Macro data cannot become security evidence before a versioned exposure map is validated."
+      ],
+      "promotion_eligible": false
+    }
+  ],
+  "8A_decision": {
+    "revisions_pilot_status": "DEFERRED_NO_PIT_SAFE_USABLE_SOURCE",
+    "preferred_low_friction_validation_order": [
+      "alphavantage_earnings_estimates",
+      "eodhd_calendar_trends",
+      "intrinio_zacks_estimates"
+    ],
+    "validated_revisions_result": {
+      "alphavantage_earnings_estimates": "UNSAFE_RETROSPECTIVE_NO_ASOF_QUERY_OR_PROVEN_OBSERVATION_TIMESTAMP",
+      "eodhd_calendar_trends": "UNSAFE_RETROSPECTIVE_NO_ASOF_QUERY_FISCAL_DATE_IS_NOT_VINTAGE",
+      "intrinio_zacks_estimates": "PIT_SEMANTICS_SAFE_BUT_ENTERPRISE_HISTORY_NOT_ACCESS_CLEARED",
+      "fmp_analyst_estimates": "UNSAFE_RETROSPECTIVE_NO_HISTORICAL_CONSENSUS_VINTAGES"
+    },
+    "reason": "No revisions source is simultaneously PIT-safe for historical scanner dates, accessible/licensed for this project, and economically cleared. Using Alpha Vantage or EODHD retrospectively would violate the Phase-8 PIT contract; Intrinio requires Enterprise historical access.",
+    "next_phase": "8C_FUNDAMENTALS_AND_STRUCTURED_CORPORATE_EVENTS",
+    "phase8b_status": "DEFERRED_NOT_CANCELLED",
+    "phase8b_reopen_conditions": [
+      "obtain a historical revisions feed with immutable as-of/vintage timestamps and acceptable license/cost",
+      "or accumulate a sufficiently long prospective archived revisions ledger without retrojection"
+    ],
+    "no_source_is_promoted_yet": true
+  }
+}
