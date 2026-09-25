@@ -6,6 +6,8 @@ on:
       - "configs/external_source_registry_schema_v1.json"
       - "configs/external_source_registry_v1.json"
       - "configs/external_universe_coverage_contract_v1.json"
+      - "configs/external_revision_source_probe_v1.json"
+      - "scripts/run_external_revision_source_probe_8a.py"
       - "docs/external_evidence_8a_source_pit.md"
       - "tests/test_external_evidence_8a_source_pit.py"
       - ".github/workflows/external_evidence_8a_source_pit.yml"
@@ -28,3 +30,5 @@ jobs:
         run: python -m pip install -e ".[test]"
       - name: Run Phase 8A source and PIT guards
         run: python -m pytest -q tests/test_external_evidence_8a_source_pit.py
+      - name: Run deterministic revisions source probe
+        run: python scripts/run_external_revision_source_probe_8a.py --output artifacts/research/external_revision_source_probe_8a.json
