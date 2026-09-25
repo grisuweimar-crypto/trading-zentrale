@@ -16,6 +16,11 @@ from typing import Mapping
 import pandas as pd
 
 from scanner.reports.selection_timing import HORIZONS
+from scanner.research.decision_layer.conflict_research import (
+    _moving_date_blocks,
+    _support_region_count,
+    attach_timing_topology,
+)
 from scanner.research.decision_layer.dataset import (
     DecisionDatasetConfig,
     build_decision_research_dataset,
@@ -31,10 +36,12 @@ READINESS_STATES = frozenset({
     "collecting_prospective_evidence",
     "collecting_prospective_dataset",
     "awaiting_mature_outcomes",
+    "collecting_prospective_comparison_support",
     "awaiting_downstream_shadow_trace",
     "metrics_ready_for_promotion_review",
 })
 REQUIRED_PHASES = ("7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H")
+DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
 FORBIDDEN_TRUE_FIELDS = frozenset({
     "productive_integration_enabled",
     "execution_allowed",
@@ -196,9 +203,67 @@ def _publication_as_of(root: Path) -> str:
     return value
 
 
+def _comparison_readiness(
+    mature: pd.DataFrame,
+    horizon: int,
+    contract_7c: Mapping[str, object],
+) -> dict[str, object]:
+    min_group_n = int(contract_7c.get("min_group_n", -1))
+    statistical_rules = contract_7c.get("statistical_rules")
+    if min_group_n < 1 or not isinstance(statistical_rules, Mapping):
+        raise PromotionValidationError("invalid_7c_support_contract")
+    min_regions = int(statistical_rules.get("minimum_temporal_support_regions", -1))
+    if min_regions < 1:
+        raise PromotionValidationError("invalid_7c_temporal_support_requirement")
+
+    work = attach_timing_topology(mature, horizon)
+    topology = f"timing_topology_{horizon}t"
+    dates, _blocks, block_length = _moving_date_blocks(work, horizon)
+    results: dict[str, object] = {}
+    comparisons = contract_7c.get("pre_registered_comparisons")
+    if not isinstance(comparisons, list):
+        raise PromotionValidationError("7c_pre_registered_comparisons_missing")
+    for item in comparisons:
+        if not isinstance(item, Mapping):
+            continue
+        if int(item.get("horizon_sessions", -1)) != horizon:
+            continue
+        comparison_id = str(item.get("id") or "").strip()
+        if not comparison_id:
+            raise PromotionValidationError("7c_comparison_id_missing")
+        left_name = str(item.get("left") or "")
+        right_name = str(item.get("right") or "")
+        left = work.loc[work[topology].eq(left_name)]
+        right = work.loc[work[topology].eq(right_name)]
+        left_regions = _support_region_count(left, dates, block_length)
+        right_regions = _support_region_count(right, dates, block_length)
+        data_ready = (
+            len(left) >= min_group_n
+            and len(right) >= min_group_n
+            and left_regions >= min_regions
+            and right_regions >= min_regions
+        )
+        results[comparison_id] = {
+            "horizon_sessions": horizon,
+            "left": left_name,
+            "right": right_name,
+            "left_N": int(len(left)),
+            "right_N": int(len(right)),
+            "minimum_group_n": min_group_n,
+            "left_temporal_support_regions": int(left_regions),
+            "right_temporal_support_regions": int(right_regions),
+            "minimum_temporal_support_regions": min_regions,
+            "block_length_sessions": int(block_length),
+            "data_ready": bool(data_ready),
+            "outcome_direction_evaluated": False,
+        }
+    return results
+
+
 def _dataset_summary(
     root: Path,
     contract_7b: Mapping[str, object],
+    contract_7c: Mapping[str, object],
     reviewed_as_of: date,
 ) -> dict[str, object]:
     research = root / "artifacts" / "research"
@@ -215,11 +280,18 @@ def _dataset_summary(
     prospective = visible.loc[visible["research_partition"].eq("prospective_unspent")].copy()
 
     horizon_summary: dict[str, object] = {}
+    all_comparisons: list[bool] = []
     for horizon in HORIZONS:
         peer = f"peer_excess_{horizon}t"
         if peer not in prospective.columns:
             raise PromotionValidationError(f"prospective_peer_label_missing:{horizon}")
         mature = prospective.loc[pd.to_numeric(prospective[peer], errors="coerce").notna()].copy()
+        comparisons = _comparison_readiness(mature, horizon, contract_7c)
+        all_comparisons.extend(
+            bool(value.get("data_ready"))
+            for value in comparisons.values()
+            if isinstance(value, Mapping)
+        )
         horizon_summary[str(horizon)] = {
             "prospective_rows": int(len(prospective)),
             "mature_peer_excess_rows": int(len(mature)),
@@ -227,6 +299,12 @@ def _dataset_summary(
             "mature_observation_days": int(
                 pd.to_datetime(mature["obs_date"], errors="coerce").dt.normalize().nunique()
             ) if len(mature) else 0,
+            "pre_registered_comparison_readiness": comparisons,
+            "all_pre_registered_comparisons_data_ready": bool(comparisons) and all(
+                bool(value.get("data_ready"))
+                for value in comparisons.values()
+                if isinstance(value, Mapping)
+            ),
         }
 
     return {
@@ -244,6 +322,7 @@ def _dataset_summary(
             if len(prospective) else None
         ),
         "horizons": horizon_summary,
+        "all_pre_registered_comparisons_data_ready": bool(all_comparisons) and all(all_comparisons),
         "spent_rows_visible": int(
             visible["research_partition"].eq("legacy_replay_spent").sum()
         ),
@@ -295,6 +374,7 @@ def validate_shadow_trace_summary(
             "trace_rows": 0,
             "symbols": 0,
             "captured_layers": [],
+            "layer_metrics_ready": {},
             "contains_raw_position_values": False,
             "public_repository_persistence": False,
             "future_trace_rows_ignored": 0,
@@ -312,8 +392,19 @@ def validate_shadow_trace_summary(
     layers = summary.get("captured_layers")
     if not isinstance(layers, list):
         raise PromotionValidationError("shadow_trace_captured_layers_missing")
-    if any(str(layer) not in {"7D", "7E", "7F", "7G", "7H"} for layer in layers):
+    if any(str(layer) not in DOWNSTREAM_TRACE_LAYERS for layer in layers):
         raise PromotionValidationError("invalid_shadow_trace_layer")
+    metrics = summary.get("layer_metrics_ready")
+    if rows and not isinstance(metrics, Mapping):
+        raise PromotionValidationError("shadow_trace_layer_metrics_ready_required")
+    if metrics is None:
+        metrics = {}
+    if not isinstance(metrics, Mapping):
+        raise PromotionValidationError("invalid_shadow_trace_layer_metrics_ready")
+    if any(str(layer) not in DOWNSTREAM_TRACE_LAYERS for layer in metrics):
+        raise PromotionValidationError("invalid_shadow_trace_metric_layer")
+    if any(not isinstance(value, bool) for value in metrics.values()):
+        raise PromotionValidationError("shadow_trace_metric_readiness_must_be_boolean")
     as_of_min = summary.get("as_of_min")
     as_of_max = summary.get("as_of_max")
     if rows:
@@ -329,6 +420,9 @@ def validate_shadow_trace_summary(
         "trace_rows": rows,
         "symbols": symbols,
         "captured_layers": sorted({str(layer) for layer in layers}),
+        "layer_metrics_ready": {
+            str(layer): bool(value) for layer, value in sorted(metrics.items(), key=lambda item: str(item[0]))
+        },
         "contains_raw_position_values": False,
         "public_repository_persistence": False,
         "as_of_min": str(as_of_min) if as_of_min else None,
@@ -368,9 +462,13 @@ def _review_state(
         return "collecting_prospective_dataset"
     if _mature_total(dataset) == 0:
         return "awaiting_mature_outcomes"
-    required_layers = {"7D", "7E", "7F", "7G", "7H"}
+    if dataset.get("all_pre_registered_comparisons_data_ready") is not True:
+        return "collecting_prospective_comparison_support"
     captured = set(map(str, trace.get("captured_layers", [])))
-    if traces == 0 or not required_layers.issubset(captured):
+    metrics = trace.get("layer_metrics_ready")
+    metrics = metrics if isinstance(metrics, Mapping) else {}
+    layer_metrics_ready = all(metrics.get(layer) is True for layer in DOWNSTREAM_TRACE_LAYERS)
+    if traces == 0 or not DOWNSTREAM_TRACE_LAYERS.issubset(captured) or not layer_metrics_ready:
         return "awaiting_downstream_shadow_trace"
     return "metrics_ready_for_promotion_review"
 
@@ -397,7 +495,7 @@ def build_promotion_report(
     contracts, contract_hashes = _source_contracts(root, protocol)
     review_day = _day(reviewed_as_of or _publication_as_of(root))
     prospective_start = str(protocol.get("prospective_unspent_from") or "")
-    dataset = _dataset_summary(root, contracts["7B"], review_day)
+    dataset = _dataset_summary(root, contracts["7B"], contracts["7C"], review_day)
     archive = _archive_summary(root, review_day, prospective_start)
     trace = validate_shadow_trace_summary(
         trace_summary,
@@ -417,6 +515,8 @@ def build_promotion_report(
         blockers.append("prospective_7b_dataset_rows_missing")
     elif state == "awaiting_mature_outcomes":
         blockers.append("prospective_forward_outcomes_not_mature")
+    elif state == "collecting_prospective_comparison_support":
+        blockers.append("pre_registered_7c_comparisons_lack_frozen_minimum_support")
     elif state == "awaiting_downstream_shadow_trace":
         blockers.append("private_downstream_7d_7h_shadow_trace_missing_or_incomplete")
 
