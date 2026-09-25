@@ -13,6 +13,15 @@ from .pivots import (
     detect_multidegree_pivots,
     prepare_daily_ohlcv,
 )
+from .scenarios import (
+    CLASSIC_IMPULSE_RULES,
+    CONSERVATIVE_SUPPORT,
+    FULL_SUPPORT,
+    ScenarioInputError,
+    evaluate_correction_window,
+    evaluate_motive_window,
+    generate_scenario_sets,
+)
 
 __all__ = [
     "DEFAULT_PIVOT_SPECS",
@@ -22,4 +31,11 @@ __all__ = [
     "detect_confirmed_pivots",
     "detect_multidegree_pivots",
     "prepare_daily_ohlcv",
+    "CLASSIC_IMPULSE_RULES",
+    "CONSERVATIVE_SUPPORT",
+    "FULL_SUPPORT",
+    "ScenarioInputError",
+    "evaluate_correction_window",
+    "evaluate_motive_window",
+    "generate_scenario_sets",
 ]
