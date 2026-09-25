@@ -1,0 +1,207 @@
+name: Temporary Phase 5D P1 Patch
+
+on:
+  push:
+    branches:
+      - phase5d-walkforward-evaluation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v6
+        with:
+          ref: phase5d-walkforward-evaluation
+          fetch-depth: 0
+
+      - name: Apply archived-chain fix and regression test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/scanner/reports/confidence_vnext_walkforward_v2.py')
+          source = source_path.read_text(encoding='utf-8')
+
+          old_map = '''    known_pairs = {
+              (
+                  str(record["version_id"]),
+                  str(record["successor_version_id"]),
+              ): str(record["evaluation_sha256"])
+              for record in evaluations
+          }
+          '''
+          new_map = '''    archived_by_pair = {
+              (
+                  str(record["version_id"]),
+                  str(record["successor_version_id"]),
+              ): record
+              for record in evaluations
+          }
+          '''
+          if old_map not in source:
+              raise SystemExit('expected known_pairs block not found')
+          source = source.replace(old_map, new_map, 1)
+
+          old_build = '''            record = _build_finalized_record(
+                  version,
+                  successor,
+                  frame,
+                  previous_evaluation_sha256=(
+                      str(evaluations[-1]["evaluation_sha256"])
+                      if evaluations
+                      else ""
+                  ),
+                  bootstrap_reps=bootstrap_reps,
+                  random_seed=random_seed,
+              )
+          '''
+          new_build = '''            archived_record = archived_by_pair.get(pair)
+              predecessor_hash = (
+                  str(archived_record["previous_evaluation_sha256"])
+                  if archived_record is not None
+                  else (
+                      str(evaluations[-1]["evaluation_sha256"])
+                      if evaluations
+                      else ""
+                  )
+              )
+              record = _build_finalized_record(
+                  version,
+                  successor,
+                  frame,
+                  previous_evaluation_sha256=predecessor_hash,
+                  bootstrap_reps=bootstrap_reps,
+                  random_seed=random_seed,
+              )
+          '''
+          if old_build not in source:
+              raise SystemExit('expected finalized-record build block not found')
+          source = source.replace(old_build, new_build, 1)
+
+          old_append = '''            supplied_hash = str(record["evaluation_sha256"])
+              previous_hash = known_pairs.get(pair)
+              if previous_hash is None:
+                  evaluations.append(record)
+                  _validate_evaluations(evaluations)
+                  known_pairs[pair] = supplied_hash
+                  new_evaluations.append(str(record["evaluation_id"]))
+              elif previous_hash != supplied_hash:
+                  raise ValueError(
+                      f"immutable Phase 5D evaluation conflict for {pair}"
+                  )
+          '''
+          new_append = '''            supplied_hash = str(record["evaluation_sha256"])
+              if archived_record is None:
+                  evaluations.append(record)
+                  _validate_evaluations(evaluations)
+                  archived_by_pair[pair] = record
+                  new_evaluations.append(str(record["evaluation_id"]))
+              elif str(archived_record["evaluation_sha256"]) != supplied_hash:
+                  raise ValueError(
+                      f"immutable Phase 5D evaluation conflict for {pair}"
+                  )
+          '''
+          if old_append not in source:
+              raise SystemExit('expected archive append block not found')
+          source = source.replace(old_append, new_append, 1)
+          source_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('tests/test_confidence_vnext_walkforward_v2.py')
+          tests = test_path.read_text(encoding='utf-8')
+          marker = 'def test_archived_epoch_rerun_and_append_preserves_chain(tmp_path):'
+          if marker not in tests:
+              tests += '''
+
+
+def test_archived_epoch_rerun_and_append_preserves_chain(tmp_path):
+    claims, outcomes = _future_fixture()
+    v1 = _version(5, "2026-10-01T16:00:00Z", "a" * 64)
+    v2 = _version(
+        5,
+        "2026-10-12T16:00:00Z",
+        "b" * 64,
+        previous_hash=v1["version_sha256"],
+    )
+    paths = _write_sources(tmp_path, claims, outcomes, [v1, v2])
+
+    first = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert first["finalized_evaluations"] == 1
+    first_text = paths[3].read_text(encoding="utf-8")
+    first_record = json.loads(first_text.splitlines()[0])
+    first_hash = first_record["evaluation_sha256"]
+
+    second = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert second["new_finalized_evaluations"] == []
+    assert paths[3].read_text(encoding="utf-8") == first_text
+
+    c = _claim("CCC", "future-2", "2026-10-13", 5)
+    d = _claim("DDD", "future-2", "2026-10-13", 5)
+    claims = pd.concat(
+        [claims, pd.DataFrame([c, d], columns=CLAIM_COLUMNS_V2)],
+        ignore_index=True,
+    )
+    outcomes = pd.concat(
+        [
+            outcomes,
+            pd.DataFrame(
+                [
+                    _outcome(c, "2026-10-20", 0.04, "2026-10-21T16:00:00Z"),
+                    _outcome(d, "2026-10-20", 0.02, "2026-10-21T16:00:00Z"),
+                ],
+                columns=OUTCOME_COLUMNS_V2,
+            ),
+        ],
+        ignore_index=True,
+    )
+    claims.to_csv(paths[0], index=False)
+    outcomes.to_csv(paths[1], index=False)
+
+    v3 = _version(
+        5,
+        "2026-10-25T16:00:00Z",
+        "c" * 64,
+        previous_hash=v2["version_sha256"],
+    )
+    _write_versions(paths[2], [v1, v2, v3])
+
+    third = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert len(third["new_finalized_evaluations"]) == 1
+    records = [
+        json.loads(line)
+        for line in paths[3].read_text(encoding="utf-8").splitlines()
+    ]
+    assert len(records) == 2
+    assert records[0] == first_record
+    assert records[1]["previous_evaluation_sha256"] == first_hash
+
+    stable_text = paths[3].read_text(encoding="utf-8")
+    fourth = run_walkforward_evaluation(*paths, bootstrap_reps=5)
+    assert fourth["new_finalized_evaluations"] == []
+    assert paths[3].read_text(encoding="utf-8") == stable_text
+          '''
+          test_path.write_text(tests, encoding='utf-8')
+          PY
+
+      - name: Run focused regression and inherited tests
+        run: |
+          python -m pip install -e '.[test]'
+          python -m pytest -q \
+            tests/test_confidence_vnext_walkforward_v2.py \
+            tests/test_confidence_vnext_progressive.py \
+            tests/test_confidence_vnext_prospective_v2.py \
+            tests/test_confidence_vnext_frozen_baseline.py \
+            tests/test_confidence_vnext_walkforward.py
+
+      - name: Remove temporary workflow and push clean patch
+        run: |
+          rm -f .github/workflows/phase5d_apply_p1.yml
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Fix Phase 5D archived evaluation chain rebuilds'
+          git push origin HEAD:phase5d-walkforward-evaluation
