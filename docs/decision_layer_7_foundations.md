@@ -212,7 +212,7 @@ Pro Titel mindestens:
 - Evidence Coverage
 - Conflict/Confirmation State
 - Universal Stance
-- Decision Confidence / Evidence Sufficiency (getrennt von upstream Confidence)
+- Decision Reliability / Evidence Sufficiency (getrennt von upstream Confidence)
 - Reasons
 - Counter Evidence
 - Previous/Current State + Transition
