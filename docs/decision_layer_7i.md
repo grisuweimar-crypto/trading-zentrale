@@ -46,10 +46,13 @@ The report advances only through explicit data states:
 - `collecting_prospective_evidence`
 - `collecting_prospective_dataset`
 - `awaiting_mature_outcomes`
+- `collecting_prospective_comparison_support`
 - `awaiting_downstream_shadow_trace`
 - `metrics_ready_for_promotion_review`
 
-`metrics_ready_for_promotion_review` still does **not** mean that promotion has passed. It means only that the frozen metrics can be reviewed without immediately failing for missing prospective evidence.
+A first mature prospective outcome is deliberately not enough. After outcomes begin to mature, the frozen Phase-7C comparisons must still reach their already-defined minimum group size and temporal support. Only after that may the downstream 7D–7H shadow metrics become the remaining readiness gate.
+
+`metrics_ready_for_promotion_review` still does **not** mean that promotion has passed. It means only that the frozen metrics can be reviewed without immediately failing for missing prospective evidence or support.
 
 ## Prospective evidence sources
 
@@ -61,13 +64,21 @@ The report advances only through explicit data states:
 
 Legacy replay packets never count as independent confirmation.
 
-### 2. 7B forward outcomes
+### 2. 7B forward outcomes and frozen 7C comparison support
 
 7I rebuilds the Decision Research Dataset from the canonical research inputs and only counts rows whose `obs_date` is on or before the requested review cutoff.
 
 Only the `prospective_unspent` partition can contribute to empirical readiness. Spent rows are still visible for diagnostics, but are explicitly excluded from empirical confirmation.
 
 Forward labels remain labels, never features.
+
+For every pre-registered Phase-7C comparison, 7I measures only **data readiness** before promotion review. It does not inspect the result direction to move the readiness state. Each frozen comparison must satisfy:
+
+- minimum group N = 30 on both sides;
+- at least two temporal support regions on both sides;
+- the same horizon-specific moving-block definition frozen in 7C.
+
+This prevents a single favorable mature observation—or a dense cluster of overlapping observations—from making the layer look validation-ready.
 
 ### 3. Private downstream shadow trace
 
@@ -78,7 +89,10 @@ A future runtime may supply a compact `decision_shadow_trace_summary_v1` with:
 - prospective row count;
 - symbol count;
 - captured layers;
+- per-layer `layer_metrics_ready` booleans for 7D, 7E, 7F, 7G and 7H;
 - minimum and maximum trace dates.
+
+Captured rows alone are not sufficient. All required downstream layers must be present and their frozen validation metrics must explicitly be marked ready before the overall state can become `metrics_ready_for_promotion_review`.
 
 The summary must state that raw position values are absent and public repository persistence is disabled. Quantities, market values, entry prices, current prices or broker/account identifiers do not belong in the public validation path.
 
@@ -101,7 +115,7 @@ These inherited rules define when a prospective comparison can be statistically 
 
 ### 7C — confirmation/conflict
 
-Only the already frozen pre-registered comparisons may be rerun on prospective mature outcomes. Historical discovery support cannot be renamed validation.
+Only the already frozen pre-registered comparisons may be rerun on prospective mature outcomes. Historical discovery support cannot be renamed validation. Every frozen comparison must first satisfy the inherited minimum N and temporal-support rules before 7I calls the prospective metrics ready for review.
 
 ### 7D — Universal Stance
 
