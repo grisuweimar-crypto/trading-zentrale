@@ -1,12 +1,10 @@
 """Phase-7H research-only Depot-Watch integration.
 
-7H is a presentation/integration boundary. It joins the authoritative current
-``daily_research`` snapshot with explicitly supplied position snapshots and
-already-computed 7A->7G Decision-Layer bundles. It never reconstructs missing
-evidence from scanner scalars and never recomputes stance, hysteresis or action.
-
-Real position data is intentionally runtime input. The public repository's model
-portfolio and legacy holdings are not treated as the user's actual depot.
+7H joins the authoritative current ``daily_research`` snapshot with explicitly
+supplied position snapshots and already-computed 7A->7G Decision-Layer bundles.
+It is a presentation/integration layer: missing evidence is never rebuilt from
+scanner scalars, and stance, hysteresis, portfolio action and execution remain
+outside 7H authority.
 """
 from __future__ import annotations
 
@@ -33,6 +31,7 @@ from scanner.research.decision_layer.universal_stance import validate_universal_
 SCHEMA_VERSION = "decision_depot_watch_v1"
 POSITION_BOOK_SCHEMA_VERSION = "decision_depot_position_book_v1"
 BUNDLE_SCHEMA_VERSION = "decision_chain_bundle_v1"
+BUNDLE_SET_SCHEMA_VERSION = "decision_chain_bundle_set_v1"
 
 AVAILABILITY_STATES = frozenset({
     "decision_available",
@@ -64,16 +63,16 @@ FORBIDDEN_OUTPUT_KEYS = frozenset({
 
 
 class DepotWatchError(ValueError):
-    """Raised when Phase-7H integration inputs or output violate the contract."""
+    """Raised when Phase-7H integration input or output violates the contract."""
 
 
 def _timestamp(value: object, field: str) -> datetime:
     text = str(value or "").strip()
     if not text:
         raise DepotWatchError(f"{field}_required")
-    normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
+    text = text[:-1] + "+00:00" if text.endswith("Z") else text
     try:
-        parsed = datetime.fromisoformat(normalized)
+        parsed = datetime.fromisoformat(text)
     except ValueError as exc:
         raise DepotWatchError(f"invalid_{field}") from exc
     if parsed.tzinfo is None:
@@ -82,8 +81,8 @@ def _timestamp(value: object, field: str) -> datetime:
 
 
 def _canonical_hash(value: Mapping[str, object]) -> str:
-    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-    return sha256(payload.encode("utf-8")).hexdigest()
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return sha256(raw.encode("utf-8")).hexdigest()
 
 
 def _forbidden_paths(value: object, path: str = "$") -> list[str]:
@@ -101,12 +100,10 @@ def _forbidden_paths(value: object, path: str = "$") -> list[str]:
 
 
 def validate_daily_research_snapshot(value: Mapping[str, object]) -> dict[str, object]:
-    """Validate only the 7H-facing shape of an already-published daily snapshot.
+    """Validate the file-system-independent 7H-facing daily snapshot shape.
 
-    The CLI uses the repository's stronger ``validate_daily_research`` before it
-    reaches this function. Keeping this validator file-system independent makes
-    unit tests and private/runtime integrations possible without weakening the
-    production artifact validator.
+    The runtime CLI additionally calls the repository's full
+    ``validate_daily_research`` validator before reaching this boundary.
     """
     snapshot_id = str(value.get("snapshot_id") or "").strip()
     as_of = str(value.get("as_of") or "").strip()
@@ -118,6 +115,7 @@ def validate_daily_research_snapshot(value: Mapping[str, object]) -> dict[str, o
     _timestamp(as_of, "daily_research_as_of")
     if not isinstance(symbols, Mapping):
         raise DepotWatchError("daily_research_symbols_required")
+
     normalized_symbols: dict[str, object] = {}
     for raw_symbol, payload in symbols.items():
         symbol = str(raw_symbol).strip()
@@ -128,9 +126,16 @@ def validate_daily_research_snapshot(value: Mapping[str, object]) -> dict[str, o
         if not isinstance(payload, Mapping):
             raise DepotWatchError(f"daily_research_symbol_payload_invalid:{symbol}")
         normalized_symbols[symbol] = deepcopy(dict(payload))
+
     universe_size = value.get("universe_size")
-    if universe_size is not None and int(universe_size) != len(normalized_symbols):
-        raise DepotWatchError("daily_research_universe_size_mismatch")
+    if universe_size is not None:
+        try:
+            parsed_size = int(universe_size)
+        except (TypeError, ValueError) as exc:
+            raise DepotWatchError("daily_research_universe_size_invalid") from exc
+        if parsed_size != len(normalized_symbols):
+            raise DepotWatchError("daily_research_universe_size_mismatch")
+
     out = deepcopy(dict(value))
     out["snapshot_id"] = snapshot_id
     out["as_of"] = as_of
@@ -143,19 +148,21 @@ def validate_position_book(
 ) -> dict[str, object]:
     if value.get("schema_version") != POSITION_BOOK_SCHEMA_VERSION:
         raise DepotWatchError("unsupported_position_book_schema")
-    book_id = str(value.get("source_snapshot_id") or "").strip()
-    if not book_id:
+    source_snapshot_id = str(value.get("source_snapshot_id") or "").strip()
+    if not source_snapshot_id:
         raise DepotWatchError("position_book_source_snapshot_id_required")
-    book_as_of = str(value.get("as_of") or "").strip()
-    book_time = _timestamp(book_as_of, "position_book_as_of")
-    if decision_as_of is not None and book_time > _timestamp(decision_as_of, "decision_as_of"):
+    as_of = str(value.get("as_of") or "").strip()
+    book_time = _timestamp(as_of, "position_book_as_of")
+    decision_time = _timestamp(decision_as_of, "decision_as_of") if decision_as_of is not None else None
+    if decision_time is not None and book_time > decision_time:
         raise DepotWatchError("future_position_book")
-    positions = value.get("positions")
-    if not isinstance(positions, list):
+
+    raw_positions = value.get("positions")
+    if not isinstance(raw_positions, list):
         raise DepotWatchError("position_book_positions_must_be_list")
-    normalized: list[dict[str, object]] = []
+    positions: list[dict[str, object]] = []
     seen: set[str] = set()
-    for raw in positions:
+    for raw in raw_positions:
         if not isinstance(raw, Mapping):
             raise DepotWatchError("position_book_row_must_be_object")
         position = validate_position_snapshot(raw)
@@ -163,24 +170,26 @@ def validate_position_book(
         if symbol in seen:
             raise DepotWatchError(f"duplicate_position_symbol:{symbol}")
         seen.add(symbol)
-        if _timestamp(position["as_of"], "position_as_of") > book_time:
+        position_time = _timestamp(position["as_of"], "position_as_of")
+        if position_time > book_time:
             raise DepotWatchError(f"position_newer_than_position_book:{symbol}")
-        if decision_as_of is not None and _timestamp(position["as_of"], "position_as_of") > _timestamp(decision_as_of, "decision_as_of"):
+        if decision_time is not None and position_time > decision_time:
             raise DepotWatchError(f"future_position_snapshot:{symbol}")
-        normalized.append(position)
+        positions.append(position)
+
     out = deepcopy(dict(value))
-    out["source_snapshot_id"] = book_id
-    out["as_of"] = book_as_of
-    out["positions"] = normalized
+    out["source_snapshot_id"] = source_snapshot_id
+    out["as_of"] = as_of
+    out["positions"] = positions
     return out
 
 
 def validate_decision_bundle(value: Mapping[str, object]) -> dict[str, object]:
-    """Validate one complete, already-computed 7A/7D/7E/7F/7G chain."""
+    """Validate one complete already-computed 7A/7D/7E/7F/7G chain."""
     if value.get("schema_version") != BUNDLE_SCHEMA_VERSION:
         raise DepotWatchError("unsupported_decision_bundle_schema")
-    required = ("packet", "stance", "transition", "action", "explanation")
-    if any(not isinstance(value.get(key), Mapping) for key in required):
+    keys = ("packet", "stance", "transition", "action", "explanation")
+    if any(not isinstance(value.get(key), Mapping) for key in keys):
         raise DepotWatchError("decision_bundle_members_required")
 
     packet = validate_input_packet(value["packet"])
@@ -188,7 +197,6 @@ def validate_decision_bundle(value: Mapping[str, object]) -> dict[str, object]:
     transition = validate_state_transition(value["transition"])
     action = validate_portfolio_action(value["action"])
     explanation = validate_reliability_explanation(value["explanation"])
-
     sources = (packet, stance, transition, action, explanation)
     for key in ("symbol", "as_of", "source_snapshot_id"):
         values = [str(source.get(key) or "") for source in sources]
@@ -197,20 +205,20 @@ def validate_decision_bundle(value: Mapping[str, object]) -> dict[str, object]:
 
     universal = stance.get("universal_stance")
     raw = transition.get("raw_stance")
-    action_stance = action.get("universal_stance_context")
     transition_state = transition.get("transition_state")
+    action_stance = action.get("universal_stance_context")
     action_transition = action.get("transition_context")
     action_row = action.get("portfolio_action")
     explanation_context = explanation.get("decision_context")
     if not all(isinstance(item, Mapping) for item in (
-        universal, raw, action_stance, transition_state, action_transition,
+        universal, raw, transition_state, action_stance, action_transition,
         action_row, explanation_context,
     )):
         raise DepotWatchError("decision_bundle_context_missing")
     assert isinstance(universal, Mapping)
     assert isinstance(raw, Mapping)
-    assert isinstance(action_stance, Mapping)
     assert isinstance(transition_state, Mapping)
+    assert isinstance(action_stance, Mapping)
     assert isinstance(action_transition, Mapping)
     assert isinstance(action_row, Mapping)
     assert isinstance(explanation_context, Mapping)
@@ -237,36 +245,46 @@ def validate_decision_bundle(value: Mapping[str, object]) -> dict[str, object]:
 
 
 def validate_bundle_set(value: Mapping[str, object]) -> dict[str, dict[str, object]]:
-    if value.get("schema_version") != "decision_chain_bundle_set_v1":
+    if value.get("schema_version") != BUNDLE_SET_SCHEMA_VERSION:
         raise DepotWatchError("unsupported_decision_bundle_set_schema")
-    bundles = value.get("bundles")
-    if not isinstance(bundles, list):
+    raw_bundles = value.get("bundles")
+    if not isinstance(raw_bundles, list):
         raise DepotWatchError("decision_bundle_set_bundles_must_be_list")
-    result: dict[str, dict[str, object]] = {}
-    for raw in bundles:
+    bundles: dict[str, dict[str, object]] = {}
+    for raw in raw_bundles:
         if not isinstance(raw, Mapping):
             raise DepotWatchError("decision_bundle_must_be_object")
-        # Duplicates are a hard ambiguity even when one bundle later proves invalid.
         packet = raw.get("packet")
         symbol = str(packet.get("symbol") or "").strip() if isinstance(packet, Mapping) else ""
         if not symbol:
             raise DepotWatchError("decision_bundle_symbol_required")
-        if symbol in result:
+        if symbol in bundles:
             raise DepotWatchError(f"duplicate_decision_bundle_symbol:{symbol}")
-        result[symbol] = deepcopy(dict(raw))
-    return result
+        bundles[symbol] = deepcopy(dict(raw))
+    return bundles
 
 
 def _daily_context(value: Mapping[str, object]) -> dict[str, object]:
     current = value.get("current")
     if not isinstance(current, Mapping):
-        current = {}
+        return {}
     allowed = (
         "name", "score", "rank", "rank_percentile", "r_code", "rs3m",
         "trend200", "cycle", "confidence", "confidence_label", "close",
         "currency", "sector", "cluster", "cluster_official",
     )
     return {key: deepcopy(current.get(key)) for key in allowed if key in current}
+
+
+def _position_add_capacity(position: Mapping[str, object]) -> str:
+    """Mirror the frozen 7F capacity semantics without inventing capacity."""
+    can_add = position.get("can_add")
+    remaining = position.get("remaining_adds")
+    if can_add is False or remaining == 0:
+        return "blocked"
+    if can_add is True or (isinstance(remaining, int) and remaining > 0):
+        return "available"
+    return "unknown"
 
 
 def _position_matches_action(position: Mapping[str, object], action: Mapping[str, object]) -> bool:
@@ -284,7 +302,9 @@ def _position_matches_action(position: Mapping[str, object], action: Mapping[str
         ("current_price", "current_price"),
         ("remaining_adds", "remaining_adds"),
     )
-    return all(position.get(left) == context.get(right) for left, right in direct_pairs)
+    if not all(position.get(left) == context.get(right) for left, right in direct_pairs):
+        return False
+    return context.get("add_capacity_state") == _position_add_capacity(position)
 
 
 def _group_for_action(action_state: str) -> str:
@@ -297,11 +317,20 @@ def _group_for_action(action_state: str) -> str:
     raise DepotWatchError(f"unsupported_watch_action:{action_state}")
 
 
+def _position_view(position: Mapping[str, object]) -> dict[str, object]:
+    fields = (
+        "source_snapshot_id", "as_of", "position_state", "quantity",
+        "market_value", "currency", "average_entry_price", "current_price",
+        "remaining_adds",
+    )
+    return {field: deepcopy(position.get(field)) for field in fields}
+
+
 def _unavailable_row(
     *,
     symbol: str,
     position: Mapping[str, object],
-    daily_context: Mapping[str, object] | None,
+    daily_context: Mapping[str, object],
     availability: str,
     reason: str,
     order: int,
@@ -313,18 +342,8 @@ def _unavailable_row(
         "availability_reason": reason,
         "presentation_group": "unavailable",
         "attention_required": False,
-        "daily_scanner_context": deepcopy(dict(daily_context or {})),
-        "position": {
-            "source_snapshot_id": position.get("source_snapshot_id"),
-            "as_of": position.get("as_of"),
-            "position_state": position.get("position_state"),
-            "quantity": position.get("quantity"),
-            "market_value": position.get("market_value"),
-            "currency": position.get("currency"),
-            "average_entry_price": position.get("average_entry_price"),
-            "current_price": position.get("current_price"),
-            "remaining_adds": position.get("remaining_adds"),
-        },
+        "daily_scanner_context": deepcopy(dict(daily_context)),
+        "position": _position_view(position),
         "decision": None,
         "execution_allowed": False,
     }
@@ -333,7 +352,6 @@ def _unavailable_row(
 def _available_row(
     *,
     symbol: str,
-    position: Mapping[str, object],
     daily_context: Mapping[str, object],
     bundle: Mapping[str, object],
     order: int,
@@ -348,18 +366,21 @@ def _available_row(
     transition_state = transition["transition_state"]
     action_row = action["portfolio_action"]
     reliability = explanation["reliability"]
-    explanation_body = explanation.get("explanation", {})
     assert all(isinstance(item, Mapping) for item in (universal, transition_state, action_row, reliability))
-    if not isinstance(explanation_body, Mapping):
-        explanation_body = {}
-    gaps = explanation_body.get("missing_or_limited_evidence", [])
-    if not isinstance(gaps, list):
-        gaps = []
-    triggers = explanation.get("change_triggers", {})
-    if not isinstance(triggers, Mapping):
-        triggers = {}
+
+    explanation_body = explanation.get("explanation")
+    gaps = explanation_body.get("missing_or_limited_evidence", []) if isinstance(explanation_body, Mapping) else []
+    gaps = gaps if isinstance(gaps, list) else []
+    triggers = explanation.get("change_triggers")
+    triggers = triggers if isinstance(triggers, Mapping) else {}
+    decision_triggers = triggers.get("decision_change_triggers", [])
+    information_triggers = triggers.get("information_completion_triggers", [])
+    decision_triggers = decision_triggers if isinstance(decision_triggers, list) else []
+    information_triggers = information_triggers if isinstance(information_triggers, list) else []
+
     action_state = str(action_row["state"])
     group = _group_for_action(action_state)
+    coverage = packet.get("coverage")
     return {
         "symbol": symbol,
         "position_order": order,
@@ -383,11 +404,11 @@ def _available_row(
             "pnl_context": deepcopy(action.get("pnl_context")),
             "reliability_assessment": reliability.get("assessment"),
             "numeric_reliability_score": reliability.get("numeric_reliability_score"),
-            "coverage_admission_state": packet.get("coverage", {}).get("admission_state") if isinstance(packet.get("coverage"), Mapping) else None,
+            "coverage_admission_state": coverage.get("admission_state") if isinstance(coverage, Mapping) else None,
             "evidence_gap_count": len(gaps),
             "missing_or_limited_evidence": deepcopy(gaps),
-            "decision_change_triggers": deepcopy(list(triggers.get("decision_change_triggers", []))) if isinstance(triggers.get("decision_change_triggers", []), list) else [],
-            "information_completion_triggers": deepcopy(list(triggers.get("information_completion_triggers", []))) if isinstance(triggers.get("information_completion_triggers", []), list) else [],
+            "decision_change_triggers": deepcopy(decision_triggers),
+            "information_completion_triggers": deepcopy(information_triggers),
             "explanation_id": explanation.get("explanation_id"),
         },
         "execution_allowed": False,
@@ -399,7 +420,7 @@ def build_depot_watch(
     position_book: Mapping[str, object],
     bundle_set: Mapping[str, object],
 ) -> dict[str, object]:
-    """Build a compact, non-ranking Depot-Watch from already-computed decisions."""
+    """Build a compact non-ranking Depot-Watch from preserved decisions."""
     daily = validate_daily_research_snapshot(daily_research)
     positions = validate_position_book(position_book, decision_as_of=daily["as_of"])
     raw_bundles = validate_bundle_set(bundle_set)
@@ -413,66 +434,61 @@ def build_depot_watch(
         symbol = str(position["symbol"])
         daily_symbol = daily_symbols.get(symbol)
         context = _daily_context(daily_symbol) if isinstance(daily_symbol, Mapping) else {}
+
         if not isinstance(daily_symbol, Mapping):
             rows.append(_unavailable_row(
-                symbol=symbol,
-                position=position,
-                daily_context=context,
+                symbol=symbol, position=position, daily_context=context,
                 availability="symbol_not_in_daily_research",
                 reason="exact_symbol_absent_from_authoritative_daily_snapshot",
                 order=order,
             ))
             continue
+
         raw_bundle = raw_bundles.get(symbol)
         if raw_bundle is None:
             rows.append(_unavailable_row(
-                symbol=symbol,
-                position=position,
-                daily_context=context,
+                symbol=symbol, position=position, daily_context=context,
                 availability="decision_bundle_missing",
                 reason="complete_7a_7g_bundle_not_supplied",
                 order=order,
             ))
             continue
+
         packet = raw_bundle.get("packet")
         bundle_snapshot = str(packet.get("source_snapshot_id") or "") if isinstance(packet, Mapping) else ""
         bundle_as_of = str(packet.get("as_of") or "") if isinstance(packet, Mapping) else ""
         if bundle_snapshot != daily["snapshot_id"] or bundle_as_of != daily["as_of"]:
             rows.append(_unavailable_row(
-                symbol=symbol,
-                position=position,
-                daily_context=context,
+                symbol=symbol, position=position, daily_context=context,
                 availability="decision_bundle_snapshot_mismatch",
                 reason="decision_bundle_not_from_authoritative_daily_snapshot",
                 order=order,
             ))
             continue
+
         try:
             bundle = validate_decision_bundle(raw_bundle)
-        except Exception as exc:  # fail closed per row; other holdings remain reviewable
+        except Exception as exc:  # per-row fail-closed boundary
             rows.append(_unavailable_row(
-                symbol=symbol,
-                position=position,
-                daily_context=context,
+                symbol=symbol, position=position, daily_context=context,
                 availability="decision_bundle_invalid",
                 reason=f"decision_bundle_validation_failed:{type(exc).__name__}:{exc}",
                 order=order,
             ))
             continue
+
         used_bundles.add(symbol)
         if not _position_matches_action(position, bundle["action"]):
             rows.append(_unavailable_row(
-                symbol=symbol,
-                position=position,
-                daily_context=context,
+                symbol=symbol, position=position, daily_context=context,
                 availability="position_context_mismatch",
                 reason="7f_action_was_not_computed_from_supplied_position_snapshot",
                 order=order,
             ))
             continue
+
         rows.append(_available_row(
             symbol=symbol,
-            position=position,
             daily_context=context,
             bundle=bundle,
             order=order,
@@ -495,9 +511,9 @@ def build_depot_watch(
             reliability_counts[reliability_state] = reliability_counts.get(reliability_state, 0) + 1
 
     available_count = availability_counts.get("decision_available", 0)
-    if available_count == len(rows) and rows:
+    if rows and available_count == len(rows):
         watch_status = "complete"
-    elif available_count > 0:
+    elif available_count:
         watch_status = "partial"
     else:
         watch_status = "unavailable"
@@ -581,6 +597,7 @@ def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
     _timestamp(value.get("as_of"), "watch_as_of")
     if not str(value.get("source_snapshot_id") or "").strip():
         raise DepotWatchError("watch_source_snapshot_id_required")
+
     rows = value.get("rows")
     if not isinstance(rows, list):
         raise DepotWatchError("watch_rows_must_be_list")
@@ -614,16 +631,15 @@ def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
                 raise DepotWatchError(f"numeric_reliability_score_forbidden:{symbol}")
             if _group_for_action(action_state) != group:
                 raise DepotWatchError(f"action_presentation_group_mismatch:{symbol}")
-        else:
-            if decision is not None or group != "unavailable":
-                raise DepotWatchError(f"unavailable_row_must_not_expose_decision:{symbol}")
+        elif decision is not None or group != "unavailable":
+            raise DepotWatchError(f"unavailable_row_must_not_expose_decision:{symbol}")
         if row.get("execution_allowed") is not False:
             raise DepotWatchError(f"watch_row_execution_must_remain_disabled:{symbol}")
 
     expected_status = "unavailable"
     if rows and available == len(rows):
         expected_status = "complete"
-    elif available > 0:
+    elif available:
         expected_status = "partial"
     if value.get("watch_status") != expected_status:
         raise DepotWatchError("watch_status_count_mismatch")
@@ -631,6 +647,7 @@ def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
     forbidden = _forbidden_paths(value)
     if forbidden:
         raise DepotWatchError("forbidden_execution_or_sizing_fields:" + ",".join(forbidden))
+
     semantics = value.get("semantics")
     if not isinstance(semantics, Mapping):
         raise DepotWatchError("watch_semantics_required")
