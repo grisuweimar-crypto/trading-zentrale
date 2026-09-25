@@ -185,6 +185,15 @@ def test_position_context_must_match_the_position_used_by_7f():
     assert row["decision"] is None
 
 
+def test_add_capacity_change_also_invalidates_old_7f_position_context():
+    supplied = _position(can_add=False)
+    old = _position(can_add=True)
+    result = build_depot_watch(_daily("TEST"), _position_book(supplied), _bundles(_bundle(position=old)))
+    row = result["rows"][0]
+    assert row["availability"] == "position_context_mismatch"
+    assert row["decision"] is None
+
+
 def test_invalid_bundle_fails_closed_per_symbol_without_hiding_other_valid_positions():
     first = _position("TEST")
     second = _position("GOOD", source="good-broker")
