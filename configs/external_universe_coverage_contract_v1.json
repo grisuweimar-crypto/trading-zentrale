@@ -1,0 +1,79 @@
+{
+  "schema_version": "external_universe_coverage_contract_v1",
+  "phase": "8A_external_source_and_pit_contract",
+  "purpose": "prevent survivorship and current-membership leakage in all Phase-8 research datasets",
+  "status": "required_before_family_backtest",
+  "membership_key": ["as_of_date", "symbol", "listing_venue", "instrument_id"],
+  "required_fields": [
+    "as_of_date",
+    "symbol",
+    "instrument_id",
+    "listing_venue",
+    "membership_status",
+    "membership_reason",
+    "listing_date",
+    "delisting_date",
+    "scanner_observable",
+    "external_family",
+    "source_id",
+    "source_coverage_status",
+    "pit_status",
+    "reason_codes"
+  ],
+  "membership_status_values": [
+    "IN_SCOPE",
+    "OUT_OF_SCOPE",
+    "NOT_YET_LISTED",
+    "DELISTED",
+    "UNKNOWN"
+  ],
+  "coverage_status_values": [
+    "KNOWN",
+    "UNKNOWN",
+    "NOT_APPLICABLE",
+    "STALE",
+    "LICENSED_OUT",
+    "LOW_COVERAGE",
+    "CONFLICTING_SOURCES"
+  ],
+  "rules": {
+    "current_universe_may_define_historical_universe": false,
+    "current_symbol_may_replace_historical_identifier_without_mapping": false,
+    "delisted_symbols_may_be_dropped_from_historical_sample": false,
+    "historical_scanner_membership_must_be_preserved": true,
+    "source_coverage_must_be_evaluated_as_of_date": true,
+    "missing_external_data_may_be_imputed_neutral": false,
+    "unknown_membership_may_be_silently_excluded": false,
+    "family_specific_coverage_required": true,
+    "publication_valid_from_required": true
+  },
+  "governance_sources": [
+    {
+      "source_id": "internal_scanner_history",
+      "role": "primary_project_observability_ledger",
+      "description": "Use the historical scanner/history artifacts to establish whether an instrument was actually observable by the project at each historical date."
+    },
+    {
+      "source_id": "alphavantage_listing_status",
+      "role": "optional_external_listing_delisting_crosscheck",
+      "pit_status": "PARTIAL",
+      "description": "Alpha Vantage documents active/delisted US stocks and ETFs as of historical dates after 2010-01-01. Use only as a cross-check, not as a replacement for project history or non-US listing records.",
+      "documentation_url": "https://www.alphavantage.co/documentation/#listing-status"
+    }
+  ],
+  "dataset_build_order": [
+    "resolve_historical_project_membership",
+    "resolve_historical_instrument_identity",
+    "attach_family_specific_source_coverage_as_of_date",
+    "attach_publication_valid_from",
+    "retain_explicit_missingness_and_exclusion_reason",
+    "only_then_join_outcomes"
+  ],
+  "forbidden_shortcuts": [
+    "filter_history_to_symbols_that_exist_today",
+    "filter_history_to_symbols_with_external_data_today",
+    "use_current_ticker_without_identifier_mapping_across_renames",
+    "treat_no_vendor_record_as_no_event_or_neutral",
+    "use_settlement_or_fiscal_period_date_as_publication_date_without_proof"
+  ]
+}
