@@ -1,0 +1,172 @@
+{
+  "schema_version": "elliott_vnext_contract_v2",
+  "module": "6_elliott_vnext",
+  "status": "foundation_only_not_productive",
+  "foundation_revision": "full_cycle_swing_management",
+  "rule_source": {
+    "name": "ElliottWaver.live Kompendium",
+    "url": "https://elliottwaver.live/kompendium/",
+    "verified_on": "2026-09-24"
+  },
+  "timeframes": {
+    "source": "daily_ohlcv",
+    "derived": ["weekly"],
+    "intraday_required": false,
+    "default_flow": "top_down",
+    "bottom_up_trigger_allowed": true
+  },
+  "pivot_causality": {
+    "required_fields": ["pivot_time", "confirmed_time"],
+    "usable_from": "confirmed_time",
+    "future_revision_of_historical_state": false
+  },
+  "scenario_policy": {
+    "single_true_count_claim_allowed": false,
+    "primary_required": true,
+    "alternatives_required_when_plausible": true,
+    "hard_invalidation_required": true,
+    "rule_violations_required": true,
+    "projection_zones_must_be_scenario_specific": true
+  },
+  "pattern_classes": {
+    "motive": ["impulse", "leading_diagonal", "ending_diagonal"],
+    "correction": ["zigzag", "flat", "triangle", "double_three", "triple_three"],
+    "v1_full_support": ["impulse", "zigzag", "flat"],
+    "v1_conservative_support": ["leading_diagonal", "ending_diagonal", "triangle", "double_three", "triple_three"]
+  },
+  "hard_rules": {
+    "classic_impulse": [
+      "wave_2_must_not_cross_wave_1_origin",
+      "wave_3_must_not_be_shortest_of_1_3_5",
+      "wave_4_must_not_overlap_wave_1_price_territory"
+    ],
+    "diagonal_exception": [
+      "wave_4_wave_1_overlap_is_allowed_for_leading_or_ending_diagonal"
+    ],
+    "truncation_policy": [
+      "wave_5_new_extreme_must_not_be_hard_required"
+    ]
+  },
+  "soft_guidelines": {
+    "wave_2_retracement": [0.5, 0.618, 0.786, 0.887],
+    "wave_4_retracement": [0.146, 0.236, 0.382, 0.5],
+    "wave_3_extension_research_candidates": [1.0, 1.618, 2.0, 2.618, 3.236],
+    "wave_5_projection_levels": "not_frozen_before_empirical_research",
+    "note": "Guidelines may rank or describe plausible scenarios but must never override hard rules."
+  },
+  "fibonacci_policy": {
+    "wave_structure_selects_anchors": true,
+    "fibonacci_must_not_select_wave_count": true,
+    "levels_are_zones": true,
+    "zone_width_inputs": ["atr", "price_level", "wave_degree"],
+    "optional_zone_width_inputs": ["liquidity", "spread", "gaps", "instrument_type"],
+    "wave_2_0_887_is_hard_invalidation": false,
+    "wave_2_hard_invalidation": "wave_1_origin_crossed",
+    "fib_geometry_must_remain_separate_from_confirmation": true
+  },
+  "projection_policy": {
+    "purpose": "prospective_price_map_not_forecast_or_trade_order",
+    "requires_structurally_valid_scenario": true,
+    "requires_causally_available_anchors": true,
+    "projection_must_store_available_from": true,
+    "projection_must_store_basis": true,
+    "projection_must_store_scenario_id": true,
+    "single_exact_price_target_forbidden": true,
+    "zones_not_points": true,
+    "wave_3": {
+      "basis": "extensions_of_confirmed_wave_1_from_wave_2_candidate_end",
+      "candidate_levels_source": "soft_guidelines.wave_3_extension_research_candidates",
+      "levels_remain_research_hypotheses_until_validated": true
+    },
+    "wave_4": {
+      "basis": "retracements_of_confirmed_or_sufficiently_supported_wave_3",
+      "candidate_levels_source": "soft_guidelines.wave_4_retracement"
+    },
+    "wave_5": {
+      "basis_candidates": ["wave_1_length_relative_to_wave_4", "wave_1_to_wave_3_structure_relative_to_wave_4"],
+      "numeric_levels_frozen": false,
+      "must_be_empirically_compared_before_production": true,
+      "truncated_fifth_must_remain_possible": true
+    }
+  },
+  "wave_cycle_states": [
+    "possible_wave_2_completion",
+    "wave_3_in_progress",
+    "wave_3_target_approach",
+    "possible_wave_3_exhaustion",
+    "wave_4_in_progress",
+    "wave_4_target_zone",
+    "possible_wave_4_completion",
+    "wave_5_in_progress",
+    "wave_5_target_approach",
+    "possible_wave_5_completion",
+    "post_wave_5_higher_degree_correction_risk"
+  ],
+  "routing_triggers": [
+    {"id": "EW_CONTEXT", "meaning": "valid higher-degree structure exists", "action": "maintain_context"},
+    {"id": "EW_PREWATCH_382", "meaning": "correction approximately reaches 38.2%", "action": "cheap_watch"},
+    {"id": "EW_DEEP_SCAN_500", "meaning": "correction approximately reaches 50%", "action": "run_deep_elliott_and_scanner_analysis"},
+    {"id": "EW_W2_CORE", "meaning": "wave-2 candidate within 50%-78.6% zone", "action": "review_entry_or_add_context_only"},
+    {"id": "EW_W2_DEEP", "meaning": "wave-2 candidate within 78.6%-88.7% zone", "action": "raise_risk_and_alternative_scenario_priority"},
+    {"id": "EW_W2_DANGER", "meaning": "deeper than 88.7% while wave-1 origin remains intact", "action": "force_recount_and_raise_alternative_scenario_priority"},
+    {"id": "EW_W3_TARGET_APPROACH", "meaning": "price approaches a scenario-specific projected wave-3 zone", "action": "review_hold_vs_partial_reduce_context"},
+    {"id": "EW_W3_EXHAUSTION", "meaning": "wave-3 target zone plus independent exhaustion evidence", "action": "prioritize_partial_reduce_review"},
+    {"id": "EW_W4_TARGET_ZONE", "meaning": "wave-4 candidate enters a scenario-specific retracement zone", "action": "review_reentry_or_add_context"},
+    {"id": "EW_W4_COMPLETION", "meaning": "wave-4 candidate has structural turn confirmation", "action": "prioritize_reentry_or_add_review"},
+    {"id": "EW_W5_TARGET_APPROACH", "meaning": "price approaches a scenario-specific wave-5 target cluster", "action": "raise_profit_protection_review_priority"},
+    {"id": "EW_W5_COMPLETION_RISK", "meaning": "wave-5 completion evidence raises higher-degree correction risk", "action": "prioritize_larger_reduce_or_exit_review"},
+    {"id": "EW_INVALIDATED", "meaning": "hard rule invalidates current count", "action": "discard_specific_count"},
+    {"id": "EW_BOTTOM_UP_SCAN", "meaning": "scanner event requests local Elliott analysis and parent-context search", "action": "bottom_up_then_zoom_out"}
+  ],
+  "swing_routing_policy": {
+    "module_may_propose_review_context": true,
+    "module_may_emit_direct_trade_order": false,
+    "allowed_review_contexts": [
+      "entry_or_add_review",
+      "hold_review",
+      "partial_reduce_review",
+      "reentry_or_add_review",
+      "profit_protection_review",
+      "larger_reduce_or_exit_review"
+    ],
+    "review_context_is_not_decision": true,
+    "final_action_requires_global_decision_layer": true
+  },
+  "evidence_dimensions": ["structural_fit", "confirmation_strength", "historical_expectancy"],
+  "forbidden_shortcuts": [
+    "elliott_outputs_buy_hold_sell",
+    "fibonacci_level_alone_is_trade_signal",
+    "projection_zone_is_presented_as_certain_future_price",
+    "wave_3_target_zone_alone_triggers_sale",
+    "wave_5_target_zone_alone_triggers_sale",
+    "scanner_peer_sample_defines_real_sector",
+    "historical_pivot_used_before_confirmed_time",
+    "projection_uses_anchor_before_anchor_confirmed_time",
+    "holdout_used_for_pattern_selection",
+    "overlapping_forward_windows_treated_as_independent"
+  ],
+  "market_context": {
+    "history_artifact": "artifacts/research/market_context_history.csv",
+    "separate_from_scanner_history": true,
+    "quality_levels": ["sufficient", "limited", "unreliable", "unavailable"],
+    "usable_as_real_market_evidence": ["sufficient", "limited"],
+    "unusable_as_real_market_evidence": ["unreliable", "unavailable"],
+    "preferred_proxy_order": [
+      "official_or_broad_index",
+      "broad_liquid_sector_or_theme_etf",
+      "externally_defined_point_in_time_peer_basket",
+      "scanner_peer_context_only"
+    ]
+  },
+  "cross_system_research": {
+    "questions": ["redundancy", "confirmation", "elliott_rescue", "scanner_rescue", "conflict", "lead_lag", "stage_specific_incremental_value", "swing_routing_value"],
+    "lead_lag_window_trading_days": 20,
+    "stage_specific_windows_required": true,
+    "discovery_validation_holdout_separation_required": true
+  },
+  "decision_boundary": {
+    "module_may_emit_trade_decision": false,
+    "module_may_emit_review_priority": true,
+    "final_decision_owner": "global_decision_layer"
+  }
+}
