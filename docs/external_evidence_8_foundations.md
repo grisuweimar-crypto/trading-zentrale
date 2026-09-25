@@ -2,13 +2,19 @@
 
 Untertitel: Fundamentals, Revisions, Positioning, Events & Macro Context
 
-Status: Foundation-only. Keine produktive Integration in Phase 7.
+Status: Foundation-only. Phase 7A–7I ist technisch abgeschlossen und der Phase-7I-Validierungsvertrag wurde am 2026-09-25 eingefroren. Phase 8 bleibt bis zum gesonderten Startauftrag ohne produktive Integration.
 
 ## 1. Leitfrage
 
 Phase 8 untersucht ausschließlich, ob externe Informationen außerhalb der bisherigen Preis-/Scannerarchitektur Point-in-Time einen eigenständigen, reproduzierbaren und Out-of-Sample bestätigten Zusatznutzen gegenüber dem eingefrorenen Phase-7-Core liefern.
 
 Phase 8 ist ausdrücklich kein Feature-Creep-Projekt und erzeugt keinen neuen Super-Score.
+
+Verbindliche Baseline ist der eingefrorene Phase-7-Core unter `configs/decision_validation_promotion_v1.json`:
+- Freeze: `2026-09-25`
+- `prospective_unspent` ab: `2026-09-26`
+
+Phase 8 darf die Phase-7-Prospektivevidenz nicht durch rückwirkende Regeländerungen entwerten.
 
 ## 2. Evidenzfamilien
 
@@ -71,7 +77,7 @@ Zusatzfelder:
 
 Ein numerisches Quellen-Confidence-Feld darf nur als interne Datenqualitätsmetrik verwendet werden und ist kein Richtungs-Vote.
 
-## 6. Coverage und Domain Gating
+## 6. Coverage, Universe und Domain Gating
 
 Jede Familie muss explizit dokumentieren:
 - geografische Abdeckung,
@@ -81,6 +87,8 @@ Jede Familie muss explizit dokumentieren:
 - Verzögerung,
 - Lizenzgrenzen,
 - validierte Domänen.
+
+Zusätzlich ist für Research ein As-of-Universe-/Coverage-Ledger erforderlich. Es muss mindestens historische Zugehörigkeit, Aufnahme-/Ausschlussgrund, Listing-/Delisting-Status und Datenverfügbarkeit am jeweiligen Zeitpunkt nachvollziehbar machen. Aktuelle Universe-Mitgliedschaft darf nicht rückwirkend als historische Mitgliedschaft verwendet werden.
 
 Eine Familie darf außerhalb ihrer validierten Domäne nicht als bekannte neutrale Evidenz dargestellt werden.
 
@@ -111,7 +119,16 @@ Hypothesen vorab registriert; FDR-/Multiplicity-Kontrolle bzw. andere geeignete 
 
 Kein bestandener Gate = keine Integration.
 
-## 8. Konfliktmatrix
+## 8. Research Governance / Evidence Consumption
+
+Für Phase 8 gilt zusätzlich:
+- Hypothesen werden nach Familie registriert und als exploratory oder confirmatory gekennzeichnet.
+- Confirmatory Regeln werden vor Betrachtung der zugehörigen zukünftigen Outcomes eingefroren.
+- Menschliche Outcome-Inspektionen, die zu Designänderungen führen, werden protokolliert.
+- Evidenz, auf deren Outcome-Basis Regeln oder Schwellen verändert wurden, wird als `spent_for_design` behandelt und darf nicht erneut als unabhängige Bestätigung gelten.
+- Reine präventive QA-Änderungen ohne Betrachtung zukünftiger Outcomes können den `unspent`-Status erhalten, sofern dies dokumentiert ist.
+
+## 9. Konfliktmatrix
 
 Phase 8 modelliert externe Evidenz zunächst relativ zum Phase-7-Core, nicht als direkten Trade-Befehl.
 
@@ -127,7 +144,7 @@ Kanonische Relation:
 
 Diese Relation ist eine Beschreibung, keine bereits validierte Decision-Policy.
 
-## 9. Decision Reliability Extension
+## 10. Decision Reliability Extension
 
 Phase 8 darf die bestehende Phase-7-Reliability nicht überschreiben. Sie liefert zusätzliche strukturierte Reliability-Dimensionen:
 - `core_evidence`
@@ -141,7 +158,7 @@ Phase 8 darf die bestehende Phase-7-Reliability nicht überschreiben. Sie liefer
 
 Eine spätere kombinierte Decision Reliability darf nur in Phase 8I nach erfolgreicher Validierung erweitert werden.
 
-## 10. Forschungshierarchie
+## 11. Forschungshierarchie
 
 1. Source/PIT feasibility
 2. Single-family incremental test
@@ -152,7 +169,7 @@ Eine spätere kombinierte Decision Reliability darf nur in Phase 8I nach erfolgr
 
 Nie mehrere neue Familien gleichzeitig einführen und anschließend versuchen, den Mehrwert rückwirkend zuzuordnen.
 
-## 11. Priorisierung
+## 12. Priorisierung
 
 Operative Reihenfolge:
 1. 8A PIT- und Source Contract
@@ -162,7 +179,7 @@ Operative Reihenfolge:
 5. Macro Exposure
 6. breite News-/Event-Erweiterungen erst nach erfolgreicher strukturierter Basis
 
-## 12. Phase-7-Grenze
+## 13. Phase-7-Grenze
 
 Phase 7 bleibt eingefrorene Baseline.
 
