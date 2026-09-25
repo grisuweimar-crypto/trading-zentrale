@@ -1,0 +1,153 @@
+{
+  "schema_version": "external_evidence_8_contract_v1",
+  "phase": "8_external_evidence_layer",
+  "status": "foundation_only_not_productive",
+  "purpose": "measure incremental point_in_time external evidence value versus frozen phase7 core",
+  "families": [
+    "fundamentals",
+    "revisions",
+    "positioning",
+    "structured_events",
+    "macro_exposure"
+  ],
+  "priority": [
+    "source_and_pit_contract",
+    "revisions_single_family_pilot",
+    "fundamentals_and_structured_corporate_events",
+    "positioning",
+    "macro_exposure"
+  ],
+  "pit_contract": {
+    "common_fields": [
+      "event_time",
+      "published_at",
+      "ingested_at",
+      "valid_from",
+      "revision_id",
+      "source",
+      "license",
+      "restatement_policy",
+      "vintage"
+    ],
+    "usable_from": "published_at_or_later_family_specific_valid_from",
+    "current_value_retrojection_forbidden": true,
+    "family_rules": {
+      "fundamentals": ["separate_preliminary_final_restated", "preserve_first_release_vintage"],
+      "revisions": ["historical_consensus_snapshot_required", "current_consensus_retrojection_forbidden"],
+      "positioning": ["settlement_date_separate_from_publication_date", "usable_no_earlier_than_publication"],
+      "structured_events": ["first_public_release_required", "source_hierarchy_required"],
+      "macro_exposure": ["release_vintage_required", "revisions_must_not_replace_original_release_in_history"]
+    }
+  },
+  "status_model": {
+    "states": [
+      "KNOWN",
+      "UNKNOWN",
+      "NOT_APPLICABLE",
+      "STALE",
+      "LICENSED_OUT",
+      "LOW_COVERAGE",
+      "CONFLICTING_SOURCES"
+    ],
+    "unknown_may_be_treated_as_neutral": false,
+    "low_coverage_may_be_treated_as_neutral": false,
+    "stale_may_be_treated_as_neutral": false,
+    "conflicting_sources_may_be_treated_as_neutral": false,
+    "required_quality_fields": [
+      "coverage",
+      "freshness_days",
+      "provenance_quality",
+      "validated_domain",
+      "source_count",
+      "reason_codes"
+    ]
+  },
+  "external_evidence_semantics": {
+    "must_remain_separate_family": true,
+    "may_rewrite_selection": false,
+    "may_rewrite_timing": false,
+    "may_rewrite_probability": false,
+    "may_rewrite_risk": false,
+    "may_rewrite_confidence": false,
+    "may_rewrite_elliott": false,
+    "may_directly_replace_portfolio_action": false,
+    "may_generate_order": false
+  },
+  "promotion_gates": {
+    "required": [
+      "pit",
+      "coverage",
+      "incremental",
+      "stability",
+      "robustness",
+      "cost",
+      "multiple_testing"
+    ],
+    "all_required_for_integration": true,
+    "multiple_testing_controls_required": true,
+    "preregistered_hypotheses_preferred": true,
+    "holdout_may_select_features": false
+  },
+  "baseline_policy": {
+    "baseline": "frozen_phase7_core",
+    "phase7_validation_contract": "configs/decision_validation_promotion_v1.json",
+    "phase7_frozen_on": "2026-09-25",
+    "phase7_prospective_unspent_from": "2026-09-26",
+    "single_family_first": true,
+    "multi_family_joint_test_before_single_family_promotion_allowed": false,
+    "incremental_value_required": true,
+    "out_of_sample_required": true,
+    "regime_checks_required": true,
+    "domain_checks_required": true
+  },
+  "research_governance": {
+    "as_of_universe_ledger_required": true,
+    "historical_membership_and_exclusion_reasons_required": true,
+    "survivorship_by_current_membership_forbidden": true,
+    "hypothesis_family_registry_required": true,
+    "confirmatory_family_freeze_required_before_outcome_inspection": true,
+    "human_outcome_inspection_log_required": true,
+    "outcome_driven_design_change_marks_evidence_spent_for_design": true,
+    "preventive_qa_change_without_future_outcome_inspection_may_preserve_unspent_status": true
+  },
+  "relation_to_phase7": {
+    "states": [
+      "CONFIRMING",
+      "CONFLICTING",
+      "UNKNOWN",
+      "EXTERNAL_ONLY",
+      "MIXED_EXTERNAL",
+      "INSUFFICIENT_EXTERNAL"
+    ],
+    "descriptive_not_policy": true,
+    "external_direction_alone_is_trade_decision": false
+  },
+  "decision_reliability_extension": {
+    "phase7_reliability_must_not_be_overwritten": true,
+    "candidate_dimensions": [
+      "core_evidence",
+      "external_evidence",
+      "external_coverage",
+      "provenance_quality",
+      "external_family_agreement",
+      "core_external_conflict_severity",
+      "walk_forward_support_external",
+      "reason_codes"
+    ],
+    "integration_only_after_promotion": true
+  },
+  "forbidden_shortcuts": [
+    "treat_missing_as_neutral",
+    "retroject_current_consensus",
+    "retroject_latest_restatement",
+    "use_settlement_date_before_publication",
+    "invent_macro_exposure_without_versioned_mapping",
+    "combine_all_external_families_before_single_family_testing",
+    "use_external_evidence_as_direct_buy_sell_vote",
+    "optimize_on_holdout",
+    "promote_from_discovery_only",
+    "use_current_universe_membership_as_historical_membership",
+    "reuse_outcome_inspected_evidence_as_unspent_design_confirmation",
+    "ignore_license_restrictions"
+  ]
+}

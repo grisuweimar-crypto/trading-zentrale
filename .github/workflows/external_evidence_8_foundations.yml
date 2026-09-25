@@ -1,0 +1,32 @@
+name: Phase 8 External Evidence Foundations
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8_contract_v1.json"
+      - "configs/external_source_registry_schema_v1.json"
+      - "configs/external_conflict_matrix_v1.json"
+      - "docs/external_evidence_8_foundations.md"
+      - "docs/external_evidence_8_research_plan.md"
+      - "docs/module8_external_evidence_handover.md"
+      - "tests/test_external_evidence_8_foundations.py"
+      - ".github/workflows/external_evidence_8_foundations.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 8 foundation guards
+        run: python -m pytest -q tests/test_external_evidence_8_foundations.py

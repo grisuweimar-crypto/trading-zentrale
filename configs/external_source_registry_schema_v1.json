@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "External Evidence Source Registry",
+  "type": "object",
+  "required": ["schema_version", "sources"],
+  "properties": {
+    "schema_version": {"const": "external_source_registry_v1"},
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "family",
+          "provider",
+          "coverage_status",
+          "pit_status",
+          "license_status",
+          "history_start",
+          "validated_domain",
+          "publication_semantics",
+          "restatement_policy"
+        ],
+        "properties": {
+          "source_id": {"type": "string"},
+          "family": {"enum": ["fundamentals", "revisions", "positioning", "structured_events", "macro_exposure"]},
+          "provider": {"type": "string"},
+          "coverage_status": {"enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"]},
+          "pit_status": {"enum": ["SAFE", "PARTIAL", "UNSAFE", "UNKNOWN"]},
+          "license_status": {"enum": ["USABLE", "RESTRICTED", "LICENSED_OUT", "UNKNOWN"]},
+          "history_start": {"type": ["string", "null"]},
+          "history_end": {"type": ["string", "null"]},
+          "geography": {"type": "array", "items": {"type": "string"}},
+          "instrument_types": {"type": "array", "items": {"type": "string"}},
+          "validated_domain": {"type": "array", "items": {"type": "string"}},
+          "publication_semantics": {"type": "string"},
+          "restatement_policy": {"enum": ["first_release_only", "latest_revised", "both_versioned", "not_applicable"]},
+          "revision_history_available": {"type": "boolean"},
+          "estimated_cost": {"type": ["number", "null"], "minimum": 0},
+          "cost_unit": {"type": ["string", "null"]},
+          "source_quality_notes": {"type": "array", "items": {"type": "string"}},
+          "promotion_eligible": {"type": "boolean"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}
