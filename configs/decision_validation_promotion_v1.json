@@ -32,6 +32,7 @@
     "collecting_prospective_evidence",
     "collecting_prospective_dataset",
     "awaiting_mature_outcomes",
+    "collecting_prospective_comparison_support",
     "awaiting_downstream_shadow_trace",
     "metrics_ready_for_promotion_review"
   ],
@@ -48,6 +49,7 @@
     "prospective_partition_required": "prospective_unspent",
     "typed_7a_packets_required": true,
     "mature_forward_outcomes_required": true,
+    "frozen_7c_comparison_support_requirements_must_be_met": true,
     "downstream_7d_through_7h_shadow_trace_required": true,
     "date_only_join_allowed": false,
     "snapshot_identity_required_where_available": true,
@@ -66,7 +68,7 @@
     "winner_selection_from_spent_data_allowed": false
   },
   "layer_review_requirements": {
-    "7C": "Re-run only the frozen pre-registered comparisons on prospective-unspent mature outcomes; discovery support never becomes confirmation by relabelling.",
+    "7C": "Re-run only the frozen pre-registered comparisons on prospective-unspent mature outcomes; discovery support never becomes confirmation by relabelling. Promotion review metrics are not ready until every frozen comparison has the inherited minimum group N and temporal support.",
     "7D": "Evaluate preserved positive/negative/conflicted/insufficient stance behavior on prospective traces and mature outcomes without redefining the stance mapping after outcomes are known.",
     "7E": "Evaluate the frozen depth-2 candidate and comparison depths 1/3/5 prospectively; historical churn reduction alone cannot validate outcome quality or choose a winner.",
     "7F": "Evaluate review actions separately from Universal Stance using prospective private-runtime position-state traces; no cost or P/L proxy may be invented.",
@@ -79,12 +81,14 @@
     "required_for_7d_through_7h_empirical_review": true,
     "must_not_contain_raw_position_values": true,
     "public_repository_persistence_allowed": false,
-    "required_captured_layers": ["7D", "7E", "7F", "7G", "7H"]
+    "required_captured_layers": ["7D", "7E", "7F", "7G", "7H"],
+    "layer_metrics_ready_required_when_trace_rows_exist": true
   },
   "promotion_policy": {
     "shadow_collection_requires_explicit_empirical_edge": false,
     "shadow_collection_requires_technical_readiness": true,
     "promotion_review_requires_prospective_mature_evidence": true,
+    "promotion_review_requires_frozen_comparison_support": true,
     "promotion_review_is_automatic_promotion": false,
     "automatic_promotion_allowed": false,
     "automatic_contract_mutation_allowed": false,
