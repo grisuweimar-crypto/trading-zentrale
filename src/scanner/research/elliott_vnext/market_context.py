@@ -257,14 +257,16 @@ def build_market_context_history(
         raise MarketContextInputError("blank_history_context_id")
     for col in ("open", "high", "low", "close"):
         raw[col] = _numeric(raw, col, required=True)
-        if (raw[col] <= 0).any():
-            raise MarketContextInputError(f"nonpositive_history_{col}")
+        if (~np.isfinite(raw[col])).any() or (raw[col] <= 0).any():
+            raise MarketContextInputError(f"nonfinite_or_nonpositive_history_{col}")
     raw["adj_close"] = _numeric(raw, "adj_close", required=False)
     raw["volume"] = _numeric(raw, "volume", required=False)
-    if (raw["adj_close"].notna() & (raw["adj_close"] <= 0)).any():
-        raise MarketContextInputError("nonpositive_history_adj_close")
-    if (raw["volume"].notna() & (raw["volume"] < 0)).any():
-        raise MarketContextInputError("negative_history_volume")
+    adj_bad = raw["adj_close"].notna() & ((~np.isfinite(raw["adj_close"])) | (raw["adj_close"] <= 0))
+    vol_bad = raw["volume"].notna() & ((~np.isfinite(raw["volume"])) | (raw["volume"] < 0))
+    if adj_bad.any():
+        raise MarketContextInputError("nonfinite_or_nonpositive_history_adj_close")
+    if vol_bad.any():
+        raise MarketContextInputError("nonfinite_or_negative_history_volume")
 
     bad_high = raw["high"] < raw[["open", "low", "close"]].max(axis=1)
     bad_low = raw["low"] > raw[["open", "high", "close"]].min(axis=1)
