@@ -1,0 +1,51 @@
+name: Phase 7C Confirmation and Conflict Research
+
+on:
+  pull_request:
+    paths:
+      - "configs/decision_conflict_research_v1.json"
+      - "configs/decision_research_dataset_v1.json"
+      - "src/scanner/research/decision_layer/**"
+      - "tests/test_decision_conflict_research_7c.py"
+      - "tests/test_decision_layer_input_contract.py"
+      - "tests/test_decision_research_dataset_7b.py"
+      - "tests/test_decision_evidence_archive_7b.py"
+      - "scripts/run_decision_conflict_7c.py"
+      - "scripts/inspect_decision_relations_7c.py"
+      - "docs/decision_layer_7c.md"
+      - ".github/workflows/decision_layer_7c.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 7A 7B and 7C regression tests
+        run: >-
+          pytest -q
+          tests/test_decision_layer_input_contract.py
+          tests/test_decision_research_dataset_7b.py
+          tests/test_decision_evidence_archive_7b.py
+          tests/test_decision_conflict_research_7c.py
+      - name: Smoke-test 7C CLIs
+        run: >-
+          python scripts/run_decision_conflict_7c.py --help
+          && python scripts/inspect_decision_relations_7c.py --help
+      - name: Build 7C report from repository research inputs
+        run: >-
+          python scripts/run_decision_conflict_7c.py
+          --output /tmp/decision_conflict_7c.json
+      - name: Validate real-input 7C output
+        run: >-
+          python -c "import json, pathlib; d=json.loads(pathlib.Path('/tmp/decision_conflict_7c.json').read_text()); assert d['rows_used_for_discovery'] > 0; assert d['symbols_used_for_discovery'] > 0; assert d['semantics']['universal_stance_computed'] is False; assert d['semantics']['portfolio_action_computed'] is False; assert d['promotion_gate']['status'] == 'prospective_confirmation_required'; assert d['promotion_gate']['independent_confirmation_available_at_freeze'] is False"
