@@ -2,8 +2,9 @@
 
 Phase 7A defines the typed evidence-admission boundary. Phase 7B adds the
 point-in-time Decision Research Dataset plus a separate prospective typed-
-evidence archive. Neither phase computes a universal stance, portfolio action,
-hysteresis state or order instruction.
+evidence archive. Phase 7C studies confirmation/conflict topology without
+resolving it into a universal stance, portfolio action, hysteresis state or
+order instruction.
 """
 
 from .input_contract import (
@@ -30,6 +31,17 @@ from .evidence_archive import (
     validate_archive_packets,
     write_normalized_archive,
 )
+from .conflict_research import (
+    SCHEMA_VERSION as CONFLICT_RESEARCH_SCHEMA_VERSION,
+    ConflictResearchConfig,
+    DecisionConflictResearchError,
+    analyze_conflicts,
+    attach_timing_topology,
+    packet_relation_graph,
+    run_conflict_research,
+    timing_topology,
+    validate_conflict_report,
+)
 
 __all__ = [
     "ADMISSION_STATES",
@@ -50,4 +62,13 @@ __all__ = [
     "load_evidence_archive",
     "validate_archive_packets",
     "write_normalized_archive",
+    "CONFLICT_RESEARCH_SCHEMA_VERSION",
+    "ConflictResearchConfig",
+    "DecisionConflictResearchError",
+    "analyze_conflicts",
+    "attach_timing_topology",
+    "packet_relation_graph",
+    "run_conflict_research",
+    "timing_topology",
+    "validate_conflict_report",
 ]
