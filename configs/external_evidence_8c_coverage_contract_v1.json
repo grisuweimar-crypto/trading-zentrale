@@ -1,0 +1,58 @@
+{
+  "schema_version": "external_evidence_8c_coverage_contract_v1",
+  "phase": "8C_B_full_history_and_coverage",
+  "status": "ACTIVE_NOT_RESEARCH_READY",
+  "purpose": "prove complete SEC filing-history and provenance coverage before any Phase-8 outcome research",
+  "required_before_outcome_join": true,
+  "submission_history": {
+    "recent_block_alone_is_complete_history": false,
+    "all_filings_files_must_be_loaded": true,
+    "missing_history_file_status": "INCOMPLETE_HISTORY",
+    "duplicate_accession_conflict_may_be_silently_resolved": false,
+    "accession_is_primary_filing_identity": true,
+    "ticker_is_primary_historical_identity": false,
+    "cik_is_primary_entity_identity": true
+  },
+  "coverage_dimensions": [
+    "history_files_expected",
+    "history_files_loaded",
+    "history_complete",
+    "filing_count",
+    "unique_accession_count",
+    "earliest_filing_date",
+    "latest_filing_date",
+    "exact_publication_timestamp_count",
+    "date_only_delayed_count",
+    "unknown_publication_time_count",
+    "companyfacts_accession_resolution_rate",
+    "forms_covered"
+  ],
+  "companyfacts_join": {
+    "fact_without_accession_may_be_dropped": false,
+    "unresolved_accession_may_be_treated_as_neutral": false,
+    "unresolved_accession_is_pit_safe": false,
+    "coverage_must_be_reported_before_feature_building": true
+  },
+  "history_ingestion": {
+    "preferred_large_backfill": "SEC bulk archives when practical",
+    "per_company_history_files_allowed": true,
+    "sec_fair_access_max_requests_per_second": 10,
+    "live_probe_should_sleep_between_history_requests": true,
+    "archive_every_raw_payload_hash": true
+  },
+  "research_gate": {
+    "history_complete_required": true,
+    "as_of_universe_join_required": true,
+    "coverage_domain_must_be_frozen_before_outcomes": true,
+    "missingness_must_remain_explicit": true,
+    "no_minimum_coverage_threshold_selected_from_outcomes": true
+  },
+  "forbidden_shortcuts": [
+    "use_only_filings_recent_for_historical_backtest",
+    "drop_symbols_with_incomplete_sec_history_without_reason_code",
+    "resolve_duplicate_accessions_by_latest_row_wins",
+    "use_current_ticker_as_stable_historical_entity_id",
+    "drop_companyfacts_rows_whose_accession_is_unresolved",
+    "choose_coverage_threshold_after_viewing_returns"
+  ]
+}
