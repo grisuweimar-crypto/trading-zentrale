@@ -5,7 +5,8 @@ prospective evidence archive. 7C studies confirmation/conflict topology. 7D maps
 that topology into a portfolio-independent Universal Stance. 7E adds research-
 only hysteresis while preserving raw stance. 7F is the first position-aware
 layer and maps preserved stance/transition context into review-only Portfolio
-Action and Swing Management without broker order generation.
+Action and Swing Management. 7G adds faithful Reliability & Explainability over
+those preserved outputs without changing the stance, transition or action.
 """
 
 from .input_contract import (
@@ -74,6 +75,13 @@ from .portfolio_action import (
     validate_portfolio_action,
     validate_position_snapshot,
 )
+from .reliability_explainability import (
+    SCHEMA_VERSION as RELIABILITY_EXPLAINABILITY_SCHEMA_VERSION,
+    RELIABILITY_STATES,
+    ReliabilityExplainabilityError,
+    build_reliability_explanation,
+    validate_reliability_explanation,
+)
 
 __all__ = [
     "ADMISSION_STATES",
@@ -126,4 +134,9 @@ __all__ = [
     "compute_portfolio_action",
     "validate_portfolio_action",
     "validate_position_snapshot",
+    "RELIABILITY_EXPLAINABILITY_SCHEMA_VERSION",
+    "RELIABILITY_STATES",
+    "ReliabilityExplainabilityError",
+    "build_reliability_explanation",
+    "validate_reliability_explanation",
 ]
