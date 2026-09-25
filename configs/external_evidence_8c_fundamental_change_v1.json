@@ -1,0 +1,135 @@
+{
+  "schema_version": "external_evidence_8c_fundamental_change_v1",
+  "phase": "8C_C_fundamental_change_engine",
+  "status": "FEATURE_DEFINITION_ACTIVE_OUTCOMES_DISABLED",
+  "purpose": "build deterministic PIT-safe fundamental change observations without assigning predictive direction",
+  "outcome_research_enabled": false,
+  "decision_integration_enabled": false,
+  "comparison_bases": [
+    "FIRST_RELEASE",
+    "ASOF_LATEST_VERSION"
+  ],
+  "default_research_basis": "FIRST_RELEASE",
+  "basis_rules": {
+    "FIRST_RELEASE": "for each fact context retain earliest PIT-safe accession/publication only",
+    "ASOF_LATEST_VERSION": "for an explicit as_of timestamp retain latest PIT-safe version whose valid_from <= as_of; never rewrite earlier snapshots"
+  },
+  "metric_families": {
+    "revenue": {
+      "kind": "duration",
+      "concepts": ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet"],
+      "allowed_units": ["USD", "EUR", "GBP", "JPY", "CNY", "CHF", "CAD", "AUD"]
+    },
+    "operating_income": {
+      "kind": "duration",
+      "concepts": ["OperatingIncomeLoss"]
+    },
+    "net_income": {
+      "kind": "duration",
+      "concepts": ["NetIncomeLoss", "ProfitLoss"]
+    },
+    "diluted_eps": {
+      "kind": "duration",
+      "concepts": ["EarningsPerShareDiluted"]
+    },
+    "operating_cash_flow": {
+      "kind": "duration",
+      "concepts": ["NetCashProvidedByUsedInOperatingActivities"]
+    },
+    "capex": {
+      "kind": "duration",
+      "concepts": ["PaymentsToAcquirePropertyPlantAndEquipment"]
+    },
+    "cash": {
+      "kind": "instant",
+      "concepts": ["CashAndCashEquivalentsAtCarryingValue"]
+    },
+    "assets": {
+      "kind": "instant",
+      "concepts": ["Assets"]
+    },
+    "equity": {
+      "kind": "instant",
+      "concepts": ["StockholdersEquity"]
+    },
+    "debt": {
+      "kind": "instant",
+      "concepts": ["LongTermDebt", "LongTermDebtCurrent", "LongTermDebtNoncurrent"]
+    }
+  },
+  "context_rules": {
+    "pit_safe_required": true,
+    "valid_from_required": true,
+    "accession_required": true,
+    "same_entity_required": true,
+    "same_unit_required": true,
+    "duration_metric_requires_start_and_end": true,
+    "instant_metric_requires_end": true,
+    "custom_taxonomy_auto_mapping_forbidden": true,
+    "cross_concept_fallback_requires_explicit_family_mapping": true,
+    "same_accession_required_for_derived_ratio_components": true,
+    "same_start_end_required_for_duration_ratio_components": true,
+    "same_end_required_for_instant_ratio_components": true
+  },
+  "change_candidates": {
+    "revenue_yoy_change": {
+      "type": "yoy_pct_change",
+      "metric": "revenue",
+      "same_fiscal_period_preferred": true,
+      "approximately_one_year_gap_required": true
+    },
+    "revenue_growth_acceleration": {
+      "type": "difference_of_yoy_growth",
+      "metric": "revenue",
+      "requires_two_consecutive_yoy_growth_observations": true
+    },
+    "operating_margin": {
+      "type": "ratio",
+      "numerator": "operating_income",
+      "denominator": "revenue"
+    },
+    "operating_margin_change": {
+      "type": "yoy_absolute_change",
+      "metric": "operating_margin"
+    },
+    "free_cash_flow": {
+      "type": "difference",
+      "left": "operating_cash_flow",
+      "right": "capex"
+    },
+    "free_cash_flow_yoy_change": {
+      "type": "yoy_absolute_change",
+      "metric": "free_cash_flow"
+    },
+    "debt_to_equity": {
+      "type": "ratio",
+      "numerator": "debt",
+      "denominator": "equity"
+    },
+    "debt_to_equity_change": {
+      "type": "yoy_absolute_change",
+      "metric": "debt_to_equity"
+    },
+    "diluted_eps_yoy_change": {
+      "type": "yoy_absolute_change",
+      "metric": "diluted_eps"
+    }
+  },
+  "direction_policy": {
+    "feature_value_is_not_signal": true,
+    "positive_numeric_change_is_not_automatically_positive_evidence": true,
+    "negative_numeric_change_is_not_automatically_negative_evidence": true,
+    "no_thresholds_before_outcome_research": true
+  },
+  "forbidden_shortcuts": [
+    "compare_different_units_or_currencies",
+    "compare_duration_facts_with_mismatched_period_lengths_without_validation",
+    "combine_ratio_components_from_different_accessions",
+    "use_latest_restatement_as_if_known_at_first_release",
+    "replace_first_release_history_with_restated_values",
+    "select_tag_fallback_based_on_future_coverage_or_returns",
+    "assign_bullish_bearish_direction_from_arithmetic_sign",
+    "select_feature_thresholds_before_hypothesis_freeze",
+    "inspect_market_outcomes_during_8c_c_feature_construction"
+  ]
+}
