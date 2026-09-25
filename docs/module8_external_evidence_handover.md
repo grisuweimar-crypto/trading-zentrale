@@ -4,7 +4,7 @@
 
 Untertitel: Fundamentals, Revisions, Positioning, Events & Macro Context
 
-Status: Foundation vorbereitet. Eigentliche Implementierung nach Abschluss von Phase 7.
+Status: Foundation vorbereitet und mit dem aktuellen `main` synchronisiert. Phase 7A–7I ist technisch abgeschlossen; der Phase-7I-Validierungsvertrag ist seit 2026-09-25 eingefroren. Die eigentliche Phase-8-Implementierung beginnt erst nach gesondertem Startauftrag.
 
 Repository: `grisuweimar-crypto/trading-zentrale`
 
@@ -13,6 +13,13 @@ Foundation-Branch: `phase8-external-evidence-foundations`
 ## Leitfrage
 
 Welche außerhalb der bisherigen Preis-/Scannerarchitektur liegenden Informationen liefern Point-in-Time einen eigenständigen, reproduzierbaren und Out-of-Sample bestätigten Zusatznutzen gegenüber dem eingefrorenen Phase-7-Core?
+
+## Verbindliche Baseline
+
+- Phase-7-Validierungsvertrag: `configs/decision_validation_promotion_v1.json`
+- Freeze: `2026-09-25`
+- `prospective_unspent` ab: `2026-09-26`
+- Phase 8 darf diese Baseline nicht rückwirkend umdefinieren.
 
 ## Verbindliche Grenzen
 
@@ -26,6 +33,8 @@ Welche außerhalb der bisherigen Preis-/Scannerarchitektur liegenden Information
 - Keine Promotion aus Discovery allein.
 - Kein Holdout-Tuning.
 - Keine direkte BUY/HOLD/SELL- oder Orderentscheidung aus externer Evidenz.
+- Aktuelle Universe-Mitgliedschaft darf nicht als historische Mitgliedschaft rückprojiziert werden.
+- Outcome-getriebene Designänderungen verbrauchen die dafür betrachtete Evidenz (`spent_for_design`).
 
 ## Evidenzfamilien
 
@@ -55,6 +64,8 @@ Welche außerhalb der bisherigen Preis-/Scannerarchitektur liegenden Information
 - Cost
 - Multiple Testing
 
+Zusätzlich müssen As-of-Universe/Survivorship und Evidence-Consumption der confirmatory Evidenz nachvollziehbar dokumentiert sein.
+
 Alle Gates müssen für eine produktive Integration bestanden sein.
 
 ## Teilphasen
@@ -69,18 +80,23 @@ Alle Gates müssen für eine produktive Integration bestanden sein.
 - 8H Cross-Factor Interaction
 - 8I Decision Layer Extension
 
-## Startauftrag
+## Startauftrag für den neuen Phase-8-Chat
 
-1. Phase 7 vollständig abschließen und Phase-7-Core einfrieren.
-2. Foundation-Branch gegen den dann aktuellen `main` prüfen.
-3. Foundations auf frischen Phase-8-Arbeitsbranch übernehmen.
+Bereits erledigt:
+1. Phase 7A–7I vollständig technisch abschließen und Validierungsgrenze einfrieren.
+2. Foundation-Branch gegen den aktuellen `main` synchronisieren und prüfen.
+
+Ab dem neuen Startauftrag:
+3. Foundations als Ausgangspunkt verwenden; keine Phase-7-Verträge rückwirkend verändern.
 4. 8A beginnen: Quelleninventar und vollständigen PIT-Vertrag real prüfen.
-5. Noch keine Datenquelle aufgrund theoretischer Attraktivität integrieren.
-6. Revisions als ersten Single-Family-Piloten priorisieren, falls 8A eine saubere und wirtschaftlich vertretbare Historie findet.
-7. Andernfalls Fundamentals/Structured Corporate Events vorziehen.
-8. Jede Familie gegen Phase 7 allein testen.
-9. Cross-Factor-Research erst nach Einzelpromotion.
-10. Decision Layer erst in 8I erweitern.
+5. As-of-Universe-/Coverage-Ledger für die Research-Domäne definieren.
+6. Hypothesenfamilien und Evidence-Consumption-Log vor confirmatory Tests festlegen.
+7. Noch keine Datenquelle aufgrund theoretischer Attraktivität integrieren.
+8. Revisions als ersten Single-Family-Piloten priorisieren, falls 8A eine saubere und wirtschaftlich vertretbare Historie findet.
+9. Andernfalls Fundamentals/Structured Corporate Events vorziehen.
+10. Jede Familie gegen Phase 7 allein testen.
+11. Cross-Factor-Research erst nach Einzelpromotion.
+12. Decision Layer erst in 8I erweitern.
 
 ## Vorbereitete Dateien
 
