@@ -4,6 +4,8 @@ Status: Vorbereitung / Research-Grundlage. Noch keine produktive Entscheidungslo
 
 Phase 7 ist der ursprünglich als Phase 6 geplante Interpretation-/Decision-Layer. Durch das Einschieben von Elliott vNext wurde er um eine Nummer nach hinten verschoben. Ziel ist nicht ein weiterer Sensor, sondern die nachvollziehbare Zusammenführung der bereits getrennt entwickelten Evidenzquellen zu einer reproduzierbaren Handlungsaussage.
 
+Die Foundation enthält ausdrücklich die vor dem ersten Policy-Code einzufrierende Semantik für `HOLD`, `NO_ACTION`, `INSUFFICIENT_EVIDENCE`, Conflict-Typen, Decision Reliability und Hysterese-Grenzen. Ein kanonischer State-Katalog dient als ausführbare Referenz.
+
 ## 1. Grundprinzip
 
 Die Upstream-Module bleiben semantisch getrennt:
