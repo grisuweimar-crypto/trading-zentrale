@@ -13,13 +13,23 @@ from .sec_edgar import (
     normalize_cik,
     submission_rows,
 )
+from .sec_history import (
+    assemble_full_submission_history,
+    companyfacts_accession_coverage,
+    historical_submission_file_specs,
+    historical_submission_file_url,
+)
 
 __all__ = [
+    "assemble_full_submission_history",
     "build_acceptance_index",
     "classify_publication_stage",
+    "companyfacts_accession_coverage",
     "companyfacts_rows",
     "compute_valid_from",
     "filing_candidate_events",
+    "historical_submission_file_specs",
+    "historical_submission_file_url",
     "normalize_cik",
     "submission_rows",
 ]
