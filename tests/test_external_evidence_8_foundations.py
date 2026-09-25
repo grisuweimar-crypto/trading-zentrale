@@ -61,12 +61,34 @@ def test_all_promotion_gates_are_required():
     assert c["promotion_gates"]["all_required_for_integration"] is True
 
 
+def test_phase7_baseline_is_bound_to_frozen_7i_contract():
+    c = load_contract()
+    b = c["baseline_policy"]
+    assert b["baseline"] == "frozen_phase7_core"
+    assert b["phase7_validation_contract"] == "configs/decision_validation_promotion_v1.json"
+    assert b["phase7_frozen_on"] == "2026-09-25"
+    assert b["phase7_prospective_unspent_from"] == "2026-09-26"
+
+
 def test_single_family_research_precedes_joint_testing():
     c = load_contract()
     b = c["baseline_policy"]
     assert b["single_family_first"] is True
     assert b["multi_family_joint_test_before_single_family_promotion_allowed"] is False
     assert b["baseline"] == "frozen_phase7_core"
+
+
+def test_research_governance_guards_survivorship_and_human_evidence_consumption():
+    c = load_contract()
+    g = c["research_governance"]
+    assert g["as_of_universe_ledger_required"] is True
+    assert g["historical_membership_and_exclusion_reasons_required"] is True
+    assert g["survivorship_by_current_membership_forbidden"] is True
+    assert g["hypothesis_family_registry_required"] is True
+    assert g["confirmatory_family_freeze_required_before_outcome_inspection"] is True
+    assert g["human_outcome_inspection_log_required"] is True
+    assert g["outcome_driven_design_change_marks_evidence_spent_for_design"] is True
+    assert g["preventive_qa_change_without_future_outcome_inspection_may_preserve_unspent_status"] is True
 
 
 def test_external_relation_is_descriptive_not_trade_policy():
@@ -98,6 +120,9 @@ def test_no_orders_or_direct_portfolio_action_replacement():
     assert s["may_generate_order"] is False
 
 
-def test_license_restrictions_are_not_ignored():
+def test_forbidden_shortcuts_cover_survivorship_and_spent_evidence_reuse():
     c = load_contract()
-    assert "ignore_license_restrictions" in c["forbidden_shortcuts"]
+    shortcuts = set(c["forbidden_shortcuts"])
+    assert "use_current_universe_membership_as_historical_membership" in shortcuts
+    assert "reuse_outcome_inspected_evidence_as_unspent_design_confirmation" in shortcuts
+    assert "ignore_license_restrictions" in shortcuts
