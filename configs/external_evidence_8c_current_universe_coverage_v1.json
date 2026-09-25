@@ -5,13 +5,19 @@
   "scope": "CURRENT_SCANNER_SNAPSHOT_FEASIBILITY_ONLY_NOT_HISTORICAL_UNIVERSE",
   "scanner_source": "artifacts/research/latest_scanner.csv",
   "identity_policy": {
-    "sec_source": "https://www.sec.gov/files/company_tickers.json",
+    "authoritative_sec_ticker_source": "https://www.sec.gov/files/company_tickers.json",
+    "authoritative_current_validation_source": "https://data.sec.gov/submissions/CIK##########.json",
     "exact_current_ticker_match_only": true,
     "fuzzy_company_name_match_forbidden": true,
     "exchange_suffix_stripping_forbidden": true,
     "adr_native_listing_substitution_forbidden": true,
     "historical_identity_claim": false,
-    "unmatched_status": "UNKNOWN"
+    "unmatched_status": "UNKNOWN",
+    "github_actions_www_sec_403_transport_fallback_allowed": true,
+    "fallback_role": "CIK_CANDIDATE_BOOTSTRAP_ONLY",
+    "fallback_candidate_must_be_confirmed_by_current_sec_submissions": true,
+    "failed_current_sec_validation_must_be_rejected": true,
+    "fallback_coverage_interpretation": "VALIDATED_LOWER_BOUND_CURRENT_EXACT_MATCH"
   },
   "data_policy": {
     "full_submissions_history_required_per_matched_cik": true,
@@ -24,6 +30,7 @@
   "coverage_outputs": [
     "exact_sec_match_count",
     "unmatched_count",
+    "stale_or_unvalidated_bootstrap_identity_count",
     "processing_errors",
     "research_ready_company_count",
     "mapped_share_of_usable_facts",
@@ -37,6 +44,7 @@
   ],
   "interpretation_rules": {
     "unmatched_current_symbol_is_not_proof_of_no_sec_filing": true,
+    "fallback_unmatched_symbol_is_not_proof_of_no_current_sec_mapping": true,
     "current_ticker_match_is_not_historical_identifier_mapping": true,
     "coverage_result_may_expand_mapping_only_from_accounting_semantics": true,
     "coverage_result_may_not_select_features_from_future_returns": true,
