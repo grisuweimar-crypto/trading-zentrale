@@ -43,34 +43,34 @@ def test_b6_documentary_candidate_batch_passes_gate_and_has_fourteen_distinct_su
     assert all(row["promotion_allowed"] is False for row in b6["candidates"])
 
 
-def test_b6_adds_only_subjects_not_already_covered_by_effective_b1_through_b5_map():
-    b6 = _load("configs/external_evidence_8f_mapping_candidates_b6_v1.json")
-    effective = load_effective_exposure_map(root=ROOT)
-    active_subjects = {row["subject_id"] for row in effective["mappings"]}
-    b6_subjects = {row["subject_id"] for row in b6["candidates"]}
-    assert len(active_subjects) == 80
-    assert active_subjects.isdisjoint(b6_subjects)
-
-
-def test_b6_review_artifact_is_explicitly_pending():
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_b6_v1.json")
-    assert review["status"] == "AWAITING_HUMAN_REVIEW"
-    assert review["reviewed_at"] is None
-    assert review["decisions"] == []
-    assert all(value is False for value in review["guards"].values())
-
-
-def test_pending_b6_review_cannot_modify_effective_eighty_mapping_exposure_map():
+def test_b6_is_active_in_effective_map_and_review_is_explicit_human_approval():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b6_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b6_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 80
+
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewed_at"] == "2026-09-26T23:28:24+02:00"
+    assert len(review["decisions"]) == 14
+    assert all(row["decision"] == "APPROVE" for row in review["decisions"])
+    assert all(row["source_verified"] is True for row in review["decisions"])
+    assert all(row["relationship_class_confirmed"] is True for row in review["decisions"])
+
+    active_subjects = {row["subject_id"] for row in effective["mappings"]}
+    b6_subjects = {row["subject_id"] for row in candidates["candidates"]}
+    assert b6_subjects.issubset(active_subjects)
+    assert len(effective["mappings"]) == 94
+
+
+def test_b6_replay_is_idempotent_against_effective_ninety_four_mapping_map():
+    candidates = _load("configs/external_evidence_8f_mapping_candidates_b6_v1.json")
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_b6_v1.json")
+    effective = load_effective_exposure_map(root=ROOT)
     result = apply_human_mapping_review(
         candidate_config=candidates,
         review_config=review,
         exposure_map=effective,
     )
-    assert result["status"] == "AWAITING_HUMAN_REVIEW"
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 80
+    assert result["already_applied_count"] == 14
+    assert len(result["exposure_map"]["mappings"]) == 94
