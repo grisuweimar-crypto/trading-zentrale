@@ -25,15 +25,19 @@ def test_8d_starts_outcome_blind_and_without_decision_integration() -> None:
     assert gate["interaction_research_enabled"] is False
 
 
-def test_finra_short_interest_separates_observation_from_publication_time() -> None:
+def test_finra_short_interest_separates_event_publication_and_actual_observation_time() -> None:
     family = _contract()["families"]["SHORT_INTEREST"]
     assert family["event_time_policy"] == "settlementDate"
-    assert family["valid_from_policy"] == "FINRA_PUBLICATION_DATE_AT_16_40_AMERICA_NEW_YORK"
+    assert family["published_at_policy"] == "FINRA_PUBLICATION_DATE_AT_16_40_AMERICA_NEW_YORK"
+    assert family["valid_from_policy"] == (
+        "ACTUAL_INGESTED_AT_UNLESS_ORIGINAL_PUBLICATION_VINTAGE_IS_INDEPENDENTLY_PROVEN"
+    )
     assert family["vintage_policy"]["historical_backfill"] == (
         "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
     )
+    assert family["vintage_policy"]["prospective_valid_from"] == "INGESTED_AT"
     assert family["vintage_policy"]["strict_pit_eligibility"] == (
-        "PROSPECTIVE_SNAPSHOTS_OR_OTHERWISE_PROVEN_ORIGINAL_VINTAGE_ONLY"
+        "PROSPECTIVE_SNAPSHOT_FROM_ACTUAL_INGESTION_FORWARD_OR_OTHERWISE_PROVEN_ORIGINAL_VINTAGE_ONLY"
     )
     assert family["disabled_features"]["short_interest_percent_float"].startswith("DISABLED_")
     assert family["disabled_features"]["daily_short_interest"].startswith("DISABLED_")
@@ -43,7 +47,7 @@ def test_finra_short_interest_separates_observation_from_publication_time() -> N
 def test_finra_a1_acquisition_contract_is_fail_closed() -> None:
     family = _contract()["families"]["SHORT_INTEREST"]
     acquisition = family["acquisition_contract"]
-    assert family["status"] == "SOURCE_ACCEPTED_AND_A1_IMPLEMENTED_WITH_VINTAGE_LIMITATION"
+    assert family["status"] == "SOURCE_ACCEPTED_A1_A2_IMPLEMENTED_WITH_VINTAGE_LIMITATION"
     assert acquisition["prospective_only_for_strict_pit"] is True
     assert acquisition["one_settlement_date_per_snapshot"] is True
     assert acquisition["request_method"] == "FILTERED_POST_WITH_PAGINATION"
@@ -51,7 +55,21 @@ def test_finra_a1_acquisition_contract_is_fail_closed() -> None:
     assert acquisition["record_total_header_must_reconcile_when_present"] is True
     assert acquisition["raw_page_sha256_required"] is True
     assert acquisition["canonical_raw_snapshot_sha256_required"] is True
+    assert acquisition["publication_time_retrojection_enabled"] is False
     assert acquisition["ci_live_network_access"] is False
+
+
+def test_finra_a2_coverage_contract_forbids_identity_guessing() -> None:
+    coverage = _contract()["families"]["SHORT_INTEREST"]["coverage_contract"]
+    assert coverage["single_finra_settlement_date_required"] is True
+    assert coverage["match_method"] == "EXACT_SYMBOL_ONLY"
+    assert coverage["ticker_suffix_stripping_enabled"] is False
+    assert coverage["adr_substitution_enabled"] is False
+    assert coverage["fuzzy_name_matching_enabled"] is False
+    assert coverage["ambiguous_market_class_auto_selection_enabled"] is False
+    assert coverage["missing_evidence_status"] == "UNKNOWN_NOT_IN_FINRA_SNAPSHOT"
+    assert coverage["ambiguous_evidence_status"] == "AMBIGUOUS_MULTIPLE_FINRA_ROWS"
+    assert coverage["missing_evidence_may_default_to_neutral"] is False
 
 
 def test_insider_first_slice_is_only_high_precision_p_and_s() -> None:
@@ -82,6 +100,7 @@ def test_global_pit_identity_guards_are_fail_closed() -> None:
     assert guards["current_ticker_may_be_used_as_historical_stable_id"] is False
     assert guards["symbol_changes_must_be_explicit"] is True
     assert guards["settlement_date_is_not_publication_time"] is True
+    assert guards["publication_time_is_not_automatically_valid_from_for_later_retrievals"] is True
     assert guards["transaction_date_is_not_filing_availability_time"] is True
     assert guards["revised_history_may_silently_replace_original_vintage"] is False
     assert guards["unknown_or_uncovered_status_must_be_explicit"] is True
