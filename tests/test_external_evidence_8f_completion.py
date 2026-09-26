@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from scanner.research.external_evidence.completion_8f import evaluate_phase8f_completion
+from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,10 +40,7 @@ def _ledger() -> dict:
         "status": "OUTCOME_BLIND_APPEND_ONLY_MACRO_LEDGER",
         "knowable_row_count": 2,
         "coverage": {"series_count": 1},
-        "guards": {
-            "market_outcomes_read": False,
-            "later_revision_overwrites_original": False,
-        },
+        "guards": {"market_outcomes_read": False, "later_revision_overwrites_original": False},
     }
 
 
@@ -53,17 +51,14 @@ def _domain_audit() -> dict:
         "mapped_subject_count": 1,
         "explicit_unmapped_subject_count": 1,
         "market_outcomes_read": False,
-        "guards": {
-            "domain_pinned_to_pre8f_source_blob": True,
-            "market_outcomes_read": False,
-        },
+        "guards": {"domain_pinned_to_pre8f_source_blob": True, "market_outcomes_read": False},
     }
 
 
 def test_current_phase8f_state_is_blocked_not_falsely_frozen():
     config = _load_json("configs/external_evidence_8f_completion_v1.json")
     macro = _load_json("configs/external_evidence_8f_macro_exposure_v1.json")
-    exposure = _load_json("configs/external_evidence_8f_exposure_map_v1.json")
+    exposure = load_effective_exposure_map(root=ROOT)
 
     result = evaluate_phase8f_completion(
         completion_config=config,
@@ -77,14 +72,13 @@ def test_current_phase8f_state_is_blocked_not_falsely_frozen():
     assert "real_macro_ledger:missing" in result["blockers"]
     assert "exposure_domain_audit:missing" in result["blockers"]
     assert not any(value.startswith("reviewed_exposure_mappings:") for value in result["blockers"])
-    assert result["metrics"]["active_reviewed_mapping_count"] == 10
+    assert result["metrics"]["active_reviewed_mapping_count"] == 80
 
 
 def test_completion_passes_only_when_real_requirements_are_represented():
     config = _load_json("configs/external_evidence_8f_completion_v1.json")
     macro = _load_json("configs/external_evidence_8f_macro_exposure_v1.json")
-    exposure = _load_json("configs/external_evidence_8f_exposure_map_v1.json")
-    exposure = copy.deepcopy(exposure)
+    exposure = copy.deepcopy(load_effective_exposure_map(root=ROOT))
     exposure["mappings"] = [_mapping()]
 
     result = evaluate_phase8f_completion(
@@ -104,8 +98,7 @@ def test_completion_passes_only_when_real_requirements_are_represented():
 def test_domain_accounting_must_be_complete():
     config = _load_json("configs/external_evidence_8f_completion_v1.json")
     macro = _load_json("configs/external_evidence_8f_macro_exposure_v1.json")
-    exposure = _load_json("configs/external_evidence_8f_exposure_map_v1.json")
-    exposure = copy.deepcopy(exposure)
+    exposure = copy.deepcopy(load_effective_exposure_map(root=ROOT))
     exposure["mappings"] = [_mapping()]
     audit = _domain_audit()
     audit["explicit_unmapped_subject_count"] = 0
@@ -124,7 +117,7 @@ def test_domain_accounting_must_be_complete():
 def test_domain_must_be_pinned_to_pre8f_source_blob():
     config = _load_json("configs/external_evidence_8f_completion_v1.json")
     macro = _load_json("configs/external_evidence_8f_macro_exposure_v1.json")
-    exposure = copy.deepcopy(_load_json("configs/external_evidence_8f_exposure_map_v1.json"))
+    exposure = copy.deepcopy(load_effective_exposure_map(root=ROOT))
     exposure["mappings"] = [_mapping()]
     audit = _domain_audit()
     audit["guards"]["domain_pinned_to_pre8f_source_blob"] = False
