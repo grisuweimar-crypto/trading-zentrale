@@ -1,0 +1,20 @@
+{
+  "schema_version": "external_evidence_8f_research_domain_v1",
+  "phase": "8F_macro_exposure_context",
+  "domain_version": "8F_RESEARCH_DOMAIN_PENDING_V1",
+  "status": "UNDEFINED_UNTIL_SUBJECT_SET_IS_FROZEN",
+  "subject_ids": [],
+  "explicit_unmapped": [],
+  "rules": {
+    "domain_must_be_defined_before_8f_freeze": true,
+    "subject_may_not_enter_domain_because_mapping_exists": true,
+    "mapped_and_unmapped_subjects_both_remain_in_denominator": true,
+    "explicit_unmapped_requires_reason": true,
+    "market_outcomes_may_be_used_to_define_domain": false,
+    "current_mapping_coverage_may_be_used_to_select_domain": false
+  },
+  "notes": [
+    "The domain must be selected from a pre-existing scanner/universe definition or another outcome-blind rule, not from which symbols happen to have convenient macro mappings.",
+    "A subject without a defensible documentary exposure mapping stays in the domain as explicit_unmapped rather than being silently dropped."
+  ]
+}
