@@ -1,0 +1,59 @@
+{
+  "schema_version": "external_evidence_8d_insider_identity_v1",
+  "phase": "8D_B5_insider_asof_identity",
+  "status": "FAMILY_SPECIFIC_PIT_IDENTITY_RESOLVER_OUTCOME_BLIND",
+  "parent_contract": "configs/external_universe_coverage_contract_v1.json",
+  "external_family": "INSIDER_ACTIVITY",
+  "market_outcomes_may_be_read": false,
+  "market_direction_may_be_assigned": false,
+  "phase7_integration_enabled": false,
+  "production_external_evidence_enabled": false,
+  "scanner_observability": {
+    "primary_symbol_field": "symbol",
+    "knowledge_timestamp_field": "generated_at",
+    "market_date_field": "as_of",
+    "date_only_market_date_may_be_used_as_knowledge_timestamp": false,
+    "reason": "Scanner artifacts expose date-only as_of plus timezone-aware generated_at; PIT identity must use the actual scanner generation timestamp."
+  },
+  "identity_evidence_source": "PIT_VALIDATED_SEC_INSIDER_EVIDENCE_ROWS",
+  "evidence_fields": [
+    "issuer_cik",
+    "issuer_trading_symbol_reported",
+    "accession_number",
+    "valid_from",
+    "pit_status",
+    "source_quarter"
+  ],
+  "resolution_rules": {
+    "scanner_history_is_primary_observability_ledger": true,
+    "exact_symbol_only": true,
+    "current_ticker_retrojection_enabled": false,
+    "suffix_stripping_enabled": false,
+    "adr_substitution_enabled": false,
+    "fuzzy_name_matching_enabled": false,
+    "future_identity_evidence_may_be_used": false,
+    "latest_known_symbol_per_cik_asof_is_authoritative_for_that_cik": true,
+    "multiple_ciks_with_same_latest_symbol_are_ambiguous": true,
+    "no_prior_identity_evidence_status": "UNKNOWN_NO_PIT_IDENTITY",
+    "conflicting_identity_status": "AMBIGUOUS_PIT_IDENTITY",
+    "resolved_identity_status": "VERIFIED_FAMILY_PIT_IDENTITY"
+  },
+  "output_required_fields": [
+    "as_of",
+    "symbol",
+    "issuer_cik",
+    "instrument_id",
+    "identity_status",
+    "membership_status",
+    "scanner_observable",
+    "external_family",
+    "source_id",
+    "source_coverage_status",
+    "pit_status",
+    "identity_evidence_valid_from",
+    "identity_evidence_accessions",
+    "reason_codes"
+  ],
+  "missing_external_data_may_be_imputed_neutral": false,
+  "artifact_schema": "external_evidence_8d_insider_asof_identity_v1"
+}
