@@ -1,0 +1,71 @@
+{
+  "schema_version": "external_evidence_8c_structured_events_v1",
+  "phase": "8C_D_structured_events",
+  "status": "CANDIDATE_EVENT_EXTRACTION_ONLY",
+  "source": "sec_edgar_submissions_8k_6k",
+  "allowed_forms": ["8-K", "8-K/A", "6-K", "6-K/A"],
+  "direction_policy": "UNKNOWN_ONLY",
+  "market_outcomes_may_be_read": false,
+  "event_item_mapping": {
+    "1.01": "MATERIAL_DEFINITIVE_AGREEMENT",
+    "1.02": "TERMINATION_MATERIAL_AGREEMENT",
+    "2.01": "ACQUISITION_OR_DISPOSITION_COMPLETED",
+    "2.02": "RESULTS_RELEASE",
+    "2.03": "DIRECT_FINANCIAL_OBLIGATION",
+    "2.04": "TRIGGERING_EVENT_FINANCIAL_OBLIGATION",
+    "2.05": "EXIT_OR_DISPOSAL_PLAN",
+    "2.06": "MATERIAL_IMPAIRMENT",
+    "3.01": "LISTING_OR_COMPLIANCE_EVENT",
+    "3.02": "UNREGISTERED_EQUITY_SALE",
+    "3.03": "SECURITY_HOLDER_RIGHTS_CHANGE",
+    "4.01": "AUDITOR_CHANGE_OR_DISAGREEMENT",
+    "4.02": "NONRELIANCE_ON_PRIOR_FINANCIALS",
+    "5.01": "CONTROL_CHANGE",
+    "5.02": "DIRECTOR_OR_OFFICER_CHANGE",
+    "5.03": "GOVERNANCE_DOCUMENT_CHANGE",
+    "5.07": "SHAREHOLDER_VOTE_RESULT",
+    "7.01": "REGULATION_FD_DISCLOSURE",
+    "8.01": "OTHER_MATERIAL_EVENT"
+  },
+  "hard_boundaries": {
+    "results_release_implies_beat_or_miss": false,
+    "reg_fd_implies_guidance_change": false,
+    "other_material_event_implies_dividend_or_buyback": false,
+    "unregistered_equity_sale_implies_total_capital_raise": false,
+    "filing_item_implies_positive_or_negative_direction": false,
+    "6k_without_content_parser_may_be_semantically_classified": false,
+    "amendment_may_overwrite_original_event": false
+  },
+  "semantic_enrichment_requires_content_evidence": [
+    "GUIDANCE_RAISE",
+    "GUIDANCE_CUT",
+    "DIVIDEND_INCREASE",
+    "DIVIDEND_CUT",
+    "BUYBACK_AUTHORIZATION",
+    "BUYBACK_EXPANSION",
+    "CAPITAL_RAISE",
+    "EARNINGS_BEAT",
+    "EARNINGS_MISS"
+  ],
+  "required_output_fields": [
+    "cik",
+    "accession_number",
+    "form",
+    "item_code",
+    "candidate_event_type",
+    "semantic_state",
+    "direction",
+    "published_at",
+    "valid_from",
+    "revision_id",
+    "publication_stage",
+    "status",
+    "reason_codes"
+  ],
+  "research_gate": {
+    "outcome_research_enabled": false,
+    "decision_integration_enabled": false,
+    "direction_assignment_enabled": false,
+    "content_semantic_enrichment_enabled": false
+  }
+}
