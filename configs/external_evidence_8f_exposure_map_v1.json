@@ -1,0 +1,48 @@
+{
+  "schema_version": "external_evidence_8f_exposure_map_v1",
+  "phase": "8F_macro_exposure_context",
+  "map_version": "8F_EXPOSURE_MAP_2026-09-26_V1",
+  "status": "FOUNDATION_EMPTY_MAP_NO_ASSET_EXPOSURES_PROMOTED",
+  "created_at": "2026-09-26T00:00:00+00:00",
+  "retroactive_mapping_allowed": false,
+  "undocumented_mapping_allowed": false,
+  "automatic_sector_to_exposure_inference_allowed": false,
+  "automatic_company_name_keyword_mapping_allowed": false,
+  "automatic_llm_mapping_allowed": false,
+  "exposure_sign_assignment_allowed": false,
+  "weight_assignment_allowed": false,
+  "threshold_assignment_allowed": false,
+  "required_mapping_fields": [
+    "mapping_id",
+    "map_version",
+    "subject_id",
+    "factor_id",
+    "relationship_class",
+    "evidence_type",
+    "evidence_reference",
+    "evidence_sha256",
+    "evidence_valid_from",
+    "human_reviewed",
+    "reviewed_at",
+    "review_status",
+    "valid_from",
+    "valid_to"
+  ],
+  "allowed_relationship_classes": [
+    "REVENUE_LINK",
+    "INPUT_COST_LINK",
+    "FINANCING_SENSITIVITY",
+    "CURRENCY_TRANSLATION",
+    "BALANCE_SHEET_LINK",
+    "OTHER_DOCUMENTED"
+  ],
+  "mapping_rules": [
+    "Every asset-factor relationship requires a documentary reference and SHA-256 evidence fingerprint.",
+    "Every mapping requires explicit human review.",
+    "A newly researched mapping becomes usable no earlier than reviewed_at and evidence_valid_from.",
+    "Historical exposures may not be reconstructed from today's sector label, company description, name keywords or current business mix alone.",
+    "Relationship class is descriptive only and does not imply positive or negative market direction.",
+    "Changes in business mix or exposure must be represented by a new versioned mapping interval rather than overwriting history."
+  ],
+  "mappings": []
+}
