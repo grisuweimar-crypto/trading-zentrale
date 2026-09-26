@@ -74,7 +74,9 @@ def _bundle(tmp_path: Path) -> Path:
 
 def _tsv(rows: list[dict[str, object]], fields: list[str]) -> bytes:
     buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=fields, delimiter="\t", lineterminator="\n")
+    writer = csv.DictWriter(
+        buffer, fieldnames=fields, delimiter="\t", lineterminator="\n"
+    )
     writer.writeheader()
     writer.writerows(rows)
     return buffer.getvalue().encode("utf-8")
@@ -100,7 +102,7 @@ def _insider_zip(tmp_path: Path) -> Path:
             "DOCUMENT_TYPE": "4",
             "ISSUERCIK": "320193",
             "ISSUERNAME": "Example Corp",
-            "ISSUERTRADINGSYMBOL": "OLD",  # deliberately not used as identity
+            "ISSUERTRADINGSYMBOL": "OLD",
             "AFF10B5ONE": "0",
         },
         {
@@ -239,20 +241,25 @@ def _insider_zip(tmp_path: Path) -> Path:
     return path
 
 
+def _source_url() -> str:
+    return (
+        "https://www.sec.gov/files/datastandardsinnovation/data/"
+        "insider-transactions-data-sets/2026q2_form345.zip"
+    )
+
+
 def test_sec_insider_bulk_exact_accession_pit_join_and_ps_scope(tmp_path: Path) -> None:
     payload = import_sec_insider_quarter(
         insider_zip_path=_insider_zip(tmp_path),
         sec_bulk_bundle_dir=_bundle(tmp_path),
-        source_url=(
-            "https://www.sec.gov/files/datastandardsinnovation/data/"
-            "insider-transactions-data-sets/2026q2_form345.zip"
-        ),
+        source_url=_source_url(),
         quarter_label="2026Q2",
     )
     assert payload["guards"]["market_outcomes_read"] is False
     assert payload["guards"]["market_direction_assigned"] is False
     assert payload["guards"]["current_ticker_used_as_historical_identity"] is False
     assert payload["counts"]["p_s_evidence_row_count"] == 2
+    assert payload["counts"]["high_precision_discretionary_candidate_count"] == 1
     assert payload["counts"]["unmatched_verified_accession_count"] == 1
     assert payload["excluded_transaction_code_counts"]["A"] == 1
 
@@ -261,14 +268,16 @@ def test_sec_insider_bulk_exact_accession_pit_join_and_ps_scope(tmp_path: Path) 
     assert purchase["issuer_trading_symbol_reported"] == "OLD"
     assert purchase["valid_from"] == "2026-04-01T16:30:00-04:00"
     assert purchase["strict_pit_eligible"] is True
-    assert purchase["candidate_status"] == "P_S_HIGH_PRECISION_CANDIDATE"
+    assert purchase["candidate_status"] == "P_S_HIGH_PRECISION_DISCRETIONARY_CANDIDATE"
+    assert purchase["discretionary_semantics_eligible"] is True
     assert purchase["transaction_value_when_price_known"] == pytest.approx(1250.0)
     assert len(purchase["reporting_owners"]) == 1
 
     sale = next(row for row in payload["rows"] if row["transaction_code"] == "S")
     assert sale["amendment"] is True
     assert sale["aff10b5one"] is True
-    assert sale["candidate_status"] == "P_S_10B5_1_DECLARED"
+    assert sale["candidate_status"] == "EXCLUDED_10B5_1_PLAN"
+    assert sale["discretionary_semantics_eligible"] is False
     assert "AFF10B5ONE_TRUE" in sale["reason_codes"]
 
 
@@ -282,19 +291,34 @@ def test_sec_insider_bulk_rejects_non_sec_source_url(tmp_path: Path) -> None:
         )
 
 
-def test_sec_insider_bulk_marks_inconsistent_ps_acquired_disposed(tmp_path: Path) -> None:
-    zip_path = _insider_zip(tmp_path)
-    # Replace NONDERIV_TRANS with one inconsistent P/D row while preserving the other tables.
+def _rewrite_transactions(zip_path: Path, rows: list[dict[str, object]]) -> None:
     with zipfile.ZipFile(zip_path, "r") as zf:
         submission = zf.read("SUBMISSION.tsv")
         owners = zf.read("REPORTINGOWNER.tsv")
     fields = [
-        "ACCESSION_NUMBER", "NONDERIV_TRANS_SK", "SECURITY_TITLE", "TRANS_DATE",
-        "TRANS_FORM_TYPE", "TRANS_CODE", "EQUITY_SWAP_INVOLVED", "TRANS_TIMELINESS",
-        "TRANS_SHARES", "TRANS_PRICEPERSHARE", "TRANS_ACQUIRED_DISP_CD",
-        "SHRS_OWND_FOLWNG_TRANS", "DIRECT_INDIRECT_OWNERSHIP", "NATURE_OF_OWNERSHIP",
+        "ACCESSION_NUMBER",
+        "NONDERIV_TRANS_SK",
+        "SECURITY_TITLE",
+        "TRANS_DATE",
+        "TRANS_FORM_TYPE",
+        "TRANS_CODE",
+        "EQUITY_SWAP_INVOLVED",
+        "TRANS_TIMELINESS",
+        "TRANS_SHARES",
+        "TRANS_PRICEPERSHARE",
+        "TRANS_ACQUIRED_DISP_CD",
+        "SHRS_OWND_FOLWNG_TRANS",
+        "DIRECT_INDIRECT_OWNERSHIP",
+        "NATURE_OF_OWNERSHIP",
     ]
-    bad = [{
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("SUBMISSION.tsv", submission)
+        zf.writestr("REPORTINGOWNER.tsv", owners)
+        zf.writestr("NONDERIV_TRANS.tsv", _tsv(rows, fields))
+
+
+def _base_purchase(**overrides: object) -> dict[str, object]:
+    row: dict[str, object] = {
         "ACCESSION_NUMBER": "0000320193-26-000111",
         "NONDERIV_TRANS_SK": "1",
         "SECURITY_TITLE": "Common Stock",
@@ -305,24 +329,49 @@ def test_sec_insider_bulk_marks_inconsistent_ps_acquired_disposed(tmp_path: Path
         "TRANS_TIMELINESS": "",
         "TRANS_SHARES": "100",
         "TRANS_PRICEPERSHARE": "12.50",
-        "TRANS_ACQUIRED_DISP_CD": "D",
+        "TRANS_ACQUIRED_DISP_CD": "A",
         "SHRS_OWND_FOLWNG_TRANS": "900",
         "DIRECT_INDIRECT_OWNERSHIP": "D",
         "NATURE_OF_OWNERSHIP": "",
-    }]
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("SUBMISSION.tsv", submission)
-        zf.writestr("REPORTINGOWNER.tsv", owners)
-        zf.writestr("NONDERIV_TRANS.tsv", _tsv(bad, fields))
+    }
+    row.update(overrides)
+    return row
 
+
+def test_sec_insider_bulk_marks_inconsistent_ps_acquired_disposed(tmp_path: Path) -> None:
+    zip_path = _insider_zip(tmp_path)
+    _rewrite_transactions(zip_path, [_base_purchase(TRANS_ACQUIRED_DISP_CD="D")])
     payload = import_sec_insider_quarter(
         insider_zip_path=zip_path,
         sec_bulk_bundle_dir=_bundle(tmp_path),
-        source_url=(
-            "https://www.sec.gov/files/datastandardsinnovation/data/"
-            "insider-transactions-data-sets/2026q2_form345.zip"
-        ),
+        source_url=_source_url(),
         quarter_label="2026Q2",
     )
     assert payload["rows"][0]["candidate_status"] == "CONFLICTING_ACQUIRED_DISPOSED_CODE"
-    assert "P_S_CODE_INCONSISTENT_WITH_ACQUIRED_DISPOSED" in payload["rows"][0]["reason_codes"]
+    assert payload["rows"][0]["discretionary_semantics_eligible"] is False
+
+
+def test_sec_insider_bulk_requires_form4_transaction_for_discretionary_scope(tmp_path: Path) -> None:
+    zip_path = _insider_zip(tmp_path)
+    _rewrite_transactions(zip_path, [_base_purchase(TRANS_FORM_TYPE="5")])
+    payload = import_sec_insider_quarter(
+        insider_zip_path=zip_path,
+        sec_bulk_bundle_dir=_bundle(tmp_path),
+        source_url=_source_url(),
+        quarter_label="2026Q2",
+    )
+    assert payload["rows"][0]["candidate_status"] == "EXCLUDED_NON_FORM4_TRANSACTION"
+    assert payload["rows"][0]["discretionary_semantics_eligible"] is False
+
+
+def test_sec_insider_bulk_excludes_equity_swap_from_discretionary_scope(tmp_path: Path) -> None:
+    zip_path = _insider_zip(tmp_path)
+    _rewrite_transactions(zip_path, [_base_purchase(EQUITY_SWAP_INVOLVED="1")])
+    payload = import_sec_insider_quarter(
+        insider_zip_path=zip_path,
+        sec_bulk_bundle_dir=_bundle(tmp_path),
+        source_url=_source_url(),
+        quarter_label="2026Q2",
+    )
+    assert payload["rows"][0]["candidate_status"] == "EXCLUDED_EQUITY_SWAP"
+    assert payload["rows"][0]["discretionary_semantics_eligible"] is False
