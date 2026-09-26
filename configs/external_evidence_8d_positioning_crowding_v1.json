@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8d_positioning_crowding_v1",
   "phase": "8D_positioning_crowding",
-  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_OUTCOME_BLIND",
+  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PREREGISTERED_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -92,7 +92,7 @@
       "direction": "UNASSIGNED"
     },
     "INSIDER_ACTIVITY": {
-      "status": "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_HIGH_PRECISION_CHALLENGER",
+      "status": "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_B3_PREREGISTERED_HIGH_PRECISION_CHALLENGER",
       "source_authority": "U.S. SEC EDGAR",
       "forms": ["4", "4/A"],
       "source_urls": [
@@ -129,6 +129,15 @@
         "source_member_sha256_required": true,
         "ci_live_network_access": false
       },
+      "b3_validation_contract": {
+        "config": "configs/external_evidence_8d_insider_validation_v1.json",
+        "status": "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION",
+        "first_real_corpus": "2026Q2",
+        "pool_with_earlier_quarters": false,
+        "market_outcomes_may_be_read": false,
+        "candidate_status_name_is_not_proof_of_subjective_discretion": true,
+        "semantic_target": "P_S_EXTRACTION_AND_PROVENANCE_WITHOUT_MOTIVE_INFERENCE"
+      },
       "excluded_from_discretionary_buy_sell_scope": [
         "A_GRANT_AWARD_OR_COMPANY_ACQUISITION",
         "D_SALE_OR_TRANSFER_BACK_TO_COMPANY",
@@ -159,16 +168,20 @@
         "RPTOWNER_RELATIONSHIP"
       ],
       "initial_features_after_validation": [
-        "discretionary_purchase_count",
-        "discretionary_sale_count",
-        "discretionary_purchase_shares",
-        "discretionary_sale_shares",
-        "discretionary_purchase_value_when_price_known",
-        "discretionary_sale_value_when_price_known",
-        "distinct_buyer_count",
-        "distinct_seller_count"
+        "p_s_purchase_count",
+        "p_s_sale_count",
+        "p_s_purchase_shares",
+        "p_s_sale_shares",
+        "p_s_purchase_value_when_price_known",
+        "p_s_sale_value_when_price_known",
+        "distinct_p_s_buyer_count",
+        "distinct_p_s_seller_count"
       ],
       "artifact_schema": "external_evidence_8d_sec_insider_bulk_v1",
+      "validation_artifact_schemas": [
+        "external_evidence_8d_insider_validation_package_v1",
+        "external_evidence_8d_insider_validation_result_v1"
+      ],
       "direction": "UNASSIGNED"
     },
     "BORROW_RATE": {
