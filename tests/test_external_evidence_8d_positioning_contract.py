@@ -6,16 +6,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "configs" / "external_evidence_8d_positioning_crowding_v1.json"
+VALIDATION_PATH = ROOT / "configs" / "external_evidence_8d_insider_validation_v1.json"
 
 
 def _contract() -> dict:
     return json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
 
 
+def _validation() -> dict:
+    return json.loads(VALIDATION_PATH.read_text(encoding="utf-8"))
+
+
 def test_8d_starts_outcome_blind_and_without_decision_integration() -> None:
     contract = _contract()
     principles = contract["principles"]
     gate = contract["research_gate"]
+    assert contract["status"] == "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PREREGISTERED_OUTCOME_BLIND"
     assert principles["market_outcomes_may_be_read"] is False
     assert principles["market_direction_may_be_assigned"] is False
     assert principles["absolute_high_or_low_positioning_implies_direction"] is False
@@ -62,7 +68,9 @@ def test_finra_a1_a2_contract_is_fail_closed() -> None:
 def test_insider_b1_b2_is_exact_accession_high_precision_challenger() -> None:
     family = _contract()["families"]["INSIDER_ACTIVITY"]
     contract = family["b1_b2_contract"]
-    assert family["status"] == "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_HIGH_PRECISION_CHALLENGER"
+    assert family["status"] == (
+        "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_B3_PREREGISTERED_HIGH_PRECISION_CHALLENGER"
+    )
     assert family["forms"] == ["4", "4/A"]
     assert family["event_time_policy"] == "TRANS_DATE"
     assert family["valid_from_policy"] == "EXACT_ACCESSION_JOIN_TO_SEC_SUBMISSIONS_ACCEPTANCE_METADATA"
@@ -80,6 +88,34 @@ def test_insider_b1_b2_is_exact_accession_high_precision_challenger() -> None:
     assert contract["aff10b5one_unknown_not_assumed_discretionary"] is True
     assert contract["ci_live_network_access"] is False
     assert family["direction"] == "UNASSIGNED"
+
+
+def test_insider_b3_is_preregistered_before_real_evaluation() -> None:
+    family = _contract()["families"]["INSIDER_ACTIVITY"]
+    b3 = family["b3_validation_contract"]
+    validation = _validation()
+    assert b3["config"] == "configs/external_evidence_8d_insider_validation_v1.json"
+    assert b3["status"] == "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION"
+    assert b3["first_real_corpus"] == "2026Q2"
+    assert b3["pool_with_earlier_quarters"] is False
+    assert b3["market_outcomes_may_be_read"] is False
+    assert b3["candidate_status_name_is_not_proof_of_subjective_discretion"] is True
+    assert validation["status"] == "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION"
+    assert validation["real_validation_corpus"]["quarter"] == "2026Q2"
+    assert validation["real_validation_corpus"]["pool_with_earlier_quarters"] is False
+    assert validation["market_outcomes_may_be_read"] is False
+    assert validation["hard_boundaries"]["purchases_are_predefined_bullish"] is False
+    assert validation["hard_boundaries"]["sales_are_predefined_bearish"] is False
+    assert validation["hard_boundaries"][
+        "non_10b5_1_flagged_is_predefined_as_subjectively_discretionary"
+    ] is False
+
+
+def test_insider_future_features_are_descriptive_not_motive_labels() -> None:
+    features = set(_contract()["families"]["INSIDER_ACTIVITY"]["initial_features_after_validation"])
+    assert "p_s_purchase_count" in features
+    assert "p_s_sale_count" in features
+    assert all("discretionary" not in feature for feature in features)
 
 
 def test_insider_excluded_codes_are_not_silently_discretionary() -> None:
