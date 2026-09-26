@@ -1,0 +1,202 @@
+{
+  "schema_version": "qm_research_governance_v1",
+  "status": "foundation_only_not_productive",
+  "activation_condition": {
+    "phase8_must_be_complete": true,
+    "branch_must_be_synchronized_with_then_current_main": true,
+    "productive_scanner_or_decision_logic_may_change_in_foundation": false
+  },
+  "purpose": "convert architecture review findings into explicit research-quality controls without rewriting frozen historical evidence or current production semantics",
+  "principles": {
+    "engineering_completion_is_not_empirical_promotion": true,
+    "missing_is_not_neutral": true,
+    "spent_evidence_may_not_be_relabelled_unspent": true,
+    "preventive_qa_is_distinct_from_outcome_driven_redesign": true,
+    "point_in_time_and_available_from_are_mandatory": true,
+    "no_retroactive_repair_of_missing_provenance": true,
+    "no_super_score_shortcut": true
+  },
+  "workstreams": [
+    {
+      "id": "QM-A",
+      "name": "research_governance_and_evidence_consumption",
+      "goal": "bind human and automated research decisions to an auditable spent/unspent protocol"
+    },
+    {
+      "id": "QM-B",
+      "name": "as_of_universe_coverage_and_survivorship",
+      "goal": "record point_in_time eligibility, inclusion, exclusion and data availability"
+    },
+    {
+      "id": "QM-C",
+      "name": "hypothesis_registry_and_global_multiplicity",
+      "goal": "register hypothesis families before confirmatory outcome inspection and control family-level multiplicity"
+    },
+    {
+      "id": "QM-D",
+      "name": "dependence_effective_n_and_robustness",
+      "goal": "report date, symbol, sector and horizon dependence rather than relying on raw event counts"
+    },
+    {
+      "id": "QM-E",
+      "name": "probability_calibration_audit",
+      "goal": "separate robust directional advantage from actual probability calibration quality"
+    },
+    {
+      "id": "QM-F",
+      "name": "decision_layer_incremental_ablation",
+      "goal": "measure incremental value of later decision layers without changing frozen Phase7I conclusions"
+    },
+    {
+      "id": "QM-G",
+      "name": "elliott_challenger_registry",
+      "goal": "register soft Elliott challengers without changing frozen hard rules or structural count semantics"
+    }
+  ],
+  "evidence_consumption": {
+    "preventive_qa_change": {
+      "definition": "change motivated by architecture, code, provenance, contract or methodology review without inspecting future outcome performance for the affected hypothesis",
+      "may_preserve_unspent_status": true,
+      "log_required": true
+    },
+    "outcome_driven_research_change": {
+      "definition": "change motivated by inspected future outcome performance or downstream realized results",
+      "marks_inspected_evidence_spent_for_design": true,
+      "log_required": true,
+      "spent_evidence_may_not_confirm_redesigned_rule": true
+    },
+    "required_log_fields": [
+      "inspection_id",
+      "inspected_at",
+      "evidence_version_or_commit",
+      "question",
+      "outcomes_visible",
+      "decision_taken",
+      "change_type",
+      "spent_for_design",
+      "affected_hypothesis_ids",
+      "code_or_config_version"
+    ]
+  },
+  "hypothesis_registry": {
+    "required": true,
+    "required_fields": [
+      "hypothesis_id",
+      "family_id",
+      "description",
+      "created_at",
+      "freeze_at",
+      "status",
+      "universe",
+      "horizon",
+      "target",
+      "feature_definition",
+      "multiplicity_family",
+      "discovery_or_confirmatory",
+      "evidence_status",
+      "source_or_rationale"
+    ],
+    "confirmatory_status_requires_pre_outcome_freeze": true,
+    "full_family_results_must_be_retained": true,
+    "manual_cherry_picking_forbidden": true
+  },
+  "as_of_universe_ledger": {
+    "required": true,
+    "required_fields": [
+      "as_of",
+      "symbol",
+      "instrument_id",
+      "eligible",
+      "inclusion_reason",
+      "exclusion_reason",
+      "listing_status",
+      "exchange",
+      "currency",
+      "data_provider_coverage",
+      "scanner_coverage",
+      "price_coverage",
+      "sector_or_domain_assignment_id",
+      "available_from"
+    ],
+    "current_membership_may_not_define_historical_membership": true,
+    "delistings_and_suspensions_must_remain_observable_when_known": true,
+    "missing_target_is_distinct_from_missing_feature": true
+  },
+  "dependence_and_robustness": {
+    "raw_event_count_may_not_be_presented_as_independent_n": true,
+    "effective_n_or_dependence_diagnostic_required_for_confirmatory_claims": true,
+    "date_concentration_report_required": true,
+    "symbol_concentration_report_required": true,
+    "sector_or_domain_concentration_report_required_when_available": true,
+    "leave_one_sector_or_domain_out_sensitivity_required_when_sample_permits": true,
+    "primary_temporal_uncertainty_method_remains_pre_registered": true,
+    "alternative_bootstrap_or_block_lengths_are_sensitivity_not_model_selection": true,
+    "no_cross_horizon_pooling_without_explicit_estimand": true
+  },
+  "probability_calibration_audit": {
+    "research_only_extension": true,
+    "required_diagnostics_when_sample_permits": [
+      "reliability_curve",
+      "brier_score",
+      "log_loss",
+      "calibration_intercept",
+      "calibration_slope",
+      "temporal_calibration_by_epoch"
+    ],
+    "advantage_probability_is_not_equivalent_to_calibration": true,
+    "diagnostics_may_not_rewrite_historical_probability_claims": true
+  },
+  "decision_layer_ablation": {
+    "status": "future_shadow_research_after_phase8",
+    "must_not_relabel_phase7i_validation": true,
+    "paired_same_claim_comparison_required": true,
+    "candidate_ladder": {
+      "B0": "position_unchanged_or_no_new_review",
+      "B1": "selection_only",
+      "B2": "selection_plus_eligible_timing_without_decision_hysteresis",
+      "B3": "raw_universal_stance",
+      "B4": "universal_stance_plus_hysteresis",
+      "B5": "portfolio_action_core_without_elliott_swing_adjustment",
+      "B6": "same_portfolio_action_core_with_elliott_swing_adjustment"
+    },
+    "elliott_incremental_value_primary_pair": ["B5", "B6"],
+    "execution_must_remain_disabled_until_separate_promotion": true
+  },
+  "elliott_challenger_registry": {
+    "frozen_hard_rules_may_not_be_rewritten_by_challengers": true,
+    "challengers_start_as_soft_sidecar_evidence": true,
+    "initial_candidates": [
+      "wave_personality_w3_momentum_expansion",
+      "wave_personality_w3_volume_expansion",
+      "wave_personality_w4_volume_contraction",
+      "wave_personality_w4_sideways_character",
+      "w5_momentum_divergence",
+      "w5_volume_divergence",
+      "channel_fit_and_causal_channel_break",
+      "alternation_fit",
+      "deep_correction_reclaim",
+      "scenario_stability",
+      "ending_diagonal_reversal"
+    ],
+    "external_four_signal_challenger_components_are_correlated_price_family_until_proven_otherwise": true,
+    "scenario_stability_is_not_assumed_to_equal_correctness": true,
+    "w5_divergence_is_not_a_hard_rule": true
+  },
+  "deferred_outside_qm_core": {
+    "dynamic_portfolio_correlation": "later_portfolio_risk_overlay",
+    "elliott_stage_times_external_evidence": "phase8h_only_after_required_single_family_promotion",
+    "fixed_crv_thresholds": "reject_without_empirical_comparison",
+    "fixed_position_sizing_rules": "outside_current_qm_scope"
+  },
+  "forbidden_shortcuts": [
+    "retrofit_missing_historical_provenance",
+    "reuse_outcome_inspected_evidence_as_unspent_confirmation",
+    "select_confirmatory_hypotheses_after_viewing_confirmatory_outcomes",
+    "treat_raw_event_count_as_independent_sample_size",
+    "use_current_universe_as_historical_universe",
+    "choose_bootstrap_or_block_length_by_best_result",
+    "treat_probability_advantage_as_calibration_proof",
+    "let_elliott_soft_challengers_rewrite_frozen_structural_counts_before_validation",
+    "promote_b6_from_unpaired_or_retrospective_comparison"
+  ]
+}
