@@ -1,0 +1,39 @@
+name: Phase 8F Macro Exposure Context
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8f_macro_exposure_v1.json"
+      - "configs/external_evidence_8f_exposure_map_v1.json"
+      - "src/scanner/research/external_evidence/macro_exposure_8f.py"
+      - "scripts/run_external_evidence_8f_contract_gate.py"
+      - "tests/test_external_evidence_8f_macro_exposure.py"
+      - "docs/external_evidence_8f_macro_exposure.md"
+      - ".github/workflows/external_evidence_8f_macro_exposure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Validate Phase 8F macro vintage and exposure-map guards
+        run: python -m pytest -q tests/test_external_evidence_8f_macro_exposure.py
+      - name: Verify Phase 8F contract gate CLI
+        run: python scripts/run_external_evidence_8f_contract_gate.py --help
+      - name: Execute Phase 8F foundation contract gate
+        run: python scripts/run_external_evidence_8f_contract_gate.py --output /tmp/external_evidence_8f_contract_gate.json
+
+# CI intentionally performs no live FRED/ALFRED requests.
+# No macro factor direction, signed asset exposure, outcome research, threshold/weight selection,
+# cross-factor interaction research, Phase-7 integration or production enablement is allowed here.
