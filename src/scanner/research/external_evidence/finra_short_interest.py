@@ -5,7 +5,7 @@ import hashlib
 import json
 from datetime import date, datetime, time, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 from zoneinfo import ZoneInfo
 
 
@@ -47,6 +47,13 @@ def _parse_iso_datetime(value: str) -> datetime:
 
 
 def publication_valid_from(publication_date: str) -> str:
+    """Return FINRA's documented scheduled availability time for a publication date.
+
+    The name is retained for compatibility with the first 8D-A1 slice. Downstream PIT
+    evidence must NOT use this value as `valid_from` unless original-vintage observation
+    at that time is independently proven. `build_finra_snapshot` uses ingestion time as
+    the actual `valid_from`.
+    """
     try:
         day = date.fromisoformat(str(publication_date).strip())
     except ValueError as exc:
@@ -190,13 +197,24 @@ def build_finra_snapshot(
     if not rows:
         raise FinraShortInterestError("FINRA snapshot contains no rows")
 
-    valid_from = publication_valid_from(publication_date)
+    published_at = publication_valid_from(publication_date)
     ingested = _parse_iso_datetime(ingested_at)
-    valid_dt = _parse_iso_datetime(valid_from)
-    if ingested < valid_dt:
+    published_dt = _parse_iso_datetime(published_at)
+    if ingested < published_dt:
         raise FinraShortInterestError(
             "ingested_at precedes FINRA publication availability time"
         )
+
+    ingested_iso = _iso_utc(ingested)
+    # Critical PIT rule: we know the retrieved vintage only from actual observation.
+    # Never retroject a later retrieval back to the scheduled FINRA publication time.
+    valid_from = ingested_iso
+    strict_pit = source_mode == PROSPECTIVE_MODE
+    vintage_status = (
+        "PROSPECTIVE_SNAPSHOT_OBSERVED_AT_INGESTION"
+        if strict_pit
+        else "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
+    )
 
     normalized: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
@@ -217,18 +235,15 @@ def build_finra_snapshot(
             item.update(
                 {
                     "event_time": item["settlement_date"],
-                    "published_at": valid_from,
+                    "published_at": published_at,
                     "valid_from": valid_from,
-                    "ingested_at": _iso_utc(ingested),
+                    "ingested_at": ingested_iso,
                     "source_authority": "FINRA",
                     "source_dataset": "consolidatedShortInterest",
                     "source_mode": source_mode,
-                    "strict_pit_eligible": source_mode == PROSPECTIVE_MODE,
-                    "vintage_status": (
-                        "STRICT_PIT_PROSPECTIVE_SNAPSHOT"
-                        if source_mode == PROSPECTIVE_MODE
-                        else "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
-                    ),
+                    "strict_pit_eligible": strict_pit,
+                    "strict_pit_basis": "OBSERVED_AT_INGESTION" if strict_pit else "NOT_ELIGIBLE",
+                    "vintage_status": vintage_status,
                 }
             )
             normalized.append(item)
@@ -246,7 +261,6 @@ def build_finra_snapshot(
     if not normalized:
         raise FinraShortInterestError("no FINRA rows survived normalization")
 
-    strict_pit = source_mode == PROSPECTIVE_MODE
     return {
         "schema_version": SCHEMA_VERSION,
         "phase": "8D_FINRA_short_interest",
@@ -258,20 +272,20 @@ def build_finra_snapshot(
         "source_sha256": _sha256_bytes(raw),
         "source_mode": source_mode,
         "publication_date": publication_date,
-        "published_at": valid_from,
-        "ingested_at": _iso_utc(ingested),
+        "published_at": published_at,
+        "ingested_at": ingested_iso,
+        "valid_from": valid_from,
         "strict_pit_eligible": strict_pit,
-        "vintage_status": (
-            "STRICT_PIT_PROSPECTIVE_SNAPSHOT"
-            if strict_pit
-            else "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
-        ),
+        "strict_pit_basis": "OBSERVED_AT_INGESTION" if strict_pit else "NOT_ELIGIBLE",
+        "vintage_status": vintage_status,
         "row_count": len(normalized),
         "rejected_row_count": len(rejected),
         "rows": normalized,
         "rejections": rejected,
         "guards": {
             "settlement_date_is_publication_time": False,
+            "publication_time_retrojection_enabled": False,
+            "valid_from_is_ingested_at": True,
             "short_sale_volume_substituted_for_short_interest": False,
             "short_interest_percent_float_enabled": False,
             "market_outcomes_read": False,
