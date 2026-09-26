@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -173,9 +174,11 @@ def test_real_bulk_adapter_builds_pit_first_release_features(tmp_path: Path):
     assert (output / "summary.json").is_file()
     assert (output / "company_coverage.csv").is_file()
     assert (output / "feature_observations.csv").is_file()
-    text = (output / "feature_observations.csv").read_text(encoding="utf-8")
-    assert "revenue_yoy_change" in text
-    assert "0.2" in text
+    with (output / "feature_observations.csv").open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    revenue = next(row for row in rows if row["feature"] == "revenue_yoy_change")
+    assert float(revenue["pct_change"]) == pytest.approx(0.2)
+    assert float(revenue["absolute_change"]) == pytest.approx(20.0)
 
 
 def test_real_bulk_adapter_rejects_non_authoritative_transport(tmp_path: Path):
