@@ -4,20 +4,27 @@
   "status": "FEASIBILITY_MEASUREMENT_ONLY",
   "scope": "CURRENT_SCANNER_SNAPSHOT_FEASIBILITY_ONLY_NOT_HISTORICAL_UNIVERSE",
   "scanner_source": "artifacts/research/latest_scanner.csv",
+  "transport_architecture": {
+    "official_source_authority": "U.S. SEC EDGAR",
+    "live_sec_from_github_hosted_actions_allowed": false,
+    "reason": "GitHub-hosted runners received HTTP 403 from SEC endpoints during 8C-C3 validation; transport failure must not become a coverage result.",
+    "collection_mode": "OFFLINE_OFFICIAL_SEC_SNAPSHOT",
+    "collector": "scripts/collect_external_evidence_8c_sec_snapshot.py",
+    "analyzer": "scripts/run_external_evidence_8c_universe_coverage.py",
+    "snapshot_schema": "external_evidence_8c_sec_snapshot_v1",
+    "snapshot_files_require_sha256": true,
+    "snapshot_market_outcomes_forbidden": true,
+    "github_ci_role": "DETERMINISTIC_CODE_AND_SNAPSHOT_INTEGRITY_TESTS_ONLY"
+  },
   "identity_policy": {
-    "authoritative_sec_ticker_source": "https://www.sec.gov/files/company_tickers.json",
-    "authoritative_current_validation_source": "https://data.sec.gov/submissions/CIK##########.json",
+    "sec_ticker_source": "https://www.sec.gov/files/company_tickers.json",
     "exact_current_ticker_match_only": true,
     "fuzzy_company_name_match_forbidden": true,
     "exchange_suffix_stripping_forbidden": true,
     "adr_native_listing_substitution_forbidden": true,
     "historical_identity_claim": false,
     "unmatched_status": "UNKNOWN",
-    "github_actions_www_sec_403_transport_fallback_allowed": true,
-    "fallback_role": "CIK_CANDIDATE_BOOTSTRAP_ONLY",
-    "fallback_candidate_must_be_confirmed_by_current_sec_submissions": true,
-    "failed_current_sec_validation_must_be_rejected": true,
-    "fallback_coverage_interpretation": "VALIDATED_LOWER_BOUND_CURRENT_EXACT_MATCH"
+    "matched_identity_must_be_confirmed_by_current_sec_submissions": true
   },
   "data_policy": {
     "full_submissions_history_required_per_matched_cik": true,
@@ -25,12 +32,12 @@
     "first_release_basis_for_feature_feasibility": true,
     "later_restatement_retrojection_forbidden": true,
     "market_outcomes_may_be_read": false,
-    "feature_direction_may_be_assigned": false
+    "feature_direction_may_be_assigned": false,
+    "network_transport_errors_may_be_interpreted_as_missing_fundamentals": false
   },
   "coverage_outputs": [
     "exact_sec_match_count",
     "unmatched_count",
-    "stale_or_unvalidated_bootstrap_identity_count",
     "processing_errors",
     "research_ready_company_count",
     "mapped_share_of_usable_facts",
@@ -44,16 +51,17 @@
   ],
   "interpretation_rules": {
     "unmatched_current_symbol_is_not_proof_of_no_sec_filing": true,
-    "fallback_unmatched_symbol_is_not_proof_of_no_current_sec_mapping": true,
     "current_ticker_match_is_not_historical_identifier_mapping": true,
     "coverage_result_may_expand_mapping_only_from_accounting_semantics": true,
     "coverage_result_may_not_select_features_from_future_returns": true,
-    "coverage_result_may_not_define_historical_universe": true
+    "coverage_result_may_not_define_historical_universe": true,
+    "sec_http_403_is_transport_failure_not_coverage_failure": true
   },
   "research_gate": {
     "outcome_research_enabled": false,
     "decision_integration_enabled": false,
     "historical_backtest_enabled": false,
-    "feature_domain_freeze_enabled": false
+    "feature_domain_freeze_enabled": false,
+    "current_universe_coverage_requires_verified_snapshot": true
   }
 }
