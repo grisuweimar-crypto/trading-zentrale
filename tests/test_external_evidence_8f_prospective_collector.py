@@ -17,15 +17,20 @@ ROOT = Path(__file__).resolve().parents[1]
 
 FED_HTML = """
 <html><body>
-<table>
-<tr><th>Instruments</th><th>2026 Sep 23</th><th>2026 Sep 24</th></tr>
-<tr><td>Federal funds (effective) 1 2 3</td><td>3.88</td><td>3.88</td></tr>
-<tr><td>Treasury constant maturities</td><td></td><td></td></tr>
-<tr><td>Nominal</td><td></td><td></td></tr>
-<tr><td>2-year</td><td>4.85</td><td>4.87</td></tr>
-<tr><td>10-year</td><td>5.11</td><td>5.18</td></tr>
-<tr><td>Inflation indexed</td><td></td><td></td></tr>
-</table>
+<div class="dates">Release date: September 25, 2026</div>
+<table id="h15table" title="Selected Interest Rates">
+<thead><tr>
+<th class="colhead" id="instruments" nowrap="nowrap">Instruments</th>
+<th id="col1" class="colhead">2026<br>Sep<br>23</th>
+<th id="col2" class="colhead">2026<br>Sep<br>24</th>
+</tr></thead><tbody>
+<tr><th class="stub">Federal funds (effective) <a href="#fn1">1</a> <a href="#fn2">2</a> <a href="#fn3">3</a></th><td>3.88</td><td>3.88</td></tr>
+<tr><th class="stub in2">Treasury constant maturities</th><td></td><td></td></tr>
+<tr><th class="stub in3">Nominal</th><td></td><td></td></tr>
+<tr><th class="stub in4">2-year</th><td>4.85</td><td>4.87</td></tr>
+<tr><th class="stub in4">10-year</th><td>5.11</td><td>5.18</td></tr>
+<tr><th class="stub in3">Inflation indexed</th><td></td><td></td></tr>
+</tbody></table>
 </body></html>
 """
 
