@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8d_positioning_crowding_v1",
   "phase": "8D_positioning_crowding",
-  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PASSED_B4_IMPLEMENTED_OUTCOME_BLIND",
+  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PASSED_B4_B5_IMPLEMENTED_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -92,7 +92,7 @@
       "direction": "UNASSIGNED"
     },
     "INSIDER_ACTIVITY": {
-      "status": "SOURCE_VALIDATED_B3_PASS_B4_FEATURE_AGGREGATION_IMPLEMENTED_OUTCOME_BLIND",
+      "status": "SOURCE_VALIDATED_B3_PASS_B4_FEATURES_B5_ASOF_IDENTITY_IMPLEMENTED_OUTCOME_BLIND",
       "source_authority": "U.S. SEC EDGAR",
       "forms": ["4", "4/A"],
       "source_urls": [
@@ -156,6 +156,23 @@
         "numeric_features_promoted": false,
         "numeric_challenger_reason": "One shares mismatch and one price mismatch were observed in the 299-row B3 mechanical audit; count features may proceed while shares/value aggregates remain challenger-only."
       },
+      "b5_identity_contract": {
+        "config": "configs/external_evidence_8d_insider_identity_v1.json",
+        "status": "IMPLEMENTED_OUTCOME_BLIND",
+        "parent_contract": "configs/external_universe_coverage_contract_v1.json",
+        "scanner_history_is_primary_observability_ledger": true,
+        "identity_source": "PIT_VALIDATED_SEC_INSIDER_EVIDENCE_ROWS",
+        "identity_becomes_usable_at": "valid_from",
+        "future_identity_evidence_may_be_used": false,
+        "current_ticker_retrojection_enabled": false,
+        "exact_symbol_only": true,
+        "symbol_changes_follow_latest_known_symbol_per_cik": true,
+        "unknown_identity_status": "UNKNOWN_NO_PIT_IDENTITY",
+        "ambiguous_identity_status": "AMBIGUOUS_PIT_IDENTITY",
+        "resolved_identity_status": "VERIFIED_FAMILY_PIT_IDENTITY",
+        "b4_grid_includes_only_resolved_identity": true,
+        "date_only_asof_is_rejected": true
+      },
       "excluded_from_discretionary_buy_sell_scope": [
         "A_GRANT_AWARD_OR_COMPANY_ACQUISITION",
         "D_SALE_OR_TRANSFER_BACK_TO_COMPANY",
@@ -205,7 +222,8 @@
         "external_evidence_8d_sec_insider_bulk_v1",
         "external_evidence_8d_insider_validation_package_v1",
         "external_evidence_8d_insider_validation_result_v1",
-        "external_evidence_8d_insider_features_v1"
+        "external_evidence_8d_insider_features_v1",
+        "external_evidence_8d_insider_asof_identity_v1"
       ],
       "direction": "UNASSIGNED"
     },
