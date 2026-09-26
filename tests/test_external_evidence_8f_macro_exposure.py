@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
 from scanner.research.external_evidence.macro_exposure_8f import (
     MacroExposure8FError,
     build_macro_context,
@@ -96,9 +97,7 @@ def test_non_known_macro_state_cannot_smuggle_numeric_neutral_value():
 
 def test_exposure_mapping_requires_human_review_and_no_retrojection():
     with pytest.raises(MacroExposure8FError, match="human-reviewed"):
-        validate_exposure_mapping(
-            _mapping(human_reviewed=False), allowed_factor_ids={"rates_policy"}
-        )
+        validate_exposure_mapping(_mapping(human_reviewed=False), allowed_factor_ids={"rates_policy"})
 
     with pytest.raises(MacroExposure8FError, match="retrojected"):
         validate_exposure_mapping(
@@ -115,34 +114,14 @@ def test_direction_weight_threshold_and_outcome_fields_are_forbidden():
         ("forward_return", 0.12),
     ):
         with pytest.raises(MacroExposure8FError, match="forbids direction/outcome/weight/threshold"):
-            validate_exposure_mapping(
-                _mapping(**{field: value}), allowed_factor_ids={"rates_policy"}
-            )
+            validate_exposure_mapping(_mapping(**{field: value}), allowed_factor_ids={"rates_policy"})
 
 
 def test_context_uses_latest_revision_knowable_at_asof_only():
     observations = [
-        _macro_row(
-            value="4.25",
-            realtime_start="2026-09-24",
-            revision_id="r1",
-            valid_from="2026-09-25T00:00:00+00:00",
-            ingested_at="2026-09-26T12:00:00+00:00",
-        ),
-        _macro_row(
-            value="4.10",
-            realtime_start="2026-09-25",
-            revision_id="r2",
-            valid_from="2026-09-26T00:00:00+00:00",
-            ingested_at="2026-09-26T12:00:00+00:00",
-        ),
-        _macro_row(
-            value="3.90",
-            realtime_start="2026-09-26",
-            revision_id="future-r3",
-            valid_from="2026-09-27T00:00:00+00:00",
-            ingested_at="2026-09-27T12:00:00+00:00",
-        ),
+        _macro_row(value="4.25", realtime_start="2026-09-24", revision_id="r1", valid_from="2026-09-25T00:00:00+00:00", ingested_at="2026-09-26T12:00:00+00:00"),
+        _macro_row(value="4.10", realtime_start="2026-09-25", revision_id="r2", valid_from="2026-09-26T00:00:00+00:00", ingested_at="2026-09-26T12:00:00+00:00"),
+        _macro_row(value="3.90", realtime_start="2026-09-26", revision_id="future-r3", valid_from="2026-09-27T00:00:00+00:00", ingested_at="2026-09-27T12:00:00+00:00"),
     ]
     result = build_macro_context(
         observations=observations,
@@ -163,40 +142,13 @@ def test_context_uses_latest_revision_knowable_at_asof_only():
 
 def test_context_preserves_all_latest_series_within_factor_without_hidden_selection():
     observations = [
-        _macro_row(
-            series_id="OIL_WTI",
-            factor_id="oil",
-            value="91.0",
-            realtime_start="2026-09-24",
-            revision_id="wti-r1",
-            valid_from="2026-09-25T00:00:00+00:00",
-        ),
-        _macro_row(
-            series_id="OIL_WTI",
-            factor_id="oil",
-            value="91.5",
-            realtime_start="2026-09-25",
-            revision_id="wti-r2",
-            valid_from="2026-09-26T00:00:00+00:00",
-        ),
-        _macro_row(
-            series_id="OIL_BRENT",
-            factor_id="oil",
-            value="95.0",
-            realtime_start="2026-09-25",
-            revision_id="brent-r1",
-            valid_from="2026-09-26T00:00:00+00:00",
-        ),
+        _macro_row(series_id="OIL_WTI", factor_id="oil", value="91.0", realtime_start="2026-09-24", revision_id="wti-r1", valid_from="2026-09-25T00:00:00+00:00"),
+        _macro_row(series_id="OIL_WTI", factor_id="oil", value="91.5", realtime_start="2026-09-25", revision_id="wti-r2", valid_from="2026-09-26T00:00:00+00:00"),
+        _macro_row(series_id="OIL_BRENT", factor_id="oil", value="95.0", realtime_start="2026-09-25", revision_id="brent-r1", valid_from="2026-09-26T00:00:00+00:00"),
     ]
     result = build_macro_context(
         observations=observations,
-        mappings=[
-            _mapping(
-                mapping_id="MAP:ABC:oil:1",
-                factor_id="oil",
-                relationship_class="INPUT_COST_LINK",
-            )
-        ],
+        mappings=[_mapping(mapping_id="MAP:ABC:oil:1", factor_id="oil", relationship_class="INPUT_COST_LINK")],
         as_of=datetime(2026, 9, 26, 18, 0, tzinfo=timezone.utc),
         allowed_series_ids={"OIL_WTI", "OIL_BRENT"},
         allowed_factor_ids={"oil"},
@@ -213,17 +165,13 @@ def test_context_preserves_all_latest_series_within_factor_without_hidden_select
     assert result["guards"]["single_series_silently_selected_from_multiseries_factor"] is False
 
 
-def test_committed_human_reviewed_exposure_map_passes_foundation_contract():
-    macro_config = json.loads(
-        (ROOT / "configs/external_evidence_8f_macro_exposure_v1.json").read_text(encoding="utf-8")
-    )
-    exposure_map = json.loads(
-        (ROOT / "configs/external_evidence_8f_exposure_map_v1.json").read_text(encoding="utf-8")
-    )
+def test_committed_human_reviewed_effective_exposure_map_passes_foundation_contract():
+    macro_config = json.loads((ROOT / "configs/external_evidence_8f_macro_exposure_v1.json").read_text(encoding="utf-8"))
+    exposure_map = load_effective_exposure_map(root=ROOT)
     result = validate_phase8f_contract(macro_config, exposure_map)
     assert result["status"] == "PASS_FOUNDATION_CONTRACT"
     assert result["factor_count"] == 11
-    assert result["mapping_count"] == 60
+    assert result["mapping_count"] == 80
     assert all(row["human_reviewed"] is True for row in exposure_map["mappings"])
     assert result["outcomes_read"] is False
 
