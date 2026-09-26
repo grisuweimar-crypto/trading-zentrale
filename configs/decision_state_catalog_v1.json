@@ -1,0 +1,151 @@
+{
+  "schema_version": "decision_state_catalog_v1",
+  "status": "foundation_contract_examples_not_final_policy",
+  "purpose": "canonical cases for contract semantics, research boundaries and later parametric decision-policy tests",
+  "cases": [
+    {
+      "id": "C01_strong_confirmed_buy",
+      "kind": "research_pending_policy",
+      "inputs": {"selection": "positive", "timing": "positive", "probability": "high", "risk": "moderate", "confidence": "high", "elliott": "constructive", "context": "neutral_or_supportive"},
+      "expected": {"candidate_stance": "BUY", "reliability": "HIGH", "notes": "requires empirical Phase-7 policy validation"}
+    },
+    {
+      "id": "C02_buy_but_portfolio_constrained",
+      "kind": "contract_deterministic",
+      "inputs": {"universal_stance": "BUY", "portfolio_constraint": "MAX_POSITION_CONCENTRATION"},
+      "expected": {"universal_stance": "BUY", "portfolio_action": "NO_ACTION", "portfolio_reason": "MAX_POSITION_CONCENTRATION"}
+    },
+    {
+      "id": "C03_hold_constructive_no_new_entry",
+      "kind": "research_pending_policy",
+      "inputs": {"selection": "positive", "timing": "neutral", "risk": "moderate", "confidence": "high"},
+      "expected": {"candidate_stance": "HOLD", "stance_detail": "HOLD_CONSTRUCTIVE"}
+    },
+    {
+      "id": "C04_hold_neutral",
+      "kind": "research_pending_policy",
+      "inputs": {"selection": "neutral", "timing": "neutral", "risk": "moderate", "confidence": "medium"},
+      "expected": {"candidate_stance": "HOLD", "stance_detail": "HOLD_NEUTRAL"}
+    },
+    {
+      "id": "C05_hold_unresolved_conflict",
+      "kind": "research_pending_policy",
+      "inputs": {"selection": "positive", "timing": "negative", "elliott": "constructive_but_alternative_active"},
+      "expected": {"candidate_stance": "HOLD_OR_INSUFFICIENT_EVIDENCE", "stance_detail_if_hold": "HOLD_UNRESOLVED", "conflict_type": "SELECTION_TIMING_CONFLICT"}
+    },
+    {
+      "id": "C06_insufficient_data",
+      "kind": "contract_deterministic",
+      "inputs": {"required_history_depth": "missing"},
+      "expected": {"universal_stance": "INSUFFICIENT_EVIDENCE", "reason": "INSUFFICIENT_DATA"}
+    },
+    {
+      "id": "C07_insufficient_model_coverage",
+      "kind": "contract_deterministic",
+      "inputs": {"required_module_output": "missing_or_unsupported"},
+      "expected": {"universal_stance": "INSUFFICIENT_EVIDENCE", "reason": "INSUFFICIENT_MODEL_COVERAGE"}
+    },
+    {
+      "id": "C08_insufficient_consensus",
+      "kind": "research_pending_policy",
+      "inputs": {"decision_critical_conflict": "unresolved"},
+      "expected": {"candidate_stance": "INSUFFICIENT_EVIDENCE", "reason": "INSUFFICIENT_CONSENSUS"}
+    },
+    {
+      "id": "C09_insufficient_validation",
+      "kind": "contract_deterministic",
+      "inputs": {"model_status": "not_validated_or_not_promoted"},
+      "expected": {"universal_stance": "INSUFFICIENT_EVIDENCE", "reason": "INSUFFICIENT_VALIDATION"}
+    },
+    {
+      "id": "C10_outside_validated_domain",
+      "kind": "contract_deterministic",
+      "inputs": {"asset_or_context": "outside_validated_domain"},
+      "expected": {"universal_stance": "INSUFFICIENT_EVIDENCE", "reason": "OUTSIDE_VALIDATED_DOMAIN"}
+    },
+    {
+      "id": "C11_stale_or_incompatible_input",
+      "kind": "contract_deterministic",
+      "inputs": {"input_status": "stale_or_version_incompatible"},
+      "expected": {"universal_stance": "INSUFFICIENT_EVIDENCE", "reason": "STALE_OR_INCOMPATIBLE_INPUT", "hysteresis_override": true}
+    },
+    {
+      "id": "C12_input_contract_violation",
+      "kind": "contract_deterministic",
+      "inputs": {"input_contract": "violated"},
+      "expected": {"universal_stance": "INSUFFICIENT_EVIDENCE", "reason": "INPUT_CONTRACT_VIOLATION", "hysteresis_override": true}
+    },
+    {
+      "id": "C13_high_risk_does_not_invert_direction",
+      "kind": "contract_deterministic",
+      "inputs": {"selection": "positive", "timing": "positive", "risk": "high"},
+      "expected": {"rule": "risk_may_limit_or_block_action_but_may_not_by_itself_relabel_positive_direction_as_SELL", "conflict_type": "RISK_CONSTRAINT_NOT_DIRECTIONAL_CONFLICT"}
+    },
+    {
+      "id": "C14_low_confidence_not_bearish",
+      "kind": "contract_deterministic",
+      "inputs": {"directional_evidence": "positive", "confidence": "low"},
+      "expected": {"rule": "lower_reliability_not_automatic_SELL"}
+    },
+    {
+      "id": "C15_probability_not_double_vote",
+      "kind": "contract_deterministic",
+      "inputs": {"selection": "positive", "timing": "positive", "probability": "high"},
+      "expected": {"rule": "probability_calibrates_existing_direction_and_is_not_third_directional_vote"}
+    },
+    {
+      "id": "C16_elliott_w2_not_auto_buy",
+      "kind": "contract_deterministic",
+      "inputs": {"elliott": "possible_W2_completion", "selection": "weak", "timing": "weak"},
+      "expected": {"rule": "elliott_structure_alone_cannot_emit_BUY", "conflict_type": "DIRECTION_STRUCTURE_CONFLICT"}
+    },
+    {
+      "id": "C17_elliott_w3_exhaustion_partial_reduce_review",
+      "kind": "research_pending_policy",
+      "inputs": {"elliott": "W3_exhaustion", "momentum": "deteriorating", "overextension": true, "position_present": true},
+      "expected": {"candidate_portfolio_action": "PARTIAL_REDUCE", "notes": "must beat no-swing baseline net of costs"}
+    },
+    {
+      "id": "C18_elliott_w4_reentry_review",
+      "kind": "research_pending_policy",
+      "inputs": {"elliott": "W4_completion", "timing": "reconfirming", "position_reduced_previously": true},
+      "expected": {"candidate_portfolio_action": "ADD", "notes": "re-entry must include transaction and opportunity costs"}
+    },
+    {
+      "id": "C19_elliott_w5_exit_review",
+      "kind": "research_pending_policy",
+      "inputs": {"elliott": "W5_completion_risk", "timing": "negative", "position_present": true},
+      "expected": {"candidate_portfolio_action": "PARTIAL_REDUCE_OR_EXIT", "notes": "not deterministic from Elliott alone"}
+    },
+    {
+      "id": "C20_primary_alternative_count_conflict",
+      "kind": "contract_deterministic",
+      "inputs": {"elliott_primary": "constructive", "elliott_alternative": "materially_active_opposite_implication"},
+      "expected": {"conflict_type": "PRIMARY_ALTERNATIVE_STRUCTURE_CONFLICT", "reliability_effect": "must_not_increase_reliability"}
+    },
+    {
+      "id": "C21_market_context_divergence",
+      "kind": "research_pending_policy",
+      "inputs": {"stock_direction": "positive", "validated_market_context": "negative"},
+      "expected": {"conflict_type": "MARKET_CONTEXT_DIVERGENCE", "notes": "directional implication requires empirical calibration"}
+    },
+    {
+      "id": "C22_hysteresis_confirmation_window",
+      "kind": "research_pending_policy",
+      "inputs": {"old_stance": "BUY", "new_candidate": "HOLD", "counter_evidence": "marginal_and_new"},
+      "expected": {"candidate_mechanism": "confirmation_window", "notes": "N not frozen before research"}
+    },
+    {
+      "id": "C23_hysteresis_exception_override",
+      "kind": "contract_deterministic",
+      "inputs": {"old_stance": "BUY", "event": "HARD_STRUCTURAL_INVALIDATION"},
+      "expected": {"rule": "hysteresis_must_not_preserve_invalidated_state", "mechanism": "exception_override"}
+    },
+    {
+      "id": "C24_decision_reliability_mixed",
+      "kind": "contract_deterministic",
+      "inputs": {"coverage": "HIGH", "data_quality": "HIGH", "module_agreement": "MIXED", "conflict_severity": "MODERATE", "walk_forward_support": "LIMITED"},
+      "expected": {"rule": "reliability_must_be_structured_and_explained", "level": "not_preassigned_before_calibration", "directional_interpretation": "forbidden"}
+    }
+  ]
+}
