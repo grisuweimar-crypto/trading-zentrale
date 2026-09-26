@@ -8,6 +8,13 @@
   "market_direction_may_be_assigned": false,
   "phase7_integration_enabled": false,
   "production_external_evidence_enabled": false,
+  "scanner_observability": {
+    "primary_symbol_field": "symbol",
+    "knowledge_timestamp_field": "generated_at",
+    "market_date_field": "as_of",
+    "date_only_market_date_may_be_used_as_knowledge_timestamp": false,
+    "reason": "Scanner artifacts expose date-only as_of plus timezone-aware generated_at; PIT identity must use the actual scanner generation timestamp."
+  },
   "identity_evidence_source": "PIT_VALIDATED_SEC_INSIDER_EVIDENCE_ROWS",
   "evidence_fields": [
     "issuer_cik",
@@ -44,7 +51,7 @@
     "source_coverage_status",
     "pit_status",
     "identity_evidence_valid_from",
-    "identity_evidence_accession",
+    "identity_evidence_accessions",
     "reason_codes"
   ],
   "missing_external_data_may_be_imputed_neutral": false,
