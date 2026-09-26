@@ -14,7 +14,9 @@
     "preventive_qa_is_distinct_from_outcome_driven_redesign": true,
     "point_in_time_and_available_from_are_mandatory": true,
     "no_retroactive_repair_of_missing_provenance": true,
-    "no_super_score_shortcut": true
+    "no_super_score_shortcut": true,
+    "derived_transformation_does_not_create_independent_evidence_by_default": true,
+    "negative_controls_must_not_touch_canonical_artifacts": true
   },
   "workstreams": [
     {
@@ -51,6 +53,21 @@
       "id": "QM-G",
       "name": "elliott_challenger_registry",
       "goal": "register soft Elliott challengers without changing frozen hard rules or structural count semantics"
+    },
+    {
+      "id": "QM-H",
+      "name": "defect_near_miss_and_capa_management",
+      "goal": "record errors, near misses, inconsistencies and deviations through containment, root-cause analysis, corrective action, prevention and verification"
+    },
+    {
+      "id": "QM-I",
+      "name": "evidence_lineage_and_double_counting_audit",
+      "goal": "make information ancestry machine-readable and detect hidden reuse of common raw information as apparently independent evidence"
+    },
+    {
+      "id": "QM-J",
+      "name": "negative_controls_and_falsification",
+      "goal": "challenge the research pipeline with pre-registered controls that should not contain genuine predictive information"
     }
   ],
   "evidence_consumption": {
@@ -160,7 +177,9 @@
       "B6": "same_portfolio_action_core_with_elliott_swing_adjustment"
     },
     "elliott_incremental_value_primary_pair": ["B5", "B6"],
-    "execution_must_remain_disabled_until_separate_promotion": true
+    "execution_must_remain_disabled_until_separate_promotion": true,
+    "b5_b6_lineage_identity_check_required": true,
+    "b5_b6_may_differ_only_by_registered_elliott_adjustment": true
   },
   "elliott_challenger_registry": {
     "frozen_hard_rules_may_not_be_rewritten_by_challengers": true,
@@ -182,6 +201,114 @@
     "scenario_stability_is_not_assumed_to_equal_correctness": true,
     "w5_divergence_is_not_a_hard_rule": true
   },
+  "defect_incident_capa": {
+    "required": true,
+    "classes": [
+      "DEFECT",
+      "NEAR_MISS",
+      "INCONSISTENCY",
+      "DEVIATION",
+      "DATA_QUALITY_EVENT",
+      "METHODOLOGY_RISK",
+      "OBSERVATION"
+    ],
+    "severity": ["S1_CRITICAL", "S2_MAJOR", "S3_MODERATE", "S4_MINOR"],
+    "detection_stage": [
+      "DESIGN_REVIEW",
+      "CODE_REVIEW",
+      "TEST",
+      "RESEARCH_RUN",
+      "PROSPECTIVE_SHADOW",
+      "PRODUCTION"
+    ],
+    "lifecycle": ["DETECT", "CONTAIN", "ANALYZE", "CORRECT", "PREVENT", "VERIFY", "CLOSE"],
+    "required_fields": [
+      "incident_id",
+      "detected_at",
+      "class",
+      "severity",
+      "detection_stage",
+      "affected_phase_or_module",
+      "description",
+      "potential_or_realized_impact",
+      "containment",
+      "root_cause",
+      "corrective_action",
+      "preventive_action",
+      "verification_evidence",
+      "status",
+      "related_commit_or_artifact"
+    ],
+    "near_misses_must_not_be_discarded_because_no_damage_occurred": true,
+    "closure_requires_verification": true,
+    "repeat_incidents_require_systemic_root_cause_review": true
+  },
+  "evidence_lineage": {
+    "required": true,
+    "representation": "versioned_directed_acyclic_graph",
+    "node_types": [
+      "raw_feature",
+      "derived_metric",
+      "research_claim",
+      "calibration",
+      "risk_context",
+      "reliability_annotation",
+      "structural_context",
+      "external_evidence",
+      "decision_usage"
+    ],
+    "required_node_fields": [
+      "node_id",
+      "node_type",
+      "name",
+      "version_or_fingerprint",
+      "information_family",
+      "available_from_semantics",
+      "source_phase_or_module"
+    ],
+    "required_edge_fields": [
+      "from_node_id",
+      "to_node_id",
+      "transform_id",
+      "relationship",
+      "directional_role",
+      "may_be_counted_as_independent_support"
+    ],
+    "derived_transformation_is_independent_support_by_default": false,
+    "shared_raw_ancestor_requires_double_counting_review": true,
+    "shared_raw_ancestor_is_not_automatic_proof_of_invalidity": true,
+    "independence_claim_requires_explicit_justification": true,
+    "required_audits": [
+      "common_raw_ancestor_between_claimed_independent_support",
+      "regime_already_embedded_in_selection",
+      "risk_already_embedded_in_selection_or_score",
+      "selection_reused_inside_confidence_or_agreement",
+      "probability_recounted_as_directional_vote",
+      "same_family_support_presented_as_cross_family_confirmation",
+      "b5_b6_non_elliott_difference"
+    ],
+    "machine_checkable_path_from_raw_feature_to_decision_usage_required": true
+  },
+  "negative_controls_and_falsification": {
+    "required_for_confirmatory_pipeline_audit": true,
+    "research_only_isolated_sandbox": true,
+    "canonical_artifacts_may_not_be_mutated": true,
+    "control_families": [
+      "temporally_shifted_signal",
+      "block_preserving_time_permutation",
+      "within_date_symbol_permutation",
+      "feature_permutation_preserving_missingness",
+      "random_pseudo_event",
+      "irrelevant_feature_control"
+    ],
+    "expected_null_behavior_must_be_preregistered": true,
+    "negative_controls_are_not_expected_to_equal_exact_zero": true,
+    "temporal_and_cross_sectional_structure_should_be_preserved_when_relevant": true,
+    "control_failure_requires_leakage_or_pipeline_investigation_before_confirmatory_promotion": true,
+    "controls_may_not_be_tuned_until_they_produce_null": true,
+    "intentionally_wrong_symbol_mapping_allowed_only_in_isolated_integrity_test": true,
+    "wrong_symbol_mapping_is_not_a_statistical_negative_control": true
+  },
   "deferred_outside_qm_core": {
     "dynamic_portfolio_correlation": "later_portfolio_risk_overlay",
     "elliott_stage_times_external_evidence": "phase8h_only_after_required_single_family_promotion",
@@ -197,6 +324,9 @@
     "choose_bootstrap_or_block_length_by_best_result",
     "treat_probability_advantage_as_calibration_proof",
     "let_elliott_soft_challengers_rewrite_frozen_structural_counts_before_validation",
-    "promote_b6_from_unpaired_or_retrospective_comparison"
+    "promote_b6_from_unpaired_or_retrospective_comparison",
+    "count_transforms_of_common_information_as_independent_votes_without_review",
+    "hide_failed_negative_controls",
+    "tune_negative_controls_until_the_pipeline_passes"
   ]
 }
