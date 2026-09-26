@@ -29,7 +29,7 @@ def _read_scanner_observations(path: Path, *, symbol_column: str, asof_column: s
         if symbol_column not in reader.fieldnames:
             raise ValueError(f"scanner history missing symbol column {symbol_column!r}")
         if asof_column not in reader.fieldnames:
-            raise ValueError(f"scanner history missing as-of column {asof_column!r}")
+            raise ValueError(f"scanner history missing knowledge-time column {asof_column!r}")
         rows = []
         for raw in reader:
             rows.append(
@@ -58,8 +58,8 @@ def main() -> int:
     parser.add_argument("--symbol-column", default="symbol")
     parser.add_argument(
         "--asof-column",
-        default="as_of",
-        help="Must contain timezone-aware timestamps. Date-only values are intentionally rejected.",
+        default="generated_at",
+        help="Scanner knowledge-time column. Default generated_at is timezone-aware; date-only market as_of is intentionally not used as knowledge time.",
     )
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--output", default=str(DEFAULT_DIR / "insider_asof_identity.json"))
@@ -96,6 +96,7 @@ def main() -> int:
                 "identity_evidence_point_count": payload["identity_evidence_point_count"],
                 "identity_status_counts": payload["identity_status_counts"],
                 "verified_feature_grid_row_count": len(feature_grid),
+                "scanner_knowledge_timestamp_column": args.asof_column,
                 "output": args.output,
                 "feature_grid_output": args.feature_grid_output,
                 "market_outcomes_read": payload["guards"]["market_outcomes_read"],
