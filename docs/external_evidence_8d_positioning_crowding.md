@@ -1,6 +1,6 @@
 # Phase 8D — Positioning / Crowding
 
-Status: `8D_A1_A2_B1_B2_IMPLEMENTED_OUTCOME_BLIND`
+Status: `8D_A1_A2_B1_B2_IMPLEMENTED_B3_PREREGISTERED_OUTCOME_BLIND`
 
 Phase 8D follows the completed Phase 8C external-evidence foundation. Production external evidence, Phase-7 integration, market-direction assignment and outcome research remain disabled.
 
@@ -101,7 +101,7 @@ Implemented:
 - `src/scanner/research/external_evidence/sec_insider_bulk.py`
 - `scripts/import_external_evidence_8d_sec_insider_bulk.py`
 
-The quarterly SEC bulk ZIP is not allowed to invent historical availability from its download date. Instead every Form 4/4-A row must join by exact accession number and issuer CIK to the already operator-attested SEC submissions bundle from Phase 8C. That bundle supplies the filing acceptance metadata and conservative PIT `valid_from`.
+The quarterly SEC bulk ZIP is not allowed to invent historical availability from its download date. Every Form 4/4-A row must join by exact accession number and issuer CIK to the operator-attested SEC submissions bundle from Phase 8C. That bundle supplies filing acceptance metadata and conservative PIT `valid_from`.
 
 Hard requirements:
 
@@ -114,11 +114,11 @@ Hard requirements:
 - current ticker is descriptive metadata only, never historical stable identity
 - Form 4/A remains separate versioned evidence and never silently overwrites the original
 
-### 8D-B2 — high-precision P/S semantic challenger
+### 8D-B2 — high-precision P/S challenger
 
 Only non-derivative Table-I transactions with code `P` or `S` enter the P/S evidence set.
 
-A row is eligible for the initial **discretionary** high-precision candidate only when all of the following hold:
+The high-precision candidate requires:
 
 - filing is Form 4 or 4/A
 - `TRANS_FORM_TYPE == 4`
@@ -128,7 +128,9 @@ A row is eligible for the initial **discretionary** high-precision candidate onl
 - transaction shares are known
 - accession/issuer identity and PIT provenance are valid
 
-Fail-closed states remain separate evidence, not discretionary trades:
+Important semantic boundary: an explicitly false `AFF10B5ONE` value means only that the filing does not declare the transaction as made pursuant to a contract, instruction or written plan intended to satisfy Rule 10b5-1(c). It does **not** prove the reporting person's subjective motivation or discretion. The implementation's legacy candidate-status name containing `DISCRETIONARY` is therefore treated only as an internal challenger label, not as a proven economic fact.
+
+Fail-closed states remain separate evidence:
 
 - `CONFLICTING_ACQUIRED_DISPOSED_CODE`
 - `EXCLUDED_NON_FORM4_TRANSACTION`
@@ -137,17 +139,42 @@ Fail-closed states remain separate evidence, not discretionary trades:
 - `P_S_DISCRETIONARY_UNRESOLVED_10B5_1`
 - `P_S_PARTIAL_MISSING_SHARES`
 
-Other Section-16 transaction codes such as grants, exercises, tax-withholding, gifts, transfers, derivatives and generic other transactions are not silently mapped to discretionary purchase/sale semantics.
-
-Potential later descriptive features, only after source/coverage validation:
-
-- discretionary purchase/sale count
-- discretionary purchase/sale shares
-- value when price is explicitly known
-- distinct buyer/seller count
-- reporting-owner relationship mix
+Other Section-16 transaction codes such as grants, exercises, tax-withholding, gifts, transfers, derivatives and generic other transactions are not silently mapped to P/S semantics.
 
 No market direction or portfolio action is assigned.
+
+### 8D-B3 — pre-registered real-data semantic/provenance validation
+
+Pre-registered before real-data evaluation:
+
+- `configs/external_evidence_8d_insider_validation_v1.json`
+- `src/scanner/research/external_evidence/sec_insider_validation.py`
+- `scripts/run_external_evidence_8d_insider_validation.py`
+- `tests/test_external_evidence_8d_insider_validation.py`
+
+The first real validation corpus is frozen to **2026 Q2 only**, the latest full public SEC insider quarter available at preregistration on 2026-09-26. Earlier quarters may not be added after seeing the Q2 validation result. If Q2 is too small, the result is `LOW_COVERAGE_NOT_PROMOTABLE` and another corpus requires a new preregistration.
+
+Frozen sampling:
+
+- deterministic hash-order sampling with seed `8D-B3-v1`
+- up to 100 high-precision candidates per transaction code (`P`, `S`)
+- up to 50 rows per quarantine/exclusion status
+- up to 100 distinct accessions for provenance review
+
+Frozen promotion gates:
+
+- at least 40 labeled high-precision candidates
+- at least 10 distinct issuers
+- at least 10 purchases and 10 sales
+- Wilson 95% lower bound for P/S scope precision >= 0.90
+- Wilson 95% lower bound for critical-field accuracy >= 0.90
+- Wilson 95% lower bound for provenance accuracy >= 0.95
+- uncertain annotation rate <= 10%
+- zero market-outcome violations
+- zero market-direction assignment
+- zero silent amendment overwrite / ticker-identity shortcuts
+
+The B3 audit validates source semantics and provenance only. It does not test whether insider buying or selling predicts returns, and passing B3 does not enable Phase-7 integration or production evidence.
 
 ## 8D-C — borrow rates
 
@@ -173,4 +200,4 @@ A source must provide security-level historical borrow fee/rebate observations w
 
 ## Next executable slice
 
-`8D-B3 / 8D validation preparation`: run real quarterly SEC insider bulk data through B1/B2, measure issuer/accession/P-S coverage and candidate-state counts, and freeze a prospective validation protocol before any market-outcome research. FINRA A1/A2 likewise still requires a real publication snapshot before its coverage can be measured empirically.
+Run the frozen **2026 Q2** SEC insider bulk ZIP through B1/B2 using the existing local `sec_bulk_snapshot`, then run B3 `prepare` to create the deterministic human-audit package. Only after that outcome-blind audit is completed may B3 be evaluated. FINRA A1/A2 independently still requires a real prospective publication snapshot before FINRA coverage can be measured empirically.
