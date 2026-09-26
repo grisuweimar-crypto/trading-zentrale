@@ -6,6 +6,7 @@ on:
       - "configs/external_evidence_8c_semantic_validation_v1.json"
       - "src/scanner/research/external_evidence/semantic_validation.py"
       - "scripts/run_external_evidence_8c_semantic_validation.py"
+      - "scripts/prepare_external_evidence_8c_semantic_audit.py"
       - "tests/test_external_evidence_8c_semantic_validation.py"
       - "docs/external_evidence_8c_i_semantic_validation.md"
       - ".github/workflows/external_evidence_8c_semantic_validation.yml"
@@ -28,5 +29,7 @@ jobs:
         run: python -m pip install -e ".[test]"
       - name: Run Phase 8C-I validation guards
         run: python -m pytest -q tests/test_external_evidence_8c_semantic_validation.py
-      - name: Verify validation runner CLI
-        run: python scripts/run_external_evidence_8c_semantic_validation.py --help
+      - name: Verify validation CLIs
+        run: |
+          python scripts/run_external_evidence_8c_semantic_validation.py --help
+          python scripts/prepare_external_evidence_8c_semantic_audit.py --help
