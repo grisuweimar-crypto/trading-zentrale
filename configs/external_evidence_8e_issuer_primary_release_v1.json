@@ -1,0 +1,45 @@
+{
+  "schema_version": "external_evidence_8e_issuer_primary_release_v1",
+  "phase": "8E_B4_issuer_primary_release",
+  "status": "PROSPECTIVE_ONLY_CHALLENGER_CONTRACT",
+  "source_class": "ISSUER_PRIMARY_RELEASE",
+  "supported_event_types": [
+    "MAJOR_CONTRACT",
+    "ACQUISITION_ANNOUNCEMENT",
+    "TAKEOVER_OFFER",
+    "MANAGEMENT_CHANGE",
+    "PRODUCT_LAUNCH",
+    "PRODUCTION_DISRUPTION"
+  ],
+  "explicitly_not_supported": [
+    "GUIDANCE_RAISE",
+    "GUIDANCE_CUT",
+    "CAPITAL_RAISE"
+  ],
+  "reason_not_supported": "These semantics remain governed by Phase 8C validation boundaries and may not be recreated from unvalidated issuer-release text.",
+  "identity_contract": {
+    "issuer_stable_id_required": true,
+    "source_event_id_required": true,
+    "canonical_event_key": "ISSUER_IR:<event_type>:<issuer_stable_id>:<source_event_id>",
+    "company_name_to_ticker_fuzzy_mapping_enabled": false
+  },
+  "pit_contract": {
+    "prospective_capture_from_actual_ingestion": true,
+    "page_date_alone_proves_historical_publication_time": false,
+    "historical_publication_time_requires_immutable_archive_or_equivalent_proof": true,
+    "without_independent_proof_valid_from": "INGESTED_AT",
+    "later_retrieval_may_backdate_knowledge": false
+  },
+  "semantic_contract": {
+    "explicit_operator_verified_event_type_required": true,
+    "generic_sentiment_enabled": false,
+    "llm_event_inference_promotable_without_validation": false,
+    "cross_source_deduplication_fuzzy": false
+  },
+  "hard_boundaries": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}
