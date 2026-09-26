@@ -16,13 +16,16 @@
     "forms": ["4", "4/A"],
     "transaction_table": "NONDERIV_TRANS",
     "target_transaction_codes": ["P", "S"],
-    "high_precision_candidate_status": "P_S_HIGH_PRECISION_CANDIDATE",
+    "high_precision_candidate_status": "P_S_HIGH_PRECISION_DISCRETIONARY_CANDIDATE",
+    "candidate_status_name_is_not_proof_of_subjective_discretion": true,
+    "semantic_target": "CORRECT_P_OR_S_EXTRACTION_WITH_NO_DECLARED_10B5_1_FLAG_AND_NO_OTHER_EXCLUSION_TRIGGER",
     "excluded_or_quarantined_statuses": [
-      "P_S_10B5_1_DECLARED",
+      "EXCLUDED_10B5_1_PLAN",
       "EXCLUDED_EQUITY_SWAP",
       "CONFLICTING_ACQUIRED_DISPOSED_CODE",
-      "CONFLICTING_TRANS_FORM_TYPE",
-      "UNKNOWN_10B5_1_STATUS"
+      "EXCLUDED_NON_FORM4_TRANSACTION",
+      "P_S_DISCRETIONARY_UNRESOLVED_10B5_1",
+      "P_S_PARTIAL_MISSING_SHARES"
     ],
     "amendments_remain_separate_versions": true,
     "current_ticker_is_not_historical_identity": true
@@ -99,6 +102,7 @@
     "absolute_insider_activity_implies_direction": false,
     "purchases_are_predefined_bullish": false,
     "sales_are_predefined_bearish": false,
+    "non_10b5_1_flagged_is_predefined_as_subjectively_discretionary": false,
     "ten_b5_1_rows_may_enter_high_precision_scope": false,
     "equity_swap_rows_may_enter_high_precision_scope": false,
     "unknown_ten_b5_1_status_may_enter_high_precision_scope": false,
