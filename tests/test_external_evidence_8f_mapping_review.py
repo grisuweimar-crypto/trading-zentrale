@@ -80,6 +80,7 @@ def test_committed_reviews_are_explicit_human_approvals():
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b4_v1.json", 20)
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b5_v1.json", 20)
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b6_v1.json", 14)
 
 
 def _assert_replay(candidate_path: str, review_path: str, expected_applied: int) -> None:
@@ -91,15 +92,16 @@ def _assert_replay(candidate_path: str, review_path: str, expected_applied: int)
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == expected_applied
-    assert len(result["exposure_map"]["mappings"]) == 80
+    assert len(result["exposure_map"]["mappings"]) == 94
 
 
-def test_committed_b1_b2_b3_b4_b5_review_replay_is_idempotent():
+def test_committed_b1_through_b6_review_replay_is_idempotent():
     _assert_replay("configs/external_evidence_8f_mapping_candidates_v1.json", "configs/external_evidence_8f_mapping_review_decisions_v1.json", 10)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b2_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b2_v1.json", 10)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b3_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b4_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b4_v1.json", 20)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b5_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b5_v1.json", 20)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b6_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b6_v1.json", 14)
 
 
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
