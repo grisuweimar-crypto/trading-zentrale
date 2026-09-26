@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8d_positioning_crowding_v1",
   "phase": "8D_positioning_crowding",
-  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PREREGISTERED_OUTCOME_BLIND",
+  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PASSED_B4_IMPLEMENTED_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -92,7 +92,7 @@
       "direction": "UNASSIGNED"
     },
     "INSIDER_ACTIVITY": {
-      "status": "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_B3_PREREGISTERED_HIGH_PRECISION_CHALLENGER",
+      "status": "SOURCE_VALIDATED_B3_PASS_B4_FEATURE_AGGREGATION_IMPLEMENTED_OUTCOME_BLIND",
       "source_authority": "U.S. SEC EDGAR",
       "forms": ["4", "4/A"],
       "source_urls": [
@@ -131,12 +131,30 @@
       },
       "b3_validation_contract": {
         "config": "configs/external_evidence_8d_insider_validation_v1.json",
-        "status": "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION",
+        "status": "PASS_SOURCE_SEMANTICS_VALIDATION",
         "first_real_corpus": "2026Q2",
         "pool_with_earlier_quarters": false,
-        "market_outcomes_may_be_read": false,
+        "reviewed_annotation_count": 299,
+        "market_outcomes_read": false,
+        "phase7_integration_enabled": false,
+        "mechanical_false_counts": {
+          "transaction_price_correct_when_present": 1,
+          "transaction_shares_correct": 1
+        },
+        "all_other_mechanical_fields_true_for_all_reviewed_rows": true,
         "candidate_status_name_is_not_proof_of_subjective_discretion": true,
         "semantic_target": "P_S_EXTRACTION_AND_PROVENANCE_WITHOUT_MOTIVE_INFERENCE"
+      },
+      "b4_feature_contract": {
+        "config": "configs/external_evidence_8d_insider_features_v1.json",
+        "status": "IMPLEMENTED_OUTCOME_BLIND",
+        "primary_window_calendar_days": 30,
+        "robustness_window_calendar_days": [90],
+        "knowledge_gate": "valid_from <= as_of",
+        "complete_source_window_required": true,
+        "amendments_in_v1_aggregation": false,
+        "numeric_features_promoted": false,
+        "numeric_challenger_reason": "One shares mismatch and one price mismatch were observed in the 299-row B3 mechanical audit; count features may proceed while shares/value aggregates remain challenger-only."
       },
       "excluded_from_discretionary_buy_sell_scope": [
         "A_GRANT_AWARD_OR_COMPANY_ACQUISITION",
@@ -167,20 +185,27 @@
         "RPTOWNERCIK",
         "RPTOWNER_RELATIONSHIP"
       ],
-      "initial_features_after_validation": [
-        "p_s_purchase_count",
-        "p_s_sale_count",
-        "p_s_purchase_shares",
-        "p_s_sale_shares",
-        "p_s_purchase_value_when_price_known",
-        "p_s_sale_value_when_price_known",
-        "distinct_p_s_buyer_count",
-        "distinct_p_s_seller_count"
-      ],
-      "artifact_schema": "external_evidence_8d_sec_insider_bulk_v1",
-      "validation_artifact_schemas": [
+      "feature_tiers_after_b3": {
+        "VALIDATED_DESCRIPTIVE_CORE": [
+          "purchase_count",
+          "sale_count"
+        ],
+        "VALIDATED_WITH_OWNER_COMPLETENESS_GATE": [
+          "distinct_buyer_count",
+          "distinct_seller_count"
+        ],
+        "CHALLENGER_NUMERIC": [
+          "purchase_shares",
+          "sale_shares",
+          "purchase_value_when_price_known",
+          "sale_value_when_price_known"
+        ]
+      },
+      "artifact_schemas": [
+        "external_evidence_8d_sec_insider_bulk_v1",
         "external_evidence_8d_insider_validation_package_v1",
-        "external_evidence_8d_insider_validation_result_v1"
+        "external_evidence_8d_insider_validation_result_v1",
+        "external_evidence_8d_insider_features_v1"
       ],
       "direction": "UNASSIGNED"
     },
