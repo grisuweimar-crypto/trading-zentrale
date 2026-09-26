@@ -1,0 +1,32 @@
+name: Phase 8C-D Structured Corporate Events
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8c_structured_events_v1.json"
+      - "src/scanner/research/external_evidence/structured_events.py"
+      - "scripts/run_external_evidence_8c_structured_events.py"
+      - "tests/test_external_evidence_8c_structured_events.py"
+      - "docs/external_evidence_8c_d_structured_events.md"
+      - ".github/workflows/external_evidence_8c_d_structured_events.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run Phase 8C-D structured event guards
+        run: python -m pytest -q tests/test_external_evidence_8c_structured_events.py
+      - name: Run structured event self-test
+        run: python scripts/run_external_evidence_8c_structured_events.py --self-test
