@@ -28,7 +28,7 @@ def test_8d_starts_outcome_blind_and_without_decision_integration() -> None:
 def test_finra_short_interest_separates_observation_from_publication_time() -> None:
     family = _contract()["families"]["SHORT_INTEREST"]
     assert family["event_time_policy"] == "settlementDate"
-    assert family["valid_from_policy"] == "FINRA_PUBLICATION_TIME_NOT_SETTLEMENT_DATE"
+    assert family["valid_from_policy"] == "FINRA_PUBLICATION_DATE_AT_16_40_AMERICA_NEW_YORK"
     assert family["vintage_policy"]["historical_backfill"] == (
         "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
     )
@@ -38,6 +38,20 @@ def test_finra_short_interest_separates_observation_from_publication_time() -> N
     assert family["disabled_features"]["short_interest_percent_float"].startswith("DISABLED_")
     assert family["disabled_features"]["daily_short_interest"].startswith("DISABLED_")
     assert family["direction"] == "UNASSIGNED"
+
+
+def test_finra_a1_acquisition_contract_is_fail_closed() -> None:
+    family = _contract()["families"]["SHORT_INTEREST"]
+    acquisition = family["acquisition_contract"]
+    assert family["status"] == "SOURCE_ACCEPTED_AND_A1_IMPLEMENTED_WITH_VINTAGE_LIMITATION"
+    assert acquisition["prospective_only_for_strict_pit"] is True
+    assert acquisition["one_settlement_date_per_snapshot"] is True
+    assert acquisition["request_method"] == "FILTERED_POST_WITH_PAGINATION"
+    assert acquisition["synchronous_record_limit_per_request"] == 5000
+    assert acquisition["record_total_header_must_reconcile_when_present"] is True
+    assert acquisition["raw_page_sha256_required"] is True
+    assert acquisition["canonical_raw_snapshot_sha256_required"] is True
+    assert acquisition["ci_live_network_access"] is False
 
 
 def test_insider_first_slice_is_only_high_precision_p_and_s() -> None:
