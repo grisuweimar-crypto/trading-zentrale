@@ -4,26 +4,31 @@ on:
   pull_request:
     paths:
       - "configs/external_evidence_8e_structured_events_v1.json"
+      - "configs/external_evidence_8e_completion_v1.json"
       - "configs/external_evidence_8e_fda_approval_v1.json"
       - "configs/external_evidence_8e_doj_antitrust_rss_v1.json"
       - "configs/external_evidence_8e_news_discovery_v1.json"
+      - "configs/external_evidence_8e_primary_release_v1.json"
       - "src/scanner/research/external_evidence/structured_events_8e.py"
       - "src/scanner/research/external_evidence/structured_events_8e_phase8c_adapter.py"
       - "src/scanner/research/external_evidence/fda_drugsatfda_8e.py"
       - "src/scanner/research/external_evidence/doj_antitrust_rss_8e.py"
       - "src/scanner/research/external_evidence/news_discovery_8e.py"
+      - "src/scanner/research/external_evidence/primary_release_8e.py"
       - "src/scanner/research/external_evidence/structured_events_8e_completion.py"
       - "scripts/run_external_evidence_8e_event_ledger.py"
       - "scripts/run_external_evidence_8e_phase8c_reuse.py"
       - "scripts/import_external_evidence_8e_fda_drugsatfda.py"
       - "scripts/import_external_evidence_8e_doj_antitrust_rss.py"
       - "scripts/import_external_evidence_8e_news_discovery.py"
+      - "scripts/import_external_evidence_8e_primary_release.py"
       - "scripts/run_external_evidence_8e_completion_gate.py"
       - "tests/test_external_evidence_8e_structured_events.py"
       - "tests/test_external_evidence_8e_phase8c_adapter.py"
       - "tests/test_external_evidence_8e_fda_drugsatfda.py"
       - "tests/test_external_evidence_8e_doj_antitrust_rss.py"
       - "tests/test_external_evidence_8e_news_discovery.py"
+      - "tests/test_external_evidence_8e_primary_release.py"
       - "tests/test_external_evidence_8e_completion.py"
       - "docs/external_evidence_8e_structured_events.md"
       - "docs/external_evidence_8e_completion.md"
@@ -53,6 +58,7 @@ jobs:
           tests/test_external_evidence_8e_fda_drugsatfda.py
           tests/test_external_evidence_8e_doj_antitrust_rss.py
           tests/test_external_evidence_8e_news_discovery.py
+          tests/test_external_evidence_8e_primary_release.py
           tests/test_external_evidence_8e_completion.py
       - name: Verify Phase 8E CLIs
         run: |
@@ -61,6 +67,7 @@ jobs:
           python scripts/import_external_evidence_8e_fda_drugsatfda.py --help
           python scripts/import_external_evidence_8e_doj_antitrust_rss.py --help
           python scripts/import_external_evidence_8e_news_discovery.py --help
+          python scripts/import_external_evidence_8e_primary_release.py --help
           python scripts/run_external_evidence_8e_completion_gate.py --help
       - name: Validate frozen Phase 8E completion contract
         run: python scripts/run_external_evidence_8e_completion_gate.py --output /tmp/external_evidence_8e_completion.json
