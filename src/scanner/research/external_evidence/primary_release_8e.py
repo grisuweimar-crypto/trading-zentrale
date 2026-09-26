@@ -177,7 +177,7 @@ def build_primary_release_evidence(
     rows.sort(key=lambda row: (str(row["valid_from"]), str(row["source_id"]), str(row["source_event_id"])))
     return {
         "schema_version": SCHEMA_VERSION,
-        "phase": "8E_B3_primary_release_adapter",
+        "phase": "8E_B5_primary_release_challenger",
         "status": "PROSPECTIVE_STRUCTURED_RELEASE_EVIDENCE",
         "ingested_at": observed_at.isoformat(),
         "row_count": len(rows),
