@@ -13,17 +13,20 @@ Implemented components:
 3. FDA Drugs@FDA regulatory-approval adapter using exact `Approval` actions and ingestion-based PIT when historical publication time is not independently proven.
 4. DOJ Antitrust civil/criminal case-filing RSS adapter for `LITIGATION_FILED`, with source-reported publication metadata retained but no historical backdating from later snapshots.
 5. FTC Competition and DOJ Antitrust press-release RSS ingestion as discovery-only evidence that cannot create canonical events or market direction.
-6. Explicit coverage matrix for every event type in the initial Phase-8E taxonomy.
-7. Completion gate that fails if any event type is unclassified, any source remains an unresolved generic candidate, or any outcome/production/Phase-7 gate is enabled.
-8. CI coverage for the event ledger, 8C reuse, FDA adapter, DOJ adapter, discovery-only boundary and completion gate.
+6. A generic **prospective structured primary-release challenger** for FTC/DOJ authority releases and issuer IR. It accepts only source-native structured labels or explicitly human-reviewed structured labels; it does not auto-classify free text.
+7. Explicit coverage state for every event type in the frozen Phase-8E taxonomy.
+8. Completion gate that validates taxonomy coverage, source status, PIT boundaries, the primary-release challenger contract, and disabled outcome/production/Phase-7 gates.
+9. CI coverage for the event ledger, 8C reuse, FDA adapter, DOJ adapter, discovery-only boundary, primary-release challenger and completion gate.
 
-## Implemented event types
+## Implemented source-native / validated event types
 
-- `REGULATORY_APPROVAL`
-- `LITIGATION_FILED`
-- `MANAGEMENT_CHANGE`
+- `REGULATORY_APPROVAL` — FDA Drugs@FDA; prospectively PIT-safe from actual ingestion, while historical First Public Release remains unresolved unless independently proven.
+- `LITIGATION_FILED` — DOJ Antitrust official case-filing RSS; prospectively PIT-safe from actual ingestion.
+- `MANAGEMENT_CHANGE` — conservative reuse of validated Phase-8C SEC metadata.
 
-## Explicitly deferred or source-gap event types
+## Prospective structured challenger event types
+
+The following event types have a usable source-layer path, but their event semantics are **not promoted**. They require source-native structured labels or human-reviewed structured intake and later family-specific validation:
 
 - `GUIDANCE_RAISE`
 - `GUIDANCE_CUT`
@@ -38,7 +41,7 @@ Implemented components:
 - `PRODUCT_LAUNCH`
 - `PRODUCTION_DISRUPTION`
 
-Each deferred state carries an explicit reason in `configs/external_evidence_8e_structured_events_v1.json`. Deferred means not safely promotable in Phase 8E; it does not mean neutral evidence.
+A challenger state is not neutral evidence and is not production-eligible. In particular, the existing Phase-8C guidance and capital-raise semantic boundaries remain in force; the primary-release challenger does not silently promote them.
 
 ## PIT conclusions
 
@@ -53,6 +56,17 @@ Approval state is authoritative. The current bulk file does not independently pr
 ### DOJ Antitrust RSS
 
 The official case-filing feeds explicitly identify filing events. RSS publication dates are retained as source metadata, but a later feed snapshot is not treated as immutable proof of historical observability. `valid_from` begins at actual ingestion without separate archive proof.
+
+### Structured primary releases
+
+For FTC/DOJ authority releases and issuer IR, a page/RSS date is retained only as a source claim unless independently proven by immutable archival evidence. Without that proof:
+
+- `published_at = null`;
+- `public_release_proof_status = INGESTION_ONLY`;
+- `valid_from = ingested_at`;
+- First Public Release remains unresolved.
+
+Actual ingestion proves that the release was observable by that moment; it does **not** fabricate an earlier source publication timestamp.
 
 ### News discovery
 
@@ -70,10 +84,11 @@ FTC/DOJ press-release feeds are discovery-only. They never independently create 
 - no current news retrojection;
 - no fuzzy event deduplication;
 - no missing -> neutral fallback;
-- no semantic promotion from ambiguous 8C filing metadata.
+- no semantic promotion from ambiguous Phase-8C filing metadata;
+- no ingestion timestamp masquerading as independently proven First Public Release.
 
 ## What Phase 8E completion does and does not mean
 
-Phase 8E completion means the structured-event source layer has a deterministic, testable and fail-closed architecture with implemented authoritative adapters and explicit non-promotable gaps.
+Phase 8E completion means the structured-event source layer is deterministic, testable, fail-closed and has an explicit status for every taxonomy family: implemented source-native/validated, prospective challenger, discovery-only or explicitly unavailable.
 
-It does **not** mean that FDA approvals, litigation filings or management changes have demonstrated predictive value. Incremental/OOS outcome testing is intentionally deferred to Phase 8G. Cross-factor interactions remain Phase 8H work and Decision Layer integration remains Phase 8I work.
+It does **not** mean any event family has demonstrated predictive value. Incremental/OOS outcome testing is intentionally deferred to Phase 8G. Cross-factor interactions remain Phase 8H work and Decision Layer integration remains Phase 8I work.
