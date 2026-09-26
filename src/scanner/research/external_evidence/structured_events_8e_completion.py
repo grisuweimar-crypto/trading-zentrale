@@ -127,7 +127,7 @@ def validate_8e_source_layer_completion(
         frozen_class = (
             "IMPLEMENTED" if frozen_status.startswith("IMPLEMENTED_")
             else "CHALLENGER" if "CHALLENGER" in frozen_status
-            else "DEFERRED" if frozen_status.startswith("DEFERRED_") or frozen_status.startswith("SOURCE_GAP_\")
+            else "DEFERRED" if frozen_status.startswith("DEFERRED_") or frozen_status.startswith("SOURCE_GAP_")
             else None
         )
         if frozen_class is None:
