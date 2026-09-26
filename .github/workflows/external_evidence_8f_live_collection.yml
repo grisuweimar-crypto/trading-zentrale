@@ -54,6 +54,7 @@ jobs:
 # This workflow is read-only with respect to repository contents.
 # The pull_request trigger is intentionally scoped to edits of this workflow itself; routine 8F commits do not make live calls.
 # Raw source payloads are persisted before parsing and uploaded even when a parser fails.
+# Fed H.15 is fetched from the actual /releases/h15/ page rather than its legacy HTML-meta redirect.
 # Fed H.15 and ECB collect without credentials. EIA is included only when EIA_API_KEY is configured.
 # The completion gate is expected to remain BLOCKED until reviewed exposure mappings account for the frozen domain.
 # No market outcomes, directions, weights, thresholds, Phase-7 integration or production decisions are evaluated here.
