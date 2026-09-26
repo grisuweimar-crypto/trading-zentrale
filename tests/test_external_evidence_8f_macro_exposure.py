@@ -155,10 +155,67 @@ def test_context_uses_latest_revision_knowable_at_asof_only():
     )
     assert result["context_count"] == 1
     assert result["contexts"][0]["status"] == "KNOWN"
+    assert result["contexts"][0]["series_count"] == 1
     assert result["contexts"][0]["macro_observation"]["revision_id"] == "r2"
     assert result["contexts"][0]["macro_observation"]["value"] == 4.10
+    assert result["contexts"][0]["macro_observations"][0]["revision_id"] == "r2"
     assert result["guards"]["market_outcomes_read"] is False
     assert result["guards"]["market_direction_assigned"] is False
+
+
+def test_context_preserves_all_latest_series_within_factor_without_hidden_selection():
+    observations = [
+        _macro_row(
+            series_id="OIL_WTI",
+            factor_id="oil",
+            value="91.0",
+            realtime_start="2026-09-24",
+            revision_id="wti-r1",
+            valid_from="2026-09-25T00:00:00+00:00",
+        ),
+        _macro_row(
+            series_id="OIL_WTI",
+            factor_id="oil",
+            value="91.5",
+            realtime_start="2026-09-25",
+            revision_id="wti-r2",
+            valid_from="2026-09-26T00:00:00+00:00",
+        ),
+        _macro_row(
+            series_id="OIL_BRENT",
+            factor_id="oil",
+            value="95.0",
+            realtime_start="2026-09-25",
+            revision_id="brent-r1",
+            valid_from="2026-09-26T00:00:00+00:00",
+        ),
+    ]
+    result = build_macro_context(
+        observations=observations,
+        mappings=[
+            _mapping(
+                mapping_id="MAP:ABC:oil:1",
+                factor_id="oil",
+                relationship_class="INPUT_COST_LINK",
+            )
+        ],
+        as_of=datetime(2026, 9, 26, 18, 0, tzinfo=timezone.utc),
+        allowed_series_ids={"OIL_WTI", "OIL_BRENT"},
+        allowed_factor_ids={"oil"},
+    )
+    context = result["contexts"][0]
+    assert context["status"] == "KNOWN"
+    assert context["series_count"] == 2
+    assert context["macro_observation"] is None
+    assert {row["series_id"] for row in context["macro_observations"]} == {
+        "OIL_WTI",
+        "OIL_BRENT",
+    }
+    by_series = {row["series_id"]: row for row in context["macro_observations"]}
+    assert by_series["OIL_WTI"]["revision_id"] == "wti-r2"
+    assert by_series["OIL_WTI"]["value"] == 91.5
+    assert by_series["OIL_BRENT"]["value"] == 95.0
+    assert result["guards"]["single_series_silently_selected_from_multiseries_factor"] is False
 
 
 def test_empty_versioned_exposure_map_is_valid_foundation_and_contract_is_frozen_fail_closed():
