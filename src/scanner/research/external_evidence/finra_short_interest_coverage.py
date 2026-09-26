@@ -28,8 +28,17 @@ def _load_snapshot(path: Path) -> dict[str, Any]:
     if guards.get("market_direction_assigned") is not False:
         raise FinraShortInterestCoverageError("coverage audit refuses direction-assigned FINRA evidence")
     rows = payload.get("rows")
-    if not isinstance(rows, list):
-        raise FinraShortInterestCoverageError("FINRA snapshot rows must be an array")
+    if not isinstance(rows, list) or not rows:
+        raise FinraShortInterestCoverageError("FINRA snapshot rows must be a non-empty array")
+    settlement_dates = {
+        str(row.get("settlement_date") or "").strip()
+        for row in rows
+        if isinstance(row, Mapping)
+    }
+    if "" in settlement_dates or len(settlement_dates) != 1:
+        raise FinraShortInterestCoverageError(
+            "8D-A2 requires exactly one FINRA settlement date; no implicit latest-period selection is allowed"
+        )
     return payload
 
 
@@ -73,6 +82,11 @@ def audit_finra_current_universe(
     scanner_rows = _load_scanner(scanner_path)
     snapshot = _load_snapshot(finra_snapshot_path)
 
+    settlement_date = next(
+        str(row.get("settlement_date"))
+        for row in snapshot["rows"]
+        if isinstance(row, Mapping)
+    )
     finra_by_symbol: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for raw in snapshot["rows"]:
         if not isinstance(raw, Mapping):
@@ -176,7 +190,7 @@ def audit_finra_current_universe(
         "scanner_as_of": scanner_as_of,
         "scanner_snapshot_id": scanner_snapshot_id,
         "finra_snapshot_source": str(finra_snapshot_path),
-        "finra_settlement_date": snapshot.get("rows", [{}])[0].get("settlement_date") if snapshot.get("rows") else None,
+        "finra_settlement_date": settlement_date,
         "finra_published_at": snapshot.get("published_at"),
         "finra_source_mode": snapshot.get("source_mode"),
         "finra_strict_pit_eligible": snapshot.get("strict_pit_eligible"),
@@ -187,6 +201,7 @@ def audit_finra_current_universe(
         "known_feature_counts": dict(sorted(known_feature_counts.items())),
         "rows": coverage_rows,
         "guards": {
+            "single_finra_settlement_date_required": True,
             "exact_symbol_only": True,
             "ticker_suffix_stripping_enabled": False,
             "adr_substitution_enabled": False,
