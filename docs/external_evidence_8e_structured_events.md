@@ -1,12 +1,12 @@
 # Phase 8E – Structured Events & News
 
-Status: `8E-A SOURCE HIERARCHY + FIRST PUBLIC RELEASE IMPLEMENTED; 8E-B1 PHASE-8C REUSE IMPLEMENTED; OUTCOME-BLIND`
+Status: `SOURCE_LAYER_IMPLEMENTATION_COMPLETE_OUTCOME_RESEARCH_DEFERRED_TO_8G`
 
 ## Objective
 
-Phase 8E adds event-centric external evidence on top of the already validated Phase-8 foundations. It starts with structured, timestampable events. Generic sentiment remains disabled.
+Phase 8E builds an event-centric external-evidence layer for structured, timestampable events. It does **not** test predictive value. Generic sentiment, market-direction assignment, Phase-7 integration and production external evidence remain disabled.
 
-The initial taxonomy follows the Phase-8 research plan:
+Initial taxonomy:
 
 - guidance raise / cut;
 - regulatory approval / rejection;
@@ -18,26 +18,35 @@ The initial taxonomy follows the Phase-8 research plan:
 - product launch;
 - production disruption.
 
-No event type carries a predefined bullish/bearish market direction.
+Every taxonomy member now has an explicit source/coverage state. Missing source or unvalidated semantics are represented as deferred/source-gap states rather than silently treated as neutral.
 
-## Relationship to Phase 8C
+## 8E-A – event ledger, source hierarchy and First Public Release
 
-Phase 8C remains the source of truth for SEC filing/event extraction that has already been built and validated there. Phase 8E does not create a second SEC content parser.
+Implemented:
 
-8E adds:
+- `src/scanner/research/external_evidence/structured_events_8e.py`
+- `scripts/run_external_evidence_8e_event_ledger.py`
+- `configs/external_evidence_8e_structured_events_v1.json`
 
-1. deterministic event identity supplied by a domain adapter;
-2. First Public Release provenance;
-3. source-authority conflict resolution;
-4. event-state versioning across multiple primary/authoritative sources.
+The ledger separates:
 
-### 8E-B1 conservative 8C reuse
+- `published_at`: independently supported source-publication timestamp;
+- `first_public_release_at`: earliest proven publication timestamp across eligible evidence;
+- `ingested_at`: when this project actually acquired the evidence;
+- `valid_from`: earliest timestamp at which the evidence is safe to use under the source-specific PIT contract.
 
-The first executable reuse adapter is intentionally narrow.
+A later observation may never backdate knowledge. Source authority resolves conflicting states, not historical availability time. Fuzzy cross-source event deduplication is disabled; each domain adapter supplies a deterministic `canonical_event_key`.
 
-The validated 8C filing-metadata label `DIRECTOR_OR_OFFICER_CHANGE` is mapped to the broad 8E taxonomy value `MANAGEMENT_CHANGE`. The adapter preserves SEC `published_at` and `valid_from`, the accession/item identity and an SHA-256 hash of the exact upstream 8C row.
+## 8E-B1 – conservative Phase-8C reuse
 
-The following 8C metadata labels are **not** promoted into richer 8E semantics:
+Implemented:
+
+- `src/scanner/research/external_evidence/structured_events_8e_phase8c_adapter.py`
+- `scripts/run_external_evidence_8e_phase8c_reuse.py`
+
+Only the already validated 8C filing-metadata domain `DIRECTOR_OR_OFFICER_CHANGE` is promoted to broad 8E `MANAGEMENT_CHANGE` evidence.
+
+The following 8C labels remain deliberately unmapped to richer 8E semantics:
 
 - `MATERIAL_DEFINITIVE_AGREEMENT`;
 - `ACQUISITION_OR_DISPOSITION_COMPLETED`;
@@ -46,103 +55,123 @@ The following 8C metadata labels are **not** promoted into richer 8E semantics:
 - `OTHER_MATERIAL_EVENT`;
 - `RESULTS_RELEASE`.
 
-For example, Item 2.01 cannot be silently treated as an acquisition because the validated 8C label includes acquisitions **or dispositions**. Item 1.01 cannot be assumed to be a major contract or takeover agreement. Capital raise and guidance semantics remain blocked until independently validated content evidence exists.
+This prevents Item 1.01 from becoming a guessed major contract/takeover, Item 2.01 from becoming a guessed acquisition rather than disposition, and generic disclosure from becoming guidance or capital-raise evidence.
 
-B1 therefore reuses 8C provenance without upgrading 8C metadata beyond what it actually proves.
+## 8E-B2 – FDA Drugs@FDA regulatory approvals
+
+Implemented:
+
+- `configs/external_evidence_8e_fda_approval_v1.json`
+- `src/scanner/research/external_evidence/fda_drugsatfda_8e.py`
+- `scripts/import_external_evidence_8e_fda_drugsatfda.py`
+- `tests/test_external_evidence_8e_fda_drugsatfda.py`
+
+Authoritative source:
+
+- `https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files`
+
+Only the exact Drugs@FDA action `Approval` emits `REGULATORY_APPROVAL`. `Tentative Approval` is explicitly excluded.
+
+PIT contract:
+
+- `SubmissionStatusDate` is an FDA action/event date, not automatically publication time;
+- current bulk snapshots cannot reconstruct historical First Public Release by themselves;
+- without independent archive/publication proof, `valid_from = ingested_at`;
+- sponsor-name fuzzy mapping to securities is disabled;
+- source ZIP, member tables and normalized rows retain SHA-256 provenance.
+
+The adapter is therefore strict-PIT eligible prospectively from actual ingestion, while historical First Public Release remains unresolved from the current bulk file alone.
+
+## 8E-B3 – DOJ Antitrust case-filing feeds
+
+Implemented:
+
+- `configs/external_evidence_8e_doj_antitrust_rss_v1.json`
+- `src/scanner/research/external_evidence/doj_antitrust_rss_8e.py`
+- `scripts/import_external_evidence_8e_doj_antitrust_rss.py`
+- `tests/test_external_evidence_8e_doj_antitrust_rss.py`
+
+Official DOJ Antitrust provides dedicated Civil Case Filings and Criminal Case Filings feeds. These feeds are used only for the source semantics they explicitly prove: `LITIGATION_FILED`.
+
+PIT contract:
+
+- RSS `pubDate` is retained as source-reported publication metadata;
+- a later RSS snapshot does not independently prove that the item was immutable and observable at that historical timestamp;
+- therefore `valid_from = ingested_at` unless independent archive proof exists;
+- titles are not semantically reclassified into rulings, settlements, merger approvals or rejections;
+- company-name/ticker inference is disabled.
+
+## 8E-B4 – discovery-only news feeds
+
+Implemented:
+
+- `configs/external_evidence_8e_news_discovery_v1.json`
+- `src/scanner/research/external_evidence/news_discovery_8e.py`
+- `scripts/import_external_evidence_8e_news_discovery.py`
+- `tests/test_external_evidence_8e_news_discovery.py`
+
+Initial official discovery feeds:
+
+- FTC Competition Press Releases: `https://www.ftc.gov/feeds/press-release-competition.xml`
+- DOJ Antitrust press-release RSS.
+
+These records remain strictly discovery-only:
+
+- no `canonical_event_key`;
+- no event type;
+- no generic sentiment;
+- no market direction;
+- no promotion eligibility;
+- they may only trigger resolution of a primary/authoritative structured source.
+
+## Explicit event coverage states
+
+Implemented structured event types:
+
+- `REGULATORY_APPROVAL` – FDA Drugs@FDA;
+- `LITIGATION_FILED` – DOJ Antitrust official case-filing feeds;
+- `MANAGEMENT_CHANGE` – conservative validated Phase-8C reuse.
+
+Explicitly deferred/source-gap event types:
+
+- `GUIDANCE_RAISE`, `GUIDANCE_CUT` – validated guidance semantics not yet available;
+- `REGULATORY_REJECTION` – no safe generic rejection adapter frozen;
+- `MAJOR_CONTRACT` – SEC Item 1.01 alone is not semantically sufficient;
+- `ACQUISITION_ANNOUNCEMENT`, `TAKEOVER_OFFER` – require validated primary-release semantics;
+- `ACQUISITION_COMPLETION` – SEC Item 2.01 remains acquisition-or-disposition ambiguous;
+- `CAPITAL_RAISE` – validated capital-raise semantics remain unavailable;
+- `LITIGATION_RULING`, `LITIGATION_SETTLEMENT` – source-specific adapters are deferred;
+- `PRODUCT_LAUNCH`, `PRODUCTION_DISRUPTION` – issuer-primary-release adapters require source-specific archive/timestamp and semantic validation.
+
+These are not implementation omissions hidden as neutral data. They are explicit non-promotable states.
 
 ## Source hierarchy
 
-The initial hierarchy is:
+1. `PUBLIC_AUTHORITY_PRIMARY`
+2. `MANDATORY_ISSUER_FILING`
+3. `OFFICIAL_EXCHANGE_DISCLOSURE`
+4. `ISSUER_PRIMARY_RELEASE`
+5. `COUNTERPARTY_OR_AWARDING_AUTHORITY_RELEASE`
+6. `REPUTABLE_NEWS_DISCOVERY_ONLY`
 
-1. `PUBLIC_AUTHORITY_PRIMARY` – regulator/government/court authority for the state within its jurisdiction;
-2. `MANDATORY_ISSUER_FILING` – legally mandated issuer filing such as SEC EDGAR;
-3. `OFFICIAL_EXCHANGE_DISCLOSURE`;
-4. `ISSUER_PRIMARY_RELEASE` – issuer IR/official release;
-5. `COUNTERPARTY_OR_AWARDING_AUTHORITY_RELEASE`;
-6. `REPUTABLE_NEWS_DISCOVERY_ONLY` – discovery only, never sufficient alone for a canonical promoted event.
+Authority rank resolves contradictory state evidence only. It may not move knowledge backward in time.
 
-The rank resolves conflicting event states. It does **not** choose the earliest timestamp.
+## Hard boundaries
 
-## First Public Release vs valid_from
-
-These fields are intentionally separate.
-
-- `published_at`: source publication timestamp when independently provable;
-- `first_public_release_at`: earliest proven `published_at` across strict-PIT source evidence for the canonical event;
-- `ingested_at`: when this project actually acquired the evidence;
-- `valid_from`: earliest time at which the evidence is safe to use under the source-specific PIT contract.
-
-Without independent historical publication proof, `valid_from` may not precede `ingested_at`.
-
-A later high-authority source may confirm or correct event state, but may never retroactively move `valid_from` or First Public Release backward.
-
-## Initial source candidates
-
-### Existing Phase-8C SEC evidence
-
-Status: conservative reuse implemented for the validated management-change metadata domain. Additional 8C event semantics require their own validated content evidence before reuse.
-
-### FDA / Drugs@FDA
-
-Candidate domain: `REGULATORY_APPROVAL`.
-
-FDA states that Drugs@FDA contains approved human drug products, regulatory history and approval letters; coverage extends back decades and the database is updated daily. Approval state can therefore come from an authoritative public source. Exact historical public-availability time still requires source-specific validation before an approval date is used as `valid_from`.
-
-Official references:
-- https://www.fda.gov/drugs/drug-approvals-and-databases/about-drugsfda
-- https://open.fda.gov/data/drugsfda/
-
-### FTC merger/case sources
-
-Candidate domains: regulatory action, merger review and litigation states.
-
-FTC provides official merger materials, cases/proceedings and press releases. Historical timestamp/archive semantics must be validated before retrospective PIT use beyond the explicitly timestamped public record.
-
-Official reference:
-- https://www.ftc.gov/merger
-
-### DOJ Antitrust
-
-Candidate domains: merger enforcement, antitrust litigation filing/ruling/settlement.
-
-DOJ publishes official Antitrust Division press releases and case filings. A source-specific adapter must preserve the original public timestamp and immutable document identity before the record can become strict-PIT evidence.
-
-Official references:
-- https://www.justice.gov/atr/press-releases
-- https://www.justice.gov/atr/antitrust-case-filings
-
-### Issuer IR
-
-Candidate domains: major contract, acquisition/takeover announcement, management change, product launch and production disruption.
-
-Issuer pages are primary company statements but are not automatically historical PIT sources. A page date alone is insufficient if later edits cannot be excluded. Retrospective use requires immutable publication/archive proof; prospective snapshots are usable from actual ingestion onward.
-
-## Canonical event identity
-
-8E-A deliberately does not perform fuzzy deduplication. Every adapter must provide a deterministic `canonical_event_key`. News similarity, entity-name similarity or LLM semantic similarity may not silently merge events.
-
-The 8E-B1 8C reuse adapter uses an accession-scoped deterministic key. It does not claim that an issuer press release and an SEC filing are already cross-source-deduplicated. A later validated identity resolver may link them only with explicit collision/false-merge QA before outcomes are opened.
-
-## Current hard boundaries
-
-- no market outcomes read;
-- no market direction assigned;
+- no market outcomes;
+- no bullish/bearish direction;
 - no generic sentiment;
 - no threshold selection;
 - no interaction research;
 - no Phase-7 integration;
 - no production external evidence;
 - no current news retrojection;
-- discovery-only news cannot create a canonical known event by itself;
-- source hierarchy cannot retroactively backdate knowledge;
-- Phase-8C SEC semantics are not relabeled without independent validation.
+- no fuzzy event merge;
+- no missing evidence -> neutral fallback;
+- no unvalidated 8C semantic upgrade.
 
-## Next slice
+## Completion boundary
 
-8E-B2 should validate and implement the first new external authority adapter. Recommended order:
+Phase 8E is complete as a **source/PIT/event-identity layer** once the completion gate passes. This does not mean the implemented event families are predictive or production-promoted.
 
-1. FDA regulatory approvals;
-2. FTC/DOJ regulatory/litigation events;
-3. issuer primary releases only after a timestamp/archive contract is frozen.
-
-Each adapter must pass source/PIT/coverage validation before any event-outcome research. Predictive testing belongs to Phase 8G, not 8E.
+Predictive/incremental testing belongs to **Phase 8G**. Cross-factor interactions belong to **8H** and any Decision Layer use belongs to **8I**.
