@@ -22,17 +22,17 @@ def _load(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
-def test_committed_overlay_registry_materializes_b5_to_eighty_effective_mappings():
+def test_committed_overlay_registry_materializes_b5_b6_to_ninety_four_effective_mappings():
     base = _load("configs/external_evidence_8f_exposure_map_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     audit = build_effective_exposure_map_audit(root=ROOT)
 
     assert len(base["mappings"]) == 60
-    assert len(effective["mappings"]) == 80
+    assert len(effective["mappings"]) == 94
     assert audit["status"] == "PASS_EFFECTIVE_EXPOSURE_MAP_COMPOSITION"
     assert audit["base_mapping_count"] == 60
-    assert audit["overlay_count"] == 1
-    assert audit["effective_mapping_count"] == 80
+    assert audit["overlay_count"] == 2
+    assert audit["effective_mapping_count"] == 94
     assert audit["market_outcomes_read"] is False
     assert audit["automatic_promotion_used"] is False
     assert audit["final_freeze_materialization_required"] is True
@@ -41,6 +41,8 @@ def test_committed_overlay_registry_materializes_b5_to_eighty_effective_mappings
     for subject in {
         "KLAC", "LRCX", "SNOW", "FSLR", "GMED", "SNN", "TSLA", "NFLX", "SPOT", "ADBE",
         "FISV", "PFE", "PEP", "PG", "NKE", "GE", "KO", "JNJ", "UBER", "STLA",
+        "SN.L", "BAYN.DE", "FME.DE", "NXP", "PM", "RACE", "ETN", "ADS.DE", "VOW3.DE",
+        "BAS.DE", "ABBN.SW", "UUUU", "ENR.DE", "RI.PA",
     }:
         assert subject in active_subjects
 
@@ -48,7 +50,7 @@ def test_committed_overlay_registry_materializes_b5_to_eighty_effective_mappings
 def test_effective_map_has_unique_active_subject_factor_pairs():
     effective = load_effective_exposure_map(root=ROOT)
     pairs = [(row["subject_id"], row["factor_id"]) for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
-    assert len(pairs) == len(set(pairs)) == 80
+    assert len(pairs) == len(set(pairs)) == 94
 
 
 def test_overlay_registry_guards_fail_closed():
