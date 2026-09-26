@@ -1,0 +1,50 @@
+{
+  "schema_version": "external_evidence_8e_doj_antitrust_rss_v1",
+  "phase": "8E_B3_doj_antitrust_case_filings",
+  "status": "AUTHORITATIVE_CASE_FILING_ADAPTER_PROSPECTIVE_PIT_FROM_INGESTION",
+  "provider": "U.S. Department of Justice Antitrust Division",
+  "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+  "official_index_url": "https://www.justice.gov/atr/news-feeds",
+  "feeds": {
+    "CIVIL_CASE_FILINGS": {
+      "url": "https://www.justice.gov/media/1190096/dl?inline=",
+      "event_type": "LITIGATION_FILED",
+      "event_state": "FILED"
+    },
+    "CRIMINAL_CASE_FILINGS": {
+      "url": "https://www.justice.gov/media/1194211/dl?inline=",
+      "event_type": "LITIGATION_FILED",
+      "event_state": "FILED"
+    }
+  },
+  "identity_contract": {
+    "source_event_id": "RSS_GUID_ELSE_LINK",
+    "subject_id": "DOJ_ANTITRUST_MATTER:SHA256(source_event_id)",
+    "canonical_event_key": "DOJ:LITIGATION_FILED:<feed_kind>:SHA256(source_event_id)",
+    "cross_source_fuzzy_merge_enabled": false,
+    "company_name_to_ticker_mapping_enabled": false
+  },
+  "pit_contract": {
+    "rss_pubdate_is_source_reported_publication_time": true,
+    "rss_pubdate_alone_proves_immutable_historical_presence": false,
+    "historical_first_public_release_status": "UNRESOLVED_WITH_CURRENT_RSS_SNAPSHOT_ALONE",
+    "valid_from_without_independent_archive_proof": "INGESTED_AT",
+    "public_release_proof_status_without_independent_archive_proof": "INGESTION_ONLY",
+    "strict_pit_eligible_from_actual_ingestion_forward": true,
+    "later_snapshot_may_backdate_knowledge": false
+  },
+  "provenance": {
+    "raw_xml_sha256_required": true,
+    "item_content_sha256_required": true,
+    "ingested_at_required_timezone_aware": true,
+    "official_feed_url_required": true
+  },
+  "hard_boundaries": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "litigation_is_predefined_bullish_or_bearish": false,
+    "rss_title_semantic_reclassification_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "schema_version": "external_evidence_8e_primary_release_v1",
+  "phase": "8E_B5_primary_release_challenger",
+  "status": "PROSPECTIVE_STRUCTURED_RELEASE_ADAPTER_OUTCOME_BLIND",
+  "providers": {
+    "FTC_COMPETITION": {
+      "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+      "allowed_hosts": ["www.ftc.gov", "ftc.gov"],
+      "official_feed": "https://www.ftc.gov/feeds/press-release-competition.xml",
+      "allowed_event_types": ["LITIGATION_FILED", "LITIGATION_RULING", "LITIGATION_SETTLEMENT"],
+      "semantic_mode": "STRUCTURED_EXPLICIT_LABEL_CHALLENGER"
+    },
+    "DOJ_ANTITRUST": {
+      "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+      "allowed_hosts": ["www.justice.gov", "justice.gov"],
+      "official_feed": "https://www.justice.gov/news/rss?field_component=376&require_all=0&search_api_language=en&show_public_archived=0&type%5B0%5D=image_gallery&type%5B1%5D=press_release&type%5B2%5D=speech&type%5B3%5D=youtube_video",
+      "allowed_event_types": ["LITIGATION_FILED", "LITIGATION_RULING", "LITIGATION_SETTLEMENT"],
+      "semantic_mode": "STRUCTURED_EXPLICIT_LABEL_CHALLENGER"
+    },
+    "ISSUER_IR": {
+      "source_class": "ISSUER_PRIMARY_RELEASE",
+      "allowed_hosts": [],
+      "requires_issuer_domain_attestation": true,
+      "allowed_event_types": [
+        "GUIDANCE_RAISE",
+        "GUIDANCE_CUT",
+        "MAJOR_CONTRACT",
+        "ACQUISITION_ANNOUNCEMENT",
+        "TAKEOVER_OFFER",
+        "ACQUISITION_COMPLETION",
+        "CAPITAL_RAISE",
+        "MANAGEMENT_CHANGE",
+        "PRODUCT_LAUNCH",
+        "PRODUCTION_DISRUPTION"
+      ],
+      "semantic_mode": "STRUCTURED_EXPLICIT_LABEL_CHALLENGER"
+    }
+  },
+  "pit_contract": {
+    "prospective_observation_is_strict_pit_from_ingested_at": true,
+    "published_at_without_independent_historical_proof": null,
+    "valid_from_without_independent_historical_proof": "INGESTED_AT",
+    "source_claimed_published_at_preserved_separately": true,
+    "historical_backdating_requires_independent_proof": true,
+    "historical_backdating_requires_archival_proof_sha256": true,
+    "page_date_alone_is_historical_proof": false,
+    "later_snapshot_may_backdate_knowledge": false
+  },
+  "semantic_contract": {
+    "generic_sentiment_enabled": false,
+    "automatic_free_text_event_classification_enabled": false,
+    "event_type_must_be_explicit": true,
+    "event_state_must_be_explicit": true,
+    "explicit_label_is_challenger_until_family_specific_semantic_validation": true,
+    "no_source_may_assign_market_direction": true
+  },
+  "provenance": {
+    "source_url_required": true,
+    "source_event_id_required": true,
+    "content_sha256_required": true,
+    "ingested_at_timezone_aware_required": true,
+    "canonical_event_key_required": true
+  },
+  "hard_boundaries": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "threshold_selection_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}

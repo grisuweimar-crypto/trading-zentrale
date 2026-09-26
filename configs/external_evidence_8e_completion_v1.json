@@ -1,0 +1,71 @@
+{
+  "schema_version": "external_evidence_8e_completion_v1",
+  "phase": "8E_structured_events_news_completion",
+  "status": "FROZEN_OUTCOME_BLIND_COMPLETION_GATE",
+  "required_event_taxonomy": [
+    "GUIDANCE_RAISE",
+    "GUIDANCE_CUT",
+    "REGULATORY_APPROVAL",
+    "REGULATORY_REJECTION",
+    "MAJOR_CONTRACT",
+    "ACQUISITION_ANNOUNCEMENT",
+    "TAKEOVER_OFFER",
+    "ACQUISITION_COMPLETION",
+    "CAPITAL_RAISE",
+    "LITIGATION_FILED",
+    "LITIGATION_RULING",
+    "LITIGATION_SETTLEMENT",
+    "MANAGEMENT_CHANGE",
+    "PRODUCT_LAUNCH",
+    "PRODUCTION_DISRUPTION"
+  ],
+  "event_family_status": {
+    "MANAGEMENT_CHANGE": {"status": "IMPLEMENTED_VALIDATED_8C_METADATA_REUSE", "adapter": "PHASE8C_CANONICAL_SEC_EVENTS", "historical_pit": "SAFE_WITH_EXISTING_8C_PROVENANCE"},
+    "REGULATORY_APPROVAL": {"status": "IMPLEMENTED_PROSPECTIVE_PIT_PARTIAL_HISTORICAL_FPR", "adapter": "FDA_DRUGS_AT_FDA", "historical_pit": "FIRST_PUBLIC_RELEASE_UNRESOLVED_FROM_CURRENT_BULK_ALONE"},
+    "LITIGATION_FILED": {"status": "IMPLEMENTED_PROSPECTIVE_PIT_PARTIAL_HISTORICAL_FPR", "adapter": "DOJ_ANTITRUST_CASE_FILINGS", "historical_pit": "FIRST_PUBLIC_RELEASE_UNRESOLVED_FROM_LATER_RSS_SNAPSHOT_ALONE"},
+    "REGULATORY_REJECTION": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "LITIGATION_RULING": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "LITIGATION_SETTLEMENT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "GUIDANCE_RAISE": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER", "promotion_boundary": "PHASE8C_GUIDANCE_SEMANTICS_REMAIN_IN_FORCE"},
+    "GUIDANCE_CUT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER", "promotion_boundary": "PHASE8C_GUIDANCE_SEMANTICS_REMAIN_IN_FORCE"},
+    "MAJOR_CONTRACT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "ACQUISITION_ANNOUNCEMENT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "TAKEOVER_OFFER": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "ACQUISITION_COMPLETION": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "CAPITAL_RAISE": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER", "promotion_boundary": "PHASE8C_CAPITAL_RAISE_SEMANTICS_REMAIN_IN_FORCE"},
+    "PRODUCT_LAUNCH": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "PRODUCTION_DISRUPTION": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"}
+  },
+  "required_source_layer_components": {
+    "event_ledger": "IMPLEMENTED",
+    "source_hierarchy": "IMPLEMENTED",
+    "first_public_release_contract": "IMPLEMENTED",
+    "phase8c_reuse": "IMPLEMENTED_CONSERVATIVE",
+    "fda_approval_adapter": "IMPLEMENTED_PROSPECTIVE_PARTIAL",
+    "doj_case_filing_adapter": "IMPLEMENTED_PROSPECTIVE_PARTIAL",
+    "primary_release_challenger": "IMPLEMENTED_PROSPECTIVE_CHALLENGER",
+    "news_discovery": "EXPLICITLY_NOT_PROMOTION_ELIGIBLE",
+    "generic_sentiment": "DEFERRED_NOT_REQUIRED_FOR_8E_COMPLETION"
+  },
+  "completion_rules": {
+    "every_taxonomy_event_must_have_explicit_status": true,
+    "unspecified_event_family_allowed": false,
+    "challenger_is_valid_completion_state_but_not_promotion": true,
+    "unsafe_historical_backdating_allowed": false,
+    "discovery_news_may_create_known_event_alone": false,
+    "generic_sentiment_required_for_completion": false,
+    "real_market_outcomes_required_for_completion": false,
+    "predictive_validation_belongs_to_phase": "8G",
+    "cross_factor_interactions_belong_to_phase": "8H",
+    "decision_layer_integration_belongs_to_phase": "8I"
+  },
+  "hard_boundaries": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "generic_sentiment_enabled": false,
+    "threshold_selection_enabled": false,
+    "interaction_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}
