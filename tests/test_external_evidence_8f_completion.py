@@ -53,6 +53,10 @@ def _domain_audit() -> dict:
         "mapped_subject_count": 1,
         "explicit_unmapped_subject_count": 1,
         "market_outcomes_read": False,
+        "guards": {
+            "domain_pinned_to_pre8f_source_blob": True,
+            "market_outcomes_read": False,
+        },
     }
 
 
@@ -92,6 +96,7 @@ def test_completion_passes_only_when_real_requirements_are_represented():
     assert result["status"] == "PASS_8F_COMPLETION"
     assert result["freeze_allowed"] is True
     assert result["blockers"] == []
+    assert result["metrics"]["domain_pinned_to_pre8f_source_blob"] is True
     assert result["guards"]["market_outcomes_read"] is False
 
 
@@ -113,3 +118,22 @@ def test_domain_accounting_must_be_complete():
     )
     assert result["status"] == "BLOCKED_8F_COMPLETION"
     assert "domain_accounting:1!=2" in result["blockers"]
+
+
+def test_domain_must_be_pinned_to_pre8f_source_blob():
+    config = _load_json("configs/external_evidence_8f_completion_v1.json")
+    macro = _load_json("configs/external_evidence_8f_macro_exposure_v1.json")
+    exposure = copy.deepcopy(_load_json("configs/external_evidence_8f_exposure_map_v1.json"))
+    exposure["mappings"] = [_mapping()]
+    audit = _domain_audit()
+    audit["guards"]["domain_pinned_to_pre8f_source_blob"] = False
+
+    result = evaluate_phase8f_completion(
+        completion_config=config,
+        macro_config=macro,
+        exposure_map=exposure,
+        macro_ledger=_ledger(),
+        exposure_domain_audit=audit,
+    )
+    assert result["status"] == "BLOCKED_8F_COMPLETION"
+    assert "research_domain:not_pinned_to_pre8f_source_blob" in result["blockers"]
