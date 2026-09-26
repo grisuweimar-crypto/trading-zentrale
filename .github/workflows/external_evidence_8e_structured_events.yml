@@ -1,0 +1,36 @@
+name: Phase 8E Structured Events and News
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8e_structured_events_v1.json"
+      - "src/scanner/research/external_evidence/structured_events_8e.py"
+      - "scripts/run_external_evidence_8e_event_ledger.py"
+      - "tests/test_external_evidence_8e_structured_events.py"
+      - "docs/external_evidence_8e_structured_events.md"
+      - ".github/workflows/external_evidence_8e_structured_events.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Validate Phase 8E source hierarchy and First Public Release contract
+        run: python -m pytest -q tests/test_external_evidence_8e_structured_events.py
+      - name: Verify Phase 8E CLI
+        run: python scripts/run_external_evidence_8e_event_ledger.py --help
+
+# CI intentionally makes no live SEC/FDA/FTC/DOJ/news requests.
+# 8E-A is source-contract and event-ledger infrastructure only.
+# Generic sentiment, market outcomes, Phase-7 integration and production enablement remain disabled.
