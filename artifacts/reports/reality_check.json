@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
-  "date": "2026-09-25",
+  "date": "2026-09-26",
   "stats": {
-    "total": 212,
-    "ok": 206,
+    "total": 213,
+    "ok": 207,
     "warn": 6,
     "error": 0
   },
@@ -20,15 +20,15 @@
       "scanner": 32.4,
       "market": 0.0,
       "scanner_band": "hoch",
-      "market_band": "positiv",
+      "market_band": "neutral",
       "hint": "Passend: intern stark, Markt trägt.",
       "problems": [
         "n=10",
         "warn%=0%",
         "bewertung=hoch",
-        "markt=positiv"
+        "markt=neutral"
       ],
-      "problems_text": "n=10; warn%=0%; bewertung=hoch; markt=positiv",
+      "problems_text": "n=10; warn%=0%; bewertung=hoch; markt=neutral",
       "n": 10
     },
     {
@@ -293,7 +293,7 @@
       "reality_score": 1.0,
       "intern": "S1 Hardware",
       "offiziell": "Medical Devices",
-      "scanner": 22.6,
+      "scanner": 22.7,
       "market": -0.1,
       "scanner_band": "mittel",
       "market_band": "negativ",
@@ -339,7 +339,7 @@
       "reality_score": 1.0,
       "intern": "S3 Energie",
       "offiziell": "Electrical Equipment & Parts",
-      "scanner": 20.8,
+      "scanner": 20.9,
       "market": -0.0,
       "scanner_band": "niedrig",
       "market_band": "neutral",
@@ -385,7 +385,7 @@
       "reality_score": 1.0,
       "intern": "S21 Finanzsystem",
       "offiziell": "Credit Services",
-      "scanner": 24.7,
+      "scanner": 24.6,
       "market": -0.0,
       "scanner_band": "hoch",
       "market_band": "neutral",
@@ -564,6 +564,29 @@
       "symbol": "",
       "name": "",
       "severity": "warn",
+      "signal": "Warn",
+      "verdict": "warn",
+      "reality_score": 1.0,
+      "intern": "S4 Fundament",
+      "offiziell": "Chemicals",
+      "scanner": 23.2,
+      "market": 0.0,
+      "scanner_band": "mittel",
+      "market_band": "positiv",
+      "hint": "Gemischt: weiter prüfen.",
+      "problems": [
+        "n=3",
+        "warn%=0%",
+        "bewertung=mittel",
+        "markt=positiv"
+      ],
+      "problems_text": "n=3; warn%=0%; bewertung=mittel; markt=positiv",
+      "n": 3
+    },
+    {
+      "symbol": "",
+      "name": "",
+      "severity": "warn",
       "signal": "Kontra",
       "verdict": "contra",
       "reality_score": 1.0,
@@ -592,7 +615,7 @@
       "reality_score": 1.0,
       "intern": "S2 Gehirn",
       "offiziell": "Information Technology Services",
-      "scanner": 14.2,
+      "scanner": 14.1,
       "market": -0.0,
       "scanner_band": "niedrig",
       "market_band": "neutral",
