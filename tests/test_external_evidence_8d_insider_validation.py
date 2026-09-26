@@ -16,9 +16,10 @@ from scanner.research.external_evidence.sec_insider_validation import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs" / "external_evidence_8d_insider_validation_v1.json"
+HIGH_STATUS = "P_S_HIGH_PRECISION_DISCRETIONARY_CANDIDATE"
 
 
-def _row(index: int, code: str, *, status: str = "P_S_HIGH_PRECISION_CANDIDATE") -> dict:
+def _row(index: int, code: str, *, status: str = HIGH_STATUS) -> dict:
     return {
         "source_authority": "U.S. SEC EDGAR",
         "source_dataset": "Insider Transactions Data Sets",
@@ -76,7 +77,7 @@ def _evidence(path: Path, rows: list[dict], *, outcome_read: bool = False) -> Pa
 
 def test_b3_package_is_deterministic_and_stratified(tmp_path: Path) -> None:
     rows = [_row(i, "P") for i in range(1, 31)] + [_row(i + 100, "S") for i in range(1, 31)]
-    rows.append(_row(999, "S", status="P_S_10B5_1_DECLARED"))
+    rows.append(_row(999, "S", status="EXCLUDED_10B5_1_PLAN"))
     evidence = _evidence(tmp_path / "evidence.json", rows)
 
     first = prepare_insider_validation_package(evidence_path=evidence, config_path=CONFIG)
@@ -86,7 +87,7 @@ def test_b3_package_is_deterministic_and_stratified(tmp_path: Path) -> None:
     assert first["guards"]["market_outcomes_read"] is False
     assert first["population"]["candidate_count_by_code"] == {"P": 30, "S": 30}
     assert first["sample"]["candidate_sample_by_code"] == {"P": 30, "S": 30}
-    assert first["population"]["quarantine_population_by_status"]["P_S_10B5_1_DECLARED"] == 1
+    assert first["population"]["quarantine_population_by_status"]["EXCLUDED_10B5_1_PLAN"] == 1
 
 
 def test_b3_refuses_outcome_contaminated_input(tmp_path: Path) -> None:
