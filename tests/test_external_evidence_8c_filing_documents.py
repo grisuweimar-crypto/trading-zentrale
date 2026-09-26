@@ -100,12 +100,20 @@ def test_snapshot_validates_content_document_digest(tmp_path):
         "source_authority": "U.S. SEC EDGAR",
         "created_at": "2026-09-26T00:00:00+00:00",
         "scanner_as_of": "2026-09-25",
+        "ticker_bootstrap": {
+            "mode": "SEC_OFFICIAL_LIVE",
+            "source_url": "https://www.sec.gov/files/company_tickers.json",
+            "authoritative": True,
+            "requires_current_submissions_validation": True,
+            "official_source_url": "https://www.sec.gov/files/company_tickers.json"
+        },
         "company_tickers_file": {"path": "raw/company_tickers.json", "sha256": ticker_digest, "source_url": "sec"},
         "companies": [
             {
                 "symbol": "AAPL",
                 "cik": "0000320193",
                 "identity_status": "VERIFIED_BY_SEC_SUBMISSIONS",
+                "identity_authority": "CURRENT_SEC_SUBMISSIONS_ONLY",
                 "submissions_file": {"path": "raw/companies/0000320193/submissions.json", "sha256": submissions_digest, "source_url": "sec"},
                 "history_files": [],
                 "companyfacts_file": {"path": "raw/companies/0000320193/companyfacts.json", "sha256": facts_digest, "source_url": "sec"},

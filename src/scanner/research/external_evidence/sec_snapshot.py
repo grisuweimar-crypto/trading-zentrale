@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from .sec_identity_bootstrap import validate_submissions_identity
+
 
 SNAPSHOT_SCHEMA = "external_evidence_8c_sec_snapshot_v1"
 
@@ -77,6 +79,18 @@ def load_snapshot_manifest(bundle_dir: Path) -> dict[str, Any]:
         raise SecSnapshotError("SEC snapshot source_authority must be U.S. SEC EDGAR")
     if payload.get("market_outcomes_read") is not False:
         raise SecSnapshotError("SEC snapshot must remain outcome-blind")
+
+    bootstrap = payload.get("ticker_bootstrap")
+    if not isinstance(bootstrap, Mapping):
+        raise SecSnapshotError("ticker_bootstrap metadata is required")
+    if bootstrap.get("requires_current_submissions_validation") is not True:
+        raise SecSnapshotError("ticker bootstrap must require current SEC submissions validation")
+    if bootstrap.get("authoritative") is False:
+        if bootstrap.get("identity_authority") != "CURRENT_SEC_SUBMISSIONS_ONLY":
+            raise SecSnapshotError(
+                "Non-authoritative ticker bootstrap must declare CURRENT_SEC_SUBMISSIONS_ONLY authority"
+            )
+
     companies = payload.get("companies")
     if not isinstance(companies, list):
         raise SecSnapshotError("SEC snapshot companies must be an array")
@@ -109,7 +123,19 @@ def validate_snapshot_bundle(bundle_dir: Path) -> dict[str, Any]:
             raise SecSnapshotError("Verified company requires submissions and companyfacts files")
         if not isinstance(history, list) or not isinstance(content_filings, list):
             raise SecSnapshotError("history_files/content_filings must be arrays")
-        read_json_verified(bundle_dir, submissions)
+
+        submissions_payload = read_json_verified(bundle_dir, submissions)
+        valid_identity, identity_reasons = validate_submissions_identity(
+            symbol=str(company.get("symbol") or ""),
+            candidate_cik=str(company.get("cik") or ""),
+            submissions_payload=submissions_payload,
+        )
+        if not valid_identity:
+            raise SecSnapshotError(
+                "Verified company identity is not confirmed by hashed current SEC submissions: "
+                + ",".join(identity_reasons)
+            )
+
         read_json_verified(bundle_dir, companyfacts)
         verified_files += 2
         for spec in history:
@@ -136,6 +162,7 @@ def validate_snapshot_bundle(bundle_dir: Path) -> dict[str, Any]:
         "verified_content_document_count": verified_content_documents,
         "snapshot_created_at": manifest.get("created_at"),
         "scanner_as_of": manifest.get("scanner_as_of"),
+        "ticker_bootstrap_mode": (manifest.get("ticker_bootstrap") or {}).get("mode"),
         "content_acquisition_window": manifest.get("content_acquisition_window"),
         "market_outcomes_read": False,
     }

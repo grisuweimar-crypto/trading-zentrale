@@ -1,0 +1,72 @@
+{
+  "schema_version": "external_evidence_8c_semantic_validation_v1",
+  "phase": "8C_I_semantic_challenger_validation",
+  "status": "PRE_REGISTERED_BEFORE_REAL_SNAPSHOT_EVALUATION",
+  "challenger_parser_version": "8c_semantic_challenger_v1",
+  "market_outcomes_may_be_read": false,
+  "validation_unit": "8C_G_ANCHOR",
+  "anchor_id_fields": ["family", "symbol", "accession_number", "excerpt_sha256"],
+  "sampling": {
+    "seed": "8C-I-v1",
+    "candidate_audit": {
+      "method": "DETERMINISTIC_HASH_ORDER",
+      "per_family_max": 100,
+      "use_all_when_at_or_below_max": true,
+      "purpose": "precision_and_field_accuracy"
+    },
+    "anchor_audit": {
+      "method": "DETERMINISTIC_HASH_ORDER_INDEPENDENT_OF_CHALLENGER_OUTPUT",
+      "per_family_max": 200,
+      "use_all_when_at_or_below_max": true,
+      "purpose": "descriptive_recall_and_false_negative_review"
+    }
+  },
+  "annotation": {
+    "market_outcomes_visible_to_annotator": false,
+    "allowed_truth_labels": {
+      "DIVIDEND": ["REGULAR_QUARTERLY_DIVIDEND_DECLARATION", "NOT_TARGET", "UNCERTAIN"],
+      "BUYBACK": ["NEW_AUTHORIZATION", "NOT_TARGET", "UNCERTAIN"]
+    },
+    "required_common_fields": [
+      "anchor_id",
+      "family",
+      "truth_label",
+      "review_status",
+      "market_outcomes_seen",
+      "notes"
+    ],
+    "dividend_truth_fields": ["amount_per_share", "currency", "security_class", "frequency"],
+    "buyback_truth_fields": ["authorization_amount", "currency"],
+    "uncertain_excluded_from_accuracy_denominator": true
+  },
+  "promotion_gates": {
+    "evaluated_independently_by_family": true,
+    "minimum_labeled_emitted_candidates": 40,
+    "minimum_distinct_issuers_in_labeled_candidates": 10,
+    "precision_wilson_95_lower_bound_min": 0.90,
+    "critical_field_accuracy_wilson_95_lower_bound_min": 0.90,
+    "maximum_uncertain_annotation_rate": 0.10,
+    "market_direction_violation_count_max": 0,
+    "provenance_violation_count_max": 0,
+    "recall_gate": "DESCRIPTIVE_ONLY_IN_FIRST_VALIDATION",
+    "low_coverage_behavior": "LOW_COVERAGE_NOT_PROMOTABLE",
+    "failed_precision_behavior": "REMAIN_CHALLENGER"
+  },
+  "critical_fields": {
+    "DIVIDEND": ["amount_per_share", "currency", "security_class", "frequency"],
+    "BUYBACK": ["action", "authorization_amount", "currency"]
+  },
+  "hard_boundaries": {
+    "pooled_precision_may_hide_family_failure": false,
+    "uncertain_label_may_be_counted_correct": false,
+    "insufficient_sample_may_pass": false,
+    "descriptive_recall_may_be_optimized_after_outcome_view": false,
+    "market_outcomes_may_influence_annotation": false,
+    "promotion_enables_phase7_integration_automatically": false
+  },
+  "research_gate": {
+    "outcome_research_enabled": false,
+    "production_external_evidence_enabled": false,
+    "phase7_integration_enabled": false
+  }
+}
