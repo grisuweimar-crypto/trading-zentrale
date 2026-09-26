@@ -21,6 +21,7 @@ on:
       - "tests/test_external_evidence_8d_finra_short_interest.py"
       - "tests/test_external_evidence_8d_finra_coverage.py"
       - "tests/test_external_evidence_8d_sec_insider_bulk.py"
+      - "tests/test_external_evidence_8d_sec_insider_cross_context.py"
       - "tests/test_external_evidence_8d_insider_validation.py"
       - ".github/workflows/external_evidence_8d_positioning.yml"
   workflow_dispatch:
@@ -47,6 +48,7 @@ jobs:
           tests/test_external_evidence_8d_finra_short_interest.py
           tests/test_external_evidence_8d_finra_coverage.py
           tests/test_external_evidence_8d_sec_insider_bulk.py
+          tests/test_external_evidence_8d_sec_insider_cross_context.py
           tests/test_external_evidence_8d_insider_validation.py
       - name: Verify Phase 8D CLIs
         run: |
@@ -60,5 +62,6 @@ jobs:
 # CI intentionally performs no live FINRA or SEC requests.
 # Real FINRA snapshots are collected prospectively outside CI.
 # SEC insider quarterly bulk ZIPs are operator-provided official SEC downloads and
-# are joined to the already operator-attested SEC submissions bundle by accession.
+# are joined to the already operator-attested SEC submissions bundle by accession + issuer CIK.
+# Cross-entity Form 4 accession appearances are expected and are not treated as snapshot corruption.
 # B3 sampling and validation remain outcome-blind until the preregistered audit is complete.
