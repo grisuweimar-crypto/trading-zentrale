@@ -19,6 +19,21 @@ def _load(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
+def _empty_exposure() -> dict:
+    exposure = copy.deepcopy(_load("configs/external_evidence_8f_exposure_map_v1.json"))
+    exposure["status"] = "FOUNDATION_EMPTY_MAP_NO_ASSET_EXPOSURES_PROMOTED"
+    exposure["mappings"] = []
+    return exposure
+
+
+def _empty_review() -> dict:
+    review = copy.deepcopy(_load("configs/external_evidence_8f_mapping_review_decisions_v1.json"))
+    review["status"] = "AWAITING_HUMAN_REVIEW"
+    review["reviewed_at"] = None
+    review["decisions"] = []
+    return review
+
+
 def _approved_review(candidate_id: str = "MAPCAND:CVX:oil:1") -> dict:
     return {
         "schema_version": "external_evidence_8f_mapping_review_decisions_v1",
@@ -48,8 +63,8 @@ def _approved_review(candidate_id: str = "MAPCAND:CVX:oil:1") -> dict:
 
 def test_empty_review_decisions_do_not_modify_exposure_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    review = _empty_review()
+    exposure = _empty_exposure()
     result = apply_human_mapping_review(
         candidate_config=candidates,
         review_config=review,
@@ -60,9 +75,18 @@ def test_empty_review_decisions_do_not_modify_exposure_map():
     assert result["exposure_map"]["mappings"] == []
 
 
+def test_committed_b1_review_contains_ten_explicit_human_approvals():
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_v1.json")
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert len(review["decisions"]) == 10
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
+
+
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    exposure = _empty_exposure()
     result = apply_human_mapping_review(
         candidate_config=candidates,
         review_config=_approved_review(),
@@ -81,7 +105,7 @@ def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time
 
 def test_approval_requires_source_verification():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    exposure = _empty_exposure()
     review = _approved_review()
     review["decisions"][0]["source_verified"] = False
     with pytest.raises(ExposureMappingReview8FError, match="source_verified=true"):
@@ -94,7 +118,7 @@ def test_approval_requires_source_verification():
 
 def test_reject_and_defer_never_promote():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    exposure = _empty_exposure()
     review = _approved_review()
     review["decisions"] = [
         {"candidate_id": "MAPCAND:CVX:oil:1", "decision": "REJECT"},
@@ -113,7 +137,7 @@ def test_reject_and_defer_never_promote():
 
 def test_review_cannot_enable_automatic_approval_guard():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    exposure = _empty_exposure()
     review = _approved_review()
     review["guards"]["automatic_approval_allowed"] = True
     with pytest.raises(ExposureMappingReview8FError, match="must remain false"):
