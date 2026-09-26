@@ -62,11 +62,8 @@ def _validate_source_url(
         raise PrimaryRelease8EError(
             f"source_url host {host!r} is not allowed for provider {provider_id}"
         )
-    if provider.get("requires_issuer_domain_attestation") is True:
-        if row.get("issuer_domain_attested") is not True:
-            raise PrimaryRelease8EError(
-                "ISSUER_IR records require issuer_domain_attested=true"
-            )
+    if provider.get("requires_issuer_domain_attestation") is True and row.get("issuer_domain_attested") is not True:
+        raise PrimaryRelease8EError("ISSUER_IR records require issuer_domain_attested=true")
     return source_url
 
 
@@ -78,12 +75,13 @@ def build_primary_release_evidence(
 ) -> dict[str, Any]:
     """Normalize prospectively observed authoritative/issuer releases outcome-blind.
 
-    This adapter deliberately does not classify free text. Event type and state must be supplied
-    explicitly by a source-specific structured intake or human-reviewed challenger workflow.
-    Without independently proven historical publication timing, public availability is conservatively
-    proven only at actual ingestion time.
+    Free text is never auto-classified. Event type/state must be supplied by source-native
+    structure or a human-reviewed challenger workflow. A source/page date is preserved as a
+    claim, but `published_at` is populated only when historical publication timing has independent
+    archival proof. Otherwise strict PIT begins at actual ingestion and First Public Release stays
+    unresolved rather than being fabricated from the ingestion timestamp.
     """
-    if config.get("schema_version") != "external_evidence_8e_primary_release_v1":
+    if config.get("schema_version") != SCHEMA_VERSION:
         raise PrimaryRelease8EError("unsupported primary release config")
     hard = config.get("hard_boundaries") or {}
     for field in (
@@ -110,13 +108,9 @@ def build_primary_release_evidence(
             raise PrimaryRelease8EError(f"unsupported provider_id: {provider_id}")
 
         event_type = _required_text(raw, "event_type").upper()
-        allowed_event_types = {
-            str(value).upper() for value in provider.get("allowed_event_types") or []
-        }
+        allowed_event_types = {str(value).upper() for value in provider.get("allowed_event_types") or []}
         if event_type not in allowed_event_types:
-            raise PrimaryRelease8EError(
-                f"event_type {event_type} is not allowed for provider {provider_id}"
-            )
+            raise PrimaryRelease8EError(f"event_type {event_type} is not allowed for provider {provider_id}")
 
         source_event_id = _required_text(raw, "source_event_id")
         identity = (provider_id, source_event_id)
@@ -124,9 +118,7 @@ def build_primary_release_evidence(
             raise PrimaryRelease8EError(f"duplicate provider/source_event_id: {identity}")
         seen_identity.add(identity)
 
-        source_url = _validate_source_url(
-            provider_id=provider_id, row=raw, provider=provider
-        )
+        source_url = _validate_source_url(provider_id=provider_id, row=raw, provider=provider)
         content_sha256 = _sha256(raw.get("content_sha256"), field="content_sha256")
         source_claimed_published_at = _optional_aware_datetime(
             raw.get("source_claimed_published_at"), field="source_claimed_published_at"
@@ -136,25 +128,17 @@ def build_primary_release_evidence(
 
         if historical_proven:
             if source_claimed_published_at is None:
-                raise PrimaryRelease8EError(
-                    "historical publication proof requires source_claimed_published_at"
-                )
-            archival_proof_sha256 = _sha256(
-                raw.get("archival_proof_sha256"), field="archival_proof_sha256"
-            )
+                raise PrimaryRelease8EError("historical publication proof requires source_claimed_published_at")
+            archival_proof_sha256 = _sha256(raw.get("archival_proof_sha256"), field="archival_proof_sha256")
             if source_claimed_published_at > observed_at:
-                raise PrimaryRelease8EError(
-                    "proven publication time cannot be after actual ingestion"
-                )
+                raise PrimaryRelease8EError("proven publication time cannot be after actual ingestion")
             published_at = source_claimed_published_at
             valid_from = source_claimed_published_at
             proof_status = "PROVEN"
         else:
-            # The actual successful observation itself proves the release was public by ingestion.
-            # A page/RSS date is retained only as a source claim and is never used to backdate.
-            published_at = observed_at
+            published_at = None
             valid_from = observed_at
-            proof_status = "PROVEN"
+            proof_status = "INGESTION_ONLY"
 
         semantic_origin = _required_text(raw, "semantic_label_origin").upper()
         if semantic_origin not in {"SOURCE_NATIVE_STRUCTURED", "HUMAN_REVIEWED_STRUCTURED"}:
@@ -162,7 +146,7 @@ def build_primary_release_evidence(
                 "semantic_label_origin must be SOURCE_NATIVE_STRUCTURED or HUMAN_REVIEWED_STRUCTURED"
             )
 
-        row = {
+        rows.append({
             "canonical_event_key": _required_text(raw, "canonical_event_key"),
             "event_type": event_type,
             "subject_id": _required_text(raw, "subject_id"),
@@ -172,12 +156,8 @@ def build_primary_release_evidence(
             "event_state": _required_text(raw, "event_state").upper(),
             "authority_scope": _required_text(raw, "authority_scope"),
             "source_url": source_url,
-            "published_at": published_at.isoformat(),
-            "source_claimed_published_at": (
-                source_claimed_published_at.isoformat()
-                if source_claimed_published_at is not None
-                else None
-            ),
+            "published_at": published_at.isoformat() if published_at else None,
+            "source_claimed_published_at": source_claimed_published_at.isoformat() if source_claimed_published_at else None,
             "valid_from": valid_from.isoformat(),
             "ingested_at": observed_at.isoformat(),
             "content_sha256": content_sha256,
@@ -188,21 +168,13 @@ def build_primary_release_evidence(
             "historical_publication_time_independently_proven": historical_proven,
             "semantic_label_origin": semantic_origin,
             "semantic_status": (
-                "SOURCE_NATIVE_STRUCTURED"
-                if semantic_origin == "SOURCE_NATIVE_STRUCTURED"
+                "SOURCE_NATIVE_STRUCTURED" if semantic_origin == "SOURCE_NATIVE_STRUCTURED"
                 else "HUMAN_REVIEWED_STRUCTURED_CHALLENGER"
             ),
             "market_direction": "UNASSIGNED",
-        }
-        rows.append(row)
+        })
 
-    rows.sort(
-        key=lambda row: (
-            str(row["valid_from"]),
-            str(row["source_id"]),
-            str(row["source_event_id"]),
-        )
-    )
+    rows.sort(key=lambda row: (str(row["valid_from"]), str(row["source_id"]), str(row["source_event_id"])))
     return {
         "schema_version": SCHEMA_VERSION,
         "phase": "8E_B3_primary_release_adapter",
@@ -216,16 +188,13 @@ def build_primary_release_evidence(
             "generic_sentiment_enabled": False,
             "automatic_free_text_event_classification_enabled": False,
             "historical_backdating_without_independent_proof": False,
+            "ingestion_time_fabricated_as_published_at": False,
             "phase7_integration_enabled": False,
             "production_external_evidence_enabled": False,
         },
     }
 
 
-def write_primary_release_evidence(
-    payload: Mapping[str, Any], output_path: Path
-) -> None:
+def write_primary_release_evidence(payload: Mapping[str, Any], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(dict(payload), indent=2, sort_keys=True), encoding="utf-8"
-    )
+    output_path.write_text(json.dumps(dict(payload), indent=2, sort_keys=True), encoding="utf-8")
