@@ -24,15 +24,25 @@ def validate_8e_source_layer_completion(
     fda_config: Mapping[str, Any],
     doj_config: Mapping[str, Any],
     news_config: Mapping[str, Any],
+    primary_release_config: Mapping[str, Any],
 ) -> dict[str, Any]:
-    if structured_config.get("schema_version") != "external_evidence_8e_structured_events_v1":
-        raise StructuredEvents8ECompletionError("unsupported structured-events config schema")
-    if fda_config.get("schema_version") != "external_evidence_8e_fda_approval_v1":
-        raise StructuredEvents8ECompletionError("unsupported FDA config schema")
-    if doj_config.get("schema_version") != "external_evidence_8e_doj_antitrust_rss_v1":
-        raise StructuredEvents8ECompletionError("unsupported DOJ config schema")
-    if news_config.get("schema_version") != "external_evidence_8e_news_discovery_v1":
-        raise StructuredEvents8ECompletionError("unsupported news-discovery config schema")
+    expected_schemas = {
+        "structured": "external_evidence_8e_structured_events_v1",
+        "fda": "external_evidence_8e_fda_approval_v1",
+        "doj": "external_evidence_8e_doj_antitrust_rss_v1",
+        "news": "external_evidence_8e_news_discovery_v1",
+        "primary": "external_evidence_8e_primary_release_v1",
+    }
+    payloads = {
+        "structured": structured_config,
+        "fda": fda_config,
+        "doj": doj_config,
+        "news": news_config,
+        "primary": primary_release_config,
+    }
+    for label, expected in expected_schemas.items():
+        if payloads[label].get("schema_version") != expected:
+            raise StructuredEvents8ECompletionError(f"unsupported {label} config schema")
 
     principles = structured_config.get("principles") or {}
     _require_false(
@@ -84,12 +94,17 @@ def validate_8e_source_layer_completion(
             "source candidates remain unresolved: " + ", ".join(unresolved_candidates)
         )
 
-    if adapters.get("FDA_DRUGS_AT_FDA", {}).get("status") != "IMPLEMENTED_AUTHORITATIVE_APPROVAL_STATE":
-        raise StructuredEvents8ECompletionError("FDA adapter is not frozen as implemented")
-    if adapters.get("DOJ_ANTITRUST_CASE_FILINGS", {}).get("status") != "IMPLEMENTED_AUTHORITATIVE_CASE_FILING_FEEDS":
-        raise StructuredEvents8ECompletionError("DOJ case-filing adapter is not frozen as implemented")
-    if adapters.get("PHASE8C_CANONICAL_SEC_EVENTS", {}).get("status") != "IMPLEMENTED_CONSERVATIVE_REUSE":
-        raise StructuredEvents8ECompletionError("Phase-8C reuse adapter is not frozen as implemented")
+    required_adapter_statuses = {
+        "FDA_DRUGS_AT_FDA": "IMPLEMENTED_AUTHORITATIVE_APPROVAL_STATE",
+        "DOJ_ANTITRUST_CASE_FILINGS": "IMPLEMENTED_AUTHORITATIVE_CASE_FILING_FEEDS",
+        "PHASE8C_CANONICAL_SEC_EVENTS": "IMPLEMENTED_CONSERVATIVE_REUSE",
+        "PRIMARY_RELEASE_CHALLENGER": "IMPLEMENTED_PROSPECTIVE_STRUCTURED_CHALLENGER",
+    }
+    for key, expected in required_adapter_statuses.items():
+        if adapters.get(key, {}).get("status") != expected:
+            raise StructuredEvents8ECompletionError(
+                f"{key} adapter is not frozen as {expected}"
+            )
 
     _require_false(
         fda_config.get("hard_boundaries") or {},
@@ -124,6 +139,24 @@ def validate_8e_source_layer_completion(
         ),
         label="news.hard_boundaries",
     )
+    _require_false(
+        primary_release_config.get("hard_boundaries") or {},
+        (
+            "market_outcomes_may_be_read",
+            "market_direction_may_be_assigned",
+            "threshold_selection_enabled",
+            "phase7_integration_enabled",
+            "production_external_evidence_enabled",
+        ),
+        label="primary.hard_boundaries",
+    )
+    pit = primary_release_config.get("pit_contract") or {}
+    if pit.get("prospective_observation_is_strict_pit_from_ingested_at") is not True:
+        raise StructuredEvents8ECompletionError("primary release prospective PIT gate is not enabled")
+    if pit.get("page_date_alone_is_historical_proof") is not False:
+        raise StructuredEvents8ECompletionError("primary release page date may not prove historical PIT")
+    if pit.get("later_snapshot_may_backdate_knowledge") is not False:
+        raise StructuredEvents8ECompletionError("primary release later snapshots may not backdate knowledge")
 
     completion = structured_config.get("completion_contract") or {}
     if completion.get("architecture_and_source_layer_complete") is not True:
@@ -134,7 +167,12 @@ def validate_8e_source_layer_completion(
     implemented = sorted(
         event for event, state in coverage.items() if str(state).startswith("IMPLEMENTED_")
     )
-    deferred = sorted(event for event in taxonomy if event not in implemented)
+    challenger = sorted(
+        event for event, state in coverage.items() if "CHALLENGER" in str(state)
+    )
+    deferred = sorted(
+        event for event in taxonomy if event not in implemented and event not in challenger
+    )
     discovery_only = sorted(
         key for key, value in adapters.items()
         if "DISCOVERY_ONLY" in str((value or {}).get("status") or "")
@@ -144,6 +182,7 @@ def validate_8e_source_layer_completion(
         "phase": "8E_structured_events_news",
         "status": "PHASE_8E_SOURCE_LAYER_COMPLETE_OUTCOME_RESEARCH_PENDING_8G",
         "implemented_event_types": implemented,
+        "prospective_challenger_event_types": challenger,
         "explicitly_deferred_or_source_gap_event_types": deferred,
         "discovery_only_sources": discovery_only,
         "event_type_count": len(taxonomy),
@@ -167,9 +206,17 @@ def load_and_validate_8e_completion(
     fda_config_path: Path,
     doj_config_path: Path,
     news_config_path: Path,
+    primary_release_config_path: Path,
 ) -> dict[str, Any]:
-    payloads = []
-    for path in (structured_config_path, fda_config_path, doj_config_path, news_config_path):
+    paths = (
+        structured_config_path,
+        fda_config_path,
+        doj_config_path,
+        news_config_path,
+        primary_release_config_path,
+    )
+    payloads: list[dict[str, Any]] = []
+    for path in paths:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:
@@ -182,6 +229,7 @@ def load_and_validate_8e_completion(
         fda_config=payloads[1],
         doj_config=payloads[2],
         news_config=payloads[3],
+        primary_release_config=payloads[4],
     )
 
 
