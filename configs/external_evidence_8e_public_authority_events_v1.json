@@ -1,0 +1,66 @@
+{
+  "schema_version": "external_evidence_8e_public_authority_events_v1",
+  "phase": "8E_B3_public_authority_events",
+  "status": "PROSPECTIVE_PIT_ADAPTER_CONTRACT",
+  "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+  "providers": {
+    "FTC": {
+      "allowed_hosts": ["ftc.gov", "www.ftc.gov", "search.ftc.gov"],
+      "official_index_urls": [
+        "https://www.ftc.gov/legal-library/browse/cases-proceedings",
+        "https://search.ftc.gov/news-events/news/press-releases"
+      ],
+      "supported_event_types": [
+        "REGULATORY_APPROVAL",
+        "REGULATORY_REJECTION",
+        "LITIGATION_FILED",
+        "LITIGATION_RULING",
+        "LITIGATION_SETTLEMENT"
+      ]
+    },
+    "DOJ_ANTITRUST": {
+      "allowed_hosts": ["justice.gov", "www.justice.gov"],
+      "official_index_urls": [
+        "https://www.justice.gov/atr/antitrust-case-filings",
+        "https://www.justice.gov/atr/press-releases"
+      ],
+      "supported_event_types": [
+        "REGULATORY_APPROVAL",
+        "REGULATORY_REJECTION",
+        "LITIGATION_FILED",
+        "LITIGATION_RULING",
+        "LITIGATION_SETTLEMENT"
+      ]
+    }
+  },
+  "identity_contract": {
+    "canonical_event_key": "<provider>:<event_type>:<source_event_id>",
+    "source_event_id_must_be_exact": true,
+    "fuzzy_case_or_company_matching_enabled": false,
+    "ticker_mapping_enabled": false,
+    "security_identity_resolution_deferred": true
+  },
+  "pit_contract": {
+    "case_open_date_is_publication_time": false,
+    "page_date_is_exact_publication_time": false,
+    "historical_publication_time_requires_independent_proof": true,
+    "without_independent_publication_time_proof": "VALID_FROM_INGESTED_AT",
+    "later_retrieval_may_backdate_knowledge": false,
+    "timezone_aware_ingested_at_required": true
+  },
+  "provenance": {
+    "official_source_url_required": true,
+    "source_record_sha256_required": true,
+    "source_event_id_required": true,
+    "authority_scope_required": true
+  },
+  "hard_boundaries": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "regulatory_action_is_predefined_bullish_or_bearish": false,
+    "litigation_state_is_predefined_bullish_or_bearish": false,
+    "generic_sentiment_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}
