@@ -218,7 +218,7 @@ def test_context_preserves_all_latest_series_within_factor_without_hidden_select
     assert result["guards"]["single_series_silently_selected_from_multiseries_factor"] is False
 
 
-def test_empty_versioned_exposure_map_is_valid_foundation_and_contract_is_frozen_fail_closed():
+def test_committed_human_reviewed_exposure_map_passes_foundation_contract():
     macro_config = json.loads(
         (ROOT / "configs/external_evidence_8f_macro_exposure_v1.json").read_text(encoding="utf-8")
     )
@@ -228,7 +228,8 @@ def test_empty_versioned_exposure_map_is_valid_foundation_and_contract_is_frozen
     result = validate_phase8f_contract(macro_config, exposure_map)
     assert result["status"] == "PASS_FOUNDATION_CONTRACT"
     assert result["factor_count"] == 11
-    assert result["mapping_count"] == 0
+    assert result["mapping_count"] == 10
+    assert all(row["human_reviewed"] is True for row in exposure_map["mappings"])
     assert result["outcomes_read"] is False
 
     macro_config["principles"]["market_outcomes_may_be_read"] = True
