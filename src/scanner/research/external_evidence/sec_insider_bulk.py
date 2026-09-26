@@ -94,8 +94,21 @@ def _load_sec_bundle(bundle_dir: Path) -> tuple[dict[str, Any], str]:
 
 def _acceptance_index(
     bundle_dir: Path, manifest: Mapping[str, Any]
-) -> tuple[dict[str, dict[str, Any]], set[str]]:
-    by_accession: dict[str, dict[str, Any]] = {}
+) -> tuple[
+    dict[tuple[str, str], dict[str, Any]],
+    set[str],
+    dict[str, set[str]],
+]:
+    """Index Form 4 publication metadata by accession + SEC entity context.
+
+    A Section-16 filing can legitimately appear in submissions histories for more than
+    one participating SEC entity. Therefore accession number alone is insufficient to
+    infer the issuer. The official Insider Transactions SUBMISSION.ISSUERCIK is used
+    later to choose the matching issuer context. Conflicts within the same
+    (accession, CIK) context still fail closed.
+    """
+    by_accession_and_cik: dict[tuple[str, str], dict[str, Any]] = {}
+    context_ciks_by_accession: dict[str, set[str]] = defaultdict(set)
     verified_ciks: set[str] = set()
     for company in manifest.get("companies") or []:
         if not isinstance(company, Mapping):
@@ -131,7 +144,7 @@ def _acceptance_index(
                 continue
             payload = {
                 "symbol": symbol,
-                "issuer_cik": cik,
+                "sec_context_cik": cik,
                 "form": str(row.get("form") or "").upper(),
                 "filed_date": row.get("filed_date"),
                 "published_at": row.get("published_at"),
@@ -140,15 +153,18 @@ def _acceptance_index(
                 "primary_document": row.get("primary_document"),
                 "reason_codes": list(row.get("reason_codes") or []),
             }
-            existing = by_accession.get(accession)
+            key = (accession, cik)
+            existing = by_accession_and_cik.get(key)
             if existing is not None and existing != payload:
                 raise SecInsiderBulkError(
-                    f"conflicting SEC bundle metadata for accession {accession}"
+                    "conflicting SEC bundle metadata within accession/CIK context "
+                    f"{accession} / {cik}"
                 )
-            by_accession[accession] = payload
-    if not by_accession:
+            by_accession_and_cik[key] = payload
+            context_ciks_by_accession[accession].add(cik)
+    if not by_accession_and_cik:
         raise SecInsiderBulkError("verified SEC bundle contains no Form 4/4-A accessions")
-    return by_accession, verified_ciks
+    return by_accession_and_cik, verified_ciks, dict(context_ciks_by_accession)
 
 
 def _find_member(zf: zipfile.ZipFile, stem: str) -> str:
@@ -233,7 +249,9 @@ def import_sec_insider_quarter(
         raise SecInsiderBulkError("quarter_label is required")
 
     manifest, bundle_manifest_sha = _load_sec_bundle(sec_bulk_bundle_dir)
-    acceptance, verified_ciks = _acceptance_index(sec_bulk_bundle_dir, manifest)
+    acceptance, verified_ciks, accession_context_ciks = _acceptance_index(
+        sec_bulk_bundle_dir, manifest
+    )
     zip_sha = _sha256_file(insider_zip_path)
 
     with zipfile.ZipFile(insider_zip_path, "r") as zf:
@@ -296,7 +314,7 @@ def import_sec_insider_quarter(
     status_counts: Counter[str] = Counter()
     excluded_code_counts: Counter[str] = Counter()
     unmatched_accessions = 0
-    cik_conflicts = 0
+    issuer_context_mismatches = 0
 
     for accession, sub in submission_by_accession.items():
         document_type = str(sub.get("DOCUMENT_TYPE") or "").strip().upper()
@@ -310,15 +328,21 @@ def import_sec_insider_quarter(
         if issuer_cik not in verified_ciks:
             continue
 
-        filing_meta = acceptance.get(accession)
+        filing_meta = acceptance.get((accession, issuer_cik))
         if filing_meta is None:
-            unmatched_accessions += 1
-            status_counts["UNKNOWN_ACCESSION_NOT_IN_SEC_BUNDLE"] += 1
+            if accession in accession_context_ciks:
+                issuer_context_mismatches += 1
+                status_counts[
+                    "UNKNOWN_ACCESSION_PRESENT_ONLY_IN_OTHER_SEC_CONTEXTS"
+                ] += 1
+            else:
+                unmatched_accessions += 1
+                status_counts["UNKNOWN_ACCESSION_NOT_IN_SEC_BUNDLE"] += 1
             continue
-        if filing_meta["issuer_cik"] != issuer_cik:
-            cik_conflicts += 1
-            status_counts["CONFLICTING_ISSUER_CIK"] += 1
-            continue
+        if filing_meta["sec_context_cik"] != issuer_cik:
+            raise SecInsiderBulkError(
+                "internal accession/issuer-CIK acceptance index mismatch"
+            )
         if filing_meta["form"] != document_type:
             status_counts["CONFLICTING_FORM_TYPE"] += 1
             continue
@@ -450,7 +474,8 @@ def import_sec_insider_quarter(
         },
         "sec_bulk_manifest_sha256": bundle_manifest_sha,
         "source_semantics": (
-            "AS_FILED_FLAT_EXTRACTION_JOINED_TO_EXACT_ACCESSION_ACCEPTANCE_METADATA"
+            "AS_FILED_FLAT_EXTRACTION_JOINED_TO_EXACT_ACCESSION_PLUS_ISSUER_CIK_"
+            "ACCEPTANCE_METADATA"
         ),
         "counts": {
             "submission_rows": len(submissions),
@@ -460,7 +485,8 @@ def import_sec_insider_quarter(
             "p_s_evidence_row_count": len(evidence_rows),
             "high_precision_discretionary_candidate_count": discretionary_count,
             "unmatched_verified_accession_count": unmatched_accessions,
-            "issuer_cik_conflict_count": cik_conflicts,
+            "issuer_context_mismatch_count": issuer_context_mismatches,
+            "issuer_cik_conflict_count": issuer_context_mismatches,
         },
         "candidate_status_counts": dict(sorted(status_counts.items())),
         "excluded_transaction_code_counts": dict(sorted(excluded_code_counts.items())),
@@ -468,6 +494,8 @@ def import_sec_insider_quarter(
         "guards": {
             "exact_accession_join_required": True,
             "exact_issuer_cik_join_required": True,
+            "acceptance_index_key_includes_issuer_cik": True,
+            "cross_entity_accession_contexts_allowed": True,
             "current_ticker_used_as_historical_identity": False,
             "forms_restricted_to_4_and_4_a": True,
             "nonderivative_transactions_only": True,
