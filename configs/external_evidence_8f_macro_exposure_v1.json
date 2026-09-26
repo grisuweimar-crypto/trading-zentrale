@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8f_macro_exposure_v1",
   "phase": "8F_macro_exposure_context",
-  "status": "8F_A1_A2_FOUNDATION_OUTCOME_BLIND_SOURCE_BLOCKED",
+  "status": "8F_SOURCE_ADAPTER_BUILD_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -16,23 +16,25 @@
     "latest_revision_may_replace_original_vintage_in_history": false
   },
   "source_contract": {
-    "enabled_source_ids": [],
-    "pit_reference_candidate_id": "fred_alfred_realtime",
-    "provider": "Federal Reserve Bank of St. Louis FRED/ALFRED",
-    "source_registry": "configs/external_source_registry_v1.json",
-    "candidate_status": "LICENSE_BLOCKED_CURRENT_TERMS_FOR_SCANNER_SYSTEM_USE",
-    "api_key_required_for_live_api": true,
+    "source_routing_config": "configs/external_evidence_8f_source_candidates_v1.json",
+    "market_proxy_config": "configs/external_evidence_8f_market_proxies_v1.json",
+    "adapter_source_ids": [
+      "bls_cpi_archived_releases",
+      "eia_open_data_energy"
+    ],
+    "blocked_source_ids": [
+      "fred_alfred_realtime"
+    ],
+    "fred_alfred_status": "BLOCKED_CURRENT_TERMS",
     "ci_live_network_access": false,
-    "live_collection_enabled": false,
-    "persistent_storage_enabled": false,
-    "source_license_gate": "BLOCKED_UNTIL_EXPLICIT_PERMISSION_OR_ALTERNATIVE_SOURCE",
+    "production_live_collection_enabled": false,
+    "persistent_production_storage_enabled": false,
     "source_terms_checked_at": "2026-09-26",
-    "source_terms_url": "https://fred.stlouisfed.org/legal/terms/",
     "source_notes": [
-      "ALFRED real-time periods/vintage dates are technically suitable for reconstructing what values were known on historical calendar dates.",
-      "The current FRED terms prohibit FRED API access in connection with software-program/system development and prohibit API use for storing, caching or archiving FRED content.",
-      "Therefore FRED/ALFRED is retained only as a PIT-semantics reference candidate and is not enabled as a Scanner_vNext ingestion source absent explicit permission or changed terms.",
-      "Third-party series can carry additional copyright restrictions even if source-level use later becomes cleared."
+      "FRED/ALFRED is retained only as a conceptual vintage-semantics reference and is not an enabled ingestion source under the currently reviewed terms.",
+      "BLS archived CPI releases may establish exact historical publication availability when the archived release itself states the embargo/release timestamp.",
+      "EIA current-history/API snapshots may contain later corrections, so historical rows from a snapshot are not retrojected; strict PIT begins at actual ingestion unless separate archive proof exists.",
+      "Market proxies for uranium and lithium remain separate challenger evidence and may not be relabeled as underlying commodity spot prices."
     ]
   },
   "macro_vintage_contract": {
@@ -51,71 +53,112 @@
       "status",
       "ingested_at",
       "valid_from",
-      "historical_vintage_independently_proven"
+      "historical_vintage_independently_proven",
+      "historical_publication_time_independently_proven",
+      "published_at",
+      "availability_proof_type"
     ],
-    "historical_vintage_source": "INDEPENDENT_ARCHIVE_OR_SOURCE_WITH_DATE_LEVEL_VINTAGE_PROOF",
+    "historical_vintage_source": "INDEPENDENT_ARCHIVE_OR_SOURCE_WITH_DATE_LEVEL_OR_EXACT_TIMESTAMP_PROOF",
     "day_level_historical_vintage_valid_from": "NEXT_UTC_DAY",
+    "exact_timestamp_historical_vintage_valid_from": "PROVEN_PUBLISHED_AT",
     "prospective_unproven_valid_from": "ACTUAL_INGESTED_AT_OR_LATER",
     "later_revision_overwrites_original": false,
     "revision_identity_required": true,
     "date_only_intraday_backdating_forbidden": true,
     "unknown_may_default_to_neutral": false
   },
+  "series_catalog": [
+    {
+      "series_id": "BLS_CPI_U_ALL_ITEMS_MOM_SA_RELEASE_PCT",
+      "factor_id": "inflation",
+      "source_id": "bls_cpi_archived_releases",
+      "availability_mode": "HISTORICAL_EXACT_RELEASE_TIMESTAMP",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "BLS_CPI_U_ALL_ITEMS_YOY_NSA_RELEASE_PCT",
+      "factor_id": "inflation",
+      "source_id": "bls_cpi_archived_releases",
+      "availability_mode": "HISTORICAL_EXACT_RELEASE_TIMESTAMP",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "PET.RWTC.D",
+      "factor_id": "oil",
+      "source_id": "eia_open_data_energy",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "PET.RBRTE.D",
+      "factor_id": "oil",
+      "source_id": "eia_open_data_energy",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "NG.RNGWHHD.D",
+      "factor_id": "gas",
+      "source_id": "eia_open_data_energy",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    }
+  ],
   "factor_catalog": [
     {
       "factor_id": "rates_policy",
       "category": "rates",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "SOURCE_ROUTED_ADAPTER_PENDING"
     },
     {
       "factor_id": "yield_curve",
       "category": "rates",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "SOURCE_ROUTED_ADAPTER_PENDING"
     },
     {
       "factor_id": "inflation",
       "category": "inflation",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "BLS_ARCHIVE_ADAPTER_IMPLEMENTED"
     },
     {
       "factor_id": "fx",
       "category": "fx",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "SOURCE_ROUTED_ADAPTER_PENDING"
     },
     {
       "factor_id": "oil",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "EIA_PROSPECTIVE_ADAPTER_IMPLEMENTED"
     },
     {
       "factor_id": "gas",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "EIA_PROSPECTIVE_ADAPTER_IMPLEMENTED"
     },
     {
       "factor_id": "gold",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "SOURCE_ROUTED_ARCHIVE_VALIDATION_PENDING"
     },
     {
       "factor_id": "silver",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "SOURCE_ROUTED_ARCHIVE_VALIDATION_PENDING"
     },
     {
       "factor_id": "uranium",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "MARKET_PROXY_CHALLENGERS_REGISTERED"
     },
     {
       "factor_id": "copper",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "SOURCE_ROUTED_ARCHIVE_VALIDATION_PENDING"
     },
     {
       "factor_id": "lithium",
       "category": "commodities",
-      "status": "SOURCE_SELECTION_PENDING_NO_CLEARED_SOURCE"
+      "status": "MARKET_PROXY_CHALLENGERS_REGISTERED"
     }
   ],
   "context_semantics": {
@@ -128,11 +171,11 @@
     "decision_policy_enabled": false
   },
   "next_gates": [
-    "8F_A3_ALTERNATIVE_SOURCE_OR_EXPLICIT_PERMISSION_REVIEW",
-    "8F_A4_SERIES_SELECTION_AND_SERIES_LEVEL_LICENSE_REVIEW",
+    "8F_A4_SERIES_LEVEL_SOURCE_AND_RIGHTS_VALIDATION",
     "8F_B_VERSIONED_EXPOSURE_MAPPING_POPULATION",
     "8F_C_REAL_PIT_MACRO_INGESTION",
     "8F_D_COVERAGE_AND_CONTEXT_AUDIT",
+    "8F_FREEZE",
     "8G_INCREMENTAL_OUTCOME_RESEARCH_ONLY_AFTER_8F_FREEZE"
   ]
 }
