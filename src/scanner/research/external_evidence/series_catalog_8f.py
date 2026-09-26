@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from scanner.research.external_evidence.bls_cpi_8f import SERIES_MOM_SA, SERIES_YOY_NSA
-from scanner.research.external_evidence.eia_energy_8f import SERIES_SPECS
+from scanner.research.external_evidence.ecb_fx_8f import SERIES_ID as ECB_FX_SERIES_ID
+from scanner.research.external_evidence.eia_energy_8f import SERIES_SPECS as EIA_SERIES_SPECS
+from scanner.research.external_evidence.fed_h15_8f import SERIES_SPECS as FED_H15_SERIES_SPECS
 
 
 class SeriesCatalog8FError(ValueError):
@@ -60,15 +62,18 @@ def validate_series_catalog(
         if status == "ADAPTER_IMPLEMENTED":
             implemented_sources.add(source_id)
 
-    required_bls = {SERIES_MOM_SA, SERIES_YOY_NSA}
-    missing_bls = required_bls - seen
-    if missing_bls:
-        raise SeriesCatalog8FError(f"implemented BLS adapter series missing from catalog: {sorted(missing_bls)}")
-
-    required_eia = set(SERIES_SPECS)
-    missing_eia = required_eia - seen
-    if missing_eia:
-        raise SeriesCatalog8FError(f"implemented EIA adapter series missing from catalog: {sorted(missing_eia)}")
+    required_groups = {
+        "BLS": {SERIES_MOM_SA, SERIES_YOY_NSA},
+        "EIA": set(EIA_SERIES_SPECS),
+        "FED_H15": set(FED_H15_SERIES_SPECS),
+        "ECB_FX": {ECB_FX_SERIES_ID},
+    }
+    for label, required in required_groups.items():
+        missing = required - seen
+        if missing:
+            raise SeriesCatalog8FError(
+                f"implemented {label} adapter series missing from catalog: {sorted(missing)}"
+            )
 
     declared_adapter_sources = set(macro_config.get("source_contract", {}).get("adapter_source_ids") or [])
     if declared_adapter_sources != implemented_sources:
