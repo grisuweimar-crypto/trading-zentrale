@@ -72,6 +72,7 @@ def test_empty_review_decisions_do_not_modify_exposure_map():
     )
     assert result["status"] == "AWAITING_HUMAN_REVIEW"
     assert result["approved_count"] == 0
+    assert result["already_applied_count"] == 0
     assert result["exposure_map"]["mappings"] == []
 
 
@@ -84,6 +85,21 @@ def test_committed_b1_review_contains_ten_explicit_human_approvals():
     assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
 
 
+def test_committed_b1_review_replay_is_idempotent():
+    candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_v1.json")
+    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    result = apply_human_mapping_review(
+        candidate_config=candidates,
+        review_config=review,
+        exposure_map=exposure,
+    )
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
+    assert result["approved_count"] == 0
+    assert result["already_applied_count"] == 10
+    assert len(result["exposure_map"]["mappings"]) == 10
+
+
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
     exposure = _empty_exposure()
@@ -94,6 +110,7 @@ def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time
     )
     assert result["status"] == "HUMAN_REVIEW_APPLIED"
     assert result["approved_count"] == 1
+    assert result["already_applied_count"] == 0
     mapping = result["exposure_map"]["mappings"][0]
     assert mapping["mapping_id"] == "MAP:CVX:oil:1"
     assert mapping["human_reviewed"] is True
@@ -130,6 +147,7 @@ def test_reject_and_defer_never_promote():
         exposure_map=exposure,
     )
     assert result["approved_count"] == 0
+    assert result["already_applied_count"] == 0
     assert result["rejected_count"] == 1
     assert result["deferred_count"] == 1
     assert result["exposure_map"]["mappings"] == []
