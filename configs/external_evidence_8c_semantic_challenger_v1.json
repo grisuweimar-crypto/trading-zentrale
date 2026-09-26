@@ -12,7 +12,8 @@
       "semantic_event": "DIVIDEND_DECLARATION_OBSERVATION",
       "scope": "EXPLICIT_REGULAR_QUARTERLY_DIVIDEND_AMOUNT_PER_SHARE_ONLY",
       "special_dividend_allowed": false,
-      "comparison_requires_explicit_currency": true
+      "comparison_requires_explicit_currency": true,
+      "comparison_requires_explicit_security_class": true
     },
     "BUYBACK": {
       "enabled": true,
@@ -55,6 +56,7 @@
   "hard_boundaries": {
     "candidate_is_production_evidence": false,
     "bare_dollar_is_assumed_usd": false,
+    "unknown_security_class_is_comparison_eligible": false,
     "dividend_amount_implies_increase_or_cut": false,
     "buyback_authorization_implies_positive_direction": false,
     "historical_context_statement_may_be_promoted_without_explicit_action_verb": false,
