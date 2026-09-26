@@ -7,10 +7,13 @@ on:
       - "src/scanner/research/external_evidence/filing_documents.py"
       - "src/scanner/research/external_evidence/sec_identity_bootstrap.py"
       - "src/scanner/research/external_evidence/sec_snapshot.py"
+      - "src/scanner/research/external_evidence/bulk_content_completion.py"
       - "scripts/collect_external_evidence_8c_sec_snapshot.py"
+      - "scripts/collect_external_evidence_8c_bulk_content.py"
       - "tests/test_external_evidence_8c_filing_documents.py"
       - "tests/test_external_evidence_8c_sec_identity_bootstrap.py"
       - "tests/test_external_evidence_8c_sec_snapshot.py"
+      - "tests/test_external_evidence_8c_bulk_content_completion.py"
       - "docs/external_evidence_8c_f_content_acquisition.md"
       - ".github/workflows/external_evidence_8c_f_content_acquisition.yml"
   workflow_dispatch:
@@ -36,7 +39,10 @@ jobs:
           tests/test_external_evidence_8c_filing_documents.py
           tests/test_external_evidence_8c_sec_identity_bootstrap.py
           tests/test_external_evidence_8c_sec_snapshot.py
-      - name: Verify collector CLI only
-        run: python scripts/collect_external_evidence_8c_sec_snapshot.py --help
+          tests/test_external_evidence_8c_bulk_content_completion.py
+      - name: Verify collector CLIs only
+        run: >-
+          python scripts/collect_external_evidence_8c_sec_snapshot.py --help &&
+          python scripts/collect_external_evidence_8c_bulk_content.py --help
 
 # No live SEC calls are permitted on GitHub-hosted Actions.
