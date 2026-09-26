@@ -6,6 +6,7 @@ on:
       - "configs/external_evidence_8d_positioning_crowding_v1.json"
       - "configs/external_evidence_8d_insider_validation_v1.json"
       - "configs/external_evidence_8d_insider_features_v1.json"
+      - "configs/external_evidence_8d_insider_identity_v1.json"
       - "src/scanner/research/external_evidence/finra_short_interest.py"
       - "src/scanner/research/external_evidence/finra_short_interest_acquisition.py"
       - "src/scanner/research/external_evidence/finra_short_interest_coverage.py"
@@ -14,6 +15,8 @@ on:
       - "src/scanner/research/external_evidence/sec_insider_raw_audit.py"
       - "src/scanner/research/external_evidence/sec_insider_b3_finalize.py"
       - "src/scanner/research/external_evidence/sec_insider_features.py"
+      - "src/scanner/research/external_evidence/sec_insider_identity.py"
+      - "src/scanner/research/external_evidence/sec_insider_identity_grid.py"
       - "scripts/import_external_evidence_8d_finra_short_interest.py"
       - "scripts/collect_external_evidence_8d_finra_short_interest.py"
       - "scripts/run_external_evidence_8d_finra_coverage.py"
@@ -23,7 +26,9 @@ on:
       - "scripts/export_external_evidence_8d_b3_raw_audit.py"
       - "scripts/finalize_external_evidence_8d_b3_audit.py"
       - "scripts/run_external_evidence_8d_insider_features.py"
+      - "scripts/run_external_evidence_8d_insider_identity.py"
       - "docs/external_evidence_8d_positioning_crowding.md"
+      - "docs/external_evidence_8d_b3_b4_status.md"
       - "tests/test_external_evidence_8d_positioning_contract.py"
       - "tests/test_external_evidence_8d_finra_short_interest.py"
       - "tests/test_external_evidence_8d_finra_coverage.py"
@@ -33,6 +38,8 @@ on:
       - "tests/test_external_evidence_8d_insider_raw_audit.py"
       - "tests/test_external_evidence_8d_b3_finalize.py"
       - "tests/test_external_evidence_8d_insider_features.py"
+      - "tests/test_external_evidence_8d_insider_identity.py"
+      - "tests/test_external_evidence_8d_insider_identity_grid.py"
       - ".github/workflows/external_evidence_8d_positioning.yml"
   workflow_dispatch:
 
@@ -63,6 +70,8 @@ jobs:
           tests/test_external_evidence_8d_insider_raw_audit.py
           tests/test_external_evidence_8d_b3_finalize.py
           tests/test_external_evidence_8d_insider_features.py
+          tests/test_external_evidence_8d_insider_identity.py
+          tests/test_external_evidence_8d_insider_identity_grid.py
       - name: Verify Phase 8D CLIs
         run: |
           python scripts/import_external_evidence_8d_finra_short_interest.py --help
@@ -74,6 +83,7 @@ jobs:
           python scripts/export_external_evidence_8d_b3_raw_audit.py --help
           python scripts/finalize_external_evidence_8d_b3_audit.py --help
           python scripts/run_external_evidence_8d_insider_features.py --help
+          python scripts/run_external_evidence_8d_insider_identity.py --help
 
 # CI intentionally performs no live FINRA or SEC requests.
 # Real FINRA snapshots are collected prospectively outside CI.
@@ -84,3 +94,6 @@ jobs:
 # are then verified mechanically against raw SEC rows and raw submissions acceptance metadata.
 # B4 is descriptive and outcome-blind; 30d is primary, 90d robustness-only, and numeric
 # share/value aggregates remain challenger-only after the two isolated B3 numeric mismatches.
+# B5 implements the mandatory 8A as-of-universe order for the insider family: internal scanner
+# history defines observability, only prior PIT SEC symbol/CIK evidence may resolve identity,
+# and UNKNOWN/AMBIGUOUS identities are excluded from the B4 feature grid rather than imputed.
