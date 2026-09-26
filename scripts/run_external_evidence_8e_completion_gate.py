@@ -15,6 +15,7 @@ DEFAULT_STRUCTURED = ROOT / "configs" / "external_evidence_8e_structured_events_
 DEFAULT_FDA = ROOT / "configs" / "external_evidence_8e_fda_approval_v1.json"
 DEFAULT_DOJ = ROOT / "configs" / "external_evidence_8e_doj_antitrust_rss_v1.json"
 DEFAULT_NEWS = ROOT / "configs" / "external_evidence_8e_news_discovery_v1.json"
+DEFAULT_PRIMARY = ROOT / "configs" / "external_evidence_8e_primary_release_v1.json"
 DEFAULT_OUTPUT = ROOT / "artifacts" / "research" / "external_evidence_8e_completion.json"
 
 
@@ -24,6 +25,7 @@ def main() -> int:
     parser.add_argument("--fda-config", default=str(DEFAULT_FDA))
     parser.add_argument("--doj-config", default=str(DEFAULT_DOJ))
     parser.add_argument("--news-config", default=str(DEFAULT_NEWS))
+    parser.add_argument("--primary-release-config", default=str(DEFAULT_PRIMARY))
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     args = parser.parse_args()
 
@@ -32,6 +34,7 @@ def main() -> int:
         fda_config_path=Path(args.fda_config),
         doj_config_path=Path(args.doj_config),
         news_config_path=Path(args.news_config),
+        primary_release_config_path=Path(args.primary_release_config),
     )
     write_completion_result(result, Path(args.output))
     print(json.dumps(result, indent=2, sort_keys=True))
