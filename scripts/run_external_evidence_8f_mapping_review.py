@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
 from scanner.research.external_evidence.exposure_mapping_review_8f import apply_human_mapping_review
 
 
@@ -11,10 +12,17 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CANDIDATES = ROOT / "configs/external_evidence_8f_mapping_candidates_v1.json"
 DEFAULT_REVIEW = ROOT / "configs/external_evidence_8f_mapping_review_decisions_v1.json"
 DEFAULT_EXPOSURE = ROOT / "configs/external_evidence_8f_exposure_map_v1.json"
+DEFAULT_OVERLAY_REGISTRY = ROOT / "configs/external_evidence_8f_exposure_overlays_v1.json"
 
 
 def _load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _load_exposure(path: Path, overlay_registry: Path) -> dict:
+    if path.resolve() == DEFAULT_EXPOSURE.resolve():
+        return load_effective_exposure_map(root=ROOT, registry_path=overlay_registry)
+    return _load(path)
 
 
 def main() -> int:
@@ -22,6 +30,7 @@ def main() -> int:
     parser.add_argument("--candidates", type=Path, default=DEFAULT_CANDIDATES)
     parser.add_argument("--review", type=Path, default=DEFAULT_REVIEW)
     parser.add_argument("--exposure-map", type=Path, default=DEFAULT_EXPOSURE)
+    parser.add_argument("--overlay-registry", type=Path, default=DEFAULT_OVERLAY_REGISTRY)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--write-exposure-map", action="store_true")
     args = parser.parse_args()
@@ -29,7 +38,7 @@ def main() -> int:
     result = apply_human_mapping_review(
         candidate_config=_load(args.candidates),
         review_config=_load(args.review),
-        exposure_map=_load(args.exposure_map),
+        exposure_map=_load_exposure(args.exposure_map, args.overlay_registry),
     )
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
