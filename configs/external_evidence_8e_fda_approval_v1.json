@@ -11,12 +11,8 @@
   "coverage_note": "Drugs@FDA contains most human drug products approved since 1939; document availability is stronger for approvals since 1998.",
   "event_type": "REGULATORY_APPROVAL",
   "event_state": "APPROVED",
-  "approval_action_descriptions_exact": [
-    "Approval"
-  ],
-  "explicitly_not_approval_actions": [
-    "Tentative Approval"
-  ],
+  "approval_action_descriptions_exact": ["Approval"],
+  "explicitly_not_approval_actions": ["Tentative Approval"],
   "identity_contract": {
     "subject_id": "FDA_APPLICATION:<ApplNo>",
     "source_event_id": "<ApplNo>:<SubmissionType>:<SubmissionNo>",
@@ -30,11 +26,12 @@
     "submission_status_date_is_publication_time": false,
     "current_bulk_snapshot_may_reconstruct_historical_first_public_release": false,
     "historical_first_public_release_status": "UNRESOLVED_WITH_DRUGSATFDA_BULK_ALONE",
-    "published_at_without_independent_publication_proof": null,
-    "public_release_proof_status_without_independent_proof": "INGESTION_ONLY",
-    "valid_from_without_independent_publication_proof": "INGESTED_AT",
+    "conservative_public_release_time_without_historical_proof": "ACTUAL_INGESTED_AT",
+    "public_release_proof_status_without_historical_proof": "PROVEN_AT_INGESTION",
+    "valid_from_without_independent_historical_proof": "INGESTED_AT",
     "strict_pit_eligible_from_actual_ingestion_forward": true,
-    "later_snapshot_may_backdate_knowledge": false
+    "later_snapshot_may_backdate_knowledge": false,
+    "fda_action_date_may_backdate_knowledge": false
   },
   "required_bulk_tables_by_columns": {
     "applications": ["ApplNo", "SponsorName"],
