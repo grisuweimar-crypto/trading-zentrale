@@ -1,6 +1,6 @@
 {
   "schema_version": "external_evidence_8e_primary_release_v1",
-  "phase": "8E_B3_primary_release_adapter",
+  "phase": "8E_B5_primary_release_challenger",
   "status": "PROSPECTIVE_STRUCTURED_RELEASE_ADAPTER_OUTCOME_BLIND",
   "providers": {
     "FTC_COMPETITION": {
@@ -38,7 +38,8 @@
   },
   "pit_contract": {
     "prospective_observation_is_strict_pit_from_ingested_at": true,
-    "conservative_published_at_without_historical_proof": "INGESTED_AT",
+    "published_at_without_independent_historical_proof": null,
+    "valid_from_without_independent_historical_proof": "INGESTED_AT",
     "source_claimed_published_at_preserved_separately": true,
     "historical_backdating_requires_independent_proof": true,
     "historical_backdating_requires_archival_proof_sha256": true,
