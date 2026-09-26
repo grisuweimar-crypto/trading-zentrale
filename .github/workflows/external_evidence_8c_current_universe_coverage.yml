@@ -1,0 +1,44 @@
+name: Phase 8C-C Current Universe SEC Coverage
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8c_current_universe_coverage_v1.json"
+      - "src/scanner/research/external_evidence/universe_coverage.py"
+      - "src/scanner/research/external_evidence/sec_snapshot.py"
+      - "scripts/collect_external_evidence_8c_sec_snapshot.py"
+      - "scripts/run_external_evidence_8c_universe_coverage.py"
+      - "tests/test_external_evidence_8c_universe_coverage.py"
+      - "tests/test_external_evidence_8c_sec_snapshot.py"
+      - ".github/workflows/external_evidence_8c_current_universe_coverage.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run universe coverage and snapshot guards
+        run: >-
+          python -m pytest -q
+          tests/test_external_evidence_8c_universe_coverage.py
+          tests/test_external_evidence_8c_sec_snapshot.py
+      - name: Verify coverage runner is offline-only
+        run: python scripts/run_external_evidence_8c_universe_coverage.py --self-test
+      - name: Verify official SEC collector CLI
+        run: python scripts/collect_external_evidence_8c_sec_snapshot.py --help
+
+# Deliberately no live SEC job here.
+# SEC returned HTTP 403 from GitHub-hosted runners during Phase 8C-C3 validation.
+# Official SEC data are collected outside hosted Actions into a hashed snapshot bundle;
+# CI validates code and bundle integrity, while coverage consumes the frozen snapshot.
