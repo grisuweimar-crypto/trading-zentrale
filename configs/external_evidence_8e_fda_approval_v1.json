@@ -1,0 +1,60 @@
+{
+  "schema_version": "external_evidence_8e_fda_approval_v1",
+  "phase": "8E_B2_fda_regulatory_approval",
+  "status": "AUTHORITATIVE_STATE_ADAPTER_PROSPECTIVE_PIT_FROM_INGESTION",
+  "source_id": "fda_drugsatfda_bulk",
+  "provider": "U.S. Food and Drug Administration",
+  "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+  "official_source_url": "https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files",
+  "dataset": "Drugs@FDA data files",
+  "update_cadence": "WEEKDAYS_DAILY",
+  "coverage_note": "Drugs@FDA contains most human drug products approved since 1939; document availability is stronger for approvals since 1998.",
+  "event_type": "REGULATORY_APPROVAL",
+  "event_state": "APPROVED",
+  "approval_action_descriptions_exact": [
+    "Approval"
+  ],
+  "explicitly_not_approval_actions": [
+    "Tentative Approval"
+  ],
+  "identity_contract": {
+    "subject_id": "FDA_APPLICATION:<ApplNo>",
+    "source_event_id": "<ApplNo>:<SubmissionType>:<SubmissionNo>",
+    "canonical_event_key": "FDA:REGULATORY_APPROVAL:<ApplNo>:<SubmissionType>:<SubmissionNo>",
+    "sponsor_name_may_be_mapped_to_ticker": false,
+    "company_name_fuzzy_mapping_enabled": false,
+    "security_identity_resolution_deferred": true
+  },
+  "pit_contract": {
+    "submission_status_date_is_event_or_action_date": true,
+    "submission_status_date_is_publication_time": false,
+    "current_bulk_snapshot_may_reconstruct_historical_first_public_release": false,
+    "historical_first_public_release_status": "UNRESOLVED_WITH_DRUGSATFDA_BULK_ALONE",
+    "published_at_without_independent_publication_proof": null,
+    "public_release_proof_status_without_independent_proof": "INGESTION_ONLY",
+    "valid_from_without_independent_publication_proof": "INGESTED_AT",
+    "strict_pit_eligible_from_actual_ingestion_forward": true,
+    "later_snapshot_may_backdate_knowledge": false
+  },
+  "required_bulk_tables_by_columns": {
+    "applications": ["ApplNo", "SponsorName"],
+    "submissions": ["ApplNo", "SubmissionType", "SubmissionNo", "SubmissionStatus", "SubmissionStatusDate"],
+    "action_types": ["ActionTypes_LookupID", "ActionTypes_LookupDescription"],
+    "submission_action_join": ["ApplNo", "SubmissionType", "SubmissionNo", "ActionTypes_LookupID"]
+  },
+  "provenance": {
+    "source_zip_sha256_required": true,
+    "source_member_sha256_required": true,
+    "normalized_evidence_sha256_required": true,
+    "ingested_at_required_timezone_aware": true
+  },
+  "hard_boundaries": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "approval_is_predefined_bullish": false,
+    "tentative_approval_may_equal_approval": false,
+    "action_date_may_equal_first_public_release_without_proof": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}
