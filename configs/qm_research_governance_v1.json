@@ -6,7 +6,7 @@
     "branch_must_be_synchronized_with_then_current_main": true,
     "productive_scanner_or_decision_logic_may_change_in_foundation": false
   },
-  "purpose": "convert architecture review findings into explicit research-quality controls without rewriting frozen historical evidence or current production semantics",
+  "purpose": "convert architecture review findings into explicit machine-checkable research-quality controls without rewriting frozen historical evidence or current production semantics",
   "principles": {
     "engineering_completion_is_not_empirical_promotion": true,
     "missing_is_not_neutral": true,
@@ -15,107 +15,101 @@
     "point_in_time_and_available_from_are_mandatory": true,
     "no_retroactive_repair_of_missing_provenance": true,
     "no_super_score_shortcut": true,
-    "derived_transformation_does_not_create_independent_evidence_by_default": true,
-    "negative_controls_must_not_touch_canonical_artifacts": true
+    "governance_rules_must_not_remain_purely_self_reported_when_machine_enforcement_is_possible": true,
+    "qm_methods_must_not_be_selected_after_results_for_favorable_outcomes": true
   },
   "workstreams": [
-    {
-      "id": "QM-A",
-      "name": "research_governance_and_evidence_consumption",
-      "goal": "bind human and automated research decisions to an auditable spent/unspent protocol"
-    },
-    {
-      "id": "QM-B",
-      "name": "as_of_universe_coverage_and_survivorship",
-      "goal": "record point_in_time eligibility, inclusion, exclusion and data availability"
-    },
-    {
-      "id": "QM-C",
-      "name": "hypothesis_registry_and_global_multiplicity",
-      "goal": "register hypothesis families before confirmatory outcome inspection and control family-level multiplicity"
-    },
-    {
-      "id": "QM-D",
-      "name": "dependence_effective_n_and_robustness",
-      "goal": "report date, symbol, sector and horizon dependence rather than relying on raw event counts"
-    },
-    {
-      "id": "QM-E",
-      "name": "probability_calibration_audit",
-      "goal": "separate robust directional advantage from actual probability calibration quality"
-    },
-    {
-      "id": "QM-F",
-      "name": "decision_layer_incremental_ablation",
-      "goal": "measure incremental value of later decision layers without changing frozen Phase7I conclusions"
-    },
-    {
-      "id": "QM-G",
-      "name": "elliott_challenger_registry",
-      "goal": "register soft Elliott challengers without changing frozen hard rules or structural count semantics"
-    },
-    {
-      "id": "QM-H",
-      "name": "defect_near_miss_and_capa_management",
-      "goal": "record errors, near misses, inconsistencies and deviations through containment, root-cause analysis, corrective action, prevention and verification"
-    },
-    {
-      "id": "QM-I",
-      "name": "evidence_lineage_and_double_counting_audit",
-      "goal": "make information ancestry machine-readable and detect hidden reuse of common raw information as apparently independent evidence"
-    },
-    {
-      "id": "QM-J",
-      "name": "negative_controls_and_falsification",
-      "goal": "challenge the research pipeline with pre-registered controls that should not contain genuine predictive information"
-    }
+    {"id": "QM-A", "name": "research_governance_and_evidence_consumption", "goal": "bind human and automated research decisions to an auditable state-transition and spent/unspent protocol"},
+    {"id": "QM-B", "name": "as_of_universe_coverage_survivorship_and_investability", "goal": "record point_in_time eligibility, instrument identity, inclusion, exclusion, tradability and data/outcome availability"},
+    {"id": "QM-C", "name": "hypothesis_registry_global_multiplicity_and_analysis_plan", "goal": "freeze confirmatory analysis paths and control family-level, adaptive and sequential multiplicity"},
+    {"id": "QM-D", "name": "dependence_effective_n_and_robustness", "goal": "report temporal, cross_sectional, entity and group dependence rather than relying on raw event counts"},
+    {"id": "QM-E", "name": "probability_calibration_audit", "goal": "separate robust directional advantage from actual probability calibration quality"},
+    {"id": "QM-F", "name": "decision_layer_incremental_ablation", "goal": "measure incremental value of later decision layers under stateful policy evaluation without changing frozen Phase7I conclusions"},
+    {"id": "QM-G", "name": "elliott_challenger_registry", "goal": "register soft Elliott challengers without changing frozen hard rules or structural count semantics"},
+    {"id": "QM-H", "name": "defect_near_miss_and_capa", "goal": "record actual integrity incidents and near misses through containment, root-cause, correction, prevention and verified closure"},
+    {"id": "QM-I", "name": "evidence_lineage_and_double_counting", "goal": "trace material decision information to immutable ancestry and detect unsupported independence claims or hidden reuse"},
+    {"id": "QM-J", "name": "negative_controls_and_falsification", "goal": "challenge the research pipeline with pre-registered placebo controls that preserve relevant structure while removing genuine predictive information"}
   ],
+  "evidence_state_machine": {
+    "required": true,
+    "states": [
+      "DRAFT",
+      "EXPLORATORY",
+      "FROZEN_FOR_CONFIRMATION",
+      "CONFIRMATORY_EVALUATED",
+      "CONFIRMATORY_SPENT",
+      "REPLICATION_PENDING",
+      "PROSPECTIVE_SHADOW",
+      "PROMOTION_ELIGIBLE",
+      "PROMOTED",
+      "REJECTED",
+      "RETIRED",
+      "INVALIDATED"
+    ],
+    "in_place_state_rewrite_forbidden": true,
+    "state_transition_record_required": true,
+    "transition_requires_immutable_identity": true,
+    "forbidden_transition_must_fail_closed": true,
+    "evaluated_confirmatory_evidence_cannot_return_to_unspent": true,
+    "policy_or_hypothesis_change_after_outcome_inspection_requires_new_version": true
+  },
+  "immutable_analysis_identity": {
+    "required_for_confirmatory_and_promotion_states": true,
+    "required_fields": [
+      "hypothesis_version_hash",
+      "analysis_plan_hash",
+      "code_or_commit_hash",
+      "config_hash",
+      "dataset_snapshot_hash",
+      "universe_ledger_version",
+      "instrument_master_version",
+      "label_definition_hash",
+      "benchmark_definition_hash",
+      "environment_or_dependency_fingerprint",
+      "evaluation_cohort_id",
+      "temporal_boundary"
+    ],
+    "mutable_aliases_may_not_substitute_for_hashes": true
+  },
   "evidence_consumption": {
-    "preventive_qa_change": {
-      "definition": "change motivated by architecture, code, provenance, contract or methodology review without inspecting future outcome performance for the affected hypothesis",
-      "may_preserve_unspent_status": true,
-      "log_required": true
+    "change_classes": {
+      "MECHANICALLY_EQUIVALENT_REPAIR": "repair demonstrated not to change estimand, eligibility, labels, evidence population or decision rule for the affected frozen analysis",
+      "PREVENTIVE_QA_NEW_VERSION": "architecture, code, provenance or methodology improvement not motivated by future performance but not provably equivalent to the frozen analysis; requires a new version and new evidence boundary",
+      "OUTCOME_DRIVEN_RESEARCH_CHANGE": "change motivated by inspected future outcomes, realized performance or performance-revealing artifacts; inspected evidence becomes spent_for_design for the successor rule"
     },
-    "outcome_driven_research_change": {
-      "definition": "change motivated by inspected future outcome performance or downstream realized results",
-      "marks_inspected_evidence_spent_for_design": true,
-      "log_required": true,
-      "spent_evidence_may_not_confirm_redesigned_rule": true
-    },
+    "default_if_equivalence_uncertain": "PREVENTIVE_QA_NEW_VERSION",
+    "outcome_driven_change_marks_inspected_evidence_spent_for_design": true,
+    "spent_evidence_may_not_confirm_redesigned_rule": true,
+    "aggregate_or_indirect_performance_views_can_consume_evidence": true,
     "required_log_fields": [
       "inspection_id",
       "inspected_at",
-      "evidence_version_or_commit",
+      "actor_id",
+      "actor_role",
+      "access_mode",
+      "dataset_snapshot_id",
+      "label_version_id",
+      "universe_ledger_version_id",
+      "analysis_plan_version_id",
+      "artifact_hash",
+      "inspection_scope",
+      "outcome_visibility_level",
       "question",
-      "outcomes_visible",
+      "reason_for_access",
       "decision_taken",
-      "change_type",
+      "change_class",
       "spent_for_design",
       "affected_hypothesis_ids",
-      "code_or_config_version"
-    ]
-  },
-  "hypothesis_registry": {
-    "required": true,
-    "required_fields": [
-      "hypothesis_id",
-      "family_id",
-      "description",
-      "created_at",
-      "freeze_at",
-      "status",
-      "universe",
-      "horizon",
-      "target",
-      "feature_definition",
-      "multiplicity_family",
-      "discovery_or_confirmatory",
-      "evidence_status",
-      "source_or_rationale"
+      "code_or_config_version",
+      "evidence_effect",
+      "review_or_approval_reference"
     ],
-    "confirmatory_status_requires_pre_outcome_freeze": true,
-    "full_family_results_must_be_retained": true,
-    "manual_cherry_picking_forbidden": true
+    "access_modes": ["NONE", "RAW_ROWS", "AGGREGATE_METRIC", "CHART", "DASHBOARD", "EXPORTED_FILE", "GENERATED_REPORT", "API_QUERY", "TEST_OR_FAILURE_REPORT"],
+    "outcome_visibility_levels": ["NONE", "BLINDED", "AGGREGATE", "SUBGROUP", "ROW_LEVEL", "INDIRECT_PERFORMANCE_REVEAL"],
+    "registry_entry_mutation_in_place_forbidden": true,
+    "superseding_versions_required": true,
+    "review_roles_should_be_separated_when_practicable": true,
+    "same_actor_approval_must_be_explicitly_flagged_as_not_independent": true
   },
   "as_of_universe_ledger": {
     "required": true,
@@ -123,53 +117,163 @@
       "as_of",
       "symbol",
       "instrument_id",
+      "instrument_master_version",
       "eligible",
       "inclusion_reason",
       "exclusion_reason",
       "listing_status",
-      "exchange",
-      "currency",
+      "tradability_status",
+      "exchange_or_venue",
+      "currency_or_pair",
       "data_provider_coverage",
       "scanner_coverage",
       "price_coverage",
+      "outcome_coverage",
       "sector_or_domain_assignment_id",
-      "available_from"
+      "available_from",
+      "session_calendar_id"
     ],
     "current_membership_may_not_define_historical_membership": true,
+    "historical_universe_must_be_reconstructable_without_present_day_metadata": true,
     "delistings_and_suspensions_must_remain_observable_when_known": true,
-    "missing_target_is_distinct_from_missing_feature": true
+    "missing_target_is_distinct_from_missing_feature": true,
+    "ticker_reuse_and_symbol_changes_require_stable_instrument_mapping": true,
+    "corporate_action_knowledge_time_must_be_distinct_from_effective_date": true,
+    "provider_coverage_start_and_revision_history_should_be_recorded_when_available": true,
+    "historical_sector_or_domain_assignment_requires_effective_dated_provenance": true,
+    "status_states_must_distinguish": [
+      "NOT_LISTED",
+      "LISTED_NOT_TRADABLE",
+      "NOT_COVERED_BY_PROVIDER",
+      "COVERED_BUT_MISSING",
+      "INGESTION_FAILED",
+      "SUSPENDED_OR_HALTED",
+      "DELISTED",
+      "UNKNOWN"
+    ]
+  },
+  "outcome_availability_ledger": {
+    "required": true,
+    "goal": "prevent bad outcomes from disappearing through delisting, merger, suspension, migration or missing provider history",
+    "required_fields": [
+      "instrument_id",
+      "claim_or_event_id",
+      "target_horizon",
+      "expected_target_date_or_session",
+      "outcome_state",
+      "final_observed_price_or_value_if_available",
+      "delisting_or_termination_reason_if_known",
+      "censoring_reason_if_any",
+      "source_version",
+      "available_from"
+    ],
+    "known_delisting_is_not_generic_missing": true,
+    "censored_outcome_may_not_be_silently_dropped": true
+  },
+  "hypothesis_registry": {
+    "required": true,
+    "required_fields": [
+      "hypothesis_id",
+      "family_id",
+      "parent_hypothesis_or_research_question_id",
+      "description",
+      "created_at",
+      "freeze_at",
+      "status",
+      "universe_ledger_version",
+      "horizon",
+      "target_definition",
+      "feature_definition",
+      "event_generation_rule",
+      "inclusion_exclusion_rules",
+      "missing_data_policy",
+      "benchmark_definition",
+      "primary_estimand",
+      "primary_inference_method",
+      "resampling_or_block_parameters",
+      "primary_decision_metric",
+      "promotion_rule",
+      "planned_subgroups",
+      "planned_sensitivity_menu",
+      "sequential_monitoring_plan",
+      "multiplicity_family",
+      "multiplicity_control",
+      "discovery_or_confirmatory",
+      "evidence_status",
+      "source_or_rationale",
+      "analysis_plan_hash",
+      "code_config_data_hash_bundle"
+    ],
+    "confirmatory_status_requires_pre_outcome_freeze": true,
+    "full_family_results_must_be_retained": true,
+    "abandoned_and_negative_hypotheses_must_be_retained": true,
+    "manual_cherry_picking_forbidden": true,
+    "near_duplicate_successor_must_link_to_parent": true,
+    "adaptive_hypothesis_creation_requires_new_version_or_family_scope": true,
+    "sequential_looks_require_pre_registered_schedule_or_alpha_spending_or_equivalent_control": true,
+    "governance_method_menu_must_be_frozen_before_confirmatory_results": true
+  },
+  "research_derivation_graph": {
+    "required": true,
+    "canonical_path": ["RESEARCH_QUESTION", "FAMILY", "HYPOTHESIS", "VERSION", "ANALYSIS_PLAN", "EVALUATION_RUN", "EVIDENCE_ARTIFACT", "DECISION_OR_PROMOTION_OUTCOME"],
+    "superseding_version_must_preserve_parent_link": true
   },
   "dependence_and_robustness": {
     "raw_event_count_may_not_be_presented_as_independent_n": true,
-    "effective_n_or_dependence_diagnostic_required_for_confirmatory_claims": true,
-    "date_concentration_report_required": true,
-    "symbol_concentration_report_required": true,
-    "sector_or_domain_concentration_report_required_when_available": true,
-    "leave_one_sector_or_domain_out_sensitivity_required_when_sample_permits": true,
+    "single_scalar_effective_n_is_not_required_and_may_not_replace_diagnostics": true,
+    "dependence_axes": ["TEMPORAL", "CROSS_SECTIONAL_DATE", "ENTITY_SYMBOL", "GROUP_SECTOR_DOMAIN_OR_MARKET_FACTOR"],
+    "required_concentration_diagnostics": [
+      "n_events",
+      "n_unique_dates",
+      "n_unique_symbols",
+      "n_unique_sectors_or_domains_when_available",
+      "top_date_share",
+      "top_symbol_share",
+      "top_sector_or_domain_share",
+      "date_concentration_index",
+      "symbol_concentration_index"
+    ],
+    "leave_one_period_out_required_when_sample_permits": true,
+    "leave_one_sector_or_domain_out_required_when_sample_permits": true,
+    "leave_one_large_symbol_out_required_when_sample_permits": true,
     "primary_temporal_uncertainty_method_remains_pre_registered": true,
-    "alternative_bootstrap_or_block_lengths_are_sensitivity_not_model_selection": true,
-    "no_cross_horizon_pooling_without_explicit_estimand": true
+    "alternative_bootstrap_cluster_or_block_methods_are_sensitivity_not_model_selection": true,
+    "all_pre_registered_sensitivity_variants_must_be_reported": true,
+    "no_cross_horizon_pooling_without_explicit_estimand": true,
+    "sensitivity_failure_must_affect_evidence_status_or_review_state_not_be_hidden_as_narrative_only": true
   },
   "probability_calibration_audit": {
     "research_only_extension": true,
+    "diagnostic_before_retraining": true,
+    "primary_calibration_population_must_be_defined": true,
+    "selected_claim_population_and_all_eligible_population_are_distinct_estimands": true,
+    "horizon_specific": true,
+    "block_aware_uncertainty_required_when_sample_permits": true,
+    "prequential_or_rolling_origin_evaluation_preferred_for_future_recalibration_research": true,
     "required_diagnostics_when_sample_permits": [
       "reliability_curve",
       "brier_score",
       "log_loss",
-      "calibration_intercept",
+      "calibration_in_the_large_or_intercept",
       "calibration_slope",
+      "sharpness",
       "temporal_calibration_by_epoch"
     ],
     "advantage_probability_is_not_equivalent_to_calibration": true,
-    "diagnostics_may_not_rewrite_historical_probability_claims": true
+    "diagnostics_may_not_rewrite_historical_probability_claims": true,
+    "recalibrator_is_new_model_version_and_requires_new_training_validation_promotion_contract": true,
+    "automatic_isotonic_platt_or_beta_repair_forbidden": true
   },
   "decision_layer_ablation": {
     "status": "future_shadow_research_after_phase8",
     "must_not_relabel_phase7i_validation": true,
-    "paired_same_claim_comparison_required": true,
+    "primary_estimand_must_be_declared_before_evaluation": true,
+    "stateful_policy_evaluation_required_for_portfolio_actions": true,
+    "claim_level_pairing_alone_is_insufficient_after_policy_paths_diverge": true,
     "candidate_ladder": {
-      "B0": "position_unchanged_or_no_new_review",
-      "B1": "selection_only",
+      "B0_FLAT": "remain_flat_or_no_new_entry_review",
+      "B0_LONG": "hold_existing_position_unchanged_or_no_new_action",
+      "B1": "selection_only_research_reference",
       "B2": "selection_plus_eligible_timing_without_decision_hysteresis",
       "B3": "raw_universal_stance",
       "B4": "universal_stance_plus_hysteresis",
@@ -177,13 +281,19 @@
       "B6": "same_portfolio_action_core_with_elliott_swing_adjustment"
     },
     "elliott_incremental_value_primary_pair": ["B5", "B6"],
-    "execution_must_remain_disabled_until_separate_promotion": true,
-    "b5_b6_lineage_identity_check_required": true,
-    "b5_b6_may_differ_only_by_registered_elliott_adjustment": true
+    "b5_b6_lineage_equivalence_required_before_interpretation": true,
+    "b5_b6_common_starting_state_required": true,
+    "execution_model_costs_tradeability_and_action_availability_must_be_identical_for_policy_comparison": true,
+    "path_divergence_must_be_modeled_not_ignored": true,
+    "external_or_simple_policy_benchmarks_may_be_required_if_estimand_is_realized_policy_value": true,
+    "execution_must_remain_disabled_until_separate_promotion": true
   },
   "elliott_challenger_registry": {
     "frozen_hard_rules_may_not_be_rewritten_by_challengers": true,
     "challengers_start_as_soft_sidecar_evidence": true,
+    "count_or_scenario_freeze_must_precede_challenger_outcome_evaluation": true,
+    "challenger_family_multiplicity_required": true,
+    "incremental_value_must_be_evaluated_conditional_on_frozen_core": true,
     "initial_candidates": [
       "wave_personality_w3_momentum_expansion",
       "wave_personality_w3_volume_expansion",
@@ -201,113 +311,53 @@
     "scenario_stability_is_not_assumed_to_equal_correctness": true,
     "w5_divergence_is_not_a_hard_rule": true
   },
-  "defect_incident_capa": {
-    "required": true,
-    "classes": [
-      "DEFECT",
-      "NEAR_MISS",
-      "INCONSISTENCY",
-      "DEVIATION",
-      "DATA_QUALITY_EVENT",
-      "METHODOLOGY_RISK",
-      "OBSERVATION"
-    ],
+  "incident_and_capa": {
+    "continuous_across_future_development": true,
+    "incident_categories": ["DEFECT", "NEAR_MISS", "INCONSISTENCY", "DEVIATION", "DATA_QUALITY_EVENT"],
+    "finding_categories_not_incidents": ["METHODOLOGY_RISK", "OBSERVATION"],
     "severity": ["S1_CRITICAL", "S2_MAJOR", "S3_MODERATE", "S4_MINOR"],
-    "detection_stage": [
-      "DESIGN_REVIEW",
-      "CODE_REVIEW",
-      "TEST",
-      "RESEARCH_RUN",
-      "PROSPECTIVE_SHADOW",
-      "PRODUCTION"
-    ],
     "lifecycle": ["DETECT", "CONTAIN", "ANALYZE", "CORRECT", "PREVENT", "VERIFY", "CLOSE"],
-    "required_fields": [
-      "incident_id",
-      "detected_at",
-      "class",
-      "severity",
-      "detection_stage",
-      "affected_phase_or_module",
-      "description",
-      "potential_or_realized_impact",
-      "containment",
-      "root_cause",
-      "corrective_action",
-      "preventive_action",
-      "verification_evidence",
-      "status",
-      "related_commit_or_artifact"
-    ],
-    "near_misses_must_not_be_discarded_because_no_damage_occurred": true,
-    "closure_requires_verification": true,
-    "repeat_incidents_require_systemic_root_cause_review": true
+    "evidence_impact_assessment_required": true,
+    "canonical_data_labels_pit_or_frozen_hypothesis_corruption_requires_evidence_invalidation_or_explicit_reclassification": true,
+    "near_miss_without_canonical_contamination_need_not_reclassify_evidence": true,
+    "closure_requires_verified_regression_or_reproduction_check": true,
+    "same_actor_verification_must_be_flagged_as_not_independent": true,
+    "repeated_recurrence_family_triggers_system_level_capa_review": true
   },
   "evidence_lineage": {
-    "required": true,
-    "representation": "versioned_directed_acyclic_graph",
-    "node_types": [
-      "raw_feature",
-      "derived_metric",
-      "research_claim",
-      "calibration",
-      "risk_context",
-      "reliability_annotation",
-      "structural_context",
-      "external_evidence",
-      "decision_usage"
-    ],
-    "required_node_fields": [
-      "node_id",
-      "node_type",
-      "name",
-      "version_or_fingerprint",
-      "information_family",
-      "available_from_semantics",
-      "source_phase_or_module"
-    ],
-    "required_edge_fields": [
-      "from_node_id",
-      "to_node_id",
-      "transform_id",
-      "relationship",
-      "directional_role",
-      "may_be_counted_as_independent_support"
-    ],
-    "derived_transformation_is_independent_support_by_default": false,
-    "shared_raw_ancestor_requires_double_counting_review": true,
-    "shared_raw_ancestor_is_not_automatic_proof_of_invalidity": true,
-    "independence_claim_requires_explicit_justification": true,
-    "required_audits": [
-      "common_raw_ancestor_between_claimed_independent_support",
-      "regime_already_embedded_in_selection",
-      "risk_already_embedded_in_selection_or_score",
-      "selection_reused_inside_confidence_or_agreement",
-      "probability_recounted_as_directional_vote",
-      "same_family_support_presented_as_cross_family_confirmation",
-      "b5_b6_non_elliott_difference"
-    ],
-    "machine_checkable_path_from_raw_feature_to_decision_usage_required": true
+    "typed_provenance_graph_required": true,
+    "node_classes": ["RAW_SOURCE", "RAW_FEATURE", "DERIVED_METRIC", "COMPOSITE_SCORE", "RESEARCH_CLAIM", "CALIBRATION", "RISK_CONTEXT", "RELIABILITY_ANNOTATION", "STRUCTURAL_CONTEXT", "EXTERNAL_EVIDENCE", "DECISION_USAGE"],
+    "edge_types": ["DERIVED_FROM", "AGGREGATES", "CALIBRATES", "ANNOTATES_RELIABILITY", "CONDITIONS", "CONSTRAINS", "ROUTES", "USED_BY", "SHARES_ANCESTOR_WITH"],
+    "required_node_metadata": ["node_id", "version_hash", "availability_window", "raw_source_fingerprint", "transformation_hash", "missingness_policy"],
+    "common_ancestry_is_review_trigger_not_automatic_invalidation": true,
+    "statistical_correlation_alone_does_not_prove_double_counting": true,
+    "actual_double_counting_requires_same_or_shared_information_treated_as_independent_support_without_incremental_justification": true,
+    "independence_claim_registry_required": true,
+    "material_decision_inputs_must_trace_to_raw_source": true,
+    "no_cycles": true,
+    "phase8_external_evidence_must_enter_same_lineage_graph": true,
+    "b5_b6_equivalence_test": "canonicalize graphs, remove registered Elliott adjustment subgraph and its direct routing consequences, then require identical remaining node_edge hashes plus identical data snapshot, eligibility, costs and starting position state",
+    "conditional_mutual_information_is_optional_research_not_gate": true
   },
-  "negative_controls_and_falsification": {
-    "required_for_confirmatory_pipeline_audit": true,
-    "research_only_isolated_sandbox": true,
-    "canonical_artifacts_may_not_be_mutated": true,
-    "control_families": [
-      "temporally_shifted_signal",
-      "block_preserving_time_permutation",
+  "negative_controls": {
+    "pre_registration_required": true,
+    "isolated_artifacts_required": true,
+    "canonical_data_mutation_forbidden": true,
+    "reproducible_seed_or_deterministic_transform_required": true,
+    "failure_rule_must_be_frozen_before_control_results_are_visible": true,
+    "minimum_candidate_battery": [
+      "deterministic_temporal_shift",
+      "within_symbol_block_permutation",
       "within_date_symbol_permutation",
-      "feature_permutation_preserving_missingness",
-      "random_pseudo_event",
-      "irrelevant_feature_control"
+      "feature_permutation_preserving_missingness_and_relevant_structure",
+      "pseudo_events_matched_on_relevant_frequency_and_concentration"
     ],
-    "expected_null_behavior_must_be_preregistered": true,
-    "negative_controls_are_not_expected_to_equal_exact_zero": true,
-    "temporal_and_cross_sectional_structure_should_be_preserved_when_relevant": true,
-    "control_failure_requires_leakage_or_pipeline_investigation_before_confirmatory_promotion": true,
-    "controls_may_not_be_tuned_until_they_produce_null": true,
-    "intentionally_wrong_symbol_mapping_allowed_only_in_isolated_integrity_test": true,
-    "wrong_symbol_mapping_is_not_a_statistical_negative_control": true
+    "wrong_entity_mapping_is_pipeline_integrity_test_not_primary_statistical_negative_control": true,
+    "single_expected_false_positive_is_not_automatically_systematic_failure": true,
+    "systematic_placebo_signal_blocks_confirmatory_promotion_pending_investigation": true,
+    "placebo_family_results_must_remain_visible": true,
+    "controls_may_not_be_retuned_after_results_to_make_pipeline_pass": true,
+    "exact_statistical_failure_threshold_is_not_fixed_in_foundation_and_must_be_pre_registered_in_the_later_analysis_plan": true
   },
   "deferred_outside_qm_core": {
     "dynamic_portfolio_correlation": "later_portfolio_risk_overlay",
@@ -315,18 +365,31 @@
     "fixed_crv_thresholds": "reject_without_empirical_comparison",
     "fixed_position_sizing_rules": "outside_current_qm_scope"
   },
+  "implementation_dependencies": {
+    "continuous_from_qm_start": ["QM-A", "QM-H"],
+    "foundational_parallel": ["QM-B", "QM-C"],
+    "qm_i_starts_when_b_c_schemas_exist": true,
+    "qm_i_must_be_blocking_before_qm_f_or_qm_g_interpretation": true,
+    "qm_d_requires_b_c": true,
+    "qm_e_requires_d": true,
+    "qm_j_requires_c_d_i": true,
+    "qm_f_requires_d_i": true,
+    "qm_g_requires_c_i": true
+  },
   "forbidden_shortcuts": [
     "retrofit_missing_historical_provenance",
     "reuse_outcome_inspected_evidence_as_unspent_confirmation",
     "select_confirmatory_hypotheses_after_viewing_confirmatory_outcomes",
     "treat_raw_event_count_as_independent_sample_size",
     "use_current_universe_as_historical_universe",
-    "choose_bootstrap_or_block_length_by_best_result",
+    "silently_drop_delisted_suspended_or_censored_outcomes",
+    "choose_bootstrap_cluster_or_block_method_by_best_result",
     "treat_probability_advantage_as_calibration_proof",
+    "auto_recalibrate_probability_from_audit_results",
     "let_elliott_soft_challengers_rewrite_frozen_structural_counts_before_validation",
-    "promote_b6_from_unpaired_or_retrospective_comparison",
-    "count_transforms_of_common_information_as_independent_votes_without_review",
-    "hide_failed_negative_controls",
-    "tune_negative_controls_until_the_pipeline_passes"
+    "promote_b6_without_lineage_equivalence_and_stateful_policy_evaluation",
+    "treat_shared_lineage_ancestor_as_automatic_invalidation",
+    "tune_negative_controls_or_failure_thresholds_after_results",
+    "treat_governance_method_choice_as_unregistered_free_parameter"
   ]
 }
