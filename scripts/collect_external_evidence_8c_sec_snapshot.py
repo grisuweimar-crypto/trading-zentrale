@@ -7,7 +7,7 @@ import json
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from scanner.research.external_evidence.filing_documents import (
     fetch_sec_document_bytes,
@@ -25,6 +25,10 @@ from scanner.research.external_evidence.sec_history import (
     assemble_full_submission_history,
     historical_submission_file_specs,
 )
+from scanner.research.external_evidence.sec_identity_bootstrap import (
+    load_ticker_bootstrap,
+    validate_submissions_identity,
+)
 from scanner.research.external_evidence.sec_snapshot import (
     SNAPSHOT_SCHEMA,
     write_bytes_with_digest,
@@ -33,7 +37,6 @@ from scanner.research.external_evidence.sec_snapshot import (
 from scanner.research.external_evidence.universe_coverage import build_sec_ticker_map, exact_sec_match
 
 ROOT = Path(__file__).resolve().parents[1]
-SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 
 
 class RequestPacer:
@@ -78,6 +81,11 @@ def fetch_bytes(url: str, *, user_agent: str, pacer: RequestPacer, retries: int 
     raise last
 
 
+def _http_status(exc: Exception) -> int | None:
+    response = getattr(exc, "response", None)
+    return getattr(response, "status_code", None)
+
+
 def scanner_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -95,6 +103,55 @@ def file_spec(path: str, digest: str, source_url: str) -> dict[str, str]:
     return {"path": path, "sha256": digest, "source_url": source_url}
 
 
+def _official_submissions_preflight(
+    *,
+    rows: list[dict[str, str]],
+    ticker_map: Mapping[str, Mapping[str, Any]],
+    user_agent: str,
+    pacer: RequestPacer,
+) -> dict[str, dict[str, Any]]:
+    """Confirm that at least one candidate can reach and pass official SEC identity validation.
+
+    The bootstrap payload may be non-authoritative. No snapshot directory is created
+    until a current `data.sec.gov/submissions` payload confirms both exact ticker and
+    CIK. A 403/429 from the official data endpoint is surfaced immediately.
+    """
+    failures: list[str] = []
+    for row in rows:
+        symbol = str(row.get("symbol") or "").strip().upper()
+        identity = exact_sec_match(symbol, ticker_map)
+        if identity.get("sec_match_status") != "KNOWN":
+            continue
+        cik = normalize_cik(identity["cik"])
+        url = submissions_url(cik)
+        try:
+            primary = fetch_json(url, user_agent=user_agent, pacer=pacer, retries=0)
+        except Exception as exc:
+            status = _http_status(exc)
+            if status in {403, 429}:
+                raise RuntimeError(
+                    "Official SEC submissions preflight is blocked: "
+                    f"HTTP {status} from {url}. No snapshot files were written."
+                ) from exc
+            failures.append(f"{symbol}:{type(exc).__name__}:{status}")
+            continue
+
+        valid, reasons = validate_submissions_identity(
+            symbol=symbol,
+            candidate_cik=cik,
+            submissions_payload=primary,
+        )
+        if valid:
+            return {cik: primary}
+        failures.append(f"{symbol}:{','.join(reasons)}")
+
+    detail = "; ".join(failures[:10]) or "no exact bootstrap candidates"
+    raise RuntimeError(
+        "No ticker/CIK bootstrap candidate could be confirmed by current official "
+        f"SEC submissions. No snapshot files were written. Details: {detail}"
+    )
+
+
 def _manifest(
     *,
     created_at: str,
@@ -102,6 +159,7 @@ def _manifest(
     scanner_path: Path,
     tickers_rel: str,
     tickers_digest: str,
+    ticker_bootstrap: Mapping[str, Any],
     companies: list[dict[str, Any]],
     content_window: dict[str, Any] | None,
     include_content_documents: bool,
@@ -113,7 +171,12 @@ def _manifest(
         "scanner_as_of": scanner_as_of,
         "scanner_source": str(scanner_path),
         "collector_environment": "OUTSIDE_GITHUB_ACTIONS_REQUIRED_IF_SEC_BLOCKS_HOSTED_RUNNERS",
-        "company_tickers_file": file_spec(tickers_rel, tickers_digest, SEC_TICKERS_URL),
+        "ticker_bootstrap": dict(ticker_bootstrap),
+        "company_tickers_file": file_spec(
+            tickers_rel,
+            tickers_digest,
+            str(ticker_bootstrap.get("source_url") or ""),
+        ),
         "content_documents_included": include_content_documents,
         "content_acquisition_window": content_window,
         "companies": companies,
@@ -136,7 +199,6 @@ def collect(
     rows = scanner_rows(scanner_path)
     if max_symbols is not None:
         rows = rows[:max_symbols]
-    output_dir.mkdir(parents=True, exist_ok=True)
     pacer = RequestPacer(minimum_interval_seconds)
 
     content_window: dict[str, Any] | None = None
@@ -150,14 +212,34 @@ def collect(
         content_window["history_source"] = str(research_history_path)
         content_window["note"] = "Acquisition buffer only; not a feature lookback definition."
 
-    tickers_payload = fetch_json(SEC_TICKERS_URL, user_agent=user_agent, pacer=pacer)
+    tickers_payload, ticker_bootstrap = load_ticker_bootstrap(
+        user_agent=user_agent,
+        timeout=60.0,
+    )
+    ticker_map = build_sec_ticker_map(tickers_payload)
+
+    # Fail closed before creating the snapshot bundle if the authoritative identity
+    # endpoint is blocked or no bootstrap candidate can be confirmed.
+    prefetched_submissions = _official_submissions_preflight(
+        rows=rows,
+        ticker_map=ticker_map,
+        user_agent=user_agent,
+        pacer=pacer,
+    )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
     tickers_rel = "raw/company_tickers.json"
     tickers_digest = write_json_with_digest(output_dir / tickers_rel, tickers_payload)
-    ticker_map = build_sec_ticker_map(tickers_payload)
 
     created_at = datetime.now(timezone.utc).isoformat()
     scanner_as_of = rows[0].get("as_of") if rows else None
     companies: list[dict[str, Any]] = []
+
+    print(
+        f"ticker_bootstrap_mode={ticker_bootstrap.get('mode')} "
+        f"identity_authority=CURRENT_SEC_SUBMISSIONS_ONLY",
+        flush=True,
+    )
 
     for index, row in enumerate(rows, start=1):
         symbol = str(row.get("symbol") or "").strip().upper()
@@ -167,6 +249,7 @@ def collect(
             "scanner_name": row.get("name"),
             "scanner_as_of": row.get("as_of"),
             "identity_status": "UNKNOWN",
+            "identity_authority": "CURRENT_SEC_SUBMISSIONS_ONLY",
             "reason_codes": list(identity.get("reason_codes") or []),
             "content_filings": [],
         }
@@ -179,13 +262,20 @@ def collect(
         entry.update({"cik": cik, "sec_title": identity.get("sec_title")})
         try:
             primary_url = submissions_url(cik)
-            primary = fetch_json(primary_url, user_agent=user_agent, pacer=pacer)
-            current_tickers = {str(x).strip().upper() for x in (primary.get("tickers") or [])}
-            if symbol not in current_tickers:
-                entry["identity_status"] = "REJECTED_STALE_OR_MISMATCHED_TICKER"
-                entry["reason_codes"].append("SEC_SUBMISSIONS_TICKER_MISMATCH")
+            primary = prefetched_submissions.pop(cik, None)
+            if primary is None:
+                primary = fetch_json(primary_url, user_agent=user_agent, pacer=pacer)
+
+            identity_valid, identity_reasons = validate_submissions_identity(
+                symbol=symbol,
+                candidate_cik=cik,
+                submissions_payload=primary,
+            )
+            if not identity_valid:
+                entry["identity_status"] = "REJECTED_STALE_OR_UNVALIDATED_BOOTSTRAP_IDENTITY"
+                entry["reason_codes"].extend(identity_reasons)
                 companies.append(entry)
-                print(f"[{index}/{len(rows)}] {symbol}: TICKER_MISMATCH", flush=True)
+                print(f"[{index}/{len(rows)}] {symbol}: IDENTITY_REJECTED", flush=True)
                 continue
 
             company_dir = f"raw/companies/{cik}"
@@ -263,6 +353,7 @@ def collect(
                 scanner_path=scanner_path,
                 tickers_rel=tickers_rel,
                 tickers_digest=tickers_digest,
+                ticker_bootstrap=ticker_bootstrap,
                 companies=companies,
                 content_window=content_window,
                 include_content_documents=include_content_documents,
@@ -275,6 +366,7 @@ def collect(
         scanner_path=scanner_path,
         tickers_rel=tickers_rel,
         tickers_digest=tickers_digest,
+        ticker_bootstrap=ticker_bootstrap,
         companies=companies,
         content_window=content_window,
         include_content_documents=include_content_documents,
@@ -328,6 +420,7 @@ def main() -> int:
         json.dumps(
             {
                 "scanner_as_of": result.get("scanner_as_of"),
+                "ticker_bootstrap_mode": (result.get("ticker_bootstrap") or {}).get("mode"),
                 "identity_status_counts": counts,
                 "content_document_count": content_count,
                 "content_acquisition_window": result.get("content_acquisition_window"),
