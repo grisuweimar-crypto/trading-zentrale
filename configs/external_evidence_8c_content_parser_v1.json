@@ -1,0 +1,89 @@
+{
+  "schema_version": "external_evidence_8c_content_parser_v1",
+  "phase": "8C_G_content_parser_foundation",
+  "status": "ANCHOR_EXTRACTION_ONLY",
+  "input": "SEC_FULL_SUBMISSION_TEXT_FROM_VERIFIED_SNAPSHOT",
+  "parser_version": "8c_content_parser_v1",
+  "market_outcomes_may_be_read": false,
+  "market_direction_policy": "UNKNOWN_ONLY",
+  "semantic_classification_enabled": false,
+  "document_policy": {
+    "split_sec_document_blocks": true,
+    "preserve_document_type": true,
+    "preserve_sequence": true,
+    "preserve_filename": true,
+    "preserve_description": true,
+    "normalize_html_to_visible_text": true,
+    "exclude_document_type_prefixes": ["GRAPHIC", "ZIP", "EXCEL", "JSON", "XML", "XBRL"],
+    "minimum_visible_characters": 20
+  },
+  "evidence_anchor_families": {
+    "GUIDANCE": {
+      "phrases": [
+        "guidance",
+        "outlook",
+        "expects revenue",
+        "expects net sales",
+        "expects earnings",
+        "forecast"
+      ]
+    },
+    "DIVIDEND": {
+      "phrases": [
+        "cash dividend",
+        "quarterly dividend",
+        "dividend per share",
+        "declared a dividend",
+        "dividend of"
+      ]
+    },
+    "BUYBACK": {
+      "phrases": [
+        "share repurchase",
+        "stock repurchase",
+        "repurchase authorization",
+        "repurchase program",
+        "repurchase plan"
+      ]
+    },
+    "CAPITAL_RAISE": {
+      "phrases": [
+        "public offering",
+        "registered direct offering",
+        "private placement",
+        "underwriting agreement",
+        "at-the-market offering",
+        "convertible notes",
+        "senior notes offering"
+      ]
+    }
+  },
+  "anchor_output_fields": [
+    "family",
+    "matched_phrase",
+    "document_type",
+    "sequence",
+    "filename",
+    "description",
+    "excerpt",
+    "excerpt_sha256",
+    "character_start",
+    "character_end",
+    "semantic_status",
+    "market_direction",
+    "parser_version"
+  ],
+  "hard_boundaries": {
+    "anchor_implies_semantic_event": false,
+    "anchor_implies_change_direction": false,
+    "anchor_implies_market_direction": false,
+    "keyword_count_is_signal": false,
+    "freeform_llm_inference_enabled": false,
+    "earnings_beat_miss_enabled": false
+  },
+  "research_gate": {
+    "semantic_parser_enabled": false,
+    "outcome_research_enabled": false,
+    "decision_integration_enabled": false
+  }
+}
