@@ -16,10 +16,8 @@ from scanner.research.external_evidence.exposure_review_queue_8f import build_ex
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _inputs() -> tuple[dict, set[str], set[str]]:
-    config = json.loads(
-        (ROOT / "configs/external_evidence_8f_mapping_candidates_v1.json").read_text(encoding="utf-8")
-    )
+def _inputs(path: str = "configs/external_evidence_8f_mapping_candidates_v1.json") -> tuple[dict, set[str], set[str]]:
+    config = json.loads((ROOT / path).read_text(encoding="utf-8"))
     macro = json.loads(
         (ROOT / "configs/external_evidence_8f_macro_exposure_v1.json").read_text(encoding="utf-8")
     )
@@ -53,6 +51,22 @@ def test_first_documentary_candidate_batch_passes_fail_closed_gate():
         "silver": 1,
         "uranium": 3,
     }
+
+
+def test_second_documentary_candidate_batch_passes_and_is_disjoint_from_b1():
+    b1, factor_ids, subject_ids = _inputs()
+    b2, _, _ = _inputs("configs/external_evidence_8f_mapping_candidates_b2_v1.json")
+    result = validate_mapping_candidates(
+        b2,
+        allowed_factor_ids=factor_ids,
+        allowed_subject_ids=subject_ids,
+    )
+    assert result["status"] == "PASS_DOCUMENTARY_CANDIDATE_GATE"
+    assert result["candidate_count"] == 10
+    assert result["factor_counts"] == {"gold": 5, "oil": 1, "silver": 4}
+    b1_pairs = {(row["subject_id"], row["factor_id"]) for row in b1["candidates"]}
+    b2_pairs = {(row["subject_id"], row["factor_id"]) for row in b2["candidates"]}
+    assert b1_pairs.isdisjoint(b2_pairs)
 
 
 def test_candidate_cannot_claim_human_review_or_promotion():
