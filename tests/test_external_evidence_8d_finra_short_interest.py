@@ -45,7 +45,7 @@ def test_publication_valid_from_respects_new_york_dst() -> None:
     assert publication_valid_from("2026-12-24") == "2026-12-24T21:40:00Z"
 
 
-def test_historical_backfill_is_never_strict_pit(tmp_path: Path) -> None:
+def test_historical_backfill_is_never_strict_pit_and_not_retrojected(tmp_path: Path) -> None:
     source = _write_rows(tmp_path / "finra.json", [_row()])
     payload = build_finra_snapshot(
         source_path=source,
@@ -55,13 +55,18 @@ def test_historical_backfill_is_never_strict_pit(tmp_path: Path) -> None:
     )
     assert payload["strict_pit_eligible"] is False
     assert payload["vintage_status"] == "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
+    assert payload["published_at"] == "2026-09-25T20:40:00Z"
+    assert payload["valid_from"] == "2026-09-26T08:00:00Z"
+    assert payload["rows"][0]["valid_from"] == "2026-09-26T08:00:00Z"
     assert payload["rows"][0]["strict_pit_eligible"] is False
+    assert payload["guards"]["publication_time_retrojection_enabled"] is False
+    assert payload["guards"]["valid_from_is_ingested_at"] is True
     assert payload["guards"]["market_outcomes_read"] is False
     assert payload["guards"]["market_direction_assigned"] is False
     assert payload["rows"][0]["market_direction"] == "UNASSIGNED"
 
 
-def test_prospective_snapshot_requires_ingestion_after_publication(tmp_path: Path) -> None:
+def test_prospective_snapshot_requires_ingestion_after_publication_and_uses_observation_time(tmp_path: Path) -> None:
     source = _write_rows(tmp_path / "finra.json", [_row()])
     with pytest.raises(FinraShortInterestError, match="precedes FINRA publication"):
         build_finra_snapshot(
@@ -74,11 +79,16 @@ def test_prospective_snapshot_requires_ingestion_after_publication(tmp_path: Pat
     payload = build_finra_snapshot(
         source_path=source,
         publication_date="2026-09-25",
-        ingested_at="2026-09-25T20:40:00+00:00",
+        ingested_at="2026-09-25T21:15:00+00:00",
         source_mode=PROSPECTIVE_MODE,
     )
     assert payload["strict_pit_eligible"] is True
+    assert payload["strict_pit_basis"] == "OBSERVED_AT_INGESTION"
+    assert payload["vintage_status"] == "PROSPECTIVE_SNAPSHOT_OBSERVED_AT_INGESTION"
+    assert payload["published_at"] == "2026-09-25T20:40:00Z"
+    assert payload["valid_from"] == "2026-09-25T21:15:00Z"
     assert payload["rows"][0]["published_at"] == "2026-09-25T20:40:00Z"
+    assert payload["rows"][0]["valid_from"] == "2026-09-25T21:15:00Z"
     assert payload["rows"][0]["event_time"] == "2026-09-15"
 
 
@@ -155,6 +165,8 @@ def test_prospective_collector_pages_and_preserves_raw_hashes(tmp_path: Path) ->
     snapshot = json.loads((tmp_path / "out" / "snapshot.json").read_text(encoding="utf-8"))
     assert snapshot["row_count"] == 3
     assert snapshot["strict_pit_eligible"] is True
+    assert snapshot["published_at"] == "2026-09-25T20:40:00Z"
+    assert snapshot["valid_from"] == "2026-09-25T20:45:00Z"
 
 
 def test_prospective_collector_fails_closed_before_publication(tmp_path: Path) -> None:
