@@ -65,97 +65,52 @@ def test_empty_review_decisions_do_not_modify_exposure_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
     review = _empty_review()
     exposure = _empty_exposure()
-    result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=review,
-        exposure_map=exposure,
-    )
+    result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=exposure)
     assert result["status"] == "AWAITING_HUMAN_REVIEW"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 0
     assert result["exposure_map"]["mappings"] == []
 
 
-def test_committed_b1_review_contains_ten_explicit_human_approvals():
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_v1.json")
+def _assert_committed_review(path: str, count: int) -> None:
+    review = _load(path)
     assert review["status"] == "HUMAN_REVIEW_COMPLETED"
-    assert len(review["decisions"]) == 10
+    assert len(review["decisions"]) == count
     assert all(item["decision"] == "APPROVE" for item in review["decisions"])
     assert all(item["source_verified"] is True for item in review["decisions"])
     assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
 
 
-def test_committed_b2_review_contains_ten_explicit_human_approvals():
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_b2_v1.json")
-    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
-    assert len(review["decisions"]) == 10
-    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
-    assert all(item["source_verified"] is True for item in review["decisions"])
-    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
+def test_committed_reviews_are_explicit_human_approvals():
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_v1.json", 10)
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b2_v1.json", 10)
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b4_v1.json", 20)
 
 
-def test_committed_b3_review_contains_twenty_explicit_human_approvals():
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
-    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
-    assert len(review["decisions"]) == 20
-    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
-    assert all(item["source_verified"] is True for item in review["decisions"])
-    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
-
-
-def test_committed_b1_review_replay_is_idempotent():
-    candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+def _assert_replay(candidate_path: str, review_path: str, expected_applied: int) -> None:
     result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=review,
-        exposure_map=exposure,
+        candidate_config=_load(candidate_path),
+        review_config=_load(review_path),
+        exposure_map=_load("configs/external_evidence_8f_exposure_map_v1.json"),
     )
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 10
-    assert len(result["exposure_map"]["mappings"]) == 40
+    assert result["already_applied_count"] == expected_applied
+    assert len(result["exposure_map"]["mappings"]) == 60
 
 
-def test_committed_b2_review_replay_is_idempotent():
-    candidates = _load("configs/external_evidence_8f_mapping_candidates_b2_v1.json")
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_b2_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
-    result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=review,
-        exposure_map=exposure,
-    )
-    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
-    assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 10
-    assert len(result["exposure_map"]["mappings"]) == 40
-
-
-def test_committed_b3_review_replay_is_idempotent():
-    candidates = _load("configs/external_evidence_8f_mapping_candidates_b3_v1.json")
-    review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
-    result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=review,
-        exposure_map=exposure,
-    )
-    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
-    assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 20
-    assert len(result["exposure_map"]["mappings"]) == 40
+def test_committed_b1_b2_b3_b4_review_replay_is_idempotent():
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_v1.json", "configs/external_evidence_8f_mapping_review_decisions_v1.json", 10)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b2_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b2_v1.json", 10)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b3_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b4_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b4_v1.json", 20)
 
 
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
     exposure = _empty_exposure()
-    result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=_approved_review(),
-        exposure_map=exposure,
-    )
+    result = apply_human_mapping_review(candidate_config=candidates, review_config=_approved_review(), exposure_map=exposure)
     assert result["status"] == "HUMAN_REVIEW_APPLIED"
     assert result["approved_count"] == 1
     assert result["already_applied_count"] == 0
@@ -174,11 +129,7 @@ def test_approval_requires_source_verification():
     review = _approved_review()
     review["decisions"][0]["source_verified"] = False
     with pytest.raises(ExposureMappingReview8FError, match="source_verified=true"):
-        apply_human_mapping_review(
-            candidate_config=candidates,
-            review_config=review,
-            exposure_map=exposure,
-        )
+        apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=exposure)
 
 
 def test_reject_and_defer_never_promote():
@@ -189,11 +140,7 @@ def test_reject_and_defer_never_promote():
         {"candidate_id": "MAPCAND:CVX:oil:1", "decision": "REJECT"},
         {"candidate_id": "MAPCAND:CCJ:uranium:1", "decision": "DEFER"},
     ]
-    result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=review,
-        exposure_map=exposure,
-    )
+    result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=exposure)
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 0
     assert result["rejected_count"] == 1
@@ -207,8 +154,4 @@ def test_review_cannot_enable_automatic_approval_guard():
     review = _approved_review()
     review["guards"]["automatic_approval_allowed"] = True
     with pytest.raises(ExposureMappingReview8FError, match="must remain false"):
-        apply_human_mapping_review(
-            candidate_config=candidates,
-            review_config=review,
-            exposure_map=exposure,
-        )
+        apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=exposure)
