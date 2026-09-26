@@ -11,186 +11,270 @@ Die Grundlage sind:
 - externe Zweitprüfungen durch Perplexity und DeepSeek,
 - erkannte Unsicherheiten zu Multiplikität, Abhängigkeiten, Survivorship, Probability-Kalibrierung, menschlichem Evidenzverbrauch und Elliott-Zusatznutzen,
 - Fehler/Beinahefehler/Inkonsistenzen aus der bisherigen Entwicklung,
-- die neue Gefahr verdeckter informationeller Doppelzählung in einer mehrstufigen Architektur,
+- die Gefahr verdeckter informationeller Doppelzählung in einer mehrstufigen Architektur,
 - Falsifikationsbedarf durch Negative Controls.
 
-## Zentrale Trennlinie
+Die wichtigste gemeinsame Konsequenz der externen Zweitprüfung lautet: QM darf nicht nur dokumentieren. Wo möglich, müssen unzulässige Forschungswege durch maschinenprüfbare Zustände, unveränderliche Identitäten und Fail-closed-Gates technisch erschwert oder verhindert werden.
 
-### Preventive QA Change
-Eine Änderung entsteht aus Architektur-, Code-, Provenance- oder Methodenprüfung, ohne zukünftige Outcomes der betroffenen Hypothese zur Regelanpassung zu verwenden.
+## Kontrollkern
 
-Sie darf den Status zukünftiger Evidenz grundsätzlich erhalten, muss aber protokolliert werden.
+### Evidence State Machine
 
-### Outcome-driven Research Change
-Eine Änderung entsteht, weil zukünftige Performance/Outcomes betrachtet und daraufhin Regel, Schwelle, Feature oder Policy angepasst wurden.
+Confirmatory Forschung erhält einen expliziten Lebenszyklus:
 
-Die betrachtete Evidenz wird für die geänderte Hypothese `spent_for_design` und darf die neue Regel nicht mehr als unspent confirmation bestätigen.
+`DRAFT -> EXPLORATORY -> FROZEN_FOR_CONFIRMATION -> CONFIRMATORY_EVALUATED -> CONFIRMATORY_SPENT -> REPLICATION_PENDING -> PROSPECTIVE_SHADOW -> PROMOTION_ELIGIBLE -> PROMOTED / REJECTED / RETIRED / INVALIDATED`
+
+Verbotene Rücksprünge, insbesondere von ausgewerteter Evidenz zurück zu `unspent`, müssen fail-closed behandelt werden.
+
+### Immutable Analysis Identity
+
+Confirmatory Evaluation und Promotion werden an unveränderliche Identitäten gebunden, u. a.:
+- Hypothesen-/Analysis-Plan-Hash,
+- Code-/Commit-/Config-Hash,
+- Dataset-Snapshot,
+- Universe-/Instrument-Master-Version,
+- Label- und Benchmarkdefinition,
+- Environment-/Dependency-Fingerprint,
+- Evaluation Cohort und Zeitgrenze.
+
+Mutable Alias-Namen ersetzen keine echte Versionsbindung.
+
+### Evidence Consumption
+
+Die bisherige Zweiteilung wird verschärft:
+
+1. `MECHANICALLY_EQUIVALENT_REPAIR`
+   - nachweislich keine Änderung an Estimand, Eligibility, Labels, Evidence Population oder Decision Rule.
+
+2. `PREVENTIVE_QA_NEW_VERSION`
+   - QA-/Architekturverbesserung ohne Performance-Motivation, aber nicht nachweislich mechanisch äquivalent.
+   - neue Version und neue Evidence Boundary.
+
+3. `OUTCOME_DRIVEN_RESEARCH_CHANGE`
+   - Änderung nach sichtbaren Outcomes oder performance-revealing Artefakten.
+   - betroffene Evidenz wird `spent_for_design`.
+
+Im Zweifel gilt nicht "preventive", sondern neue Version.
+
+Auch Aggregate, Charts, Dashboard-Ansichten, Reports oder Failure Summaries können Evidenz verbrauchen, wenn sie Performance verraten.
 
 ## QM-Arbeitsblöcke
 
 ### QM-A – Research Governance & Evidence Consumption
+- Evidence State Machine,
 - append-only Inspection-/Decision-Log,
-- spent/unspent-Status,
-- Preventive-QA vs Outcome-driven Change,
-- Code-/Config-Fingerprint pro Entscheidung,
-- Verbot der stillen Wiederverwendung inspizierter Evidenz.
+- immutable Analysis Identity,
+- Actor-/Role-/Access-Mode,
+- Outcome Visibility Level,
+- Evidence Effect,
+- superseding versions statt In-place-Änderung,
+- unabhängige Review-Rollen soweit praktikabel; gleiche Person muss ausdrücklich als nicht unabhängig markiert werden.
 
-### QM-B – As-of Universe / Coverage / Survivorship
-- historisches Universe-Ledger,
-- Listing/Delisting/Suspension,
-- Inclusion/Exclusion Reason,
-- Exchange/Currency,
-- Scanner-/Price-/Provider-Coverage,
-- historische Sector-/Domain-Zuordnung mit `available_from`,
-- Missing Feature getrennt von Missing Outcome.
+### QM-B – As-of Universe / Coverage / Survivorship / Investability
+Zusätzlich zum historischen Universe-Ledger:
+- stabiler Instrument Master,
+- Symbolwechsel/Ticker-Reuse,
+- Listing/Delisting/Suspension/Halt,
+- tatsächliche Tradability,
+- Exchange/Venue, Währung/Pair,
+- Session Calendar,
+- Corporate-Action-Knowledge-Time,
+- Provider-Coverage-Historie,
+- effektive historische Sector-/Domain-Provenance,
+- Outcome-Availability-Ledger,
+- bekannte Delistings/Censoring nie als generisches Missing behandeln.
 
-### QM-C – Hypothesis Registry & Global Multiplicity
-- eindeutige Hypothesen-ID,
-- Evidence Family,
-- Discovery vs Confirmatory,
-- Freeze-Zeitpunkt,
-- Horizon/Target/Universe,
-- Multiplicity Family,
-- vollständige Null-/Negativresultate aufbewahren,
-- keine Auswahl einzelner Treffer aus einem größeren unsichtbaren Suchraum.
+Historische Universen müssen ohne heutige Metadaten rekonstruierbar sein.
+
+### QM-C – Hypothesis Registry / Global Multiplicity / Analysis Plan
+Eine confirmatory Hypothese friert nicht nur einen Satz ein, sondern den vollständigen Analysepfad:
+- Universe-Version,
+- Target/Label,
+- Event Generation,
+- Include/Exclude,
+- Missingness Policy,
+- Feature Transformation,
+- Benchmark,
+- Estimand,
+- Primärmethode,
+- Block-/Resampling-Parameter,
+- Decision Metric,
+- Promotion Rule,
+- Subgroups/Sensitivities,
+- Sequential Monitoring Plan,
+- Multiplicity Family/Control,
+- Code-/Config-/Data-Hash.
+
+Zusätzlich wird ein Research Derivation Graph geführt:
+`Research Question -> Family -> Hypothesis -> Version -> Analysis Plan -> Evaluation Run -> Evidence Artifact -> Decision/Promotion Outcome`
+
+Near-duplicate Nachfolger müssen ihren Parent behalten; schwache/negative Hypothesen bleiben sichtbar. Wiederholte confirmatory Looks brauchen einen vorab festgelegten Zeitplan, Alpha-Spending oder eine andere vorab definierte Sequential-Control-Logik.
 
 ### QM-D – Dependence / Effective N / Robustness
-Die bestehende horizonabhängige Moving-Block-Methodik wird nicht rückwirkend ersetzt. Ergänzt werden Diagnoseebenen:
-- Date concentration,
-- Symbol concentration,
-- Sector/Domain concentration,
-- Effective-N bzw. explizite Abhängigkeitsdiagnostik,
-- Leave-one-sector/domain-out soweit Stichprobe reicht,
-- alternative Blocklängen/Bootstrap-Verfahren nur als Sensitivität und niemals zur Auswahl des günstigsten Ergebnisses.
+Die bestehende horizonabhängige Moving-Block-Methodik bleibt Primary. Ergänzt werden getrennte Diagnosen für:
+- temporal dependence,
+- cross-sectional/date dependence,
+- repeated-symbol dependence,
+- sector/domain/market-factor dependence.
+
+Kein einzelner "effective N"-Wert soll diese Struktur vortäuschen.
+
+Zu berichten sind u. a. N events/dates/symbols/sectors, Konzentrationsanteile/-indizes sowie Leave-one-period/sector/large-symbol-out soweit möglich. Alternative Cluster-/Bootstrap-Verfahren bleiben vorregistrierte Sensitivität, nicht Model Selection.
 
 ### QM-E – Probability Calibration Audit
-Phase 2 unterscheidet robusten Probability Advantage bereits von Richtung. QM ergänzt echte Calibration-Diagnostik, soweit die Stichprobe reicht:
-- Reliability Curve,
-- Brier Score,
-- Log Loss,
-- Calibration Intercept/Slope,
-- zeitliche Calibration nach Epoche.
+Weiterhin diagnostic-only vor jeder Retraining-Entscheidung.
 
-Diese Diagnostik darf historische Claims nicht umdefinieren.
+Pflichtpunkte:
+- Calibration Population explizit definieren,
+- alle eligible Claims und selected Claims sind getrennte Estimands,
+- horizon-spezifisch,
+- block-aware uncertainty,
+- Reliability Curve,
+- Brier,
+- Log Loss,
+- Calibration-in-the-large/Intercept,
+- Slope,
+- Sharpness,
+- Epoch-/Prequential-Sicht soweit Daten reichen.
+
+Ein Recalibrator ist ein neues Modell und benötigt eigenen Train/Validation/Promotion-Vertrag.
 
 ### QM-F – Decision-Layer Incremental Ablation
-Nach Phase 8 kann zusätzlich ein Shadow-Vergleich aufgebaut werden. Er ersetzt Phase 7I nicht und darf dessen Evidenzstatus nicht umetikettieren.
+B0 wird in Flat/Long getrennt.
 
-Kandidaten:
-- B0: bestehende Position unverändert / kein neuer Review,
-- B1: Selection only,
-- B2: Selection + eligible Timing ohne Decision-Hysterese,
-- B3: Raw Universal Stance,
-- B4: Universal Stance + Hysterese,
-- B5: Portfolio Action Core ohne Elliott-Swing-Adjustment,
-- B6: identischer Core mit Elliott-Swing-Adjustment.
+Wichtig: Portfolio Actions sind zustands- und pfadabhängig. Ein Claim-Level-Pairing ist nach divergierenden Aktionen nicht mehr automatisch ein valider Paarvergleich.
 
-Besonders wichtig: B5 vs B6 muss paarweise auf denselben Claims/Datumsständen verglichen werden und ein Lineage-Check muss bestätigen, dass beide Varianten außerhalb des registrierten Elliott-Adjustments identisch sind.
+B5 vs B6 darf erst interpretiert werden, wenn:
+- gleiche Ausgangslage,
+- gleiche Eligibility,
+- gleiche Costs/Execution/Tradeability,
+- gleiche Action Availability,
+- QM-I Lineage Equality außer registriertem Elliott-Adjustment,
+- und Policy Path Divergence explizit modelliert ist.
+
+Zusätzliche externe/simple Benchmarks sind nur dann verpflichtend, wenn das vorab definierte Estimand tatsächlichen Policy Value/Return betrifft.
 
 ### QM-G – Elliott Challenger Registry
 Neue Elliott-Ideen verändern zunächst nicht den eingefrorenen Phase-6-Core.
 
-Research-only Challenger:
-- Wave Personality,
-- W3 Momentum-/Volumenexpansion,
-- W4 Volumen-/Seitwärtscharakter,
-- W5 Momentum-/Volumen-Divergenz,
-- Alternation Fit,
-- Channel Fit / kausaler Channel Break,
-- Deep-Correction Reclaim,
-- Scenario Stability / Recount History,
-- Ending-Diagonal-Reversal.
+Count/Scenario muss vor Challenger-Outcome-Evaluation eingefroren sein. Challenger-Familien unterliegen eigener Multiplicity und müssen inkrementellen Nutzen conditional on frozen core zeigen.
 
-Grundsatz: Challenger starten als Soft-Evidence-Sidecar. Sie dürfen den Count nicht nachträglich so auswählen, dass sie sich selbst bestätigen.
-
-### QM-H – Defect / Near-Miss / CAPA Management
-QM erfasst nicht nur Methodenrisiken, sondern auch tatsächliche Fehler und Beinahefehler.
-
-Klassen:
+### QM-H – Defect / Near-Miss / CAPA
+Incident-Kategorien:
 - DEFECT,
 - NEAR_MISS,
 - INCONSISTENCY,
 - DEVIATION,
-- DATA_QUALITY_EVENT,
-- METHODOLOGY_RISK,
-- OBSERVATION.
+- DATA_QUALITY_EVENT.
+
+`METHODOLOGY_RISK` und `OBSERVATION` werden als Findings getrennt geführt, nicht als Incidents.
 
 Lifecycle:
 `DETECT -> CONTAIN -> ANALYZE -> CORRECT -> PREVENT -> VERIFY -> CLOSE`
 
-Ein Fall darf erst geschlossen werden, wenn die Korrektur oder Präventionsmaßnahme überprüft wurde. Wiederkehrende Fehler erzwingen eine systemische Root-Cause-Prüfung statt nur weiterer Einzelpatches.
+Canonical Data, Labels, PIT State oder Frozen Hypothesis korrumpiert => Evidence Impact Assessment plus Invalidierung/Reklassifikation.
+
+Near Miss ohne Canonical Contamination muss Evidenz nicht automatisch reklassifizieren.
+
+QM-H bleibt nach Start dauerhaft aktiv.
 
 ### QM-I – Evidence Lineage & Double-Counting Audit
-Dies ist eine eigene Abstammungs- und Informationsabhängigkeitsprüfung, keine weitere Performance-Statistik.
+Typed Provenance Graph statt bloßem Textdiagramm.
 
-Maschinenlesbar wird ein gerichteter Graph aufgebaut:
-`raw feature -> derived metric -> research claim -> calibration/context/reliability -> decision usage`
+Node-Klassen u. a.:
+- RAW_SOURCE,
+- RAW_FEATURE,
+- DERIVED_METRIC,
+- COMPOSITE_SCORE,
+- RESEARCH_CLAIM,
+- CALIBRATION,
+- RISK_CONTEXT,
+- RELIABILITY_ANNOTATION,
+- STRUCTURAL_CONTEXT,
+- EXTERNAL_EVIDENCE,
+- DECISION_USAGE.
 
-Beispielhafte Fragen:
-- steckt RS3M bereits im Scanner Score und wird später scheinbar erneut als unabhängige Evidenz gezählt?
-- steckt Risk bereits in der Score-/Selection-Logik und erscheint zusätzlich als separater Risk Context?
-- steckt Regime indirekt bereits in Selection?
-- verwendet Confidence/Agreement Selection erneut und erzeugt dadurch scheinbare zweite Bestätigung?
-- wird Probability fälschlich als zusätzlicher directional vote interpretiert?
-- sind B5 und B6 tatsächlich identisch außer Elliott?
+Shared ancestry löst Review aus, ist aber keine automatische Invalidierung.
 
-Wichtig: Ein gemeinsamer Rohdaten-Vorfahre ist ein Double-Counting-Review-Trigger, aber nicht automatisch der Beweis, dass zwei abgeleitete Signale identisch oder wertlos sind. Entscheidend ist, ob sie als unabhängige Evidenz gezählt werden dürfen.
+Zusätzlich gibt es ein Independence-Claims-Registry: Wer zwei gemeinsame Informationsquellen als unabhängig behandelt, muss diese Behauptung explizit registrieren.
+
+Phase-8 External Evidence muss in denselben Lineage Graph aufgenommen werden.
+
+B5/B6: nach Entfernung des registrierten Elliott-Subgraphs müssen die kanonisierten Restgraphen sowie Snapshot/Eligibility/Costs/Start-State identisch sein.
 
 ### QM-J – Negative Controls / Falsification
-Die Pipeline wird gezielt mit Kontrollen konfrontiert, die keinen echten Vorhersageeffekt tragen sollten.
+Pre-registered, isoliert, reproduzierbar und ohne Mutation kanonischer Daten.
 
-Mögliche Control-Familien:
-- zeitlich verschobene Signale,
-- block-erhaltende Zeitpermutation,
-- Symbolpermutation innerhalb desselben Datums,
-- Feature-Permutation bei erhaltener Missingness,
-- zufällige Pseudo-Events,
-- bewusst irrelevante Features.
+Mindestkandidaten:
+- deterministic temporal shift,
+- within-symbol block permutation,
+- within-date symbol permutation,
+- feature permutation bei erhaltener Missingness/relevanter Struktur,
+- pseudo-events mit passender Frequenz/Konzentration.
 
-Regeln:
-- ausschließlich isolierte Research-Kopie; niemals kanonische Artefakte verändern,
-- erwartetes Nullverhalten vorab definieren,
-- Negative Controls müssen nicht exakt Null ergeben,
-- relevante Zeit-/Querschnittsstruktur möglichst erhalten,
-- auffällig starke Placebo-Effekte blockieren eine confirmatory Promotion bis Leakage/Abhängigkeit/Pipeline geprüft ist,
-- Controls dürfen nicht so lange verändert werden, bis sie endlich „bestehen“.
+Wrong-entity mapping bleibt Pipeline-Integrity-Test, kein primärer statistischer Placebo-Test.
 
-Bewusst falsche Symbolzuordnung ist nur als isolierter Integritäts-/Fehlertest zulässig und kein regulärer statistischer Negative Control, weil sie Datenverträge absichtlich verletzt.
+Ein einzelner zufälliger Placebo-Treffer ist nicht automatisch ein Systemfehler. Ein vorab definierter `SYSTEMATIC_PLACEBO_SIGNAL` blockiert Confirmatory Promotion bis zur Untersuchung.
+
+Die konkrete statistische Failure Rule wird nicht heute erfunden, sondern muss im späteren Analysis Plan vor Sicht auf Placebo-Ergebnisse eingefroren werden.
+
+## QM erzeugt selbst Degrees of Freedom
+
+Auch Governance kann nach Ergebnis selektiert werden. Deshalb müssen bei confirmatory Arbeit auch folgende Entscheidungen eingefroren oder als exploratory gekennzeichnet werden:
+- Multiplicity Family,
+- Block-/Cluster-Sensitivitätsmenü,
+- Calibration Population,
+- Negative-Control-Battery und Failure Rule,
+- Lineage-Grenzen/Materiality,
+- Promotion Estimand und Threshold,
+- Sequential Look Schedule.
+
+## Reihenfolge / Dependencies nach Phase 8
+
+QM ist kein rein linearer Fahrplan.
+
+Dauerhaft ab QM-Start:
+- QM-A,
+- QM-H.
+
+Parallel foundational:
+- QM-B,
+- QM-C.
+
+Sobald B/C-Schemas stehen:
+- QM-I beginnen; vor QM-F/QM-G-Interpretation muss QM-I blocking sein.
+
+Danach:
+- QM-D aus B/C,
+- QM-E aus D,
+- QM-J aus C/D/I,
+- QM-F aus D/I,
+- QM-G aus C/I.
+
+Vor jedem Start zuerst:
+1. QM-Branch auf finalen Phase-8-main synchronisieren.
+2. Delta Audit gegen durch Phase 8 bereits gelöste Punkte.
+3. Doppelmaßnahmen entfernen.
 
 ## Nicht Teil des unmittelbaren QM-Core
 
-- Dynamische Portfolio-Korrelation wird als späterer Portfolio-Risk-Overlay geführt.
+- Dynamische Portfolio-Korrelation bleibt späterer Portfolio-Risk-Overlay.
 - Elliott × External Evidence bleibt Phase 8H und setzt die Einzelpromotion der externen Familie voraus.
 - Feste CRV-, Stop- oder Positionsgrößenregeln werden nicht aus fremden Quellen übernommen.
-
-## Reihenfolge nach Abschluss von Phase 8
-
-1. QM-Branch auf den finalen Phase-8-`main` synchronisieren.
-2. Audit: Welche QM-Anforderungen wurden in Phase 8 bereits umgesetzt?
-3. QM-A als Governance-Basis umsetzen.
-4. QM-H als dauerhaftes Fehler-/CAPA-System aktivieren.
-5. QM-B und QM-C aufbauen: historisches Universe + Hypothesen-/Multiplicity-Registry.
-6. QM-I Evidence Lineage erstellen, bevor weitere Layer als vermeintlich unabhängige Evidenz bewertet werden.
-7. QM-D Dependence/Effective-N ergänzen.
-8. QM-J Negative Controls/Falsification gegen die Research-Pipeline laufen lassen.
-9. QM-E Probability Calibration prüfen.
-10. QM-F als prospektiven Shadow-/Ablation-Track aufbauen.
-11. QM-G als registrierten Elliott-Challenger-Track durchführen.
-12. Erst danach entscheiden, welche Befunde echte Code-/Policy-Änderungen rechtfertigen.
-
-QM-H läuft ab Aktivierung querschnittlich weiter und endet nicht mit einem einzelnen Paket.
+- Conditional Mutual Information ist optionale Forschung, kein automatischer Lineage-Gate.
+- Kein einzelner scalar Effective N als Promotion Shortcut.
 
 ## Abnahmekriterium
 
-QM gilt nicht als erfolgreich, weil mehr Metriken existieren. Es gilt als erfolgreich, wenn für jede relevante zukünftige Forschungsentscheidung nachvollziehbar ist:
-- welche Hypothese vorlag,
-- welche Daten damals verfügbar waren,
+QM gilt nicht als erfolgreich, weil mehr Metriken oder Dokumente existieren. Es gilt als erfolgreich, wenn für jede relevante zukünftige Forschungsentscheidung maschinenprüfbar nachvollziehbar ist:
+- welche Hypothese/Version vorlag,
+- welcher Analysis Plan eingefroren war,
+- welche Daten/Universe/Labels verfügbar waren,
+- welche Artefakte angesehen wurden,
 - ob Evidenz bereits verbraucht war,
-- welches Universe tatsächlich galt,
+- welche Informationsabstammung und Independence Claims vorlagen,
+- welche Multiplicity-/Sequential-Look-Regeln galten,
 - welche Abhängigkeiten bestanden,
-- wie viele Hypothesen tatsächlich geprüft wurden,
-- woher jede verwendete Information abstammt,
-- ob vermeintlich unabhängige Evidenz gemeinsame Informationsquellen hat,
-- ob die Pipeline kontrollierte Nullsignale korrekt als Null/unsicher behandelt,
-- welche Fehler/Beinahefehler erkannt und verifiziert geschlossen wurden,
-- und ob eine spätere Promotion auf genuinely later evidence beruht.
+- ob Incidents Evidenz beeinflusst haben,
+- ob Negative Controls die Pipeline ausreichend herausgefordert haben,
+- und ob eine Promotion auf genuinely later evidence und gültigen State Transitions beruht.
