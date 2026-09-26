@@ -23,7 +23,7 @@ from scanner.research.external_evidence.fed_h15_release_8f import (
 from scanner.research.external_evidence.macro_ledger_8f import build_macro_ledger
 
 
-FED_H15_RELEASE_URL = "https://www.federalreserve.gov/releases/h15/current/"
+FED_H15_RELEASE_URL = "https://www.federalreserve.gov/releases/h15/"
 ECB_USD_EUR_URL = (
     "https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A"
     "?format=csvdata&lastNObservations=10"
