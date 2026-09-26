@@ -15,12 +15,15 @@ on:
       - "src/scanner/research/external_evidence/eia_energy_8f.py"
       - "src/scanner/research/external_evidence/fed_h15_8f.py"
       - "src/scanner/research/external_evidence/ecb_fx_8f.py"
+      - "src/scanner/research/external_evidence/macro_ledger_8f.py"
       - "scripts/run_external_evidence_8f_contract_gate.py"
+      - "scripts/run_external_evidence_8f_macro_ledger.py"
       - "tests/test_external_evidence_8f_macro_exposure.py"
       - "tests/test_external_evidence_8f_source_candidates.py"
       - "tests/test_external_evidence_8f_market_proxies.py"
       - "tests/test_external_evidence_8f_series_catalog.py"
       - "tests/test_external_evidence_8f_source_adapters.py"
+      - "tests/test_external_evidence_8f_macro_ledger.py"
       - "docs/external_evidence_8f_macro_exposure.md"
       - "docs/external_evidence_8f_market_proxies.md"
       - ".github/workflows/external_evidence_8f_macro_exposure.yml"
@@ -41,7 +44,7 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate Phase 8F foundation, source adapters, series routing and proxy guards
+      - name: Validate Phase 8F foundation, adapters, ledger, routing and proxy guards
         run: >-
           python -m pytest -q
           tests/test_external_evidence_8f_macro_exposure.py
@@ -49,14 +52,18 @@ jobs:
           tests/test_external_evidence_8f_market_proxies.py
           tests/test_external_evidence_8f_series_catalog.py
           tests/test_external_evidence_8f_source_adapters.py
+          tests/test_external_evidence_8f_macro_ledger.py
       - name: Verify Phase 8F contract gate CLI
         run: python scripts/run_external_evidence_8f_contract_gate.py --help
+      - name: Verify Phase 8F macro ledger CLI
+        run: python scripts/run_external_evidence_8f_macro_ledger.py --help
       - name: Execute Phase 8F foundation contract gate
         run: python scripts/run_external_evidence_8f_contract_gate.py --output /tmp/external_evidence_8f_contract_gate.json
 
 # CI intentionally performs no live macro-source or market-price requests.
 # BLS historical PIT is accepted only from an archived release with an independently proven exact timestamp.
 # EIA, Fed H.15 and ECB current-history data remain prospective-only unless separate historical archive proof is introduced.
+# Macro observations are stored append-only; later revisions may not overwrite prior vintages.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
 # Uranium/lithium ETFs, physical-trust NAVs and futures are challenger proxies only; they are not relabelled as spot.
 # No macro factor direction, signed asset exposure, outcome research, threshold/weight selection,
