@@ -45,6 +45,7 @@ jobs:
           tests/test_external_evidence_8f_mapping_candidates_b4.py
           tests/test_external_evidence_8f_mapping_candidates_b5.py
           tests/test_external_evidence_8f_mapping_candidates_b6.py
+          tests/test_external_evidence_8f_mapping_candidates_b7.py
           tests/test_external_evidence_8f_completion.py
       - name: Verify Phase 8F CLIs
         run: |
@@ -86,6 +87,10 @@ jobs:
         run: |
           python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b6_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b6.json
           python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b6_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b6_v1.json --output /tmp/external_evidence_8f_mapping_review_b6.json
+      - name: Validate B7 and confirm pending review cannot promote
+        run: |
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b7_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b7.json
+          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b7_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b7_v1.json --output /tmp/external_evidence_8f_mapping_review_b7.json
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -95,6 +100,7 @@ jobs:
 # Documentary candidate mappings cannot enter the effective exposure map automatically.
 # B1-B4 remain materialized in the 60-mapping base map; B5 and B6 are append-only human-reviewed overlays.
 # The effective map contains 94 reviewed mappings after B6; 113 frozen-domain subjects remain unaccounted.
+# B7 remains pending human review and must not change the effective 94-mapping map.
 # B1-B6 human-review replay must be idempotent against the effective map.
 # Human-review promotion is idempotent for equivalent mapping semantics; conflicting duplicates fail closed.
 # No backdating, market direction, signed exposure, weights, thresholds, outcome research,
