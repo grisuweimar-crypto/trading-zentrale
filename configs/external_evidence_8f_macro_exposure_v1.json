@@ -20,7 +20,9 @@
     "market_proxy_config": "configs/external_evidence_8f_market_proxies_v1.json",
     "adapter_source_ids": [
       "bls_cpi_archived_releases",
-      "eia_open_data_energy"
+      "eia_open_data_energy",
+      "federal_reserve_board_h15",
+      "ecb_data_portal"
     ],
     "blocked_source_ids": [
       "fred_alfred_realtime"
@@ -34,6 +36,8 @@
       "FRED/ALFRED is retained only as a conceptual vintage-semantics reference and is not an enabled ingestion source under the currently reviewed terms.",
       "BLS archived CPI releases may establish exact historical publication availability when the archived release itself states the embargo/release timestamp.",
       "EIA current-history/API snapshots may contain later corrections, so historical rows from a snapshot are not retrojected; strict PIT begins at actual ingestion unless separate archive proof exists.",
+      "Federal Reserve Board H.15 current downloadable history may contain later corrections; the 8F adapter therefore treats collected H.15 rows as prospective snapshot evidence unless separate original-release proof is added.",
+      "ECB Data Portal current FX history may reflect later revisions; the 8F adapter therefore begins strict PIT at actual ingestion unless separate historical publication/vintage proof is added.",
       "Market proxies for uranium and lithium remain separate challenger evidence and may not be relabeled as underlying commodity spot prices."
     ]
   },
@@ -102,18 +106,46 @@
       "source_id": "eia_open_data_energy",
       "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
       "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "RIFSPFF_N.D",
+      "factor_id": "rates_policy",
+      "source_id": "federal_reserve_board_h15",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "RIFLGFCY02_N.B",
+      "factor_id": "yield_curve",
+      "source_id": "federal_reserve_board_h15",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "RIFLGFCY10_N.B",
+      "factor_id": "yield_curve",
+      "source_id": "federal_reserve_board_h15",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "EXR.D.USD.EUR.SP00.A",
+      "factor_id": "fx",
+      "source_id": "ecb_data_portal",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
     }
   ],
   "factor_catalog": [
     {
       "factor_id": "rates_policy",
       "category": "rates",
-      "status": "SOURCE_ROUTED_ADAPTER_PENDING"
+      "status": "FED_H15_PROSPECTIVE_ADAPTER_IMPLEMENTED"
     },
     {
       "factor_id": "yield_curve",
       "category": "rates",
-      "status": "SOURCE_ROUTED_ADAPTER_PENDING"
+      "status": "FED_H15_2Y_10Y_PROSPECTIVE_ADAPTER_IMPLEMENTED"
     },
     {
       "factor_id": "inflation",
@@ -123,7 +155,7 @@
     {
       "factor_id": "fx",
       "category": "fx",
-      "status": "SOURCE_ROUTED_ADAPTER_PENDING"
+      "status": "ECB_USD_EUR_PROSPECTIVE_ADAPTER_IMPLEMENTED"
     },
     {
       "factor_id": "oil",
@@ -163,6 +195,8 @@
   ],
   "context_semantics": {
     "allowed_output": "RAW_PIT_MACRO_CONTEXT_JOINED_ONLY_THROUGH_VERSIONED_DOCUMENTED_EXPOSURE_MAPPING",
+    "multiple_series_per_factor_preserved": true,
+    "silent_single_series_selection_for_multiseries_factor": false,
     "factor_standardization_enabled": false,
     "factor_direction_enabled": false,
     "factor_weighting_enabled": false,
@@ -171,7 +205,7 @@
     "decision_policy_enabled": false
   },
   "next_gates": [
-    "8F_A4_SERIES_LEVEL_SOURCE_AND_RIGHTS_VALIDATION",
+    "8F_A4_REMAINING_SERIES_LEVEL_SOURCE_AND_RIGHTS_VALIDATION",
     "8F_B_VERSIONED_EXPOSURE_MAPPING_POPULATION",
     "8F_C_REAL_PIT_MACRO_INGESTION",
     "8F_D_COVERAGE_AND_CONTEXT_AUDIT",
