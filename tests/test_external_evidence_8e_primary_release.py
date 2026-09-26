@@ -52,14 +52,16 @@ def test_observed_release_is_pit_safe_from_actual_ingestion_not_page_date() -> N
     )
     row = payload["rows"][0]
     assert row["source_claimed_published_at"] == "2026-09-25T12:00:00-04:00"
-    assert row["published_at"] == ingested_at
+    assert row["published_at"] is None
+    assert row["public_release_proof_status"] == "INGESTION_ONLY"
     assert row["valid_from"] == ingested_at
     assert row["strict_pit_eligible"] is True
     assert row["historical_publication_time_independently_proven"] is False
     assert payload["guards"]["historical_backdating_without_independent_proof"] is False
+    assert payload["guards"]["ingestion_time_fabricated_as_published_at"] is False
 
 
-def test_observed_release_can_produce_conservative_first_public_release() -> None:
+def test_observed_release_does_not_fake_first_public_release() -> None:
     ingested_at = "2026-09-26T16:00:00+00:00"
     payload = build_primary_release_evidence(
         records=[_record()], ingested_at=ingested_at, config=_config()
@@ -76,8 +78,8 @@ def test_observed_release_can_produce_conservative_first_public_release() -> Non
         source_ranks=source_ranks,
     )
     event = ledger["events"][0]
-    assert event["status"] == "KNOWN"
-    assert event["first_public_release_at"] == ingested_at
+    assert event["status"] == "INSUFFICIENT_FIRST_PUBLIC_RELEASE_PROOF"
+    assert event["first_public_release_at"] is None
     assert event["valid_from"] == ingested_at
     assert event["event_state"] == "FILED"
 
@@ -111,9 +113,7 @@ def test_issuer_ir_requires_domain_attestation() -> None:
 
 
 def test_independent_historical_publication_proof_requires_hash() -> None:
-    record = _record(
-        historical_publication_time_independently_proven=True,
-    )
+    record = _record(historical_publication_time_independently_proven=True)
     with pytest.raises(PrimaryRelease8EError, match="archival_proof_sha256"):
         build_primary_release_evidence(
             records=[record],
@@ -134,6 +134,7 @@ def test_independent_historical_publication_proof_may_backdate_only_with_proof()
     )
     row = payload["rows"][0]
     assert row["published_at"] == "2026-09-25T12:00:00-04:00"
+    assert row["public_release_proof_status"] == "PROVEN"
     assert row["valid_from"] == "2026-09-25T12:00:00-04:00"
     assert row["archival_proof_sha256"] == "b" * 64
 
