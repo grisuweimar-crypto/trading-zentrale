@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8d_positioning_crowding_v1",
   "phase": "8D_positioning_crowding",
-  "status": "8D_A1_A2_FINRA_IMPLEMENTED_OUTCOME_BLIND",
+  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -92,17 +92,42 @@
       "direction": "UNASSIGNED"
     },
     "INSIDER_ACTIVITY": {
-      "status": "SOURCE_ACCEPTED_HIGH_PRECISION_CHALLENGER",
+      "status": "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_HIGH_PRECISION_CHALLENGER",
       "source_authority": "U.S. SEC EDGAR",
       "forms": ["4", "4/A"],
-      "source_url": "https://www.sec.gov/submit-filings/technical-specifications",
-      "identity": ["issuer_cik", "accession_number", "reporting_owner_identity"],
-      "event_time_policy": "transaction_date",
-      "valid_from_policy": "SEC_ACCEPTANCE_TIMESTAMP",
+      "source_urls": [
+        "https://www.sec.gov/data-research/sec-markets-data/insider-transactions-data-sets",
+        "https://www.sec.gov/files/insider_transactions_readme.pdf"
+      ],
+      "bulk_dataset": "Insider Transactions Data Sets",
+      "bulk_tables": ["SUBMISSION", "REPORTINGOWNER", "NONDERIV_TRANS"],
+      "bulk_semantics": "AS_FILED_QUARTERLY_FLAT_EXTRACTION",
+      "identity": ["issuer_cik", "accession_number", "nonderiv_trans_sk"],
+      "event_time_policy": "TRANS_DATE",
+      "valid_from_policy": "EXACT_ACCESSION_JOIN_TO_SEC_SUBMISSIONS_ACCEPTANCE_METADATA",
       "amendment_policy": "4/A_RETAINED_AS_SEPARATE_VERSIONED_EVIDENCE_NO_SILENT_OVERWRITE",
       "initial_transaction_scope": {
-        "P": "PURCHASE_ON_EXCHANGE_OR_FROM_ANOTHER_PERSON",
-        "S": "SALE_ON_EXCHANGE_OR_TO_ANOTHER_PERSON"
+        "P": "OPEN_MARKET_OR_PRIVATE_PURCHASE",
+        "S": "OPEN_MARKET_OR_PRIVATE_SALE"
+      },
+      "b1_b2_contract": {
+        "official_quarterly_bulk_only": true,
+        "verified_sec_bundle_required": true,
+        "exact_accession_join_required": true,
+        "exact_issuer_cik_join_required": true,
+        "current_ticker_used_as_historical_identity": false,
+        "forms_restricted_to_4_and_4_a": true,
+        "nonderivative_table_only": true,
+        "transaction_form_type_4_required_for_discretionary_candidate": true,
+        "transaction_codes_restricted_to_p_and_s": true,
+        "p_requires_acquired_code_a": true,
+        "s_requires_disposed_code_d": true,
+        "equity_swaps_excluded_from_discretionary_candidate": true,
+        "aff10b5one_true_excluded_from_discretionary_candidate": true,
+        "aff10b5one_unknown_not_assumed_discretionary": true,
+        "source_zip_sha256_required": true,
+        "source_member_sha256_required": true,
+        "ci_live_network_access": false
       },
       "excluded_from_discretionary_buy_sell_scope": [
         "A_GRANT_AWARD_OR_COMPANY_ACQUISITION",
@@ -112,19 +137,26 @@
         "M_DERIVATIVE_EXERCISE_OR_CONVERSION",
         "J_OTHER_UNLESS_SEPARATELY_VALIDATED",
         "K_SWAP_OR_HEDGE",
-        "V_VOLUNTARY_REPORTING_FLAG_DOES_NOT_DEFINE_ECONOMIC_ACTION"
+        "V_VOLUNTARY_REPORTING_FLAG_DOES_NOT_DEFINE_ECONOMIC_ACTION",
+        "EQUITY_SWAP_INVOLVED",
+        "AFF10B5ONE_TRUE",
+        "TRANS_FORM_TYPE_NOT_4",
+        "P_S_ACQUIRED_DISPOSED_CONFLICT"
       ],
       "raw_fields": [
-        "transaction_date",
-        "transaction_code",
-        "acquired_disposed_code",
-        "transaction_shares",
-        "transaction_price_per_share",
-        "post_transaction_shares",
-        "security_title",
-        "direct_or_indirect_ownership",
-        "reporting_owner_relationships",
-        "ten_b5_1_indicator_or_footnote_when_available"
+        "TRANS_DATE",
+        "TRANS_FORM_TYPE",
+        "TRANS_CODE",
+        "TRANS_ACQUIRED_DISP_CD",
+        "TRANS_SHARES",
+        "TRANS_PRICEPERSHARE",
+        "SHRS_OWND_FOLWNG_TRANS",
+        "SECURITY_TITLE",
+        "DIRECT_INDIRECT_OWNERSHIP",
+        "EQUITY_SWAP_INVOLVED",
+        "AFF10B5ONE",
+        "RPTOWNERCIK",
+        "RPTOWNER_RELATIONSHIP"
       ],
       "initial_features_after_validation": [
         "discretionary_purchase_count",
@@ -136,6 +168,7 @@
         "distinct_buyer_count",
         "distinct_seller_count"
       ],
+      "artifact_schema": "external_evidence_8d_sec_insider_bulk_v1",
       "direction": "UNASSIGNED"
     },
     "BORROW_RATE": {
