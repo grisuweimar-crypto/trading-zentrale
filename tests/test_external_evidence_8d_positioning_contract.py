@@ -7,6 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "configs" / "external_evidence_8d_positioning_crowding_v1.json"
 VALIDATION_PATH = ROOT / "configs" / "external_evidence_8d_insider_validation_v1.json"
+FEATURE_PATH = ROOT / "configs" / "external_evidence_8d_insider_features_v1.json"
+IDENTITY_PATH = ROOT / "configs" / "external_evidence_8d_insider_identity_v1.json"
 
 
 def _contract() -> dict:
@@ -17,11 +19,19 @@ def _validation() -> dict:
     return json.loads(VALIDATION_PATH.read_text(encoding="utf-8"))
 
 
-def test_8d_starts_outcome_blind_and_without_decision_integration() -> None:
+def _features() -> dict:
+    return json.loads(FEATURE_PATH.read_text(encoding="utf-8"))
+
+
+def _identity() -> dict:
+    return json.loads(IDENTITY_PATH.read_text(encoding="utf-8"))
+
+
+def test_8d_remains_outcome_blind_and_without_decision_integration() -> None:
     contract = _contract()
     principles = contract["principles"]
     gate = contract["research_gate"]
-    assert contract["status"] == "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PREREGISTERED_OUTCOME_BLIND"
+    assert contract["status"] == "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PASSED_B4_B5_IMPLEMENTED_OUTCOME_BLIND"
     assert principles["market_outcomes_may_be_read"] is False
     assert principles["market_direction_may_be_assigned"] is False
     assert principles["absolute_high_or_low_positioning_implies_direction"] is False
@@ -65,11 +75,11 @@ def test_finra_a1_a2_contract_is_fail_closed() -> None:
     assert coverage["missing_evidence_may_default_to_neutral"] is False
 
 
-def test_insider_b1_b2_is_exact_accession_high_precision_challenger() -> None:
+def test_insider_b1_b2_contract_remains_fail_closed_after_b3_pass() -> None:
     family = _contract()["families"]["INSIDER_ACTIVITY"]
     contract = family["b1_b2_contract"]
     assert family["status"] == (
-        "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_B3_PREREGISTERED_HIGH_PRECISION_CHALLENGER"
+        "SOURCE_VALIDATED_B3_PASS_B4_FEATURES_B5_ASOF_IDENTITY_IMPLEMENTED_OUTCOME_BLIND"
     )
     assert family["forms"] == ["4", "4/A"]
     assert family["event_time_policy"] == "TRANS_DATE"
@@ -90,16 +100,25 @@ def test_insider_b1_b2_is_exact_accession_high_precision_challenger() -> None:
     assert family["direction"] == "UNASSIGNED"
 
 
-def test_insider_b3_is_preregistered_before_real_evaluation() -> None:
+def test_insider_b3_pass_is_recorded_while_preregistration_stays_frozen() -> None:
     family = _contract()["families"]["INSIDER_ACTIVITY"]
     b3 = family["b3_validation_contract"]
     validation = _validation()
     assert b3["config"] == "configs/external_evidence_8d_insider_validation_v1.json"
-    assert b3["status"] == "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION"
+    assert b3["status"] == "PASS_SOURCE_SEMANTICS_VALIDATION"
     assert b3["first_real_corpus"] == "2026Q2"
     assert b3["pool_with_earlier_quarters"] is False
-    assert b3["market_outcomes_may_be_read"] is False
+    assert b3["reviewed_annotation_count"] == 299
+    assert b3["market_outcomes_read"] is False
+    assert b3["phase7_integration_enabled"] is False
+    assert b3["mechanical_false_counts"] == {
+        "transaction_price_correct_when_present": 1,
+        "transaction_shares_correct": 1,
+    }
+    assert b3["all_other_mechanical_fields_true_for_all_reviewed_rows"] is True
     assert b3["candidate_status_name_is_not_proof_of_subjective_discretion"] is True
+
+    # The preregistration config itself remains immutable after the real result.
     assert validation["status"] == "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION"
     assert validation["real_validation_corpus"]["quarter"] == "2026Q2"
     assert validation["real_validation_corpus"]["pool_with_earlier_quarters"] is False
@@ -111,11 +130,59 @@ def test_insider_b3_is_preregistered_before_real_evaluation() -> None:
     ] is False
 
 
-def test_insider_future_features_are_descriptive_not_motive_labels() -> None:
-    features = set(_contract()["families"]["INSIDER_ACTIVITY"]["initial_features_after_validation"])
-    assert "p_s_purchase_count" in features
-    assert "p_s_sale_count" in features
-    assert all("discretionary" not in feature for feature in features)
+def test_insider_b4_features_are_descriptive_and_numeric_features_stay_challenger() -> None:
+    family = _contract()["families"]["INSIDER_ACTIVITY"]
+    b4 = family["b4_feature_contract"]
+    tiers = family["feature_tiers_after_b3"]
+    feature_config = _features()
+
+    assert b4["status"] == "IMPLEMENTED_OUTCOME_BLIND"
+    assert b4["primary_window_calendar_days"] == 30
+    assert b4["robustness_window_calendar_days"] == [90]
+    assert b4["knowledge_gate"] == "valid_from <= as_of"
+    assert b4["complete_source_window_required"] is True
+    assert b4["amendments_in_v1_aggregation"] is False
+    assert b4["numeric_features_promoted"] is False
+    assert set(tiers["VALIDATED_DESCRIPTIVE_CORE"]) == {"purchase_count", "sale_count"}
+    assert set(tiers["VALIDATED_WITH_OWNER_COMPLETENESS_GATE"]) == {
+        "distinct_buyer_count",
+        "distinct_seller_count",
+    }
+    assert set(tiers["CHALLENGER_NUMERIC"]) == {
+        "purchase_shares",
+        "sale_shares",
+        "purchase_value_when_price_known",
+        "sale_value_when_price_known",
+    }
+    assert feature_config["market_outcomes_may_be_read"] is False
+    assert feature_config["multiplicity_policy"].startswith("30d is the primary")
+
+
+def test_insider_b5_identity_implements_8a_asof_contract_fail_closed() -> None:
+    family = _contract()["families"]["INSIDER_ACTIVITY"]
+    b5 = family["b5_identity_contract"]
+    identity = _identity()
+
+    assert b5["status"] == "IMPLEMENTED_OUTCOME_BLIND"
+    assert b5["parent_contract"] == "configs/external_universe_coverage_contract_v1.json"
+    assert b5["scanner_history_is_primary_observability_ledger"] is True
+    assert b5["identity_becomes_usable_at"] == "valid_from"
+    assert b5["future_identity_evidence_may_be_used"] is False
+    assert b5["current_ticker_retrojection_enabled"] is False
+    assert b5["exact_symbol_only"] is True
+    assert b5["b4_grid_includes_only_resolved_identity"] is True
+    assert b5["date_only_asof_is_rejected"] is True
+
+    rules = identity["resolution_rules"]
+    assert identity["market_outcomes_may_be_read"] is False
+    assert rules["scanner_history_is_primary_observability_ledger"] is True
+    assert rules["exact_symbol_only"] is True
+    assert rules["current_ticker_retrojection_enabled"] is False
+    assert rules["suffix_stripping_enabled"] is False
+    assert rules["adr_substitution_enabled"] is False
+    assert rules["fuzzy_name_matching_enabled"] is False
+    assert rules["future_identity_evidence_may_be_used"] is False
+    assert identity["missing_external_data_may_be_imputed_neutral"] is False
 
 
 def test_insider_excluded_codes_are_not_silently_discretionary() -> None:
