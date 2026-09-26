@@ -13,6 +13,7 @@ class ECBFX8FError(ValueError):
 
 SOURCE_ID = "ecb_data_portal"
 SERIES_ID = "EXR.D.USD.EUR.SP00.A"
+SERIES_KEY = "D.USD.EUR.SP00.A"
 FACTOR_ID = "fx"
 UNITS = "USD_per_EUR"
 
@@ -55,7 +56,7 @@ def build_ecb_fx_prospective_macro_observations(
 
     for raw in reader:
         row = {str(key or "").strip().upper(): value for key, value in raw.items()}
-        if "KEY" in row and str(row.get("KEY") or "").strip() not in {"", SERIES_ID}:
+        if "KEY" in row and str(row.get("KEY") or "").strip() not in {"", SERIES_ID, SERIES_KEY}:
             continue
         if "CURRENCY" in row and str(row.get("CURRENCY") or "").strip() not in {"", "USD"}:
             continue
