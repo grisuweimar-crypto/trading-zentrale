@@ -65,9 +65,10 @@ def validate_event_evidence(
 
     valid_from = _aware_datetime(row.get("valid_from"), field="valid_from")
     ingested_at = _aware_datetime(row.get("ingested_at"), field="ingested_at")
-    if valid_from > ingested_at and row.get("historical_publication_time_independently_proven") is not True:
+    historical_time_proven = row.get("historical_publication_time_independently_proven") is True
+    if valid_from < ingested_at and not historical_time_proven:
         raise StructuredEvent8EError(
-            "valid_from may precede/align with ingestion only when historical publication timing is independently proven"
+            "valid_from cannot precede actual ingestion unless historical publication timing is independently proven"
         )
 
     published_at = _optional_aware_datetime(row.get("published_at"), field="published_at")
@@ -76,6 +77,12 @@ def validate_event_evidence(
         raise StructuredEvent8EError(f"unsupported public_release_proof_status: {proof_status}")
     if proof_status == "PROVEN" and published_at is None:
         raise StructuredEvent8EError("PROVEN public release requires published_at")
+    if published_at is not None and valid_from < published_at:
+        raise StructuredEvent8EError("valid_from cannot precede published_at")
+    if historical_time_proven and published_at is None:
+        raise StructuredEvent8EError(
+            "historical publication timing cannot be proven without published_at"
+        )
 
     strict_pit = row.get("strict_pit_eligible") is True
     discovery_only = row.get("discovery_only") is True
@@ -99,9 +106,7 @@ def validate_event_evidence(
         "strict_pit_eligible": strict_pit,
         "discovery_only": discovery_only,
         "public_release_proof_status": proof_status,
-        "historical_publication_time_independently_proven": row.get(
-            "historical_publication_time_independently_proven"
-        ) is True,
+        "historical_publication_time_independently_proven": historical_time_proven,
     }
 
 
