@@ -29,10 +29,12 @@ def test_series_catalog_matches_implemented_adapters_and_source_routing():
     macro, sources = _load()
     result = validate_series_catalog(macro, sources)
     assert result["status"] == "PASS_SERIES_CATALOG_CONTRACT"
-    assert result["series_count"] == 5
+    assert result["series_count"] == 9
     assert result["implemented_adapter_sources"] == [
         "bls_cpi_archived_releases",
+        "ecb_data_portal",
         "eia_open_data_energy",
+        "federal_reserve_board_h15",
     ]
 
 
