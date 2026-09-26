@@ -7,13 +7,16 @@ on:
       - "src/scanner/research/external_evidence/finra_short_interest.py"
       - "src/scanner/research/external_evidence/finra_short_interest_acquisition.py"
       - "src/scanner/research/external_evidence/finra_short_interest_coverage.py"
+      - "src/scanner/research/external_evidence/sec_insider_bulk.py"
       - "scripts/import_external_evidence_8d_finra_short_interest.py"
       - "scripts/collect_external_evidence_8d_finra_short_interest.py"
       - "scripts/run_external_evidence_8d_finra_coverage.py"
+      - "scripts/import_external_evidence_8d_sec_insider_bulk.py"
       - "docs/external_evidence_8d_positioning_crowding.md"
       - "tests/test_external_evidence_8d_positioning_contract.py"
       - "tests/test_external_evidence_8d_finra_short_interest.py"
       - "tests/test_external_evidence_8d_finra_coverage.py"
+      - "tests/test_external_evidence_8d_sec_insider_bulk.py"
       - ".github/workflows/external_evidence_8d_positioning.yml"
   workflow_dispatch:
 
@@ -32,17 +35,21 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate Phase 8D source contract and FINRA implementation
+      - name: Validate Phase 8D outcome-blind source and PIT contracts
         run: >-
           python -m pytest -q
           tests/test_external_evidence_8d_positioning_contract.py
           tests/test_external_evidence_8d_finra_short_interest.py
           tests/test_external_evidence_8d_finra_coverage.py
-      - name: Verify Phase 8D FINRA CLIs
+          tests/test_external_evidence_8d_sec_insider_bulk.py
+      - name: Verify Phase 8D CLIs
         run: |
           python scripts/import_external_evidence_8d_finra_short_interest.py --help
           python scripts/collect_external_evidence_8d_finra_short_interest.py --help
           python scripts/run_external_evidence_8d_finra_coverage.py --help
+          python scripts/import_external_evidence_8d_sec_insider_bulk.py --help
 
-# CI intentionally performs no live FINRA requests.
-# Real FINRA publication snapshots are acquired prospectively outside GitHub Actions.
+# CI intentionally performs no live FINRA or SEC requests.
+# Real FINRA snapshots are collected prospectively outside CI.
+# SEC insider quarterly bulk ZIPs are operator-provided official SEC downloads and
+# are joined to the already operator-attested SEC submissions bundle by accession.
