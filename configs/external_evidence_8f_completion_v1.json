@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8f_completion_v1",
   "phase": "8F_macro_exposure_context",
-  "status": "NOT_COMPLETE_UNTIL_REAL_LEDGER_AND_REVIEWED_MAPPING_EXIST",
+  "status": "BLOCKED_PENDING_REAL_LEDGER_AND_REVIEWED_MAPPING_COVERAGE",
   "freeze_allowed": false,
   "requirements": {
     "foundation_contract_must_pass": true,
@@ -14,6 +14,7 @@
     "reviewed_exposure_mapping_required": true,
     "minimum_active_reviewed_mappings": 1,
     "research_domain_coverage_must_be_explicit": true,
+    "research_domain_must_be_pinned_to_pre8f_source_blob": true,
     "domain_subjects_must_be_accounted_for_as_mapped_or_explicitly_unmapped": true,
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -27,9 +28,10 @@
     "exposure_domain_audit"
   ],
   "notes": [
+    "The research denominator is now frozen to the exact pre-8F universe_master.csv blob at the Phase-8E head, filtered to active stocks and deduplicated by symbol.",
     "Synthetic fixture rows may validate code but may not satisfy the real-macro-ledger completion requirement.",
     "A mapping is not complete merely because a sector/name suggests exposure; it must satisfy the versioned documentary human-review contract.",
-    "The research domain may be intentionally narrow, but every subject inside it must be accounted for as mapped or explicitly unmapped.",
+    "Every frozen-domain subject must remain accounted for as mapped or explicitly unmapped.",
     "Phase 8F remains outcome-blind until the completion gate is frozen; 8G outcome research starts only afterward."
   ]
 }
