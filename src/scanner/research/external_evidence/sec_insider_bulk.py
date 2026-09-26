@@ -8,7 +8,7 @@ import zipfile
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 from .sec_edgar import normalize_cik
 from .sec_history import assemble_full_submission_history
@@ -92,7 +92,9 @@ def _load_sec_bundle(bundle_dir: Path) -> tuple[dict[str, Any], str]:
     return manifest, _sha256_file(path)
 
 
-def _acceptance_index(bundle_dir: Path, manifest: Mapping[str, Any]) -> tuple[dict[str, dict[str, Any]], set[str]]:
+def _acceptance_index(
+    bundle_dir: Path, manifest: Mapping[str, Any]
+) -> tuple[dict[str, dict[str, Any]], set[str]]:
     by_accession: dict[str, dict[str, Any]] = {}
     verified_ciks: set[str] = set()
     for company in manifest.get("companies") or []:
@@ -105,12 +107,17 @@ def _acceptance_index(bundle_dir: Path, manifest: Mapping[str, Any]) -> tuple[di
         primary = _read_verified_json(bundle_dir, company.get("submissions_file") or {})
         if normalize_cik(primary.get("cik") or "") != cik:
             raise SecInsiderBulkError(f"submissions CIK mismatch for {symbol}")
-        tickers = {str(value or "").strip().upper() for value in (primary.get("tickers") or [])}
+        tickers = {
+            str(value or "").strip().upper() for value in (primary.get("tickers") or [])
+        }
         if symbol not in tickers:
             raise SecInsiderBulkError(f"submissions ticker mismatch for {symbol}")
+
         historical: dict[str, dict[str, Any]] = {}
         for spec in company.get("history_files") or []:
-            historical[Path(str(spec.get("path") or "")).name] = _read_verified_json(bundle_dir, spec)
+            historical[Path(str(spec.get("path") or "")).name] = _read_verified_json(
+                bundle_dir, spec
+            )
         assembled = assemble_full_submission_history(
             primary,
             historical_payloads=historical,
@@ -122,7 +129,6 @@ def _acceptance_index(bundle_dir: Path, manifest: Mapping[str, Any]) -> tuple[di
             accession = str(row.get("accession_number") or "").strip()
             if not accession:
                 continue
-            existing = by_accession.get(accession)
             payload = {
                 "symbol": symbol,
                 "issuer_cik": cik,
@@ -134,21 +140,24 @@ def _acceptance_index(bundle_dir: Path, manifest: Mapping[str, Any]) -> tuple[di
                 "primary_document": row.get("primary_document"),
                 "reason_codes": list(row.get("reason_codes") or []),
             }
+            existing = by_accession.get(accession)
             if existing is not None and existing != payload:
-                raise SecInsiderBulkError(f"conflicting SEC bundle metadata for accession {accession}")
+                raise SecInsiderBulkError(
+                    f"conflicting SEC bundle metadata for accession {accession}"
+                )
             by_accession[accession] = payload
+    if not by_accession:
+        raise SecInsiderBulkError("verified SEC bundle contains no Form 4/4-A accessions")
     return by_accession, verified_ciks
 
 
 def _find_member(zf: zipfile.ZipFile, stem: str) -> str:
-    matches: list[str] = []
     target = stem.upper()
-    for name in zf.namelist():
-        if name.endswith("/"):
-            continue
-        base = Path(name).name
-        if Path(base).stem.upper() == target:
-            matches.append(name)
+    matches = [
+        name
+        for name in zf.namelist()
+        if not name.endswith("/") and Path(Path(name).name).stem.upper() == target
+    ]
     if len(matches) != 1:
         raise SecInsiderBulkError(
             f"expected exactly one {stem} table in SEC insider ZIP, found {len(matches)}"
@@ -156,13 +165,17 @@ def _find_member(zf: zipfile.ZipFile, stem: str) -> str:
     return matches[0]
 
 
-def _read_tsv(zf: zipfile.ZipFile, member: str) -> tuple[list[dict[str, str]], str]:
+def _read_tsv(
+    zf: zipfile.ZipFile, member: str
+) -> tuple[list[dict[str, str]], str]:
     raw = zf.read(member)
     try:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise SecInsiderBulkError(f"cannot decode SEC insider table {member}") from exc
     reader = csv.DictReader(io.StringIO(text), delimiter="\t")
+    if not reader.fieldnames:
+        raise SecInsiderBulkError(f"SEC insider table has no header: {member}")
     rows = [dict(row) for row in reader]
     return rows, _sha256_bytes(raw)
 
@@ -195,8 +208,6 @@ def _bool01(value: Any) -> bool | None:
         return True
     if text in {"0", "N", "FALSE"}:
         return False
-    if not text:
-        return None
     return None
 
 
@@ -207,12 +218,11 @@ def import_sec_insider_quarter(
     source_url: str,
     quarter_label: str,
 ) -> dict[str, Any]:
-    """Import one official SEC quarterly Insider Transactions ZIP without market outcomes.
+    """Import one official SEC quarterly Insider Transactions ZIP outcome-blind.
 
-    The quarterly flat files are treated as an extraction of immutable as-filed accessions.
-    Historical availability is reconstructed only by exact accession + issuer-CIK join to the
-    operator-attested SEC submissions bulk bundle. Current ticker is never used as a historical
-    identity key.
+    Quarterly tables provide immutable as-filed accession content. Historical availability
+    is reconstructed only by exact accession + issuer-CIK join to the operator-attested SEC
+    submissions bundle. Current ticker is descriptive metadata, never historical identity.
     """
     if not insider_zip_path.is_file():
         raise SecInsiderBulkError(f"SEC insider ZIP not found: {insider_zip_path}")
@@ -224,8 +234,8 @@ def import_sec_insider_quarter(
 
     manifest, bundle_manifest_sha = _load_sec_bundle(sec_bulk_bundle_dir)
     acceptance, verified_ciks = _acceptance_index(sec_bulk_bundle_dir, manifest)
-
     zip_sha = _sha256_file(insider_zip_path)
+
     with zipfile.ZipFile(insider_zip_path, "r") as zf:
         submission_member = _find_member(zf, "SUBMISSION")
         owner_member = _find_member(zf, "REPORTINGOWNER")
@@ -241,7 +251,11 @@ def import_sec_insider_quarter(
             continue
         owner_by_accession[accession].append(
             {
-                "reporting_owner_cik": normalize_cik(raw.get("RPTOWNERCIK") or "") if str(raw.get("RPTOWNERCIK") or "").strip() else None,
+                "reporting_owner_cik": (
+                    normalize_cik(raw.get("RPTOWNERCIK") or "")
+                    if str(raw.get("RPTOWNERCIK") or "").strip()
+                    else None
+                ),
                 "reporting_owner_name": raw.get("RPTOWNERNAME"),
                 "reporting_owner_relationship": raw.get("RPTOWNER_RELATIONSHIP"),
                 "reporting_owner_title": raw.get("RPTOWNER_TITLE"),
@@ -260,14 +274,23 @@ def import_sec_insider_quarter(
         submission_by_accession[accession] = raw
     if duplicate_submissions:
         raise SecInsiderBulkError(
-            f"duplicate SUBMISSION accessions in insider ZIP: {sorted(set(duplicate_submissions))[:5]}"
+            "duplicate SUBMISSION accessions in insider ZIP: "
+            + str(sorted(set(duplicate_submissions))[:5])
         )
 
     trans_by_accession: dict[str, list[dict[str, str]]] = defaultdict(list)
+    seen_transaction_keys: set[tuple[str, str]] = set()
     for raw in transactions:
         accession = str(raw.get("ACCESSION_NUMBER") or "").strip()
-        if accession:
-            trans_by_accession[accession].append(raw)
+        trans_key = str(raw.get("NONDERIV_TRANS_SK") or "").strip()
+        if not accession:
+            continue
+        identity = (accession, trans_key)
+        if trans_key and identity in seen_transaction_keys:
+            raise SecInsiderBulkError(f"duplicate NONDERIV_TRANS identity {identity}")
+        if trans_key:
+            seen_transaction_keys.add(identity)
+        trans_by_accession[accession].append(raw)
 
     evidence_rows: list[dict[str, Any]] = []
     status_counts: Counter[str] = Counter()
@@ -286,6 +309,7 @@ def import_sec_insider_quarter(
         issuer_cik = normalize_cik(issuer_cik_raw)
         if issuer_cik not in verified_ciks:
             continue
+
         filing_meta = acceptance.get(accession)
         if filing_meta is None:
             unmatched_accessions += 1
@@ -309,6 +333,8 @@ def import_sec_insider_quarter(
                 if code:
                     excluded_code_counts[code] += 1
                 continue
+
+            trans_form_type = str(tx.get("TRANS_FORM_TYPE") or "").strip().upper()
             acq_disp = str(tx.get("TRANS_ACQUIRED_DISP_CD") or "").strip().upper()
             expected_acq_disp = "A" if code == "P" else "D"
             equity_swap = _bool01(tx.get("EQUITY_SWAP_INVOLVED"))
@@ -316,64 +342,85 @@ def import_sec_insider_quarter(
             price = _number(tx.get("TRANS_PRICEPERSHARE"))
             value = (shares * price) if shares is not None and price is not None else None
             reason_codes: list[str] = []
-            candidate_status = "P_S_HIGH_PRECISION_CANDIDATE"
 
             if acq_disp != expected_acq_disp:
                 candidate_status = "CONFLICTING_ACQUIRED_DISPOSED_CODE"
                 reason_codes.append("P_S_CODE_INCONSISTENT_WITH_ACQUIRED_DISPOSED")
-            if equity_swap is True:
+            elif trans_form_type != "4":
+                candidate_status = "EXCLUDED_NON_FORM4_TRANSACTION"
+                reason_codes.append("TRANS_FORM_TYPE_NOT_4")
+            elif equity_swap is True:
                 candidate_status = "EXCLUDED_EQUITY_SWAP"
                 reason_codes.append("EQUITY_SWAP_INVOLVED")
-            if aff10b5 is True:
-                candidate_status = "P_S_10B5_1_DECLARED"
+            elif aff10b5 is True:
+                candidate_status = "EXCLUDED_10B5_1_PLAN"
                 reason_codes.append("AFF10B5ONE_TRUE")
             elif aff10b5 is None:
+                candidate_status = "P_S_DISCRETIONARY_UNRESOLVED_10B5_1"
                 reason_codes.append("AFF10B5ONE_UNKNOWN")
+            elif shares is None:
+                candidate_status = "P_S_PARTIAL_MISSING_SHARES"
+                reason_codes.append("TRANSACTION_SHARES_UNKNOWN")
+            else:
+                candidate_status = "P_S_HIGH_PRECISION_DISCRETIONARY_CANDIDATE"
+
             if len(reporting_owners) != 1:
                 reason_codes.append("REPORTING_OWNER_NOT_UNIQUE")
-            if shares is None:
-                reason_codes.append("TRANSACTION_SHARES_UNKNOWN")
             if price is None:
                 reason_codes.append("TRANSACTION_PRICE_UNKNOWN")
 
-            strict_pit = filing_meta.get("pit_status") in {"SAFE", "DATE_ONLY_DELAYED"} and bool(filing_meta.get("valid_from"))
-            row = {
-                "source_authority": "U.S. SEC EDGAR",
-                "source_dataset": "Insider Transactions Data Sets",
-                "source_quarter": label,
-                "accession_number": accession,
-                "document_type": document_type,
-                "issuer_cik": issuer_cik,
-                "issuer_name": sub.get("ISSUERNAME"),
-                "issuer_trading_symbol_reported": sub.get("ISSUERTRADINGSYMBOL"),
-                "scanner_symbol": filing_meta.get("symbol"),
-                "transaction_key": tx.get("NONDERIV_TRANS_SK"),
-                "transaction_date": _sec_date(tx.get("TRANS_DATE")),
-                "event_time": _sec_date(tx.get("TRANS_DATE")),
-                "transaction_code": code,
-                "acquired_disposed_code": acq_disp,
-                "transaction_shares": shares,
-                "transaction_price_per_share": price,
-                "transaction_value_when_price_known": value,
-                "security_title": tx.get("SECURITY_TITLE"),
-                "post_transaction_shares": _number(tx.get("SHRS_OWND_FOLWNG_TRANS")),
-                "direct_or_indirect_ownership": tx.get("DIRECT_INDIRECT_OWNERSHIP"),
-                "nature_of_ownership": tx.get("NATURE_OF_OWNERSHIP"),
-                "equity_swap_involved": equity_swap,
-                "transaction_timeliness": tx.get("TRANS_TIMELINESS"),
-                "aff10b5one": aff10b5,
-                "aff10b5one_raw": aff10b5_raw,
-                "reporting_owners": reporting_owners,
-                "published_at": filing_meta.get("published_at"),
-                "valid_from": filing_meta.get("valid_from"),
-                "pit_status": filing_meta.get("pit_status"),
-                "strict_pit_eligible": strict_pit,
-                "amendment": document_type == "4/A",
-                "candidate_status": candidate_status,
-                "reason_codes": reason_codes,
-                "market_direction": "UNASSIGNED",
-            }
-            evidence_rows.append(row)
+            strict_pit = (
+                filing_meta.get("pit_status") in {"SAFE", "DATE_ONLY_DELAYED"}
+                and bool(filing_meta.get("valid_from"))
+            )
+            transaction_date = _sec_date(tx.get("TRANS_DATE"))
+            evidence_rows.append(
+                {
+                    "source_authority": "U.S. SEC EDGAR",
+                    "source_dataset": "Insider Transactions Data Sets",
+                    "source_quarter": label,
+                    "accession_number": accession,
+                    "document_type": document_type,
+                    "issuer_cik": issuer_cik,
+                    "issuer_name": sub.get("ISSUERNAME"),
+                    "issuer_trading_symbol_reported": sub.get("ISSUERTRADINGSYMBOL"),
+                    "scanner_symbol": filing_meta.get("symbol"),
+                    "transaction_key": tx.get("NONDERIV_TRANS_SK"),
+                    "transaction_date": transaction_date,
+                    "event_time": transaction_date,
+                    "transaction_form_type": trans_form_type,
+                    "transaction_code": code,
+                    "acquired_disposed_code": acq_disp,
+                    "transaction_shares": shares,
+                    "transaction_price_per_share": price,
+                    "transaction_value_when_price_known": value,
+                    "security_title": tx.get("SECURITY_TITLE"),
+                    "post_transaction_shares": _number(
+                        tx.get("SHRS_OWND_FOLWNG_TRANS")
+                    ),
+                    "direct_or_indirect_ownership": tx.get(
+                        "DIRECT_INDIRECT_OWNERSHIP"
+                    ),
+                    "nature_of_ownership": tx.get("NATURE_OF_OWNERSHIP"),
+                    "equity_swap_involved": equity_swap,
+                    "transaction_timeliness": tx.get("TRANS_TIMELINESS"),
+                    "aff10b5one": aff10b5,
+                    "aff10b5one_raw": aff10b5_raw,
+                    "reporting_owners": reporting_owners,
+                    "published_at": filing_meta.get("published_at"),
+                    "valid_from": filing_meta.get("valid_from"),
+                    "pit_status": filing_meta.get("pit_status"),
+                    "strict_pit_eligible": strict_pit,
+                    "amendment": document_type == "4/A",
+                    "candidate_status": candidate_status,
+                    "discretionary_semantics_eligible": (
+                        candidate_status
+                        == "P_S_HIGH_PRECISION_DISCRETIONARY_CANDIDATE"
+                    ),
+                    "reason_codes": reason_codes,
+                    "market_direction": "UNASSIGNED",
+                }
+            )
             status_counts[candidate_status] += 1
 
     evidence_rows.sort(
@@ -382,6 +429,9 @@ def import_sec_insider_quarter(
             str(row.get("accession_number") or ""),
             str(row.get("transaction_key") or ""),
         )
+    )
+    discretionary_count = sum(
+        1 for row in evidence_rows if row["discretionary_semantics_eligible"] is True
     )
 
     return {
@@ -399,13 +449,16 @@ def import_sec_insider_quarter(
             "NONDERIV_TRANS": trans_sha,
         },
         "sec_bulk_manifest_sha256": bundle_manifest_sha,
-        "source_semantics": "AS_FILED_FLAT_EXTRACTION_JOINED_TO_EXACT_ACCESSION_ACCEPTANCE_METADATA",
+        "source_semantics": (
+            "AS_FILED_FLAT_EXTRACTION_JOINED_TO_EXACT_ACCESSION_ACCEPTANCE_METADATA"
+        ),
         "counts": {
             "submission_rows": len(submissions),
             "reporting_owner_rows": len(owners),
             "nonderivative_transaction_rows": len(transactions),
             "verified_sec_cik_count": len(verified_ciks),
             "p_s_evidence_row_count": len(evidence_rows),
+            "high_precision_discretionary_candidate_count": discretionary_count,
             "unmatched_verified_accession_count": unmatched_accessions,
             "issuer_cik_conflict_count": cik_conflicts,
         },
@@ -419,7 +472,10 @@ def import_sec_insider_quarter(
             "forms_restricted_to_4_and_4_a": True,
             "nonderivative_transactions_only": True,
             "transaction_codes_restricted_to_p_and_s": True,
-            "equity_swaps_excluded_from_high_precision_candidate": True,
+            "transaction_form_type_4_required_for_discretionary_candidate": True,
+            "equity_swaps_excluded_from_discretionary_candidate": True,
+            "ten_b5_1_true_excluded_from_discretionary_candidate": True,
+            "ten_b5_1_unknown_not_assumed_discretionary": True,
             "amendments_silently_overwrite_original": False,
             "missing_evidence_defaults_to_neutral": False,
             "market_outcomes_read": False,
@@ -434,4 +490,6 @@ def import_sec_insider_quarter(
 
 def write_sec_insider_evidence(payload: Mapping[str, Any], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(dict(payload), indent=2, sort_keys=True), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(dict(payload), indent=2, sort_keys=True), encoding="utf-8"
+    )
