@@ -83,11 +83,20 @@
   },
   "source_adapters": {
     "PHASE8C_CANONICAL_SEC_EVENTS": {
-      "status": "REUSE_REQUIRED",
+      "status": "REUSE_REQUIRED_CONSERVATIVE_MAPPING",
       "source_class": "MANDATORY_ISSUER_FILING",
       "pit_status": "SAFE_WITH_EXISTING_8C_PROVENANCE",
-      "supported_initial_events": ["GUIDANCE_RAISE", "GUIDANCE_CUT", "CAPITAL_RAISE", "MANAGEMENT_CHANGE", "ACQUISITION_ANNOUNCEMENT", "ACQUISITION_COMPLETION"],
-      "duplicate_sec_reparse_enabled": false
+      "supported_initial_events": ["MANAGEMENT_CHANGE"],
+      "unmapped_until_content_semantics_validated": [
+        "MATERIAL_DEFINITIVE_AGREEMENT",
+        "ACQUISITION_OR_DISPOSITION_COMPLETED",
+        "UNREGISTERED_EQUITY_SALE",
+        "REGULATION_FD_DISCLOSURE",
+        "OTHER_MATERIAL_EVENT",
+        "RESULTS_RELEASE"
+      ],
+      "duplicate_sec_reparse_enabled": false,
+      "notes": "8C filing metadata is not silently upgraded into acquisition, major-contract, guidance or capital-raise semantics. Future validated 8C content semantics may extend this mapping."
     },
     "FDA_DRUGS_AT_FDA": {
       "status": "SOURCE_CANDIDATE",
