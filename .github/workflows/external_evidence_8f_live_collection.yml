@@ -5,6 +5,11 @@ on:
   pull_request:
     paths:
       - ".github/workflows/external_evidence_8f_live_collection.yml"
+      - "src/scanner/research/external_evidence/prospective_collector_8f.py"
+      - "src/scanner/research/external_evidence/fed_h15_release_8f.py"
+      - "src/scanner/research/external_evidence/ecb_fx_8f.py"
+      - "src/scanner/research/external_evidence/eia_energy_8f.py"
+      - "scripts/collect_external_evidence_8f_prospective.py"
 
 permissions:
   contents: read
@@ -52,7 +57,7 @@ jobs:
           retention-days: 30
 
 # This workflow is read-only with respect to repository contents.
-# The pull_request trigger is intentionally scoped to edits of this workflow itself; routine 8F commits do not make live calls.
+# It runs only when the live collector or one of its parsers changes, or when started manually.
 # Raw source payloads are persisted before parsing and uploaded even when a parser fails.
 # Fed H.15 is fetched from the actual /releases/h15/ page rather than its legacy HTML-meta redirect.
 # Fed H.15 and ECB collect without credentials. EIA is included only when EIA_API_KEY is configured.
