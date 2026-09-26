@@ -1,18 +1,18 @@
 # Phase 8D — Positioning / Crowding
 
-Status: `8D_A1_FINRA_IMPLEMENTED_OUTCOME_BLIND`
+Status: `8D_A1_A2_B1_B2_IMPLEMENTED_OUTCOME_BLIND`
 
-Phase 8D follows the completed Phase 8C external-evidence foundation. Phase 8C did not enable production external evidence or Phase-7 integration. The same separation remains mandatory here.
+Phase 8D follows the completed Phase 8C external-evidence foundation. Production external evidence, Phase-7 integration, market-direction assignment and outcome research remain disabled.
 
 ## Goal
 
-Build point-in-time safe descriptive positioning evidence without assigning bullish/bearish direction in advance. The first families are:
+Build point-in-time safe descriptive positioning evidence before any outcome-based research. Initial families:
 
 1. FINRA short interest
-2. SEC Form 4 insider activity
+2. SEC Form 4/4-A insider activity
 3. security-level borrow rates only if a historically usable PIT-safe source becomes available on acceptable terms
 
-No market outcome may be read while defining or validating the source semantics and feature contracts.
+No absolute high/low positioning value is assigned bullish or bearish meaning in advance.
 
 ## 8D-A — FINRA short interest
 
@@ -22,138 +22,155 @@ Authoritative sources:
 - https://developer.finra.org/docs
 - https://www.finra.org/filing-reporting/regulatory-filing-systems/short-interest
 
-FINRA requires short-interest reporting twice monthly. The Consolidated Short Interest developer dataset is public and exposes position quantity, prior position, change, average daily volume, days-to-cover, settlement date and revision metadata. FINRA states that the dataset is available by 4:40 PM ET on the publication date.
+FINRA publishes consolidated short-interest data twice monthly. `settlementDate` is the economic observation date, not the public availability time.
 
-### PIT rule
+### PIT / vintage rule
 
-`settlementDate` is the economic observation date, not the time the value became public. Historical research may use a short-interest observation only from its publication time onward.
+FINRA states that corrected records can carry a Revision Flag and that only the most recent data is made available. Therefore:
 
-FINRA states that corrected records receive a `Revision Flag` and that only the most recent data is made available. Therefore historical API/download backfill is classified as `LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE`. It must not be presented as strict original-vintage PIT evidence.
+- historical backfill = `LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE`
+- prospective snapshots are stored with actual `ingested_at`
+- scheduled FINRA publication time is retained as `published_at`
+- a later retrieval is never retrojected backward to the scheduled publication time
+- strict PIT use begins at the actual ingestion timestamp unless original-vintage availability is independently proven
 
-Strict PIT evidence is built prospectively by storing each publication snapshot with:
+### 8D-A1 — acquisition and normalization
 
-- settlement date
-- publication date and 4:40 PM America/New_York availability time
-- `ingested_at`
-- source URL / dataset identity
-- raw page SHA-256 hashes
-- canonical raw-snapshot SHA-256
-- record-level revision flag
-
-### 8D-A1 implementation
-
-Implemented on branch `phase8d-positioning-crowding-foundation`:
+Implemented:
 
 - `src/scanner/research/external_evidence/finra_short_interest.py`
-  - deterministic CSV/JSON normalization
-  - explicit historical-vintage vs prospective-snapshot modes
-  - New York DST-aware 4:40 PM publication timestamp
-  - raw-source SHA-256
-  - settlement-date/event-time separation
-  - strict-PIT eligibility only for prospectively captured snapshots
-  - consistency checks for reported quantity/percent changes
-  - no market direction assignment
 - `src/scanner/research/external_evidence/finra_short_interest_acquisition.py`
-  - filtered POST acquisition for one settlement date
-  - synchronous pagination with FINRA `Record-Total` reconciliation when present
-  - maximum 5,000 records per request
-  - conservative request spacing
-  - raw response page retention and page hashes
-  - fail-closed rejection if a filtered response contains another settlement date
-  - prospective collection forbidden before the documented publication time
 - `scripts/import_external_evidence_8d_finra_short_interest.py`
-  - imports an existing FINRA CSV/JSON export
-  - historical imports cannot become strict-PIT evidence
 - `scripts/collect_external_evidence_8d_finra_short_interest.py`
-  - performs one prospective publication-snapshot acquisition
-- `tests/test_external_evidence_8d_finra_short_interest.py`
-  - DST publication-time tests
-  - historical-vintage quarantine
-  - prospective publication-time gate
-  - outcome/direction guards
-  - pagination and raw-hash retention
-  - wrong-settlement-date rejection
 
-GitHub Actions validates the implementation with synthetic data only. CI performs no live FINRA requests.
+Key guards:
 
-### First descriptive features
+- one settlement date per prospective snapshot
+- filtered POST + pagination
+- max 5,000 rows per synchronous request
+- reconciliation to FINRA `Record-Total` when supplied
+- raw page SHA-256 and canonical raw-snapshot SHA-256
+- wrong settlement date fails closed
+- no live FINRA requests in CI
+
+First descriptive fields:
 
 - short position quantity
-- change in short position quantity
-- change in short position percent
+- change quantity
+- change percent
 - days to cover
 
-`short_interest_percent_float` remains disabled until a PIT-safe historical float denominator exists. Daily short-sale volume must never be substituted for short interest.
+`short_interest_percent_float` remains disabled until a PIT-safe historical float denominator exists. Short-sale volume is not substituted for short interest.
 
-No absolute high/low value is pre-assigned bullish or bearish meaning.
+### 8D-A2 — current-universe coverage
 
-### 8D-A2 next gate
+Implemented:
 
-Before outcome research, measure current-universe and as-of identity coverage:
+- `src/scanner/research/external_evidence/finra_short_interest_coverage.py`
+- `scripts/run_external_evidence_8d_finra_coverage.py`
 
-- exact symbol matches
-- ambiguous/missing identities
-- market-class distinctions
-- symbol-change handling
-- latest available FINRA observation per covered security
-- explicit `UNKNOWN` / uncovered state
+Coverage is outcome-blind and uses only exact scanner-symbol matching.
 
-This is descriptive coverage only. It may not select thresholds, infer direction or read future returns.
+Forbidden shortcuts:
+
+- ticker suffix stripping
+- ADR substitution
+- fuzzy-name matching
+- automatic market-class selection
+
+Missing matches are `UNKNOWN_NOT_IN_FINRA_SNAPSHOT`. Multiple exact rows remain `AMBIGUOUS_MULTIPLE_FINRA_ROWS`. Coverage accepts only a single-settlement-date FINRA snapshot.
 
 ## 8D-B — SEC insider activity
 
-Authoritative source:
+Authoritative sources:
 
-- U.S. SEC EDGAR Forms 4 and 4/A ownership XML
-- https://www.sec.gov/submit-filings/technical-specifications
+- https://www.sec.gov/data-research/sec-markets-data/insider-transactions-data-sets
+- https://www.sec.gov/files/insider_transactions_readme.pdf
 
-PIT identity is based on issuer CIK plus accession. `transaction_date` is the economic event date; the SEC acceptance timestamp is the earliest research availability time.
+The SEC Insider Transactions Data Sets are quarterly, flattened extracts of Ownership XML Forms 3/4/5 and amendments. Phase 8D uses only the official `SUBMISSION`, `REPORTINGOWNER`, and `NONDERIV_TRANS` tables for the first challenger.
 
-The high-precision first challenger uses only transaction codes:
+The SEC documentation defines:
 
-- `P`: purchase of securities on an exchange or from another person
-- `S`: sale of securities on an exchange or to another person
+- `P` = open-market or private purchase
+- `S` = open-market or private sale
 
-Other transaction codes are not silently interpreted as discretionary purchases or sales. Grants/awards, exercises/conversions, tax withholding, gifts, transfers back to the company, swaps/hedges and generic `J` transactions remain outside this first scope.
+### 8D-B1 — acquisition / PIT provenance
 
-Forms 4/A are retained as separate versioned evidence. They may correct prior filings but may not silently overwrite the originally available historical state.
+Implemented:
 
-Potential descriptive features after source/field validation:
+- `src/scanner/research/external_evidence/sec_insider_bulk.py`
+- `scripts/import_external_evidence_8d_sec_insider_bulk.py`
+
+The quarterly SEC bulk ZIP is not allowed to invent historical availability from its download date. Instead every Form 4/4-A row must join by exact accession number and issuer CIK to the already operator-attested SEC submissions bundle from Phase 8C. That bundle supplies the filing acceptance metadata and conservative PIT `valid_from`.
+
+Hard requirements:
+
+- official `sec.gov` bulk source URL
+- direct official SEC bulk bundle from Phase 8C
+- exact accession join
+- exact issuer-CIK join
+- source ZIP SHA-256
+- individual table SHA-256
+- current ticker is descriptive metadata only, never historical stable identity
+- Form 4/A remains separate versioned evidence and never silently overwrites the original
+
+### 8D-B2 — high-precision P/S semantic challenger
+
+Only non-derivative Table-I transactions with code `P` or `S` enter the P/S evidence set.
+
+A row is eligible for the initial **discretionary** high-precision candidate only when all of the following hold:
+
+- filing is Form 4 or 4/A
+- `TRANS_FORM_TYPE == 4`
+- `P` is paired with acquired code `A`, or `S` with disposed code `D`
+- no equity swap is involved
+- `AFF10B5ONE` is explicitly false
+- transaction shares are known
+- accession/issuer identity and PIT provenance are valid
+
+Fail-closed states remain separate evidence, not discretionary trades:
+
+- `CONFLICTING_ACQUIRED_DISPOSED_CODE`
+- `EXCLUDED_NON_FORM4_TRANSACTION`
+- `EXCLUDED_EQUITY_SWAP`
+- `EXCLUDED_10B5_1_PLAN`
+- `P_S_DISCRETIONARY_UNRESOLVED_10B5_1`
+- `P_S_PARTIAL_MISSING_SHARES`
+
+Other Section-16 transaction codes such as grants, exercises, tax-withholding, gifts, transfers, derivatives and generic other transactions are not silently mapped to discretionary purchase/sale semantics.
+
+Potential later descriptive features, only after source/coverage validation:
 
 - discretionary purchase/sale count
 - discretionary purchase/sale shares
-- value when a transaction price is explicitly available
+- value when price is explicitly known
 - distinct buyer/seller count
-- reporting-owner role mix
+- reporting-owner relationship mix
 
-No sign or action implication is assigned in advance.
+No market direction or portfolio action is assigned.
 
-## 8D-C — Borrow rates
+## 8D-C — borrow rates
 
-Current status: `SOURCE_GAP_DEFERRED`.
+Status: `SOURCE_GAP_DEFERRED`.
 
-Commercial sources exist with historical securities-lending fees and utilization. Their licensing, economics and historical-vintage semantics require separate evaluation before adoption. Current broker borrow fees must not be retrojected into history.
+A source must provide security-level historical borrow fee/rebate observations with immutable as-of timestamps and acceptable licensing/economics. The following are forbidden substitutes:
 
-SEC Rule 10c-1a is expected eventually to provide public securities-lending rate information through FINRA, but current public dissemination is not yet available for this project window. The SEC's December 3, 2025 exemptive order moved the Rule 10c-1a reporting compliance date to September 28, 2028 and the public dissemination date to March 29, 2029. Therefore SLATE is not a current 2026 borrow-rate data source.
-
-Fails-to-deliver and short-sale volume are not accepted substitutes for borrow fees.
+- fails-to-deliver as borrow rate
+- short-sale volume as borrow rate
+- current borrow fees retrojected historically
 
 ## Hard boundaries
 
-- no market outcomes during source-contract/source-coverage validation
+- no market outcomes during source/coverage/semantic validation
+- no threshold selection
 - no Phase-7 or production integration
-- no direction from high or low absolute positioning values
 - no current-value retrojection
-- no silent neutral for missing or uncovered evidence
+- no silent neutral for missing evidence
 - as-of universe identity required before historical feature research
-- settlement date is not publication time
-- transaction date is not filing availability time
-- revisions/amendments remain versioned evidence
-- historical FINRA backfills are not strict original-vintage evidence
+- settlement date is not FINRA publication/observation time
+- transaction date is not SEC filing availability time
+- amendments/revisions remain versioned evidence
 
-## Next executable slices
+## Next executable slice
 
-1. `8D-A2`: current-universe coverage and symbol-identity audit over FINRA short interest; no outcomes.
-2. `8D-B1`: SEC Form 4/4-A acquisition for verified SEC issuers using the established SEC evidence transport discipline.
-3. `8D-B2`: deterministic P/S transaction parser and provenance validation; no outcomes.
-4. Only after source and PIT coverage are measured: pre-register descriptive feature validation and later incremental-value research.
+`8D-B3 / 8D validation preparation`: run real quarterly SEC insider bulk data through B1/B2, measure issuer/accession/P-S coverage and candidate-state counts, and freeze a prospective validation protocol before any market-outcome research. FINRA A1/A2 likewise still requires a real publication snapshot before its coverage can be measured empirically.
