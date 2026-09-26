@@ -4,8 +4,13 @@ on:
   pull_request:
     paths:
       - "configs/external_evidence_8d_positioning_crowding_v1.json"
+      - "src/scanner/research/external_evidence/finra_short_interest.py"
+      - "src/scanner/research/external_evidence/finra_short_interest_acquisition.py"
+      - "scripts/import_external_evidence_8d_finra_short_interest.py"
+      - "scripts/collect_external_evidence_8d_finra_short_interest.py"
       - "docs/external_evidence_8d_positioning_crowding.md"
       - "tests/test_external_evidence_8d_positioning_contract.py"
+      - "tests/test_external_evidence_8d_finra_short_interest.py"
       - ".github/workflows/external_evidence_8d_positioning.yml"
   workflow_dispatch:
 
@@ -24,5 +29,15 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate Phase 8D source contract
-        run: python -m pytest -q tests/test_external_evidence_8d_positioning_contract.py
+      - name: Validate Phase 8D source contract and FINRA PIT implementation
+        run: >-
+          python -m pytest -q
+          tests/test_external_evidence_8d_positioning_contract.py
+          tests/test_external_evidence_8d_finra_short_interest.py
+      - name: Verify Phase 8D FINRA CLIs
+        run: |
+          python scripts/import_external_evidence_8d_finra_short_interest.py --help
+          python scripts/collect_external_evidence_8d_finra_short_interest.py --help
+
+# CI intentionally performs no live FINRA requests.
+# Real FINRA publication snapshots are acquired prospectively outside GitHub Actions.
