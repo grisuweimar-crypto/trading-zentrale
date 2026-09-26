@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8f_macro_exposure_v1",
   "phase": "8F_macro_exposure_context",
-  "status": "8F_SOURCE_ADAPTER_BUILD_OUTCOME_BLIND",
+  "status": "8F_ADAPTER_LEDGER_DOMAIN_COMPLETION_GATES_BUILT_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -18,6 +18,8 @@
   "source_contract": {
     "source_routing_config": "configs/external_evidence_8f_source_candidates_v1.json",
     "market_proxy_config": "configs/external_evidence_8f_market_proxies_v1.json",
+    "research_domain_config": "configs/external_evidence_8f_research_domain_v1.json",
+    "completion_config": "configs/external_evidence_8f_completion_v1.json",
     "adapter_source_ids": [
       "bls_cpi_archived_releases",
       "eia_open_data_energy",
@@ -38,7 +40,8 @@
       "EIA current-history/API snapshots may contain later corrections, so historical rows from a snapshot are not retrojected; strict PIT begins at actual ingestion unless separate archive proof exists.",
       "Federal Reserve Board H.15 current downloadable history may contain later corrections; the 8F adapter therefore treats collected H.15 rows as prospective snapshot evidence unless separate original-release proof is added.",
       "ECB Data Portal current FX history may reflect later revisions; the 8F adapter therefore begins strict PIT at actual ingestion unless separate historical publication/vintage proof is added.",
-      "Market proxies for uranium and lithium remain separate challenger evidence and may not be relabeled as underlying commodity spot prices."
+      "Market proxies for uranium and lithium remain separate challenger evidence and may not be relabeled as underlying commodity spot prices.",
+      "Research-domain membership must be frozen independently of mapping convenience or outcomes before Phase 8F completion."
     ]
   },
   "macro_vintage_contract": {
@@ -205,10 +208,10 @@
     "decision_policy_enabled": false
   },
   "next_gates": [
-    "8F_A4_REMAINING_SERIES_LEVEL_SOURCE_AND_RIGHTS_VALIDATION",
-    "8F_B_VERSIONED_EXPOSURE_MAPPING_POPULATION",
     "8F_C_REAL_PIT_MACRO_INGESTION",
-    "8F_D_COVERAGE_AND_CONTEXT_AUDIT",
+    "8F_B_RESEARCH_DOMAIN_FREEZE",
+    "8F_B_VERSIONED_EXPOSURE_MAPPING_POPULATION",
+    "8F_D_REAL_COVERAGE_AND_CONTEXT_AUDIT",
     "8F_FREEZE",
     "8G_INCREMENTAL_OUTCOME_RESEARCH_ONLY_AFTER_8F_FREEZE"
   ]
