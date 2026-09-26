@@ -1,6 +1,6 @@
 # Phase 8E – Structured Events & News
 
-Status: `8E-A SOURCE HIERARCHY + FIRST PUBLIC RELEASE IMPLEMENTED, OUTCOME-BLIND`
+Status: `8E-A SOURCE HIERARCHY + FIRST PUBLIC RELEASE IMPLEMENTED; 8E-B1 PHASE-8C REUSE IMPLEMENTED; OUTCOME-BLIND`
 
 ## Objective
 
@@ -22,16 +22,33 @@ No event type carries a predefined bullish/bearish market direction.
 
 ## Relationship to Phase 8C
 
-Phase 8C remains the source of truth for SEC filing/event extraction that has already been built and validated there. Phase 8E does not create a second SEC content parser for guidance, capital raises, management changes or acquisition filings.
+Phase 8C remains the source of truth for SEC filing/event extraction that has already been built and validated there. Phase 8E does not create a second SEC content parser.
 
-Instead, 8E adds:
+8E adds:
 
-1. a canonical cross-source event identity assigned by a domain adapter;
+1. deterministic event identity supplied by a domain adapter;
 2. First Public Release provenance;
 3. source-authority conflict resolution;
 4. event-state versioning across multiple primary/authoritative sources.
 
-Existing 8C events can therefore enter 8E as normalized source evidence with their original accession/timestamp provenance preserved.
+### 8E-B1 conservative 8C reuse
+
+The first executable reuse adapter is intentionally narrow.
+
+The validated 8C filing-metadata label `DIRECTOR_OR_OFFICER_CHANGE` is mapped to the broad 8E taxonomy value `MANAGEMENT_CHANGE`. The adapter preserves SEC `published_at` and `valid_from`, the accession/item identity and an SHA-256 hash of the exact upstream 8C row.
+
+The following 8C metadata labels are **not** promoted into richer 8E semantics:
+
+- `MATERIAL_DEFINITIVE_AGREEMENT`;
+- `ACQUISITION_OR_DISPOSITION_COMPLETED`;
+- `UNREGISTERED_EQUITY_SALE`;
+- `REGULATION_FD_DISCLOSURE`;
+- `OTHER_MATERIAL_EVENT`;
+- `RESULTS_RELEASE`.
+
+For example, Item 2.01 cannot be silently treated as an acquisition because the validated 8C label includes acquisitions **or dispositions**. Item 1.01 cannot be assumed to be a major contract or takeover agreement. Capital raise and guidance semantics remain blocked until independently validated content evidence exists.
+
+B1 therefore reuses 8C provenance without upgrading 8C metadata beyond what it actually proves.
 
 ## Source hierarchy
 
@@ -63,9 +80,7 @@ A later high-authority source may confirm or correct event state, but may never 
 
 ### Existing Phase-8C SEC evidence
 
-Status: reuse required where available.
-
-SEC filing acceptance/accession provenance already validated in 8C remains authoritative for that source family. 8E only normalizes it into the event-centric ledger.
+Status: conservative reuse implemented for the validated management-change metadata domain. Additional 8C event semantics require their own validated content evidence before reuse.
 
 ### FDA / Drugs@FDA
 
@@ -90,7 +105,7 @@ Official reference:
 
 Candidate domains: merger enforcement, antitrust litigation filing/ruling/settlement.
 
-DOJ publishes official Antitrust Division press releases and case filings. As with FTC, a source-specific adapter must preserve the original public timestamp and immutable document identity before the record can become strict-PIT evidence.
+DOJ publishes official Antitrust Division press releases and case filings. A source-specific adapter must preserve the original public timestamp and immutable document identity before the record can become strict-PIT evidence.
 
 Official references:
 - https://www.justice.gov/atr/press-releases
@@ -106,7 +121,7 @@ Issuer pages are primary company statements but are not automatically historical
 
 8E-A deliberately does not perform fuzzy deduplication. Every adapter must provide a deterministic `canonical_event_key`. News similarity, entity-name similarity or LLM semantic similarity may not silently merge events.
 
-A later slice may introduce a validated deterministic identity resolver, but only before outcome inspection and with an explicit collision/false-merge audit.
+The 8E-B1 8C reuse adapter uses an accession-scoped deterministic key. It does not claim that an issuer press release and an SEC filing are already cross-source-deduplicated. A later validated identity resolver may link them only with explicit collision/false-merge QA before outcomes are opened.
 
 ## Current hard boundaries
 
@@ -124,11 +139,10 @@ A later slice may introduce a validated deterministic identity resolver, but onl
 
 ## Next slice
 
-8E-B should implement one source adapter at a time. Recommended first order:
+8E-B2 should validate and implement the first new external authority adapter. Recommended order:
 
-1. reuse adapter for validated Phase-8C canonical SEC events;
-2. FDA regulatory approvals;
-3. FTC/DOJ regulatory/litigation events;
-4. issuer primary releases only after a timestamp/archive contract is frozen.
+1. FDA regulatory approvals;
+2. FTC/DOJ regulatory/litigation events;
+3. issuer primary releases only after a timestamp/archive contract is frozen.
 
 Each adapter must pass source/PIT/coverage validation before any event-outcome research. Predictive testing belongs to Phase 8G, not 8E.
