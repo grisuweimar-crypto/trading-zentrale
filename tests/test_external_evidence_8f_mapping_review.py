@@ -85,6 +85,15 @@ def test_committed_b1_review_contains_ten_explicit_human_approvals():
     assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
 
 
+def test_committed_b2_review_contains_ten_explicit_human_approvals():
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_b2_v1.json")
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert len(review["decisions"]) == 10
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
+
+
 def test_committed_b1_review_replay_is_idempotent():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_v1.json")
@@ -97,7 +106,22 @@ def test_committed_b1_review_replay_is_idempotent():
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 10
-    assert len(result["exposure_map"]["mappings"]) == 10
+    assert len(result["exposure_map"]["mappings"]) == 20
+
+
+def test_committed_b2_review_replay_is_idempotent():
+    candidates = _load("configs/external_evidence_8f_mapping_candidates_b2_v1.json")
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_b2_v1.json")
+    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    result = apply_human_mapping_review(
+        candidate_config=candidates,
+        review_config=review,
+        exposure_map=exposure,
+    )
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
+    assert result["approved_count"] == 0
+    assert result["already_applied_count"] == 10
+    assert len(result["exposure_map"]["mappings"]) == 20
 
 
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
