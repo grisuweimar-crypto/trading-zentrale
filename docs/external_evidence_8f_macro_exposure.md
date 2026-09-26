@@ -1,196 +1,213 @@
 # Phase 8F – Macro & Exposure Context
 
-Status: **8F-A1/A2 foundation implemented, outcome-blind; source routing reviewed**.
+Status: **source/PIT foundation, first adapters, append-only ledger and completion gate implemented; Phase 8F is not yet frozen**.
 
-Phase 8F starts only after the Phase-8E source/PIT/event-identity layer. It remains a separate external-evidence family and does not alter the frozen Phase-7 Core.
+Phase 8F remains a separate external-evidence family on top of the frozen Phase-7 Core. It does not alter Selection, Timing, Probability, Risk, Confidence, Elliott or the Phase-7 decision layer.
 
-## Purpose
+## Hard boundary
 
-Phase 8F prepares the contracts required for PIT-safe macro observations and a versioned, documented asset-to-factor exposure map.
+The current implementation remains outcome-blind:
 
-It does **not** yet test predictive value, assign bullish/bearish direction, select thresholds or weights, run cross-factor interactions, integrate with Phase 7, or enable production external evidence.
+- no market outcome reading;
+- no bullish/bearish assignment;
+- no signed exposure inference;
+- no weights;
+- no thresholds;
+- no cross-factor interaction research;
+- no Phase-7 integration;
+- no production external evidence.
 
-## Why the exposure map comes first
+The dedicated completion gate prevents Phase 8F from being declared finished while real PIT observations and reviewed exposure mappings are still missing.
 
-The Phase-8 research plan states that Macro & Exposure Context is valid only with a versioned exposure map. A theoretical relationship is not sufficient evidence.
+## PIT / vintage contract
 
-Therefore this foundation fails closed:
+Two historical-availability modes are supported:
 
-- no sector-to-factor auto-mapping;
-- no keyword or company-name mapping;
-- no LLM-generated mapping;
-- no signed exposure;
-- no factor weight;
-- no threshold;
-- no retrospective mapping from today's company description or business mix.
+1. **Exact independently proven publication timestamp**: `valid_from` may equal the proven `published_at` timestamp.
+2. **Day-level historical vintage only**: the conservative earliest `valid_from` remains 00:00 UTC on the following calendar day.
 
-Each future asset-factor mapping must carry a documentary evidence reference, SHA-256 fingerprint, explicit human review, review timestamp and validity interval.
+Prospective observations without independent historical proof use `valid_from >= ingested_at`.
 
-A mapping researched today cannot be silently projected backward into historical scanner dates. It becomes usable no earlier than its review time and documentary evidence availability.
+Later revisions are separate append-only observations and may never overwrite an earlier vintage.
 
-## Macro vintage contract
+UNKNOWN/STALE/LICENSED_OUT/LOW_COVERAGE states may not smuggle a numeric zero as a fake neutral value.
 
-The Phase-8A registry identified `fred_alfred_realtime` as technically attractive for PIT macro reconstruction because ALFRED provides real-time periods and historical vintage dates.
+## Source blocker: FRED / ALFRED
 
-That remains a useful reference model for calendar-date PIT semantics, but Phase 8F no longer assumes that FRED/ALFRED will be the actual data source.
+FRED/ALFRED remains blocked for Scanner_vNext ingestion under the terms reviewed on 2026-09-26. It is retained only as a conceptual vintage-semantics reference. No FRED/ALFRED data are persisted by Phase 8F.
 
-For any independently proven historical day-level vintage source:
+## Implemented source adapters
 
-- the vintage date may prove that the value existed on that calendar date;
-- it may **not** be treated as proof that the value was available at 00:00 or before an intraday scanner run;
-- Phase 8F therefore sets the earliest generic historical `valid_from` to **00:00 UTC on the following calendar day** unless a separate source proves a more precise publication timestamp.
+### BLS CPI – retrospective exact PIT
 
-For prospective records without independent historical-vintage proof:
+Adapter: `bls_cpi_8f.py`
 
-- `valid_from >= ingested_at`.
+Implemented release-level series:
 
-Later revisions remain separate versioned observations and may never overwrite the original vintage in history.
+- `BLS_CPI_U_ALL_ITEMS_MOM_SA_RELEASE_PCT`
+- `BLS_CPI_U_ALL_ITEMS_YOY_NSA_RELEASE_PCT`
 
-## FRED/ALFRED source blocker
+The adapter parses archived CPI news releases, including the release/embargo timestamp. Historical use is allowed only when the archived release itself independently proves the exact publication time. The source text is SHA-256 fingerprinted and later revisions remain separate.
 
-The 8F source review on 2026-09-26 found that current official FRED Terms of Use prohibit FRED API access in connection with development of a software program/system and prohibit API use in connection with storing, caching or archiving FRED content.
+### U.S. EIA – prospective energy snapshots
 
-Scanner_vNext is a software/research system whose Phase-8 design requires persisted, versioned evidence. Therefore:
+Adapter: `eia_energy_8f.py`
 
-- `fred_alfred_realtime` is **not enabled** as an 8F ingestion source;
-- no FRED/ALFRED data are collected or persisted by this implementation;
-- ALFRED is retained only as a PIT/vintage-semantics reference candidate;
-- FRED/ALFRED could be reconsidered only after explicit permission/clarification or changed terms.
+Implemented series:
 
-## Alternative source routing
+- `PET.RWTC.D` – WTI spot;
+- `PET.RBRTE.D` – Brent spot;
+- `NG.RNGWHHD.D` – Henry Hub natural gas.
 
-Phase 8F does not require one provider for all factors. The preferred design is now **primary source by factor**.
+Current-history/API rows are **not** retrojected as historical PIT evidence. They become strict PIT only from actual ingestion unless a separate historical archive proves earlier availability.
 
-The detailed routing matrix is frozen in `configs/external_evidence_8f_source_candidates_v1.json`.
+### Federal Reserve Board H.15 – prospective rates / curve snapshots
 
-### Inflation
+Adapter: `fed_h15_8f.py`
 
-**BLS archived CPI releases** are the strongest initial retrospective candidate.
+Implemented raw series:
 
-- archived CPI releases are available on the BLS site back to 1994;
-- releases carry explicit embargo/release timestamps (08:30 America/New_York for the 2026 schedule);
-- BLS states that its published material is public domain except separately copyrighted images/illustrations;
-- seasonally adjusted values can be revised, so historical research must consume the archived release version rather than today's latest API value.
+- `RIFSPFF_N.D` – effective federal funds rate;
+- `RIFLGFCY02_N.B` – 2-year Treasury constant maturity;
+- `RIFLGFCY10_N.B` – 10-year Treasury constant maturity.
 
-Status: `CLEAR_FOR_ADAPTER_BUILD`.
+No spread, direction or threshold is derived in 8F. Current downloadable history remains prospective-only for strict PIT unless original-vintage archive proof is introduced.
 
-### U.S. policy rates / yield curve
+### ECB – prospective USD/EUR FX snapshots
 
-**Federal Reserve Board H.15** provides direct official interest-rate data and is published daily at 16:15 America/New_York.
+Adapter: `ecb_fx_8f.py`
 
-The Board states that website information is public domain unless otherwise indicated.
+Implemented series:
 
-Historical downloadable H.15 series can contain later corrections, so current history is not automatically an original-vintage panel. Strict retrospective use therefore requires archived release proof; prospective snapshots can be clean from actual ingestion onward.
+- `EXR.D.USD.EUR.SP00.A` – USD per EUR reference rate.
 
-Status: `CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD`.
+Current ECB history is not retrojected as original-vintage evidence. Strict PIT starts at actual ingestion unless archived release/revision proof is added.
 
-**U.S. Treasury Daily Treasury Rates** provide direct nominal and real yield-curve archives, including nominal history from 1990 and real curves from 2003. Treasury states that indicative quotations underlying the nominal curve are obtained around 15:30 America/New_York.
+## Multiple-series context semantics
 
-Status: useful direct yield-curve candidate, with the same original-vintage caution for historical corrections.
+A factor may legitimately contain several raw series. Phase 8F therefore keeps the latest knowable revision **per series**, not one arbitrary series per factor.
 
-### Euro rates / yield curve / FX
+Examples:
 
-**ECB Data Portal** is a strong European primary source.
+- inflation: CPI MoM and CPI YoY remain separate;
+- oil: WTI and Brent remain separate;
+- yield curve: 2Y and 10Y remain separate.
 
-- ESCB statistics may be freely reused with source attribution, subject to the ECB reuse policy and third-party exclusions;
-- euro-area yield curves are published daily at noon CET and are available from 2004-09-06;
-- ECB reference FX rates are normally updated around 16:00 CET after the 14:15 concertation procedure;
-- the API supports SDMX retrieval and update/revision queries.
+The foundation does not collapse them into a spread, score, sign or weighted aggregate.
 
-Current historical data may still reflect later revisions, so historical original-vintage use remains separate from prospective collection unless revision history is independently preserved.
+## Uranium and lithium market proxies
 
-Status: `CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD`.
-
-### Oil and gas
-
-**U.S. EIA Open Data** is the preferred high-frequency energy candidate.
-
-- EIA API terms explicitly allow development of services that retrieve, display and analyze EIA data;
-- long daily histories exist for WTI and Brent crude oil spot prices;
-- long daily Henry Hub natural-gas spot-price history is available.
-
-Current historical series may contain corrections, so prospective snapshotting is strict PIT; retrospective use requires release-vintage validation where corrections matter.
-
-Status: `CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD`.
-
-### Gold, silver and copper
-
-**World Bank Pink Sheet** is the preferred open monthly candidate for these factors and can also provide monthly oil/gas context.
-
-- monthly Pink Sheet publications and historical monthly workbooks are available;
-- World Bank-produced open datasets default to CC BY 4.0 unless dataset metadata states otherwise;
-- monthly documents carry publication metadata.
-
-Before activation we still need to verify the exact Pink Sheet dataset license metadata and confirm that archived monthly publications preserve the values required for first-release reconstruction.
-
-Status: `CLEAR_FOR_ARCHIVE_AND_LICENSE_VALIDATION`.
-
-**IMF Primary Commodity Prices** remains a secondary fallback. IMF statistical-data terms permit downloading, extracting, copying, transforming and distributing IMF Data with attribution, but historical vintage semantics are not yet proven for our use and IMF's general automated bulk-access restrictions make it less attractive than EIA/World Bank for this project.
+The proxy contract is separate from the commodity-source contract.
 
 ### Uranium
 
-EIA publishes an official **Uranium Marketing Annual Report** with explicit release dates and revisions. It is usable as slow structural context, but annual frequency is too low to replace a timely uranium market/spot factor.
+- Sprott Physical Uranium Trust NAV: commodity-like physical-trust challenger from 2021;
+- URA: long-history uranium/nuclear equity-sector challenger from 2010.
 
-Status: source exists, but **primary timely uranium context remains a source gap**.
+They may not be spliced into one synthetic history and may not be relabelled as uranium spot.
 
 ### Lithium
 
-No clean open standardized lithium price series has yet passed the source gate. World Bank methodology explicitly notes that lithium is not covered by its GEM/Pink Sheet price data and uses S&P Global Market Intelligence in another methodology context.
+- CME lithium futures: preferred commodity-like challenger if exchange/benchmark rights pass;
+- LIT: long-history lithium/battery equity-sector challenger from 2010.
 
-Status: **deferred source gap** rather than inserting a weak proxy.
+LIT is not a lithium spot-price substitute because it contains mining, refining and downstream battery-equity effects.
 
-## Factor catalog / current routing
+## Gold, silver and copper
 
-- `rates_policy`: Fed Board H.15 + ECB candidates;
-- `yield_curve`: U.S. Treasury / Fed H.15 + ECB candidates;
-- `inflation`: BLS archived CPI releases;
-- `fx`: ECB Data Portal;
-- `oil`: EIA primary, World Bank/IMF slower fallbacks;
-- `gas`: EIA primary, World Bank/IMF slower fallbacks;
-- `gold`: World Bank monthly candidate, IMF fallback;
-- `silver`: World Bank monthly candidate, IMF fallback;
-- `copper`: World Bank monthly candidate, IMF fallback;
-- `uranium`: EIA annual only for structural context; timely source gap;
-- `lithium`: source gap.
+World Bank Pink Sheet remains the preferred monthly open-source candidate. The source review found a World Bank commodity-price dataset licensed CC BY 4.0 and archived monthly Pink Sheet publications with publication metadata.
 
-## Code contract
+The remaining gate is not the general license principle but exact first-release/vintage reconstruction: historical values must be tied to the publication that actually contained them rather than today's revised workbook.
 
-`src/scanner/research/external_evidence/macro_exposure_8f.py` implements:
+IMF remains fallback only.
 
-1. validation of versioned PIT macro observations;
-2. conservative day-level historical-vintage handling;
-3. explicit UNKNOWN/non-neutral missingness;
-4. validation of documented human-reviewed exposure mappings;
-5. prevention of retroactive mapping;
-6. deterministic as-of joining of the latest macro revision actually knowable at the requested timestamp;
-7. hard prohibition of direction, outcome, weight and threshold fields in the foundation layer;
-8. an executable 8F contract gate.
+## Series catalog and source routing
 
-## Current boundary
+`series_catalog_8f.py` verifies that implemented adapters and configured series agree with the source-routing contract, cannot use blocked sources, and cannot silently change a factor/source relationship.
 
-Implemented:
+Current implemented raw macro series count: **9** across:
 
-- **8F-A1:** Macro vintage/PIT contract;
-- **8F-A2:** versioned exposure-map contract and deterministic validator;
-- **8F-A3:** alternative-source feasibility/routing review, including explicit FRED blocker and factor-specific candidates.
+- inflation;
+- rates_policy;
+- yield_curve;
+- FX;
+- oil;
+- gas.
 
-Next:
+Gold, silver and copper remain archive-validation candidates. Uranium and lithium are represented by separate challenger proxy contracts, not fake spot series.
 
-- validate and implement the first adapters, beginning with the cleanest source families;
-- series-level license/copyright checks before activation;
-- populate documented exposure mappings without retrojection;
-- run real coverage/context audit;
-- freeze 8F before 8G incremental outcome research.
+## Append-only macro ledger
 
-## Hard guards
+`macro_ledger_8f.py` provides the Phase-8F observation ledger.
 
-The current layer keeps disabled:
+It enforces:
 
-- market outcome reading;
-- market direction assignment;
-- signed exposure inference;
-- weight selection;
-- threshold selection;
-- cross-factor interactions;
-- Phase-7 integration;
-- production external evidence.
+- append-only observation identity;
+- no revision overwrite;
+- collision failure if the same revision identity appears with changed semantic content;
+- as-of exclusion of future `valid_from` rows;
+- coverage summaries by source, factor and series;
+- separation of exact historical-release proof from prospective-ingestion proof.
+
+Synthetic test rows validate the code but do **not** count as real 8F evidence.
+
+## Exposure map
+
+`configs/external_evidence_8f_exposure_map_v1.json` remains intentionally empty at this point.
+
+Every promoted mapping must have:
+
+- subject ID;
+- factor ID;
+- documentary evidence reference;
+- SHA-256 evidence fingerprint;
+- evidence-valid-from time;
+- explicit human review;
+- review timestamp;
+- mapping validity interval;
+- descriptive relationship class only.
+
+Automatic sector/name/keyword/LLM inference remains forbidden. A mapping cannot be retrojected before documentary evidence and review.
+
+## Completion / freeze gate
+
+`completion_8f.py` and `configs/external_evidence_8f_completion_v1.json` make completion fail closed.
+
+Phase 8F may be frozen only when all of the following are true:
+
+1. foundation/source/series/proxy contracts pass;
+2. a **real** append-only macro ledger contains knowable observations;
+3. at least one active documentary human-reviewed exposure mapping exists;
+4. the intended research domain is explicitly defined;
+5. every subject in that domain is accounted for as mapped or explicitly unmapped;
+6. all outcome/direction/threshold/Phase-7 guards remain disabled.
+
+Current expected completion state: **BLOCKED**, because the real prospective ledger and reviewed research-domain mapping set have not yet been populated. This is a guardrail, not a test failure.
+
+## Current implementation status
+
+Completed technically:
+
+- 8F-A1 macro PIT/vintage contract;
+- 8F-A2 versioned exposure-map contract;
+- 8F-A3 factor-specific source routing and FRED blocker;
+- BLS historical CPI adapter;
+- EIA prospective oil/gas adapter;
+- Fed H.15 prospective rates/yield adapter;
+- ECB prospective FX adapter;
+- uranium/lithium proxy contract;
+- multi-series-per-factor context fix;
+- append-only macro ledger and coverage audit;
+- fail-closed 8F completion/freeze gate;
+- CI tests for all of the above without live network calls.
+
+Still required before 8F freeze:
+
+1. real PIT/prospective data collection into the append-only ledger;
+2. archive validation / optional adapter for World Bank gold, silver and copper;
+3. explicit research-domain definition;
+4. documentary human-reviewed exposure-map population for that domain;
+5. real coverage/context audit;
+6. final 8F freeze artifact.
+
+Only after that may Phase 8G inspect outcomes and test incremental predictive value.
