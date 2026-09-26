@@ -1,6 +1,6 @@
 # Phase 8F – Macro & Exposure Context
 
-Status: **source/PIT foundation, first adapters, append-only ledger and completion gate implemented; Phase 8F is not yet frozen**.
+Status: **source/PIT foundation, first adapters, append-only ledger, research-domain audit and completion gate implemented; Phase 8F is not yet frozen**.
 
 Phase 8F remains a separate external-evidence family on top of the frozen Phase-7 Core. It does not alter Selection, Timing, Probability, Risk, Confidence, Elliott or the Phase-7 decision layer.
 
@@ -117,7 +117,7 @@ LIT is not a lithium spot-price substitute because it contains mining, refining 
 
 World Bank Pink Sheet remains the preferred monthly open-source candidate. The source review found a World Bank commodity-price dataset licensed CC BY 4.0 and archived monthly Pink Sheet publications with publication metadata.
 
-The remaining gate is not the general license principle but exact first-release/vintage reconstruction: historical values must be tied to the publication that actually contained them rather than today's revised workbook.
+The remaining gate is exact first-release/vintage reconstruction: historical values must be tied to the publication that actually contained them rather than today's revised workbook.
 
 IMF remains fallback only.
 
@@ -169,6 +169,20 @@ Every promoted mapping must have:
 
 Automatic sector/name/keyword/LLM inference remains forbidden. A mapping cannot be retrojected before documentary evidence and review.
 
+## Research-domain accounting
+
+`configs/external_evidence_8f_research_domain_v1.json` and `exposure_domain_8f.py` define a separate denominator before 8G research.
+
+The domain must come from a pre-existing outcome-blind scanner/universe rule, not from which assets happen to have convenient mappings. Every subject must remain visible as one of:
+
+- mapped;
+- explicitly unmapped with a documented reason;
+- unaccounted (which blocks completion).
+
+Mapped and unmapped subjects both remain in the denominator. A symbol may not be silently dropped because no clean exposure mapping is available.
+
+The current domain config is deliberately empty and marked `UNDEFINED_UNTIL_SUBJECT_SET_IS_FROZEN`.
+
 ## Completion / freeze gate
 
 `completion_8f.py` and `configs/external_evidence_8f_completion_v1.json` make completion fail closed.
@@ -182,7 +196,7 @@ Phase 8F may be frozen only when all of the following are true:
 5. every subject in that domain is accounted for as mapped or explicitly unmapped;
 6. all outcome/direction/threshold/Phase-7 guards remain disabled.
 
-Current expected completion state: **BLOCKED**, because the real prospective ledger and reviewed research-domain mapping set have not yet been populated. This is a guardrail, not a test failure.
+Current expected completion state: **BLOCKED**, because the real prospective ledger, frozen research domain and reviewed mapping set have not yet been populated. This is a guardrail, not a test failure.
 
 ## Current implementation status
 
@@ -198,6 +212,7 @@ Completed technically:
 - uranium/lithium proxy contract;
 - multi-series-per-factor context fix;
 - append-only macro ledger and coverage audit;
+- explicit research-domain coverage audit;
 - fail-closed 8F completion/freeze gate;
 - CI tests for all of the above without live network calls.
 
@@ -205,7 +220,7 @@ Still required before 8F freeze:
 
 1. real PIT/prospective data collection into the append-only ledger;
 2. archive validation / optional adapter for World Bank gold, silver and copper;
-3. explicit research-domain definition;
+3. explicit outcome-blind research-domain freeze;
 4. documentary human-reviewed exposure-map population for that domain;
 5. real coverage/context audit;
 6. final 8F freeze artifact.
