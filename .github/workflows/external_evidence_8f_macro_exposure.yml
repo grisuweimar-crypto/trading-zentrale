@@ -6,11 +6,14 @@ on:
       - "configs/external_evidence_8f_macro_exposure_v1.json"
       - "configs/external_evidence_8f_exposure_map_v1.json"
       - "configs/external_evidence_8f_source_candidates_v1.json"
+      - "configs/external_evidence_8f_market_proxies_v1.json"
       - "src/scanner/research/external_evidence/macro_exposure_8f.py"
       - "src/scanner/research/external_evidence/source_candidates_8f.py"
+      - "src/scanner/research/external_evidence/market_proxies_8f.py"
       - "scripts/run_external_evidence_8f_contract_gate.py"
       - "tests/test_external_evidence_8f_macro_exposure.py"
       - "tests/test_external_evidence_8f_source_candidates.py"
+      - "tests/test_external_evidence_8f_market_proxies.py"
       - "docs/external_evidence_8f_macro_exposure.md"
       - ".github/workflows/external_evidence_8f_macro_exposure.yml"
   workflow_dispatch:
@@ -30,17 +33,19 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate Phase 8F macro vintage, source routing and exposure-map guards
+      - name: Validate Phase 8F macro vintage, source routing, market proxies and exposure-map guards
         run: >-
           python -m pytest -q
           tests/test_external_evidence_8f_macro_exposure.py
           tests/test_external_evidence_8f_source_candidates.py
+          tests/test_external_evidence_8f_market_proxies.py
       - name: Verify Phase 8F contract gate CLI
         run: python scripts/run_external_evidence_8f_contract_gate.py --help
       - name: Execute Phase 8F foundation contract gate
         run: python scripts/run_external_evidence_8f_contract_gate.py --output /tmp/external_evidence_8f_contract_gate.json
 
-# CI intentionally performs no live FRED/ALFRED/BLS/Fed/Treasury/ECB/EIA/World Bank/IMF requests.
+# CI intentionally performs no live macro-source or market-price requests.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
+# Uranium/lithium ETFs, physical-trust NAVs and futures are challenger proxies only; they are not relabelled as spot.
 # No macro factor direction, signed asset exposure, outcome research, threshold/weight selection,
 # cross-factor interaction research, Phase-7 integration or production enablement is allowed here.
