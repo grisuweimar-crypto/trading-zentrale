@@ -15,6 +15,7 @@ on:
       - "scripts/run_external_evidence_8d_finra_coverage.py"
       - "scripts/import_external_evidence_8d_sec_insider_bulk.py"
       - "scripts/run_external_evidence_8d_insider_validation.py"
+      - "scripts/run_external_evidence_8d_b3_real_q2.py"
       - "docs/external_evidence_8d_positioning_crowding.md"
       - "tests/test_external_evidence_8d_positioning_contract.py"
       - "tests/test_external_evidence_8d_finra_short_interest.py"
@@ -54,6 +55,7 @@ jobs:
           python scripts/run_external_evidence_8d_finra_coverage.py --help
           python scripts/import_external_evidence_8d_sec_insider_bulk.py --help
           python scripts/run_external_evidence_8d_insider_validation.py --help
+          python scripts/run_external_evidence_8d_b3_real_q2.py --help
 
 # CI intentionally performs no live FINRA or SEC requests.
 # Real FINRA snapshots are collected prospectively outside CI.
