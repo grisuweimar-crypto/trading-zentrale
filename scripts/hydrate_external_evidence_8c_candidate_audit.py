@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from scanner.research.external_evidence.semantic_validation import anchor_id
 
@@ -18,6 +18,35 @@ def _load_json(path: Path) -> Any:
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+
+def _build_relevant_anchor_index(
+    anchor_rows: Iterable[Any], needed_ids: set[str]
+) -> tuple[dict[str, dict[str, Any]], int]:
+    """Index only anchors required by the frozen candidate sample.
+
+    Unrelated 8C-G families may legitimately contain duplicate anchor IDs and must not
+    block DIVIDEND/BUYBACK candidate hydration. Identical duplicates of a required
+    anchor are harmless and are deduplicated. Conflicting duplicates remain fail-closed.
+    """
+    anchor_index: dict[str, dict[str, Any]] = {}
+    identical_relevant_duplicates = 0
+    for raw in anchor_rows:
+        if not isinstance(raw, dict):
+            continue
+        cid = anchor_id(raw)
+        if cid not in needed_ids:
+            continue
+        previous = anchor_index.get(cid)
+        if previous is None:
+            anchor_index[cid] = raw
+            continue
+
+        if str(previous.get("excerpt") or "") != str(raw.get("excerpt") or ""):
+            raise ValueError(f"Conflicting duplicate relevant 8C-G anchor_id: {cid}")
+        identical_relevant_duplicates += 1
+
+    return anchor_index, identical_relevant_duplicates
 
 
 def main() -> int:
@@ -60,21 +89,25 @@ def main() -> int:
     if not isinstance(anchor_rows, list) or not isinstance(packet_rows, list):
         raise ValueError("Expected anchors and candidate packet rows arrays")
 
-    anchor_index: dict[str, dict[str, Any]] = {}
-    for raw in anchor_rows:
+    needed_ids: set[str] = set()
+    for raw in packet_rows:
         if not isinstance(raw, dict):
-            continue
-        cid = anchor_id(raw)
-        if cid in anchor_index:
-            raise ValueError(f"Duplicate 8C-G anchor_id: {cid}")
-        anchor_index[cid] = raw
+            raise ValueError("Candidate audit row must be an object")
+        cid = str(raw.get("anchor_id") or "")
+        if not cid:
+            raise ValueError("Candidate audit row is missing anchor_id")
+        if cid in needed_ids:
+            raise ValueError(f"Duplicate candidate audit anchor_id: {cid}")
+        needed_ids.add(cid)
+
+    anchor_index, identical_relevant_duplicates = _build_relevant_anchor_index(
+        anchor_rows, needed_ids
+    )
 
     hydrated: list[dict[str, Any]] = []
     missing: list[str] = []
     empty_excerpt: list[str] = []
     for raw in packet_rows:
-        if not isinstance(raw, dict):
-            raise ValueError("Candidate audit row must be an object")
         row = dict(raw)
         cid = str(row.get("anchor_id") or "")
         source = anchor_index.get(cid)
@@ -92,9 +125,13 @@ def main() -> int:
         hydrated.append(row)
 
     if missing:
-        raise ValueError(f"{len(missing)} sampled candidates have no matching 8C-G anchor; first={missing[0]}")
+        raise ValueError(
+            f"{len(missing)} sampled candidates have no matching 8C-G anchor; first={missing[0]}"
+        )
     if empty_excerpt:
-        raise ValueError(f"{len(empty_excerpt)} matching 8C-G anchors have empty excerpts; first={empty_excerpt[0]}")
+        raise ValueError(
+            f"{len(empty_excerpt)} matching 8C-G anchors have empty excerpts; first={empty_excerpt[0]}"
+        )
     if len(hydrated) != len(packet_rows):
         raise ValueError("Hydration changed candidate audit sample cardinality")
 
@@ -104,17 +141,27 @@ def main() -> int:
     output_payload["source_anchor_schema"] = anchors.get("schema_version")
     output_payload["market_outcomes_visible"] = False
     output_payload["sampling_unchanged"] = True
+    output_payload["identical_relevant_anchor_duplicates_ignored"] = identical_relevant_duplicates
     output_payload["rows"] = hydrated
 
     output = Path(args.output)
     _write_json(output, output_payload)
-    print(json.dumps({
-        "candidate_count": len(hydrated),
-        "nonempty_evidence_excerpt_count": sum(1 for row in hydrated if row.get("evidence_excerpt")),
-        "sampling_unchanged": True,
-        "market_outcomes_visible": False,
-        "output": str(output),
-    }, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "candidate_count": len(hydrated),
+                "nonempty_evidence_excerpt_count": sum(
+                    1 for row in hydrated if row.get("evidence_excerpt")
+                ),
+                "identical_relevant_anchor_duplicates_ignored": identical_relevant_duplicates,
+                "sampling_unchanged": True,
+                "market_outcomes_visible": False,
+                "output": str(output),
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 

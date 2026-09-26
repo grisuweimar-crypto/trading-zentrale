@@ -1,0 +1,80 @@
+{
+  "schema_version": "external_evidence_8c_semantic_validation_result_v1",
+  "validation_status": "EVALUATED_WITHOUT_MARKET_OUTCOMES",
+  "candidate_sample_count": 200,
+  "market_outcomes_read": false,
+  "production_external_evidence_enabled": false,
+  "phase7_integration_enabled": false,
+  "families": [
+    {
+      "family": "BUYBACK",
+      "candidate_count": 100,
+      "labeled_candidate_count": 100,
+      "uncertain_count": 0,
+      "distinct_issuer_count": 17,
+      "correct_target_count": 89,
+      "precision": 0.89,
+      "precision_wilson_95_lower": 0.8136870349691968,
+      "critical_field_comparisons": 267,
+      "critical_field_correct": 267,
+      "critical_field_accuracy": 1.0,
+      "critical_field_accuracy_wilson_95_lower": 0.9858165775748635,
+      "uncertain_annotation_rate": 0.0,
+      "promotion_status": "REMAIN_CHALLENGER",
+      "failed_gate": "precision_wilson",
+      "outcome_research": "NOT_RUN"
+    },
+    {
+      "family": "DIVIDEND",
+      "candidate_count": 100,
+      "labeled_candidate_count": 100,
+      "uncertain_count": 0,
+      "distinct_issuer_count": 16,
+      "correct_target_count": 100,
+      "precision": 1.0,
+      "precision_wilson_95_lower": 0.9630065017930143,
+      "critical_field_comparisons": 400,
+      "critical_field_correct": 359,
+      "critical_field_accuracy": 0.8975,
+      "critical_field_accuracy_wilson_95_lower": 0.8638965789864276,
+      "uncertain_annotation_rate": 0.0,
+      "promotion_status": "REMAIN_CHALLENGER",
+      "failed_gate": "critical_field_accuracy_wilson",
+      "outcome_research": "NOT_RUN"
+    }
+  ],
+  "anchor_audit": {
+    "sample_count": 400,
+    "recall_gate": "DESCRIPTIVE_ONLY_IN_FIRST_VALIDATION",
+    "promotion_effect": "NONE",
+    "families": [
+      {
+        "family": "BUYBACK",
+        "sample_count": 200,
+        "labeled_count": 148,
+        "uncertain_count": 52,
+        "target_count": 18,
+        "non_target_count": 130,
+        "emitted_target_count": 6,
+        "false_negative_count": 12,
+        "descriptive_recall": 0.3333333333333333
+      },
+      {
+        "family": "DIVIDEND",
+        "sample_count": 200,
+        "labeled_count": 111,
+        "uncertain_count": 89,
+        "target_count": 26,
+        "non_target_count": 85,
+        "emitted_target_count": 24,
+        "false_negative_count": 2,
+        "descriptive_recall": 0.9230769230769231
+      }
+    ]
+  },
+  "notes": [
+    "Critical-field accuracy is evaluated only on true target events; NOT_TARGET precision false positives are excluded from the field-accuracy denominator.",
+    "Recall is descriptive only in this first validation and has no promotion effect.",
+    "No market outcomes were visible during annotation or validation."
+  ]
+}

@@ -145,19 +145,24 @@ def evaluate_family(
             uncertain += 1
             continue
         labeled += 1
-        if _candidate_truth_is_target(family, truth_label):
+        is_target = _candidate_truth_is_target(family, truth_label)
+        if is_target:
             correct += 1
         issuer = str(candidate.get("cik") or candidate.get("symbol") or "")
         if issuer:
             distinct_issuers.add(issuer)
 
-        for field in critical_fields:
-            truth_key = f"truth_{field}"
-            if truth_key not in annotation:
-                continue
-            field_total += 1
-            if _field_equal(candidate.get(field), annotation.get(truth_key)):
-                field_correct += 1
+        # Critical-field accuracy is defined only for true target events. A NOT_TARGET
+        # candidate is a precision false positive and has no valid target-field truth
+        # tuple to score against.
+        if is_target:
+            for field in critical_fields:
+                truth_key = f"truth_{field}"
+                if truth_key not in annotation:
+                    continue
+                field_total += 1
+                if _field_equal(candidate.get(field), annotation.get(truth_key)):
+                    field_correct += 1
 
         if str(candidate.get("market_direction") or "UNKNOWN") != "UNKNOWN":
             direction_violations += 1

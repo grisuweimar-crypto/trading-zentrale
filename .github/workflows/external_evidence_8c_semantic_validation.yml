@@ -7,7 +7,10 @@ on:
       - "src/scanner/research/external_evidence/semantic_validation.py"
       - "scripts/run_external_evidence_8c_semantic_validation.py"
       - "scripts/prepare_external_evidence_8c_semantic_audit.py"
+      - "scripts/hydrate_external_evidence_8c_candidate_audit.py"
       - "tests/test_external_evidence_8c_semantic_validation.py"
+      - "tests/test_external_evidence_8c_candidate_audit_hydration.py"
+      - "tests/test_external_evidence_8c_validation_denominator.py"
       - "docs/external_evidence_8c_i_semantic_validation.md"
       - ".github/workflows/external_evidence_8c_semantic_validation.yml"
   workflow_dispatch:
@@ -28,8 +31,12 @@ jobs:
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
       - name: Run Phase 8C-I validation guards
-        run: python -m pytest -q tests/test_external_evidence_8c_semantic_validation.py
+        run: |
+          python -m pytest -q tests/test_external_evidence_8c_semantic_validation.py
+          python -m pytest -q tests/test_external_evidence_8c_candidate_audit_hydration.py
+          python -m pytest -q tests/test_external_evidence_8c_validation_denominator.py
       - name: Verify validation CLIs
         run: |
           python scripts/run_external_evidence_8c_semantic_validation.py --help
           python scripts/prepare_external_evidence_8c_semantic_audit.py --help
+          python scripts/hydrate_external_evidence_8c_candidate_audit.py --help
