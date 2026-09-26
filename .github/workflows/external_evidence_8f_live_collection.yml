@@ -26,16 +26,19 @@ jobs:
       - name: Collect official-source prospective snapshot
         run: python scripts/collect_external_evidence_8f_prospective.py
       - name: Build frozen pre-8F research-domain audit
+        if: always()
         run: >-
           python scripts/run_external_evidence_8f_exposure_domain_audit.py
           --output artifacts/research/external_evidence_8f_exposure_domain_audit.json
       - name: Evaluate completion gate without pretending freeze
+        if: success()
         run: >-
           python scripts/run_external_evidence_8f_completion_gate.py
           --macro-ledger artifacts/research/external_evidence_8f_macro_ledger.json
           --exposure-domain-audit artifacts/research/external_evidence_8f_exposure_domain_audit.json
           --output artifacts/research/external_evidence_8f_completion_gate.json
-      - name: Upload Phase 8F PIT snapshot artifact
+      - name: Upload Phase 8F PIT snapshot or parser-diagnostic artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: phase8f-live-macro-pit-${{ github.run_id }}
@@ -50,7 +53,7 @@ jobs:
 
 # This workflow is read-only with respect to repository contents.
 # The pull_request trigger is intentionally scoped to edits of this workflow itself; routine 8F commits do not make live calls.
-# It records raw official-source payloads plus hashes and normalized append-only observations.
+# Raw source payloads are persisted before parsing and uploaded even when a parser fails.
 # Fed H.15 and ECB collect without credentials. EIA is included only when EIA_API_KEY is configured.
 # The completion gate is expected to remain BLOCKED until reviewed exposure mappings account for the frozen domain.
 # No market outcomes, directions, weights, thresholds, Phase-7 integration or production decisions are evaluated here.
