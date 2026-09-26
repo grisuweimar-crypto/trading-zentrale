@@ -37,6 +37,7 @@ def evaluate_phase8f_completion(
         "real_macro_ledger_required",
         "reviewed_exposure_mapping_required",
         "research_domain_coverage_must_be_explicit",
+        "research_domain_must_be_pinned_to_pre8f_source_blob",
         "domain_subjects_must_be_accounted_for_as_mapped_or_explicitly_unmapped",
     ):
         _required_bool(requirements, key, True)
@@ -91,6 +92,7 @@ def evaluate_phase8f_completion(
         if ledger_series < minimum_series:
             blockers.append(f"ledger_series:{ledger_series}<{minimum_series}")
 
+    domain_pinned = False
     if exposure_domain_audit is None:
         blockers.append("exposure_domain_audit:missing")
         domain_count = 0
@@ -102,6 +104,10 @@ def evaluate_phase8f_completion(
         mapped_count = int(exposure_domain_audit.get("mapped_subject_count") or 0)
         explicit_unmapped_count = int(exposure_domain_audit.get("explicit_unmapped_subject_count") or 0)
         accounted_count = mapped_count + explicit_unmapped_count
+        domain_guards = exposure_domain_audit.get("guards") or {}
+        domain_pinned = domain_guards.get("domain_pinned_to_pre8f_source_blob") is True
+        if not domain_pinned:
+            blockers.append("research_domain:not_pinned_to_pre8f_source_blob")
         if domain_count <= 0:
             blockers.append("research_domain:empty")
         if accounted_count != domain_count:
@@ -124,6 +130,7 @@ def evaluate_phase8f_completion(
             "ledger_series_count": ledger_series,
             "domain_subject_count": domain_count,
             "domain_accounted_count": accounted_count,
+            "domain_pinned_to_pre8f_source_blob": domain_pinned,
         },
         "guards": {
             "market_outcomes_read": False,
