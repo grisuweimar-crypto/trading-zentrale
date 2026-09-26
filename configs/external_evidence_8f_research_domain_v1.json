@@ -1,8 +1,16 @@
 {
   "schema_version": "external_evidence_8f_research_domain_v1",
   "phase": "8F_macro_exposure_context",
-  "domain_version": "8F_RESEARCH_DOMAIN_PENDING_V1",
-  "status": "UNDEFINED_UNTIL_SUBJECT_SET_IS_FROZEN",
+  "domain_version": "8F_RESEARCH_DOMAIN_PRE8F_ACTIVE_STOCKS_2c6efec912ea",
+  "status": "FROZEN_OUTCOME_BLIND_PRE8F_ACTIVE_STOCK_UNIVERSE",
+  "subject_source": {
+    "path": "data/inputs/universe_master.csv",
+    "source_ref": "feef4e572283613739b2f24cf42b837ff68a1508",
+    "git_blob_sha": "2c6efec912ea7478096f77dc8f88d7eed2a0581b",
+    "filter": "active == 1 AND asset_type == stock",
+    "deduplicate_by": "symbol",
+    "symbol_column": "symbol"
+  },
   "subject_ids": [],
   "explicit_unmapped": [],
   "rules": {
@@ -14,7 +22,9 @@
     "current_mapping_coverage_may_be_used_to_select_domain": false
   },
   "notes": [
-    "The domain must be selected from a pre-existing scanner/universe definition or another outcome-blind rule, not from which symbols happen to have convenient macro mappings.",
-    "A subject without a defensible documentary exposure mapping stays in the domain as explicit_unmapped rather than being silently dropped."
+    "The denominator is pinned to the exact universe_master.csv Git blob already present at the Phase-8E head before Phase 8F began.",
+    "Membership is deterministic: active=1, asset_type=stock, deduplicated by symbol.",
+    "No symbol enters or leaves this research domain because of macro mapping availability or outcome knowledge.",
+    "A subject without a defensible documentary exposure mapping stays visible as unaccounted until explicitly reviewed/mapped or explicitly marked unmapped."
   ]
 }
