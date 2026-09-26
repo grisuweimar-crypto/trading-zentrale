@@ -158,6 +158,25 @@ def test_perfect_preregistered_sample_can_pass() -> None:
     assert result["phase7_integration_enabled"] is False
 
 
+def test_false_positive_does_not_enter_critical_field_accuracy_denominator() -> None:
+    candidates = [_candidate("BUYBACK", i) for i in range(60)]
+    annotations = [_annotation(row) for row in candidates]
+    annotations[-1] = _annotation(candidates[-1], correct=False)
+    annotations[-1]["truth_action"] = None
+    annotations[-1]["truth_authorization_amount"] = None
+    annotations[-1]["truth_currency"] = None
+
+    result = evaluate_all(
+        candidate_rows=candidates, annotations=annotations, contract=CONTRACT
+    )
+    family = result["families"][0]
+    assert family["correct_target_count"] == 59
+    assert family["labeled_candidate_count"] == 60
+    assert family["critical_field_comparisons"] == 59 * 3
+    assert family["critical_field_correct"] == 59 * 3
+    assert family["critical_field_accuracy"] == 1.0
+
+
 def test_pooled_success_cannot_hide_family_failure() -> None:
     dividend = [_candidate("DIVIDEND", i) for i in range(60)]
     buyback = [_candidate("BUYBACK", i + 1000) for i in range(10)]
