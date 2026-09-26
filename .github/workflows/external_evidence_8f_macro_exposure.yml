@@ -17,6 +17,8 @@ on:
       - "configs/external_evidence_8f_mapping_review_decisions_b3_v1.json"
       - "configs/external_evidence_8f_mapping_candidates_b4_v1.json"
       - "configs/external_evidence_8f_mapping_review_decisions_b4_v1.json"
+      - "configs/external_evidence_8f_mapping_candidates_b5_v1.json"
+      - "configs/external_evidence_8f_mapping_review_decisions_b5_v1.json"
       - "src/scanner/research/external_evidence/macro_exposure_8f.py"
       - "src/scanner/research/external_evidence/source_candidates_8f.py"
       - "src/scanner/research/external_evidence/market_proxies_8f.py"
@@ -55,12 +57,14 @@ on:
       - "tests/test_external_evidence_8f_mapping_review.py"
       - "tests/test_external_evidence_8f_mapping_candidates_b3.py"
       - "tests/test_external_evidence_8f_mapping_candidates_b4.py"
+      - "tests/test_external_evidence_8f_mapping_candidates_b5.py"
       - "docs/external_evidence_8f_macro_exposure.md"
       - "docs/external_evidence_8f_market_proxies.md"
       - "docs/external_evidence_8f_mapping_candidates_b1.md"
       - "docs/external_evidence_8f_mapping_candidates_b2.md"
       - "docs/external_evidence_8f_mapping_candidates_b3.md"
       - "docs/external_evidence_8f_mapping_candidates_b4.md"
+      - "docs/external_evidence_8f_mapping_candidates_b5.md"
       - ".github/workflows/external_evidence_8f_macro_exposure.yml"
   workflow_dispatch:
 
@@ -95,6 +99,7 @@ jobs:
           tests/test_external_evidence_8f_mapping_review.py
           tests/test_external_evidence_8f_mapping_candidates_b3.py
           tests/test_external_evidence_8f_mapping_candidates_b4.py
+          tests/test_external_evidence_8f_mapping_candidates_b5.py
           tests/test_external_evidence_8f_completion.py
       - name: Verify Phase 8F contract gate CLI
         run: python scripts/run_external_evidence_8f_contract_gate.py --help
@@ -155,6 +160,17 @@ jobs:
           --candidates configs/external_evidence_8f_mapping_candidates_b4_v1.json
           --review configs/external_evidence_8f_mapping_review_decisions_b4_v1.json
           --output /tmp/external_evidence_8f_mapping_review_b4.json
+      - name: Validate documentary mapping candidate batch B5
+        run: >-
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py
+          --candidates configs/external_evidence_8f_mapping_candidates_b5_v1.json
+          --output /tmp/external_evidence_8f_mapping_candidate_gate_b5.json
+      - name: Confirm pending B5 human review cannot promote candidates
+        run: >-
+          python scripts/run_external_evidence_8f_mapping_review.py
+          --candidates configs/external_evidence_8f_mapping_candidates_b5_v1.json
+          --review configs/external_evidence_8f_mapping_review_decisions_b5_v1.json
+          --output /tmp/external_evidence_8f_mapping_review_b5.json
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -168,6 +184,7 @@ jobs:
 # Documentary candidate mappings cannot enter the active exposure map automatically.
 # Human-review promotion is idempotent for byte-equivalent mapping semantics; conflicting duplicates hard-fail.
 # B1, B2, B3 and B4 are explicitly human-reviewed; replay must be a no-op against the committed active map.
+# B5 remains pending human review and CI must confirm that it cannot modify the active map.
 # The human-review promotion path requires explicit source verification and relationship-class confirmation and sets valid_from to reviewed_at.
 # The completion gate must remain BLOCKED until a real ledger and reviewed exposure mappings account for the frozen domain.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
