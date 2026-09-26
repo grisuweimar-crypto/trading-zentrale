@@ -60,6 +60,14 @@ def test_b3_pairs_are_disjoint_from_b1_and_b2():
     assert pairs(b2).isdisjoint(pairs(b3))
 
 
+def test_b3_review_artifact_is_still_explicitly_pending():
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
+    assert review["status"] == "AWAITING_HUMAN_REVIEW"
+    assert review["reviewed_at"] is None
+    assert review["decisions"] == []
+    assert all(value is False for value in review["guards"].values())
+
+
 def test_empty_b3_human_review_cannot_modify_active_twenty_mapping_exposure_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b3_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
