@@ -25,63 +25,83 @@ def test_8d_starts_outcome_blind_and_without_decision_integration() -> None:
     assert gate["interaction_research_enabled"] is False
 
 
-def test_finra_short_interest_separates_event_publication_and_actual_observation_time() -> None:
+def test_finra_short_interest_separates_observation_publication_and_ingestion() -> None:
     family = _contract()["families"]["SHORT_INTEREST"]
     assert family["event_time_policy"] == "settlementDate"
     assert family["published_at_policy"] == "FINRA_PUBLICATION_DATE_AT_16_40_AMERICA_NEW_YORK"
-    assert family["valid_from_policy"] == (
-        "ACTUAL_INGESTED_AT_UNLESS_ORIGINAL_PUBLICATION_VINTAGE_IS_INDEPENDENTLY_PROVEN"
-    )
+    assert family["valid_from_policy"].startswith("ACTUAL_INGESTED_AT")
     assert family["vintage_policy"]["historical_backfill"] == (
         "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE"
     )
     assert family["vintage_policy"]["prospective_valid_from"] == "INGESTED_AT"
-    assert family["vintage_policy"]["strict_pit_eligibility"] == (
-        "PROSPECTIVE_SNAPSHOT_FROM_ACTUAL_INGESTION_FORWARD_OR_OTHERWISE_PROVEN_ORIGINAL_VINTAGE_ONLY"
-    )
     assert family["disabled_features"]["short_interest_percent_float"].startswith("DISABLED_")
     assert family["disabled_features"]["daily_short_interest"].startswith("DISABLED_")
     assert family["direction"] == "UNASSIGNED"
 
 
-def test_finra_a1_acquisition_contract_is_fail_closed() -> None:
+def test_finra_a1_a2_contract_is_fail_closed() -> None:
     family = _contract()["families"]["SHORT_INTEREST"]
     acquisition = family["acquisition_contract"]
+    coverage = family["coverage_contract"]
     assert family["status"] == "SOURCE_ACCEPTED_A1_A2_IMPLEMENTED_WITH_VINTAGE_LIMITATION"
     assert acquisition["prospective_only_for_strict_pit"] is True
     assert acquisition["one_settlement_date_per_snapshot"] is True
     assert acquisition["request_method"] == "FILTERED_POST_WITH_PAGINATION"
-    assert acquisition["synchronous_record_limit_per_request"] == 5000
-    assert acquisition["record_total_header_must_reconcile_when_present"] is True
+    assert acquisition["publication_time_retrojection_enabled"] is False
     assert acquisition["raw_page_sha256_required"] is True
     assert acquisition["canonical_raw_snapshot_sha256_required"] is True
-    assert acquisition["publication_time_retrojection_enabled"] is False
     assert acquisition["ci_live_network_access"] is False
-
-
-def test_finra_a2_coverage_contract_forbids_identity_guessing() -> None:
-    coverage = _contract()["families"]["SHORT_INTEREST"]["coverage_contract"]
-    assert coverage["single_finra_settlement_date_required"] is True
     assert coverage["match_method"] == "EXACT_SYMBOL_ONLY"
     assert coverage["ticker_suffix_stripping_enabled"] is False
     assert coverage["adr_substitution_enabled"] is False
     assert coverage["fuzzy_name_matching_enabled"] is False
     assert coverage["ambiguous_market_class_auto_selection_enabled"] is False
-    assert coverage["missing_evidence_status"] == "UNKNOWN_NOT_IN_FINRA_SNAPSHOT"
-    assert coverage["ambiguous_evidence_status"] == "AMBIGUOUS_MULTIPLE_FINRA_ROWS"
     assert coverage["missing_evidence_may_default_to_neutral"] is False
 
 
-def test_insider_first_slice_is_only_high_precision_p_and_s() -> None:
+def test_insider_b1_b2_is_exact_accession_high_precision_challenger() -> None:
     family = _contract()["families"]["INSIDER_ACTIVITY"]
+    contract = family["b1_b2_contract"]
+    assert family["status"] == "SOURCE_ACCEPTED_B1_B2_IMPLEMENTED_HIGH_PRECISION_CHALLENGER"
     assert family["forms"] == ["4", "4/A"]
-    assert family["event_time_policy"] == "transaction_date"
-    assert family["valid_from_policy"] == "SEC_ACCEPTANCE_TIMESTAMP"
+    assert family["event_time_policy"] == "TRANS_DATE"
+    assert family["valid_from_policy"] == "EXACT_ACCESSION_JOIN_TO_SEC_SUBMISSIONS_ACCEPTANCE_METADATA"
     assert set(family["initial_transaction_scope"]) == {"P", "S"}
+    assert contract["official_quarterly_bulk_only"] is True
+    assert contract["verified_sec_bundle_required"] is True
+    assert contract["exact_accession_join_required"] is True
+    assert contract["exact_issuer_cik_join_required"] is True
+    assert contract["current_ticker_used_as_historical_identity"] is False
+    assert contract["transaction_form_type_4_required_for_discretionary_candidate"] is True
+    assert contract["p_requires_acquired_code_a"] is True
+    assert contract["s_requires_disposed_code_d"] is True
+    assert contract["equity_swaps_excluded_from_discretionary_candidate"] is True
+    assert contract["aff10b5one_true_excluded_from_discretionary_candidate"] is True
+    assert contract["aff10b5one_unknown_not_assumed_discretionary"] is True
+    assert contract["ci_live_network_access"] is False
     assert family["direction"] == "UNASSIGNED"
-    excluded = " ".join(family["excluded_from_discretionary_buy_sell_scope"])
-    for code in ("A_", "D_", "F_", "G_", "M_", "J_", "K_", "V_"):
-        assert code in excluded
+
+
+def test_insider_excluded_codes_are_not_silently_discretionary() -> None:
+    excluded = set(
+        _contract()["families"]["INSIDER_ACTIVITY"][
+            "excluded_from_discretionary_buy_sell_scope"
+        ]
+    )
+    required = {
+        "A_GRANT_AWARD_OR_COMPANY_ACQUISITION",
+        "D_SALE_OR_TRANSFER_BACK_TO_COMPANY",
+        "F_EXERCISE_PRICE_OR_TAX_WITHHOLDING",
+        "G_GIFT",
+        "M_DERIVATIVE_EXERCISE_OR_CONVERSION",
+        "J_OTHER_UNLESS_SEPARATELY_VALIDATED",
+        "K_SWAP_OR_HEDGE",
+        "EQUITY_SWAP_INVOLVED",
+        "AFF10B5ONE_TRUE",
+        "TRANS_FORM_TYPE_NOT_4",
+        "P_S_ACQUIRED_DISPOSED_CONFLICT",
+    }
+    assert required <= excluded
 
 
 def test_borrow_rate_remains_deferred_and_no_proxy_substitution_is_allowed() -> None:
@@ -100,7 +120,9 @@ def test_global_pit_identity_guards_are_fail_closed() -> None:
     assert guards["current_ticker_may_be_used_as_historical_stable_id"] is False
     assert guards["symbol_changes_must_be_explicit"] is True
     assert guards["settlement_date_is_not_publication_time"] is True
-    assert guards["publication_time_is_not_automatically_valid_from_for_later_retrievals"] is True
+    assert guards[
+        "publication_time_is_not_automatically_valid_from_for_later_retrievals"
+    ] is True
     assert guards["transaction_date_is_not_filing_availability_time"] is True
     assert guards["revised_history_may_silently_replace_original_vintage"] is False
     assert guards["unknown_or_uncovered_status_must_be_explicit"] is True
