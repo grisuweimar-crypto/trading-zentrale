@@ -22,10 +22,12 @@ on:
       - "src/scanner/research/external_evidence/prospective_collector_8f.py"
       - "src/scanner/research/external_evidence/completion_8f.py"
       - "src/scanner/research/external_evidence/exposure_domain_8f.py"
+      - "src/scanner/research/external_evidence/exposure_review_queue_8f.py"
       - "scripts/run_external_evidence_8f_contract_gate.py"
       - "scripts/run_external_evidence_8f_macro_ledger.py"
       - "scripts/run_external_evidence_8f_completion_gate.py"
       - "scripts/run_external_evidence_8f_exposure_domain_audit.py"
+      - "scripts/run_external_evidence_8f_exposure_review_queue.py"
       - "scripts/collect_external_evidence_8f_prospective.py"
       - "tests/test_external_evidence_8f_macro_exposure.py"
       - "tests/test_external_evidence_8f_source_candidates.py"
@@ -36,6 +38,7 @@ on:
       - "tests/test_external_evidence_8f_prospective_collector.py"
       - "tests/test_external_evidence_8f_completion.py"
       - "tests/test_external_evidence_8f_exposure_domain.py"
+      - "tests/test_external_evidence_8f_exposure_review_queue.py"
       - "docs/external_evidence_8f_macro_exposure.md"
       - "docs/external_evidence_8f_market_proxies.md"
       - ".github/workflows/external_evidence_8f_macro_exposure.yml"
@@ -56,7 +59,7 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate Phase 8F foundation, adapters, collector, ledger, domain, completion, routing and proxy guards
+      - name: Validate Phase 8F foundation, adapters, collector, ledger, domain, review queue, completion, routing and proxy guards
         run: >-
           python -m pytest -q
           tests/test_external_evidence_8f_macro_exposure.py
@@ -67,6 +70,7 @@ jobs:
           tests/test_external_evidence_8f_macro_ledger.py
           tests/test_external_evidence_8f_prospective_collector.py
           tests/test_external_evidence_8f_exposure_domain.py
+          tests/test_external_evidence_8f_exposure_review_queue.py
           tests/test_external_evidence_8f_completion.py
       - name: Verify Phase 8F contract gate CLI
         run: python scripts/run_external_evidence_8f_contract_gate.py --help
@@ -76,12 +80,16 @@ jobs:
         run: python scripts/collect_external_evidence_8f_prospective.py --help
       - name: Verify Phase 8F exposure-domain audit CLI
         run: python scripts/run_external_evidence_8f_exposure_domain_audit.py --help
+      - name: Verify Phase 8F exposure review queue CLI
+        run: python scripts/run_external_evidence_8f_exposure_review_queue.py --help
       - name: Verify Phase 8F completion gate CLI
         run: python scripts/run_external_evidence_8f_completion_gate.py --help
       - name: Execute Phase 8F foundation contract gate
         run: python scripts/run_external_evidence_8f_contract_gate.py --output /tmp/external_evidence_8f_contract_gate.json
-      - name: Build current empty research-domain audit
+      - name: Build frozen research-domain audit
         run: python scripts/run_external_evidence_8f_exposure_domain_audit.py --output /tmp/external_evidence_8f_exposure_domain_audit.json
+      - name: Build frozen 207-subject exposure review queue
+        run: python scripts/run_external_evidence_8f_exposure_review_queue.py --output /tmp/external_evidence_8f_exposure_review_queue.json
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -91,7 +99,8 @@ jobs:
 # EIA, Fed H.15 and ECB current-history data remain prospective-only unless separate historical archive proof is introduced.
 # Macro observations are stored append-only; later revisions may not overwrite prior vintages.
 # Research-domain membership may not be selected from mapping convenience or outcome knowledge.
-# The completion gate must remain BLOCKED until a real ledger, reviewed exposure mappings and explicit research-domain accounting exist.
+# The 207-subject review queue is pinned to the pre-8F universe blob and contains no inferred factor mapping.
+# The completion gate must remain BLOCKED until a real ledger and reviewed exposure mappings account for the frozen domain.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
 # Uranium/lithium ETFs, physical-trust NAVs and futures are challenger proxies only; they are not relabelled as spot.
 # No macro factor direction, signed asset exposure, outcome research, threshold/weight selection,
