@@ -11,6 +11,8 @@ on:
       - "configs/external_evidence_8f_research_domain_v1.json"
       - "configs/external_evidence_8f_mapping_candidates_v1.json"
       - "configs/external_evidence_8f_mapping_review_decisions_v1.json"
+      - "configs/external_evidence_8f_mapping_candidates_b2_v1.json"
+      - "configs/external_evidence_8f_mapping_review_decisions_b2_v1.json"
       - "src/scanner/research/external_evidence/macro_exposure_8f.py"
       - "src/scanner/research/external_evidence/source_candidates_8f.py"
       - "src/scanner/research/external_evidence/market_proxies_8f.py"
@@ -50,6 +52,7 @@ on:
       - "docs/external_evidence_8f_macro_exposure.md"
       - "docs/external_evidence_8f_market_proxies.md"
       - "docs/external_evidence_8f_mapping_candidates_b1.md"
+      - "docs/external_evidence_8f_mapping_candidates_b2.md"
       - ".github/workflows/external_evidence_8f_macro_exposure.yml"
   workflow_dispatch:
 
@@ -105,10 +108,21 @@ jobs:
         run: python scripts/run_external_evidence_8f_exposure_domain_audit.py --output /tmp/external_evidence_8f_exposure_domain_audit.json
       - name: Build frozen 207-subject exposure review queue
         run: python scripts/run_external_evidence_8f_exposure_review_queue.py --output /tmp/external_evidence_8f_exposure_review_queue.json
-      - name: Validate first documentary mapping candidate batch
-        run: python scripts/run_external_evidence_8f_mapping_candidate_gate.py --output /tmp/external_evidence_8f_mapping_candidate_gate.json
-      - name: Confirm empty human review artifact cannot promote candidates
-        run: python scripts/run_external_evidence_8f_mapping_review.py --output /tmp/external_evidence_8f_mapping_review.json
+      - name: Validate documentary mapping candidate batch B1
+        run: python scripts/run_external_evidence_8f_mapping_candidate_gate.py --output /tmp/external_evidence_8f_mapping_candidate_gate_b1.json
+      - name: Replay committed B1 human review idempotently
+        run: python scripts/run_external_evidence_8f_mapping_review.py --output /tmp/external_evidence_8f_mapping_review_b1.json
+      - name: Validate documentary mapping candidate batch B2
+        run: >-
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py
+          --candidates configs/external_evidence_8f_mapping_candidates_b2_v1.json
+          --output /tmp/external_evidence_8f_mapping_candidate_gate_b2.json
+      - name: Confirm pending B2 human review cannot promote candidates
+        run: >-
+          python scripts/run_external_evidence_8f_mapping_review.py
+          --candidates configs/external_evidence_8f_mapping_candidates_b2_v1.json
+          --review configs/external_evidence_8f_mapping_review_decisions_b2_v1.json
+          --output /tmp/external_evidence_8f_mapping_review_b2.json
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -120,6 +134,7 @@ jobs:
 # Research-domain membership may not be selected from mapping convenience or outcome knowledge.
 # The 207-subject review queue is pinned to the pre-8F universe blob and contains no inferred factor mapping.
 # Documentary candidate mappings remain PENDING_HUMAN_REVIEW and cannot enter the active exposure map automatically.
+# Human-review promotion is idempotent for byte-equivalent mapping semantics; conflicting duplicates hard-fail.
 # The human-review promotion path requires explicit source verification and relationship-class confirmation and sets valid_from to reviewed_at.
 # The completion gate must remain BLOCKED until a real ledger and reviewed exposure mappings account for the frozen domain.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
