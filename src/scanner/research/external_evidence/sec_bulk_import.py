@@ -315,12 +315,12 @@ def import_sec_bulk_bundle(
         "eligibility": {
             "fundamentals_real_data_validation": direct and bool(facts_verified),
             "structured_event_semantic_validation": direct and content_count > 0,
-            "final_phase8c_completion": false,
-            "phase7_integration": false,
-            "market_outcome_research": false,
+            "final_phase8c_completion": False,
+            "phase7_integration": False,
+            "market_outcome_research": False,
         },
-        "market_outcomes_read": false,
-        "direction_assigned": false,
+        "market_outcomes_read": False,
+        "direction_assigned": False,
     }
     write_json_with_digest(output_dir / "bulk_manifest.json", manifest)
     return manifest
