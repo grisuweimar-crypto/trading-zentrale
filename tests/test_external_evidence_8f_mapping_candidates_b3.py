@@ -60,25 +60,28 @@ def test_b3_pairs_are_disjoint_from_b1_and_b2():
     assert pairs(b2).isdisjoint(pairs(b3))
 
 
-def test_b3_review_artifact_is_still_explicitly_pending():
+def test_b3_review_artifact_contains_twenty_explicit_human_approvals():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
-    assert review["status"] == "AWAITING_HUMAN_REVIEW"
-    assert review["reviewed_at"] is None
-    assert review["decisions"] == []
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewed_at"] == "2026-09-26T22:19:54+02:00"
+    assert len(review["decisions"]) == 20
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
     assert all(value is False for value in review["guards"].values())
 
 
-def test_empty_b3_human_review_cannot_modify_active_twenty_mapping_exposure_map():
+def test_committed_b3_human_review_is_idempotent_on_active_forty_mapping_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b3_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
     exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
-    assert len(exposure["mappings"]) == 20
+    assert len(exposure["mappings"]) == 40
     result = apply_human_mapping_review(
         candidate_config=candidates,
         review_config=review,
         exposure_map=exposure,
     )
-    assert result["status"] == "AWAITING_HUMAN_REVIEW"
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 20
+    assert result["already_applied_count"] == 20
+    assert len(result["exposure_map"]["mappings"]) == 40
