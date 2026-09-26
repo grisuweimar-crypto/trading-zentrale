@@ -21,14 +21,17 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def write_json_with_digest(path: Path, payload: Any) -> str:
-    data = canonical_json_bytes(payload)
+def write_bytes_with_digest(path: Path, data: bytes) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
     return sha256_bytes(data)
 
 
-def read_json_verified(bundle_dir: Path, file_spec: Mapping[str, Any]) -> dict[str, Any]:
+def write_json_with_digest(path: Path, payload: Any) -> str:
+    return write_bytes_with_digest(path, canonical_json_bytes(payload))
+
+
+def _verified_bytes(bundle_dir: Path, file_spec: Mapping[str, Any]) -> bytes:
     relative = str(file_spec.get("path") or "").strip()
     expected = str(file_spec.get("sha256") or "").strip().lower()
     if not relative or not expected:
@@ -47,6 +50,16 @@ def read_json_verified(bundle_dir: Path, file_spec: Mapping[str, Any]) -> dict[s
         raise SecSnapshotError(
             f"Snapshot digest mismatch for {relative}: expected {expected}, got {actual}"
         )
+    return data
+
+
+def read_bytes_verified(bundle_dir: Path, file_spec: Mapping[str, Any]) -> bytes:
+    return _verified_bytes(bundle_dir, file_spec)
+
+
+def read_json_verified(bundle_dir: Path, file_spec: Mapping[str, Any]) -> dict[str, Any]:
+    relative = str(file_spec.get("path") or "").strip()
+    data = _verified_bytes(bundle_dir, file_spec)
     payload = json.loads(data.decode("utf-8"))
     if not isinstance(payload, dict):
         raise SecSnapshotError(f"Snapshot JSON must be an object: {relative}")
@@ -74,6 +87,7 @@ def validate_snapshot_bundle(bundle_dir: Path) -> dict[str, Any]:
     manifest = load_snapshot_manifest(bundle_dir)
     verified_files = 0
     verified_companies = 0
+    verified_content_documents = 0
 
     ticker_spec = manifest.get("company_tickers_file")
     if not isinstance(ticker_spec, Mapping):
@@ -90,10 +104,11 @@ def validate_snapshot_bundle(bundle_dir: Path) -> dict[str, Any]:
         submissions = company.get("submissions_file")
         companyfacts = company.get("companyfacts_file")
         history = company.get("history_files") or []
+        content_filings = company.get("content_filings") or []
         if not isinstance(submissions, Mapping) or not isinstance(companyfacts, Mapping):
             raise SecSnapshotError("Verified company requires submissions and companyfacts files")
-        if not isinstance(history, list):
-            raise SecSnapshotError("history_files must be an array")
+        if not isinstance(history, list) or not isinstance(content_filings, list):
+            raise SecSnapshotError("history_files/content_filings must be arrays")
         read_json_verified(bundle_dir, submissions)
         read_json_verified(bundle_dir, companyfacts)
         verified_files += 2
@@ -102,6 +117,15 @@ def validate_snapshot_bundle(bundle_dir: Path) -> dict[str, Any]:
                 raise SecSnapshotError("history file spec must be an object")
             read_json_verified(bundle_dir, spec)
             verified_files += 1
+        for filing in content_filings:
+            if not isinstance(filing, Mapping):
+                raise SecSnapshotError("content filing entry must be an object")
+            document = filing.get("document_file")
+            if not isinstance(document, Mapping):
+                raise SecSnapshotError("content filing requires document_file")
+            read_bytes_verified(bundle_dir, document)
+            verified_files += 1
+            verified_content_documents += 1
         verified_companies += 1
 
     return {
@@ -109,7 +133,9 @@ def validate_snapshot_bundle(bundle_dir: Path) -> dict[str, Any]:
         "company_count": len(manifest["companies"]),
         "verified_company_count": verified_companies,
         "verified_file_count": verified_files,
+        "verified_content_document_count": verified_content_documents,
         "snapshot_created_at": manifest.get("created_at"),
         "scanner_as_of": manifest.get("scanner_as_of"),
+        "content_acquisition_window": manifest.get("content_acquisition_window"),
         "market_outcomes_read": False,
     }

@@ -1,0 +1,39 @@
+{
+  "schema_version": "external_evidence_8c_content_acquisition_v1",
+  "phase": "8C_F_content_document_acquisition",
+  "status": "OFFLINE_COLLECTION_CONTRACT",
+  "source_authority": "U.S. SEC EDGAR",
+  "transport": "OUTSIDE_GITHUB_HOSTED_ACTIONS",
+  "eligible_forms": ["8-K", "8-K/A", "6-K", "6-K/A"],
+  "document_strategy": "FULL_SUBMISSION_TEXT_PER_ACCESSION",
+  "research_history_source": "artifacts/research/history_recent.csv",
+  "default_acquisition_buffer_days": 365,
+  "buffer_semantics": "COLLECTION_ONLY_NOT_FEATURE_LOOKBACK",
+  "required_manifest_fields_per_content_filing": [
+    "accession_number",
+    "form",
+    "valid_from",
+    "published_at",
+    "publication_stage",
+    "document_file"
+  ],
+  "integrity": {
+    "sha256_required": true,
+    "source_url_required": true,
+    "accession_bound": true,
+    "later_amendment_overwrites_original": false
+  },
+  "hard_boundaries": {
+    "github_actions_live_sec_download": false,
+    "content_download_without_history_window": false,
+    "content_document_implies_event_semantics": false,
+    "content_document_implies_market_direction": false,
+    "market_outcomes_may_be_read": false
+  },
+  "research_gate": {
+    "content_parser_enabled": false,
+    "semantic_enrichment_enabled": false,
+    "outcome_research_enabled": false,
+    "decision_integration_enabled": false
+  }
+}
