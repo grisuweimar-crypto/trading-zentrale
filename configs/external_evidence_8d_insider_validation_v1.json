@@ -2,6 +2,7 @@
   "schema_version": "external_evidence_8d_insider_validation_v1",
   "phase": "8D_B3_insider_validation",
   "status": "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION",
+  "preregistered_on": "2026-09-26",
   "input_schema": "external_evidence_8d_sec_insider_bulk_v1",
   "market_outcomes_may_be_read": false,
   "market_direction_may_be_assigned": false,
@@ -12,6 +13,14 @@
     "transaction_key",
     "transaction_code"
   ],
+  "real_validation_corpus": {
+    "quarter": "2026Q2",
+    "source_url": "https://www.sec.gov/files/datastandardsinnovation/data/insider-transactions-data-sets/2026q2_form345.zip",
+    "selection_rule": "LATEST_FULL_PUBLIC_SEC_INSIDER_QUARTER_AVAILABLE_AT_PREREGISTRATION",
+    "pool_with_earlier_quarters": false,
+    "if_sample_is_insufficient": "LOW_COVERAGE_NOT_PROMOTABLE_AND_REQUIRE_NEW_PREREGISTRATION_BEFORE_ADDING_ANOTHER_QUARTER",
+    "reason": "Freeze the first real corpus before inspecting parser accuracy or any market outcomes; do not expand the sample after seeing validation results."
+  },
   "scope": {
     "forms": ["4", "4/A"],
     "transaction_table": "NONDERIV_TRANS",
