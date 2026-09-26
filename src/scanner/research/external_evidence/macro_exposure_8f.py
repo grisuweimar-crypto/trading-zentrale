@@ -76,8 +76,6 @@ def _forbid_semantic_shortcuts(row: Mapping[str, Any]) -> None:
 
 
 def _historical_vintage_safe_floor(realtime_start: date) -> datetime:
-    # ALFRED proves the calendar date on which a vintage existed, but not an
-    # intraday publication time. The next UTC day is a conservative no-backdate floor.
     return datetime.combine(realtime_start + timedelta(days=1), time.min, tzinfo=timezone.utc)
 
 
@@ -101,12 +99,36 @@ def validate_macro_observation(
     ingested_at = _aware_datetime(row.get("ingested_at"), field="ingested_at")
     valid_from = _aware_datetime(row.get("valid_from"), field="valid_from")
     historical_proof = row.get("historical_vintage_independently_proven") is True
+    exact_publication_proof = row.get("historical_publication_time_independently_proven") is True
+    published_at_raw = row.get("published_at")
+    published_at = None if published_at_raw in (None, "") else _aware_datetime(published_at_raw, field="published_at")
 
-    if historical_proof:
+    if exact_publication_proof:
+        if not historical_proof:
+            raise MacroExposure8FError(
+                "exact historical publication-time proof requires historical vintage proof"
+            )
+        if published_at is None:
+            raise MacroExposure8FError("exact historical publication-time proof requires published_at")
+        if published_at.date() != realtime_start:
+            raise MacroExposure8FError(
+                "published_at local calendar date must match realtime_start for exact release proof"
+            )
+        if published_at > ingested_at:
+            raise MacroExposure8FError("published_at cannot be later than ingested_at")
+        if valid_from < published_at:
+            raise MacroExposure8FError(
+                "valid_from cannot precede independently proven exact publication time"
+            )
+    elif published_at is not None:
+        raise MacroExposure8FError(
+            "published_at may only be supplied when exact historical publication-time proof is enabled"
+        )
+    elif historical_proof:
         safe_floor = _historical_vintage_safe_floor(realtime_start)
         if valid_from < safe_floor:
             raise MacroExposure8FError(
-                "historical ALFRED day-level vintage cannot become usable before the next UTC day"
+                "historical day-level vintage cannot become usable before the next UTC day"
             )
     elif valid_from < ingested_at:
         raise MacroExposure8FError(
@@ -133,6 +155,12 @@ def validate_macro_observation(
             raise MacroExposure8FError("non-KNOWN macro observation must not carry a numeric value")
         value = None
 
+    availability_proof_type = str(row.get("availability_proof_type") or "").strip().upper() or None
+    if exact_publication_proof and availability_proof_type != "ARCHIVED_RELEASE_EXACT_TIMESTAMP":
+        raise MacroExposure8FError(
+            "exact historical publication-time proof requires ARCHIVED_RELEASE_EXACT_TIMESTAMP"
+        )
+
     return {
         "schema_version": MACRO_SCHEMA_VERSION,
         "series_id": series_id,
@@ -150,6 +178,9 @@ def validate_macro_observation(
         "ingested_at": ingested_at,
         "valid_from": valid_from,
         "historical_vintage_independently_proven": historical_proof,
+        "historical_publication_time_independently_proven": exact_publication_proof,
+        "published_at": published_at,
+        "availability_proof_type": availability_proof_type,
     }
 
 
@@ -244,8 +275,6 @@ def _latest_available_observation(
     if not available:
         return None
 
-    # First choose the most recent observation date. For that observation, use
-    # the latest revision that was already knowable at as_of.
     latest_observation_date = max(row["observation_date"] for row in available)
     same_observation = [row for row in available if row["observation_date"] == latest_observation_date]
     return max(same_observation, key=lambda row: (row["valid_from"], row["realtime_start"], row["revision_id"]))
@@ -341,9 +370,14 @@ def validate_phase8f_contract(
     if wrong:
         raise MacroExposure8FError("Phase 8F hard guards must remain false: " + ", ".join(wrong))
 
-    if macro_config.get("macro_vintage_contract", {}).get("day_level_historical_vintage_valid_from") != "NEXT_UTC_DAY":
+    vintage_contract = macro_config.get("macro_vintage_contract", {})
+    if vintage_contract.get("day_level_historical_vintage_valid_from") != "NEXT_UTC_DAY":
         raise MacroExposure8FError("day-level historical macro vintage must fail closed to NEXT_UTC_DAY")
-    if macro_config.get("macro_vintage_contract", {}).get("later_revision_overwrites_original") is not False:
+    if vintage_contract.get("exact_timestamp_historical_vintage_valid_from") != "PROVEN_PUBLISHED_AT":
+        raise MacroExposure8FError(
+            "exact-timestamp historical macro vintage must use independently proven published_at"
+        )
+    if vintage_contract.get("later_revision_overwrites_original") is not False:
         raise MacroExposure8FError("later macro revisions may not overwrite original vintages")
 
     factors = macro_config.get("factor_catalog") or []
