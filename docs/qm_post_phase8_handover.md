@@ -13,81 +13,118 @@ QM beginnt erst, wenn Phase 8 technisch abgeschlossen ist. Dann zuerst:
 2. diesen Branch darauf synchronisieren,
 3. Phase-8-Ergebnisse gegen die QM-Anforderungen abgleichen,
 4. doppelte oder inzwischen erledigte Maßnahmen entfernen,
-5. erst danach QM-A starten.
+5. erst danach QM-A/H aktivieren.
 
-## Verbindliche Arbeitsreihenfolge
+## Audit-Konsens aus Perplexity + DeepSeek
 
-- QM-A Research Governance / Evidence Consumption
-- QM-H Defect / Near-Miss / CAPA Management
-- QM-B As-of Universe / Coverage / Survivorship
-- QM-C Hypothesis Registry / Global Multiplicity
-- QM-I Evidence Lineage / Double-Counting Audit
-- QM-D Dependence / Effective N / Robustness
-- QM-J Negative Controls / Falsification
-- QM-E Probability Calibration Audit
-- QM-F Decision-Layer Ablation / Elliott incremental value
-- QM-G Elliott Challenger Registry
+Beide unabhängigen Zweitprüfungen sehen denselben Kernpunkt: Der QM-Entwurf ist methodisch schlüssig, aber zentrale Regeln dürfen nicht nur dokumentiert oder selbst berichtet werden. Confirmatory Forschung benötigt maschinenprüfbare Zustände, unveränderliche Analysis Identity, nachvollziehbaren Evidenzzugriff und Fail-closed-Gates.
 
-QM-H ist nach Aktivierung querschnittlich dauerhaft weiterzuführen.
+Daraus wurden folgende Foundation-Änderungen übernommen:
+- Evidence State Machine,
+- immutable Analysis/Data/Code/Label/Universe Identity,
+- feinere Evidence-Consumption-Klassen und Access Modes,
+- neue Version bei nicht nachweislich mechanisch äquivalenten QA-Änderungen,
+- Investability + Outcome-Availability zusätzlich zu Universe/Survivorship,
+- vollständiger Analysis-Plan-Freeze in QM-C,
+- Research Derivation Graph,
+- Sequential-Look-/Alpha-Spending- oder gleichwertige vorregistrierte Kontrolle,
+- getrennte Abhängigkeitsachsen statt eines einzigen Effective-N-Werts,
+- Calibration Population + block-aware Calibration Audit,
+- stateful/path-dependent Policy Evaluation in QM-F,
+- Incident/Findings-Trennung in QM-H,
+- verpflichtender typed Provenance Graph + Independence Claims in QM-I,
+- pre-registered Negative-Control Failure Rule in QM-J.
+
+Nicht ungeprüft übernommen wurde eine konkrete DeepSeek-Placebo-Schwelle (z. B. bestimmter KS-/Bonferroni-Test). Der Foundation-Vertrag verlangt stattdessen, dass die konkrete Failure Rule vor Sicht auf die Placebo-Ergebnisse im späteren Analysis Plan eingefroren wird.
+
+## Arbeitsstruktur
+
+QM ist kein rein linearer Ablauf.
+
+Dauerhaft ab QM-Start:
+- QM-A Research Governance / Evidence Consumption / State Machine
+- QM-H Defect / Near-Miss / CAPA
+
+Parallel foundational:
+- QM-B As-of Universe / Investability / Outcome Availability
+- QM-C Hypothesis Registry / Multiplicity / Analysis Plan / Sequential Monitoring
+
+Sobald B/C-Schemas stehen:
+- QM-I Evidence Lineage / Double Counting beginnen
+
+Danach / abhängig:
+- QM-D benötigt B/C
+- QM-E benötigt D
+- QM-J benötigt C/D/I
+- QM-F benötigt D/I
+- QM-G benötigt C/I
+
+QM-I muss vor Interpretation von B5/B6 oder neuen Elliott-Challengern als Blocking Gate wirksam sein.
 
 ## Wichtige Schutzgrenzen
 
 - Keine rückwirkende Änderung historischer PIT-Daten.
-- Keine Reparatur fehlender Provenance.
-- Keine Neudefinition bereits verbrauchter Holdouts als unspent.
-- Keine Änderung des eingefrorenen Phase-6-Elliott-Hard-Rule-Kerns durch Challenger.
-- Keine rückwirkende Neuinterpretation von Phase 7I durch spätere B0–B6-Ablationen.
-- Keine Auswahl von Bootstrap/Blocklänge/Regime anhand des schönsten Ergebnisses.
-- Outcome-getriebene Regeländerungen verbrauchen die betrachtete Evidenz für diese neue Regel.
-- Transformationen gemeinsamer Rohinformation dürfen nicht automatisch als unabhängige Evidenzstimmen behandelt werden.
-- Negative Controls laufen nur in isolierter Research-Kopie und dürfen keine kanonischen Artefakte verändern.
-- Fehlgeschlagene Placebo-/Negative-Control-Tests dürfen nicht verschwiegen oder durch nachträgliches Tuning „repariert“ werden.
-- B5 und B6 müssen außerhalb des registrierten Elliott-Unterschieds lineage-identisch bleiben.
+- Keine Reparatur fehlender Provenance durch Erfindung.
+- Keine Rückstufung ausgewerteter Evidenz auf unspent.
+- Kein In-place-Umschreiben eingefrorener Registry-Einträge; nur superseding versions.
+- Nicht nachweislich mechanisch äquivalente QA-Änderung => neue Version / neue Evidence Boundary.
+- Aggregate/Charts/Dashboards/Reports können Evidenz verbrauchen.
+- Keine heutige Universe-/Sector-/Provider-Metadaten-Rückprojektion.
+- Delisting/Suspension/Censoring darf nicht als generisches Missing verschwinden.
+- Keine Auswahl von Bootstrap/Cluster/Block-/Calibration-/Placebo-Verfahren anhand des schönsten Ergebnisses.
+- Keine automatische Recalibration aus QM-E.
+- Keine automatische Invalidierung nur wegen gemeinsamer Lineage-Ancestry.
+- Keine Interpretation B6-B5 ohne Lineage Equality und stateful policy evaluation.
+- Keine Placebo-Retuning-Schleife nach Sicht auf Resultate.
 
-## Bereits bekannte externe und interne QM-Funde
+## QM-B Mindestziel
 
-Gemeinsame bzw. relevante Punkte aus Perplexity/DeepSeek und internem Audit:
-- globale Multiplikität über das gesamte Forschungsprogramm,
-- Datum×Symbol×Sektor/Domain-Abhängigkeit,
-- As-of-Universe und Survivorship,
-- echte Probability Calibration zusätzlich zu Advantage/Robustness,
-- menschlicher Evidenzverbrauch durch wiederholte Outcome-Inspektion,
-- inkrementelle Decision-Layer-Ablation,
-- Elliott-Swing-Zusatznutzen B5 vs B6,
-- Elliott Challenger: Wave Personality, Exhaustion, Reclaim, Channeling, Scenario Stability,
-- systematische Erfassung von Fehlern, Beinahefehlern, Inkonsistenzen und Abweichungen,
-- mögliche verdeckte informationelle Doppelzählung über mehrere Phasen,
-- Bedarf an Negative Controls/Falsifikation gegen unbemerkte Leakage-/Pipeline-/Abhängigkeitsprobleme.
+Historisch muss rekonstruierbar sein:
+- welches stabile Instrument gemeint war,
+- unter welchem Symbol / Venue / Currency-Pair,
+- ob es existierte,
+- ob es handelbar war,
+- ob der Provider es abdeckte,
+- ob Scanner-/Preis-/Outcome-Daten verfügbar waren,
+- ob es suspendiert/delistet/mergered/migriert war,
+- und warum ein Outcome vorhanden, censored oder fehlend ist.
 
-## QM-I Kernfrage
+## QM-C Mindestziel
 
-Für jede relevante Information soll maschinenlesbar nachvollziehbar werden:
-`raw feature -> derived metric -> research claim -> calibration/context/reliability -> decision usage`.
+Ein confirmatory Claim ist nur dann eingefroren, wenn nicht nur die verbale Hypothese, sondern der komplette Analysis Plan gebunden ist: Universe, Target, Event Rule, Filter, Missingness, Benchmark, Estimand, Inference, Resampling, Decision Metric, Promotion Rule, Planned Sensitivities, Sequential Looks, Multiplicity Scope und Hash Bundle.
 
-Der Lineage-Audit prüft insbesondere:
-- gemeinsame Rohdaten-Vorfahren bei angeblich unabhängiger Bestätigung,
-- Regime/Risk bereits indirekt in Selection/Score,
-- Selection-Reuse in Confidence/Agreement,
-- Probability als mögliche Doppelzählung von Richtung,
-- same-family support als vermeintliche cross-family confirmation,
-- Unterschiede B5 vs B6 außerhalb Elliott.
+## QM-I Mindestziel
 
-Gemeinsame Abstammung ist ein Review-Trigger, nicht automatisch ein Fehlerurteil.
+Für jede relevante Information muss maschinenlesbar nachvollziehbar werden:
+`raw source -> raw feature -> derived metric -> composite/claim -> calibration/context/reliability -> decision usage`.
 
-## QM-J Kernfrage
+Gemeinsame Abstammung ist ein Review-Trigger, kein automatischer Fehler. Unabhängigkeit muss bei gemeinsamem Ursprung explizit behauptet und begründet werden.
 
-Kann die Pipeline kontrollierte Placebos korrekt als Null/unsicher behandeln?
+B5/B6: nach Entfernung des registrierten Elliott-Adjustments müssen Rest-Lineage, Snapshot, Eligibility, Costs und Starting State identisch sein, bevor der Unterschied als Elliott-Zusatznutzen interpretiert wird.
 
-Dafür werden vorab registrierte Kontrollen genutzt, z. B. zeitliche Verschiebungen, block-erhaltende Permutationen, Symbol-Permutationen innerhalb eines Datums, missingness-erhaltende Feature-Permutationen, Pseudo-Events und irrelevante Features.
+## QM-J Mindestziel
 
-Wenn solche Kontrollen ähnlich starke „Signale“ erzeugen wie echte Hypothesen, muss vor jeder confirmatory Promotion Leakage, Abhängigkeit, Multiplicity oder Pipeline-Verhalten untersucht werden.
+Kann die Pipeline struktur-erhaltende Placebos korrekt als Null/unsicher behandeln?
+
+Mindestkandidaten:
+- temporal shift,
+- within-symbol block permutation,
+- within-date symbol permutation,
+- missingness-/struktur-erhaltende feature permutation,
+- frequency/concentration-matched pseudo-events.
+
+Wrong-entity mapping bleibt isolierter Pipeline-Integrity-Test.
+
+Ein einzelner Placebo-Treffer ist kein automatischer Systemfehler. Ein vorab definierter systematischer Placebo-Fail blockiert Promotion bis zur Untersuchung.
 
 ## Nicht ungeprüft übernehmen
 
-Folgende externe Kritik wurde bereits als zu pauschal oder falsch eingeordnet und darf nicht mechanisch umgesetzt werden:
+Folgende Kritik bleibt zu pauschal oder wurde bereits widerlegt/qualifiziert:
 - Phase-5-Leak allein durch Maturity Cutoff,
 - horizon-langer Event-Cooldown als notwendige Voraussetzung für Unabhängigkeit,
-- zwei 5T-Timing-Treffer seien allein wegen 96 Mustern automatisch unter Zufallserwartung,
-- Regime müsse zwingend als neuer directional vote in den Scanner eingebaut werden.
+- zwei 5T-Timing-Treffer seien allein wegen 96 Mustern automatisch Zufall,
+- Regime müsse zwingend als neuer directional vote in den Scanner,
+- ein einzelner scalar Effective N löse Panel-Abhängigkeit,
+- gemeinsame Rohdaten-Ancestry bedeute automatisch Double Counting.
 
 Diese Punkte dürfen als Sensitivitäts-/Auditfrage untersucht werden, aber nicht als bereits feststehender Fehler behandelt werden.
