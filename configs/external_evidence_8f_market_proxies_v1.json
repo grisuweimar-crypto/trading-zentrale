@@ -1,0 +1,119 @@
+{
+  "schema_version": "external_evidence_8f_market_proxies_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "CHALLENGER_PROXY_ROUTING_OUTCOME_BLIND",
+  "rules": {
+    "proxy_may_be_labeled_as_underlying_spot": false,
+    "different_proxy_series_may_be_spliced_into_one_history": false,
+    "proxy_direction_may_be_assigned": false,
+    "proxy_weight_may_be_selected": false,
+    "market_outcomes_may_be_read": false,
+    "price_source_rights_must_be_cleared_before_ingestion": true,
+    "historical_price_basis_must_be_explicit": true,
+    "adjusted_history_may_be_retrojected_without_corporate_action_provenance": false
+  },
+  "proxies": [
+    {
+      "proxy_id": "uranium_physical_sput_nav",
+      "factor_id": "uranium",
+      "instrument": "Sprott Physical Uranium Trust",
+      "symbols": ["U.UN", "U.U"],
+      "proxy_class": "PHYSICAL_COMMODITY_TRUST_NAV",
+      "inception_date": "2021-07-19",
+      "relationship_to_factor": "HOLDS_SUBSTANTIALLY_ALL_ASSETS_AS_PHYSICAL_U3O8",
+      "preferred_measure": "NAV_PER_UNIT",
+      "market_price_allowed_as_separate_measure": true,
+      "limitations": [
+        "Exchange market price can trade at a material premium or discount to NAV.",
+        "NAV uses a blended proprietary uranium spot-price benchmark, so benchmark/data rights must be reviewed before persistent automated ingestion.",
+        "This proxy starts in 2021 and cannot provide pre-inception uranium context."
+      ],
+      "pit_status": "CANDIDATE_DAILY_MARKET_PROXY",
+      "license_status": "RIGHTS_REVIEW_REQUIRED",
+      "build_status": "PREFERRED_URANIUM_PROXY_CHALLENGER",
+      "source_urls": [
+        "https://sprott.com/investment-strategies/exchange-listed-products/physical-commodity-funds/uranium/"
+      ]
+    },
+    {
+      "proxy_id": "uranium_equity_ura",
+      "factor_id": "uranium",
+      "instrument": "Global X Uranium ETF",
+      "symbols": ["URA"],
+      "proxy_class": "THEMATIC_EQUITY_ETF",
+      "inception_date": "2010-11-04",
+      "relationship_to_factor": "URANIUM_MINING_AND_NUCLEAR_COMPONENTS_EQUITY_BASKET",
+      "preferred_measure": "UNADJUSTED_MARKET_CLOSE_WITH_SEPARATE_CORPORATE_ACTION_PROVENANCE",
+      "market_price_allowed_as_separate_measure": true,
+      "limitations": [
+        "Represents equity-market pricing of uranium/nuclear companies, not the uranium spot price.",
+        "Contains company, equity-beta, FX, financing and nuclear-industry effects beyond uranium itself.",
+        "Must remain a separate feature from the physical-uranium proxy and may not be spliced into it."
+      ],
+      "pit_status": "CANDIDATE_LONG_HISTORY_MARKET_PROXY",
+      "license_status": "PRICE_SOURCE_RIGHTS_REVIEW_REQUIRED",
+      "build_status": "SECONDARY_URANIUM_PROXY_CHALLENGER",
+      "source_urls": [
+        "https://www.globalxetfs.com/funds/URA"
+      ]
+    },
+    {
+      "proxy_id": "lithium_equity_lit",
+      "factor_id": "lithium",
+      "instrument": "Global X Lithium & Battery Tech ETF",
+      "symbols": ["LIT"],
+      "proxy_class": "THEMATIC_EQUITY_ETF",
+      "inception_date": "2010-07-22",
+      "relationship_to_factor": "LITHIUM_MINING_REFINING_AND_BATTERY_VALUE_CHAIN_EQUITY_BASKET",
+      "preferred_measure": "UNADJUSTED_MARKET_CLOSE_WITH_SEPARATE_CORPORATE_ACTION_PROVENANCE",
+      "market_price_allowed_as_separate_measure": true,
+      "limitations": [
+        "Represents the lithium/battery equity value chain, not a pure lithium commodity price.",
+        "Battery manufacturers and downstream companies can react differently from lithium producers when lithium prices move.",
+        "Equity beta, FX, technology sentiment and company-specific effects remain embedded."
+      ],
+      "pit_status": "CANDIDATE_LONG_HISTORY_MARKET_PROXY",
+      "license_status": "PRICE_SOURCE_RIGHTS_REVIEW_REQUIRED",
+      "build_status": "SECONDARY_LITHIUM_PROXY_CHALLENGER",
+      "source_urls": [
+        "https://www.globalxetfs.com/funds/LIT"
+      ]
+    },
+    {
+      "proxy_id": "lithium_cme_futures",
+      "factor_id": "lithium",
+      "instrument": "CME Lithium Hydroxide / Lithium Carbonate CIF CJK Futures",
+      "symbols": ["LTH", "LTC"],
+      "proxy_class": "COMMODITY_FUTURES_SETTLEMENT",
+      "inception_date": null,
+      "relationship_to_factor": "FINANCIALLY_SETTLED_AGAINST_FASTMARKETS_LITHIUM_PRICE_ASSESSMENTS",
+      "preferred_measure": "OFFICIAL_SETTLEMENT_BY_CONTRACT_WITH_EXPLICIT_ROLL_POLICY",
+      "market_price_allowed_as_separate_measure": true,
+      "limitations": [
+        "Requires an explicit contract-selection and roll methodology; continuous back-adjusted histories may not be retrojected without provenance.",
+        "The underlying Fastmarkets benchmark and CME market data have separate usage/licensing conditions that must be cleared.",
+        "Liquidity varies materially by contract and date."
+      ],
+      "pit_status": "CANDIDATE_COMMODITY_PRICE_PROXY",
+      "license_status": "CME_AND_BENCHMARK_RIGHTS_REVIEW_REQUIRED",
+      "build_status": "PREFERRED_LITHIUM_COMMODITY_PROXY_IF_RIGHTS_CLEAR",
+      "source_urls": [
+        "https://www.cmegroup.com/markets/metals/battery-metals/lithium-hydroxide-cif-cjk-fastmarkets.html"
+      ]
+    }
+  ],
+  "preferred_routing": {
+    "uranium": [
+      "uranium_physical_sput_nav",
+      "uranium_equity_ura"
+    ],
+    "lithium": [
+      "lithium_cme_futures",
+      "lithium_equity_lit"
+    ]
+  },
+  "interpretation": {
+    "uranium": "Use SPUT NAV as the more commodity-like challenger from 2021 onward and URA as a separate longer-history equity-sector proxy from 2010 onward. Never splice them into one synthetic series.",
+    "lithium": "Prefer exchange-traded lithium futures as the commodity-like challenger if rights and liquidity gates pass; use LIT only as a separate long-history lithium/battery equity proxy."
+  }
+}

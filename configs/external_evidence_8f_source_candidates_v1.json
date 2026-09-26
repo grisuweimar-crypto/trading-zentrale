@@ -1,0 +1,198 @@
+{
+  "schema_version": "external_evidence_8f_source_candidates_v1",
+  "phase": "8F_macro_exposure_context",
+  "as_of": "2026-09-26",
+  "status": "ALTERNATIVE_SOURCE_ROUTING_OUTCOME_BLIND",
+  "rules": {
+    "single_provider_required": false,
+    "primary_source_preferred_per_factor": true,
+    "historical_current_value_retrojection_forbidden": true,
+    "historical_original_vintage_or_release_archive_required": true,
+    "prospective_snapshot_from_actual_ingestion_allowed": true,
+    "source_terms_and_series_rights_must_be_cleared": true,
+    "blocked_source_may_not_be_enabled": true
+  },
+  "sources": [
+    {
+      "source_id": "bls_cpi_archived_releases",
+      "provider": "U.S. Bureau of Labor Statistics",
+      "factors": ["inflation"],
+      "frequency": "MONTHLY",
+      "history": "Archived CPI news releases available back to 1994 on the BLS site",
+      "publication_semantics": "Archived CPI releases preserve the release text and state the embargo/release timestamp; current 2026 CPI releases are published at 08:30 America/New_York.",
+      "pit_status": "SAFE_RELEASE_ARCHIVE_SUBJECT_TO_RELEASE_PARSE_VALIDATION",
+      "license_status": "USABLE_PUBLIC_DOMAIN",
+      "build_status": "CLEAR_FOR_ADAPTER_BUILD",
+      "source_urls": [
+        "https://www.bls.gov/bls/news-release/cpi.htm",
+        "https://www.bls.gov/schedule/news_release/cpi.htm",
+        "https://www.bls.gov/developers/termsOfService.htm",
+        "https://www.bls.gov/opub/copyright-information.htm"
+      ],
+      "notes": [
+        "Use archived release values, not the current API value, when reconstructing historical first-known inflation evidence.",
+        "Seasonally adjusted indexes can be revised; release snapshots must remain versioned rather than overwritten."
+      ]
+    },
+    {
+      "source_id": "federal_reserve_board_h15",
+      "provider": "Board of Governors of the Federal Reserve System",
+      "factors": ["rates_policy", "yield_curve"],
+      "frequency": "DAILY_BUSINESS_DAYS",
+      "history": "Long historical H.15 series available directly from the Board; daily H.15 release is posted at 16:15 America/New_York.",
+      "publication_semantics": "Each daily H.15 release contains recent effective federal funds and Treasury constant-maturity observations; Board calendar/release pages provide publication timing.",
+      "pit_status": "PARTIAL_HISTORICAL_PROSPECTIVE_SAFE",
+      "license_status": "USABLE_PUBLIC_DOMAIN_UNLESS_MARKED_OTHERWISE",
+      "build_status": "CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD",
+      "source_urls": [
+        "https://www.federalreserve.gov/releases/h15/",
+        "https://www.federalreserve.gov/datadownload/Choose.aspx?rel=H15",
+        "https://www.federalreserve.gov/disclaimer.htm"
+      ],
+      "notes": [
+        "Current downloadable history can reflect later corrections; strict retrospective use requires an archived release copy or other original-vintage proof.",
+        "Prospective collection may store each actual release from ingestion forward."
+      ]
+    },
+    {
+      "source_id": "us_treasury_daily_yield_curve",
+      "provider": "U.S. Department of the Treasury",
+      "factors": ["yield_curve"],
+      "frequency": "DAILY_BUSINESS_DAYS",
+      "history": "Daily par yield curve archive available from 1990 onward; real yield curve archive from 2003 onward.",
+      "publication_semantics": "Treasury states that the nominal par curve uses indicative market quotations obtained around 15:30 America/New_York; downloadable daily CSV/XML archives are available.",
+      "pit_status": "PARTIAL_HISTORICAL_PROSPECTIVE_SAFE",
+      "license_status": "US_GOVERNMENT_SOURCE_REVIEW_REQUIRED_FOR_FEED_TERMS",
+      "build_status": "CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD_AFTER_FINAL_TERMS_CHECK",
+      "source_urls": [
+        "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rate-archives",
+        "https://home.treasury.gov/policy-issues/financing-the-government/interest-rate-statistics"
+      ],
+      "notes": [
+        "Current historical archive does not by itself prove the original unrevised vintage of every historical day.",
+        "Use actual ingestion time prospectively unless a release-time archive proves earlier availability."
+      ]
+    },
+    {
+      "source_id": "ecb_data_portal",
+      "provider": "European Central Bank / ESCB",
+      "factors": ["rates_policy", "yield_curve", "fx"],
+      "frequency": "DAILY_OR_POLICY_EVENT",
+      "history": "ECB SDMX data portal provides long historical series; euro-area yield curves are available daily from 2004-09-06.",
+      "publication_semantics": "ECB euro-area yield curves are published daily at noon CET; ECB reference FX rates are normally updated around 16:00 CET after the 14:15 concertation procedure.",
+      "pit_status": "PARTIAL_HISTORICAL_PROSPECTIVE_SAFE",
+      "license_status": "USABLE_FREE_REUSE_WITH_ATTRIBUTION_FOR_ESCB_STATISTICS",
+      "build_status": "CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD",
+      "source_urls": [
+        "https://data.ecb.europa.eu/help/api/overview",
+        "https://data.ecb.europa.eu/methodology/yield-curves",
+        "https://data.ecb.europa.eu/methodology/exchange-rates",
+        "https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html"
+      ],
+      "notes": [
+        "Third-party data remain excluded from the ECB free-reuse rule unless separately cleared.",
+        "Current historical series may incorporate revisions; retrospective original-vintage use must be separately proven."
+      ]
+    },
+    {
+      "source_id": "eia_open_data_energy",
+      "provider": "U.S. Energy Information Administration",
+      "factors": ["oil", "gas"],
+      "frequency": "DAILY_WEEKLY_MONTHLY_DEPENDING_SERIES",
+      "history": "Long daily spot-price histories exist for WTI, Brent and Henry Hub natural gas.",
+      "publication_semantics": "EIA publishes dated energy observations and machine-readable API data; the API terms explicitly allow development of services that retrieve, display and analyze EIA data.",
+      "pit_status": "PARTIAL_HISTORICAL_PROSPECTIVE_SAFE",
+      "license_status": "USABLE_API_TERMS",
+      "build_status": "CLEAR_FOR_PROSPECTIVE_ADAPTER_BUILD",
+      "source_urls": [
+        "https://www.eia.gov/opendata/terms-of-service.php",
+        "https://www.eia.gov/dnav/pet/PET_PRI_SPT_S1_D.htm",
+        "https://www.eia.gov/dnav/ng/hist/rngwhhda.htm"
+      ],
+      "notes": [
+        "Current historical series can contain later corrections; strict historical PIT should use archived release evidence where available or remain latest-vintage research only.",
+        "Prospective snapshots can be made strict PIT from actual ingestion forward."
+      ]
+    },
+    {
+      "source_id": "world_bank_pink_sheet",
+      "provider": "World Bank",
+      "factors": ["oil", "gas", "gold", "silver", "copper"],
+      "frequency": "MONTHLY",
+      "history": "Monthly and annual commodity-price history plus monthly Pink Sheet publications.",
+      "publication_semantics": "Monthly Pink Sheet documents carry document/web publication timestamps and historical monthly workbooks are published alongside them.",
+      "pit_status": "CANDIDATE_HISTORICAL_RELEASE_ARCHIVE_VALIDATION_REQUIRED",
+      "license_status": "CANDIDATE_DEFAULT_CC_BY_4_0_DATASET_METADATA_MUST_CONFIRM",
+      "build_status": "CLEAR_FOR_ARCHIVE_AND_LICENSE_VALIDATION",
+      "source_urls": [
+        "https://www.worldbank.org/en/research/commodity-markets",
+        "https://datacatalog.worldbank.org/public-licenses",
+        "https://data.worldbank.org/summary-terms-of-use"
+      ],
+      "notes": [
+        "World Bank-produced open datasets default to CC BY 4.0, but dataset-specific metadata must be checked before activation.",
+        "Monthly frequency is slower than EIA for oil/gas but may provide one openly reusable family for gold, silver and copper if archive validation passes."
+      ]
+    },
+    {
+      "source_id": "imf_primary_commodity_prices",
+      "provider": "International Monetary Fund",
+      "factors": ["oil", "gas", "gold", "silver", "copper"],
+      "frequency": "MONTHLY",
+      "history": "IMF Primary Commodity Prices statistical data are available through IMF data services/APIs.",
+      "publication_semantics": "IMF statistical data may be downloaded, extracted, copied, transformed and distributed with attribution, subject to IMF data terms and any third-party conditions.",
+      "pit_status": "CANDIDATE_HISTORICAL_VINTAGE_NOT_YET_PROVEN",
+      "license_status": "USABLE_FOR_DATA_WITH_ATTRIBUTION_NONCOMMERCIAL_PROJECT_BULK_AUTOMATION_REVIEW_REQUIRED",
+      "build_status": "SECONDARY_CANDIDATE_NOT_SELECTED",
+      "source_urls": [
+        "https://www.imf.org/en/about/copyright-and-terms",
+        "https://data.imf.org/en/Resource-Pages/IMF-API"
+      ],
+      "notes": [
+        "Do not use as historical PIT evidence until original publication/vintage semantics are proven.",
+        "Keep as a fallback to World Bank/EIA rather than adding another redundant commodity source immediately."
+      ]
+    },
+    {
+      "source_id": "eia_uranium_marketing_annual",
+      "provider": "U.S. Energy Information Administration",
+      "factors": ["uranium"],
+      "frequency": "ANNUAL",
+      "history": "Annual U.S. uranium purchase and contract-price reports are available back for decades.",
+      "publication_semantics": "Annual report release dates and later revision notices are explicit.",
+      "pit_status": "SAFE_RELEASE_LEVEL_LOW_FREQUENCY",
+      "license_status": "USABLE_EIA_SOURCE",
+      "build_status": "DEFERRED_TOO_LOW_FREQUENCY_FOR_PRIMARY_8F_URANIUM_CONTEXT",
+      "source_urls": [
+        "https://www.eia.gov/uranium/marketing/"
+      ],
+      "notes": [
+        "Useful as slow structural uranium context, not as a substitute for a timely uranium spot/market series.",
+        "Free timely uranium spot benchmarks remain a source gap."
+      ]
+    }
+  ],
+  "factor_routing": {
+    "rates_policy": ["federal_reserve_board_h15", "ecb_data_portal"],
+    "yield_curve": ["us_treasury_daily_yield_curve", "federal_reserve_board_h15", "ecb_data_portal"],
+    "inflation": ["bls_cpi_archived_releases"],
+    "fx": ["ecb_data_portal"],
+    "oil": ["eia_open_data_energy", "world_bank_pink_sheet", "imf_primary_commodity_prices"],
+    "gas": ["eia_open_data_energy", "world_bank_pink_sheet", "imf_primary_commodity_prices"],
+    "gold": ["world_bank_pink_sheet", "imf_primary_commodity_prices"],
+    "silver": ["world_bank_pink_sheet", "imf_primary_commodity_prices"],
+    "uranium": ["eia_uranium_marketing_annual"],
+    "copper": ["world_bank_pink_sheet", "imf_primary_commodity_prices"],
+    "lithium": []
+  },
+  "explicit_source_gaps": {
+    "uranium": "No free timely spot benchmark with cleared licensing and proven strict historical PIT has been accepted; EIA annual data are too slow for the primary context role.",
+    "lithium": "No clean open standardized lithium price series has been accepted. World Bank documentation explicitly notes that its GEM/Pink Sheet commodity dataset does not contain lithium price data and uses S&P Global Market Intelligence for lithium in another methodology context."
+  },
+  "blocked_sources": [
+    {
+      "source_id": "fred_alfred_realtime",
+      "reason": "Current FRED terms prohibit API use in connection with software/system development and prohibit storing/caching/archiving FRED content; Scanner_vNext requires both system use and persisted vintages."
+    }
+  ]
+}

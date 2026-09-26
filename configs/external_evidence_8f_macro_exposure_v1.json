@@ -1,0 +1,218 @@
+{
+  "schema_version": "external_evidence_8f_macro_exposure_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "8F_ADAPTER_LEDGER_DOMAIN_COMPLETION_GATES_BUILT_OUTCOME_BLIND",
+  "principles": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "exposure_sign_may_be_assigned": false,
+    "threshold_selection_enabled": false,
+    "interaction_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false,
+    "missing_macro_evidence_may_default_to_neutral": false,
+    "undocumented_theoretical_exposure_may_be_used": false,
+    "current_macro_value_may_be_retrojected": false,
+    "latest_revision_may_replace_original_vintage_in_history": false
+  },
+  "source_contract": {
+    "source_routing_config": "configs/external_evidence_8f_source_candidates_v1.json",
+    "market_proxy_config": "configs/external_evidence_8f_market_proxies_v1.json",
+    "research_domain_config": "configs/external_evidence_8f_research_domain_v1.json",
+    "completion_config": "configs/external_evidence_8f_completion_v1.json",
+    "adapter_source_ids": [
+      "bls_cpi_archived_releases",
+      "eia_open_data_energy",
+      "federal_reserve_board_h15",
+      "ecb_data_portal"
+    ],
+    "blocked_source_ids": [
+      "fred_alfred_realtime"
+    ],
+    "fred_alfred_status": "BLOCKED_CURRENT_TERMS",
+    "ci_live_network_access": false,
+    "production_live_collection_enabled": false,
+    "persistent_production_storage_enabled": false,
+    "source_terms_checked_at": "2026-09-26",
+    "source_notes": [
+      "FRED/ALFRED is retained only as a conceptual vintage-semantics reference and is not an enabled ingestion source under the currently reviewed terms.",
+      "BLS archived CPI releases may establish exact historical publication availability when the archived release itself states the embargo/release timestamp.",
+      "EIA current-history/API snapshots may contain later corrections, so historical rows from a snapshot are not retrojected; strict PIT begins at actual ingestion unless separate archive proof exists.",
+      "Federal Reserve Board H.15 current downloadable history may contain later corrections; the 8F adapter therefore treats collected H.15 rows as prospective snapshot evidence unless separate original-release proof is added.",
+      "ECB Data Portal current FX history may reflect later revisions; the 8F adapter therefore begins strict PIT at actual ingestion unless separate historical publication/vintage proof is added.",
+      "Market proxies for uranium and lithium remain separate challenger evidence and may not be relabeled as underlying commodity spot prices.",
+      "Research-domain membership must be frozen independently of mapping convenience or outcomes before Phase 8F completion."
+    ]
+  },
+  "macro_vintage_contract": {
+    "required_fields": [
+      "series_id",
+      "factor_id",
+      "observation_date",
+      "value",
+      "units",
+      "realtime_start",
+      "realtime_end",
+      "revision_id",
+      "source_id",
+      "source_record_sha256",
+      "license_status",
+      "status",
+      "ingested_at",
+      "valid_from",
+      "historical_vintage_independently_proven",
+      "historical_publication_time_independently_proven",
+      "published_at",
+      "availability_proof_type"
+    ],
+    "historical_vintage_source": "INDEPENDENT_ARCHIVE_OR_SOURCE_WITH_DATE_LEVEL_OR_EXACT_TIMESTAMP_PROOF",
+    "day_level_historical_vintage_valid_from": "NEXT_UTC_DAY",
+    "exact_timestamp_historical_vintage_valid_from": "PROVEN_PUBLISHED_AT",
+    "prospective_unproven_valid_from": "ACTUAL_INGESTED_AT_OR_LATER",
+    "later_revision_overwrites_original": false,
+    "revision_identity_required": true,
+    "date_only_intraday_backdating_forbidden": true,
+    "unknown_may_default_to_neutral": false
+  },
+  "series_catalog": [
+    {
+      "series_id": "BLS_CPI_U_ALL_ITEMS_MOM_SA_RELEASE_PCT",
+      "factor_id": "inflation",
+      "source_id": "bls_cpi_archived_releases",
+      "availability_mode": "HISTORICAL_EXACT_RELEASE_TIMESTAMP",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "BLS_CPI_U_ALL_ITEMS_YOY_NSA_RELEASE_PCT",
+      "factor_id": "inflation",
+      "source_id": "bls_cpi_archived_releases",
+      "availability_mode": "HISTORICAL_EXACT_RELEASE_TIMESTAMP",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "PET.RWTC.D",
+      "factor_id": "oil",
+      "source_id": "eia_open_data_energy",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "PET.RBRTE.D",
+      "factor_id": "oil",
+      "source_id": "eia_open_data_energy",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "NG.RNGWHHD.D",
+      "factor_id": "gas",
+      "source_id": "eia_open_data_energy",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "RIFSPFF_N.D",
+      "factor_id": "rates_policy",
+      "source_id": "federal_reserve_board_h15",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "RIFLGFCY02_N.B",
+      "factor_id": "yield_curve",
+      "source_id": "federal_reserve_board_h15",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "RIFLGFCY10_N.B",
+      "factor_id": "yield_curve",
+      "source_id": "federal_reserve_board_h15",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    },
+    {
+      "series_id": "EXR.D.USD.EUR.SP00.A",
+      "factor_id": "fx",
+      "source_id": "ecb_data_portal",
+      "availability_mode": "PROSPECTIVE_INGESTION_ONLY_UNLESS_ARCHIVE_PROOF_ADDED",
+      "status": "ADAPTER_IMPLEMENTED"
+    }
+  ],
+  "factor_catalog": [
+    {
+      "factor_id": "rates_policy",
+      "category": "rates",
+      "status": "FED_H15_PROSPECTIVE_ADAPTER_IMPLEMENTED"
+    },
+    {
+      "factor_id": "yield_curve",
+      "category": "rates",
+      "status": "FED_H15_2Y_10Y_PROSPECTIVE_ADAPTER_IMPLEMENTED"
+    },
+    {
+      "factor_id": "inflation",
+      "category": "inflation",
+      "status": "BLS_ARCHIVE_ADAPTER_IMPLEMENTED"
+    },
+    {
+      "factor_id": "fx",
+      "category": "fx",
+      "status": "ECB_USD_EUR_PROSPECTIVE_ADAPTER_IMPLEMENTED"
+    },
+    {
+      "factor_id": "oil",
+      "category": "commodities",
+      "status": "EIA_PROSPECTIVE_ADAPTER_IMPLEMENTED"
+    },
+    {
+      "factor_id": "gas",
+      "category": "commodities",
+      "status": "EIA_PROSPECTIVE_ADAPTER_IMPLEMENTED"
+    },
+    {
+      "factor_id": "gold",
+      "category": "commodities",
+      "status": "SOURCE_ROUTED_ARCHIVE_VALIDATION_PENDING"
+    },
+    {
+      "factor_id": "silver",
+      "category": "commodities",
+      "status": "SOURCE_ROUTED_ARCHIVE_VALIDATION_PENDING"
+    },
+    {
+      "factor_id": "uranium",
+      "category": "commodities",
+      "status": "MARKET_PROXY_CHALLENGERS_REGISTERED"
+    },
+    {
+      "factor_id": "copper",
+      "category": "commodities",
+      "status": "SOURCE_ROUTED_ARCHIVE_VALIDATION_PENDING"
+    },
+    {
+      "factor_id": "lithium",
+      "category": "commodities",
+      "status": "MARKET_PROXY_CHALLENGERS_REGISTERED"
+    }
+  ],
+  "context_semantics": {
+    "allowed_output": "RAW_PIT_MACRO_CONTEXT_JOINED_ONLY_THROUGH_VERSIONED_DOCUMENTED_EXPOSURE_MAPPING",
+    "multiple_series_per_factor_preserved": true,
+    "silent_single_series_selection_for_multiseries_factor": false,
+    "factor_standardization_enabled": false,
+    "factor_direction_enabled": false,
+    "factor_weighting_enabled": false,
+    "asset_exposure_sign_enabled": false,
+    "cross_factor_interactions_enabled": false,
+    "decision_policy_enabled": false
+  },
+  "next_gates": [
+    "8F_C_REAL_PIT_MACRO_INGESTION",
+    "8F_B_RESEARCH_DOMAIN_FREEZE",
+    "8F_B_VERSIONED_EXPOSURE_MAPPING_POPULATION",
+    "8F_D_REAL_COVERAGE_AND_CONTEXT_AUDIT",
+    "8F_FREEZE",
+    "8G_INCREMENTAL_OUTCOME_RESEARCH_ONLY_AFTER_8F_FREEZE"
+  ]
+}

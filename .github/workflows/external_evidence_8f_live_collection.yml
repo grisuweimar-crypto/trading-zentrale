@@ -1,0 +1,65 @@
+name: Phase 8F Live Macro Collection
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/external_evidence_8f_live_collection.yml"
+      - "src/scanner/research/external_evidence/prospective_collector_8f.py"
+      - "src/scanner/research/external_evidence/fed_h15_release_8f.py"
+      - "src/scanner/research/external_evidence/ecb_fx_8f.py"
+      - "src/scanner/research/external_evidence/eia_energy_8f.py"
+      - "scripts/collect_external_evidence_8f_prospective.py"
+
+permissions:
+  contents: read
+
+jobs:
+  collect-live-pit-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project
+        run: python -m pip install -e ".[test]"
+      - name: Collect official-source prospective snapshot
+        run: python scripts/collect_external_evidence_8f_prospective.py
+      - name: Build frozen pre-8F research-domain audit
+        if: always()
+        run: >-
+          python scripts/run_external_evidence_8f_exposure_domain_audit.py
+          --output artifacts/research/external_evidence_8f_exposure_domain_audit.json
+      - name: Evaluate completion gate without pretending freeze
+        if: success()
+        run: >-
+          python scripts/run_external_evidence_8f_completion_gate.py
+          --macro-ledger artifacts/research/external_evidence_8f_macro_ledger.json
+          --exposure-domain-audit artifacts/research/external_evidence_8f_exposure_domain_audit.json
+          --output artifacts/research/external_evidence_8f_completion_gate.json
+      - name: Upload Phase 8F PIT snapshot or parser-diagnostic artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8f-live-macro-pit-${{ github.run_id }}
+          path: |
+            artifacts/research/external_evidence_8f_macro_ledger.json
+            artifacts/research/external_evidence_8f_collection_latest.json
+            artifacts/research/external_evidence_8f_exposure_domain_audit.json
+            artifacts/research/external_evidence_8f_completion_gate.json
+            artifacts/research/external_evidence_8f_raw/**
+          if-no-files-found: error
+          retention-days: 30
+
+# This workflow is read-only with respect to repository contents.
+# It runs only when the live collector or one of its parsers changes, or when started manually.
+# Raw source payloads are persisted before parsing and uploaded even when a parser fails.
+# Fed H.15 is fetched from the actual /releases/h15/ page rather than its legacy HTML-meta redirect.
+# Fed H.15 and ECB collect without credentials. EIA is included only when EIA_API_KEY is configured.
+# The completion gate is expected to remain BLOCKED until reviewed exposure mappings account for the frozen domain.
+# No market outcomes, directions, weights, thresholds, Phase-7 integration or production decisions are evaluated here.
