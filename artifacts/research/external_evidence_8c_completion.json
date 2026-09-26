@@ -1,0 +1,57 @@
+{
+  "schema_version": "external_evidence_8c_completion_v1",
+  "phase": "8C",
+  "status": "COMPLETE_FROZEN",
+  "completed_at": "2026-09-26",
+  "fundamentals": {
+    "status": "REAL_PIT_VALIDATED",
+    "manifest_company_count": 212,
+    "direct_verified_company_count": 137,
+    "research_ready_company_count": 137,
+    "feature_observation_count": 42825,
+    "latest_feature_row_count": 932
+  },
+  "filing_content": {
+    "status": "REAL_COMPLETE",
+    "selected_filing_count": 3200,
+    "content_document_count": 3200,
+    "fetch_error_count": 0,
+    "parser_error_count": 0,
+    "anchor_count": 22789,
+    "document_count_with_anchors": 2700,
+    "family_counts": {
+      "BUYBACK": 3334,
+      "CAPITAL_RAISE": 7320,
+      "DIVIDEND": 1579,
+      "GUIDANCE": 10556
+    }
+  },
+  "semantic_challenger": {
+    "status": "REAL_COMPLETE_CHALLENGER_ONLY",
+    "eligible_anchor_count": 4913,
+    "candidate_count": 379,
+    "rejection_count": 4534,
+    "candidate_family_counts": {
+      "BUYBACK": 127,
+      "DIVIDEND": 252
+    }
+  },
+  "semantic_validation": {
+    "status": "REAL_VALIDATION_COMPLETE",
+    "candidate_audit_sample_count": 200,
+    "anchor_audit_sample_count": 400,
+    "BUYBACK": "REMAIN_CHALLENGER",
+    "DIVIDEND": "REMAIN_CHALLENGER",
+    "GUIDANCE": "DISABLED_NOT_PROMOTED",
+    "CAPITAL_RAISE": "DISABLED_NOT_PROMOTED",
+    "EARNINGS_BEAT_MISS": "BLOCKED_BY_8B_CONSENSUS_DEPENDENCY"
+  },
+  "hard_boundaries": {
+    "market_outcomes_read_for_8C_I": false,
+    "production_external_evidence_enabled": false,
+    "phase7_integration_enabled": false,
+    "market_direction_assigned": false
+  },
+  "completion_decision": "PHASE_8C_COMPLETE_WITH_UNPROMOTED_SEMANTIC_CHALLENGERS",
+  "next_phase": "8D_POSITIONING_CROWDING"
+}
