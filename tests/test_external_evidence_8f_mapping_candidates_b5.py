@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
 from scanner.research.external_evidence.exposure_mapping_candidates_8f import validate_mapping_candidates
 from scanner.research.external_evidence.exposure_mapping_review_8f import apply_human_mapping_review
 from scanner.research.external_evidence.exposure_review_queue_8f import build_exposure_review_queue
@@ -29,11 +30,7 @@ def _allowed() -> tuple[set[str], set[str]]:
 def test_b5_documentary_candidate_batch_passes_gate_and_has_twenty_distinct_subjects():
     b5 = _load("configs/external_evidence_8f_mapping_candidates_b5_v1.json")
     factor_ids, subject_ids = _allowed()
-    result = validate_mapping_candidates(
-        b5,
-        allowed_factor_ids=factor_ids,
-        allowed_subject_ids=subject_ids,
-    )
+    result = validate_mapping_candidates(b5, allowed_factor_ids=factor_ids, allowed_subject_ids=subject_ids)
     assert result["status"] == "PASS_DOCUMENTARY_CANDIDATE_GATE"
     assert result["candidate_count"] == 20
     assert result["factor_counts"] == {"fx": 20}
@@ -42,34 +39,37 @@ def test_b5_documentary_candidate_batch_passes_gate_and_has_twenty_distinct_subj
     assert all(row["promotion_allowed"] is False for row in b5["candidates"])
 
 
-def test_b5_adds_only_subjects_not_already_covered_by_b1_through_b4():
+def test_b5_adds_only_subjects_not_already_materialized_in_b1_through_b4_base():
     b5 = _load("configs/external_evidence_8f_mapping_candidates_b5_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
-    active_subjects = {row["subject_id"] for row in exposure["mappings"]}
+    base = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    base_subjects = {row["subject_id"] for row in base["mappings"]}
     b5_subjects = {row["subject_id"] for row in b5["candidates"]}
-    assert active_subjects.isdisjoint(b5_subjects)
-    assert len(active_subjects) == 60
+    assert base_subjects.isdisjoint(b5_subjects)
+    assert len(base_subjects) == 60
 
 
-def test_b5_review_artifact_is_explicitly_pending():
+def test_b5_review_artifact_contains_twenty_explicit_human_approvals():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b5_v1.json")
-    assert review["status"] == "AWAITING_HUMAN_REVIEW"
-    assert review["reviewed_at"] is None
-    assert review["decisions"] == []
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewed_at"] == "2026-09-26T23:07:27+02:00"
+    assert len(review["decisions"]) == 20
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
     assert all(value is False for value in review["guards"].values())
 
 
-def test_pending_b5_review_cannot_modify_active_sixty_mapping_exposure_map():
+def test_b5_is_active_in_effective_map_and_review_replay_is_idempotent():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b5_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b5_v1.json")
-    exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
-    assert len(exposure["mappings"]) == 60
-    result = apply_human_mapping_review(
-        candidate_config=candidates,
-        review_config=review,
-        exposure_map=exposure,
-    )
-    assert result["status"] == "AWAITING_HUMAN_REVIEW"
+    effective = load_effective_exposure_map(root=ROOT)
+    assert len(effective["mappings"]) == 80
+    b5_subjects = {row["subject_id"] for row in candidates["candidates"]}
+    active_subjects = {row["subject_id"] for row in effective["mappings"]}
+    assert b5_subjects.issubset(active_subjects)
+
+    result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 60
+    assert result["already_applied_count"] == 20
+    assert len(result["exposure_map"]["mappings"]) == 80
