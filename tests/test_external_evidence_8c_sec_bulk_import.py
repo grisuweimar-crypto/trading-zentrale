@@ -9,6 +9,7 @@ from scanner.research.external_evidence.sec_bulk_import import (
     DIRECT_BULK_MODE,
     MIRROR_MODE,
     SecBulkImportError,
+    build_bulk_submissions_index,
     import_sec_bulk_bundle,
 )
 
@@ -44,6 +45,27 @@ def _submissions_payload(cik: str, ticker: str, *, history_name: str | None = No
             "files": files,
         },
     }
+
+
+def test_bulk_index_retains_only_target_scanner_payloads(tmp_path):
+    target_cik = "0000320193"
+    members = {
+        f"CIK{target_cik}.json": _submissions_payload(target_cik, "AAPL"),
+    }
+    for index in range(1, 51):
+        cik = f"{index:010d}"
+        members[f"CIK{cik}.json"] = _submissions_payload(cik, f"ZZ{index}")
+
+    archive_path = _write_zip(tmp_path / "submissions.zip", members)
+    with zipfile.ZipFile(archive_path) as archive:
+        candidates, primary_by_cik, by_basename = build_bulk_submissions_index(
+            archive,
+            target_symbols={"AAPL"},
+        )
+
+    assert set(candidates) == {"AAPL"}
+    assert set(primary_by_cik) == {target_cik}
+    assert len(by_basename) == 51
 
 
 def test_direct_bulk_import_builds_identity_from_primary_submissions(tmp_path):
