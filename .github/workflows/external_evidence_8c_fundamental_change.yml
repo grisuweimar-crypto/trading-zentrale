@@ -6,9 +6,12 @@ on:
       - "configs/external_evidence_8c_fundamental_change_v1.json"
       - "src/scanner/research/external_evidence/fundamental_change.py"
       - "src/scanner/research/external_evidence/fundamental_coverage.py"
+      - "src/scanner/research/external_evidence/bulk_fundamental_evaluation.py"
       - "src/scanner/research/external_evidence/__init__.py"
+      - "scripts/run_external_evidence_8c_bulk_fundamentals.py"
       - "tests/test_external_evidence_8c_fundamental_change.py"
       - "tests/test_external_evidence_8c_fundamental_extensions.py"
+      - "tests/test_external_evidence_8c_bulk_fundamental_evaluation.py"
       - "docs/external_evidence_8c_fundamental_change.md"
       - ".github/workflows/external_evidence_8c_fundamental_change.yml"
   workflow_dispatch:
@@ -33,3 +36,4 @@ jobs:
           python -m pytest -q
           tests/test_external_evidence_8c_fundamental_change.py
           tests/test_external_evidence_8c_fundamental_extensions.py
+          tests/test_external_evidence_8c_bulk_fundamental_evaluation.py
