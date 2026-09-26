@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8d_positioning_crowding_v1",
   "phase": "8D_positioning_crowding",
-  "status": "SOURCE_FOUNDATION_OUTCOME_BLIND",
+  "status": "8D_A1_FINRA_IMPLEMENTED_OUTCOME_BLIND",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -13,9 +13,11 @@
   },
   "families": {
     "SHORT_INTEREST": {
-      "status": "SOURCE_ACCEPTED_WITH_VINTAGE_LIMITATION",
+      "status": "SOURCE_ACCEPTED_AND_A1_IMPLEMENTED_WITH_VINTAGE_LIMITATION",
       "source_authority": "FINRA",
       "dataset": "Consolidated Short Interest",
+      "dataset_group": "otcmarket",
+      "dataset_name": "consolidatedShortInterest",
       "source_urls": [
         "https://www.finra.org/finra-data/browse-catalog/equity-short-interest",
         "https://developer.finra.org/docs",
@@ -38,13 +40,24 @@
         "marketClassCode"
       ],
       "event_time_policy": "settlementDate",
-      "valid_from_policy": "FINRA_PUBLICATION_TIME_NOT_SETTLEMENT_DATE",
+      "valid_from_policy": "FINRA_PUBLICATION_DATE_AT_16_40_AMERICA_NEW_YORK",
       "publication_time_note": "Dataset documentation states availability by 4:40 PM ET on publication date. The reporting schedule supplies publication dates.",
       "vintage_policy": {
         "historical_backfill": "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE",
-        "prospective_collection": "STORE_EACH_PUBLICATION_SNAPSHOT_WITH_INGESTED_AT_AND_RAW_HASH",
+        "prospective_collection": "STORE_EACH_PUBLICATION_SNAPSHOT_WITH_INGESTED_AT_RAW_PAGE_HASHES_AND_CANONICAL_RAW_HASH",
         "reason": "FINRA notes that corrected items carry a Revision Flag and only the most recent data is made available. Historical backfill therefore cannot prove the exact originally published vintage.",
         "strict_pit_eligibility": "PROSPECTIVE_SNAPSHOTS_OR_OTHERWISE_PROVEN_ORIGINAL_VINTAGE_ONLY"
+      },
+      "acquisition_contract": {
+        "prospective_only_for_strict_pit": true,
+        "one_settlement_date_per_snapshot": true,
+        "request_method": "FILTERED_POST_WITH_PAGINATION",
+        "synchronous_record_limit_per_request": 5000,
+        "minimum_request_interval_seconds_default": 0.25,
+        "record_total_header_must_reconcile_when_present": true,
+        "raw_page_sha256_required": true,
+        "canonical_raw_snapshot_sha256_required": true,
+        "ci_live_network_access": false
       },
       "initial_features": [
         "short_position_quantity",
@@ -55,6 +68,10 @@
       "disabled_features": {
         "short_interest_percent_float": "DISABLED_UNTIL_PIT_SAFE_FLOAT_DENOMINATOR_EXISTS",
         "daily_short_interest": "DISABLED_SHORT_SALE_VOLUME_IS_NOT_SHORT_INTEREST"
+      },
+      "artifact_schemas": {
+        "normalized_snapshot": "external_evidence_8d_finra_short_interest_snapshot_v1",
+        "acquisition_manifest": "external_evidence_8d_finra_short_interest_acquisition_v1"
       },
       "direction": "UNASSIGNED"
     },
