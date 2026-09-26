@@ -13,6 +13,8 @@ on:
       - "src/scanner/research/external_evidence/series_catalog_8f.py"
       - "src/scanner/research/external_evidence/bls_cpi_8f.py"
       - "src/scanner/research/external_evidence/eia_energy_8f.py"
+      - "src/scanner/research/external_evidence/fed_h15_8f.py"
+      - "src/scanner/research/external_evidence/ecb_fx_8f.py"
       - "scripts/run_external_evidence_8f_contract_gate.py"
       - "tests/test_external_evidence_8f_macro_exposure.py"
       - "tests/test_external_evidence_8f_source_candidates.py"
@@ -54,7 +56,7 @@ jobs:
 
 # CI intentionally performs no live macro-source or market-price requests.
 # BLS historical PIT is accepted only from an archived release with an independently proven exact timestamp.
-# EIA current-history data remain prospective-only unless separate historical archive proof is introduced.
+# EIA, Fed H.15 and ECB current-history data remain prospective-only unless separate historical archive proof is introduced.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
 # Uranium/lithium ETFs, physical-trust NAVs and futures are challenger proxies only; they are not relabelled as spot.
 # No macro factor direction, signed asset exposure, outcome research, threshold/weight selection,
