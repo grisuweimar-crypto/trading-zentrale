@@ -1,0 +1,31 @@
+{
+  "schema_version": "external_evidence_8c_transport_status_v1",
+  "phase": "8C",
+  "status": "BLOCKED_ON_SEC_TRANSPORT",
+  "observed_on": "2026-09-26",
+  "blocked_endpoints": [
+    "https://www.sec.gov/files/company_tickers.json",
+    "https://data.sec.gov/submissions/CIK##########.json",
+    "https://www.sec.gov/Archives/edgar/daily-index/bulkdata/submissions.zip"
+  ],
+  "observed_http_status": 403,
+  "interpretation": "Transport access is blocked in both the user environment and the assistant execution environment. This is not treated as missing authentication because the SEC documents the public data APIs as keyless.",
+  "research_state": {
+    "phase8c_complete": false,
+    "fundamental_real_data_validation_complete": false,
+    "structured_event_real_data_validation_complete": false,
+    "phase7_integration_allowed": false,
+    "market_outcome_research_allowed": false
+  },
+  "allowed_paths": [
+    "DIRECT_SEC_API",
+    "DIRECT_SEC_BULK_OPERATOR_ATTESTED",
+    "NON_AUTHORITATIVE_TRANSPORT_FOR_CHALLENGER_ONLY"
+  ],
+  "authority_rules": {
+    "DIRECT_SEC_API": "Eligible for authoritative SEC provenance when collected from official SEC HTTPS endpoints and persisted with hashes.",
+    "DIRECT_SEC_BULK_OPERATOR_ATTESTED": "Eligible for offline SEC processing only when the operator records the official SEC source URL, acquisition timestamp and archive SHA-256. This is provenance-attested, not independently re-fetched by CI.",
+    "NON_AUTHORITATIVE_TRANSPORT_FOR_CHALLENGER_ONLY": "May be used only for parser/challenger development. It cannot promote evidence, satisfy the final SEC provenance gate, alter Phase 7, or enable market-outcome research."
+  },
+  "next_active_work": "8C-J_OFFLINE_SEC_BULK_IMPORT"
+}
