@@ -10,6 +10,7 @@ from scanner.research.external_evidence.exposure_domain_8f import (
     ExposureDomain8FError,
     build_exposure_domain_audit,
 )
+from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,9 +41,7 @@ def _domain() -> dict:
         "domain_version": "TEST_DOMAIN_V1",
         "status": "FROZEN_TEST_DOMAIN",
         "subject_ids": ["AAA", "BBB"],
-        "explicit_unmapped": [
-            {"subject_id": "BBB", "reason": "No documentary macro exposure accepted"}
-        ],
+        "explicit_unmapped": [{"subject_id": "BBB", "reason": "No documentary macro exposure accepted"}],
         "rules": {
             "domain_must_be_defined_before_8f_freeze": True,
             "subject_may_not_enter_domain_because_mapping_exists": True,
@@ -55,9 +54,7 @@ def _domain() -> dict:
 
 
 def _empty_exposure() -> dict:
-    exposure = json.loads(
-        (ROOT / "configs/external_evidence_8f_exposure_map_v1.json").read_text(encoding="utf-8")
-    )
+    exposure = json.loads((ROOT / "configs/external_evidence_8f_exposure_map_v1.json").read_text(encoding="utf-8"))
     exposure["status"] = "FOUNDATION_EMPTY_MAP_NO_ASSET_EXPOSURES_PROMOTED"
     exposure["mappings"] = []
     return exposure
@@ -88,9 +85,7 @@ def test_subject_cannot_be_both_mapped_and_explicit_unmapped():
     exposure = copy.deepcopy(_empty_exposure())
     exposure["mappings"] = [_mapping("AAA")]
     domain = _domain()
-    domain["explicit_unmapped"].append(
-        {"subject_id": "AAA", "reason": "contradictory test"}
-    )
+    domain["explicit_unmapped"].append({"subject_id": "AAA", "reason": "contradictory test"})
     with pytest.raises(ExposureDomain8FError, match="both mapped and explicit_unmapped"):
         build_exposure_domain_audit(domain_config=domain, exposure_map=exposure)
 
@@ -102,37 +97,23 @@ def test_domain_rule_cannot_select_subjects_from_mapping_coverage():
         build_exposure_domain_audit(domain_config=domain, exposure_map=_empty_exposure())
 
 
-def test_committed_domain_is_pinned_to_pre8f_universe_blob_and_tracks_reviewed_mappings():
-    domain = json.loads(
-        (ROOT / "configs/external_evidence_8f_research_domain_v1.json").read_text(encoding="utf-8")
-    )
-    exposure = json.loads(
-        (ROOT / "configs/external_evidence_8f_exposure_map_v1.json").read_text(encoding="utf-8")
-    )
+def test_committed_domain_is_pinned_to_pre8f_universe_blob_and_tracks_effective_reviewed_mappings():
+    domain = json.loads((ROOT / "configs/external_evidence_8f_research_domain_v1.json").read_text(encoding="utf-8"))
+    exposure = load_effective_exposure_map(root=ROOT)
     universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8")
-    result = build_exposure_domain_audit(
-        domain_config=domain,
-        exposure_map=exposure,
-        universe_csv_text=universe_text,
-    )
+    result = build_exposure_domain_audit(domain_config=domain, exposure_map=exposure, universe_csv_text=universe_text)
     assert result["domain_status"] == "FROZEN_OUTCOME_BLIND_PRE8F_ACTIVE_STOCK_UNIVERSE"
     assert result["domain_subject_count"] == 207
-    assert result["mapped_subject_count"] == 60
+    assert result["mapped_subject_count"] == 80
     assert result["explicit_unmapped_subject_count"] == 0
-    assert result["unaccounted_subject_count"] == 147
+    assert result["unaccounted_subject_count"] == 127
     assert result["source_snapshot"]["source_ref"] == "feef4e572283613739b2f24cf42b837ff68a1508"
     assert result["source_snapshot"]["git_blob_sha"] == "2c6efec912ea7478096f77dc8f88d7eed2a0581b"
     assert result["guards"]["domain_pinned_to_pre8f_source_blob"] is True
 
 
 def test_pinned_domain_fails_if_universe_blob_changes():
-    domain = json.loads(
-        (ROOT / "configs/external_evidence_8f_research_domain_v1.json").read_text(encoding="utf-8")
-    )
+    domain = json.loads((ROOT / "configs/external_evidence_8f_research_domain_v1.json").read_text(encoding="utf-8"))
     universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8") + "\n"
     with pytest.raises(ExposureDomain8FError, match="source blob mismatch"):
-        build_exposure_domain_audit(
-            domain_config=domain,
-            exposure_map=_empty_exposure(),
-            universe_csv_text=universe_text,
-        )
+        build_exposure_domain_audit(domain_config=domain, exposure_map=_empty_exposure(), universe_csv_text=universe_text)
