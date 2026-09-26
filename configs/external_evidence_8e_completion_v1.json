@@ -20,83 +20,21 @@
     "PRODUCTION_DISRUPTION"
   ],
   "event_family_status": {
-    "MANAGEMENT_CHANGE": {
-      "status": "IMPLEMENTED_VALIDATED_8C_METADATA_REUSE",
-      "adapter": "PHASE8C_CANONICAL_SEC_EVENTS",
-      "historical_pit": "SAFE_WITH_EXISTING_8C_PROVENANCE",
-      "semantic_scope": "DIRECTOR_OR_OFFICER_CHANGE_ONLY"
-    },
-    "REGULATORY_APPROVAL": {
-      "status": "IMPLEMENTED_PROSPECTIVE_PIT_PARTIAL_HISTORICAL_FPR",
-      "adapter": "FDA_DRUGS_AT_FDA",
-      "historical_pit": "FIRST_PUBLIC_RELEASE_UNRESOLVED_FROM_CURRENT_BULK_ALONE",
-      "security_identity": "DEFERRED_NO_FUZZY_SPONSOR_TO_TICKER_MAPPING"
-    },
-    "REGULATORY_REJECTION": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "FTC_DOJ_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "LITIGATION_FILED": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "FTC_DOJ_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "LITIGATION_RULING": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "FTC_DOJ_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "LITIGATION_SETTLEMENT": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "FTC_DOJ_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "GUIDANCE_RAISE": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "GUIDANCE_CUT": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "MAJOR_CONTRACT": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "ACQUISITION_ANNOUNCEMENT": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "TAKEOVER_OFFER": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "ACQUISITION_COMPLETION": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "CAPITAL_RAISE": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "PRODUCT_LAUNCH": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    },
-    "PRODUCTION_DISRUPTION": {
-      "status": "PROSPECTIVE_STRUCTURED_CHALLENGER",
-      "adapter": "ISSUER_IR_PRIMARY_RELEASE",
-      "historical_pit": "NO_BACKDATING_WITHOUT_ARCHIVAL_PROOF"
-    }
+    "MANAGEMENT_CHANGE": {"status": "IMPLEMENTED_VALIDATED_8C_METADATA_REUSE", "adapter": "PHASE8C_CANONICAL_SEC_EVENTS", "historical_pit": "SAFE_WITH_EXISTING_8C_PROVENANCE"},
+    "REGULATORY_APPROVAL": {"status": "IMPLEMENTED_PROSPECTIVE_PIT_PARTIAL_HISTORICAL_FPR", "adapter": "FDA_DRUGS_AT_FDA", "historical_pit": "FIRST_PUBLIC_RELEASE_UNRESOLVED_FROM_CURRENT_BULK_ALONE"},
+    "LITIGATION_FILED": {"status": "IMPLEMENTED_PROSPECTIVE_PIT_PARTIAL_HISTORICAL_FPR", "adapter": "DOJ_ANTITRUST_CASE_FILINGS", "historical_pit": "FIRST_PUBLIC_RELEASE_UNRESOLVED_FROM_LATER_RSS_SNAPSHOT_ALONE"},
+    "REGULATORY_REJECTION": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "LITIGATION_RULING": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "LITIGATION_SETTLEMENT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "GUIDANCE_RAISE": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER", "promotion_boundary": "PHASE8C_GUIDANCE_SEMANTICS_REMAIN_IN_FORCE"},
+    "GUIDANCE_CUT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER", "promotion_boundary": "PHASE8C_GUIDANCE_SEMANTICS_REMAIN_IN_FORCE"},
+    "MAJOR_CONTRACT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "ACQUISITION_ANNOUNCEMENT": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "TAKEOVER_OFFER": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "ACQUISITION_COMPLETION": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "CAPITAL_RAISE": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER", "promotion_boundary": "PHASE8C_CAPITAL_RAISE_SEMANTICS_REMAIN_IN_FORCE"},
+    "PRODUCT_LAUNCH": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"},
+    "PRODUCTION_DISRUPTION": {"status": "PROSPECTIVE_STRUCTURED_CHALLENGER", "adapter": "PRIMARY_RELEASE_CHALLENGER"}
   },
   "required_source_layer_components": {
     "event_ledger": "IMPLEMENTED",
@@ -104,14 +42,15 @@
     "first_public_release_contract": "IMPLEMENTED",
     "phase8c_reuse": "IMPLEMENTED_CONSERVATIVE",
     "fda_approval_adapter": "IMPLEMENTED_PROSPECTIVE_PARTIAL",
-    "ftc_doj_primary_release_adapter": "IMPLEMENTED_PROSPECTIVE_CHALLENGER",
-    "issuer_ir_primary_release_adapter": "IMPLEMENTED_PROSPECTIVE_CHALLENGER",
+    "doj_case_filing_adapter": "IMPLEMENTED_PROSPECTIVE_PARTIAL",
+    "primary_release_challenger": "IMPLEMENTED_PROSPECTIVE_CHALLENGER",
     "news_discovery": "EXPLICITLY_NOT_PROMOTION_ELIGIBLE",
     "generic_sentiment": "DEFERRED_NOT_REQUIRED_FOR_8E_COMPLETION"
   },
   "completion_rules": {
     "every_taxonomy_event_must_have_explicit_status": true,
     "unspecified_event_family_allowed": false,
+    "challenger_is_valid_completion_state_but_not_promotion": true,
     "unsafe_historical_backdating_allowed": false,
     "discovery_news_may_create_known_event_alone": false,
     "generic_sentiment_required_for_completion": false,
