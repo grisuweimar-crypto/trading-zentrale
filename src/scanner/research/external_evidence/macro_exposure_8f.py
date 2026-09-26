@@ -258,12 +258,12 @@ def _serialize(value: Any) -> Any:
     return value
 
 
-def _latest_available_observation(
+def _latest_available_observations(
     rows: Iterable[dict[str, Any]],
     *,
     factor_id: str,
     as_of: datetime,
-) -> dict[str, Any] | None:
+) -> list[dict[str, Any]]:
     available = [
         row
         for row in rows
@@ -273,11 +273,26 @@ def _latest_available_observation(
         and row["observation_date"] <= as_of.date()
     ]
     if not available:
-        return None
+        return []
 
-    latest_observation_date = max(row["observation_date"] for row in available)
-    same_observation = [row for row in available if row["observation_date"] == latest_observation_date]
-    return max(same_observation, key=lambda row: (row["valid_from"], row["realtime_start"], row["revision_id"]))
+    by_series: dict[str, list[dict[str, Any]]] = {}
+    for row in available:
+        by_series.setdefault(row["series_id"], []).append(row)
+
+    selected: list[dict[str, Any]] = []
+    for series_id in sorted(by_series):
+        series_rows = by_series[series_id]
+        latest_observation_date = max(row["observation_date"] for row in series_rows)
+        same_observation = [
+            row for row in series_rows if row["observation_date"] == latest_observation_date
+        ]
+        selected.append(
+            max(
+                same_observation,
+                key=lambda row: (row["valid_from"], row["realtime_start"], row["revision_id"]),
+            )
+        )
+    return selected
 
 
 def build_macro_context(
@@ -308,7 +323,7 @@ def build_macro_context(
 
     contexts: list[dict[str, Any]] = []
     for mapping in sorted(active_mappings, key=lambda row: (row["subject_id"], row["factor_id"], row["mapping_id"])):
-        observation = _latest_available_observation(
+        factor_observations = _latest_available_observations(
             normalized_observations,
             factor_id=mapping["factor_id"],
             as_of=as_of,
@@ -320,8 +335,10 @@ def build_macro_context(
                 "relationship_class": mapping["relationship_class"],
                 "mapping_id": mapping["mapping_id"],
                 "mapping_valid_from": mapping["valid_from"],
-                "status": "KNOWN" if observation is not None else "UNKNOWN",
-                "macro_observation": observation,
+                "status": "KNOWN" if factor_observations else "UNKNOWN",
+                "series_count": len(factor_observations),
+                "macro_observations": factor_observations,
+                "macro_observation": factor_observations[0] if len(factor_observations) == 1 else None,
             }
         )
 
@@ -342,6 +359,7 @@ def build_macro_context(
                 "interaction_research_enabled": False,
                 "phase7_integration_enabled": False,
                 "production_external_evidence_enabled": False,
+                "single_series_silently_selected_from_multiseries_factor": False,
             },
         }
     )
