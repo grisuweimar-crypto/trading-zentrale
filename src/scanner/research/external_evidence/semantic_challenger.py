@@ -16,7 +16,7 @@ _DIVIDEND_RE = re.compile(
     r".{0,80}?(?:\bof\b\s+)?"
     r"(?P<currency>USD|US\$|U\.S\.\s*\$|\$)\s*"
     r"(?P<amount>\d{1,4}(?:\.\d{1,6})?)\s*"
-    r"(?:per|a)\s+(?:common\s+)?share\b",
+    r"(?:per|a)\s+(?:(?P<share_class>common)\s+)?share\b",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -85,7 +85,16 @@ def _dividend_candidate(anchor: Mapping[str, Any], *, parser_version: str) -> tu
     if not match:
         return None, "NO_HIGH_PRECISION_DIVIDEND_PATTERN"
 
-    currency, currency_status, comparison_eligible = _currency(match.group("currency"))
+    currency, currency_status, currency_eligible = _currency(match.group("currency"))
+    share_class_explicit = bool(match.group("share_class"))
+    security_class = "common" if share_class_explicit else "UNKNOWN"
+    comparison_eligible = currency_eligible and share_class_explicit
+    reasons: list[str] = []
+    if not currency_eligible:
+        reasons.append("AMBIGUOUS_CURRENCY_SYMBOL")
+    if not share_class_explicit:
+        reasons.append("SECURITY_CLASS_NOT_EXPLICIT")
+
     record = _base_evidence(
         anchor,
         event_type="DIVIDEND_DECLARATION_OBSERVATION",
@@ -101,12 +110,12 @@ def _dividend_candidate(anchor: Mapping[str, Any], *, parser_version: str) -> tu
             "currency": currency,
             "currency_status": currency_status,
             "comparison_eligible": comparison_eligible,
-            "security_class": "UNKNOWN",
+            "security_class": security_class,
+            "security_class_status": "EXPLICIT" if share_class_explicit else "UNKNOWN",
             "matched_rule": "QUARTERLY_DIVIDEND_EXPLICIT_ACTION_AMOUNT_PER_SHARE_V1",
+            "reason_codes": reasons,
         }
     )
-    if not comparison_eligible:
-        record["reason_codes"] = ["AMBIGUOUS_CURRENCY_SYMBOL"]
     return record, None
 
 
@@ -139,10 +148,9 @@ def _buyback_candidate(
             "currency": currency,
             "currency_status": currency_status,
             "matched_rule": "NEW_REPURCHASE_AUTHORIZATION_EXPLICIT_AMOUNT_V1",
+            "reason_codes": [] if currency_status == "EXPLICIT" else ["AMBIGUOUS_CURRENCY_SYMBOL"],
         }
     )
-    if currency_status != "EXPLICIT":
-        record["reason_codes"] = ["AMBIGUOUS_CURRENCY_SYMBOL"]
     return record, None
 
 
@@ -188,13 +196,11 @@ def extract_semantic_candidates(
                     allowed_actions=buyback_actions,
                 )
         except (ContentEvidenceError, ValueError) as exc:
-            candidate = None
-            reason = "PROVENANCE_OR_VALUE_ERROR"
             rejections.append(
                 {
                     "family": family,
                     "accession_number": anchor.get("accession_number"),
-                    "reason": reason,
+                    "reason": "PROVENANCE_OR_VALUE_ERROR",
                     "error_type": type(exc).__name__,
                     "error_message": str(exc)[:500],
                 }
@@ -255,3 +261,5 @@ def validate_semantic_candidates(
         if row.get("family") == "DIVIDEND" and row.get("comparison_eligible") is True:
             if row.get("currency") == "UNKNOWN":
                 raise SemanticChallengerError("Dividend comparison may not be enabled with unknown currency")
+            if row.get("security_class") == "UNKNOWN":
+                raise SemanticChallengerError("Dividend comparison may not be enabled with unknown security class")
