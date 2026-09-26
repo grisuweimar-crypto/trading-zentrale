@@ -13,12 +13,12 @@ python scripts/collect_external_evidence_8c_sec_snapshot.py \
   --output-dir artifacts/external_evidence/sec_snapshot \
   --user-agent "trading-zentrale research contact-via-github grisuweimar-crypto/trading-zentrale" \
   --minimum-interval-seconds 0.22 \
-  --include-filing-content \
-  --history artifacts/research/history_recent.csv \
+  --include-content-documents \
+  --research-history artifacts/research/history_recent.csv \
   --content-lookback-days 365
 ```
 
-The collector writes a resumable, accession-bound bundle with raw SEC JSON, bounded 8-K/6-K filing text, source URLs and SHA-256 digests. It does not read market outcomes or assign directions.
+The collector writes an accession-bound bundle with raw SEC JSON, bounded 8-K/6-K filing text, source URLs and SHA-256 digests. It does not read market outcomes or assign directions.
 
 ## Return artifact
 
