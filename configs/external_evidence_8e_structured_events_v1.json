@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8e_structured_events_v1",
   "phase": "8E_structured_events_news",
-  "status": "8E_A_SOURCE_HIERARCHY_AND_FIRST_PUBLIC_RELEASE_CONTRACT",
+  "status": "8E_SOURCE_LAYER_IMPLEMENTATION_COMPLETE_OUTCOME_RESEARCH_DEFERRED_TO_8G",
   "principles": {
     "market_outcomes_may_be_read": false,
     "market_direction_may_be_assigned": false,
@@ -59,8 +59,8 @@
     },
     "REPUTABLE_NEWS_DISCOVERY_ONLY": {
       "authority_rank": 90,
-      "examples": ["wire_service", "major_financial_news_provider"],
-      "role": "discovery_only_until_a_primary_or_authoritative_source_is_resolved",
+      "examples": ["official_press_release_feed_used_for_discovery", "wire_service", "major_financial_news_provider"],
+      "role": "discovery_only_until_a_primary_or_authoritative_event_source_is_resolved",
       "promotion_eligible": false
     }
   },
@@ -83,7 +83,7 @@
   },
   "source_adapters": {
     "PHASE8C_CANONICAL_SEC_EVENTS": {
-      "status": "REUSE_REQUIRED_CONSERVATIVE_MAPPING",
+      "status": "IMPLEMENTED_CONSERVATIVE_REUSE",
       "source_class": "MANDATORY_ISSUER_FILING",
       "pit_status": "SAFE_WITH_EXISTING_8C_PROVENANCE",
       "supported_initial_events": ["MANAGEMENT_CHANGE"],
@@ -95,48 +95,83 @@
         "OTHER_MATERIAL_EVENT",
         "RESULTS_RELEASE"
       ],
-      "duplicate_sec_reparse_enabled": false,
-      "notes": "8C filing metadata is not silently upgraded into acquisition, major-contract, guidance or capital-raise semantics. Future validated 8C content semantics may extend this mapping."
+      "duplicate_sec_reparse_enabled": false
     },
     "FDA_DRUGS_AT_FDA": {
-      "status": "SOURCE_CANDIDATE",
+      "status": "IMPLEMENTED_AUTHORITATIVE_APPROVAL_STATE",
       "source_class": "PUBLIC_AUTHORITY_PRIMARY",
-      "pit_status": "PARTIAL_PENDING_PUBLICATION_TIME_VALIDATION",
+      "pit_status": "PROSPECTIVE_SAFE_FROM_INGESTION_HISTORICAL_FIRST_PUBLIC_RELEASE_UNRESOLVED",
       "supported_initial_events": ["REGULATORY_APPROVAL"],
-      "notes": "Approval dates and approval letters are authoritative for approval state; exact historical public availability time must be proven before using published_at as valid_from."
+      "config": "configs/external_evidence_8e_fda_approval_v1.json",
+      "notes": "Exact Approval actions only. Tentative Approval is excluded. Current bulk snapshots do not backdate historical knowledge."
     },
-    "FTC_MERGER_AND_CASES": {
-      "status": "SOURCE_CANDIDATE",
+    "DOJ_ANTITRUST_CASE_FILINGS": {
+      "status": "IMPLEMENTED_AUTHORITATIVE_CASE_FILING_FEEDS",
       "source_class": "PUBLIC_AUTHORITY_PRIMARY",
-      "pit_status": "PARTIAL_PENDING_TIMESTAMP_ARCHIVE_VALIDATION",
-      "supported_initial_events": ["REGULATORY_APPROVAL", "REGULATORY_REJECTION", "LITIGATION_FILED", "LITIGATION_RULING", "LITIGATION_SETTLEMENT"]
+      "pit_status": "PROSPECTIVE_SAFE_FROM_INGESTION_HISTORICAL_FIRST_PUBLIC_RELEASE_UNRESOLVED",
+      "supported_initial_events": ["LITIGATION_FILED"],
+      "config": "configs/external_evidence_8e_doj_antitrust_rss_v1.json",
+      "notes": "Official civil and criminal Antitrust case-filing RSS feeds. Source-reported pubDate is retained but does not retroactively move valid_from before actual ingestion."
     },
-    "DOJ_ANTITRUST_CASES": {
-      "status": "SOURCE_CANDIDATE",
-      "source_class": "PUBLIC_AUTHORITY_PRIMARY",
-      "pit_status": "PARTIAL_PENDING_TIMESTAMP_ARCHIVE_VALIDATION",
-      "supported_initial_events": ["REGULATORY_APPROVAL", "REGULATORY_REJECTION", "LITIGATION_FILED", "LITIGATION_RULING", "LITIGATION_SETTLEMENT"]
+    "FTC_COMPETITION_NEWS": {
+      "status": "IMPLEMENTED_DISCOVERY_ONLY",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "pit_status": "NOT_PROMOTION_ELIGIBLE_ALONE",
+      "supported_initial_events": [],
+      "config": "configs/external_evidence_8e_news_discovery_v1.json",
+      "notes": "Official FTC competition press-release RSS is discovery-only; titles are not automatically converted into canonical events."
+    },
+    "DOJ_ANTITRUST_NEWS": {
+      "status": "IMPLEMENTED_DISCOVERY_ONLY",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "pit_status": "NOT_PROMOTION_ELIGIBLE_ALONE",
+      "supported_initial_events": [],
+      "config": "configs/external_evidence_8e_news_discovery_v1.json"
     },
     "ISSUER_IR": {
-      "status": "SOURCE_CANDIDATE",
+      "status": "SOURCE_SPECIFIC_DEFERRED",
       "source_class": "ISSUER_PRIMARY_RELEASE",
       "pit_status": "PARTIAL_SOURCE_SPECIFIC",
       "supported_initial_events": ["MAJOR_CONTRACT", "ACQUISITION_ANNOUNCEMENT", "TAKEOVER_OFFER", "MANAGEMENT_CHANGE", "PRODUCT_LAUNCH", "PRODUCTION_DISRUPTION"],
-      "notes": "A page date alone is insufficient for historical PIT. Prospective ingestion is safe from ingested_at; retrospective use needs immutable timestamp/archive proof."
+      "notes": "No generic retrospective issuer-IR adapter is permitted. Each source requires immutable timestamp/archive proof or prospective ingestion; semantic extraction requires its own outcome-blind validation."
     },
     "NEWS_DISCOVERY": {
-      "status": "DISCOVERY_ONLY",
+      "status": "IMPLEMENTED_DISCOVERY_ONLY",
       "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
       "pit_status": "NOT_PROMOTION_ELIGIBLE_ALONE",
       "supported_initial_events": [],
       "may_create_canonical_event_without_primary_confirmation": false
     }
   },
+  "event_coverage_matrix": {
+    "GUIDANCE_RAISE": "DEFERRED_PENDING_VALIDATED_GUIDANCE_SEMANTICS",
+    "GUIDANCE_CUT": "DEFERRED_PENDING_VALIDATED_GUIDANCE_SEMANTICS",
+    "REGULATORY_APPROVAL": "IMPLEMENTED_FDA_DRUGSATFDA_PROSPECTIVE_PIT",
+    "REGULATORY_REJECTION": "SOURCE_GAP_DEFERRED_NO_SAFE_GENERIC_REJECTION_SOURCE",
+    "MAJOR_CONTRACT": "DEFERRED_8C_ITEM_1_01_NOT_SEMANTICALLY_SUFFICIENT",
+    "ACQUISITION_ANNOUNCEMENT": "DEFERRED_REQUIRES_VALIDATED_PRIMARY_RELEASE_SEMANTICS",
+    "TAKEOVER_OFFER": "DEFERRED_REQUIRES_VALIDATED_PRIMARY_RELEASE_SEMANTICS",
+    "ACQUISITION_COMPLETION": "DEFERRED_8C_ITEM_2_01_ACQUISITION_OR_DISPOSITION_AMBIGUITY",
+    "CAPITAL_RAISE": "DEFERRED_PENDING_VALIDATED_CAPITAL_RAISE_SEMANTICS",
+    "LITIGATION_FILED": "IMPLEMENTED_DOJ_ANTITRUST_CASE_FILING_FEEDS_PROSPECTIVE_PIT",
+    "LITIGATION_RULING": "SOURCE_SPECIFIC_DEFERRED",
+    "LITIGATION_SETTLEMENT": "SOURCE_SPECIFIC_DEFERRED",
+    "MANAGEMENT_CHANGE": "IMPLEMENTED_PHASE8C_CONSERVATIVE_REUSE",
+    "PRODUCT_LAUNCH": "SOURCE_SPECIFIC_DEFERRED_ISSUER_PRIMARY_RELEASE",
+    "PRODUCTION_DISRUPTION": "SOURCE_SPECIFIC_DEFERRED_ISSUER_PRIMARY_RELEASE"
+  },
   "overlap_with_phase8c": {
     "phase8c_remains_source_of_truth_for_existing_sec_extraction": true,
     "phase8e_may_add_cross_source_event_identity_and_first_public_release": true,
     "phase8e_may_not_relabel_8c_semantics_without_new_independent_validation": true,
-    "guidance_and_capital_raise_beat_miss_boundaries_remain_in_force": true
+    "guidance_and_capital_raise_boundaries_remain_in_force": true
+  },
+  "completion_contract": {
+    "architecture_and_source_layer_complete": true,
+    "every_initial_event_type_must_have_explicit_coverage_state": true,
+    "source_gap_or_deferred_is_valid_completion_state_when_reason_is_explicit": true,
+    "predictive_outcome_validation_belongs_to_phase8g": true,
+    "production_promotion_belongs_after_phase8g": true
   },
   "research_gate": {
     "outcome_research_enabled": false,
