@@ -1,0 +1,70 @@
+{
+  "schema_version": "external_evidence_8c_semantic_challenger_v1",
+  "phase": "8C_H_semantic_challenger",
+  "status": "HIGH_PRECISION_CHALLENGER_ONLY",
+  "input": "8C_G_EVIDENCE_ANCHORS",
+  "parser_version": "8c_semantic_challenger_v1",
+  "market_outcomes_may_be_read": false,
+  "market_direction_policy": "UNKNOWN_ONLY",
+  "supported_families": {
+    "DIVIDEND": {
+      "enabled": true,
+      "semantic_event": "DIVIDEND_DECLARATION_OBSERVATION",
+      "scope": "EXPLICIT_REGULAR_QUARTERLY_DIVIDEND_AMOUNT_PER_SHARE_ONLY",
+      "special_dividend_allowed": false,
+      "comparison_requires_explicit_currency": true
+    },
+    "BUYBACK": {
+      "enabled": true,
+      "semantic_event": "BUYBACK_ACTION",
+      "scope": "EXPLICIT_NEW_REPURCHASE_AUTHORIZATION_WITH_UP_TO_AMOUNT_ONLY",
+      "allowed_action": "NEW_AUTHORIZATION"
+    },
+    "GUIDANCE": {
+      "enabled": false,
+      "reason": "Range/metric/period/basis extraction needs a separate validated grammar before challenger activation."
+    },
+    "CAPITAL_RAISE": {
+      "enabled": false,
+      "reason": "Announcement/pricing/completion state and instrument classification need a separate validated grammar."
+    },
+    "EARNINGS_BEAT_MISS": {
+      "enabled": false,
+      "reason": "Blocked by paused 8B historical consensus dependency."
+    }
+  },
+  "currency_policy": {
+    "explicit_usd_tokens": ["USD", "US$", "U.S.$", "U.S. $"],
+    "bare_dollar_symbol_currency": "UNKNOWN",
+    "bare_dollar_comparison_eligible": false
+  },
+  "required_output_fields": [
+    "event_type",
+    "symbol",
+    "cik",
+    "accession_number",
+    "source_valid_from",
+    "source_document",
+    "evidence_excerpt_sha256",
+    "extraction_method",
+    "parser_version",
+    "semantic_status",
+    "market_direction",
+    "reason_codes"
+  ],
+  "hard_boundaries": {
+    "candidate_is_production_evidence": false,
+    "bare_dollar_is_assumed_usd": false,
+    "dividend_amount_implies_increase_or_cut": false,
+    "buyback_authorization_implies_positive_direction": false,
+    "historical_context_statement_may_be_promoted_without_explicit_action_verb": false,
+    "guidance_semantics_enabled": false,
+    "capital_raise_semantics_enabled": false,
+    "earnings_beat_miss_enabled": false
+  },
+  "research_gate": {
+    "production_promotion_enabled": false,
+    "outcome_research_enabled": false,
+    "decision_integration_enabled": false
+  }
+}
