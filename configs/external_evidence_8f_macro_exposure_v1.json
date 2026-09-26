@@ -1,0 +1,130 @@
+{
+  "schema_version": "external_evidence_8f_macro_exposure_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "8F_A1_A2_FOUNDATION_OUTCOME_BLIND",
+  "principles": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "exposure_sign_may_be_assigned": false,
+    "threshold_selection_enabled": false,
+    "interaction_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false,
+    "missing_macro_evidence_may_default_to_neutral": false,
+    "undocumented_theoretical_exposure_may_be_used": false,
+    "current_macro_value_may_be_retrojected": false,
+    "latest_revision_may_replace_original_vintage_in_history": false
+  },
+  "source_contract": {
+    "primary_source_id": "fred_alfred_realtime",
+    "provider": "Federal Reserve Bank of St. Louis FRED/ALFRED",
+    "source_registry": "configs/external_source_registry_v1.json",
+    "api_key_required_for_live_api": true,
+    "ci_live_network_access": false,
+    "source_license_gate": "SERIES_LEVEL_REVIEW_REQUIRED_BEFORE_PERSISTENT_USE",
+    "source_notes": [
+      "ALFRED real-time periods/vintage dates are suitable for reconstructing what values were known on historical calendar dates.",
+      "The FRED/ALFRED API exposes day-level vintage dates, not a universal authoritative intraday publication timestamp for every series.",
+      "Third-party series can carry additional copyright restrictions; source-level access does not clear every series for redistribution or persistent public artifacts."
+    ]
+  },
+  "macro_vintage_contract": {
+    "required_fields": [
+      "series_id",
+      "factor_id",
+      "observation_date",
+      "value",
+      "units",
+      "realtime_start",
+      "realtime_end",
+      "revision_id",
+      "source_id",
+      "source_record_sha256",
+      "license_status",
+      "status",
+      "ingested_at",
+      "valid_from",
+      "historical_vintage_independently_proven"
+    ],
+    "historical_vintage_source": "ALFRED_REALTIME_PERIOD_OR_EQUIVALENT_INDEPENDENT_ARCHIVE_PROOF",
+    "day_level_historical_vintage_valid_from": "NEXT_UTC_DAY",
+    "prospective_unproven_valid_from": "ACTUAL_INGESTED_AT_OR_LATER",
+    "later_revision_overwrites_original": false,
+    "revision_identity_required": true,
+    "date_only_intraday_backdating_forbidden": true,
+    "unknown_may_default_to_neutral": false
+  },
+  "factor_catalog": [
+    {
+      "factor_id": "rates_policy",
+      "category": "rates",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "yield_curve",
+      "category": "rates",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "inflation",
+      "category": "inflation",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "fx",
+      "category": "fx",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "oil",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "gas",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "gold",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "silver",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "uranium",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "copper",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    },
+    {
+      "factor_id": "lithium",
+      "category": "commodities",
+      "status": "SOURCE_SERIES_SELECTION_PENDING"
+    }
+  ],
+  "context_semantics": {
+    "allowed_output": "RAW_PIT_MACRO_CONTEXT_JOINED_ONLY_THROUGH_VERSIONED_DOCUMENTED_EXPOSURE_MAPPING",
+    "factor_standardization_enabled": false,
+    "factor_direction_enabled": false,
+    "factor_weighting_enabled": false,
+    "asset_exposure_sign_enabled": false,
+    "cross_factor_interactions_enabled": false,
+    "decision_policy_enabled": false
+  },
+  "next_gates": [
+    "8F_A3_SERIES_SELECTION_AND_LICENSE_REVIEW",
+    "8F_B_VERSIONED_EXPOSURE_MAPPING_POPULATION",
+    "8F_C_REAL_PIT_MACRO_INGESTION",
+    "8F_D_COVERAGE_AND_CONTEXT_AUDIT",
+    "8G_INCREMENTAL_OUTCOME_RESEARCH_ONLY_AFTER_8F_FREEZE"
+  ]
+}
