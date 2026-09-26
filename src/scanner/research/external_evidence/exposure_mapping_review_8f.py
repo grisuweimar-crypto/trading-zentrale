@@ -27,6 +27,26 @@ def _aware_datetime(value: Any, *, field: str) -> datetime:
     return parsed
 
 
+def _same_mapping(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    keys = (
+        "mapping_id",
+        "map_version",
+        "subject_id",
+        "factor_id",
+        "relationship_class",
+        "evidence_type",
+        "evidence_reference",
+        "evidence_sha256",
+        "evidence_valid_from",
+        "human_reviewed",
+        "reviewed_at",
+        "review_status",
+        "valid_from",
+        "valid_to",
+    )
+    return all(left.get(key) == right.get(key) for key in keys)
+
+
 def apply_human_mapping_review(
     *,
     candidate_config: Mapping[str, Any],
@@ -58,6 +78,7 @@ def apply_human_mapping_review(
         return {
             "status": "AWAITING_HUMAN_REVIEW",
             "approved_count": 0,
+            "already_applied_count": 0,
             "rejected_count": 0,
             "deferred_count": 0,
             "exposure_map": deepcopy(exposure_map),
@@ -124,35 +145,52 @@ def apply_human_mapping_review(
 
     updated = deepcopy(exposure_map)
     existing = list(updated.get("mappings") or [])
-    existing_ids = {str(row.get("mapping_id") or "") for row in existing}
+    by_existing_id = {str(row.get("mapping_id") or ""): row for row in existing}
     existing_pairs = {
-        (str(row.get("subject_id") or ""), str(row.get("factor_id") or ""))
+        (str(row.get("subject_id") or ""), str(row.get("factor_id") or "")): row
         for row in existing
         if str(row.get("review_status") or "").upper() == "ACTIVE"
     }
+    applied: list[dict[str, Any]] = []
+    already_applied: list[dict[str, Any]] = []
     for mapping in approved:
-        if mapping["mapping_id"] in existing_ids:
-            raise ExposureMappingReview8FError(f"mapping already exists: {mapping['mapping_id']}")
-        pair = (mapping["subject_id"], mapping["factor_id"])
-        if pair in existing_pairs:
+        existing_by_id = by_existing_id.get(mapping["mapping_id"])
+        if existing_by_id is not None:
+            if _same_mapping(existing_by_id, mapping):
+                already_applied.append(mapping)
+                continue
             raise ExposureMappingReview8FError(
-                f"active mapping already exists for subject/factor: {pair[0]}/{pair[1]}"
+                f"mapping id already exists with different content: {mapping['mapping_id']}"
             )
+
+        pair = (mapping["subject_id"], mapping["factor_id"])
+        existing_by_pair = existing_pairs.get(pair)
+        if existing_by_pair is not None:
+            if _same_mapping(existing_by_pair, mapping):
+                already_applied.append(mapping)
+                continue
+            raise ExposureMappingReview8FError(
+                f"active mapping already exists with different content for subject/factor: {pair[0]}/{pair[1]}"
+            )
+
         existing.append(mapping)
-        existing_ids.add(mapping["mapping_id"])
-        existing_pairs.add(pair)
+        by_existing_id[mapping["mapping_id"]] = mapping
+        existing_pairs[pair] = mapping
+        applied.append(mapping)
 
     updated["mappings"] = existing
     if approved:
         updated["status"] = "DOCUMENTARY_HUMAN_REVIEWED_MAPPINGS_ACTIVE"
 
     return {
-        "status": "HUMAN_REVIEW_APPLIED",
+        "status": "HUMAN_REVIEW_APPLIED" if applied else "HUMAN_REVIEW_ALREADY_APPLIED",
         "reviewed_at": reviewed_at.isoformat(),
-        "approved_count": len(approved),
+        "approved_count": len(applied),
+        "already_applied_count": len(already_applied),
         "rejected_count": rejected,
         "deferred_count": deferred,
-        "approved_mapping_ids": [row["mapping_id"] for row in approved],
+        "approved_mapping_ids": [row["mapping_id"] for row in applied],
+        "already_applied_mapping_ids": [row["mapping_id"] for row in already_applied],
         "exposure_map": updated,
         "guards": {
             "market_outcomes_read": False,
