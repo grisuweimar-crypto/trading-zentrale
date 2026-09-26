@@ -11,6 +11,10 @@ from scanner.research.external_evidence.sec_insider_identity import (
     resolve_insider_asof_identity,
     write_identity_result,
 )
+from scanner.research.external_evidence.sec_insider_identity_grid import (
+    verified_feature_grid,
+    write_feature_grid_csv,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIR = ROOT / "artifacts" / "external_evidence" / "8d_sec_insider"
@@ -59,6 +63,11 @@ def main() -> int:
     )
     parser.add_argument("--config", default=str(DEFAULT_CONFIG))
     parser.add_argument("--output", default=str(DEFAULT_DIR / "insider_asof_identity.json"))
+    parser.add_argument(
+        "--feature-grid-output",
+        default=str(DEFAULT_DIR / "insider_feature_grid.csv"),
+        help="B4 grid containing only VERIFIED_FAMILY_PIT_IDENTITY issuer_cik/as_of pairs.",
+    )
     args = parser.parse_args()
 
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
@@ -77,6 +86,8 @@ def main() -> int:
         evidence_payloads=load_identity_evidence([Path(path) for path in args.evidence]),
     )
     write_identity_result(payload, Path(args.output))
+    feature_grid = verified_feature_grid(payload)
+    write_feature_grid_csv(feature_grid, Path(args.feature_grid_output))
     print(
         json.dumps(
             {
@@ -84,7 +95,9 @@ def main() -> int:
                 "row_count": payload["row_count"],
                 "identity_evidence_point_count": payload["identity_evidence_point_count"],
                 "identity_status_counts": payload["identity_status_counts"],
+                "verified_feature_grid_row_count": len(feature_grid),
                 "output": args.output,
+                "feature_grid_output": args.feature_grid_output,
                 "market_outcomes_read": payload["guards"]["market_outcomes_read"],
                 "current_ticker_retrojection_enabled": payload["guards"]["current_ticker_retrojection_enabled"],
             },
