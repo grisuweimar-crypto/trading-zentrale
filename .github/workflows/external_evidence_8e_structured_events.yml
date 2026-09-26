@@ -5,8 +5,11 @@ on:
     paths:
       - "configs/external_evidence_8e_structured_events_v1.json"
       - "src/scanner/research/external_evidence/structured_events_8e.py"
+      - "src/scanner/research/external_evidence/structured_events_8e_phase8c_adapter.py"
       - "scripts/run_external_evidence_8e_event_ledger.py"
+      - "scripts/run_external_evidence_8e_phase8c_reuse.py"
       - "tests/test_external_evidence_8e_structured_events.py"
+      - "tests/test_external_evidence_8e_phase8c_adapter.py"
       - "docs/external_evidence_8e_structured_events.md"
       - ".github/workflows/external_evidence_8e_structured_events.yml"
   workflow_dispatch:
@@ -26,11 +29,17 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate Phase 8E source hierarchy and First Public Release contract
-        run: python -m pytest -q tests/test_external_evidence_8e_structured_events.py
-      - name: Verify Phase 8E CLI
-        run: python scripts/run_external_evidence_8e_event_ledger.py --help
+      - name: Validate Phase 8E source hierarchy, First Public Release and 8C reuse contracts
+        run: >-
+          python -m pytest -q
+          tests/test_external_evidence_8e_structured_events.py
+          tests/test_external_evidence_8e_phase8c_adapter.py
+      - name: Verify Phase 8E CLIs
+        run: |
+          python scripts/run_external_evidence_8e_event_ledger.py --help
+          python scripts/run_external_evidence_8e_phase8c_reuse.py --help
 
 # CI intentionally makes no live SEC/FDA/FTC/DOJ/news requests.
-# 8E-A is source-contract and event-ledger infrastructure only.
+# 8E-A establishes source hierarchy and First Public Release semantics.
+# 8E-B1 reuses only conservative validated Phase-8C filing-item semantics.
 # Generic sentiment, market outcomes, Phase-7 integration and production enablement remain disabled.
