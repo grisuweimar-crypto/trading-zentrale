@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
 from scanner.research.external_evidence.exposure_mapping_review_8f import (
     ExposureMappingReview8FError,
     apply_human_mapping_review,
@@ -42,15 +43,7 @@ def _approved_review(candidate_id: str = "MAPCAND:CVX:oil:1") -> dict:
         "status": "HUMAN_REVIEW_COMPLETED",
         "reviewer_role": "HUMAN_REVIEWER",
         "reviewed_at": "2026-09-26T20:00:00+00:00",
-        "decisions": [
-            {
-                "candidate_id": candidate_id,
-                "decision": "APPROVE",
-                "source_verified": True,
-                "relationship_class_confirmed": True,
-                "notes": "reviewed test candidate",
-            }
-        ],
+        "decisions": [{"candidate_id": candidate_id, "decision": "APPROVE", "source_verified": True, "relationship_class_confirmed": True, "notes": "reviewed test candidate"}],
         "guards": {
             "market_outcomes_read": False,
             "automatic_approval_allowed": False,
@@ -86,25 +79,27 @@ def test_committed_reviews_are_explicit_human_approvals():
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b2_v1.json", 10)
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b4_v1.json", 20)
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b5_v1.json", 20)
 
 
 def _assert_replay(candidate_path: str, review_path: str, expected_applied: int) -> None:
     result = apply_human_mapping_review(
         candidate_config=_load(candidate_path),
         review_config=_load(review_path),
-        exposure_map=_load("configs/external_evidence_8f_exposure_map_v1.json"),
+        exposure_map=load_effective_exposure_map(root=ROOT),
     )
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == expected_applied
-    assert len(result["exposure_map"]["mappings"]) == 60
+    assert len(result["exposure_map"]["mappings"]) == 80
 
 
-def test_committed_b1_b2_b3_b4_review_replay_is_idempotent():
+def test_committed_b1_b2_b3_b4_b5_review_replay_is_idempotent():
     _assert_replay("configs/external_evidence_8f_mapping_candidates_v1.json", "configs/external_evidence_8f_mapping_review_decisions_v1.json", 10)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b2_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b2_v1.json", 10)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b3_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b4_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b4_v1.json", 20)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b5_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b5_v1.json", 20)
 
 
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
