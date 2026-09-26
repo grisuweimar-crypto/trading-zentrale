@@ -37,7 +37,10 @@ class _TableParser(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
         if tag in {"th", "td"} and self._cell is not None and self._row is not None:
-            text = " ".join("".join(self._cell).replace("\xa0", " ").split())
+            # Preserve boundaries between text nodes. The real Fed H.15 date headers
+            # use <br> separators (2026<br>Sep<br>24), which otherwise collapse to
+            # 2026Sep24 and cannot be parsed reliably.
+            text = " ".join(" ".join(self._cell).replace("\xa0", " ").split())
             self._row.append(text)
             self._cell = None
         elif tag == "tr" and self._row is not None:
@@ -58,7 +61,14 @@ def _parse_header_dates(cells: list[str]) -> list[str] | None:
     for value in cells[1:]:
         text = " ".join(value.split())
         parsed = None
-        for fmt in ("%Y %b %d", "%Y %B %d", "%b %d %Y", "%B %d %Y"):
+        for fmt in (
+            "%Y %b %d",
+            "%Y %B %d",
+            "%b %d %Y",
+            "%B %d %Y",
+            "%Y%b%d",
+            "%Y%B%d",
+        ):
             try:
                 parsed = datetime.strptime(text, fmt).date()
                 break
