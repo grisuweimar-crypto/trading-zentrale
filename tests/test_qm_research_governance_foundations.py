@@ -74,6 +74,8 @@ def test_decision_ablation_preserves_phase7i_and_pairs_b5_b6():
     assert a["paired_same_claim_comparison_required"] is True
     assert a["elliott_incremental_value_primary_pair"] == ["B5", "B6"]
     assert a["execution_must_remain_disabled_until_separate_promotion"] is True
+    assert a["b5_b6_lineage_identity_check_required"] is True
+    assert a["b5_b6_may_differ_only_by_registered_elliott_adjustment"] is True
 
 
 def test_elliott_challengers_do_not_rewrite_frozen_hard_rules():
@@ -83,6 +85,47 @@ def test_elliott_challengers_do_not_rewrite_frozen_hard_rules():
     assert e["challengers_start_as_soft_sidecar_evidence"] is True
     assert e["scenario_stability_is_not_assumed_to_equal_correctness"] is True
     assert e["w5_divergence_is_not_a_hard_rule"] is True
+
+
+def test_qm_h_tracks_defects_near_misses_and_requires_verified_closure():
+    c = load_contract()
+    q = c["defect_incident_capa"]
+    assert q["required"] is True
+    assert {"DEFECT", "NEAR_MISS", "INCONSISTENCY", "DEVIATION", "DATA_QUALITY_EVENT"}.issubset(set(q["classes"]))
+    assert q["near_misses_must_not_be_discarded_because_no_damage_occurred"] is True
+    assert q["closure_requires_verification"] is True
+    assert q["repeat_incidents_require_systemic_root_cause_review"] is True
+
+
+def test_qm_i_requires_machine_readable_lineage_and_double_counting_review():
+    c = load_contract()
+    q = c["evidence_lineage"]
+    assert q["required"] is True
+    assert q["representation"] == "versioned_directed_acyclic_graph"
+    assert q["derived_transformation_is_independent_support_by_default"] is False
+    assert q["shared_raw_ancestor_requires_double_counting_review"] is True
+    assert q["shared_raw_ancestor_is_not_automatic_proof_of_invalidity"] is True
+    assert q["independence_claim_requires_explicit_justification"] is True
+    assert q["machine_checkable_path_from_raw_feature_to_decision_usage_required"] is True
+    audits = set(q["required_audits"])
+    assert "selection_reused_inside_confidence_or_agreement" in audits
+    assert "probability_recounted_as_directional_vote" in audits
+    assert "b5_b6_non_elliott_difference" in audits
+
+
+def test_qm_j_negative_controls_are_isolated_preregistered_and_not_tuned_to_pass():
+    c = load_contract()
+    q = c["negative_controls_and_falsification"]
+    assert q["required_for_confirmatory_pipeline_audit"] is True
+    assert q["research_only_isolated_sandbox"] is True
+    assert q["canonical_artifacts_may_not_be_mutated"] is True
+    assert q["expected_null_behavior_must_be_preregistered"] is True
+    assert q["negative_controls_are_not_expected_to_equal_exact_zero"] is True
+    assert q["control_failure_requires_leakage_or_pipeline_investigation_before_confirmatory_promotion"] is True
+    assert q["controls_may_not_be_tuned_until_they_produce_null"] is True
+    assert q["wrong_symbol_mapping_is_not_a_statistical_negative_control"] is True
+    assert "hide_failed_negative_controls" in c["forbidden_shortcuts"]
+    assert "tune_negative_controls_until_the_pipeline_passes" in c["forbidden_shortcuts"]
 
 
 def test_dynamic_portfolio_correlation_is_deferred_to_portfolio_risk_overlay():
