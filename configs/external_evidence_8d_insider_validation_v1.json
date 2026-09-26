@@ -1,0 +1,113 @@
+{
+  "schema_version": "external_evidence_8d_insider_validation_v1",
+  "phase": "8D_B3_insider_validation",
+  "status": "PRE_REGISTERED_BEFORE_REAL_SEC_INSIDER_EVALUATION",
+  "input_schema": "external_evidence_8d_sec_insider_bulk_v1",
+  "market_outcomes_may_be_read": false,
+  "market_direction_may_be_assigned": false,
+  "validation_unit": "SEC_FORM4_NONDERIVATIVE_TRANSACTION",
+  "validation_id_fields": [
+    "issuer_cik",
+    "accession_number",
+    "transaction_key",
+    "transaction_code"
+  ],
+  "scope": {
+    "forms": ["4", "4/A"],
+    "transaction_table": "NONDERIV_TRANS",
+    "target_transaction_codes": ["P", "S"],
+    "high_precision_candidate_status": "P_S_HIGH_PRECISION_CANDIDATE",
+    "excluded_or_quarantined_statuses": [
+      "P_S_10B5_1_DECLARED",
+      "EXCLUDED_EQUITY_SWAP",
+      "CONFLICTING_ACQUIRED_DISPOSED_CODE",
+      "CONFLICTING_TRANS_FORM_TYPE",
+      "UNKNOWN_10B5_1_STATUS"
+    ],
+    "amendments_remain_separate_versions": true,
+    "current_ticker_is_not_historical_identity": true
+  },
+  "sampling": {
+    "seed": "8D-B3-v1",
+    "method": "DETERMINISTIC_HASH_ORDER_STRATIFIED",
+    "candidate_audit": {
+      "per_transaction_code_max": 100,
+      "use_all_when_at_or_below_max": true,
+      "minimum_labeled_per_transaction_code_for_promotion": 10
+    },
+    "quarantine_audit": {
+      "per_status_max": 50,
+      "use_all_when_at_or_below_max": true,
+      "purpose": "verify_that_excluded_or_uncertain_rows_do_not_enter_high_precision_scope"
+    },
+    "provenance_audit": {
+      "distinct_accession_max": 100,
+      "use_all_when_at_or_below_max": true,
+      "purpose": "verify_exact_accession_cik_form_and_valid_from_join"
+    }
+  },
+  "annotation": {
+    "market_outcomes_visible_to_annotator": false,
+    "allowed_truth_labels": [
+      "VALID_P_TRANSACTION",
+      "VALID_S_TRANSACTION",
+      "VALID_EXCLUDED_10B5_1",
+      "VALID_EXCLUDED_EQUITY_SWAP",
+      "NOT_TARGET",
+      "UNCERTAIN"
+    ],
+    "required_common_fields": [
+      "validation_id",
+      "truth_label",
+      "review_status",
+      "market_outcomes_seen",
+      "notes"
+    ],
+    "critical_field_checks": [
+      "issuer_cik_correct",
+      "accession_number_correct",
+      "transaction_code_correct",
+      "acquired_disposed_code_correct",
+      "transaction_date_correct",
+      "transaction_shares_correct",
+      "transaction_price_correct_when_present",
+      "valid_from_correct",
+      "reporting_owner_link_correct"
+    ],
+    "allowed_check_values": ["TRUE", "FALSE", "UNCERTAIN"],
+    "uncertain_excluded_from_accuracy_denominator": true
+  },
+  "promotion_gates": {
+    "minimum_labeled_high_precision_candidates": 40,
+    "minimum_distinct_issuers_in_labeled_candidates": 10,
+    "minimum_labeled_purchases": 10,
+    "minimum_labeled_sales": 10,
+    "scope_precision_wilson_95_lower_bound_min": 0.90,
+    "critical_field_accuracy_wilson_95_lower_bound_min": 0.90,
+    "provenance_accuracy_wilson_95_lower_bound_min": 0.95,
+    "maximum_uncertain_annotation_rate": 0.10,
+    "market_direction_violation_count_max": 0,
+    "market_outcome_violation_count_max": 0,
+    "silent_amendment_overwrite_count_max": 0,
+    "current_ticker_identity_violation_count_max": 0,
+    "low_coverage_behavior": "LOW_COVERAGE_NOT_PROMOTABLE",
+    "failed_accuracy_behavior": "REMAIN_CHALLENGER"
+  },
+  "hard_boundaries": {
+    "outcome_data_may_influence_sampling": false,
+    "outcome_data_may_influence_annotation": false,
+    "absolute_insider_activity_implies_direction": false,
+    "purchases_are_predefined_bullish": false,
+    "sales_are_predefined_bearish": false,
+    "ten_b5_1_rows_may_enter_high_precision_scope": false,
+    "equity_swap_rows_may_enter_high_precision_scope": false,
+    "unknown_ten_b5_1_status_may_enter_high_precision_scope": false,
+    "promotion_enables_phase7_integration_automatically": false
+  },
+  "research_gate": {
+    "outcome_research_enabled": false,
+    "production_external_evidence_enabled": false,
+    "phase7_integration_enabled": false,
+    "interaction_research_enabled": false
+  }
+}
