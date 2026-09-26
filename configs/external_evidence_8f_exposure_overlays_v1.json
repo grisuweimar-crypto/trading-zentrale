@@ -1,0 +1,23 @@
+{
+  "schema_version": "external_evidence_8f_exposure_overlay_registry_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "ACTIVE_APPEND_ONLY_HUMAN_REVIEWED_OVERLAYS",
+  "base_map_path": "configs/external_evidence_8f_exposure_map_v1.json",
+  "overlays": [
+    {
+      "order": 5,
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-26_B5",
+      "candidates_path": "configs/external_evidence_8f_mapping_candidates_b5_v1.json",
+      "review_path": "configs/external_evidence_8f_mapping_review_decisions_b5_v1.json",
+      "status": "ACTIVE_HUMAN_REVIEWED"
+    }
+  ],
+  "rules": {
+    "market_outcomes_may_be_read": false,
+    "automatic_review_or_promotion_allowed": false,
+    "overlay_may_backdate_before_review": false,
+    "overlay_order_is_append_only": true,
+    "base_map_is_rewritten_per_batch": false,
+    "final_8f_freeze_requires_materialized_effective_map": true
+  }
+}
