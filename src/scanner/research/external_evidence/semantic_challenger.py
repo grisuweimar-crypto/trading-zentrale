@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from hashlib import sha256
 from typing import Any, Iterable, Mapping
 
 from .content_evidence import (
@@ -60,6 +61,15 @@ def _scaled_amount(amount: str, scale: str) -> float:
     base = float(str(amount).replace(",", ""))
     factor = {"million": 1_000_000.0, "billion": 1_000_000_000.0}[scale.lower()]
     return base * factor
+
+
+def _anchor_hash_valid(anchor: Mapping[str, Any]) -> bool:
+    excerpt = str(anchor.get("excerpt") or "")
+    expected = str(anchor.get("excerpt_sha256") or "").strip().lower()
+    if len(expected) != 64:
+        return False
+    actual = sha256(excerpt.encode("utf-8")).hexdigest()
+    return actual == expected
 
 
 def _base_evidence(anchor: Mapping[str, Any], *, event_type: str, parser_version: str) -> dict[str, Any]:
@@ -183,6 +193,15 @@ def extract_semantic_candidates(
                     "family": family,
                     "accession_number": anchor.get("accession_number"),
                     "reason": "INPUT_NOT_ANCHOR_ONLY",
+                }
+            )
+            continue
+        if not _anchor_hash_valid(anchor):
+            rejections.append(
+                {
+                    "family": family,
+                    "accession_number": anchor.get("accession_number"),
+                    "reason": "ANCHOR_HASH_MISMATCH",
                 }
             )
             continue
