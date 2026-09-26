@@ -62,7 +62,7 @@ def fetch_text(url: str, *, timeout_seconds: int = 30) -> RawSnapshot:
             charset = response.headers.get_content_charset() or "utf-8"
             text = raw.decode(charset, errors="strict")
             content_type = response.headers.get_content_type() or "application/octet-stream"
-    except Exception as exc:  # network errors remain explicit; no silent fallback data
+    except Exception as exc:
         raise ProspectiveCollector8FError(f"failed to fetch {url}: {exc}") from exc
     return RawSnapshot(
         source_id="",
@@ -116,6 +116,31 @@ def _write_raw_snapshot(root: Path, *, source_id: str, snapshot: RawSnapshot, ti
     return str(path)
 
 
+def _persist_manifest_entry(
+    raw_snapshot_dir: Path,
+    *,
+    source_id: str,
+    snapshot: RawSnapshot,
+    timestamp: str,
+    series_id: str | None = None,
+    display_url: str | None = None,
+) -> dict[str, Any]:
+    entry: dict[str, Any] = {
+        "source_id": source_id,
+        "url": display_url or snapshot.url,
+        "sha256": snapshot.sha256,
+        "path": _write_raw_snapshot(
+            raw_snapshot_dir,
+            source_id=source_id,
+            snapshot=snapshot,
+            timestamp=timestamp,
+        ),
+    }
+    if series_id is not None:
+        entry["series_id"] = series_id
+    return entry
+
+
 def collect_phase8f_prospective(
     *,
     macro_config: Mapping[str, Any],
@@ -142,29 +167,29 @@ def collect_phase8f_prospective(
     raw_manifest: list[dict[str, Any]] = []
     timestamp = now.isoformat()
 
-    fed = fetcher(FED_H15_RELEASE_URL)
-    fed = RawSnapshot("federal_reserve_board_h15", fed.url, fed.content_type, fed.text, fed.sha256)
+    fed_raw = fetcher(FED_H15_RELEASE_URL)
+    fed = RawSnapshot("federal_reserve_board_h15", fed_raw.url, fed_raw.content_type, fed_raw.text, fed_raw.sha256)
+    raw_manifest.append(
+        _persist_manifest_entry(
+            raw_snapshot_dir,
+            source_id=fed.source_id,
+            snapshot=fed,
+            timestamp=timestamp,
+        )
+    )
     observations.extend(build_fed_h15_release_prospective_observations(fed.text, ingested_at=now))
-    raw_manifest.append(
-        {
-            "source_id": fed.source_id,
-            "url": fed.url,
-            "sha256": fed.sha256,
-            "path": _write_raw_snapshot(raw_snapshot_dir, source_id=fed.source_id, snapshot=fed, timestamp=timestamp),
-        }
-    )
 
-    ecb = fetcher(ECB_USD_EUR_URL)
-    ecb = RawSnapshot("ecb_data_portal", ecb.url, ecb.content_type, ecb.text, ecb.sha256)
-    observations.extend(build_ecb_fx_prospective_macro_observations(ecb.text, ingested_at=now))
+    ecb_raw = fetcher(ECB_USD_EUR_URL)
+    ecb = RawSnapshot("ecb_data_portal", ecb_raw.url, ecb_raw.content_type, ecb_raw.text, ecb_raw.sha256)
     raw_manifest.append(
-        {
-            "source_id": ecb.source_id,
-            "url": ecb.url,
-            "sha256": ecb.sha256,
-            "path": _write_raw_snapshot(raw_snapshot_dir, source_id=ecb.source_id, snapshot=ecb, timestamp=timestamp),
-        }
+        _persist_manifest_entry(
+            raw_snapshot_dir,
+            source_id=ecb.source_id,
+            snapshot=ecb,
+            timestamp=timestamp,
+        )
     )
+    observations.extend(build_ecb_fx_prospective_macro_observations(ecb.text, ingested_at=now))
 
     key = (eia_api_key if eia_api_key is not None else os.getenv("EIA_API_KEY", "")).strip()
     eia_status = "SKIPPED_NO_API_KEY"
@@ -172,23 +197,24 @@ def collect_phase8f_prospective(
         eia_status = "COLLECTED"
         for series_id in sorted(EIA_SERIES_SPECS):
             url = eia_series_url(series_id, key, length=10)
-            snap = fetcher(url)
-            snap = RawSnapshot("eia_open_data_energy", snap.url, snap.content_type, snap.text, snap.sha256)
+            raw = fetcher(url)
+            snap = RawSnapshot("eia_open_data_energy", raw.url, raw.content_type, raw.text, raw.sha256)
+            raw_manifest.append(
+                _persist_manifest_entry(
+                    raw_snapshot_dir,
+                    source_id=snap.source_id,
+                    snapshot=snap,
+                    timestamp=timestamp,
+                    series_id=series_id,
+                    display_url=url.replace(key, "***"),
+                )
+            )
             try:
                 payload = json.loads(snap.text)
             except json.JSONDecodeError as exc:
                 raise ProspectiveCollector8FError(f"EIA response is not JSON for {series_id}") from exc
             observations.extend(
                 build_eia_prospective_macro_observations(payload, series_id=series_id, ingested_at=now)
-            )
-            raw_manifest.append(
-                {
-                    "source_id": snap.source_id,
-                    "series_id": series_id,
-                    "url": url.replace(key, "***"),
-                    "sha256": snap.sha256,
-                    "path": _write_raw_snapshot(raw_snapshot_dir, source_id=snap.source_id, snapshot=snap, timestamp=timestamp),
-                }
             )
 
     unknown_series = {row["series_id"] for row in observations} - allowed_series_ids
@@ -217,7 +243,7 @@ def collect_phase8f_prospective(
         "eia_status": eia_status,
         "raw_snapshots": raw_manifest,
         "guards": {
-            "raw_payloads_persisted": True,
+            "raw_payloads_persisted_before_parsing": True,
             "append_only_ledger_used": True,
             "market_outcomes_read": False,
             "historical_current_values_retrojected": False,
