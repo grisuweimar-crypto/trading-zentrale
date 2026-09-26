@@ -1,0 +1,66 @@
+{
+  "schema_version": "external_evidence_8c_content_evidence_v1",
+  "phase": "8C_E_content_evidence",
+  "status": "CONTRACT_ONLY_NO_PRODUCTION_PARSER",
+  "source_authority": "U.S. SEC EDGAR",
+  "market_direction_policy": "UNKNOWN_ONLY",
+  "market_outcomes_may_be_read": false,
+  "supported_issuer_semantics": {
+    "guidance_change": {
+      "status": "SUPPORTED_AFTER_CONTENT_EXTRACTION",
+      "required_comparability": ["metric", "period", "unit", "basis"],
+      "allowed_change_labels": ["RAISE", "CUT", "UNCHANGED", "MIXED"]
+    },
+    "dividend_change": {
+      "status": "SUPPORTED_AFTER_CONTENT_EXTRACTION",
+      "required_comparability": ["security_class", "currency", "frequency"],
+      "special_dividends_must_be_separate": true,
+      "allowed_change_labels": ["INCREASE", "CUT", "UNCHANGED"]
+    },
+    "buyback_action": {
+      "status": "SUPPORTED_AFTER_CONTENT_EXTRACTION",
+      "allowed_actions": ["NEW_AUTHORIZATION", "EXPANSION", "EXTENSION", "CANCELLATION", "COMPLETION_UPDATE"],
+      "market_direction": "UNKNOWN"
+    },
+    "capital_raise_action": {
+      "status": "SUPPORTED_AFTER_CONTENT_EXTRACTION",
+      "allowed_actions": ["ANNOUNCED", "PRICED", "COMPLETED", "CANCELLED"],
+      "allowed_instruments": ["EQUITY", "DEBT", "CONVERTIBLE", "MIXED"],
+      "shelf_registration_is_not_completed_raise": true,
+      "market_direction": "UNKNOWN"
+    },
+    "earnings_beat_miss": {
+      "status": "BLOCKED_BY_8B_CONSENSUS_DEPENDENCY",
+      "requires_historical_consensus_pit_status": "SAFE",
+      "reason": "Beat/miss is defined versus analyst consensus, which SEC issuer filings do not provide as a historical point-in-time consensus series."
+    }
+  },
+  "required_evidence_fields": [
+    "event_type",
+    "cik",
+    "accession_number",
+    "source_valid_from",
+    "source_document",
+    "evidence_excerpt_sha256",
+    "extraction_method",
+    "parser_version",
+    "semantic_status",
+    "market_direction",
+    "reason_codes"
+  ],
+  "provenance_rules": {
+    "content_must_come_from_same_or_earlier_accession_valid_from": true,
+    "later_amendment_may_not_retroactively_replace_original_evidence": true,
+    "excerpt_hash_required": true,
+    "parser_version_required": true,
+    "freeform_llm_label_without_evidence_record_allowed": false,
+    "missing_comparator_may_be_imputed": false
+  },
+  "research_gate": {
+    "production_content_parser_enabled": false,
+    "outcome_research_enabled": false,
+    "decision_integration_enabled": false,
+    "market_direction_assignment_enabled": false,
+    "earnings_beat_miss_enabled": false
+  }
+}
