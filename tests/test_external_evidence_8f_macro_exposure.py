@@ -62,9 +62,7 @@ def _mapping(**overrides):
 
 
 def test_historical_day_level_vintage_uses_next_utc_day_floor():
-    normalized = validate_macro_observation(
-        _macro_row(), allowed_series_ids={"TEST_SERIES"}
-    )
+    normalized = validate_macro_observation(_macro_row(), allowed_series_ids={"TEST_SERIES"})
     assert normalized["valid_from"].isoformat() == "2026-09-26T00:00:00+00:00"
     assert normalized["historical_vintage_independently_proven"] is True
 
@@ -207,10 +205,7 @@ def test_context_preserves_all_latest_series_within_factor_without_hidden_select
     assert context["status"] == "KNOWN"
     assert context["series_count"] == 2
     assert context["macro_observation"] is None
-    assert {row["series_id"] for row in context["macro_observations"]} == {
-        "OIL_WTI",
-        "OIL_BRENT",
-    }
+    assert {row["series_id"] for row in context["macro_observations"]} == {"OIL_WTI", "OIL_BRENT"}
     by_series = {row["series_id"]: row for row in context["macro_observations"]}
     assert by_series["OIL_WTI"]["revision_id"] == "wti-r2"
     assert by_series["OIL_WTI"]["value"] == 91.5
@@ -228,7 +223,7 @@ def test_committed_human_reviewed_exposure_map_passes_foundation_contract():
     result = validate_phase8f_contract(macro_config, exposure_map)
     assert result["status"] == "PASS_FOUNDATION_CONTRACT"
     assert result["factor_count"] == 11
-    assert result["mapping_count"] == 10
+    assert result["mapping_count"] == 20
     assert all(row["human_reviewed"] is True for row in exposure_map["mappings"])
     assert result["outcomes_read"] is False
 
