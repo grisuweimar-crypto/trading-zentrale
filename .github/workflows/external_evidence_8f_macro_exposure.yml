@@ -13,6 +13,8 @@ on:
       - "configs/external_evidence_8f_mapping_review_decisions_v1.json"
       - "configs/external_evidence_8f_mapping_candidates_b2_v1.json"
       - "configs/external_evidence_8f_mapping_review_decisions_b2_v1.json"
+      - "configs/external_evidence_8f_mapping_candidates_b3_v1.json"
+      - "configs/external_evidence_8f_mapping_review_decisions_b3_v1.json"
       - "src/scanner/research/external_evidence/macro_exposure_8f.py"
       - "src/scanner/research/external_evidence/source_candidates_8f.py"
       - "src/scanner/research/external_evidence/market_proxies_8f.py"
@@ -48,11 +50,13 @@ on:
       - "tests/test_external_evidence_8f_exposure_domain.py"
       - "tests/test_external_evidence_8f_exposure_review_queue.py"
       - "tests/test_external_evidence_8f_mapping_candidates.py"
+      - "tests/test_external_evidence_8f_mapping_candidates_b3.py"
       - "tests/test_external_evidence_8f_mapping_review.py"
       - "docs/external_evidence_8f_macro_exposure.md"
       - "docs/external_evidence_8f_market_proxies.md"
       - "docs/external_evidence_8f_mapping_candidates_b1.md"
       - "docs/external_evidence_8f_mapping_candidates_b2.md"
+      - "docs/external_evidence_8f_mapping_candidates_b3.md"
       - ".github/workflows/external_evidence_8f_macro_exposure.yml"
   workflow_dispatch:
 
@@ -84,6 +88,7 @@ jobs:
           tests/test_external_evidence_8f_exposure_domain.py
           tests/test_external_evidence_8f_exposure_review_queue.py
           tests/test_external_evidence_8f_mapping_candidates.py
+          tests/test_external_evidence_8f_mapping_candidates_b3.py
           tests/test_external_evidence_8f_mapping_review.py
           tests/test_external_evidence_8f_completion.py
       - name: Verify Phase 8F contract gate CLI
@@ -117,12 +122,23 @@ jobs:
           python scripts/run_external_evidence_8f_mapping_candidate_gate.py
           --candidates configs/external_evidence_8f_mapping_candidates_b2_v1.json
           --output /tmp/external_evidence_8f_mapping_candidate_gate_b2.json
-      - name: Confirm pending B2 human review cannot promote candidates
+      - name: Replay committed B2 human review idempotently
         run: >-
           python scripts/run_external_evidence_8f_mapping_review.py
           --candidates configs/external_evidence_8f_mapping_candidates_b2_v1.json
           --review configs/external_evidence_8f_mapping_review_decisions_b2_v1.json
           --output /tmp/external_evidence_8f_mapping_review_b2.json
+      - name: Validate documentary mapping candidate batch B3
+        run: >-
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py
+          --candidates configs/external_evidence_8f_mapping_candidates_b3_v1.json
+          --output /tmp/external_evidence_8f_mapping_candidate_gate_b3.json
+      - name: Confirm pending B3 human review cannot promote candidates
+        run: >-
+          python scripts/run_external_evidence_8f_mapping_review.py
+          --candidates configs/external_evidence_8f_mapping_candidates_b3_v1.json
+          --review configs/external_evidence_8f_mapping_review_decisions_b3_v1.json
+          --output /tmp/external_evidence_8f_mapping_review_b3.json
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -136,6 +152,7 @@ jobs:
 # Documentary candidate mappings remain PENDING_HUMAN_REVIEW and cannot enter the active exposure map automatically.
 # Human-review promotion is idempotent for byte-equivalent mapping semantics; conflicting duplicates hard-fail.
 # The human-review promotion path requires explicit source verification and relationship-class confirmation and sets valid_from to reviewed_at.
+# Larger candidate batches are allowed only when direct documentary support exists; difficult subjects remain for separate deeper review.
 # The completion gate must remain BLOCKED until a real ledger and reviewed exposure mappings account for the frozen domain.
 # FRED/ALFRED remains explicitly blocked under the currently reviewed terms.
 # Uranium/lithium ETFs, physical-trust NAVs and futures are challenger proxies only; they are not relabelled as spot.
