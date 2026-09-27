@@ -39,9 +39,10 @@ def test_b13_documentary_candidate_batch_passes_gate_and_has_four_distinct_subje
 def test_b13_subjects_are_active_in_current_effective_map():
     b13 = _load("configs/external_evidence_8f_mapping_candidates_b13_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    active_subjects = {row["subject_id"] for row in effective["mappings"]}
+    active_subjects = {row["subject_id"] for row in effective["mappings"] if row["review_status"] == "ACTIVE"}
     b13_subjects = {row["subject_id"] for row in b13["candidates"]}
-    assert len(effective["mappings"]) == 206
+    assert len(effective["mappings"]) == 195
+    assert len(active_subjects) == 189
     assert b13_subjects == {"ASTS", "CDNL", "RGTI", "RKLB"}
     assert b13_subjects.issubset(active_subjects)
 
@@ -61,10 +62,10 @@ def test_b13_review_replay_is_idempotent_against_current_effective_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b13_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b13_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 206
+    assert len(effective["mappings"]) == 195
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 4
     assert result["redundant_already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 206
+    assert len(result["exposure_map"]["mappings"]) == 195
