@@ -1,10 +1,12 @@
 # Phase 8F — Mapping Candidate Batch B12
 
-Status: `PENDING_HUMAN_REVIEW`
+Status: `HUMAN_REVIEWED_ACTIVE`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B12`
 
-B12 contains 12 new documentary candidates drawn only from the currently unaccounted portion of the frozen 207-subject research domain. The effective pre-B12 map contains 153 unique active mappings; 54 subjects remain unaccounted. Seven later human re-reviews from B8/B10 are preserved separately in the append-only correction registry and are not double-counted.
+B12 contains 12 documentary candidates drawn only from the currently unaccounted portion of the frozen 207-subject research domain. The corrected effective pre-B12 map contained 153 unique active mappings; seven later human re-reviews from B8/B10 are preserved separately in the append-only correction registry and are not double-counted. After explicit human approval, B12 increases the effective map to 165 unique reviewed mappings and leaves 42 subjects unaccounted.
+
+Reviewed at / valid from: `2026-09-27T09:56:29+02:00`
 
 ## Subjects
 
@@ -36,8 +38,8 @@ B12 contains 12 new documentary candidates drawn only from the currently unaccou
 - PL explicitly reports that approximately 30% of fiscal 2026 revenue was denominated in foreign currencies, primarily Euro; no geographic inference is used.
 - RHM.DE explicitly reports USD/EUR hedge rates and material currency hedge volumes; no domicile inference is used.
 - PKX is mapped to lithium only because POSCO Holdings' official 2025 results release explicitly connects lithium investment/commercial production to business profit recovery; it is not inferred from a generic materials-sector label.
-- Every candidate requires explicit human verification of source and relationship class before activation.
+- All 12 source and relationship-class decisions were explicitly human-approved for B12.
 - No B12 mapping is usable before `reviewed_at`; no backdating is allowed.
 - No market direction, signed exposure, weights, thresholds, market outcomes or Phase-7 decision data are used.
 
-Machine-readable evidence references, summaries and canonical evidence-record SHA-256 fingerprints are frozen in `configs/external_evidence_8f_mapping_candidates_b12_v1.json`.
+Machine-readable evidence references, summaries and canonical evidence-record SHA-256 fingerprints remain frozen in `configs/external_evidence_8f_mapping_candidates_b12_v1.json`.
