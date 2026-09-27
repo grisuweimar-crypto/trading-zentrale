@@ -86,7 +86,11 @@ def test_b16_resolution_ledger_registers_ten_audit_only_and_four_supersessions()
     assert len(registered["8F_MAPPING_CANDIDATES_2026-09-27_B16"]) == 10
     assert {mapping_id.split(":")[1] for mapping_id in registered["8F_MAPPING_CANDIDATES_2026-09-27_B16"]} == B16_AUDIT_ONLY_SUBJECTS
 
-    resolutions = _load("configs/external_evidence_8f_overlay_resolutions_v2.json")
-    rows = [row for row in resolutions["supersessions"] if row["batch_id"] == "8F_MAPPING_CANDIDATES_2026-09-27_B16"]
+    resolutions = _load("configs/external_evidence_8f_overlay_resolutions_v2.json")["resolutions"]
+    rows = [
+        row for row in resolutions
+        if row["batch_id"] == "8F_MAPPING_CANDIDATES_2026-09-27_B16"
+        and row["action"] == "SUPERSEDE_WITH_HUMAN_REVIEWED_MAPPING"
+    ]
     assert {row["subject_id"] for row in rows} == B16_RECLASSIFIED_SUBJECTS
-    assert all(row["reviewed_at"] == REVIEWED_AT for row in rows)
+    assert {row["new_mapping_id"] for row in rows} == {f"MAP:{subject}:fx:2" for subject in B16_RECLASSIFIED_SUBJECTS}
