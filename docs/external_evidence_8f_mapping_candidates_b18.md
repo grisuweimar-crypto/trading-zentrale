@@ -1,17 +1,21 @@
 # Phase 8F — Mapping Candidate Batch B18
 
-Status: `HUMAN_REVIEWED_ACTIVE_FINAL_ACCOUNTING`
+Status: `HUMAN_REVIEWED_ACTIVE_PARTIAL_ACCOUNTING`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B18`
 
 Reviewed at: `2026-09-27T17:42+02:00`
 
-B18 started from the reviewed/active B1-B17 state: 200 unique active mappings across the frozen 207-subject research domain, with 7 subjects unaccounted.
+## Repair note
 
-The seven subjects entering B18 were:
-`6861.T`, `FANUY`, `8035.T`, `9888.HK`, `BIDU`, `DVLT`, `JD`.
+The original B18 documentation incorrectly declared full 207/207 accounting because the preceding coverage counters had double-counted re-reviews. After repair, B18 starts from **183 active mapped subjects** and **24 unaccounted subjects**.
 
-B18 deliberately separates documentary mappings from explicit-unmapped accounting. Six subjects were human-approved into existing Phase-8F factors. Tokyo Electron (`8035.T`) was human-approved as `EXPLICIT_UNMAPPED` rather than being forced into the EUR/USD-oriented `fx` factor.
+B18 adds six genuinely new active mappings and one human-reviewed explicit-unmapped subject:
+
+- new mapped: `6861.T`, `FANUY`, `9888.HK`, `BIDU`, `DVLT`, `JD`
+- explicit-unmapped: `8035.T`
+
+B18 therefore increases frozen-domain accounting by seven subjects, from 183/207 to **190/207**, not to 207/207.
 
 ## Active B18 mappings
 
@@ -28,21 +32,30 @@ All six mappings have `reviewed_at` and `valid_from` of `2026-09-27T17:42+02:00`
 
 ## Explicit unmapped — Tokyo Electron
 
-`8035.T` (Tokyo Electron) is now human-reviewed `EXPLICIT_UNMAPPED`.
+`8035.T` (Tokyo Electron) is human-reviewed `EXPLICIT_UNMAPPED`.
 
 Tokyo Electron documents that export sales are generally yen-denominated and that some sales and expenses are denominated in foreign currencies, while the profit impact of exchange-rate fluctuations is generally negligible unless fluctuations are extreme. The reviewed evidence does not establish a sufficiently specific EUR/USD relationship or another defensible relationship to the current Phase-8F factor catalog. The subject therefore remains in the frozen denominator without a forced factor mapping.
 
 This is not a claim that Tokyo Electron has no macro exposure. It is a narrower statement: under the current Phase-8F factor definitions and documentary standard, no mapping is accepted from the reviewed evidence.
 
-## Final accounting state
+## Correct accounting after B18
 
-- Active reviewed mappings: **206/207**.
-- Explicit unmapped: **1/207** (`8035.T`).
-- Unaccounted subjects: **0**.
-- Total frozen-domain accounting: **207/207**.
-- B18 is overlay order 18.
-- Seven earlier registered re-reviews remain audit-only and are not double-counted.
+- Historical mapping intervals in the repaired effective map: **195**.
+- Active mapped subjects: **189/207**.
+- Superseded historical intervals: **6**.
+- Explicit-unmapped subjects: **1/207** (`8035.T`).
+- Total accounted frozen-domain subjects: **190/207**.
+- Unaccounted subjects: **17**.
+
+The exact 17 unaccounted subjects are:
+`GOT.V`, `LGO`, `SGM.AX`, `LC0A.MU`, `MNSO`, `NOVO-B.CO`, `TME`, `RCAT`, `ACB.TO`, `SMX`, `NPN.JO`, `SE`, `GRAB`, `SPCX`, `OCGN`, `DRO.AX`, `1211.HK`.
+
+## Resolution/audit state
+
+- 18 identical re-reviews are registered audit-only and are not double-counted.
+- 6 conflicting later human reviews are represented as versioned supersessions rather than retroactive rewrites.
 - No market outcomes were read or used.
 - No market direction, exposure sign, weights or thresholds were assigned.
 - No subject was mapped from sector, domicile, ticker, listing currency or assumed business model alone.
-- Full domain accounting does not by itself freeze Phase 8F; the separate real macro-ledger and completion requirements remain in force.
+- Phase 8F remains unfrozen. The remaining 17 subjects must be mapped or explicitly-unmapped through the same documentary/human-review process, and the separate macro-ledger/completion requirements must also pass.
+- CI polling remains deferred until the complete 207-subject accounting is finished.
