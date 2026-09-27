@@ -37,32 +37,44 @@ def test_b15_documentary_candidate_batch_passes_gate_and_has_five_distinct_subje
     assert all(row["promotion_allowed"] is False for row in b15["candidates"])
 
 
-def test_b15_candidates_are_currently_unaccounted_and_do_not_modify_effective_map():
+def test_b15_subjects_are_active_in_effective_map():
     effective = load_effective_exposure_map(root=ROOT)
-    active_subjects = {row["subject_id"] for row in effective["mappings"]}
-    assert len(effective["mappings"]) == 171
-    assert active_subjects.isdisjoint(B15_SUBJECTS)
+    by_subject = {row["subject_id"]: row for row in effective["mappings"]}
+    assert len(effective["mappings"]) == 176
+    assert B15_SUBJECTS <= set(by_subject)
+    assert by_subject["SYM"]["factor_id"] == "rates_policy"
+    assert by_subject["SYM"]["relationship_class"] == "OTHER_DOCUMENTED"
+    assert by_subject["USAR"]["factor_id"] == "rates_policy"
+    assert by_subject["USAR"]["relationship_class"] == "FINANCING_SENSITIVITY"
+    assert by_subject["NESN.SW"]["relationship_class"] == "FINANCING_SENSITIVITY"
+    assert by_subject["TOM.OL"]["factor_id"] == "fx"
+    assert by_subject["TOM.OL"]["relationship_class"] == "CURRENCY_TRANSLATION"
+    assert by_subject["UMI.BR"]["factor_id"] == "fx"
+    assert by_subject["UMI.BR"]["relationship_class"] == "OTHER_DOCUMENTED"
+    assert all(by_subject[subject]["reviewed_at"] == "2026-09-27T13:46:34+02:00" for subject in B15_SUBJECTS)
+    assert all(by_subject[subject]["valid_from"] == "2026-09-27T13:46:34+02:00" for subject in B15_SUBJECTS)
 
 
-def test_b15_review_artifact_is_explicitly_pending_and_empty():
+def test_b15_review_artifact_is_explicit_human_review():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b15_v1.json")
-    assert review["status"] == "PENDING_HUMAN_REVIEW"
-    assert review["reviewed_at"] is None
-    assert review["reviewer_role"] is None
-    assert review["decisions"] == []
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewer_role"] == "HUMAN_REVIEWER"
+    assert review["reviewed_at"] == "2026-09-27T13:46:34+02:00"
+    assert len(review["decisions"]) == 5
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
     assert all(value is False for value in review["guards"].values())
 
 
-def test_b15_pending_review_replay_is_idempotent_and_keeps_171_active_mappings():
+def test_b15_review_replay_is_idempotent_against_effective_176_mapping_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b15_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b15_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
+    assert len(effective["mappings"]) == 176
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
-    assert result["status"] == "AWAITING_HUMAN_REVIEW"
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 0
+    assert result["already_applied_count"] == 5
     assert result["redundant_already_applied_count"] == 0
-    assert result["rejected_count"] == 0
-    assert result["deferred_count"] == 0
-    assert result["exposure_map"] == effective
-    assert len(result["exposure_map"]["mappings"]) == 171
+    assert len(result["exposure_map"]["mappings"]) == 176
