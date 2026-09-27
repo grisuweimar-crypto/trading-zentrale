@@ -104,9 +104,9 @@ def test_committed_domain_is_pinned_to_pre8f_universe_blob_and_tracks_effective_
     result = build_exposure_domain_audit(domain_config=domain, exposure_map=exposure, universe_csv_text=universe_text)
     assert result["domain_status"] == "FROZEN_OUTCOME_BLIND_PRE8F_ACTIVE_STOCK_UNIVERSE"
     assert result["domain_subject_count"] == 207
-    assert result["mapped_subject_count"] == 149
+    assert result["mapped_subject_count"] == 160
     assert result["explicit_unmapped_subject_count"] == 0
-    assert result["unaccounted_subject_count"] == 58
+    assert result["unaccounted_subject_count"] == 47
     assert result["source_snapshot"]["source_ref"] == "feef4e572283613739b2f24cf42b837ff68a1508"
     assert result["source_snapshot"]["git_blob_sha"] == "2c6efec912ea7478096f77dc8f88d7eed2a0581b"
     assert result["guards"]["domain_pinned_to_pre8f_source_blob"] is True
