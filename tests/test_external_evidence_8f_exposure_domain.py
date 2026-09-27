@@ -14,6 +14,25 @@ from scanner.research.external_evidence.exposure_map_store_8f import load_effect
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_UNACCOUNTED = {
+    "GOT.V",
+    "LGO",
+    "SGM.AX",
+    "LC0A.MU",
+    "MNSO",
+    "NOVO-B.CO",
+    "TME",
+    "RCAT",
+    "ACB.TO",
+    "SMX",
+    "NPN.JO",
+    "SE",
+    "GRAB",
+    "SPCX",
+    "OCGN",
+    "DRO.AX",
+    "1211.HK",
+}
 
 
 def _mapping(subject_id: str = "AAA") -> dict:
@@ -120,7 +139,8 @@ def test_committed_domain_remains_open_after_repair_until_all_subjects_are_accou
     assert result["mapped_subject_count"] == 189
     assert result["explicit_unmapped_subject_count"] == 1
     assert result["unaccounted_subject_count"] == 17
-    assert len(result["unaccounted_subject_ids"]) == 17
+    assert set(result["unaccounted_subject_ids"]) == EXPECTED_UNACCOUNTED
+    assert len(result["unaccounted_subject_ids"]) == len(EXPECTED_UNACCOUNTED) == 17
     assert domain["explicit_unmapped"][0]["subject_id"] == "8035.T"
     assert domain["explicit_unmapped"][0]["reviewed_at"] == "2026-09-27T17:42+02:00"
     assert result["source_snapshot"]["source_ref"] == "feef4e572283613739b2f24cf42b837ff68a1508"
