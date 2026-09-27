@@ -6,7 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
+from scanner.research.external_evidence.exposure_map_store_8f import (
+    load_effective_exposure_map,
+    load_registered_redundant_mapping_ids,
+)
 from scanner.research.external_evidence.exposure_mapping_review_8f import (
     ExposureMappingReview8FError,
     apply_human_mapping_review,
@@ -62,6 +65,7 @@ def test_empty_review_decisions_do_not_modify_exposure_map():
     assert result["status"] == "AWAITING_HUMAN_REVIEW"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 0
+    assert result["redundant_already_applied_count"] == 0
     assert result["exposure_map"]["mappings"] == []
 
 
@@ -88,16 +92,24 @@ def test_committed_reviews_are_explicit_human_approvals():
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b11_v1.json", 11)
 
 
-def _assert_replay(candidate_path: str, review_path: str, expected_applied: int) -> None:
+def _assert_replay(candidate_path: str, review_path: str, expected_applied: int, expected_redundant: int = 0) -> None:
+    candidate_config = _load(candidate_path)
+    review_config = _load(review_path)
+    effective = load_effective_exposure_map(root=ROOT)
+    before_count = len(effective["mappings"])
+    corrections = load_registered_redundant_mapping_ids(root=ROOT)
+    batch_id = str(candidate_config.get("candidate_batch_id") or "")
     result = apply_human_mapping_review(
-        candidate_config=_load(candidate_path),
-        review_config=_load(review_path),
-        exposure_map=load_effective_exposure_map(root=ROOT),
+        candidate_config=candidate_config,
+        review_config=review_config,
+        exposure_map=effective,
+        redundant_mapping_ids=set(corrections.get(batch_id, set())),
     )
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == expected_applied
-    assert len(result["exposure_map"]["mappings"]) == 160
+    assert result["redundant_already_applied_count"] == expected_redundant
+    assert len(result["exposure_map"]["mappings"]) == before_count
 
 
 def test_committed_b1_through_b11_review_replay_is_idempotent():
@@ -108,7 +120,7 @@ def test_committed_b1_through_b11_review_replay_is_idempotent():
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b5_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b5_v1.json", 20)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b6_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b6_v1.json", 14)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b7_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b7_v1.json", 14)
-    _assert_replay("configs/external_evidence_8f_mapping_candidates_b8_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b8_v1.json", 15)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b8_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b8_v1.json", 15, 6)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b9_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b9_v1.json", 12)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b10_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b10_v1.json", 14)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b11_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b11_v1.json", 11)
@@ -137,6 +149,14 @@ def test_approval_requires_source_verification():
     review["decisions"][0]["source_verified"] = False
     with pytest.raises(ExposureMappingReview8FError, match="source_verified=true"):
         apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=exposure)
+
+
+def test_unregistered_conflicting_rereview_remains_fail_closed():
+    candidates = _load("configs/external_evidence_8f_mapping_candidates_b8_v1.json")
+    review = _load("configs/external_evidence_8f_mapping_review_decisions_b8_v1.json")
+    base = _load("configs/external_evidence_8f_exposure_map_v1.json")
+    with pytest.raises(ExposureMappingReview8FError, match="mapping id already exists with different content"):
+        apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=base)
 
 
 def test_reject_and_defer_never_promote():
