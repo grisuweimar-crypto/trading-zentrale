@@ -71,6 +71,16 @@ jobs:
               --output "/tmp/external_evidence_8f_mapping_review_b${b}.json"
           done
 
+      - name: Validate B18 final documentary mappings without promotion
+        run: |
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py \
+            --candidates configs/external_evidence_8f_mapping_candidates_b18_v1.json \
+            --output /tmp/external_evidence_8f_mapping_candidate_gate_b18.json
+          python scripts/run_external_evidence_8f_mapping_review.py \
+            --candidates configs/external_evidence_8f_mapping_candidates_b18_v1.json \
+            --review configs/external_evidence_8f_mapping_review_decisions_b18_v1.json \
+            --output /tmp/external_evidence_8f_mapping_review_b18_pending.json
+
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -79,9 +89,12 @@ jobs:
 # Research-domain membership is frozen independently of mappings and outcomes.
 # Documentary candidate mappings cannot enter the effective exposure map automatically.
 # B1-B4 remain materialized in the 60-mapping base map; B5-B17 are append-only human-reviewed overlays.
+# B18 is pending: six documentary mapping candidates plus one pending explicit-unmapped proposal for 8035.T.
+# The effective map remains at 200 unique reviewed mappings while B18 is pending; 7 frozen-domain subjects remain unaccounted.
+# A full B18 human approval would produce 206 mapped + 1 explicit-unmapped = 207/207 accounted, without forcing 8035.T into a weak factor relationship.
 # Seven explicitly registered later re-reviews (six in B8, one SHOP/fx in B10) preserve their audit trail but are not double-counted.
-# The effective map contains 200 unique reviewed mappings after B17; 7 frozen-domain subjects remain unaccounted.
 # B1-B17 human-review replay must be idempotent against the effective map, including registered redundant re-reviews.
+# B18 pending mapping replay must be non-mutating; the explicit-unmapped proposal also remains non-active pending review.
 # Unregistered conflicting duplicates remain fail-closed.
 # No backdating, market direction, signed exposure, weights, thresholds, outcome research,
 # cross-factor research, Phase-7 integration or production external-evidence enablement is allowed here.
