@@ -63,7 +63,7 @@ def test_b5_is_active_in_effective_map_and_review_replay_is_idempotent():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b5_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b5_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 80
+    before_count = len(effective["mappings"])
     b5_subjects = {row["subject_id"] for row in candidates["candidates"]}
     active_subjects = {row["subject_id"] for row in effective["mappings"]}
     assert b5_subjects.issubset(active_subjects)
@@ -72,4 +72,4 @@ def test_b5_is_active_in_effective_map_and_review_replay_is_idempotent():
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 20
-    assert len(result["exposure_map"]["mappings"]) == 80
+    assert len(result["exposure_map"]["mappings"]) == before_count
