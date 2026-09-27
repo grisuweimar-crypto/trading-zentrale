@@ -81,6 +81,19 @@ def test_unaccounted_subject_remains_visible_not_dropped():
     assert result["unaccounted_subject_count"] == 1
 
 
+def test_superseded_interval_does_not_count_as_current_domain_coverage():
+    exposure = copy.deepcopy(_empty_exposure())
+    superseded = _mapping("AAA")
+    superseded["review_status"] = "SUPERSEDED"
+    superseded["valid_to"] = "2026-09-27T11:00:00+00:00"
+    exposure["mappings"] = [superseded]
+    domain = _domain()
+    domain["explicit_unmapped"] = []
+    result = build_exposure_domain_audit(domain_config=domain, exposure_map=exposure)
+    assert result["mapped_subject_count"] == 0
+    assert result["unaccounted_subject_ids"] == ["AAA", "BBB"]
+
+
 def test_subject_cannot_be_both_mapped_and_explicit_unmapped():
     exposure = copy.deepcopy(_empty_exposure())
     exposure["mappings"] = [_mapping("AAA")]
@@ -97,16 +110,17 @@ def test_domain_rule_cannot_select_subjects_from_mapping_coverage():
         build_exposure_domain_audit(domain_config=domain, exposure_map=_empty_exposure())
 
 
-def test_committed_domain_is_fully_accounted_after_b18():
+def test_committed_domain_remains_open_after_repair_until_all_subjects_are_accounted():
     domain = json.loads((ROOT / "configs/external_evidence_8f_research_domain_v1.json").read_text(encoding="utf-8"))
     exposure = load_effective_exposure_map(root=ROOT)
     universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8")
     result = build_exposure_domain_audit(domain_config=domain, exposure_map=exposure, universe_csv_text=universe_text)
     assert result["domain_status"] == "FROZEN_OUTCOME_BLIND_PRE8F_ACTIVE_STOCK_UNIVERSE"
     assert result["domain_subject_count"] == 207
-    assert result["mapped_subject_count"] == 206
+    assert result["mapped_subject_count"] == 189
     assert result["explicit_unmapped_subject_count"] == 1
-    assert result["unaccounted_subject_count"] == 0
+    assert result["unaccounted_subject_count"] == 17
+    assert len(result["unaccounted_subject_ids"]) == 17
     assert domain["explicit_unmapped"][0]["subject_id"] == "8035.T"
     assert domain["explicit_unmapped"][0]["reviewed_at"] == "2026-09-27T17:42+02:00"
     assert result["source_snapshot"]["source_ref"] == "feef4e572283613739b2f24cf42b837ff68a1508"
