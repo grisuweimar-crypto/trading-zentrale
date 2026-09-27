@@ -25,18 +25,18 @@ def _load(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
-def test_committed_overlay_registry_materializes_b5_through_b17_to_two_hundred_effective_mappings():
+def test_committed_overlay_registry_materializes_b5_through_b18_to_two_hundred_six_effective_mappings():
     base = _load("configs/external_evidence_8f_exposure_map_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     audit = build_effective_exposure_map_audit(root=ROOT)
 
     assert len(base["mappings"]) == 60
-    assert len(effective["mappings"]) == 200
+    assert len(effective["mappings"]) == 206
     assert audit["status"] == "PASS_EFFECTIVE_EXPOSURE_MAP_COMPOSITION"
     assert audit["base_mapping_count"] == 60
-    assert audit["overlay_count"] == 13
+    assert audit["overlay_count"] == 14
     assert audit["redundant_review_correction_count"] == 7
-    assert audit["effective_mapping_count"] == 200
+    assert audit["effective_mapping_count"] == 206
     assert audit["market_outcomes_read"] is False
     assert audit["automatic_promotion_used"] is False
     assert audit["final_freeze_materialization_required"] is True
@@ -61,6 +61,7 @@ def test_committed_overlay_registry_materializes_b5_through_b17_to_two_hundred_e
         "GOOGL", "META", "MSFT", "MU", "ORCL", "PLTR",
         "1810.HK", "9880.HK", "CGNX", "000660.KS", "005930.KS",
         "0700.HK", "IFX.DE", "SAP.DE", "YASKY", "6506.T",
+        "6861.T", "FANUY", "9888.HK", "BIDU", "DVLT", "JD",
     }:
         assert subject in active_subjects
 
@@ -68,7 +69,7 @@ def test_committed_overlay_registry_materializes_b5_through_b17_to_two_hundred_e
 def test_effective_map_has_unique_active_subject_factor_pairs():
     effective = load_effective_exposure_map(root=ROOT)
     pairs = [(row["subject_id"], row["factor_id"]) for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
-    assert len(pairs) == len(set(pairs)) == 200
+    assert len(pairs) == len(set(pairs)) == 206
 
 
 def test_overlay_registry_guards_fail_closed():
