@@ -40,32 +40,44 @@ def test_b17_documentary_candidate_batch_passes_gate_and_has_ten_distinct_subjec
     assert all(row["promotion_allowed"] is False for row in b17["candidates"])
 
 
-def test_b17_candidates_are_currently_unaccounted_and_do_not_modify_effective_map():
+def test_b17_subjects_are_active_in_effective_map():
     effective = load_effective_exposure_map(root=ROOT)
-    active_subjects = {row["subject_id"] for row in effective["mappings"]}
-    assert len(effective["mappings"]) == 190
-    assert active_subjects.isdisjoint(B17_SUBJECTS)
+    by_subject = {row["subject_id"]: row for row in effective["mappings"]}
+    assert len(effective["mappings"]) == 200
+    assert B17_SUBJECTS <= set(by_subject)
+    for subject in {"1810.HK", "9880.HK", "000660.KS", "0700.HK"}:
+        assert by_subject[subject]["factor_id"] == "rates_policy"
+        assert by_subject[subject]["relationship_class"] == "FINANCING_SENSITIVITY"
+    for subject in {"CGNX", "SAP.DE"}:
+        assert by_subject[subject]["factor_id"] == "fx"
+        assert by_subject[subject]["relationship_class"] == "CURRENCY_TRANSLATION"
+    for subject in {"005930.KS", "IFX.DE", "YASKY", "6506.T"}:
+        assert by_subject[subject]["factor_id"] == "fx"
+        assert by_subject[subject]["relationship_class"] == "OTHER_DOCUMENTED"
+    assert all(by_subject[subject]["reviewed_at"] == "2026-09-27T16:38+02:00" for subject in B17_SUBJECTS)
+    assert all(by_subject[subject]["valid_from"] == "2026-09-27T16:38+02:00" for subject in B17_SUBJECTS)
 
 
-def test_b17_review_artifact_is_explicitly_pending_and_empty():
+def test_b17_review_artifact_is_explicit_human_review():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b17_v1.json")
-    assert review["status"] == "PENDING_HUMAN_REVIEW"
-    assert review["reviewed_at"] is None
-    assert review["reviewer_role"] is None
-    assert review["decisions"] == []
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewer_role"] == "HUMAN_REVIEWER"
+    assert review["reviewed_at"] == "2026-09-27T16:38+02:00"
+    assert len(review["decisions"]) == 10
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
     assert all(value is False for value in review["guards"].values())
 
 
-def test_b17_pending_review_replay_is_non_mutating_and_keeps_190_active_mappings():
+def test_b17_review_replay_is_idempotent_against_effective_200_mapping_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b17_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b17_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
+    assert len(effective["mappings"]) == 200
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
-    assert result["status"] == "AWAITING_HUMAN_REVIEW"
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["already_applied_count"] == 0
+    assert result["already_applied_count"] == 10
     assert result["redundant_already_applied_count"] == 0
-    assert result["rejected_count"] == 0
-    assert result["deferred_count"] == 0
-    assert result["exposure_map"] == effective
-    assert len(result["exposure_map"]["mappings"]) == 190
+    assert len(result["exposure_map"]["mappings"]) == 200
