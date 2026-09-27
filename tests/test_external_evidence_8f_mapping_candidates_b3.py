@@ -71,11 +71,11 @@ def test_b3_review_artifact_contains_twenty_explicit_human_approvals():
     assert all(value is False for value in review["guards"].values())
 
 
-def test_committed_b3_human_review_is_idempotent_on_active_forty_mapping_map():
+def test_committed_b3_human_review_is_idempotent_on_materialized_sixty_mapping_base():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b3_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b3_v1.json")
     exposure = _load("configs/external_evidence_8f_exposure_map_v1.json")
-    assert len(exposure["mappings"]) == 40
+    assert len(exposure["mappings"]) == 60
     result = apply_human_mapping_review(
         candidate_config=candidates,
         review_config=review,
@@ -84,4 +84,4 @@ def test_committed_b3_human_review_is_idempotent_on_active_forty_mapping_map():
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 20
-    assert len(result["exposure_map"]["mappings"]) == 40
+    assert len(result["exposure_map"]["mappings"]) == 60
