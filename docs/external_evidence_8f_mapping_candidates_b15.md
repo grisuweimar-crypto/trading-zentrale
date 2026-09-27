@@ -1,14 +1,16 @@
 # Phase 8F — Mapping Candidate Batch B15
 
-Status: `PENDING_HUMAN_REVIEW`
+Status: `HUMAN_REVIEWED_ACTIVE`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B15`
 
-B15 starts from the reviewed/active B1-B14 state: 171 unique active mappings across the frozen 207-subject domain, with 36 subjects still unaccounted. B15 contains five documentary candidates selected only where the relationship to an already enabled Phase-8F factor is explicit in current issuer or regulatory documentation.
+Reviewed at / valid from: `2026-09-27T13:46:34+02:00`
 
-B15 is **not active**. It does not modify the effective exposure map, add an overlay, set `reviewed_at`, or assign `valid_from`. The effective state remains 171/207 mapped and 36 unaccounted until explicit human review.
+B15 started from the reviewed/active B1-B14 state of 171 unique active mappings across the frozen 207-subject domain, with 36 subjects still unaccounted. The five documentary candidates were explicitly human-reviewed and approved. B15 is now registered as the eleventh append-only human-reviewed overlay.
 
-## Candidate subjects
+After B15, the effective exposure map contains **176 unique reviewed mappings across the frozen 207-subject domain**, leaving **31 subjects unaccounted**. The seven explicitly registered later re-reviews from B8/B10 remain audit-only and are not double-counted.
+
+## Active subjects
 
 | Subject | Factor | Relationship class | Documentary basis |
 | --- | --- | --- | --- |
@@ -26,15 +28,13 @@ B15 is **not active**. It does not modify the effective exposure map, add an ove
 ## Review notes
 
 - `SYM` remains `OTHER_DOCUMENTED`, not `FINANCING_SENSITIVITY`: the filing documents treasury/investment rate exposure and explicitly says the short-duration position was not materially exposed to rate changes.
-- `USAR` is `FINANCING_SENSITIVITY`: the Serra Verde transaction closed on 3 September 2026, and a subsequent USAR filing states that the surviving subsidiary assumed the DFC financing and that the Initial Loan is priced at Term SOFR plus 4.0%. The candidate therefore uses post-close evidence rather than projecting pre-close target debt onto USAR.
-- `NESN.SW` is `FINANCING_SENSITIVITY` because the issuer directly quantifies floating-rate debt sensitivity after derivatives.
+- `USAR` is `FINANCING_SENSITIVITY`: the Serra Verde transaction closed on 3 September 2026, and a subsequent USAR filing states that the surviving subsidiary assumed the DFC financing and that the Initial Loan is priced at Term SOFR plus 4.0%. The mapping therefore uses post-close evidence rather than projecting pre-close target debt onto USAR.
+- `NESN.SW` is `FINANCING_SENSITIVITY` because the issuer directly quantifies interest-rate sensitivity on financial debt after derivatives.
 - `TOM.OL` is `CURRENCY_TRANSLATION` because EUR is the presentation currency and the issuer explicitly identifies EUR/USD as the principal driver of currency gains/losses in the financial statements.
-- `UMI.BR` stays conservatively at `OTHER_DOCUMENTED`: the source directly documents EUR/USD structural exposure and hedging, while also noting unhedged translation effects; the candidate does not infer a signed FX direction.
-- No candidate was selected from sector/name intuition alone. Several remaining Asian/local-rate cases continue to be deferred where documentary exposure is primarily to local benchmarks or currencies not represented by the current Phase-8F factor semantics.
+- `UMI.BR` remains conservatively `OTHER_DOCUMENTED`: the source directly documents EUR/USD structural exposure and hedging, while also noting unhedged translation effects; no signed FX direction is inferred.
+- No mapping was selected from sector/name intuition alone. Several remaining Asian/local-rate cases continue to be deferred where documentary exposure is primarily to local benchmarks or currencies not represented by the current Phase-8F factor semantics.
 - Exploration/project names without an explicit economic price linkage were not promoted merely because their deposits contain a commodity covered by the factor catalog.
 - No market outcomes, market direction, signed exposure, weights, thresholds or Phase-7 decision outputs were used.
-- No backdating is permitted. If a B15 candidate is later approved, its `valid_from` must be at or after the future human `reviewed_at` timestamp.
+- All five mappings are usable **no earlier than `2026-09-27T13:46:34+02:00`**. No backdating is permitted.
 
-If all five B15 candidates are later explicitly approved, effective mapped coverage would become 176/207 and the unaccounted set would fall from 36 to 31. Until then, those figures remain 171/207 and 36.
-
-Machine-readable evidence references, summaries and canonical metadata fingerprints are frozen in `configs/external_evidence_8f_mapping_candidates_b15_v1.json`. Human decisions remain empty in `configs/external_evidence_8f_mapping_review_decisions_b15_v1.json` pending explicit review.
+Machine-readable evidence references, summaries and canonical metadata fingerprints remain frozen in `configs/external_evidence_8f_mapping_candidates_b15_v1.json`. The explicit human decisions are stored separately in `configs/external_evidence_8f_mapping_review_decisions_b15_v1.json`.
