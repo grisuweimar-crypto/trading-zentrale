@@ -1,0 +1,32 @@
+{
+  "schema_version": "external_evidence_8f_mapping_candidates_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "DOCUMENTARY_CANDIDATES_PENDING_HUMAN_REVIEW",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B18",
+  "created_date": "2026-09-27",
+  "promotion_rules": {
+    "candidate_may_enter_exposure_map_without_human_review": false,
+    "candidate_may_be_backdated_before_review": false,
+    "sector_or_name_alone_is_sufficient_evidence": false,
+    "market_outcomes_may_be_used": false,
+    "direction_or_signed_exposure_may_be_assigned": false,
+    "weight_or_threshold_may_be_selected": false,
+    "reviewer_must_verify_source_and_relationship_class": true,
+    "approved_mapping_valid_from_must_be_at_or_after_reviewed_at": true
+  },
+  "candidates": [
+    {"candidate_id":"MAPCAND:6861.T:fx:1","subject_id":"6861.T","factor_id":"fx","relationship_class":"OTHER_DOCUMENTED","evidence_type":"ISSUER_FINANCIAL_RESULTS","evidence_reference":"https://www.keyence.co.jp/pdf/FinancialResults_202510_en.pdf","evidence_summary":"KEYENCE's FY2025 first-half financial-results materials disclose actual USD/JPY and EUR/JPY rates, quantify the foreign-exchange impact on sales and operating income, and quantify operating-income sensitivity to both USD and EUR moves, directly documenting multi-currency FX exposure that includes both currencies represented by the Phase-8F EUR/USD factor.","evidence_record_sha256":"4b283bdb61baa0ce9c652a2045a0943733b8391e2c2b3aa8d522fbce892ea303","candidate_status":"PENDING_HUMAN_REVIEW","human_reviewed":false,"promotion_allowed":false},
+    {"candidate_id":"MAPCAND:FANUY:fx:1","subject_id":"FANUY","factor_id":"fx","relationship_class":"OTHER_DOCUMENTED","evidence_type":"ISSUER_FINANCIAL_RESULTS","evidence_reference":"https://www.fanuc.co.jp/en/ir/announce/pdf/2026/reference202606_e.pdf","evidence_summary":"FANUC's July 2026 financial-results materials report actual and forecast Yen/USD and Yen/EUR exchange rates, while the issuer's FY2025 results identify foreign-exchange fluctuations as an operating uncertainty, directly documenting concurrent USD- and EUR-linked FX exposure.","evidence_record_sha256":"4988be191cd299b1fb7a4fd9e484a9b61edf9ad7a09834a79b8d2abe4bb397c5","candidate_status":"PENDING_HUMAN_REVIEW","human_reviewed":false,"promotion_allowed":false},
+    {"candidate_id":"MAPCAND:9888.HK:rates_policy:1","subject_id":"9888.HK","factor_id":"rates_policy","relationship_class":"OTHER_DOCUMENTED","evidence_type":"SEC_20F","evidence_reference":"https://www.sec.gov/Archives/edgar/data/1329099/000119312526109289/d38065d20f.htm","evidence_summary":"Baidu's 2025 Form 20-F reports RMB90.7 billion of short-term investments plus substantial long-term investments and time deposits, alongside outstanding interest-bearing loans; the filing documents these interest-earning and borrowing positions as material balance-sheet items, supporting a conservative documented rates-policy relationship without assigning direction or magnitude.","evidence_record_sha256":"fc8aec9b72de589ef0d7241fb2844a993f5ff663419cf474958eb3bce083a881","candidate_status":"PENDING_HUMAN_REVIEW","human_reviewed":false,"promotion_allowed":false},
+    {"candidate_id":"MAPCAND:BIDU:rates_policy:1","subject_id":"BIDU","factor_id":"rates_policy","relationship_class":"OTHER_DOCUMENTED","evidence_type":"SEC_20F","evidence_reference":"https://www.sec.gov/Archives/edgar/data/1329099/000119312526109289/d38065d20f.htm","evidence_summary":"Baidu's 2025 Form 20-F reports RMB90.7 billion of short-term investments plus substantial long-term investments and time deposits, alongside outstanding interest-bearing loans; the filing documents these interest-earning and borrowing positions as material balance-sheet items, supporting a conservative documented rates-policy relationship without assigning direction or magnitude.","evidence_record_sha256":"de0822e8caa081833da9e5795022db3f9b21a6b47b9b37bf8181c70ae284ad65","candidate_status":"PENDING_HUMAN_REVIEW","human_reviewed":false,"promotion_allowed":false},
+    {"candidate_id":"MAPCAND:DVLT:rates_policy:1","subject_id":"DVLT","factor_id":"rates_policy","relationship_class":"REVENUE_LINK","evidence_type":"SEC_10K","evidence_reference":"https://www.sec.gov/Archives/edgar/data/1682149/000110465926031280/dvlt-20251231x10k.htm","evidence_summary":"Datavault AI's 2025 Form 10-K states that elevated interest rates may dampen economic growth and cause companies to moderate information-technology spending, which could negatively affect demand for its products and solutions, directly documenting a rates-linked revenue-demand channel.","evidence_record_sha256":"c71633a3b0202535c058c47e0eb751d870e974e963ffec75d3fb3d8610937b72","candidate_status":"PENDING_HUMAN_REVIEW","human_reviewed":false,"promotion_allowed":false},
+    {"candidate_id":"MAPCAND:JD:rates_policy:1","subject_id":"JD","factor_id":"rates_policy","relationship_class":"FINANCING_SENSITIVITY","evidence_type":"SEC_20F","evidence_reference":"https://www.sec.gov/Archives/edgar/data/1549802/000119312526157870/d53690d20f.htm","evidence_summary":"JD.com's 2025 Form 20-F states that JD Property drew RMB8.286 billion under a term loan priced at 65 basis points below the Loan Prime Rate with scheduled repayments through December 2028, directly documenting ongoing benchmark-linked financing sensitivity.","evidence_record_sha256":"d9caae0d8886b6517fb1f346636dd34cab3a7ba3003d5faa73e1fa79cbf9bd63","candidate_status":"PENDING_HUMAN_REVIEW","human_reviewed":false,"promotion_allowed":false}
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "candidate_count": 6,
+    "active_exposure_map_modified": false,
+    "human_review_claimed": false,
+    "automatic_sector_mapping_promoted": false
+  }
+}
