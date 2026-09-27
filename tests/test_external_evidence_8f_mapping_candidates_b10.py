@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
+from scanner.research.external_evidence.exposure_map_store_8f import (
+    load_effective_exposure_map,
+    load_registered_redundant_mapping_ids,
+)
 from scanner.research.external_evidence.exposure_mapping_candidates_8f import validate_mapping_candidates
 from scanner.research.external_evidence.exposure_mapping_review_8f import apply_human_mapping_review
 from scanner.research.external_evidence.exposure_review_queue_8f import build_exposure_review_queue
@@ -36,12 +39,14 @@ def test_b10_documentary_candidate_batch_passes_gate_and_has_fourteen_distinct_s
     assert all(row["promotion_allowed"] is False for row in b10["candidates"])
 
 
-def test_b10_subjects_are_active_in_current_effective_map():
+def test_b10_subjects_are_active_in_current_effective_map_and_shop_is_explicit_redundant_rereview():
     b10 = _load("configs/external_evidence_8f_mapping_candidates_b10_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     active_subjects = {row["subject_id"] for row in effective["mappings"]}
     b10_subjects = {row["subject_id"] for row in b10["candidates"]}
     assert b10_subjects <= active_subjects
+    corrections = load_registered_redundant_mapping_ids(root=ROOT)
+    assert corrections["8F_MAPPING_CANDIDATES_2026-09-27_B10"] == {"MAP:SHOP:fx:1"}
 
 
 def test_b10_review_artifact_is_explicitly_human_reviewed():
@@ -60,8 +65,15 @@ def test_b10_review_replay_is_idempotent_against_current_effective_map():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b10_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     before_count = len(effective["mappings"])
-    result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
+    corrections = load_registered_redundant_mapping_ids(root=ROOT)
+    result = apply_human_mapping_review(
+        candidate_config=candidates,
+        review_config=review,
+        exposure_map=effective,
+        redundant_mapping_ids=set(corrections["8F_MAPPING_CANDIDATES_2026-09-27_B10"]),
+    )
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 14
+    assert result["redundant_already_applied_count"] == 1
     assert len(result["exposure_map"]["mappings"]) == before_count
