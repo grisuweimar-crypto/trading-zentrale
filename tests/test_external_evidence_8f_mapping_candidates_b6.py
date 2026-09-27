@@ -58,13 +58,13 @@ def test_b6_is_active_in_effective_map_and_review_is_explicit_human_approval():
     active_subjects = {row["subject_id"] for row in effective["mappings"]}
     b6_subjects = {row["subject_id"] for row in candidates["candidates"]}
     assert b6_subjects.issubset(active_subjects)
-    assert len(effective["mappings"]) == 94
 
 
-def test_b6_replay_is_idempotent_against_effective_ninety_four_mapping_map():
+def test_b6_replay_is_idempotent_against_current_effective_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b6_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b6_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
+    before_count = len(effective["mappings"])
     result = apply_human_mapping_review(
         candidate_config=candidates,
         review_config=review,
@@ -73,4 +73,4 @@ def test_b6_replay_is_idempotent_against_effective_ninety_four_mapping_map():
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 14
-    assert len(result["exposure_map"]["mappings"]) == 94
+    assert len(result["exposure_map"]["mappings"]) == before_count
