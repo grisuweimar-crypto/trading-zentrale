@@ -4,7 +4,10 @@ import argparse
 import json
 from pathlib import Path
 
-from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
+from scanner.research.external_evidence.exposure_map_store_8f import (
+    load_effective_exposure_map,
+    load_registered_redundant_mapping_ids,
+)
 from scanner.research.external_evidence.exposure_mapping_review_8f import apply_human_mapping_review
 
 
@@ -35,10 +38,19 @@ def main() -> int:
     parser.add_argument("--write-exposure-map", action="store_true")
     args = parser.parse_args()
 
+    candidate_config = _load(args.candidates)
+    review_config = _load(args.review)
+    redundant_by_batch = load_registered_redundant_mapping_ids(
+        root=ROOT,
+        registry_path=args.overlay_registry,
+    )
+    batch_id = str(candidate_config.get("candidate_batch_id") or "")
+
     result = apply_human_mapping_review(
-        candidate_config=_load(args.candidates),
-        review_config=_load(args.review),
+        candidate_config=candidate_config,
+        review_config=review_config,
         exposure_map=_load_exposure(args.exposure_map, args.overlay_registry),
+        redundant_mapping_ids=set(redundant_by_batch.get(batch_id, set())),
     )
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
