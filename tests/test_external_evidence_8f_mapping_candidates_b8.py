@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scanner.research.external_evidence.exposure_map_store_8f import load_effective_exposure_map
+from scanner.research.external_evidence.exposure_map_store_8f import (
+    load_effective_exposure_map,
+    load_registered_redundant_mapping_ids,
+)
 from scanner.research.external_evidence.exposure_mapping_candidates_8f import validate_mapping_candidates
 from scanner.research.external_evidence.exposure_mapping_review_8f import apply_human_mapping_review
 from scanner.research.external_evidence.exposure_review_queue_8f import build_exposure_review_queue
@@ -36,13 +39,24 @@ def test_b8_documentary_candidate_batch_passes_gate_and_has_fifteen_distinct_sub
     assert all(row["promotion_allowed"] is False for row in b8["candidates"])
 
 
-def test_b8_subjects_are_active_only_after_explicit_review_overlay():
+def test_b8_subjects_are_active_after_review_and_redundant_correction_resolution():
     b8 = _load("configs/external_evidence_8f_mapping_candidates_b8_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     active_subjects = {row["subject_id"] for row in effective["mappings"]}
     b8_subjects = {row["subject_id"] for row in b8["candidates"]}
-    assert len(active_subjects) == 123
     assert b8_subjects.issubset(active_subjects)
+
+    registered = load_registered_redundant_mapping_ids(root=ROOT)
+    b8_redundant = registered["8F_MAPPING_CANDIDATES_2026-09-27_B8"]
+    assert b8_redundant == {
+        "MAP:ABX.TO:gold:1",
+        "MAP:BTO.TO:gold:1",
+        "MAP:EDR.TO:silver:1",
+        "MAP:EQX.TO:gold:1",
+        "MAP:NEM.AX:gold:1",
+        "MAP:PAAS.TO:silver:1",
+    }
+    assert len(b8["candidates"]) - len(b8_redundant) == 9
 
 
 def test_b8_review_artifact_is_explicit_human_approval():
@@ -56,13 +70,20 @@ def test_b8_review_artifact_is_explicit_human_approval():
     assert all(value is False for value in review["guards"].values())
 
 
-def test_b8_review_replay_is_idempotent_against_effective_123_mapping_map():
+def test_b8_review_replay_is_idempotent_against_current_effective_map_with_registered_corrections():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b8_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b8_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 123
-    result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
+    before_count = len(effective["mappings"])
+    registered = load_registered_redundant_mapping_ids(root=ROOT)
+    result = apply_human_mapping_review(
+        candidate_config=candidates,
+        review_config=review,
+        exposure_map=effective,
+        redundant_mapping_ids=set(registered["8F_MAPPING_CANDIDATES_2026-09-27_B8"]),
+    )
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 15
-    assert len(result["exposure_map"]["mappings"]) == 123
+    assert result["redundant_already_applied_count"] == 6
+    assert len(result["exposure_map"]["mappings"]) == before_count
