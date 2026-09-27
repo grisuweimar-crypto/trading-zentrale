@@ -138,7 +138,7 @@ def test_committed_human_reviewed_effective_exposure_map_passes_foundation_contr
     result = validate_phase8f_contract(macro_config, exposure_map)
     assert result["status"] == "PASS_FOUNDATION_CONTRACT"
     assert result["factor_count"] == 11
-    assert result["mapping_count"] == 200
+    assert result["mapping_count"] == 206
     assert all(row["human_reviewed"] is True for row in exposure_map["mappings"])
     assert result["outcomes_read"] is False
 
