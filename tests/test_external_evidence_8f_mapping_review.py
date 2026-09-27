@@ -122,7 +122,7 @@ def test_committed_b1_through_b11_review_replay_is_idempotent():
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b7_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b7_v1.json", 14)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b8_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b8_v1.json", 15, 6)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b9_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b9_v1.json", 12)
-    _assert_replay("configs/external_evidence_8f_mapping_candidates_b10_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b10_v1.json", 14)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b10_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b10_v1.json", 14, 1)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b11_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b11_v1.json", 11)
 
 
