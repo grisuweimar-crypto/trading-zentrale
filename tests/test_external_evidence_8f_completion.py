@@ -72,7 +72,7 @@ def test_current_phase8f_state_is_blocked_not_falsely_frozen():
     assert "real_macro_ledger:missing" in result["blockers"]
     assert "exposure_domain_audit:missing" in result["blockers"]
     assert not any(value.startswith("reviewed_exposure_mappings:") for value in result["blockers"])
-    assert result["metrics"]["active_reviewed_mapping_count"] == 190
+    assert result["metrics"]["active_reviewed_mapping_count"] == 200
 
 
 def test_completion_passes_only_when_real_requirements_are_represented():
