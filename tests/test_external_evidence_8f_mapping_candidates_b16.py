@@ -43,7 +43,7 @@ def test_b16_documentary_candidate_batch_passes_gate_and_has_fourteen_distinct_s
 def test_b16_subjects_are_active_in_effective_map():
     effective = load_effective_exposure_map(root=ROOT)
     by_subject = {row["subject_id"]: row for row in effective["mappings"]}
-    assert len(effective["mappings"]) == 190
+    assert len(effective["mappings"]) == 200
     assert B16_SUBJECTS <= set(by_subject)
     assert by_subject["ABT"]["relationship_class"] == "CURRENCY_TRANSLATION"
     assert by_subject["ROK"]["relationship_class"] == "CURRENCY_TRANSLATION"
@@ -67,14 +67,14 @@ def test_b16_review_artifact_is_explicit_human_review():
     assert all(value is False for value in review["guards"].values())
 
 
-def test_b16_review_replay_is_idempotent_against_effective_190_mapping_map():
+def test_b16_review_replay_is_idempotent_against_effective_200_mapping_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b16_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b16_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 190
+    assert len(effective["mappings"]) == 200
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 14
     assert result["redundant_already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 190
+    assert len(result["exposure_map"]["mappings"]) == 200
