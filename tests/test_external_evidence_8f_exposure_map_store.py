@@ -25,18 +25,18 @@ def _load(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
-def test_committed_overlay_registry_materializes_b5_through_b15_to_one_hundred_seventy_six_effective_mappings():
+def test_committed_overlay_registry_materializes_b5_through_b16_to_one_hundred_ninety_effective_mappings():
     base = _load("configs/external_evidence_8f_exposure_map_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     audit = build_effective_exposure_map_audit(root=ROOT)
 
     assert len(base["mappings"]) == 60
-    assert len(effective["mappings"]) == 176
+    assert len(effective["mappings"]) == 190
     assert audit["status"] == "PASS_EFFECTIVE_EXPOSURE_MAP_COMPOSITION"
     assert audit["base_mapping_count"] == 60
-    assert audit["overlay_count"] == 11
+    assert audit["overlay_count"] == 12
     assert audit["redundant_review_correction_count"] == 7
-    assert audit["effective_mapping_count"] == 176
+    assert audit["effective_mapping_count"] == 190
     assert audit["market_outcomes_read"] is False
     assert audit["automatic_promotion_used"] is False
     assert audit["final_freeze_materialization_required"] is True
@@ -57,6 +57,8 @@ def test_committed_overlay_registry_materializes_b5_through_b15_to_one_hundred_s
         "NVDA", "AXON", "TEM", "PL", "INCY", "CRUS", "WYFI", "TE", "MP", "QBTS", "RHM.DE", "PKX",
         "ASTS", "CDNL", "RGTI", "RKLB", "PATH", "9988.HK",
         "SYM", "USAR", "NESN.SW", "TOM.OL", "UMI.BR",
+        "ABT", "ISRG", "ROK", "SYK", "TER", "AMAT", "AMZN", "ASML",
+        "GOOGL", "META", "MSFT", "MU", "ORCL", "PLTR",
     }:
         assert subject in active_subjects
 
@@ -64,7 +66,7 @@ def test_committed_overlay_registry_materializes_b5_through_b15_to_one_hundred_s
 def test_effective_map_has_unique_active_subject_factor_pairs():
     effective = load_effective_exposure_map(root=ROOT)
     pairs = [(row["subject_id"], row["factor_id"]) for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
-    assert len(pairs) == len(set(pairs)) == 176
+    assert len(pairs) == len(set(pairs)) == 190
 
 
 def test_overlay_registry_guards_fail_closed():
