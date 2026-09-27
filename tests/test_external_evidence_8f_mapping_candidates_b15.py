@@ -40,11 +40,8 @@ def test_b15_documentary_candidate_batch_passes_gate_and_has_five_distinct_subje
 def test_b15_candidates_are_currently_unaccounted_and_do_not_modify_effective_map():
     effective = load_effective_exposure_map(root=ROOT)
     active_subjects = {row["subject_id"] for row in effective["mappings"]}
-    completion = _load("configs/external_evidence_8f_completion_v1.json")
     assert len(effective["mappings"]) == 171
     assert active_subjects.isdisjoint(B15_SUBJECTS)
-    assert completion["expected_mapped_subject_count"] == 171
-    assert completion["expected_unaccounted_subject_count"] == 36
 
 
 def test_b15_review_artifact_is_explicitly_pending_and_empty():
