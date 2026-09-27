@@ -36,12 +36,11 @@ def test_b10_documentary_candidate_batch_passes_gate_and_has_fourteen_distinct_s
     assert all(row["promotion_allowed"] is False for row in b10["candidates"])
 
 
-def test_b10_subjects_are_active_in_effective_b1_through_b10_map():
+def test_b10_subjects_are_active_in_current_effective_map():
     b10 = _load("configs/external_evidence_8f_mapping_candidates_b10_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     active_subjects = {row["subject_id"] for row in effective["mappings"]}
     b10_subjects = {row["subject_id"] for row in b10["candidates"]}
-    assert len(active_subjects) == 149
     assert b10_subjects <= active_subjects
 
 
@@ -56,13 +55,13 @@ def test_b10_review_artifact_is_explicitly_human_reviewed():
     assert all(value is False for value in review["guards"].values())
 
 
-def test_b10_review_replay_is_idempotent_against_effective_149_mapping_map():
+def test_b10_review_replay_is_idempotent_against_current_effective_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b10_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b10_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 149
+    before_count = len(effective["mappings"])
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 14
-    assert len(result["exposure_map"]["mappings"]) == 149
+    assert len(result["exposure_map"]["mappings"]) == before_count
