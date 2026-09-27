@@ -1,10 +1,14 @@
 # Phase 8F — Mapping Candidate Batch B11
 
-Status: `PENDING_HUMAN_REVIEW`
+Status: `HUMAN_REVIEWED_ACTIVE`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B11`
 
-B11 contains 11 new documentary candidates drawn only from the 58 subjects still unaccounted after B10. No candidate is added merely to reach a target batch size.
+Reviewed at / valid from: `2026-09-27T09:13:36+02:00`
+
+B11 contains 11 documentary candidates drawn only from the 58 subjects still unaccounted after B10. All 11 were explicitly human-reviewed and approved. B11 is active only from the review timestamp onward; no backdating is permitted.
+
+After B11 the effective exposure map contains 160 reviewed mappings across the frozen 207-subject research domain, leaving 47 subjects unaccounted.
 
 ## Subjects
 
@@ -33,7 +37,7 @@ B11 contains 11 new documentary candidates drawn only from the 58 subjects still
 - ENSG, HIMS, ROL and NRDS document SOFR-linked revolving financing capacity, but the evidence does not justify asserting a current drawn variable-rate balance; they therefore remain `OTHER_DOCUMENTED`.
 - NIO and XPEV directly identify lithium or lithium battery cells as cost-sensitive production inputs; both use `INPUT_COST_LINK` rather than any revenue relationship.
 - TAKKT explicitly labels EUR/USD effects on euro-reported sales and earnings as translation risk, so TTK.DE uses `CURRENCY_TRANSLATION`.
-- Every source and relationship class must be explicitly human-reviewed before activation.
+- Candidate records remain immutable source artifacts with `human_reviewed=false`; approval is carried separately by `configs/external_evidence_8f_mapping_review_decisions_b11_v1.json` and applied through the overlay registry.
 - No mapping is usable before `reviewed_at`; no backdating is allowed.
 - No market direction, signed exposure, weights, thresholds or market outcomes are used.
 
