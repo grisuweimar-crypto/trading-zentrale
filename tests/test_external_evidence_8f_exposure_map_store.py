@@ -25,18 +25,18 @@ def _load(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
-def test_committed_overlay_registry_materializes_b5_through_b11_to_one_hundred_fifty_four_effective_mappings():
+def test_committed_overlay_registry_materializes_b5_through_b11_to_one_hundred_fifty_three_effective_mappings():
     base = _load("configs/external_evidence_8f_exposure_map_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     audit = build_effective_exposure_map_audit(root=ROOT)
 
     assert len(base["mappings"]) == 60
-    assert len(effective["mappings"]) == 154
+    assert len(effective["mappings"]) == 153
     assert audit["status"] == "PASS_EFFECTIVE_EXPOSURE_MAP_COMPOSITION"
     assert audit["base_mapping_count"] == 60
     assert audit["overlay_count"] == 7
-    assert audit["redundant_review_correction_count"] == 6
-    assert audit["effective_mapping_count"] == 154
+    assert audit["redundant_review_correction_count"] == 7
+    assert audit["effective_mapping_count"] == 153
     assert audit["market_outcomes_read"] is False
     assert audit["automatic_promotion_used"] is False
     assert audit["final_freeze_materialization_required"] is True
@@ -61,7 +61,7 @@ def test_committed_overlay_registry_materializes_b5_through_b11_to_one_hundred_f
 def test_effective_map_has_unique_active_subject_factor_pairs():
     effective = load_effective_exposure_map(root=ROOT)
     pairs = [(row["subject_id"], row["factor_id"]) for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
-    assert len(pairs) == len(set(pairs)) == 154
+    assert len(pairs) == len(set(pairs)) == 153
 
 
 def test_overlay_registry_guards_fail_closed():
@@ -80,6 +80,20 @@ def test_overlay_correction_guards_fail_closed():
         validate_overlay_corrections(corrections)
 
 
+def test_registered_redundant_reviews_are_explicit_and_limited_to_known_batches():
+    registered = load_registered_redundant_mapping_ids(root=ROOT)
+    assert registered["8F_MAPPING_CANDIDATES_2026-09-27_B8"] == {
+        "MAP:ABX.TO:gold:1",
+        "MAP:BTO.TO:gold:1",
+        "MAP:EDR.TO:silver:1",
+        "MAP:EQX.TO:gold:1",
+        "MAP:NEM.AX:gold:1",
+        "MAP:PAAS.TO:silver:1",
+    }
+    assert registered["8F_MAPPING_CANDIDATES_2026-09-27_B10"] == {"MAP:SHOP:fx:1"}
+    assert sum(len(values) for values in registered.values()) == 7
+
+
 def test_b8_redundant_reviews_require_explicit_registered_corrections():
     base = _load("configs/external_evidence_8f_exposure_map_v1.json")
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b8_v1.json")
@@ -92,9 +106,10 @@ def test_b8_redundant_reviews_require_explicit_registered_corrections():
     effective_after_b8 = compose_effective_exposure_map(
         base_map=base,
         overlay_pairs=[(candidates, review)],
-        redundant_mapping_ids_by_batch=registered,
+        redundant_mapping_ids_by_batch={
+            "8F_MAPPING_CANDIDATES_2026-09-27_B8": registered["8F_MAPPING_CANDIDATES_2026-09-27_B8"]
+        },
     )
-    assert len(registered["8F_MAPPING_CANDIDATES_2026-09-27_B8"]) == 6
     assert len(effective_after_b8["mappings"]) == 69
 
 
