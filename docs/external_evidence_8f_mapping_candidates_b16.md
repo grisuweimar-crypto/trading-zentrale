@@ -7,7 +7,7 @@ Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B16`
 B16 starts from the reviewed/active B1-B15 state: 176 unique active mappings across the frozen 207-subject research domain, with 31 subjects still unaccounted.
 
 The 31 remaining subjects are exactly:
-`1810.HK`, `6861.T`, `9880.HK`, `ABT`, `CGNX`, `FANUY`, `ISRG`, `ROK`, `SYK`, `TER`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `AMAT`, `AMZN`, `ASML`, `BIDU`, `DVLT`, `GOOGL`, `IFX.DE`, `JD`, `META`, `MSFT`, `MU`, `ORCL`, `PLTR`, `SAP.DE`, `YASKY`.
+`1810.HK`, `6861.T`, `9880.HK`, `ABT`, `CGNX`, `FANUY`, `ISRG`, `ROK`, `SYK`, `TER`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `AMAT`, `AMZN`, `ASML`, `BIDU`, `DVLT`, `GOOGL`, `IFX.DE`, `JD`, `META`, `MSFT`, `MU`, `ORCL`, `PLTR`, `SAP.DE`, `6506.T`.
 
 B16 contains 14 documentary FX candidates selected only where current SEC/issuer documentation explicitly identifies EUR/USD-linked revenue, expense, monetary, hedge or translation exposure. B16 is not active and does not modify the effective exposure map.
 
