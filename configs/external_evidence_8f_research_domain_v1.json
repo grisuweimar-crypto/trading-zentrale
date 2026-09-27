@@ -12,7 +12,16 @@
     "symbol_column": "symbol"
   },
   "subject_ids": [],
-  "explicit_unmapped": [],
+  "explicit_unmapped": [
+    {
+      "subject_id": "8035.T",
+      "reason": "Human-reviewed B18 conclusion: reviewed Tokyo Electron evidence does not establish a sufficiently specific relationship to the current Phase-8F factor catalog; preserve the frozen-domain subject without forcing a weak mapping.",
+      "reviewed_at": "2026-09-27T17:42+02:00",
+      "reviewer_role": "HUMAN_REVIEWER",
+      "review_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B18",
+      "evidence_reference": "https://www.tel.com/ir/policy/mplan/i9nanv00000000ga-att/20250226_TEL_IR_Day_E_rev.1_slide_r2.pdf"
+    }
+  ],
   "rules": {
     "domain_must_be_defined_before_8f_freeze": true,
     "subject_may_not_enter_domain_because_mapping_exists": true,
@@ -25,6 +34,7 @@
     "The denominator is pinned to the exact universe_master.csv Git blob already present at the Phase-8E head before Phase 8F began.",
     "Membership is deterministic: active=1, asset_type=stock, deduplicated by symbol.",
     "No symbol enters or leaves this research domain because of macro mapping availability or outcome knowledge.",
-    "A subject without a defensible documentary exposure mapping stays visible as unaccounted until explicitly reviewed/mapped or explicitly marked unmapped."
+    "A subject without a defensible documentary exposure mapping stays visible as unaccounted until explicitly reviewed/mapped or explicitly marked unmapped.",
+    "8035.T was explicitly marked unmapped by human review in B18; this records no accepted current Phase-8F mapping, not absence of macro exposure."
   ]
 }
