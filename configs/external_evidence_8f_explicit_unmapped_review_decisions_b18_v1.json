@@ -2,10 +2,12 @@
   "schema_version": "external_evidence_8f_explicit_unmapped_review_decisions_v1",
   "phase": "8F_macro_exposure_context",
   "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B18",
-  "status": "PENDING_HUMAN_REVIEW",
-  "reviewer_role": null,
-  "reviewed_at": null,
-  "decisions": [],
+  "status": "HUMAN_REVIEW_COMPLETED",
+  "reviewer_role": "HUMAN_REVIEWER",
+  "reviewed_at": "2026-09-27T17:42+02:00",
+  "decisions": [
+    {"subject_id":"8035.T","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Preserve Tokyo Electron in the frozen denominator without forcing a weak Phase-8F factor mapping. This does not claim absence of macro exposure; it records that no current relationship-specific mapping is accepted under reviewed evidence and factor definitions."}
+  ],
   "guards": {
     "market_outcomes_read": false,
     "automatic_approval_allowed": false,
