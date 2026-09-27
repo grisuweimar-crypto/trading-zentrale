@@ -24,37 +24,13 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
+
       - name: Validate Phase 8F foundation and mapping contracts
-        run: >-
-          python -m pytest -q
-          tests/test_external_evidence_8f_macro_exposure.py
-          tests/test_external_evidence_8f_source_candidates.py
-          tests/test_external_evidence_8f_market_proxies.py
-          tests/test_external_evidence_8f_series_catalog.py
-          tests/test_external_evidence_8f_source_adapters.py
-          tests/test_external_evidence_8f_macro_ledger.py
-          tests/test_external_evidence_8f_prospective_collector.py
-          tests/test_external_evidence_8f_exposure_domain.py
-          tests/test_external_evidence_8f_exposure_review_queue.py
-          tests/test_external_evidence_8f_exposure_map_store.py
-          tests/test_external_evidence_8f_mapping_candidates.py
-          tests/test_external_evidence_8f_mapping_review.py
-          tests/test_external_evidence_8f_mapping_candidates_b3.py
-          tests/test_external_evidence_8f_mapping_candidates_b4.py
-          tests/test_external_evidence_8f_mapping_candidates_b5.py
-          tests/test_external_evidence_8f_mapping_candidates_b6.py
-          tests/test_external_evidence_8f_mapping_candidates_b7.py
-          tests/test_external_evidence_8f_mapping_candidates_b8.py
-          tests/test_external_evidence_8f_mapping_candidates_b9.py
-          tests/test_external_evidence_8f_mapping_candidates_b10.py
-          tests/test_external_evidence_8f_mapping_candidates_b11.py
-          tests/test_external_evidence_8f_mapping_candidates_b12.py
-          tests/test_external_evidence_8f_mapping_candidates_b13.py
-          tests/test_external_evidence_8f_mapping_candidates_b14.py
-          tests/test_external_evidence_8f_mapping_candidates_b15.py
-          tests/test_external_evidence_8f_completion.py
+        run: python -m pytest -q tests/test_external_evidence_8f_*.py
+
       - name: Verify Phase 8F CLIs
         run: |
           python scripts/run_external_evidence_8f_contract_gate.py --help
@@ -65,72 +41,46 @@ jobs:
           python scripts/run_external_evidence_8f_mapping_candidate_gate.py --help
           python scripts/run_external_evidence_8f_mapping_review.py --help
           python scripts/run_external_evidence_8f_completion_gate.py --help
+
       - name: Execute Phase 8F foundation contract gate against effective map
         run: python scripts/run_external_evidence_8f_contract_gate.py --output /tmp/external_evidence_8f_contract_gate.json
+
       - name: Build frozen research-domain audit against effective map
         run: python scripts/run_external_evidence_8f_exposure_domain_audit.py --output /tmp/external_evidence_8f_exposure_domain_audit.json
+
       - name: Build frozen 207-subject exposure review queue
         run: python scripts/run_external_evidence_8f_exposure_review_queue.py --output /tmp/external_evidence_8f_exposure_review_queue.json
-      - name: Validate documentary mapping candidate batch B1
-        run: python scripts/run_external_evidence_8f_mapping_candidate_gate.py --output /tmp/external_evidence_8f_mapping_candidate_gate_b1.json
-      - name: Replay committed B1 human review idempotently
-        run: python scripts/run_external_evidence_8f_mapping_review.py --output /tmp/external_evidence_8f_mapping_review_b1.json
-      - name: Validate and replay B2 human review
+
+      - name: Validate and replay B1 human review idempotently
         run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b2_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b2.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b2_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b2_v1.json --output /tmp/external_evidence_8f_mapping_review_b2.json
-      - name: Validate and replay B3 human review
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --output /tmp/external_evidence_8f_mapping_candidate_gate_b1.json
+          python scripts/run_external_evidence_8f_mapping_review.py --output /tmp/external_evidence_8f_mapping_review_b1.json
+
+      - name: Validate and replay active B2-B15 human reviews
         run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b3_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b3.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b3_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b3_v1.json --output /tmp/external_evidence_8f_mapping_review_b3.json
-      - name: Validate and replay B4 human review
+          set -euo pipefail
+          for b in {2..15}; do
+            candidates="configs/external_evidence_8f_mapping_candidates_b${b}_v1.json"
+            review="configs/external_evidence_8f_mapping_review_decisions_b${b}_v1.json"
+            python scripts/run_external_evidence_8f_mapping_candidate_gate.py \
+              --candidates "$candidates" \
+              --output "/tmp/external_evidence_8f_mapping_candidate_gate_b${b}.json"
+            python scripts/run_external_evidence_8f_mapping_review.py \
+              --candidates "$candidates" \
+              --review "$review" \
+              --output "/tmp/external_evidence_8f_mapping_review_b${b}.json"
+          done
+
+      - name: Validate B16 documentary candidates without promotion
         run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b4_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b4.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b4_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b4_v1.json --output /tmp/external_evidence_8f_mapping_review_b4.json
-      - name: Validate and replay B5 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b5_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b5.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b5_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b5_v1.json --output /tmp/external_evidence_8f_mapping_review_b5.json
-      - name: Validate and replay B6 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b6_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b6.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b6_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b6_v1.json --output /tmp/external_evidence_8f_mapping_review_b6.json
-      - name: Validate and replay B7 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b7_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b7.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b7_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b7_v1.json --output /tmp/external_evidence_8f_mapping_review_b7.json
-      - name: Validate and replay B8 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b8_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b8.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b8_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b8_v1.json --output /tmp/external_evidence_8f_mapping_review_b8.json
-      - name: Validate and replay B9 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b9_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b9.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b9_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b9_v1.json --output /tmp/external_evidence_8f_mapping_review_b9.json
-      - name: Validate and replay B10 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b10_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b10.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b10_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b10_v1.json --output /tmp/external_evidence_8f_mapping_review_b10.json
-      - name: Validate and replay B11 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b11_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b11.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b11_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b11_v1.json --output /tmp/external_evidence_8f_mapping_review_b11.json
-      - name: Validate and replay B12 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b12_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b12.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b12_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b12_v1.json --output /tmp/external_evidence_8f_mapping_review_b12.json
-      - name: Validate and replay B13 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b13_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b13.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b13_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b13_v1.json --output /tmp/external_evidence_8f_mapping_review_b13.json
-      - name: Validate and replay B14 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b14_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b14.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b14_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b14_v1.json --output /tmp/external_evidence_8f_mapping_review_b14.json
-      - name: Validate and replay B15 human review through effective map
-        run: |
-          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b15_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b15.json
-          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b15_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b15_v1.json --output /tmp/external_evidence_8f_mapping_review_b15.json
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py \
+            --candidates configs/external_evidence_8f_mapping_candidates_b16_v1.json \
+            --output /tmp/external_evidence_8f_mapping_candidate_gate_b16.json
+          python scripts/run_external_evidence_8f_mapping_review.py \
+            --candidates configs/external_evidence_8f_mapping_candidates_b16_v1.json \
+            --review configs/external_evidence_8f_mapping_review_decisions_b16_v1.json \
+            --output /tmp/external_evidence_8f_mapping_review_b16_pending.json
+
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -139,9 +89,11 @@ jobs:
 # Research-domain membership is frozen independently of mappings and outcomes.
 # Documentary candidate mappings cannot enter the effective exposure map automatically.
 # B1-B4 remain materialized in the 60-mapping base map; B5-B15 are append-only human-reviewed overlays.
+# B16 contains documentary candidates only and remains pending human review; it must not change the effective map.
 # Seven explicitly registered later re-reviews (six in B8, one SHOP/fx in B10) preserve their audit trail but are not double-counted.
-# The effective map contains 176 unique reviewed mappings after B15; 31 frozen-domain subjects remain unaccounted.
+# The effective map remains at 176 unique reviewed mappings while B16 is pending; 31 frozen-domain subjects remain unaccounted.
 # B1-B15 human-review replay must be idempotent against the effective map, including registered redundant re-reviews.
+# B16 pending-review replay must be idempotent and non-mutating.
 # Unregistered conflicting duplicates remain fail-closed.
 # No backdating, market direction, signed exposure, weights, thresholds, outcome research,
 # cross-factor research, Phase-7 integration or production external-evidence enablement is allowed here.
