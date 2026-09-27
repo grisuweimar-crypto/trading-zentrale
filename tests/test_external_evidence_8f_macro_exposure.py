@@ -90,6 +90,16 @@ def test_exposure_mapping_requires_human_review_and_no_retrojection():
         validate_exposure_mapping(_mapping(valid_from="2026-09-26T09:59:59+00:00"), allowed_factor_ids={"rates_policy"})
 
 
+def test_superseded_mapping_requires_closed_interval_and_is_valid_history():
+    with pytest.raises(MacroExposure8FError, match="closed valid_to interval"):
+        validate_exposure_mapping(_mapping(review_status="SUPERSEDED"), allowed_factor_ids={"rates_policy"})
+    normalized = validate_exposure_mapping(
+        _mapping(review_status="SUPERSEDED", valid_to="2026-09-27T10:00:00+00:00"),
+        allowed_factor_ids={"rates_policy"},
+    )
+    assert normalized["review_status"] == "SUPERSEDED"
+
+
 def test_direction_weight_threshold_and_outcome_fields_are_forbidden():
     for field, value in (("direction", "POSITIVE"), ("weight", 1.0), ("threshold", 0.5), ("forward_return", 0.12)):
         with pytest.raises(MacroExposure8FError, match="forbids direction/outcome/weight/threshold"):
@@ -138,7 +148,9 @@ def test_committed_human_reviewed_effective_exposure_map_passes_foundation_contr
     result = validate_phase8f_contract(macro_config, exposure_map)
     assert result["status"] == "PASS_FOUNDATION_CONTRACT"
     assert result["factor_count"] == 11
-    assert result["mapping_count"] == 206
+    assert result["mapping_count"] == 195
+    assert sum(row["review_status"] == "ACTIVE" for row in exposure_map["mappings"]) == 189
+    assert sum(row["review_status"] == "SUPERSEDED" for row in exposure_map["mappings"]) == 6
     assert all(row["human_reviewed"] is True for row in exposure_map["mappings"])
     assert result["outcomes_read"] is False
 
