@@ -1,17 +1,19 @@
 # Phase 8F — Mapping Candidate Batch B16
 
-Status: `PENDING_HUMAN_REVIEW`
+Status: `HUMAN_REVIEWED_ACTIVE`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B16`
 
-B16 starts from the reviewed/active B1-B15 state: 176 unique active mappings across the frozen 207-subject research domain, with 31 subjects still unaccounted.
+B16 started from the reviewed/active B1-B15 state: 176 unique active mappings across the frozen 207-subject research domain, with 31 subjects still unaccounted.
 
-The 31 remaining subjects are exactly:
+The 31 subjects unaccounted before B16 were exactly:
 `1810.HK`, `6861.T`, `9880.HK`, `ABT`, `CGNX`, `FANUY`, `ISRG`, `ROK`, `SYK`, `TER`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `AMAT`, `AMZN`, `ASML`, `BIDU`, `DVLT`, `GOOGL`, `IFX.DE`, `JD`, `META`, `MSFT`, `MU`, `ORCL`, `PLTR`, `SAP.DE`, `6506.T`.
 
-B16 contains 14 documentary FX candidates selected only where current SEC/issuer documentation explicitly identifies EUR/USD-linked revenue, expense, monetary, hedge or translation exposure. B16 is not active and does not modify the effective exposure map.
+B16 contains 14 documentary FX mappings selected only where current SEC/issuer documentation explicitly identifies EUR/USD-linked revenue, expense, monetary, hedge or translation exposure.
 
-## Candidate subjects
+Human review completed at `2026-09-27T14:34:54+02:00`. All 14 approved mappings become valid no earlier than that timestamp. B16 is appended as overlay order 16; no base-map rewrite or backdating occurred.
+
+## Active B16 subjects
 
 | Subject | Factor | Relationship class | Documentary basis |
 | --- | --- | --- | --- |
@@ -32,13 +34,16 @@ B16 contains 14 documentary FX candidates selected only where current SEC/issuer
 
 ## Guardrails
 
-- Candidate count: 14.
+- Approved count: 14.
 - Factor mix: `fx` = 14.
+- `reviewed_at` / `valid_from`: `2026-09-27T14:34:54+02:00`.
 - No market outcomes were read or used.
 - No market direction, exposure sign, weights or thresholds were assigned.
 - No candidate was selected solely from sector, domicile, name or assumed global footprint.
-- `reviewed_at` and `valid_from` remain unset until explicit human approval.
-- No overlay entry is created while B16 remains pending.
-- If all 14 are later approved, effective coverage would move from 176/207 to 190/207 and 17 subjects would remain unaccounted.
+- No backdating occurred.
+- Seven previously registered re-reviews remain audit-only and are not double-counted.
 
-The remaining difficult block after a full B16 approval would mainly comprise Asian/Japanese/Korean/Chinese issuers and a few U.S./European names for which the currently reviewed evidence does not yet cleanly match the existing Phase-8F factor semantics. Those subjects remain unaccounted rather than forced into a mapping.
+After B16, effective coverage is 190/207 and 17 subjects remain unaccounted:
+`1810.HK`, `6861.T`, `9880.HK`, `CGNX`, `FANUY`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `BIDU`, `DVLT`, `IFX.DE`, `JD`, `SAP.DE`, `6506.T`.
+
+The remaining block is deliberately deferred for deeper documentary research rather than forced classification. CI polling remains deferred until all 207 subjects are mapped or explicitly accounted for.
