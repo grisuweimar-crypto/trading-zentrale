@@ -51,6 +51,7 @@ jobs:
           tests/test_external_evidence_8f_mapping_candidates_b10.py
           tests/test_external_evidence_8f_mapping_candidates_b11.py
           tests/test_external_evidence_8f_mapping_candidates_b12.py
+          tests/test_external_evidence_8f_mapping_candidates_b13.py
           tests/test_external_evidence_8f_completion.py
       - name: Verify Phase 8F CLIs
         run: |
@@ -116,6 +117,10 @@ jobs:
         run: |
           python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b12_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b12.json
           python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b12_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b12_v1.json --output /tmp/external_evidence_8f_mapping_review_b12.json
+      - name: Validate B13 and confirm pending review cannot promote
+        run: |
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --candidates configs/external_evidence_8f_mapping_candidates_b13_v1.json --output /tmp/external_evidence_8f_mapping_candidate_gate_b13.json
+          python scripts/run_external_evidence_8f_mapping_review.py --candidates configs/external_evidence_8f_mapping_candidates_b13_v1.json --review configs/external_evidence_8f_mapping_review_decisions_b13_v1.json --output /tmp/external_evidence_8f_mapping_review_b13.json
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -126,6 +131,7 @@ jobs:
 # B1-B4 remain materialized in the 60-mapping base map; B5-B12 are append-only human-reviewed overlays.
 # Seven explicitly registered later re-reviews (six in B8, one SHOP/fx in B10) preserve their audit trail but are not double-counted.
 # The effective map contains 165 unique reviewed mappings after B12; 42 frozen-domain subjects remain unaccounted.
+# B13 remains pending human review and must not change the effective 165-mapping map.
 # B1-B12 human-review replay must be idempotent against the effective map, including registered redundant re-reviews.
 # Unregistered conflicting duplicates remain fail-closed.
 # No backdating, market direction, signed exposure, weights, thresholds, outcome research,
