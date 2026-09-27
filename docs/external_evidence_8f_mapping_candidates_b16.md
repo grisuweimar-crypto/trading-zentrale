@@ -1,49 +1,55 @@
 # Phase 8F — Mapping Candidate Batch B16
 
-Status: `HUMAN_REVIEWED_ACTIVE`
+Status: `HUMAN_REVIEWED_RESOLVED`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B16`
 
-B16 started from the reviewed/active B1-B15 state: 176 unique active mappings across the frozen 207-subject research domain, with 31 subjects still unaccounted.
+Human review timestamp: `2026-09-27T14:34:54+02:00`
 
-The 31 subjects unaccounted before B16 were exactly:
-`1810.HK`, `6861.T`, `9880.HK`, `ABT`, `CGNX`, `FANUY`, `ISRG`, `ROK`, `SYK`, `TER`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `AMAT`, `AMZN`, `ASML`, `BIDU`, `DVLT`, `GOOGL`, `IFX.DE`, `JD`, `META`, `MSFT`, `MU`, `ORCL`, `PLTR`, `SAP.DE`, `6506.T`.
+## Repair note
 
-B16 contains 14 documentary FX mappings selected only where current SEC/issuer documentation explicitly identifies EUR/USD-linked revenue, expense, monetary, hedge or translation exposure.
+The original B16 documentation incorrectly treated all 14 reviewed candidates as new coverage. The repaired effective-map composition shows that all 14 subjects were already mapped before B16.
 
-Human review completed at `2026-09-27T14:34:54+02:00`. All 14 approved mappings become valid no earlier than that timestamp. B16 is appended as overlay order 16; no base-map rewrite or backdating occurred.
+B16 therefore changed **zero** frozen-domain coverage subjects:
 
-## Active B16 subjects
+- 10 reviews are identical re-reviews and are registered audit-only: `ABT`, `ISRG`, `ROK`, `TER`, `AMAT`, `AMZN`, `ASML`, `MU`, `ORCL`, `PLTR`.
+- 4 reviews are later human-approved relationship-class changes and are represented as versioned supersessions from the B16 review timestamp: `SYK`, `GOOGL`, `META`, `MSFT`.
+- The prior v1 interval is preserved historically and closed at the B16 review timestamp; a v2 interval opens at the same timestamp. No prior mapping is rewritten or backdated.
 
-| Subject | Factor | Relationship class | Documentary basis |
+## Reviewed B16 subjects
+
+| Subject | Factor | Approved relationship class | Resolution |
 | --- | --- | --- | --- |
-| ABT | fx | CURRENCY_TRANSLATION | Abbott reports large Euro forward positions and foreign-currency translation effects. |
-| ISRG | fx | OTHER_DOCUMENTED | Intuitive Surgical explicitly hedges Euro-denominated revenue, expenses and monetary balances. |
-| ROK | fx | CURRENCY_TRANSLATION | Rockwell uses net-investment hedges of Euro-functional subsidiaries with EUR/USD cross-currency swaps. |
-| SYK | fx | OTHER_DOCUMENTED | Stryker identifies Euro among principal currency exposures and reports currency effects on sales. |
-| TER | fx | OTHER_DOCUMENTED | Teradyne hedges Euro monetary exposures and has entered Euro purchase forwards. |
-| AMAT | fx | OTHER_DOCUMENTED | Applied Materials hedges Euro-denominated forecast revenues, costs and cash flows. |
-| AMZN | fx | CURRENCY_TRANSLATION | Amazon reports Euro-denominated international operations and Euro senior notes designated as net-investment hedges. |
-| ASML | fx | CURRENCY_TRANSLATION | ASML reports in EUR and explicitly quantifies USD exposure against EUR. |
-| GOOGL | fx | OTHER_DOCUMENTED | Alphabet identifies Euro among principal currency exposures and hedges revenue, monetary and net-investment exposures. |
-| META | fx | OTHER_DOCUMENTED | Meta states that the majority of its non-USD revenue/expense currency exposure is Euro. |
-| MSFT | fx | OTHER_DOCUMENTED | Microsoft identifies Euro among principal exposures and quantifies hypothetical FX impact on revenue. |
-| MU | fx | OTHER_DOCUMENTED | Micron explicitly identifies Euro exposure in operating expenses, capex, assets and liabilities. |
-| ORCL | fx | CURRENCY_TRANSLATION | Oracle translates international revenues, expenses, assets and liabilities to USD and identifies Euro as a principal exposure. |
-| PLTR | fx | OTHER_DOCUMENTED | Palantir states that its operations and cash flows are particularly exposed to Euro exchange-rate changes. |
+| ABT | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
+| ISRG | fx | OTHER_DOCUMENTED | audit-only identical re-review |
+| ROK | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
+| SYK | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
+| TER | fx | OTHER_DOCUMENTED | audit-only identical re-review |
+| AMAT | fx | OTHER_DOCUMENTED | audit-only identical re-review |
+| AMZN | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
+| ASML | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
+| GOOGL | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
+| META | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
+| MSFT | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
+| MU | fx | OTHER_DOCUMENTED | audit-only identical re-review |
+| ORCL | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
+| PLTR | fx | OTHER_DOCUMENTED | audit-only identical re-review |
+
+## Correct accounting after B16
+
+- Active mapped subjects before B16: **176/207**.
+- New subjects added by B16: **0**.
+- Active mapped subjects after B16: **176/207**.
+- Explicit-unmapped subjects at this point: **0**.
+- Unaccounted subjects after B16: **31**.
+
+The correct 31 unaccounted subjects after B16 were:
+`1810.HK`, `6861.T`, `9880.HK`, `FANUY`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `BIDU`, `DVLT`, `JD`, `6506.T`, `GOT.V`, `LGO`, `SGM.AX`, `LC0A.MU`, `MNSO`, `NOVO-B.CO`, `TME`, `RCAT`, `ACB.TO`, `SMX`, `NPN.JO`, `SE`, `GRAB`, `SPCX`, `OCGN`, `DRO.AX`, `1211.HK`.
 
 ## Guardrails
 
-- Approved count: 14.
-- Factor mix: `fx` = 14.
-- `reviewed_at` / `valid_from`: `2026-09-27T14:34:54+02:00`.
 - No market outcomes were read or used.
 - No market direction, exposure sign, weights or thresholds were assigned.
 - No candidate was selected solely from sector, domicile, name or assumed global footprint.
 - No backdating occurred.
-- Seven previously registered re-reviews remain audit-only and are not double-counted.
-
-After B16, effective coverage is 190/207 and 17 subjects remain unaccounted:
-`1810.HK`, `6861.T`, `9880.HK`, `CGNX`, `FANUY`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `BIDU`, `DVLT`, `IFX.DE`, `JD`, `SAP.DE`, `6506.T`.
-
-The remaining block is deliberately deferred for deeper documentary research rather than forced classification. CI polling remains deferred until all 207 subjects are mapped or explicitly accounted for.
+- B16 resolution is explicit and append-only; unregistered conflicts remain fail-closed.
