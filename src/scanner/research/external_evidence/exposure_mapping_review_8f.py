@@ -47,11 +47,23 @@ def _same_mapping(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
     return all(left.get(key) == right.get(key) for key in keys)
 
 
+def _same_mapping_identity(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    keys = (
+        "mapping_id",
+        "map_version",
+        "subject_id",
+        "factor_id",
+        "relationship_class",
+    )
+    return all(left.get(key) == right.get(key) for key in keys)
+
+
 def apply_human_mapping_review(
     *,
     candidate_config: Mapping[str, Any],
     review_config: Mapping[str, Any],
     exposure_map: Mapping[str, Any],
+    redundant_mapping_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     if candidate_config.get("schema_version") != CANDIDATE_SCHEMA:
         raise ExposureMappingReview8FError("unexpected candidate schema_version")
@@ -61,6 +73,10 @@ def apply_human_mapping_review(
         raise ExposureMappingReview8FError("unexpected exposure-map schema_version")
     if review_config.get("candidate_batch_id") != candidate_config.get("candidate_batch_id"):
         raise ExposureMappingReview8FError("review candidate_batch_id does not match candidate batch")
+
+    registered_redundant_ids = {
+        str(value).strip() for value in (redundant_mapping_ids or set()) if str(value).strip()
+    }
 
     guards = review_config.get("guards") or {}
     for key in (
@@ -79,6 +95,7 @@ def apply_human_mapping_review(
             "status": "AWAITING_HUMAN_REVIEW",
             "approved_count": 0,
             "already_applied_count": 0,
+            "redundant_already_applied_count": 0,
             "rejected_count": 0,
             "deferred_count": 0,
             "exposure_map": deepcopy(exposure_map),
@@ -153,14 +170,31 @@ def apply_human_mapping_review(
     }
     applied: list[dict[str, Any]] = []
     already_applied: list[dict[str, Any]] = []
+    redundant_already_applied: list[dict[str, Any]] = []
+    used_redundant_ids: set[str] = set()
+
     for mapping in approved:
-        existing_by_id = by_existing_id.get(mapping["mapping_id"])
+        mapping_id = mapping["mapping_id"]
+        existing_by_id = by_existing_id.get(mapping_id)
         if existing_by_id is not None:
             if _same_mapping(existing_by_id, mapping):
                 already_applied.append(mapping)
                 continue
+            if mapping_id in registered_redundant_ids:
+                if not _same_mapping_identity(existing_by_id, mapping):
+                    raise ExposureMappingReview8FError(
+                        f"registered redundant mapping id has incompatible identity: {mapping_id}"
+                    )
+                if existing_by_id.get("human_reviewed") is not True or str(existing_by_id.get("review_status") or "").upper() != "ACTIVE":
+                    raise ExposureMappingReview8FError(
+                        f"registered redundant mapping must resolve to an active human-reviewed mapping: {mapping_id}"
+                    )
+                already_applied.append(mapping)
+                redundant_already_applied.append(mapping)
+                used_redundant_ids.add(mapping_id)
+                continue
             raise ExposureMappingReview8FError(
-                f"mapping id already exists with different content: {mapping['mapping_id']}"
+                f"mapping id already exists with different content: {mapping_id}"
             )
 
         pair = (mapping["subject_id"], mapping["factor_id"])
@@ -169,14 +203,38 @@ def apply_human_mapping_review(
             if _same_mapping(existing_by_pair, mapping):
                 already_applied.append(mapping)
                 continue
+            if mapping_id in registered_redundant_ids:
+                if not _same_mapping_identity(existing_by_pair, mapping):
+                    raise ExposureMappingReview8FError(
+                        f"registered redundant mapping pair has incompatible identity: {pair[0]}/{pair[1]}"
+                    )
+                if existing_by_pair.get("human_reviewed") is not True or str(existing_by_pair.get("review_status") or "").upper() != "ACTIVE":
+                    raise ExposureMappingReview8FError(
+                        f"registered redundant mapping must resolve to an active human-reviewed mapping: {mapping_id}"
+                    )
+                already_applied.append(mapping)
+                redundant_already_applied.append(mapping)
+                used_redundant_ids.add(mapping_id)
+                continue
             raise ExposureMappingReview8FError(
                 f"active mapping already exists with different content for subject/factor: {pair[0]}/{pair[1]}"
             )
 
+        if mapping_id in registered_redundant_ids:
+            raise ExposureMappingReview8FError(
+                f"registered redundant mapping has no pre-existing active mapping: {mapping_id}"
+            )
+
         existing.append(mapping)
-        by_existing_id[mapping["mapping_id"]] = mapping
+        by_existing_id[mapping_id] = mapping
         existing_pairs[pair] = mapping
         applied.append(mapping)
+
+    unused_redundant_ids = registered_redundant_ids - used_redundant_ids
+    if unused_redundant_ids:
+        raise ExposureMappingReview8FError(
+            "registered redundant mapping ids were not exercised: " + ", ".join(sorted(unused_redundant_ids))
+        )
 
     updated["mappings"] = existing
     if approved:
@@ -187,10 +245,12 @@ def apply_human_mapping_review(
         "reviewed_at": reviewed_at.isoformat(),
         "approved_count": len(applied),
         "already_applied_count": len(already_applied),
+        "redundant_already_applied_count": len(redundant_already_applied),
         "rejected_count": rejected,
         "deferred_count": deferred,
         "approved_mapping_ids": [row["mapping_id"] for row in applied],
         "already_applied_mapping_ids": [row["mapping_id"] for row in already_applied],
+        "redundant_already_applied_mapping_ids": [row["mapping_id"] for row in redundant_already_applied],
         "exposure_map": updated,
         "guards": {
             "market_outcomes_read": False,
@@ -198,5 +258,6 @@ def apply_human_mapping_review(
             "mapping_backdated_before_review": False,
             "direction_assigned": False,
             "weights_or_thresholds_selected": False,
+            "redundant_review_resolution_used_only_when_registered": True,
         },
     }
