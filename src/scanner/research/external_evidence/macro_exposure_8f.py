@@ -225,8 +225,10 @@ def validate_exposure_mapping(
         raise MacroExposure8FError(f"unsupported relationship_class: {relationship_class}")
 
     review_status = _required_text(row, "review_status").upper()
-    if review_status not in {"ACTIVE", "RETIRED"}:
+    if review_status not in {"ACTIVE", "RETIRED", "SUPERSEDED"}:
         raise MacroExposure8FError(f"unsupported review_status: {review_status}")
+    if review_status == "SUPERSEDED" and valid_to is None:
+        raise MacroExposure8FError("SUPERSEDED exposure mapping requires a closed valid_to interval")
 
     return {
         "mapping_id": _required_text(row, "mapping_id"),
