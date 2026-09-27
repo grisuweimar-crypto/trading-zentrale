@@ -90,6 +90,7 @@ def test_committed_reviews_are_explicit_human_approvals():
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b9_v1.json", 12)
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b10_v1.json", 14)
     _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b11_v1.json", 11)
+    _assert_committed_review("configs/external_evidence_8f_mapping_review_decisions_b12_v1.json", 12)
 
 
 def _assert_replay(candidate_path: str, review_path: str, expected_applied: int, expected_redundant: int = 0) -> None:
@@ -112,7 +113,7 @@ def _assert_replay(candidate_path: str, review_path: str, expected_applied: int,
     assert len(result["exposure_map"]["mappings"]) == before_count
 
 
-def test_committed_b1_through_b11_review_replay_is_idempotent():
+def test_committed_b1_through_b12_review_replay_is_idempotent():
     _assert_replay("configs/external_evidence_8f_mapping_candidates_v1.json", "configs/external_evidence_8f_mapping_review_decisions_v1.json", 10)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b2_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b2_v1.json", 10)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b3_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b3_v1.json", 20)
@@ -124,6 +125,7 @@ def test_committed_b1_through_b11_review_replay_is_idempotent():
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b9_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b9_v1.json", 12)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b10_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b10_v1.json", 14, 1)
     _assert_replay("configs/external_evidence_8f_mapping_candidates_b11_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b11_v1.json", 11)
+    _assert_replay("configs/external_evidence_8f_mapping_candidates_b12_v1.json", "configs/external_evidence_8f_mapping_review_decisions_b12_v1.json", 12)
 
 
 def test_explicit_human_approval_promotes_only_reviewed_candidate_at_review_time():
