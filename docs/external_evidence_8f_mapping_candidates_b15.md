@@ -13,7 +13,7 @@ B15 is **not active**. It does not modify the effective exposure map, add an ove
 | Subject | Factor | Relationship class | Documentary basis |
 | --- | --- | --- | --- |
 | SYM | rates_policy | OTHER_DOCUMENTED | Symbotic 2025 Form 10-K explicitly identifies changes in market interest rates as a market-risk exposure for its large short-duration cash/investment position. |
-| USAR | rates_policy | FINANCING_SENSITIVITY | USA Rare Earth PREM14A states that the January 2026 DFC Facility bears variable rates and exposes the company to interest-rate risk. |
+| USAR | rates_policy | FINANCING_SENSITIVITY | A current post-merger SEC filing states that USAR assumed Serra Verde's DFC debt; the Initial Loan bears Term SOFR plus 4.0%. |
 | NESN.SW | rates_policy | FINANCING_SENSITIVITY | Nestlé 2025 financial statements identify USD/EUR interest-rate exposure on financial debt and quantify a 100 bp sensitivity to net financing cost. |
 | TOM.OL | fx | CURRENCY_TRANSLATION | TOMRA 2025 annual report identifies EUR as its main currency exposure/presentation currency and states that currency gains and losses are mostly exposed to EUR/USD. |
 | UMI.BR | fx | OTHER_DOCUMENTED | Umicore FY2025 results document structural FX hedging including a specifically quantified EUR/USD hedge and unhedged translation effects into EUR. |
@@ -26,7 +26,7 @@ B15 is **not active**. It does not modify the effective exposure map, add an ove
 ## Review notes
 
 - `SYM` remains `OTHER_DOCUMENTED`, not `FINANCING_SENSITIVITY`: the filing documents treasury/investment rate exposure and explicitly says the short-duration position was not materially exposed to rate changes.
-- `USAR` is `FINANCING_SENSITIVITY` because the filing directly links a current variable-rate facility to interest expense and cash-flow risk.
+- `USAR` is `FINANCING_SENSITIVITY`: the Serra Verde transaction closed on 3 September 2026, and a subsequent USAR filing states that the surviving subsidiary assumed the DFC financing and that the Initial Loan is priced at Term SOFR plus 4.0%. The candidate therefore uses post-close evidence rather than projecting pre-close target debt onto USAR.
 - `NESN.SW` is `FINANCING_SENSITIVITY` because the issuer directly quantifies floating-rate debt sensitivity after derivatives.
 - `TOM.OL` is `CURRENCY_TRANSLATION` because EUR is the presentation currency and the issuer explicitly identifies EUR/USD as the principal driver of currency gains/losses in the financial statements.
 - `UMI.BR` stays conservatively at `OTHER_DOCUMENTED`: the source directly documents EUR/USD structural exposure and hedging, while also noting unhedged translation effects; the candidate does not infer a signed FX direction.
