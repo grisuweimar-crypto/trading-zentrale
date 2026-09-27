@@ -1,8 +1,10 @@
 # Phase 8F — Mapping Candidate Batch B10
 
-Status: `PENDING_HUMAN_REVIEW`
+Status: `HUMAN_REVIEWED_ACTIVE`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B10`
+
+Reviewed at: `2026-09-27T08:28:40+02:00`
 
 B10 contains 14 new documentary candidates. Only direct issuer/SEC evidence for currently enabled Phase-8F factors is accepted; no candidate is added merely to reach a target batch size.
 
@@ -39,7 +41,7 @@ B10 contains 14 new documentary candidates. Only direct issuer/SEC evidence for 
 - SGL.DE documents natural gas as a material manufacturing energy input and reports 2025 natural-gas consumption; the mapping is therefore `INPUT_COST_LINK`.
 - VZLA.TO uses project economics with explicit silver-price assumptions and therefore remains `OTHER_DOCUMENTED`, not `REVENUE_LINK`.
 - MBLY, MRNA, NBIS, SHOP, INOD and AVAV use explicit Euro/EUR disclosures; no geographic, domicile or sector inference is used.
-- Every source and relationship class must be explicitly human-reviewed before activation.
+- Every source and relationship class was explicitly human-reviewed before activation.
 - No mapping is usable before `reviewed_at`; no backdating is allowed.
 - No market direction, signed exposure, weights, thresholds or market outcomes are used.
 
