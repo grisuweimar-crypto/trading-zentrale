@@ -6,7 +6,7 @@ Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B15`
 
 Reviewed at / valid from: `2026-09-27T13:46:34+02:00`
 
-B15 started from the reviewed/active B1-B14 state of 171 unique active mappings across the frozen 207-subject domain, with 36 subjects still unaccounted. The five documentary candidates were explicitly human-reviewed and approved. B15 is now registered as the eleventh append-only human-reviewed overlay.
+B15 started from the reviewed/active B1-B14 state of 171 unique active mappings across the frozen 207-subject domain, with 36 subjects still unaccounted. The five documentary candidates were explicitly human-reviewed and approved. B15 is registered as the eleventh append-only human-reviewed overlay.
 
 After B15, the effective exposure map contains **176 unique reviewed mappings across the frozen 207-subject domain**, leaving **31 subjects unaccounted**. The seven explicitly registered later re-reviews from B8/B10 remain audit-only and are not double-counted.
 
