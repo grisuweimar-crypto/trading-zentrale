@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from scanner.research.external_evidence.exposure_map_store_8f import (
     load_effective_exposure_map,
     load_registered_redundant_mapping_ids,
+    validate_overlay_corrections,
+    validate_overlay_registry,
 )
 from scanner.research.external_evidence.exposure_mapping_review_8f import apply_human_mapping_review
 
@@ -28,6 +31,123 @@ def _load_exposure(path: Path, overlay_registry: Path) -> dict:
     return _load(path)
 
 
+def _load_supersessions_by_batch(overlay_registry: Path) -> dict[str, list[dict]]:
+    registry = _load(overlay_registry)
+    normalized_registry = validate_overlay_registry(registry)
+    corrections = _load(ROOT / normalized_registry["corrections_path"])
+    normalized_corrections = validate_overlay_corrections(corrections)
+    return normalized_corrections["supersessions_by_batch"]
+
+
+def _candidate_id(mapping_id: str) -> str:
+    if not mapping_id.startswith("MAP:"):
+        raise ValueError(f"invalid supersession mapping_id: {mapping_id}")
+    return mapping_id.replace("MAP:", "MAPCAND:", 1)
+
+
+def _replay_supersession_aware(
+    *,
+    candidate_config: dict,
+    review_config: dict,
+    exposure_map: dict,
+    redundant_mapping_ids: set[str],
+    supersessions: list[dict],
+) -> dict:
+    if not supersessions:
+        return apply_human_mapping_review(
+            candidate_config=candidate_config,
+            review_config=review_config,
+            exposure_map=exposure_map,
+            redundant_mapping_ids=redundant_mapping_ids,
+        )
+
+    original_candidates = {
+        str(row.get("candidate_id") or ""): row
+        for row in candidate_config.get("candidates") or []
+    }
+    supersession_candidate_ids = {_candidate_id(str(row["mapping_id"])) for row in supersessions}
+
+    replay_candidates = deepcopy(candidate_config)
+    replay_review = deepcopy(review_config)
+    replay_candidates["candidates"] = [
+        row for row in replay_candidates.get("candidates") or []
+        if str(row.get("candidate_id") or "") not in supersession_candidate_ids
+    ]
+    replay_review["decisions"] = [
+        row for row in replay_review.get("decisions") or []
+        if str(row.get("candidate_id") or "") not in supersession_candidate_ids
+    ]
+
+    if replay_review["decisions"]:
+        result = apply_human_mapping_review(
+            candidate_config=replay_candidates,
+            review_config=replay_review,
+            exposure_map=exposure_map,
+            redundant_mapping_ids=redundant_mapping_ids,
+        )
+    else:
+        result = {
+            "status": "HUMAN_REVIEW_ALREADY_APPLIED",
+            "reviewed_at": review_config.get("reviewed_at"),
+            "approved_count": 0,
+            "already_applied_count": 0,
+            "redundant_already_applied_count": 0,
+            "rejected_count": 0,
+            "deferred_count": 0,
+            "approved_mapping_ids": [],
+            "already_applied_mapping_ids": [],
+            "redundant_already_applied_mapping_ids": [],
+            "exposure_map": deepcopy(exposure_map),
+            "guards": {
+                "market_outcomes_read": False,
+                "automatic_approval_used": False,
+                "mapping_backdated_before_review": False,
+                "direction_assigned": False,
+                "weights_or_thresholds_selected": False,
+                "redundant_review_resolution_used_only_when_registered": True,
+            },
+        }
+
+    reviewed_at = str(review_config.get("reviewed_at") or "")
+    by_mapping_id = {
+        str(row.get("mapping_id") or ""): row
+        for row in exposure_map.get("mappings") or []
+    }
+    replayed_new_ids: list[str] = []
+    for resolution in supersessions:
+        old_id = str(resolution["mapping_id"])
+        new_id = str(resolution["new_mapping_id"])
+        candidate = original_candidates.get(_candidate_id(old_id))
+        old_row = by_mapping_id.get(old_id)
+        new_row = by_mapping_id.get(new_id)
+        if candidate is None or old_row is None or new_row is None:
+            raise RuntimeError(f"registered supersession is not materialized for replay: {old_id} -> {new_id}")
+        if str(old_row.get("review_status") or "").upper() != "SUPERSEDED":
+            raise RuntimeError(f"registered supersession prior interval is not SUPERSEDED: {old_id}")
+        if old_row.get("valid_to") != reviewed_at:
+            raise RuntimeError(f"registered supersession prior interval closes at wrong time: {old_id}")
+        if str(new_row.get("review_status") or "").upper() != "ACTIVE" or new_row.get("valid_to") is not None:
+            raise RuntimeError(f"registered supersession replacement is not ACTIVE: {new_id}")
+        if new_row.get("reviewed_at") != reviewed_at or new_row.get("valid_from") != reviewed_at:
+            raise RuntimeError(f"registered supersession replacement has wrong review interval: {new_id}")
+        if new_row.get("subject_id") != candidate.get("subject_id") or new_row.get("factor_id") != candidate.get("factor_id"):
+            raise RuntimeError(f"registered supersession replacement identity mismatch: {new_id}")
+        if new_row.get("relationship_class") != candidate.get("relationship_class"):
+            raise RuntimeError(f"registered supersession replacement class mismatch: {new_id}")
+        if new_row.get("evidence_reference") != candidate.get("evidence_reference"):
+            raise RuntimeError(f"registered supersession replacement evidence mismatch: {new_id}")
+        replayed_new_ids.append(new_id)
+
+    result["already_applied_count"] = int(result.get("already_applied_count") or 0) + len(replayed_new_ids)
+    result["supersession_already_applied_count"] = len(replayed_new_ids)
+    result["supersession_already_applied_mapping_ids"] = replayed_new_ids
+    result.setdefault("already_applied_mapping_ids", []).extend(replayed_new_ids)
+    result.setdefault("guards", {})["registered_supersession_replay_used_only_when_registered"] = True
+    if int(result.get("approved_count") or 0) == 0:
+        result["status"] = "HUMAN_REVIEW_ALREADY_APPLIED"
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Apply explicit human review decisions to Phase 8F mapping candidates.")
     parser.add_argument("--candidates", type=Path, default=DEFAULT_CANDIDATES)
@@ -40,17 +160,17 @@ def main() -> int:
 
     candidate_config = _load(args.candidates)
     review_config = _load(args.review)
-    redundant_by_batch = load_registered_redundant_mapping_ids(
-        root=ROOT,
-        registry_path=args.overlay_registry,
-    )
+    exposure_map = _load_exposure(args.exposure_map, args.overlay_registry)
+    redundant_by_batch = load_registered_redundant_mapping_ids(root=ROOT, registry_path=args.overlay_registry)
+    supersessions_by_batch = _load_supersessions_by_batch(args.overlay_registry)
     batch_id = str(candidate_config.get("candidate_batch_id") or "")
 
-    result = apply_human_mapping_review(
+    result = _replay_supersession_aware(
         candidate_config=candidate_config,
         review_config=review_config,
-        exposure_map=_load_exposure(args.exposure_map, args.overlay_registry),
+        exposure_map=exposure_map,
         redundant_mapping_ids=set(redundant_by_batch.get(batch_id, set())),
+        supersessions=list(supersessions_by_batch.get(batch_id, [])),
     )
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.output:
