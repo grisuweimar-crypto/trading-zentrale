@@ -1,10 +1,12 @@
 # Phase 8F — Mapping Candidate Batch B9
 
-Status: `PENDING_HUMAN_REVIEW`
+Status: `HUMAN_REVIEWED_ACTIVE`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B9`
 
-B9 contains 12 new documentary candidates. Only direct issuer/SEC evidence for currently enabled Phase-8F factors is accepted; no candidate is added merely to reach a target batch size.
+Reviewed at: `2026-09-27T07:55:08+02:00`
+
+B9 contains 12 documentary candidates approved by explicit human review. Only direct issuer/SEC evidence for currently enabled Phase-8F factors is accepted; no candidate was added merely to reach a target batch size.
 
 ## Subjects
 
@@ -38,8 +40,8 @@ B9 contains 12 new documentary candidates. Only direct issuer/SEC evidence for c
 - SLVR.V and PPTA use project-economics disclosures with explicit commodity-price assumptions.
 - MGMA.V, DV.V and AAGFF are pre-revenue/resource-stage exposures and therefore use `OTHER_DOCUMENTED`, not `REVENUE_LINK`.
 - DV.V is retained because the frozen pre-8F research domain contains the legacy symbol; the mapping documents the frozen subject rather than asserting current standalone listing status.
-- Every source and relationship class must be explicitly human-reviewed before activation.
+- All 12 sources and relationship classes were explicitly human-reviewed before activation.
 - No mapping is usable before `reviewed_at`; no backdating is allowed.
 - No market direction, signed exposure, weights, thresholds or market outcomes are used.
 
-Machine-readable evidence references, summaries and canonical evidence-record SHA-256 fingerprints are frozen in `configs/external_evidence_8f_mapping_candidates_b9_v1.json`.
+Machine-readable evidence references, summaries and canonical evidence-record SHA-256 fingerprints remain frozen in `configs/external_evidence_8f_mapping_candidates_b9_v1.json`. The approval record is stored separately in `configs/external_evidence_8f_mapping_review_decisions_b9_v1.json`.
