@@ -1,0 +1,62 @@
+{
+  "schema_version": "external_evidence_8f_overlay_corrections_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "ACTIVE_APPEND_ONLY_REDUNDANT_REVIEW_CORRECTIONS",
+  "corrections": [
+    {
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B8",
+      "mapping_id": "MAP:ABX.TO:gold:1",
+      "subject_id": "ABX.TO",
+      "factor_id": "gold",
+      "action": "TREAT_AS_ALREADY_MATERIALIZED",
+      "reason": "B8 re-reviewed a subject/factor mapping already materialized in the B1-B4 base map. Preserve the earlier active mapping and the B8 review audit trail without creating a duplicate mapping."
+    },
+    {
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B8",
+      "mapping_id": "MAP:BTO.TO:gold:1",
+      "subject_id": "BTO.TO",
+      "factor_id": "gold",
+      "action": "TREAT_AS_ALREADY_MATERIALIZED",
+      "reason": "B8 re-reviewed a subject/factor mapping already materialized in the B1-B4 base map. Preserve the earlier active mapping and the B8 review audit trail without creating a duplicate mapping."
+    },
+    {
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B8",
+      "mapping_id": "MAP:EDR.TO:silver:1",
+      "subject_id": "EDR.TO",
+      "factor_id": "silver",
+      "action": "TREAT_AS_ALREADY_MATERIALIZED",
+      "reason": "B8 re-reviewed a subject/factor mapping already materialized in the B1-B4 base map. Preserve the earlier active mapping and the B8 review audit trail without creating a duplicate mapping."
+    },
+    {
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B8",
+      "mapping_id": "MAP:EQX.TO:gold:1",
+      "subject_id": "EQX.TO",
+      "factor_id": "gold",
+      "action": "TREAT_AS_ALREADY_MATERIALIZED",
+      "reason": "B8 re-reviewed a subject/factor mapping already materialized in the B1-B4 base map. Preserve the earlier active mapping and the B8 review audit trail without creating a duplicate mapping."
+    },
+    {
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B8",
+      "mapping_id": "MAP:NEM.AX:gold:1",
+      "subject_id": "NEM.AX",
+      "factor_id": "gold",
+      "action": "TREAT_AS_ALREADY_MATERIALIZED",
+      "reason": "B8 re-reviewed a subject/factor mapping already materialized in the B1-B4 base map. Preserve the earlier active mapping and the B8 review audit trail without creating a duplicate mapping."
+    },
+    {
+      "batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B8",
+      "mapping_id": "MAP:PAAS.TO:silver:1",
+      "subject_id": "PAAS.TO",
+      "factor_id": "silver",
+      "action": "TREAT_AS_ALREADY_MATERIALIZED",
+      "reason": "B8 re-reviewed a subject/factor mapping already materialized in the B1-B4 base map. Preserve the earlier active mapping and the B8 review audit trail without creating a duplicate mapping."
+    }
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "automatic_conflict_suppression_allowed": false,
+    "correction_requires_explicit_mapping_id": true,
+    "correction_may_mutate_existing_mapping": false,
+    "correction_may_backdate": false
+  }
+}
