@@ -1,0 +1,106 @@
+{
+  "schema_version": "external_evidence_8g_discovery_protocol_v1",
+  "phase": "8G-D",
+  "title": "Discovery outcome opening and model-fit protocol",
+  "status": "PREPARED_WAITING_FOR_FIRST_ELIGIBLE_DISCOVERY_BINDING",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "automatic_promotion_enabled": false,
+  "parent_8g_c_head": "639c422e8149143ebc36f850d75c630d4c2e2798",
+  "parent_model_construction": "configs/external_evidence_8g_model_construction_v1.json",
+  "parent_split_plan": "configs/external_evidence_8g_split_plan_v1.json",
+  "parent_split_manifest": "artifacts/research/external_evidence_8g_split_manifest_v1.json",
+  "active_factor_ids": ["rates_policy", "yield_curve", "fx"],
+  "horizons_sessions": [5, 20, 40, 60],
+  "outcome_access": {
+    "allowed_split": "DISCOVERY",
+    "validation_outcomes_allowed": false,
+    "holdout_outcomes_allowed": false,
+    "reserved_boundary_buffer_outcomes_allowed": false,
+    "primary_outcome": "peer_excess_{H}t",
+    "label_value_may_be_read_only_after_maturity": true,
+    "label_available_from_field": "label_available_from_{H}t",
+    "research_as_of_must_be_on_or_after_label_available_from": true,
+    "exact_8g_b_binding_required_before_label_join": true,
+    "exact_8g_c_pairing_required_before_label_join": true,
+    "exact_split_boundary_purge_required_before_label_value_read": true,
+    "non_discovery_rows_in_outcome_input": "FAIL_CLOSED"
+  },
+  "discovery_model_policy": {
+    "baseline_and_challenger_fit_separately_on_identical_discovery_rows": true,
+    "estimator_family": "ridge_linear_regression",
+    "alpha": 1.0,
+    "fit_intercept": true,
+    "preprocessing_fit_partition": "DISCOVERY_USABLE_ONLY",
+    "estimator_fit_partition": "DISCOVERY_USABLE_MATURED_ONLY",
+    "discovery_refits_while_collecting_allowed": true,
+    "every_refit_must_be_versioned": true,
+    "final_discovery_model_freeze_required_before_validation_open": true,
+    "validation_refit_allowed": false,
+    "holdout_refit_allowed": false
+  },
+  "discovery_search_space": {
+    "feature_family_search_allowed": false,
+    "feature_subset_search_allowed": false,
+    "feature_sign_flip_allowed": false,
+    "manual_direction_assignment_allowed": false,
+    "threshold_search_allowed": false,
+    "transform_search_allowed": false,
+    "hyperparameter_search_allowed": false,
+    "cross_factor_interactions_allowed": false,
+    "reason": "8G-B and 8G-C already froze feature definitions, natural signs, preprocessing family, estimator family and alpha before outcome access. 8G-D may learn Ridge coefficient directions from Discovery outcomes but may not reopen the frozen feature/search space."
+  },
+  "allowed_discovery_learning": {
+    "ridge_coefficients_from_discovery_labels": true,
+    "coefficient_direction_reporting": true,
+    "baseline_vs_challenger_discovery_loss_reporting": true,
+    "coverage_and_missingness_reporting": true,
+    "temporal_support_reporting": true,
+    "non_overlap_sensitivity_reporting": true,
+    "pit_integrity_reporting": true,
+    "factor_horizon_status_reporting": true,
+    "dropping_hypotheses_from_frozen_holm_family_based_on_discovery": false
+  },
+  "frozen_hypothesis_family": [
+    "rates_policy_x_5t", "rates_policy_x_20t", "rates_policy_x_40t", "rates_policy_x_60t",
+    "yield_curve_x_5t", "yield_curve_x_20t", "yield_curve_x_40t", "yield_curve_x_60t",
+    "fx_x_5t", "fx_x_20t", "fx_x_40t", "fx_x_60t"
+  ],
+  "discovery_states": {
+    "no_bound_snapshot": "WAITING_FOR_DISCOVERY_BINDING",
+    "bound_but_label_unmatured": "WAITING_FOR_LABEL_MATURITY",
+    "matured_below_minimum_evidence": "DISCOVERY_INSUFFICIENT_EVIDENCE",
+    "discovery_collecting": "DISCOVERY_COLLECTING",
+    "discovery_cohort_complete_ready_to_freeze": "DISCOVERY_READY_FOR_FINAL_MODEL_FREEZE"
+  },
+  "minimum_evidence": {
+    "minimum_paired_n_per_factor_horizon": 30,
+    "minimum_temporal_support_regions": 2,
+    "threshold_relaxation_allowed": false,
+    "insufficient_evidence_is_not_negative_evidence": true
+  },
+  "completion_gate": {
+    "discovery_protocol_committed": true,
+    "discovery_only_outcome_guard_implemented": true,
+    "validation_and_holdout_seal_tests_required": true,
+    "label_maturity_test_required": true,
+    "exact_boundary_purge_test_required": true,
+    "no_search_space_reopening_test_required": true,
+    "empirical_completion_requires_real_discovery_bindings": true,
+    "empirical_completion_requires_matured_discovery_labels": true,
+    "empirical_completion_possible_before_2026_09_29": false,
+    "next_phase_after_final_discovery_freeze": "8G-E"
+  },
+  "guards": {
+    "validation_outcomes_opened": false,
+    "holdout_outcomes_opened": false,
+    "feature_search_run": false,
+    "feature_sign_flip_run": false,
+    "threshold_search_run": false,
+    "transform_search_run": false,
+    "hyperparameter_search_run": false,
+    "cross_factor_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}
