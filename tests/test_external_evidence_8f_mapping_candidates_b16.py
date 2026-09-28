@@ -49,8 +49,8 @@ def test_b16_effective_state_distinguishes_audit_only_from_reclassification():
     effective = load_effective_exposure_map(root=ROOT)
     active_rows = [row for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
     active_by_subject = {row["subject_id"]: row for row in active_rows}
-    assert len(effective["mappings"]) == 195
-    assert len(active_rows) == 189
+    assert len(effective["mappings"]) == 201
+    assert len(active_rows) == 195
     assert B16_SUBJECTS <= set(active_by_subject)
 
     expected_classes = {
