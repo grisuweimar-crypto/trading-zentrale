@@ -1,0 +1,100 @@
+name: Phase 8I-B Promotion & Provenance Binding
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "configs/external_evidence_8i_promotion_provenance_binding_v1.json"
+      - "src/scanner/research/external_evidence/decision_binding_8i.py"
+      - "tests/test_external_evidence_8i_promotion_provenance_binding.py"
+      - "docs/external_evidence_8i_promotion_provenance_binding.md"
+      - ".github/workflows/external_evidence_8i_promotion_provenance_binding.yml"
+      - "configs/external_evidence_8i_decision_extension_contract_v1.json"
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_evidence_8h_interaction_promotion_review_v1.json"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "configs/external_evidence_8f_source_candidates_v1.json"
+      - "src/scanner/research/external_evidence/fed_h15_8f.py"
+      - "src/scanner/research/external_evidence/ecb_fx_8f.py"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8i_promotion_provenance_binding_v1.json"
+      - "src/scanner/research/external_evidence/decision_binding_8i.py"
+      - "tests/test_external_evidence_8i_promotion_provenance_binding.py"
+      - "docs/external_evidence_8i_promotion_provenance_binding.md"
+      - ".github/workflows/external_evidence_8i_promotion_provenance_binding.yml"
+      - "configs/external_evidence_8i_decision_extension_contract_v1.json"
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_evidence_8h_interaction_promotion_review_v1.json"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "configs/external_evidence_8f_source_candidates_v1.json"
+      - "src/scanner/research/external_evidence/fed_h15_8f.py"
+      - "src/scanner/research/external_evidence/ecb_fx_8f.py"
+
+permissions:
+  contents: read
+
+jobs:
+  binding-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: Guard Phase 8I-A baseline
+        run: pytest -q tests/test_external_evidence_8i_decision_extension_contract.py
+
+      - name: Guard upstream promotion contracts
+        run: |
+          pytest -q \
+            tests/test_external_evidence_8g_promotion_review.py \
+            tests/test_external_evidence_8h_interaction_promotion.py
+
+      - name: Validate Phase 8I-B binding contract and implementation
+        run: pytest -q tests/test_external_evidence_8i_promotion_provenance_binding.py
+
+      - name: Prove current fail-closed state
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.external_evidence.decision_binding_8i import current_binding_status
+
+          contract = json.loads(Path("configs/external_evidence_8i_promotion_provenance_binding_v1.json").read_text())
+          status = current_binding_status(contract)
+          assert status["state"] == "BLOCKED_UPSTREAM_SOURCE_IDENTITY_CONTRACT"
+          assert status["bound_8g_main_effect_ids"] == []
+          assert status["bound_8h_interaction_ids"] == []
+          assert status["external_evidence_state"] == "INSUFFICIENT_EXTERNAL"
+          assert status["decision_effect"] == "NO_CHANGE_TO_PHASE7_DECISION"
+          assert status["external_decision_influence_enabled"] is False
+          print("8I-B fail-closed invariant verified")
+          PY
+
+      - name: Guard outcome and production boundary
+        run: |
+          set -euo pipefail
+          if grep -nE "peer_excess_[0-9]+t|forward_return|future_return|realized_return" src/scanner/research/external_evidence/decision_binding_8i.py; then
+            echo "Outcome-like field reference detected in 8I-B implementation."
+            exit 1
+          fi
+          refs=$(grep -R -l --exclude-dir=research "decision_binding_8i" src/scanner 2>/dev/null || true)
+          if [ -n "$refs" ]; then
+            echo "8I-B binding referenced outside research namespace:"
+            echo "$refs"
+            exit 1
+          fi
+          echo "No outcome or production-facing 8I-B path found."
