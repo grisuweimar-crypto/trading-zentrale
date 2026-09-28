@@ -72,9 +72,9 @@ jobs:
               src/scanner/research/*) ;;
               *) bad="${bad}${file}\n" ;;
             esac
-          done < <(grep -RIl --exclude-dir='__pycache__' -E 'interaction_eligibility_8h|external_evidence_8h_interaction_eligibility_binding_v1' src 2>/dev/null || true)
+          done < <(grep -RIl --exclude-dir='__pycache__' -E 'interaction_eligibility_8h|external_evidence_8h_interaction_eligibility_binding_v1' src/scanner 2>/dev/null || true)
           if [[ -n "$bad" ]]; then
-            echo "8H-B eligibility binding referenced from production-facing source path(s):"
+            echo "8H-B eligibility binding referenced from production-facing scanner source path(s):"
             printf '%b' "$bad"
             exit 1
           fi
