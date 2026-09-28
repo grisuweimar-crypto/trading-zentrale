@@ -14,22 +14,17 @@ from scanner.research.external_evidence.exposure_map_store_8f import load_effect
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_UNACCOUNTED = {
-    "GOT.V",
+EXPECTED_EXPLICIT_UNMAPPED = {
+    "8035.T",
     "LGO",
-    "SGM.AX",
     "LC0A.MU",
     "MNSO",
     "NOVO-B.CO",
-    "TME",
     "RCAT",
     "ACB.TO",
     "SMX",
-    "NPN.JO",
     "SE",
-    "GRAB",
     "SPCX",
-    "OCGN",
     "DRO.AX",
     "1211.HK",
 }
@@ -129,20 +124,21 @@ def test_domain_rule_cannot_select_subjects_from_mapping_coverage():
         build_exposure_domain_audit(domain_config=domain, exposure_map=_empty_exposure())
 
 
-def test_committed_domain_remains_open_after_repair_until_all_subjects_are_accounted():
+def test_committed_domain_is_fully_accounted_after_b19_human_review():
     domain = json.loads((ROOT / "configs/external_evidence_8f_research_domain_v1.json").read_text(encoding="utf-8"))
     exposure = load_effective_exposure_map(root=ROOT)
     universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8")
     result = build_exposure_domain_audit(domain_config=domain, exposure_map=exposure, universe_csv_text=universe_text)
     assert result["domain_status"] == "FROZEN_OUTCOME_BLIND_PRE8F_ACTIVE_STOCK_UNIVERSE"
     assert result["domain_subject_count"] == 207
-    assert result["mapped_subject_count"] == 189
-    assert result["explicit_unmapped_subject_count"] == 1
-    assert result["unaccounted_subject_count"] == 17
-    assert set(result["unaccounted_subject_ids"]) == EXPECTED_UNACCOUNTED
-    assert len(result["unaccounted_subject_ids"]) == len(EXPECTED_UNACCOUNTED) == 17
-    assert domain["explicit_unmapped"][0]["subject_id"] == "8035.T"
-    assert domain["explicit_unmapped"][0]["reviewed_at"] == "2026-09-27T17:42+02:00"
+    assert result["mapped_subject_count"] == 195
+    assert result["explicit_unmapped_subject_count"] == 12
+    assert result["unaccounted_subject_count"] == 0
+    assert result["unaccounted_subject_ids"] == []
+    assert {row["subject_id"] for row in domain["explicit_unmapped"]} == EXPECTED_EXPLICIT_UNMAPPED
+    by_subject = {row["subject_id"]: row for row in domain["explicit_unmapped"]}
+    assert by_subject["8035.T"]["reviewed_at"] == "2026-09-27T17:42+02:00"
+    assert all(by_subject[subject]["reviewed_at"] == "2026-09-28T06:04+02:00" for subject in EXPECTED_EXPLICIT_UNMAPPED - {"8035.T"})
     assert result["source_snapshot"]["source_ref"] == "feef4e572283613739b2f24cf42b837ff68a1508"
     assert result["source_snapshot"]["git_blob_sha"] == "2c6efec912ea7478096f77dc8f88d7eed2a0581b"
     assert result["guards"]["domain_pinned_to_pre8f_source_blob"] is True
