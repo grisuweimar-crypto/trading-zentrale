@@ -1,0 +1,57 @@
+name: Phase 8G-B Challenger Freeze
+
+on:
+  push:
+    branches:
+      - phase8g-incremental-evidence-research
+    paths:
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "src/scanner/research/external_evidence/research_8g.py"
+      - "scripts/run_external_evidence_8g_split_binding.py"
+      - "tests/test_external_evidence_8g_challenger_freeze.py"
+      - ".github/workflows/external_evidence_8g_challenger_freeze.yml"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "src/scanner/research/external_evidence/research_8g.py"
+      - "scripts/run_external_evidence_8g_split_binding.py"
+      - "tests/test_external_evidence_8g_challenger_freeze.py"
+      - ".github/workflows/external_evidence_8g_challenger_freeze.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  challenger-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Re-verify Phase 8G-A pre-registration
+        run: python -m pytest -q tests/test_external_evidence_8g_research_contract.py
+
+      - name: Validate Phase 8G-B factor specs, slot plan and append-only binder
+        run: python -m pytest -q tests/test_external_evidence_8g_challenger_freeze.py
+
+      - name: Verify outcome-blind split binder CLI
+        run: python scripts/run_external_evidence_8g_split_binding.py --help
+
+# This gate must never load forward-return or peer-excess artifacts.
+# The first eligible V1 cohort snapshot is on or after 2026-09-29T00:00:00Z.
+# Rates-policy, yield-curve and FX are the only active confirmatory 8G-B factors.
+# Historical observation dates from the 8F live artifact are not retrojected before their proven valid_from.
+# Split bindings are feature-side, chronological and append-only. Holdout labels remain sealed.
+# No Phase-7 production integration or automatic Phase-8H promotion is enabled here.
