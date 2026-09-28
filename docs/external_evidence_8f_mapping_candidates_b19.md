@@ -15,14 +15,14 @@ B19 deliberately separates defensible documentary mappings from explicit-unmappe
 
 ## Active documentary mappings
 
-| Subject | Factor | Relationship class | Documentary basis |
-| --- | --- | --- | --- |
-| GOT.V | gold | OTHER_DOCUMENTED | Goliath describes Surebet as a large high-grade gold system and publishes gold assay/project disclosure. |
-| SGM.AX | copper | OTHER_DOCUMENTED | Sims reports FY25 earnings support from non-ferrous markets; its annual disclosure identifies copper among principal non-ferrous metals hedged for commodity-price risk. |
-| TME | rates_policy | FINANCING_SENSITIVITY | Tencent Music reports RMB3.0bn drawn under facilities whose interest is based on Loan Prime Rate or fixed rate. |
-| GRAB | rates_policy | FINANCING_SENSITIVITY | Grab identifies long-term variable-rate borrowings as its main interest-rate risk and states that they are contractually repriced. |
-| OCGN | rates_policy | FINANCING_SENSITIVITY | Ocugen documents variable-rate Avenue Capital debt priced from Prime Rate plus a contractual spread subject to a floor. |
-| NPN.JO | fx | CURRENCY_TRANSLATION | Naspers reports in USD, identifies EUR among its significant currency exposures, and quantifies sensitivity to a 10% USD move against EUR. |
+| Subject | Factor | Relationship class |
+| --- | --- | --- |
+| GOT.V | gold | OTHER_DOCUMENTED |
+| SGM.AX | copper | OTHER_DOCUMENTED |
+| TME | rates_policy | FINANCING_SENSITIVITY |
+| GRAB | rates_policy | FINANCING_SENSITIVITY |
+| OCGN | rates_policy | FINANCING_SENSITIVITY |
+| NPN.JO | fx | CURRENCY_TRANSLATION |
 
 All six mappings become usable no earlier than `2026-09-28T06:04+02:00`.
 
