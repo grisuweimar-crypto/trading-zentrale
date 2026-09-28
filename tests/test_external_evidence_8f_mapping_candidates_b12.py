@@ -41,8 +41,8 @@ def test_b12_subjects_are_active_in_current_effective_map():
     effective = load_effective_exposure_map(root=ROOT)
     active_subjects = {row["subject_id"] for row in effective["mappings"] if row["review_status"] == "ACTIVE"}
     b12_subjects = {row["subject_id"] for row in b12["candidates"]}
-    assert len(effective["mappings"]) == 195
-    assert len(active_subjects) == 189
+    assert len(effective["mappings"]) == 201
+    assert len(active_subjects) == 195
     assert b12_subjects <= active_subjects
 
 
@@ -62,7 +62,7 @@ def test_b12_review_replay_is_idempotent_against_current_effective_map():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b12_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     before_count = len(effective["mappings"])
-    assert before_count == 195
+    assert before_count == 201
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
