@@ -1,0 +1,45 @@
+name: Phase 8G Research Contract
+
+on:
+  push:
+    branches:
+      - phase8g-incremental-evidence-research
+    paths:
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "tests/test_external_evidence_8g_research_contract.py"
+      - ".github/workflows/external_evidence_8g_research_contract.yml"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "tests/test_external_evidence_8g_research_contract.py"
+      - ".github/workflows/external_evidence_8g_research_contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pre-registration-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Verify Phase 8F freeze remains outcome blind
+        run: python -m pytest -q tests/test_external_evidence_8f_freeze.py
+
+      - name: Validate Phase 8G-A outcome-blind pre-registration
+        run: python -m pytest -q tests/test_external_evidence_8g_research_contract.py
+
+# Phase 8G-A freezes the research design before any market outcome values are read.
+# This workflow validates contracts only; it does not join, read or evaluate market outcomes.
+# Factor-specific challenger specifications and split manifests are a later 8G step and must
+# themselves be frozen before their corresponding outcome labels may be joined.
+# No cross-factor research, Phase-7 integration or production activation is permitted here.
