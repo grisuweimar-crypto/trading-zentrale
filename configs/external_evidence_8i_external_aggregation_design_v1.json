@@ -1,0 +1,226 @@
+{
+  "schema_version": "external_evidence_8i_external_aggregation_design_v1",
+  "phase": "8I-C",
+  "title": "Outcome-Blind External Aggregation Design",
+  "frozen_on": "2026-09-28",
+  "status": "FROZEN_OUTCOME_BLIND_AGGREGATION_DESIGN_ONLY",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "external_state_engine_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "real_decision_outcome_read_allowed": false,
+  "parent_contracts": {
+    "8i_a": {
+      "path": "configs/external_evidence_8i_decision_extension_contract_v1.json",
+      "git_blob_sha": "3db4359d4ba70dc7bc6801c4d74aa0ebb85b8388"
+    },
+    "8i_b": {
+      "path": "configs/external_evidence_8i_promotion_provenance_binding_v1.json",
+      "git_blob_sha": "0bba5affe58aa837f9750ae46431dc6306f7af06",
+      "required_bound_state": "BOUND_FOR_8I_RESEARCH_ONLY"
+    },
+    "conflict_matrix": {
+      "path": "configs/external_conflict_matrix_v1.json",
+      "git_blob_sha": "cff60dc2b0f2d97afd43758e40cd127347ff2f66",
+      "status": "descriptive_not_policy"
+    }
+  },
+  "scope": {
+    "goal": "Freeze a deterministic, auditable and outcome-blind method for combining separately bound external components into one horizon-specific external direction state without changing the frozen Phase-7 decision.",
+    "8i_c_is_aggregation_design_only": true,
+    "real_bound_component_aggregation_enabled_now": false,
+    "real_component_direction_state_generation_enabled_now": false,
+    "core_state_may_influence_external_direction_aggregation": false,
+    "relation_mapping_after_external_aggregation_allowed": true,
+    "relation_mapping_remains_descriptive_not_policy": true
+  },
+  "input_contract": {
+    "binding_schema": "external_evidence_8i_promotion_provenance_binding_result_v1",
+    "required_binding_state": "BOUND_FOR_8I_RESEARCH_ONLY",
+    "binding_sha256_required": true,
+    "exact_component_identity_required": true,
+    "aggregation_unit": ["snapshot_id", "symbol", "horizon_sessions"],
+    "single_snapshot_symbol_horizon_per_call": true,
+    "cross_horizon_aggregation_allowed": false,
+    "date_only_identity_allowed": false,
+    "component_types_allowed": ["8g_main_effect", "8h_interaction"],
+    "duplicate_component_id_allowed": false,
+    "duplicate_main_effect_factor_per_horizon_allowed": false,
+    "interaction_requires_exact_bound_parent_main_effects_same_horizon": true,
+    "interaction_orphan_policy": "FAIL_CLOSED",
+    "component_observation_statuses": ["USABLE", "UNKNOWN_VALID", "UNAVAILABLE"],
+    "usable_direction_states": ["POSITIVE", "NEGATIVE"],
+    "unknown_valid_direction_state": "UNKNOWN",
+    "unavailable_component_is_zero_or_neutral": false,
+    "unavailable_component_is_excluded_with_reason": true,
+    "unknown_valid_component_may_be_excluded": false
+  },
+  "component_direction_boundary": {
+    "8i_c_derives_direction_from_raw_factor_values": false,
+    "8i_c_derives_direction_from_model_coefficients": false,
+    "8i_c_derives_direction_from_p_values": false,
+    "8i_c_selects_zero_or_nonzero_threshold": false,
+    "8i_c_selects_sign_convention": false,
+    "direction_state_must_be_supplied_by_versioned_outcome_blind_adapter": true,
+    "required_adapter_identity_fields": ["direction_adapter_id", "direction_adapter_version", "direction_adapter_sha256"],
+    "real_direction_adapter_current_state": "NOT_YET_FROZEN",
+    "real_component_direction_state_generation_belongs_to": "8I-D_COMPONENT_DIRECTION_STATE_ENGINE_PREREGISTRATION"
+  },
+  "dependency_graph": {
+    "main_effect_is_root_node": true,
+    "interaction_is_dependent_child_node": true,
+    "interaction_parent_factor_ids_must_match_exact_bound_main_effect_roots": true,
+    "connected_components_form_dependency_bundles": true,
+    "interaction_may_not_be_counted_as_independent_vote_in_addition_to_parent_bundle": true,
+    "overlapping_interactions_merge_connected_parent_bundles": true,
+    "same_component_may_appear_in_more_than_one_bundle": false,
+    "bundle_identity_is_order_invariant": true
+  },
+  "state_reducer": {
+    "method": "SET_SEMANTICS_NO_COUNTS_NO_WEIGHTS",
+    "input_direction_states": ["POSITIVE", "NEGATIVE", "UNKNOWN"],
+    "output_direction_states": ["POSITIVE", "NEGATIVE", "MIXED", "UNKNOWN", "INSUFFICIENT_EXTERNAL"],
+    "rules_in_order": [
+      {
+        "id": "R1_NO_INCLUDED_EVIDENCE",
+        "condition": "no USABLE and no UNKNOWN_VALID component remains after fail-closed exclusions",
+        "result": "INSUFFICIENT_EXTERNAL"
+      },
+      {
+        "id": "R2_KNOWN_SIGN_CONFLICT",
+        "condition": "the set of known directions contains both POSITIVE and NEGATIVE",
+        "result": "MIXED"
+      },
+      {
+        "id": "R3_UNRESOLVED_VALID_EVIDENCE",
+        "condition": "UNKNOWN is present and R2 did not apply",
+        "result": "UNKNOWN"
+      },
+      {
+        "id": "R4_POSITIVE_ONLY",
+        "condition": "the known-direction set equals {POSITIVE} and UNKNOWN is absent",
+        "result": "POSITIVE"
+      },
+      {
+        "id": "R5_NEGATIVE_ONLY",
+        "condition": "the known-direction set equals {NEGATIVE} and UNKNOWN is absent",
+        "result": "NEGATIVE"
+      }
+    ],
+    "multiplicity_changes_result": false,
+    "component_order_changes_result": false,
+    "majority_vote_allowed": false,
+    "numeric_vote_counting_allowed": false,
+    "arbitrary_weights_allowed": false,
+    "significance_weighting_allowed": false,
+    "confidence_weighting_allowed": false,
+    "p_value_weighting_allowed": false
+  },
+  "two_stage_aggregation": {
+    "stage_1": "reduce every connected dependency bundle with the frozen set reducer",
+    "stage_2": "reduce the set of bundle states with the same reducer",
+    "mixed_bundle_contributes_as": ["POSITIVE", "NEGATIVE"],
+    "unknown_bundle_contributes_as": ["UNKNOWN"],
+    "insufficient_bundle_is_excluded_with_reason": true,
+    "bundle_count_or_size_may_change_weight": false,
+    "interaction_count_may_change_weight": false
+  },
+  "relation_mapping": {
+    "source": "configs/external_conflict_matrix_v1.json",
+    "allowed_core_states": ["POSITIVE", "NEGATIVE", "CONFLICTED", "INSUFFICIENT_EVIDENCE"],
+    "allowed_external_states": ["POSITIVE", "NEGATIVE", "MIXED", "UNKNOWN", "INSUFFICIENT_EXTERNAL"],
+    "allowed_relations": ["CONFIRMING", "CONFLICTING", "EXTERNAL_ONLY", "MIXED_EXTERNAL", "UNKNOWN", "INSUFFICIENT_EXTERNAL"],
+    "exact_matrix_lookup_required": true,
+    "relation_is_descriptive_only": true,
+    "confirming_may_promote_phase7_stance": false,
+    "conflicting_may_demote_phase7_stance": false,
+    "external_only_is_trade_signal": false
+  },
+  "outcome_blind_guards": {
+    "market_or_decision_outcomes_read": false,
+    "forward_labels_allowed_as_inputs": false,
+    "outcome_based_direction_selection": false,
+    "outcome_based_threshold_selection": false,
+    "outcome_based_bundle_selection": false,
+    "outcome_based_component_exclusion": false,
+    "outcome_based_horizon_selection": false,
+    "post_hoc_weighting": false,
+    "failed_hypothesis_inversion": false
+  },
+  "diagnostics_required": [
+    "included_component_ids",
+    "excluded_component_ids_with_reasons",
+    "dependency_bundles",
+    "bundle_states",
+    "known_direction_set",
+    "unknown_present",
+    "external_direction_state",
+    "relation_state_if_core_state_supplied",
+    "binding_sha256s",
+    "direction_adapter_sha256s"
+  ],
+  "backward_compatibility": {
+    "phase7_core_immutable": true,
+    "phase7_universal_stance_unchanged": true,
+    "phase7_reliability_unchanged": true,
+    "phase7_state_transition_unchanged": true,
+    "phase7_portfolio_action_unchanged": true,
+    "phase7_swing_management_unchanged": true,
+    "decision_effect_in_8i_c": "NO_CHANGE_TO_PHASE7_DECISION",
+    "external_annotation_only": true
+  },
+  "current_repository_state": {
+    "state": "BLOCKED_BY_8I_B_UPSTREAM_SOURCE_IDENTITY_CONTRACT",
+    "8i_b_current_state": "BLOCKED_UPSTREAM_SOURCE_IDENTITY_CONTRACT",
+    "bound_component_ids": [],
+    "real_direction_adapter_state": "NOT_YET_FROZEN",
+    "real_aggregation_authorized": false,
+    "external_direction_state": "INSUFFICIENT_EXTERNAL",
+    "external_evidence_state": "INSUFFICIENT_EXTERNAL",
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
+  },
+  "fail_closed": {
+    "invalid_binding_digest": "REJECT_COMPONENT",
+    "binding_not_bound_for_8i_research_only": "REJECT_COMPONENT",
+    "missing_direction_adapter_identity": "REJECT_COMPONENT",
+    "invalid_component_observation_status": "REJECT_COMPONENT",
+    "unknown_valid_component": "PRESERVE_AS_UNKNOWN",
+    "unavailable_component": "EXCLUDE_WITH_REASON_NOT_NEUTRAL",
+    "orphan_interaction": "REJECT_AGGREGATION",
+    "mixed_horizons": "REJECT_AGGREGATION",
+    "duplicate_component": "REJECT_AGGREGATION",
+    "duplicate_main_effect_factor": "REJECT_AGGREGATION",
+    "no_valid_components": "INSUFFICIENT_EXTERNAL",
+    "phase7_core_remains_available": true
+  },
+  "forbidden": [
+    "numeric_vote_counting",
+    "majority_vote",
+    "arbitrary_weighting",
+    "confidence_weighting",
+    "p_value_weighting",
+    "interaction_as_independent_extra_vote",
+    "cross_horizon_vote",
+    "unknown_to_neutral_coercion",
+    "unavailable_to_neutral_coercion",
+    "outcome_informed_sign_or_threshold_selection",
+    "outcome_informed_component_or_bundle_selection",
+    "direct_external_to_portfolio_action",
+    "direct_external_to_order_or_trade",
+    "phase7_mutation"
+  ],
+  "completion_gate": {
+    "technical_completion_requires_contract_implementation_tests_docs_and_ci": true,
+    "synthetic_state_reducer_tests_required": true,
+    "synthetic_dependency_graph_tests_required": true,
+    "current_fail_closed_state_test_required": true,
+    "technical_completion_does_not_authorize_real_component_direction_generation": true,
+    "technical_completion_does_not_authorize_external_decision_influence": true,
+    "next_subblock_after_manual_start": "8I-D_COMPONENT_DIRECTION_STATE_ENGINE_PREREGISTRATION"
+  }
+}
