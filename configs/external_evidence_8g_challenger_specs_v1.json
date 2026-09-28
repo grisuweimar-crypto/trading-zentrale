@@ -1,0 +1,197 @@
+{
+  "schema_version": "external_evidence_8g_challenger_specs_v1",
+  "phase": "8G-B",
+  "status": "OUTCOME_BLIND_SINGLE_FACTOR_CHALLENGERS_FROZEN",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "automatic_promotion_enabled": false,
+  "parent_contract": "configs/external_evidence_8g_research_contract_v1.json",
+  "parent_contract_commit": "4b97c2e7e759189eb90e0966ae183314fa2a84ec",
+  "prospective_cohort_not_before": "2026-09-29T00:00:00+00:00",
+  "outcome_values_read_while_defining_specs": false,
+  "active_confirmatory_factor_ids": ["rates_policy", "yield_curve", "fx"],
+  "deferred_factor_ids": ["inflation", "oil", "gas", "gold", "silver", "copper", "uranium", "lithium"],
+  "common_pit_rules": {
+    "scanner_snapshot_requires": ["snapshot_id", "generated_at", "latest_run_complete"],
+    "scanner_snapshot_complete_required": true,
+    "date_only_snapshot_identity_allowed": false,
+    "external_observation_status_required": "KNOWN",
+    "external_valid_from_must_not_exceed_snapshot_generated_at": true,
+    "later_revision_backdating_allowed": false,
+    "latest_knowable_revision_only": true,
+    "max_observation_age_calendar_days": 7,
+    "stale_factor_state": "PIT_INELIGIBLE_STALE",
+    "missing_factor_state": "PIT_INELIGIBLE_MISSING",
+    "unknown_to_neutral_coercion_allowed": false,
+    "active_mapping_required": true,
+    "mapping_human_review_required": true,
+    "mapping_valid_from_must_not_exceed_snapshot_generated_at": true,
+    "mapping_valid_to_is_exclusive": true,
+    "unmapped_subjects_in_factor_challenger": "EXCLUDED_NOT_ZERO_FILLED"
+  },
+  "scanner_baseline": {
+    "target_by_horizon": "peer_excess_{H}t",
+    "numeric_features": [
+      "score",
+      "score_pct_full",
+      "opportunity",
+      "risk",
+      "rs3m",
+      "trend200",
+      "aggregate_risk",
+      "volatility",
+      "drawdown",
+      "debt_ratio",
+      "liquidity_risk",
+      "downside_dev",
+      "beta",
+      "timing_positive_match_count_{H}t",
+      "timing_negative_match_count_{H}t"
+    ],
+    "categorical_features": [
+      "quality_band",
+      "r_code",
+      "score_status",
+      "trend_ok",
+      "liquidity_ok",
+      "cycle",
+      "currency"
+    ],
+    "legacy_confidence_included": false,
+    "probability_retrojection_included": false,
+    "elliott_retrojection_included": false,
+    "missing_numeric_handling": "DISCOVERY_MEDIAN_PLUS_MISSING_INDICATOR",
+    "numeric_scaling": "DISCOVERY_STANDARD_SCALER_MEAN_STD",
+    "missing_categorical_handling": "EXPLICIT_MISSING_CATEGORY",
+    "categorical_encoding": "ONE_HOT_HANDLE_UNKNOWN_IGNORE",
+    "entirely_missing_required_feature": "FAIL_CLOSED_FOR_THAT_FACTOR_HORIZON_RELEASE"
+  },
+  "estimator": {
+    "family": "ridge_linear_regression",
+    "alpha": 1.0,
+    "fit_intercept": true,
+    "hyperparameter_tuning_allowed": false,
+    "feature_selection_allowed": false,
+    "fit_partition": "DISCOVERY_USABLE_ONLY",
+    "validation_refit_allowed": false,
+    "holdout_refit_allowed": false,
+    "model_freeze_before_validation_outcomes_required": true,
+    "validation_spec_freeze_before_holdout_open_required": true
+  },
+  "challenger_construction": {
+    "exactly_one_external_factor_family": true,
+    "cross_factor_interactions_allowed": false,
+    "semantic_sign_assignment": null,
+    "feature_sign_flip_allowed": false,
+    "outcome_derived_thresholds_allowed": false,
+    "external_feature_centering_and_scaling": "FIT_ON_DISCOVERY_FEATURE_VALUES_ONLY_BEFORE_ANY_DISCOVERY_OUTCOME_JOIN",
+    "external_feature_scaler": "STANDARD_SCALER_MEAN_STD",
+    "zero_variance_external_feature": "DROP_THAT_FEATURE_WITH_EXPLICIT_DIAGNOSTIC_NOT_REPLACE_WITH_THRESHOLD",
+    "relationship_class_source": "configs/external_evidence_8f_exposure_map_v1.json",
+    "relationship_class_standalone_feature_in_baseline": false,
+    "external_feature_terms": [
+      "standardized_factor_feature",
+      "standardized_factor_feature_x_relationship_class_one_hot"
+    ],
+    "standalone_relationship_class_term_allowed": false,
+    "multiple_confirmatory_variants_per_factor": false
+  },
+  "primary_comparison": {
+    "comparison_rows": "same_snapshot_same_symbol_same_matured_label_for_baseline_and_challenger",
+    "loss": "squared_error_on_peer_excess",
+    "paired_row_improvement": "baseline_squared_error_minus_challenger_squared_error",
+    "positive_value_means": "challenger_improves_prediction",
+    "snapshot_aggregation": "mean_paired_row_improvement_within_snapshot",
+    "split_effect": "mean_snapshot_level_paired_improvement",
+    "confidence_interval": "percentile_circular_moving_block_bootstrap_on_snapshot_level_improvements",
+    "null_p_value": "two_sided_centered_circular_moving_block_bootstrap",
+    "bootstrap_repetitions": 1000,
+    "bootstrap_seed": 20260928,
+    "confidence_level": 0.95,
+    "block_length_sessions": "2 * H",
+    "holm_family": "all_active_factor_x_horizon_primary_hypotheses_in_release",
+    "holm_alpha": 0.05
+  },
+  "pre_registered_diagnostics": [
+    "mean_absolute_error_improvement",
+    "spearman_prediction_vs_peer_excess_baseline_and_challenger",
+    "non_overlap_cooldown_sensitivity_H_sessions",
+    "factor_coverage_and_missingness",
+    "mapping_relationship_class_counts",
+    "PIT_integrity",
+    "external_feature_zero_variance",
+    "validation_vs_holdout_effect_direction"
+  ],
+  "factor_specs": {
+    "rates_policy": {
+      "source_id": "FED_H15",
+      "series_ids": ["RIFSPFF_N.D"],
+      "source_units": "percent",
+      "feature_fields": [
+        "rates_policy_level_pct",
+        "rates_policy_delta_pp"
+      ],
+      "feature_definition": {
+        "rates_policy_level_pct": "latest KNOWN RIFSPFF_N.D value whose valid_from <= scanner generated_at",
+        "rates_policy_delta_pp": "latest level minus immediately preceding distinct observation-date level among rows knowable at scanner generated_at"
+      },
+      "multi_series_alignment": null,
+      "natural_sign_preserved": true,
+      "historical_retrojection_allowed": false,
+      "earliest_observed_valid_from_at_8f_freeze": "2026-09-28T05:24:30.406650+00:00"
+    },
+    "yield_curve": {
+      "source_id": "FED_H15",
+      "series_ids": ["RIFLGFCY02_N.B", "RIFLGFCY10_N.B"],
+      "source_units": "percent",
+      "feature_fields": [
+        "yield_curve_10y_minus_2y_pp",
+        "yield_curve_delta_pp"
+      ],
+      "feature_definition": {
+        "yield_curve_10y_minus_2y_pp": "10Y value minus 2Y value on latest common observation_date for which both KNOWN rows were knowable at scanner generated_at",
+        "yield_curve_delta_pp": "latest common-date 10Y-minus-2Y spread minus immediately preceding common-date spread among rows knowable at scanner generated_at"
+      },
+      "multi_series_alignment": "EXACT_COMMON_OBSERVATION_DATE_ONLY",
+      "nearest_date_fill_allowed": false,
+      "natural_sign_preserved": true,
+      "historical_retrojection_allowed": false,
+      "earliest_observed_valid_from_at_8f_freeze": "2026-09-28T05:24:30.406650+00:00"
+    },
+    "fx": {
+      "source_id": "ECB_EXR",
+      "series_ids": ["EXR.D.USD.EUR.SP00.A"],
+      "source_units": "USD_per_EUR",
+      "feature_fields": [
+        "fx_log_usd_per_eur",
+        "fx_log_change"
+      ],
+      "feature_definition": {
+        "fx_log_usd_per_eur": "natural logarithm of latest positive KNOWN EXR.D.USD.EUR.SP00.A value whose valid_from <= scanner generated_at",
+        "fx_log_change": "latest log level minus immediately preceding distinct observation-date log level among rows knowable at scanner generated_at"
+      },
+      "positive_value_required": true,
+      "natural_sign_preserved": true,
+      "historical_retrojection_allowed": false,
+      "earliest_observed_valid_from_at_8f_freeze": "2026-09-28T05:24:30.406650+00:00"
+    }
+  },
+  "deferred_factor_policy": {
+    "inflation": "No confirmatory challenger until exact archived publication-time/original-release identity passes a separate outcome-blind PIT gate.",
+    "oil": "No confirmatory challenger until a real prospective EIA observation is ingested and frozen.",
+    "gas": "No confirmatory challenger until a real prospective EIA observation is ingested and frozen.",
+    "gold": "Deferred; no historical vintage proof.",
+    "silver": "Deferred; no historical vintage proof.",
+    "copper": "Deferred; no historical vintage proof.",
+    "uranium": "Proxy challenger remains separate and cannot be relabelled as physical spot evidence.",
+    "lithium": "Proxy challenger remains separate and cannot be relabelled as physical spot evidence."
+  },
+  "guards": {
+    "market_outcomes_read": false,
+    "market_direction_selected_from_outcomes": false,
+    "threshold_search_run": false,
+    "cross_factor_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}
