@@ -11,6 +11,7 @@ from scanner.research.external_evidence.exposure_review_queue_8f import build_ex
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REVIEWED_AT = "2026-09-28T06:04+02:00"
 B19_MAPPING_SUBJECTS = {"GOT.V", "SGM.AX", "TME", "GRAB", "OCGN", "NPN.JO"}
 B19_EXPLICIT_UNMAPPED_SUBJECTS = {
     "LGO",
@@ -40,7 +41,7 @@ def _allowed() -> tuple[set[str], set[str]]:
     return ({row["factor_id"] for row in macro["factor_catalog"]}, {row["subject_id"] for row in queue["subjects"]})
 
 
-def test_b19_documentary_mapping_candidates_pass_gate_but_remain_pending():
+def test_b19_documentary_mapping_candidates_pass_gate():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b19_v1.json")
     factor_ids, subject_ids = _allowed()
     result = validate_mapping_candidates(candidates, allowed_factor_ids=factor_ids, allowed_subject_ids=subject_ids)
@@ -53,64 +54,71 @@ def test_b19_documentary_mapping_candidates_pass_gate_but_remain_pending():
     assert all(row["promotion_allowed"] is False for row in candidates["candidates"])
 
 
-def test_b19_mapping_review_is_pending_and_replay_is_non_mutating():
+def test_b19_mapping_review_is_completed_and_idempotent():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b19_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b19_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert review["status"] == "PENDING_HUMAN_REVIEW"
-    assert review["reviewer_role"] is None
-    assert review["reviewed_at"] is None
-    assert review["decisions"] == []
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewer_role"] == "HUMAN_REVIEWER"
+    assert review["reviewed_at"] == REVIEWED_AT
+    assert len(review["decisions"]) == 6
+    assert all(item["decision"] == "APPROVE" for item in review["decisions"])
+    assert all(item["source_verified"] is True for item in review["decisions"])
+    assert all(item["relationship_class_confirmed"] is True for item in review["decisions"])
     assert all(value is False for value in review["guards"].values())
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
-    assert result["status"] == "AWAITING_HUMAN_REVIEW"
+    assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
-    assert result["exposure_map"] == effective
+    assert result["already_applied_count"] == 6
+    assert result["redundant_already_applied_count"] == 0
+    assert len(result["exposure_map"]["mappings"]) == 201
 
 
-def test_b19_explicit_unmapped_proposals_are_pending_and_partition_the_true_remainder():
+def test_b19_explicit_unmapped_reviews_are_completed_and_active_in_domain():
     proposal = _load("configs/external_evidence_8f_explicit_unmapped_candidates_b19_v1.json")
     review = _load("configs/external_evidence_8f_explicit_unmapped_review_decisions_b19_v1.json")
+    domain = _load("configs/external_evidence_8f_research_domain_v1.json")
     assert proposal["status"] == "PENDING_HUMAN_REVIEW"
     assert proposal["guards"]["proposal_count"] == 11
     assert {row["subject_id"] for row in proposal["proposals"]} == B19_EXPLICIT_UNMAPPED_SUBJECTS
     assert all(row["human_reviewed"] is False for row in proposal["proposals"])
     assert all(row["promotion_allowed"] is False for row in proposal["proposals"])
-    assert review["status"] == "PENDING_HUMAN_REVIEW"
-    assert review["reviewer_role"] is None
-    assert review["reviewed_at"] is None
-    assert review["decisions"] == []
+    assert review["status"] == "HUMAN_REVIEW_COMPLETED"
+    assert review["reviewer_role"] == "HUMAN_REVIEWER"
+    assert review["reviewed_at"] == REVIEWED_AT
+    assert len(review["decisions"]) == 11
+    assert {row["subject_id"] for row in review["decisions"]} == B19_EXPLICIT_UNMAPPED_SUBJECTS
+    assert all(row["decision"] == "APPROVE_EXPLICIT_UNMAPPED" for row in review["decisions"])
+    assert all(row["source_verified"] is True for row in review["decisions"])
+    assert all(row["reason_confirmed"] is True for row in review["decisions"])
     assert all(value is False for value in review["guards"].values())
 
-    effective = load_effective_exposure_map(root=ROOT)
-    domain = _load("configs/external_evidence_8f_research_domain_v1.json")
-    universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8")
-    audit = build_exposure_domain_audit(domain_config=domain, exposure_map=effective, universe_csv_text=universe_text)
-    assert set(audit["unaccounted_subject_ids"]) == B19_ALL_SUBJECTS
-    assert audit["unaccounted_subject_count"] == 17
+    domain_by_subject = {row["subject_id"]: row for row in domain["explicit_unmapped"]}
+    assert B19_EXPLICIT_UNMAPPED_SUBJECTS <= set(domain_by_subject)
+    assert all(domain_by_subject[subject]["reviewed_at"] == REVIEWED_AT for subject in B19_EXPLICIT_UNMAPPED_SUBJECTS)
 
 
-def test_b19_pending_state_does_not_falsely_complete_frozen_domain():
+def test_b19_mapping_subjects_are_active_at_human_review_timestamp():
     effective = load_effective_exposure_map(root=ROOT)
     active_rows = [row for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
-    active_subjects = {row["subject_id"] for row in active_rows}
-    assert len(effective["mappings"]) == 195
-    assert len(active_rows) == 189
-    assert B19_MAPPING_SUBJECTS.isdisjoint(active_subjects)
+    by_subject = {row["subject_id"]: row for row in active_rows}
+    assert len(effective["mappings"]) == 201
+    assert len(active_rows) == 195
+    assert B19_MAPPING_SUBJECTS <= set(by_subject)
+    assert all(by_subject[subject]["reviewed_at"] == REVIEWED_AT for subject in B19_MAPPING_SUBJECTS)
+    assert all(by_subject[subject]["valid_from"] == REVIEWED_AT for subject in B19_MAPPING_SUBJECTS)
 
+
+def test_b19_human_approval_completes_frozen_domain_accounting():
+    effective = load_effective_exposure_map(root=ROOT)
     domain = _load("configs/external_evidence_8f_research_domain_v1.json")
     universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8")
     audit = build_exposure_domain_audit(domain_config=domain, exposure_map=effective, universe_csv_text=universe_text)
-    assert audit["mapped_subject_count"] == 189
-    assert audit["explicit_unmapped_subject_count"] == 1
-    assert audit["unaccounted_subject_count"] == 17
-    assert audit["mapped_subject_count"] + audit["explicit_unmapped_subject_count"] + audit["unaccounted_subject_count"] == 207
-
-
-def test_b19_full_human_approval_would_account_for_all_207_without_claiming_activation_now():
     assert len(B19_MAPPING_SUBJECTS) == 6
     assert len(B19_EXPLICIT_UNMAPPED_SUBJECTS) == 11
     assert len(B19_ALL_SUBJECTS) == 17
-    assert 189 + len(B19_MAPPING_SUBJECTS) == 195
-    assert 1 + len(B19_EXPLICIT_UNMAPPED_SUBJECTS) == 12
-    assert 195 + 12 == 207
+    assert audit["mapped_subject_count"] == 195
+    assert audit["explicit_unmapped_subject_count"] == 12
+    assert audit["unaccounted_subject_count"] == 0
+    assert audit["unaccounted_subject_ids"] == []
+    assert audit["mapped_subject_count"] + audit["explicit_unmapped_subject_count"] == 207
