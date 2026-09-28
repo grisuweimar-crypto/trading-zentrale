@@ -1,0 +1,52 @@
+{
+  "schema_version": "external_evidence_8f_mapping_candidates_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "DOCUMENTARY_CANDIDATES_PENDING_HUMAN_REVIEW",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B14",
+  "created_date": "2026-09-27",
+  "promotion_rules": {
+    "candidate_may_enter_exposure_map_without_human_review": false,
+    "candidate_may_be_backdated_before_review": false,
+    "sector_or_name_alone_is_sufficient_evidence": false,
+    "market_outcomes_may_be_used": false,
+    "direction_or_signed_exposure_may_be_assigned": false,
+    "weight_or_threshold_may_be_selected": false,
+    "reviewer_must_verify_source_and_relationship_class": true,
+    "approved_mapping_valid_from_must_be_at_or_after_reviewed_at": true
+  },
+  "candidates": [
+    {
+      "candidate_id": "MAPCAND:PATH:rates_policy:1",
+      "subject_id": "PATH",
+      "factor_id": "rates_policy",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "SEC_10K",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1734722/000173472226000030/uipathinc_arx2026xflat.pdf",
+      "evidence_summary": "UiPath reports $871.2 million of cash and cash equivalents and $818.3 million of marketable securities at January 31, 2026, states that these interest-earning instruments carry interest-rate risk, and quantifies a hypothetical interest-rate change, directly documenting treasury-portfolio rate sensitivity.",
+      "evidence_record_sha256": "df8aceada3b17786db435e558bda33c837a21fd2adaec33d1c582fc1be9ac7dd",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:9988.HK:rates_policy:1",
+      "subject_id": "9988.HK",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "SEC_20F",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1577552/000119312526231755/baba-20260331.htm",
+      "evidence_summary": "Alibaba states that it is subject to interest-rate risk on indebtedness and that certain offshore credit facilities reference forward-looking Loan Prime Rate, SOFR or HIBOR; benchmark-rate increases can raise financing costs, directly documenting financing sensitivity.",
+      "evidence_record_sha256": "e145a11e8533056a2b0e6f509516ebc663ee937b12eec5b123b3dd4b8c9440fa",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    }
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "candidate_count": 2,
+    "active_exposure_map_modified": false,
+    "human_review_claimed": false,
+    "automatic_sector_mapping_promoted": false
+  }
+}

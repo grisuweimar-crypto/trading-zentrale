@@ -1,0 +1,92 @@
+name: Phase 8F Macro Exposure Context
+
+on:
+  pull_request:
+    paths:
+      - "configs/external_evidence_8f_*"
+      - "artifacts/research/external_evidence_8f_freeze_*/**"
+      - "src/scanner/research/external_evidence/**"
+      - "scripts/*external_evidence_8f*"
+      - "tests/test_external_evidence_8f_*"
+      - "docs/external_evidence_8f_*"
+      - ".github/workflows/external_evidence_8f_macro_exposure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Validate Phase 8F foundation, mapping and freeze contracts
+        run: python -m pytest -q tests/test_external_evidence_8f_*.py
+
+      - name: Verify Phase 8F CLIs
+        run: |
+          python scripts/run_external_evidence_8f_contract_gate.py --help
+          python scripts/run_external_evidence_8f_macro_ledger.py --help
+          python scripts/collect_external_evidence_8f_prospective.py --help
+          python scripts/run_external_evidence_8f_exposure_domain_audit.py --help
+          python scripts/run_external_evidence_8f_exposure_review_queue.py --help
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --help
+          python scripts/run_external_evidence_8f_mapping_review.py --help
+          python scripts/run_external_evidence_8f_completion_gate.py --help
+
+      - name: Execute Phase 8F foundation contract gate against effective map
+        run: python scripts/run_external_evidence_8f_contract_gate.py --output /tmp/external_evidence_8f_contract_gate.json
+
+      - name: Build frozen research-domain audit against effective map
+        run: python scripts/run_external_evidence_8f_exposure_domain_audit.py --output /tmp/external_evidence_8f_exposure_domain_audit.json
+
+      - name: Build frozen 207-subject exposure review queue
+        run: python scripts/run_external_evidence_8f_exposure_review_queue.py --output /tmp/external_evidence_8f_exposure_review_queue.json
+
+      - name: Validate and replay B1 human review idempotently
+        run: |
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py --output /tmp/external_evidence_8f_mapping_candidate_gate_b1.json
+          python scripts/run_external_evidence_8f_mapping_review.py --output /tmp/external_evidence_8f_mapping_review_b1.json
+
+      - name: Validate and replay B2-B19 human reviews with registered resolutions
+        run: |
+          set -euo pipefail
+          for b in {2..19}; do
+            candidates="configs/external_evidence_8f_mapping_candidates_b${b}_v1.json"
+            review="configs/external_evidence_8f_mapping_review_decisions_b${b}_v1.json"
+            python scripts/run_external_evidence_8f_mapping_candidate_gate.py \
+              --candidates "$candidates" \
+              --output "/tmp/external_evidence_8f_mapping_candidate_gate_b${b}.json"
+            python scripts/run_external_evidence_8f_mapping_review.py \
+              --candidates "$candidates" \
+              --review "$review" \
+              --output "/tmp/external_evidence_8f_mapping_review_b${b}.json"
+          done
+
+      - name: Verify committed Phase 8F freeze manifest and passing gate evidence
+        run: python -m pytest -q tests/test_external_evidence_8f_freeze.py
+
+# Foundation CI performs no live market-price requests.
+# Research-domain membership is frozen independently of mappings and outcomes.
+# Documentary candidate mappings cannot enter the effective exposure map automatically.
+# B1-B4 remain materialized in the 60-mapping base map; B5-B19 are append-only human-reviewed overlays.
+# Final repaired mapping state: 201 historical mapping intervals = 195 ACTIVE + 6 SUPERSEDED.
+# Frozen-domain accounting: 195 mapped + 12 human-reviewed explicit-unmapped = 207/207 accounted; zero remain unaccounted.
+# The resolution ledger contains 18 identical audit-only re-reviews and 6 versioned human-reviewed supersessions.
+# Supersessions preserve the prior interval and activate a v2 mapping only from the later human-review timestamp.
+# B1-B19 human-review replay must be idempotent against the effective map and resolution-aware.
+# Unregistered conflicting duplicates remain fail-closed.
+# The real live collector separately enforces --require-pass against an actual macro ledger and domain audit.
+# Gold/silver/copper remain explicitly deferred rather than being promoted without strict historical vintage proof.
+# No backdating, market direction, signed exposure, weights, thresholds, outcome research,
+# cross-factor research, Phase-7 integration or production external-evidence enablement is allowed here.
+# Phase 8F is frozen as a source/exposure layer; predictive-value testing begins only in Phase 8G.

@@ -1,0 +1,104 @@
+{
+  "schema_version": "external_evidence_8f_mapping_candidates_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "DOCUMENTARY_CANDIDATES_PENDING_HUMAN_REVIEW",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-28_B19",
+  "created_date": "2026-09-28",
+  "promotion_rules": {
+    "candidate_may_enter_exposure_map_without_human_review": false,
+    "candidate_may_be_backdated_before_review": false,
+    "sector_or_name_alone_is_sufficient_evidence": false,
+    "market_outcomes_may_be_used": false,
+    "direction_or_signed_exposure_may_be_assigned": false,
+    "weight_or_threshold_may_be_selected": false,
+    "reviewer_must_verify_source_and_relationship_class": true,
+    "approved_mapping_valid_from_must_be_at_or_after_reviewed_at": true
+  },
+  "candidates": [
+    {
+      "candidate_id": "MAPCAND:GOT.V:gold:1",
+      "subject_id": "GOT.V",
+      "factor_id": "gold",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "ISSUER_PROJECT_DISCLOSURE",
+      "evidence_reference": "https://goliathresourcesltd.com/about-us/",
+      "evidence_summary": "Goliath describes Surebet as a large high-grade gold system, reports high-grade gold assays across the discovery, and remains an exploration-stage issuer; this supports a conservative project-value gold relationship rather than a revenue link.",
+      "evidence_record_sha256": "4570657f7ca60f90a1bec5808884a865fb78fd50303013e21e329a3ff66472a9",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:SGM.AX:copper:1",
+      "subject_id": "SGM.AX",
+      "factor_id": "copper",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "ISSUER_FULL_YEAR_RESULTS",
+      "evidence_reference": "https://www.simsltd.com/news/2025/sims-limited-announces-fiscal-2025-full-year-results/",
+      "evidence_summary": "Sims reports that strong non-ferrous markets supported FY25 revenue and margin performance; its FY25 annual report separately identifies copper among the principal non-ferrous metals hedged for commodity-price risk, supporting a documented copper relationship without assigning a fixed direction.",
+      "evidence_record_sha256": "e541c1ff76ab03d7e907186b9468a1057c8b73f4d427547e91991f408a3da9ee",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:TME:rates_policy:1",
+      "subject_id": "TME",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "SEC_20F",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1744676/000119312526160257/tme-20251231.htm",
+      "evidence_summary": "Tencent Music's 2025 Form 20-F states that a wholly owned subsidiary drew RMB3.0 billion in 2026 under loan facilities whose interest is based on the Loan Prime Rate or fixed rates, directly documenting benchmark-linked financing sensitivity.",
+      "evidence_record_sha256": "7265e8943986248f8513c6354b87a55381e529da2a6548c9e8c3832627f22177",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:GRAB:rates_policy:1",
+      "subject_id": "GRAB",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "SEC_20F",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1855612/000185561226000020/ck0001855612-20251231.htm",
+      "evidence_summary": "Grab's 2025 Form 20-F states that its main interest-rate risk arises from long-term variable-rate borrowings that are contractually repriced, so changes in market rates directly affect financing costs.",
+      "evidence_record_sha256": "1496074094ed0f51dee3c91eef8afb870fff84b543d175e997f0b35afa5e14dd",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:OCGN:rates_policy:1",
+      "subject_id": "OCGN",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "SEC_10K",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1372299/000162828026014435/ocgn-20251231.htm",
+      "evidence_summary": "Ocugen's 2025 Form 10-K documents Avenue Capital borrowings carrying a variable rate equal to the greater of Prime Rate plus a contractual spread or a stated floor, directly linking financing cost to market rates.",
+      "evidence_record_sha256": "2737b0b24aa3b1af5eaa040a1a22a1873b66c3f804b015e7168d11cbebf22e3c",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:NPN.JO:fx:1",
+      "subject_id": "NPN.JO",
+      "factor_id": "fx",
+      "relationship_class": "CURRENCY_TRANSLATION",
+      "evidence_type": "REGULATORY_ANNUAL_FINANCIAL_STATEMENTS",
+      "evidence_reference": "https://senspdf.jse.co.za/documents/2025/jse/isse/NPN/YE25.pdf",
+      "evidence_summary": "Naspers' FY2025 financial statements use the U.S. dollar as group presentation currency, identify the euro among the most significant currency exposures, and quantify sensitivity to a 10% U.S.-dollar move against the euro, directly documenting EUR/USD-linked currency exposure.",
+      "evidence_record_sha256": "260070b2ae1a1a65d4627c26ff368add7985b2c1543fdd7a034bff6d057bb0e9",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    }
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "candidate_count": 6,
+    "active_exposure_map_modified": false,
+    "human_review_claimed": false,
+    "automatic_sector_mapping_promoted": false
+  }
+}

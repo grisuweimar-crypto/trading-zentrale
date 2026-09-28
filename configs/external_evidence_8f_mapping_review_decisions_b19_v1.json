@@ -1,0 +1,23 @@
+{
+  "schema_version": "external_evidence_8f_mapping_review_decisions_v1",
+  "phase": "8F_macro_exposure_context",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-28_B19",
+  "status": "HUMAN_REVIEW_COMPLETED",
+  "reviewer_role": "HUMAN_REVIEWER",
+  "reviewed_at": "2026-09-28T06:04+02:00",
+  "decisions": [
+    {"candidate_id":"MAPCAND:GOT.V:gold:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Project disclosure supports OTHER_DOCUMENTED gold exposure; no market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:SGM.AX:copper:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Issuer results and commodity-risk disclosure support OTHER_DOCUMENTED copper exposure; no market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:TME:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Benchmark-linked loan pricing supports FINANCING_SENSITIVITY; no market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:GRAB:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Variable-rate borrowings support FINANCING_SENSITIVITY; no market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:OCGN:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Prime-linked variable-rate borrowing supports FINANCING_SENSITIVITY; no market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:NPN.JO:fx:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Annual financial statements explicitly quantify USD/EUR sensitivity, supporting CURRENCY_TRANSLATION; no market outcomes, direction, weights or thresholds used."}
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "automatic_approval_allowed": false,
+    "backdating_before_review_allowed": false,
+    "direction_or_signed_exposure_assigned": false,
+    "weights_or_thresholds_selected": false
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": "external_evidence_8f_mapping_review_decisions_v1",
+  "phase": "8F_macro_exposure_context",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B14",
+  "status": "HUMAN_REVIEW_COMPLETED",
+  "reviewer_role": "HUMAN_REVIEWER",
+  "reviewed_at": "2026-09-27T11:28:01+02:00",
+  "decisions": [
+    {
+      "candidate_id": "MAPCAND:PATH:rates_policy:1",
+      "decision": "APPROVE",
+      "source_verified": true,
+      "relationship_class_confirmed": true,
+      "notes": "Explicit human approval; treasury/investment rate sensitivity retained as OTHER_DOCUMENTED. No market outcomes, direction, weights or thresholds used."
+    },
+    {
+      "candidate_id": "MAPCAND:9988.HK:rates_policy:1",
+      "decision": "APPROVE",
+      "source_verified": true,
+      "relationship_class_confirmed": true,
+      "notes": "Explicit human approval; benchmark-linked credit facilities support FINANCING_SENSITIVITY. No market outcomes, direction, weights or thresholds used."
+    }
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "automatic_approval_allowed": false,
+    "backdating_before_review_allowed": false,
+    "direction_or_signed_exposure_assigned": false,
+    "weights_or_thresholds_selected": false
+  }
+}
