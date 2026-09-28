@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8f_completion_v1",
   "phase": "8F_macro_exposure_context",
-  "status": "BLOCKED_PENDING_REAL_LEDGER_AND_REVIEWED_MAPPING_COVERAGE",
+  "status": "BLOCKED_PENDING_REAL_LEDGER_AND_COMPLETION_VALIDATION",
   "freeze_allowed": false,
   "requirements": {
     "foundation_contract_must_pass": true,
@@ -28,7 +28,8 @@
     "exposure_domain_audit"
   ],
   "notes": [
-    "The research denominator is now frozen to the exact pre-8F universe_master.csv blob at the Phase-8E head, filtered to active stocks and deduplicated by symbol.",
+    "The research denominator is frozen to the exact pre-8F universe_master.csv blob at the Phase-8E head, filtered to active stocks and deduplicated by symbol.",
+    "B19 human review completes documentary domain accounting at 195 active mapped subjects plus 12 explicit-unmapped subjects = 207/207; mapping coverage is no longer a blocker by itself.",
     "Synthetic fixture rows may validate code but may not satisfy the real-macro-ledger completion requirement.",
     "A mapping is not complete merely because a sector/name suggests exposure; it must satisfy the versioned documentary human-review contract.",
     "Every frozen-domain subject must remain accounted for as mapped or explicitly unmapped.",
