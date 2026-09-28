@@ -40,8 +40,8 @@ def test_b14_subjects_are_now_active_in_effective_map():
     effective = load_effective_exposure_map(root=ROOT)
     active_rows = [row for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
     by_subject = {row["subject_id"]: row for row in active_rows}
-    assert len(effective["mappings"]) == 195
-    assert len(active_rows) == 189
+    assert len(effective["mappings"]) == 201
+    assert len(active_rows) == 195
     assert by_subject["PATH"]["factor_id"] == "rates_policy"
     assert by_subject["PATH"]["relationship_class"] == "OTHER_DOCUMENTED"
     assert by_subject["9988.HK"]["factor_id"] == "rates_policy"
@@ -63,10 +63,10 @@ def test_b14_review_replay_is_idempotent_against_effective_map():
     candidates = _load("configs/external_evidence_8f_mapping_candidates_b14_v1.json")
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b14_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
-    assert len(effective["mappings"]) == 195
+    assert len(effective["mappings"]) == 201
     result = apply_human_mapping_review(candidate_config=candidates, review_config=review, exposure_map=effective)
     assert result["status"] == "HUMAN_REVIEW_ALREADY_APPLIED"
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 2
     assert result["redundant_already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 195
+    assert len(result["exposure_map"]["mappings"]) == 201
