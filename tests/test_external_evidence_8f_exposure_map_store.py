@@ -25,7 +25,7 @@ def _load(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
-def test_committed_overlay_registry_materializes_repaired_b5_through_b18_state():
+def test_committed_overlay_registry_materializes_repaired_b5_through_b19_state():
     base = _load("configs/external_evidence_8f_exposure_map_v1.json")
     effective = load_effective_exposure_map(root=ROOT)
     audit = build_effective_exposure_map_audit(root=ROOT)
@@ -35,19 +35,19 @@ def test_committed_overlay_registry_materializes_repaired_b5_through_b18_state()
     superseded = [row for row in mappings if row["review_status"] == "SUPERSEDED"]
 
     assert len(base["mappings"]) == 60
-    assert len(mappings) == 195
-    assert len(active) == 189
+    assert len(mappings) == 201
+    assert len(active) == 195
     assert len(superseded) == 6
 
     assert audit["status"] == "PASS_EFFECTIVE_EXPOSURE_MAP_COMPOSITION"
     assert audit["base_mapping_count"] == 60
-    assert audit["overlay_count"] == 14
+    assert audit["overlay_count"] == 15
     assert audit["review_resolution_count"] == 24
     assert audit["redundant_review_correction_count"] == 18
     assert audit["supersession_count"] == 6
-    assert audit["effective_mapping_interval_count"] == 195
-    assert audit["effective_mapping_count"] == 189
-    assert audit["active_subject_count"] == 189
+    assert audit["effective_mapping_interval_count"] == 201
+    assert audit["effective_mapping_count"] == 195
+    assert audit["active_subject_count"] == 195
     assert audit["superseded_mapping_count"] == 6
     assert audit["market_outcomes_read"] is False
     assert audit["automatic_promotion_used"] is False
@@ -61,7 +61,7 @@ def test_effective_map_has_unique_active_subject_factor_pairs_after_supersession
         for row in effective["mappings"]
         if row["review_status"] == "ACTIVE"
     ]
-    assert len(pairs) == len(set(pairs)) == 189
+    assert len(pairs) == len(set(pairs)) == 195
 
 
 def test_six_conflicting_rereviews_are_versioned_not_retroactively_overwritten():
