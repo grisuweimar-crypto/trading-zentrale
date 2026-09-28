@@ -14,7 +14,8 @@ LEDGER = json.loads((ROOT / "artifacts" / "research" / "external_evidence_8g_hol
 def test_persisted_holdout_seed_matches_code_generated_sealed_ledger() -> None:
     expected = new_holdout_consumption_ledger(PROTOCOL)
     assert LEDGER["schema_version"] == expected["schema_version"]
-    assert LEDGER["phase"] == "8G-E"
+    assert LEDGER["phase"] == "8G-F"
+    assert expected["phase"] == "8G-F"
     assert LEDGER["append_only"] is True
     assert LEDGER["outcomes_read_while_creating_ledger"] is False
     assert set(LEDGER["streams"]) == set(expected["streams"])
