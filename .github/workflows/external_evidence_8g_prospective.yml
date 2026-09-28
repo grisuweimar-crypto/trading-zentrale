@@ -1,0 +1,55 @@
+name: Phase 8G-G Prospective Confirmation
+
+on:
+  push:
+    branches:
+      - phase8g-incremental-evidence-research
+    paths:
+      - "configs/external_evidence_8g_evaluation_protocol_v1.json"
+      - "configs/external_evidence_8g_holdout_protocol_v1.json"
+      - "configs/external_evidence_8g_prospective_protocol_v1.json"
+      - "src/scanner/research/external_evidence/evaluation_8g.py"
+      - "src/scanner/research/external_evidence/holdout_8g.py"
+      - "src/scanner/research/external_evidence/prospective_8g.py"
+      - "tests/test_external_evidence_8g_holdout.py"
+      - "tests/test_external_evidence_8g_prospective.py"
+      - ".github/workflows/external_evidence_8g_prospective.yml"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8g_prospective_protocol_v1.json"
+      - "src/scanner/research/external_evidence/prospective_8g.py"
+      - "tests/test_external_evidence_8g_prospective.py"
+      - ".github/workflows/external_evidence_8g_prospective.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prospective-confirmation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Re-verify Phase 8G-F Holdout boundary
+        run: python -m pytest -q tests/test_external_evidence_8g_holdout.py
+
+      - name: Validate Phase 8G-G prospective confirmation governance
+        run: python -m pytest -q tests/test_external_evidence_8g_prospective.py
+
+# 8G-G is shadow research only.
+# Only 8G-F HOLDOUT_CONFIRMED hypotheses may enter the prospective stream.
+# Model, features, thresholds, horizons, variants and candidate membership remain frozen.
+# The terminal trigger is evidence-count/time-support based and outcome-independent.
+# Each eligible hypothesis receives one terminal prospective evaluation; repeated
+# significance looks and re-evaluation are forbidden. Holm retains all 12 hypotheses.
+# 8G-G does not enable Phase-7 integration, production use or automatic promotion.
+# The next planned subphase is 8G-H Promotion Review.
