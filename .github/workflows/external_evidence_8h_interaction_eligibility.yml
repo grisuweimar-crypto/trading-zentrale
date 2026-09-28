@@ -1,0 +1,108 @@
+name: Phase 8H-B Interaction Eligibility Binding
+
+on:
+  push:
+    branches:
+      - phase8h-cross-factor-interaction
+    paths:
+      - "configs/external_evidence_8h_interaction_eligibility_binding_v1.json"
+      - "src/scanner/research/external_evidence/interaction_eligibility_8h.py"
+      - "tests/test_external_evidence_8h_interaction_eligibility.py"
+      - ".github/workflows/external_evidence_8h_interaction_eligibility.yml"
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "src/scanner/research/external_evidence/promotion_review_8g.py"
+      - "src/scanner/research/external_evidence/prospective_8g.py"
+      - "tests/test_external_evidence_8g_promotion_review.py"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8h_interaction_eligibility_binding_v1.json"
+      - "src/scanner/research/external_evidence/interaction_eligibility_8h.py"
+      - "tests/test_external_evidence_8h_interaction_eligibility.py"
+      - ".github/workflows/external_evidence_8h_interaction_eligibility.yml"
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "src/scanner/research/external_evidence/promotion_review_8g.py"
+      - "src/scanner/research/external_evidence/prospective_8g.py"
+      - "tests/test_external_evidence_8g_promotion_review.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interaction-eligibility-binding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Guard upstream 8G-H promotion governance
+        run: python -m pytest -q tests/test_external_evidence_8g_promotion_review.py
+
+      - name: Guard Phase 8H-A outcome-blind research contract
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_research_contract.py
+
+      - name: Verify Phase 8H-B eligibility promotion binding
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_eligibility.py
+
+      - name: Guard research-only production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=""
+          while IFS= read -r file; do
+            case "$file" in
+              src/scanner/research/*) ;;
+              *) bad="${bad}${file}\n" ;;
+            esac
+          done < <(grep -RIl --exclude-dir='__pycache__' -E 'interaction_eligibility_8h|external_evidence_8h_interaction_eligibility_binding_v1' src 2>/dev/null || true)
+          if [[ -n "$bad" ]]; then
+            echo "8H-B eligibility binding referenced from production-facing source path(s):"
+            printf '%b' "$bad"
+            exit 1
+          fi
+
+      - name: Assert current repository remains waiting and outcome-closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.external_evidence.interaction_eligibility_8h import bind_interaction_eligibility
+
+          root = Path('.')
+          contract = json.loads((root / 'configs/external_evidence_8h_interaction_eligibility_binding_v1.json').read_text())
+          challenger = json.loads((root / 'configs/external_evidence_8g_challenger_specs_v1.json').read_text())
+          registry = json.loads((root / 'configs/external_source_registry_v1.json').read_text())
+          result = bind_interaction_eligibility(
+              contract=contract,
+              challenger_specs=challenger,
+              source_registry=registry,
+          )
+          assert result['state'] == 'WAITING_FOR_8G_H_EMPIRICAL_COMPLETION'
+          assert result['eligible_factor_horizon_ids'] == []
+          assert result['interaction_spec_freeze_authorized'] is False
+          assert result['interaction_outcome_access_authorized'] is False
+          assert result['empirical_interaction_research_enabled'] is False
+          assert result['concrete_interaction_specs'] == []
+          PY
+
+# 8H-B binds upstream eligibility only. It does not select interaction candidates,
+# inspect interaction outcomes, authorize production, mutate Phase 7, enable 8I,
+# or authorize an order/trade. Concrete outcome-blind interaction specs belong to 8H-C.
