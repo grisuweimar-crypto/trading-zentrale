@@ -1,12 +1,15 @@
 # Phase 8F – Macro & Exposure Context
 
-Status: **source/PIT foundation, first adapters, append-only ledger, research-domain audit and completion gate implemented; Phase 8F is not yet frozen**.
+Status: **FROZEN — source/exposure layer complete; outcome research pending Phase 8G**.
+
+Canonical freeze artifact: `configs/external_evidence_8f_freeze_v1.json`  
+Completion report: `docs/external_evidence_8f_completion.md`
 
 Phase 8F remains a separate external-evidence family on top of the frozen Phase-7 Core. It does not alter Selection, Timing, Probability, Risk, Confidence, Elliott or the Phase-7 decision layer.
 
 ## Hard boundary
 
-The current implementation remains outcome-blind:
+The frozen implementation remains outcome-blind:
 
 - no market outcome reading;
 - no bullish/bearish assignment;
@@ -17,7 +20,7 @@ The current implementation remains outcome-blind:
 - no Phase-7 integration;
 - no production external evidence.
 
-The dedicated completion gate prevents Phase 8F from being declared finished while real PIT observations and reviewed exposure mappings are still missing.
+Missing, deferred or unobserved macro evidence may never be converted to a numeric zero or neutral state.
 
 ## PIT / vintage contract
 
@@ -26,66 +29,45 @@ Two historical-availability modes are supported:
 1. **Exact independently proven publication timestamp**: `valid_from` may equal the proven `published_at` timestamp.
 2. **Day-level historical vintage only**: the conservative earliest `valid_from` remains 00:00 UTC on the following calendar day.
 
-Prospective observations without independent historical proof use `valid_from >= ingested_at`.
+Prospective observations without independent historical proof use `valid_from >= ingested_at`. Later revisions are separate append-only observations and may never overwrite an earlier vintage.
 
-Later revisions are separate append-only observations and may never overwrite an earlier vintage.
+## Source status
 
-UNKNOWN/STALE/LICENSED_OUT/LOW_COVERAGE states may not smuggle a numeric zero as a fake neutral value.
+### Implemented adapters
 
-## Source blocker: FRED / ALFRED
+- BLS archived CPI releases — inflation;
+- Federal Reserve H.15 — effective federal funds rate and 2Y/10Y Treasury constant maturities;
+- ECB Data Portal — USD/EUR reference rate;
+- EIA Open Data — WTI, Brent and Henry Hub prospective adapters.
 
-FRED/ALFRED remains blocked for Scanner_vNext ingestion under the terms reviewed on 2026-09-26. It is retained only as a conceptual vintage-semantics reference. No FRED/ALFRED data are persisted by Phase 8F.
+FRED/ALFRED remains blocked under the terms reviewed for 8F and is not an enabled ingestion source.
 
-## Implemented source adapters
+### Real freeze snapshot
 
-### BLS CPI – retrospective exact PIT
+The real prospective collection used for the freeze was produced by GitHub Actions run `36381751961` from Phase-8F head `10f37e7d28e533d1ec9599ab75edc5beb0e82e6f`.
 
-Adapter: `bls_cpi_8f.py`
+It contains 25 knowable append-only PIT rows across four observed series:
 
-Implemented release-level series:
+- ECB USD/EUR: 10 rows;
+- Fed H.15 effective federal funds: 5 rows;
+- Fed H.15 2Y Treasury: 5 rows;
+- Fed H.15 10Y Treasury: 5 rows.
 
-- `BLS_CPI_U_ALL_ITEMS_MOM_SA_RELEASE_PCT`
-- `BLS_CPI_U_ALL_ITEMS_YOY_NSA_RELEASE_PCT`
+The run had no `EIA_API_KEY`; oil/gas collection was therefore explicitly `SKIPPED_NO_API_KEY`. That state is not treated as neutral evidence and did not fabricate oil/gas observations.
 
-The adapter parses archived CPI news releases, including the release/embargo timestamp. Historical use is allowed only when the archived release itself independently proves the exact publication time. The source text is SHA-256 fingerprinted and later revisions remain separate.
+### Gold, silver and copper
 
-### U.S. EIA – prospective energy snapshots
+World Bank Pink Sheet remains the preferred open candidate. Official monthly publications and reusable dataset metadata exist, but Phase 8F did not establish a complete row-level historical first-release/vintage reconstruction meeting the strict PIT contract.
 
-Adapter: `eia_energy_8f.py`
+Accordingly, `gold`, `silver` and `copper` are frozen as **deferred historical-vintage paths, not promoted series**. This closes the 8F source-scope decision without overstating validation.
 
-Implemented series:
+### Uranium and lithium
 
-- `PET.RWTC.D` – WTI spot;
-- `PET.RBRTE.D` – Brent spot;
-- `NG.RNGWHHD.D` – Henry Hub natural gas.
-
-Current-history/API rows are **not** retrojected as historical PIT evidence. They become strict PIT only from actual ingestion unless a separate historical archive proves earlier availability.
-
-### Federal Reserve Board H.15 – prospective rates / curve snapshots
-
-Adapter: `fed_h15_8f.py`
-
-Implemented raw series:
-
-- `RIFSPFF_N.D` – effective federal funds rate;
-- `RIFLGFCY02_N.B` – 2-year Treasury constant maturity;
-- `RIFLGFCY10_N.B` – 10-year Treasury constant maturity.
-
-No spread, direction or threshold is derived in 8F. Current downloadable history remains prospective-only for strict PIT unless original-vintage archive proof is introduced.
-
-### ECB – prospective USD/EUR FX snapshots
-
-Adapter: `ecb_fx_8f.py`
-
-Implemented series:
-
-- `EXR.D.USD.EUR.SP00.A` – USD per EUR reference rate.
-
-Current ECB history is not retrojected as original-vintage evidence. Strict PIT starts at actual ingestion unless archived release/revision proof is added.
+Registered market proxies remain challenger-only. They may not be relabelled as underlying commodity spot prices and were not promoted by the 8F freeze.
 
 ## Multiple-series context semantics
 
-A factor may legitimately contain several raw series. Phase 8F therefore keeps the latest knowable revision **per series**, not one arbitrary series per factor.
+A factor may legitimately contain several raw series. Phase 8F keeps the latest knowable revision **per series**, rather than choosing one arbitrary series per factor.
 
 Examples:
 
@@ -93,136 +75,65 @@ Examples:
 - oil: WTI and Brent remain separate;
 - yield curve: 2Y and 10Y remain separate.
 
-The foundation does not collapse them into a spread, score, sign or weighted aggregate.
-
-## Uranium and lithium market proxies
-
-The proxy contract is separate from the commodity-source contract.
-
-### Uranium
-
-- Sprott Physical Uranium Trust NAV: commodity-like physical-trust challenger from 2021;
-- URA: long-history uranium/nuclear equity-sector challenger from 2010.
-
-They may not be spliced into one synthetic history and may not be relabelled as uranium spot.
-
-### Lithium
-
-- CME lithium futures: preferred commodity-like challenger if exchange/benchmark rights pass;
-- LIT: long-history lithium/battery equity-sector challenger from 2010.
-
-LIT is not a lithium spot-price substitute because it contains mining, refining and downstream battery-equity effects.
-
-## Gold, silver and copper
-
-World Bank Pink Sheet remains the preferred monthly open-source candidate. The source review found a World Bank commodity-price dataset licensed CC BY 4.0 and archived monthly Pink Sheet publications with publication metadata.
-
-The remaining gate is exact first-release/vintage reconstruction: historical values must be tied to the publication that actually contained them rather than today's revised workbook.
-
-IMF remains fallback only.
-
-## Series catalog and source routing
-
-`series_catalog_8f.py` verifies that implemented adapters and configured series agree with the source-routing contract, cannot use blocked sources, and cannot silently change a factor/source relationship.
-
-Current implemented raw macro series count: **9** across:
-
-- inflation;
-- rates_policy;
-- yield_curve;
-- FX;
-- oil;
-- gas.
-
-Gold, silver and copper remain archive-validation candidates. Uranium and lithium are represented by separate challenger proxy contracts, not fake spot series.
+No spread, score, sign or weighted aggregate is created in 8F.
 
 ## Append-only macro ledger
 
-`macro_ledger_8f.py` provides the Phase-8F observation ledger.
-
-It enforces:
+`macro_ledger_8f.py` enforces:
 
 - append-only observation identity;
 - no revision overwrite;
-- collision failure if the same revision identity appears with changed semantic content;
+- collision failure if the same revision identity changes semantic content;
 - as-of exclusion of future `valid_from` rows;
 - coverage summaries by source, factor and series;
 - separation of exact historical-release proof from prospective-ingestion proof.
 
-Synthetic test rows validate the code but do **not** count as real 8F evidence.
+Synthetic rows validate code but cannot satisfy the real-ledger completion requirement.
 
 ## Exposure map
 
-`configs/external_evidence_8f_exposure_map_v1.json` remains intentionally empty at this point.
+The effective exposure map is fully documentary and human-reviewed.
 
-Every promoted mapping must have:
+Frozen effective state:
 
-- subject ID;
-- factor ID;
-- documentary evidence reference;
-- SHA-256 evidence fingerprint;
-- evidence-valid-from time;
-- explicit human review;
-- review timestamp;
-- mapping validity interval;
-- descriptive relationship class only.
+- **195 ACTIVE mappings**;
+- **6 SUPERSEDED historical intervals** preserved for audit history;
+- **201 total historical mapping intervals**;
+- 18 identical later re-reviews retained as audit-only rather than double-counted.
 
-Automatic sector/name/keyword/LLM inference remains forbidden. A mapping cannot be retrojected before documentary evidence and review.
+Every promoted mapping has a subject, factor, documentary evidence reference/fingerprint, evidence-valid-from time, human review timestamp, validity interval and descriptive relationship class. Automatic sector/name inference remains forbidden.
 
 ## Research-domain accounting
 
-`configs/external_evidence_8f_research_domain_v1.json` and `exposure_domain_8f.py` define a separate denominator before 8G research.
+The denominator is frozen independently of mapping convenience and outcomes to the exact pre-8F active-stock universe:
 
-The domain must come from a pre-existing outcome-blind scanner/universe rule, not from which assets happen to have convenient mappings. Every subject must remain visible as one of:
+- source ref: `feef4e572283613739b2f24cf42b837ff68a1508`;
+- `universe_master.csv` blob: `2c6efec912ea7478096f77dc8f88d7eed2a0581b`;
+- frozen unique subjects: **207**;
+- mapped: **195**;
+- explicit-unmapped: **12**;
+- unaccounted: **0**.
 
-- mapped;
-- explicitly unmapped with a documented reason;
-- unaccounted (which blocks completion).
-
-Mapped and unmapped subjects both remain in the denominator. A symbol may not be silently dropped because no clean exposure mapping is available.
-
-The current domain config is deliberately empty and marked `UNDEFINED_UNTIL_SUBJECT_SET_IS_FROZEN`.
+Unmapped subjects remain in the denominator and may not be silently dropped.
 
 ## Completion / freeze gate
 
-`completion_8f.py` and `configs/external_evidence_8f_completion_v1.json` make completion fail closed.
+The real freeze run returned:
 
-Phase 8F may be frozen only when all of the following are true:
+- `PASS_8F_COMPLETION`;
+- `freeze_allowed=true`;
+- blockers: none;
+- active reviewed mappings: 195;
+- domain accounted: 207/207;
+- knowable real ledger rows: 25;
+- observed ledger series: 4.
 
-1. foundation/source/series/proxy contracts pass;
-2. a **real** append-only macro ledger contains knowable observations;
-3. at least one active documentary human-reviewed exposure mapping exists;
-4. the intended research domain is explicitly defined;
-5. every subject in that domain is accounted for as mapped or explicitly unmapped;
-6. all outcome/direction/threshold/Phase-7 guards remain disabled.
+`configs/external_evidence_8f_freeze_v1.json` binds the passing run, artifact digest, ledger hash, domain-audit hash, completion-gate hash and raw source-record hashes.
 
-Current expected completion state: **BLOCKED**, because the real prospective ledger, frozen research domain and reviewed mapping set have not yet been populated. This is a guardrail, not a test failure.
+The live collection workflow now runs the completion gate with `--require-pass`. Foundation CI separately verifies the frozen manifest, mappings, domain accounting and fail-closed contracts without requiring live network access.
 
-## Current implementation status
+## Completion meaning
 
-Completed technically:
+Phase 8F is complete as a deterministic, auditable **source and exposure layer**. This does not claim that any macro factor predicts returns and does not promote deferred/challenger factors.
 
-- 8F-A1 macro PIT/vintage contract;
-- 8F-A2 versioned exposure-map contract;
-- 8F-A3 factor-specific source routing and FRED blocker;
-- BLS historical CPI adapter;
-- EIA prospective oil/gas adapter;
-- Fed H.15 prospective rates/yield adapter;
-- ECB prospective FX adapter;
-- uranium/lithium proxy contract;
-- multi-series-per-factor context fix;
-- append-only macro ledger and coverage audit;
-- explicit research-domain coverage audit;
-- fail-closed 8F completion/freeze gate;
-- CI tests for all of the above without live network calls.
-
-Still required before 8F freeze:
-
-1. real PIT/prospective data collection into the append-only ledger;
-2. archive validation / optional adapter for World Bank gold, silver and copper;
-3. explicit outcome-blind research-domain freeze;
-4. documentary human-reviewed exposure-map population for that domain;
-5. real coverage/context audit;
-6. final 8F freeze artifact.
-
-Only after that may Phase 8G inspect outcomes and test incremental predictive value.
+Only Phase **8G** may inspect outcomes and test incremental predictive value versus the frozen Phase-7 Core. Cross-factor interactions remain Phase 8H work and Decision Layer integration remains Phase 8I work.
