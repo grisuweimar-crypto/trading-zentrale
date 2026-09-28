@@ -101,6 +101,7 @@ def test_b18_explicit_unmapped_tokyo_electron_remains_human_reviewed_in_final_do
     by_subject = {row["subject_id"]: row for row in domain["explicit_unmapped"]}
     assert "8035.T" in by_subject
     assert by_subject["8035.T"]["reviewed_at"] == REVIEWED_AT
+    assert by_subject["8035.T"]["review_batch_id"] == "8F_MAPPING_CANDIDATES_2026-09-27_B18"
 
 
 def test_b18_state_is_preserved_inside_final_207_subject_accounting():
