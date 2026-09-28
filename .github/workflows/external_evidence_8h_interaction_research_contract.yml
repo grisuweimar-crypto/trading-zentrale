@@ -1,0 +1,89 @@
+name: Phase 8H-A Interaction Research Contract
+
+on:
+  push:
+    paths:
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+      - ".github/workflows/external_evidence_8h_interaction_research_contract.yml"
+      - "configs/external_evidence_8_contract_v1.json"
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "tests/test_external_evidence_8g_promotion_review.py"
+      - "src/scanner/research/external_evidence/promotion_review_8g.py"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+      - ".github/workflows/external_evidence_8h_interaction_research_contract.yml"
+      - "configs/external_evidence_8_contract_v1.json"
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "tests/test_external_evidence_8g_promotion_review.py"
+      - "src/scanner/research/external_evidence/promotion_review_8g.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interaction-research-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
+
+      - name: Guard upstream 8G-H promotion boundary
+        run: pytest -q tests/test_external_evidence_8g_promotion_review.py
+
+      - name: Verify Phase 8H-A outcome-blind contract
+        run: pytest -q tests/test_external_evidence_8h_interaction_research_contract.py
+
+      - name: Guard production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=""
+          while IFS= read -r file; do
+            case "$file" in
+              src/scanner/research/*) ;;
+              *) bad="${bad}${file}\n" ;;
+            esac
+          done < <(grep -RIl --exclude-dir='__pycache__' 'external_evidence_8h_interaction_research_contract_v1' src 2>/dev/null || true)
+          if [[ -n "$bad" ]]; then
+            echo "8H-A research contract referenced from production-facing source path(s):"
+            printf '%b' "$bad"
+            exit 1
+          fi
+
+      - name: Assert empirical interaction research remains closed at 8H-A
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          p = Path('configs/external_evidence_8h_interaction_research_contract_v1.json')
+          c = json.loads(p.read_text(encoding='utf-8'))
+          state = c['current_empirical_entry_state']
+          assert state['state'] == 'NO_PROMOTED_FACTORS'
+          assert state['promoted_factor_horizon_ids'] == []
+          assert state['empirical_interaction_research_enabled'] is False
+          assert state['hard_rule'] == 'NO_PROMOTED_FACTORS -> NO_EMPIRICAL_INTERACTION_RESEARCH'
+          assert c['interaction_scope']['concrete_interaction_specs_frozen_in_this_block'] == []
+          assert c['multiplicity_control']['current_confirmatory_family'] == []
+          PY
