@@ -55,4 +55,4 @@ Full domain accounting does not by itself freeze Phase 8F. The real macro-ledger
 - No sector/name/listing-currency inference was promoted.
 - No backdating occurred.
 - B19 was activated only after explicit human review.
-- Full CI validation is permitted only now that all 207 frozen-domain subjects are actively accounted.
+- Full CI validation begins only after this complete 207/207 accounting state is committed.
