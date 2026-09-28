@@ -17,14 +17,14 @@ B19 deliberately separates defensible documentary mappings from explicit-unmappe
 
 | Subject | Factor | Relationship class | Documentary basis |
 | --- | --- | --- | --- |
-| GOT.V | gold | OTHER_DOCUMENTED | Goliath describes Surebet as a large high-grade gold system and publishes gold assay/project disclosure. Because the issuer remains exploration-stage, the relationship is project/documentary rather than revenue-linked. |
+| GOT.V | gold | OTHER_DOCUMENTED | Goliath describes Surebet as a large high-grade gold system and publishes gold assay/project disclosure. |
 | SGM.AX | copper | OTHER_DOCUMENTED | Sims reports FY25 earnings support from non-ferrous markets; its annual disclosure identifies copper among principal non-ferrous metals hedged for commodity-price risk. |
 | TME | rates_policy | FINANCING_SENSITIVITY | Tencent Music reports RMB3.0bn drawn under facilities whose interest is based on Loan Prime Rate or fixed rate. |
 | GRAB | rates_policy | FINANCING_SENSITIVITY | Grab identifies long-term variable-rate borrowings as its main interest-rate risk and states that they are contractually repriced. |
 | OCGN | rates_policy | FINANCING_SENSITIVITY | Ocugen documents variable-rate Avenue Capital debt priced from Prime Rate plus a contractual spread subject to a floor. |
 | NPN.JO | fx | CURRENCY_TRANSLATION | Naspers reports in USD, identifies EUR among its significant currency exposures, and quantifies sensitivity to a 10% USD move against EUR. |
 
-All six mappings become usable no earlier than `2026-09-28T06:04+02:00`. Candidate factor mix: `rates_policy` = 3, `gold` = 1, `copper` = 1, `fx` = 1.
+All six mappings become usable no earlier than `2026-09-28T06:04+02:00`.
 
 ## Human-reviewed explicit-unmapped subjects
 
@@ -43,4 +43,4 @@ These entries do **not** claim absence of macro exposure. They record that the r
 - Active append-only overlays: **15** (B5-B19).
 - Resolution ledger: **18 identical audit-only re-reviews + 6 versioned supersessions**.
 
-Full domain accounting does not by itself freeze Phase 8F. The real macro-ledger and separate completion requirements remain in force; production external-evidence enablement, outcome research, market direction, signed exposure, weights, thresholds, cross-factor optimization and Phase-7 integration remain prohibited here.
+Full domain accounting does not by itself freeze Phase 8F. The real macro-ledger and separate completion requirements remain in force; production external-evidence enablement remains prohibited here.
