@@ -34,6 +34,14 @@ def main() -> int:
     parser.add_argument("--snapshot-metadata", default="artifacts/research/history_metadata.json")
     parser.add_argument("--macro-ledger", required=True)
     parser.add_argument("--exposure-map", default="configs/external_evidence_8f_exposure_map_v1.json")
+    parser.add_argument(
+        "--source-identity-correction",
+        default="configs/external_evidence_source_identity_correction_v1.json",
+        help=(
+            "Versioned outcome-blind alias-to-canonical correction receipt. "
+            "Use an empty string only for legacy/synthetic inputs already carrying frozen 8G source aliases."
+        ),
+    )
     parser.add_argument("--output", default="artifacts/research/external_evidence_8g_split_manifest_v1.json")
     parser.add_argument("--audit-output", default="artifacts/research/external_evidence_8g_split_binding_latest.json")
     args = parser.parse_args()
@@ -44,6 +52,7 @@ def main() -> int:
     metadata = _load(args.snapshot_metadata)
     ledger = _load(args.macro_ledger)
     exposure_map = _load(args.exposure_map)
+    correction = _load(args.source_identity_correction) if args.source_identity_correction else None
 
     validate_challenger_specs(specs)
     validate_split_plan(plan, specs)
@@ -55,6 +64,7 @@ def main() -> int:
         exposure_map=exposure_map,
         specs=specs,
         plan=plan,
+        source_identity_correction=correction,
     )
 
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
@@ -68,6 +78,7 @@ def main() -> int:
         "bound_count": len(audit["bound"]),
         "skipped_count": len(audit["skipped"]),
         "outcomes_read": False,
+        "source_identity_correction_sha256": audit.get("source_identity_correction_sha256"),
         "output": args.output,
         "audit_output": args.audit_output,
     }, sort_keys=True))
