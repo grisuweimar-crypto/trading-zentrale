@@ -71,21 +71,9 @@
       "8h_interaction": "challenger_prediction_minus_main_effects_baseline_prediction"
     },
     "strict_state_mapping": [
-      {
-        "condition": "delta > 0",
-        "observation_status": "USABLE",
-        "direction_state": "POSITIVE"
-      },
-      {
-        "condition": "delta < 0",
-        "observation_status": "USABLE",
-        "direction_state": "NEGATIVE"
-      },
-      {
-        "condition": "delta == 0 exactly",
-        "observation_status": "UNKNOWN_VALID",
-        "direction_state": "UNKNOWN"
-      }
+      {"condition": "delta > 0", "observation_status": "USABLE", "direction_state": "POSITIVE"},
+      {"condition": "delta < 0", "observation_status": "USABLE", "direction_state": "NEGATIVE"},
+      {"condition": "delta == 0 exactly", "observation_status": "UNKNOWN_VALID", "direction_state": "UNKNOWN"}
     ],
     "zero_deadband": null,
     "round_before_sign": false,
@@ -122,24 +110,24 @@
       "therefore_delta_is_model_pair_prediction_shift_not_isolated_interaction_attribution": true
     }
   },
+  "model_pair_lineage": {
+    "8i_b_component_artifact_is_not_assumed_to_be_a_model_pair_by_default": true,
+    "direction_eligible_binding_requires_component_artifact_hash_to_equal_exact_frozen_model_pair_artifact_hash": true,
+    "baseline_model_sha256_must_verify_inside_model_pair_artifact": true,
+    "challenger_model_sha256_must_verify_inside_model_pair_artifact": true,
+    "model_pair_substitution_after_binding_allowed": false,
+    "binding_valid_from_is_the_earliest_8i_d_usable_time_for_the_bound_model_pair": true,
+    "upstream_model_training_or_promotion_outcomes_are_not_reopened_by_hash_verification": true
+  },
   "input_contract": {
     "required_binding_schema": "external_evidence_8i_promotion_provenance_binding_result_v1",
     "required_binding_state": "BOUND_FOR_8I_RESEARCH_ONLY",
     "binding_sha256_must_verify": true,
     "allowed_component_types": ["8g_main_effect", "8h_interaction"],
     "required_prediction_identity_fields": [
-      "component_type",
-      "component_id",
-      "snapshot_id",
-      "symbol",
-      "horizon_sessions",
-      "generated_at",
-      "target",
-      "prediction_status",
-      "baseline_model_sha256",
-      "challenger_model_sha256",
-      "model_pair_artifact_sha256",
-      "binding_sha256"
+      "component_type", "component_id", "snapshot_id", "symbol", "horizon_sessions",
+      "generated_at", "feature_valid_from", "input_pit_status", "target", "prediction_status",
+      "baseline_model_sha256", "challenger_model_sha256", "model_pair_artifact_sha256", "binding_sha256"
     ],
     "available_prediction_requires": ["baseline_prediction", "challenger_prediction"],
     "target_must_equal": "peer_excess_{H}t",
@@ -147,28 +135,20 @@
     "date_only_identity_allowed": false,
     "prediction_values_must_be_finite_when_available": true,
     "model_hashes_must_be_sha256": true,
+    "model_pair_artifact_sha256_must_equal_bound_component_artifact_hash": true,
     "prediction_statuses": ["AVAILABLE", "UNAVAILABLE"],
+    "input_pit_statuses": ["PIT_ELIGIBLE", "PIT_INELIGIBLE_MISSING", "PIT_INELIGIBLE_STALE", "PIT_INELIGIBLE_MAPPING", "PIT_INELIGIBLE_SOURCE"],
+    "available_prediction_requires_pit_status": "PIT_ELIGIBLE",
     "unavailable_requires_reason": true,
     "unavailable_may_not_be_coerced_to_zero": true,
     "direction_valid_from_rule": "snapshot_generated_at",
-    "model_pair_must_have_been_frozen_before_snapshot": true,
+    "feature_valid_from_must_not_exceed_snapshot": true,
     "component_binding_valid_from_must_not_exceed_snapshot": true
   },
   "forbidden_runtime_inputs": [
-    "observed_peer_excess",
-    "realized_return",
-    "adverse_excursion",
-    "path_max_drawdown",
-    "future_return",
-    "forward_label",
-    "loss_improvement",
-    "p_value",
-    "holm_adjusted_p",
-    "confidence_interval",
-    "phase7_stance",
-    "portfolio_action",
-    "entry_price",
-    "position_size"
+    "observed_peer_excess", "realized_return", "adverse_excursion", "path_max_drawdown",
+    "future_return", "forward_label", "loss_improvement", "p_value", "holm_adjusted_p",
+    "confidence_interval", "phase7_stance", "portfolio_action", "entry_price", "position_size"
   ],
   "runtime_guards": {
     "outcome_based_sign_choice_allowed": false,
@@ -188,23 +168,13 @@
     "output_direction_states": ["POSITIVE", "NEGATIVE", "UNKNOWN"],
     "unavailable_direction_state": null,
     "required_output_fields": [
-      "binding",
-      "snapshot_id",
-      "symbol",
-      "horizon_sessions",
-      "generated_at",
-      "component_observation_status",
-      "direction_state",
-      "direction_adapter_id",
-      "direction_adapter_version",
-      "direction_adapter_sha256",
-      "direction_valid_from",
-      "prediction_delta",
-      "baseline_model_sha256",
-      "challenger_model_sha256",
-      "model_pair_artifact_sha256",
-      "reason_code"
+      "binding", "snapshot_id", "symbol", "horizon_sessions", "generated_at",
+      "component_observation_status", "direction_state", "direction_adapter_id",
+      "direction_adapter_version", "direction_adapter_sha256", "direction_valid_from",
+      "prediction_delta", "baseline_model_sha256", "challenger_model_sha256",
+      "model_pair_artifact_sha256", "feature_valid_from", "input_pit_status", "reason_code"
     ],
+    "forbidden_top_level_8i_c_decision_or_portfolio_fields_present": false,
     "direction_output_is_annotation_only": true,
     "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
   },
@@ -231,10 +201,11 @@
     "target_mismatch": "REJECT_DIRECTION_GENERATION",
     "model_hash_missing_or_invalid": "REJECT_DIRECTION_GENERATION",
     "model_pair_identity_missing_or_invalid": "REJECT_DIRECTION_GENERATION",
+    "model_pair_not_exact_bound_component_artifact": "REJECT_DIRECTION_GENERATION",
     "nonfinite_available_prediction": "UNAVAILABLE_WITH_REASON",
     "prediction_not_available": "UNAVAILABLE_WITH_REASON",
-    "model_pair_not_frozen_before_snapshot": "REJECT_DIRECTION_GENERATION",
     "binding_valid_from_after_snapshot": "REJECT_DIRECTION_GENERATION",
+    "feature_valid_from_after_snapshot": "REJECT_DIRECTION_GENERATION",
     "forbidden_outcome_or_decision_input": "REJECT_DIRECTION_GENERATION",
     "zero_incremental_prediction": "UNKNOWN_VALID",
     "phase7_core_remains_available": true
