@@ -1,9 +1,9 @@
 """Phase 8I-D outcome-blind component direction state engine.
 
 The engine maps the incremental prediction displacement of an exact frozen,
-promoted model pair to POSITIVE / NEGATIVE / UNKNOWN.  It does not interpret
+promoted model pair to POSITIVE / NEGATIVE / UNKNOWN. It does not interpret
 raw macro signs, read realized outcomes, aggregate components, change Phase 7,
-or authorize portfolio/order effects.  Real execution remains closed; the
+or authorize portfolio/order effects. Real execution remains closed; the
 implementation is executable only for synthetic contract tests in 8I-D.
 """
 from __future__ import annotations
@@ -216,6 +216,28 @@ def validate_direction_contract(
         if adapter.get(key) is not False:
             raise ExternalEvidence8IDirectionError(f"8i_d_forbidden_adapter_property:{key}")
 
+    lineage = contract.get("model_pair_lineage") or {}
+    for key in (
+        "8i_b_component_artifact_is_not_assumed_to_be_a_model_pair_by_default",
+        "direction_eligible_binding_requires_component_artifact_hash_to_equal_exact_frozen_model_pair_artifact_hash",
+        "baseline_model_sha256_must_verify_inside_model_pair_artifact",
+        "challenger_model_sha256_must_verify_inside_model_pair_artifact",
+        "binding_valid_from_is_the_earliest_8i_d_usable_time_for_the_bound_model_pair",
+        "upstream_model_training_or_promotion_outcomes_are_not_reopened_by_hash_verification",
+    ):
+        if lineage.get(key) is not True:
+            raise ExternalEvidence8IDirectionError(f"8i_d_model_pair_lineage_guard_required:{key}")
+    if lineage.get("model_pair_substitution_after_binding_allowed") is not False:
+        raise ExternalEvidence8IDirectionError("8i_d_model_pair_substitution_must_be_forbidden")
+
+    inputs = contract.get("input_contract") or {}
+    if inputs.get("model_pair_artifact_sha256_must_equal_bound_component_artifact_hash") is not True:
+        raise ExternalEvidence8IDirectionError("8i_d_exact_bound_model_pair_required")
+    if inputs.get("available_prediction_requires_pit_status") != "PIT_ELIGIBLE":
+        raise ExternalEvidence8IDirectionError("8i_d_available_prediction_pit_rule_drift")
+    if set(inputs.get("input_pit_statuses") or ()) != ALLOWED_PIT_STATUSES:
+        raise ExternalEvidence8IDirectionError("8i_d_input_pit_vocabulary_drift")
+
     guards = contract.get("runtime_guards") or {}
     if any(value is not False for value in guards.values()):
         raise ExternalEvidence8IDirectionError("8i_d_runtime_guards_must_all_remain_false")
@@ -281,7 +303,7 @@ def derive_component_direction(
 ) -> dict[str, Any]:
     """Derive one standardized direction state from a frozen prediction pair.
 
-    Only synthetic execution is authorized by 8I-D.  The formula is fixed before
+    Only synthetic execution is authorized by 8I-D. The formula is fixed before
     any 8I reliability/decision outcome may be opened.
     """
     validate_direction_contract(contract, binding_contract, aggregation_contract)
@@ -418,7 +440,6 @@ def derive_component_direction(
         "phase7_mutation_authorized": False,
         "extended_reliability_enabled": False,
         "extended_stance_enabled": False,
-        "portfolio_action_change_authorized": False,
         "orders_or_trades_authorized": False,
     }
     result["direction_state_sha256"] = digest(result)
