@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import date, datetime, timezone
+from hashlib import sha256
+import json
 from typing import Any, Mapping
 
 from scanner.research.external_evidence.research_8g import (
@@ -13,6 +15,17 @@ from scanner.research.external_evidence.research_8g import (
     slot_state,
     validate_split_manifest,
 )
+
+
+SOURCE_IDENTITY_CORRECTION_SCHEMA = "external_evidence_upstream_source_identity_correction_v1"
+
+
+def _stable_json(value: object) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
+def _digest(value: object) -> str:
+    return sha256(_stable_json(value).encode("utf-8")).hexdigest()
 
 
 def _ts(value: object) -> datetime:
@@ -50,12 +63,48 @@ def _snapshot_as_of(snapshot_metadata: Mapping[str, Any]) -> str:
     return as_of.isoformat()
 
 
+def _verified_source_identity_correction(
+    correction: Mapping[str, Any] | None,
+) -> tuple[dict[str, str], str | None]:
+    if correction is None:
+        return {}, None
+    if correction.get("schema_version") != SOURCE_IDENTITY_CORRECTION_SCHEMA:
+        raise ExternalEvidence8GError("source_identity_correction_schema_mismatch")
+    if correction.get("state") != "RESOLVED_OUTCOME_BLIND_VERSIONED":
+        raise ExternalEvidence8GError("source_identity_correction_not_resolved")
+    if correction.get("outcomes_read") is not False:
+        raise ExternalEvidence8GError("source_identity_correction_must_be_outcome_blind")
+    if correction.get("retroactive_evidence_rewrite") is not False:
+        raise ExternalEvidence8GError("source_identity_correction_retroactive_rewrite_forbidden")
+    if correction.get("source_series_or_values_changed") is not False:
+        raise ExternalEvidence8GError("source_identity_correction_may_not_change_values")
+    aliases = correction.get("alias_to_canonical")
+    if not isinstance(aliases, Mapping):
+        raise ExternalEvidence8GError("source_identity_correction_alias_map_required")
+    alias_map = {str(k): str(v) for k, v in aliases.items()}
+    expected = {
+        "FED_H15": "federal_reserve_board_h15",
+        "ECB_EXR": "ecb_data_portal",
+    }
+    if alias_map != expected:
+        raise ExternalEvidence8GError("source_identity_correction_alias_map_mismatch")
+    recorded = str(correction.get("correction_sha256") or "")
+    payload = dict(correction)
+    payload.pop("correction_sha256", None)
+    if len(recorded) != 64 or _digest(payload) != recorded:
+        raise ExternalEvidence8GError("source_identity_correction_digest_mismatch")
+    return alias_map, recorded
+
+
 def _source_filtered_ledger(
-    macro_ledger: Mapping[str, Any], specs: Mapping[str, Any]
-) -> dict[str, Any]:
+    macro_ledger: Mapping[str, Any],
+    specs: Mapping[str, Any],
+    source_identity_correction: Mapping[str, Any] | None = None,
+) -> tuple[dict[str, Any], str | None]:
     rows = macro_ledger.get("observations")
     if not isinstance(rows, list):
         raise ExternalEvidence8GError("macro_ledger_observations_missing")
+    alias_to_canonical, correction_sha = _verified_source_identity_correction(source_identity_correction)
 
     filtered: list[Mapping[str, Any]] = []
     for row in rows:
@@ -72,15 +121,26 @@ def _source_filtered_ledger(
 
         if series_id not in expected_series:
             continue
-        if source_id != expected_source:
-            raise ExternalEvidence8GError(
-                f"frozen_source_mismatch:{factor_id}:{series_id}:{source_id}"
-            )
-        filtered.append(row)
+        if source_id == expected_source:
+            filtered.append(dict(row))
+            continue
+
+        canonical = alias_to_canonical.get(expected_source)
+        if canonical is not None and source_id == canonical:
+            # Normalize a private feature-side copy to the frozen 8G alias.  The
+            # source ledger itself is never mutated or rewritten retroactively.
+            normalized = dict(row)
+            normalized["source_id"] = expected_source
+            filtered.append(normalized)
+            continue
+
+        raise ExternalEvidence8GError(
+            f"frozen_source_mismatch:{factor_id}:{series_id}:{source_id}"
+        )
 
     out = dict(macro_ledger)
     out["observations"] = filtered
-    return out
+    return out, correction_sha
 
 
 def validate_guarded_manifest(
@@ -120,17 +180,19 @@ def bind_snapshot_to_manifest_guarded(
     exposure_map: Mapping[str, Any],
     specs: Mapping[str, Any],
     plan: Mapping[str, Any],
+    source_identity_correction: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     validate_split_manifest(manifest, specs, plan)
     assert_outcome_blind_payload(snapshot_metadata)
     as_of = _snapshot_as_of(snapshot_metadata)
     generated_raw = snapshot_metadata.get("generated_at") or snapshot_metadata.get("views_generated_at")
     generated_at = _ts(generated_raw)
-    filtered_ledger = _source_filtered_ledger(macro_ledger, specs)
+    filtered_ledger, correction_sha = _source_filtered_ledger(
+        macro_ledger,
+        specs,
+        source_identity_correction=source_identity_correction,
+    )
 
-    # Non-empty manifests created by this guarded binder must already carry the
-    # sampling-day identity. This prevents silently mixing the earlier, weaker
-    # snapshot-id-only binding semantics with the corrected 8G-B semantics.
     for key, stream in manifest["streams"].items():
         assignments = stream["assignments"]
         if assignments and any("as_of" not in item for item in assignments):
@@ -146,6 +208,9 @@ def bind_snapshot_to_manifest_guarded(
         "skipped": [],
         "outcomes_read": False,
         "sampling_identity": "factor_id+horizon_sessions+as_of",
+        "source_identity_correction_sha256": correction_sha,
+        "source_identity_normalization_is_feature_side_copy_only": correction_sha is not None,
+        "retroactive_source_ledger_rewrite": False,
     }
 
     for factor_id in ACTIVE_FACTORS:
