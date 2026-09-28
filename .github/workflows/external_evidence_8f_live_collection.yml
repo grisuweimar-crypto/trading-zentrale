@@ -10,6 +10,8 @@ on:
       - "src/scanner/research/external_evidence/ecb_fx_8f.py"
       - "src/scanner/research/external_evidence/eia_energy_8f.py"
       - "scripts/collect_external_evidence_8f_prospective.py"
+      - "configs/external_evidence_8f_completion_v1.json"
+      - "configs/external_evidence_8f_freeze_v1.json"
 
 permissions:
   contents: read
@@ -35,13 +37,14 @@ jobs:
         run: >-
           python scripts/run_external_evidence_8f_exposure_domain_audit.py
           --output artifacts/research/external_evidence_8f_exposure_domain_audit.json
-      - name: Evaluate completion gate without pretending freeze
+      - name: Require passing Phase 8F completion gate
         if: success()
         run: >-
           python scripts/run_external_evidence_8f_completion_gate.py
           --macro-ledger artifacts/research/external_evidence_8f_macro_ledger.json
           --exposure-domain-audit artifacts/research/external_evidence_8f_exposure_domain_audit.json
           --output artifacts/research/external_evidence_8f_completion_gate.json
+          --require-pass
       - name: Upload Phase 8F PIT snapshot or parser-diagnostic artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,13 +57,13 @@ jobs:
             artifacts/research/external_evidence_8f_completion_gate.json
             artifacts/research/external_evidence_8f_raw/**
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
 # This workflow is read-only with respect to repository contents.
-# It runs only when the live collector or one of its parsers changes, or when started manually.
+# It runs only when the live collector, parsers or frozen completion contract changes, or when started manually.
 # Raw source payloads are persisted before parsing and uploaded even when a parser fails.
 # Fed H.15 is fetched from the actual /releases/h15/ page rather than its legacy HTML-meta redirect.
 # Fed H.15 and ECB collect without credentials. EIA is included only when EIA_API_KEY is configured.
 # Frozen-domain mapping accounting is complete at 195 mapped + 12 explicit-unmapped = 207/207.
-# The completion gate may still remain BLOCKED if real macro-ledger or other completion requirements are not satisfied.
+# After the Phase-8F freeze, this workflow must continue to satisfy the real completion gate; missing optional/unobserved factor families may never be converted to neutral evidence.
 # No market outcomes, directions, weights, thresholds, Phase-7 integration or production decisions are evaluated here.
