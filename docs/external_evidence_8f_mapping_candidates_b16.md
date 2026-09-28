@@ -1,55 +1,42 @@
 # Phase 8F — Mapping Candidate Batch B16
 
-Status: `HUMAN_REVIEWED_RESOLVED`
+Status: `HUMAN_REVIEWED_ACTIVE_REPAIRED_HISTORY`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B16`
 
-Human review timestamp: `2026-09-27T14:34:54+02:00`
+Human review completed at `2026-09-27T14:34:54+02:00`.
 
-## Repair note
+B16 was originally treated as a 14-subject coverage increase. The repair audit established that **all 14 B16 subjects already existed in the materialized base map**. B16 therefore added **zero new frozen-domain subjects**.
 
-The original B16 documentation incorrectly treated all 14 reviewed candidates as new coverage. The repaired effective-map composition shows that all 14 subjects were already mapped before B16.
+Ten B16 reviews preserve the same subject/factor/relationship identity and are retained as audit-only re-reviews. Four B16 reviews (`SYK`, `GOOGL`, `META`, `MSFT`) changed the descriptive relationship class and are represented as versioned supersessions beginning only at the B16 human-review timestamp. The original intervals remain preserved historically.
 
-B16 therefore changed **zero** frozen-domain coverage subjects:
+## B16 reviewed subjects
 
-- 10 reviews are identical re-reviews and are registered audit-only: `ABT`, `ISRG`, `ROK`, `TER`, `AMAT`, `AMZN`, `ASML`, `MU`, `ORCL`, `PLTR`.
-- 4 reviews are later human-approved relationship-class changes and are represented as versioned supersessions from the B16 review timestamp: `SYK`, `GOOGL`, `META`, `MSFT`.
-- The prior v1 interval is preserved historically and closed at the B16 review timestamp; a v2 interval opens at the same timestamp. No prior mapping is rewritten or backdated.
-
-## Reviewed B16 subjects
-
-| Subject | Factor | Approved relationship class | Resolution |
+| Subject | Factor | B16 relationship class | Repaired interpretation |
 | --- | --- | --- | --- |
-| ABT | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
-| ISRG | fx | OTHER_DOCUMENTED | audit-only identical re-review |
-| ROK | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
-| SYK | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
-| TER | fx | OTHER_DOCUMENTED | audit-only identical re-review |
-| AMAT | fx | OTHER_DOCUMENTED | audit-only identical re-review |
-| AMZN | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
-| ASML | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
-| GOOGL | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
-| META | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
-| MSFT | fx | OTHER_DOCUMENTED | v1 CURRENCY_TRANSLATION superseded by v2 |
-| MU | fx | OTHER_DOCUMENTED | audit-only identical re-review |
-| ORCL | fx | CURRENCY_TRANSLATION | audit-only identical re-review |
-| PLTR | fx | OTHER_DOCUMENTED | audit-only identical re-review |
+| ABT | fx | CURRENCY_TRANSLATION | Audit-only re-review. |
+| ISRG | fx | OTHER_DOCUMENTED | Audit-only re-review. |
+| ROK | fx | CURRENCY_TRANSLATION | Audit-only re-review. |
+| SYK | fx | OTHER_DOCUMENTED | Versioned reclassification from prior `CURRENCY_TRANSLATION`. |
+| TER | fx | OTHER_DOCUMENTED | Audit-only re-review. |
+| AMAT | fx | OTHER_DOCUMENTED | Audit-only re-review. |
+| AMZN | fx | CURRENCY_TRANSLATION | Audit-only re-review. |
+| ASML | fx | CURRENCY_TRANSLATION | Audit-only re-review. |
+| GOOGL | fx | OTHER_DOCUMENTED | Versioned reclassification from prior `CURRENCY_TRANSLATION`. |
+| META | fx | OTHER_DOCUMENTED | Versioned reclassification from prior `CURRENCY_TRANSLATION`. |
+| MSFT | fx | OTHER_DOCUMENTED | Versioned reclassification from prior `CURRENCY_TRANSLATION`. |
+| MU | fx | OTHER_DOCUMENTED | Audit-only re-review. |
+| ORCL | fx | CURRENCY_TRANSLATION | Audit-only re-review. |
+| PLTR | fx | OTHER_DOCUMENTED | Audit-only re-review. |
 
-## Correct accounting after B16
+## Repaired B16 accounting
 
-- Active mapped subjects before B16: **176/207**.
-- New subjects added by B16: **0**.
-- Active mapped subjects after B16: **176/207**.
-- Explicit-unmapped subjects at this point: **0**.
-- Unaccounted subjects after B16: **31**.
+- Reviews approved: **14**.
+- Genuinely new mapped subjects: **0**.
+- Audit-only re-reviews: **10**.
+- Versioned supersessions: **4**.
+- ACTIVE mapped subjects after B16: **176/207**, unchanged from B15.
+- No base-map rewrite or backdating occurred in the repaired representation.
+- No market outcomes, direction, exposure sign, weights or thresholds were used.
 
-The correct 31 unaccounted subjects after B16 were:
-`1810.HK`, `6861.T`, `9880.HK`, `FANUY`, `YASKY`, `000660.KS`, `005930.KS`, `0700.HK`, `8035.T`, `9888.HK`, `BIDU`, `DVLT`, `JD`, `6506.T`, `GOT.V`, `LGO`, `SGM.AX`, `LC0A.MU`, `MNSO`, `NOVO-B.CO`, `TME`, `RCAT`, `ACB.TO`, `SMX`, `NPN.JO`, `SE`, `GRAB`, `SPCX`, `OCGN`, `DRO.AX`, `1211.HK`.
-
-## Guardrails
-
-- No market outcomes were read or used.
-- No market direction, exposure sign, weights or thresholds were assigned.
-- No candidate was selected solely from sector, domicile, name or assumed global footprint.
-- No backdating occurred.
-- B16 resolution is explicit and append-only; unregistered conflicts remain fail-closed.
+Later B17-B19 additions must not be retroactively attributed to B16.
