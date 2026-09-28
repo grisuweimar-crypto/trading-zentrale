@@ -2,8 +2,8 @@
 
 Validation and Holdout use the frozen Phase-8G-D preprocessing/model state.
 No refit, feature search, threshold search or cross-factor interaction is
-permitted here. Holdout access remains a one-shot operation after the full
-Validation family is frozen.
+permitted here. Holdout primitives are prepared here, while final Holdout/OOS
+governance belongs to Phase 8G-F.
 """
 from __future__ import annotations
 
@@ -89,8 +89,8 @@ def validate_evaluation_protocol(protocol: Mapping[str, Any]) -> None:
     guards = protocol.get("guards")
     if not isinstance(guards, Mapping) or any(value is not False for value in guards.values()):
         raise ExternalEvidence8GEvaluationError("8g_e_definition_guards_must_remain_false")
-    if protocol.get("next_planned_phase") != "8H_CROSS_FACTOR_INTERACTION":
-        raise ExternalEvidence8GEvaluationError("roadmap_after_8g_must_be_8h")
+    if protocol.get("next_planned_phase") != "8G-F_HOLDOUT_OOS":
+        raise ExternalEvidence8GEvaluationError("roadmap_after_8g_e_must_be_8g_f")
 
 
 def build_discovery_freeze_receipt(
@@ -275,7 +275,7 @@ def _spearman(x: np.ndarray, y: np.ndarray) -> float | None:
     return None if pd.isna(value) else float(value)
 
 
-def _snapshot_effects(rows: pd.DataFrame, horizon: int) -> pd.DataFrame:
+def _snapshot_effects(rows: pd.DataFrame, horizon: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     target = f"peer_excess_{horizon}t"
     y = pd.to_numeric(rows[target], errors="raise").to_numpy(dtype=float)
     base = pd.to_numeric(rows["baseline_prediction"], errors="raise").to_numpy(dtype=float)
@@ -579,7 +579,7 @@ def new_holdout_consumption_ledger(protocol: Mapping[str, Any]) -> dict[str, Any
     validate_evaluation_protocol(protocol)
     return {
         "schema_version": HOLDOUT_LEDGER_SCHEMA,
-        "phase": "8G-E",
+        "phase": "8G-F",
         "append_only": True,
         "streams": {hypothesis: {"state": "SEALED", "evaluation_sha256": None} for hypothesis in protocol["frozen_hypothesis_family"]},
     }
