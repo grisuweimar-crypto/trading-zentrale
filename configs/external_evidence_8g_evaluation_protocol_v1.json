@@ -60,10 +60,7 @@
     "family_membership_frozen": true,
     "underpowered_or_missing_primary_p_value": 1.0,
     "two_sided_p_values": true,
-    "positive_confirmatory_result_requires": [
-      "primary_effect_gt_zero",
-      "holm_adjusted_p_lt_0_05"
-    ]
+    "positive_confirmatory_result_requires": ["primary_effect_gt_zero", "holm_adjusted_p_lt_0_05"]
   },
   "split_policy": {
     "validation": {
@@ -122,11 +119,7 @@
   "promotion_candidate_gate": {
     "unit": "factor_horizon_challenger",
     "automatic_promotion": false,
-    "requires_validation": [
-      "minimum_evidence_met",
-      "primary_effect_gt_zero",
-      "holm_adjusted_p_lt_0_05"
-    ],
+    "requires_validation": ["minimum_evidence_met", "primary_effect_gt_zero", "holm_adjusted_p_lt_0_05"],
     "requires_holdout": [
       "minimum_evidence_met",
       "primary_effect_gt_zero",
@@ -154,5 +147,6 @@
     "phase7_integration_enabled": false,
     "production_external_evidence_enabled": false
   },
-  "next_phase_after_8g_e": "8G-F_FINAL_SINGLE_FACTOR_PROMOTION_FREEZE"
+  "8g_completion_rule": "8G-E is the final 8G subphase. After the technical evaluation gate is frozen, empirical 8G completion still requires the prospective Validation and Holdout evidence defined here. Only promotion candidates may proceed to 8H interaction review.",
+  "next_planned_phase": "8H_CROSS_FACTOR_INTERACTION"
 }
