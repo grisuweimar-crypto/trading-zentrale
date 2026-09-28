@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind one outcome-blind Scanner_vNext snapshot into the frozen Phase-8G split manifest."""
+"""Bind one outcome-blind Scanner_vNext sampling day into the frozen Phase-8G manifest."""
 from __future__ import annotations
 
 import argparse
@@ -7,10 +7,12 @@ import json
 from pathlib import Path
 
 from scanner.research.external_evidence.research_8g import (
-    bind_snapshot_to_manifest,
     validate_challenger_specs,
     validate_split_manifest,
     validate_split_plan,
+)
+from scanner.research.external_evidence.research_8g_binding_guard import (
+    bind_snapshot_to_manifest_guarded,
 )
 
 
@@ -20,7 +22,11 @@ def _load(path: str) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Bind a feature-side Scanner snapshot to frozen 8G factor/horizon slots without reading outcomes"
+        description=(
+            "Bind a feature-side Scanner sampling day to frozen 8G factor/horizon slots "
+            "without reading outcomes; repeated reruns with the same as_of date do not "
+            "consume additional slots"
+        )
     )
     parser.add_argument("--specs", default="configs/external_evidence_8g_challenger_specs_v1.json")
     parser.add_argument("--plan", default="configs/external_evidence_8g_split_plan_v1.json")
@@ -42,7 +48,7 @@ def main() -> int:
     validate_challenger_specs(specs)
     validate_split_plan(plan, specs)
     validate_split_manifest(manifest, specs, plan)
-    updated, audit = bind_snapshot_to_manifest(
+    updated, audit = bind_snapshot_to_manifest_guarded(
         manifest=manifest,
         snapshot_metadata=metadata,
         macro_ledger=ledger,
@@ -58,6 +64,7 @@ def main() -> int:
     print(json.dumps({
         "manifest_id": updated["manifest_id"],
         "snapshot_id": audit["snapshot_id"],
+        "as_of": audit["as_of"],
         "bound_count": len(audit["bound"]),
         "skipped_count": len(audit["skipped"]),
         "outcomes_read": False,
