@@ -126,6 +126,9 @@ def test_8g_b_configs_and_seed_manifest_validate() -> None:
 
     assert specs["active_confirmatory_factor_ids"] == ["rates_policy", "yield_curve", "fx"]
     assert specs["outcome_values_read_while_defining_specs"] is False
+    assert specs["prospective_cohort_not_before"] == "2026-09-28T05:24:30.406650+00:00"
+    assert plan["prospective_cohort_not_before"] == specs["prospective_cohort_not_before"]
+    assert manifest["prospective_cohort_not_before"] == specs["prospective_cohort_not_before"]
     assert specs["challenger_construction"]["exactly_one_external_factor_family"] is True
     assert specs["challenger_construction"]["cross_factor_interactions_allowed"] is False
     assert specs["challenger_construction"]["feature_sign_flip_allowed"] is False
@@ -219,13 +222,13 @@ def test_factor_features_use_only_rows_knowable_by_snapshot() -> None:
     assert result["feature_values"]["rates_policy_delta_pp"] == pytest.approx(-0.02)
 
 
-def test_snapshot_before_frozen_prospective_start_consumes_no_slot() -> None:
+def test_snapshot_before_actual_pit_start_consumes_no_slot() -> None:
     specs = _load(SPECS_PATH)
     plan = _load(PLAN_PATH)
     manifest = empty_split_manifest(specs, plan)
     updated, audit = bind_snapshot_to_manifest(
         manifest=manifest,
-        snapshot_metadata=_snapshot(generated_at="2026-09-28T23:59:59+00:00"),
+        snapshot_metadata=_snapshot(generated_at="2026-09-28T05:24:30.406649+00:00"),
         macro_ledger=_ledger(),
         exposure_map=_exposure_map(),
         specs=specs,
@@ -235,6 +238,23 @@ def test_snapshot_before_frozen_prospective_start_consumes_no_slot() -> None:
     assert len(audit["skipped"]) == 12
     assert all(item["reason"] == "BEFORE_PROSPECTIVE_COHORT_START" for item in audit["skipped"])
     assert updated == manifest
+
+
+def test_28_sep_snapshot_after_sources_and_mappings_are_knowable_can_bind() -> None:
+    specs = _load(SPECS_PATH)
+    plan = _load(PLAN_PATH)
+    manifest = empty_split_manifest(specs, plan)
+    updated, audit = bind_snapshot_to_manifest(
+        manifest=manifest,
+        snapshot_metadata=_snapshot("snap-20260928", "2026-09-28T15:00:00+00:00"),
+        macro_ledger=_ledger(),
+        exposure_map=_exposure_map(),
+        specs=specs,
+        plan=plan,
+    )
+    assert len(audit["bound"]) == 12
+    assert not audit["skipped"]
+    assert all(len(stream["assignments"]) == 1 for stream in updated["streams"].values())
 
 
 def test_stale_factor_state_does_not_consume_slots() -> None:
