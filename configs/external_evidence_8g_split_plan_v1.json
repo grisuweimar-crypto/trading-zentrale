@@ -9,9 +9,12 @@
   "prospective_cohort_not_before": "2026-09-29T00:00:00+00:00",
   "outcome_values_allowed_in_assignment": false,
   "assignment_stream": "SEPARATE_PER_FACTOR_AND_HORIZON",
-  "eligible_snapshot_order": "generated_at_ascending_then_snapshot_id_ascending",
+  "eligible_snapshot_order": "as_of_ascending_then_generated_at_ascending_then_snapshot_id_ascending",
   "snapshot_identity": "snapshot_id",
+  "sampling_identity": "factor_id+horizon_sessions+as_of",
   "same_snapshot_may_bind_once_per_factor_horizon": true,
+  "same_as_of_date_may_bind_once_per_factor_horizon": true,
+  "first_eligible_snapshot_of_as_of_date_wins": true,
   "snapshot_reassignment_allowed": false,
   "slot_reassignment_allowed": false,
   "assignment_after_label_inspection_allowed": false,
@@ -29,7 +32,9 @@
     "holdout_usable_slots": "4 * H",
     "block_length_sessions": "2 * H",
     "minimum_temporal_support_regions": 2,
-    "rationale": "With chronological 50/25/25 allocation, H-session split-boundary purges and 2H uncertainty blocks, 16H total slots leave 3H usable validation snapshots and 4H holdout snapshots, sufficient for at least two temporally separated 2H support anchors."
+    "reserved_tail_buffer_is_exact_boundary_purge": false,
+    "exact_row_boundary_purge_required_at_label_join": true,
+    "rationale": "The 16H capacity and H-sized reserved tails are frozen outcome-blind sampling buffers only. Snapshot dates are not assumed to equal trading sessions. Actual minimum-N and temporal-support requirements remain empirical gates, and exact split-boundary purging is applied later from each row's structural label-availability date before any outcome value is evaluated."
   },
   "slot_ranges_by_horizon": {
     "5": {
@@ -80,28 +85,42 @@
   "factor_snapshot_eligibility": {
     "requires_complete_scanner_snapshot": true,
     "requires_exact_snapshot_id_and_generated_at": true,
+    "requires_exact_as_of_date": true,
     "generated_at_must_be_on_or_after_cohort_start": true,
     "requires_factor_pit_state": true,
     "requires_factor_freshness_gate": true,
+    "requires_frozen_source_id_match": true,
     "requires_at_least_one_active_human_reviewed_mapping": true,
     "requires_market_outcomes": false,
     "requires_label_maturity": false,
     "outcomes_or_labels_may_not_affect_eligibility": true
   },
   "binding_rule": {
-    "description": "For each factor and horizon independently, the next eligible complete Scanner_vNext snapshot binds permanently to the next unfilled ordinal slot. Split and purge status are determined only by the frozen slot range for that horizon.",
+    "description": "For each factor and horizon independently, the first eligible complete Scanner_vNext snapshot for a new as_of date binds permanently to the next unfilled ordinal slot. Later reruns with the same as_of date do not consume another slot. Split status is determined only by the frozen slot range.",
     "duplicate_snapshot_same_factor_horizon": "IDEMPOTENT_NO_NEW_SLOT",
+    "duplicate_as_of_date_same_factor_horizon": "NO_NEW_SLOT_FIRST_ELIGIBLE_SNAPSHOT_WINS",
     "conflicting_existing_binding": "FAIL_CLOSED",
-    "out_of_order_older_snapshot_after_newer_binding": "FAIL_CLOSED",
+    "out_of_order_older_as_of_after_newer_binding": "FAIL_CLOSED",
     "cohort_full": "NO_NEW_BINDING_RELEASE_COMPLETE",
     "missing_or_stale_factor": "SKIP_WITH_REASON_NO_SLOT_CONSUMED",
     "no_active_mapping": "SKIP_WITH_REASON_NO_SLOT_CONSUMED"
+  },
+  "exact_split_boundary_purge": {
+    "required": true,
+    "timing": "AT_LABEL_JOIN_AFTER_SPLIT_BINDINGS_ARE_ALREADY_FROZEN",
+    "uses_outcome_value": false,
+    "structural_field": "label_available_from_{H}t",
+    "rule": "For an earlier-split row, exclude the row if label_available_from_{H}t is on or after the first as_of date of the next split.",
+    "reserved_tail_slots_are_additional_conservative_buffer": true,
+    "reserved_tail_slots_substitute_for_exact_purge": false,
+    "temporal_support_recomputed_after_exact_purge": true,
+    "minimum_paired_n_recomputed_after_exact_purge": true
   },
   "outcome_opening_gates": {
     "discovery": "A bound usable Discovery snapshot may join its matured H-session label only after challenger spec, split plan and its snapshot binding already exist.",
     "validation": "Validation outcomes remain closed until Discovery usable cohort is complete, Discovery model/preprocessing state is frozen, and no further estimator or feature changes are permitted.",
     "holdout": "Holdout outcomes remain sealed until Validation analysis and the validation-to-holdout evaluation specification are frozen. Holdout is opened once only.",
-    "purged_slots": "Purged boundary slots never join labels for fitting or confirmatory evaluation."
+    "purged_slots": "Reserved boundary-buffer slots never join labels for fitting or confirmatory evaluation; exact row-level split-boundary purge is additionally required at label join."
   },
   "hypothesis_family": [
     "rates_policy_x_5t", "rates_policy_x_20t", "rates_policy_x_40t", "rates_policy_x_60t",
@@ -118,6 +137,8 @@
     "split_chosen_from_outcomes": false,
     "threshold_search_run": false,
     "holdout_reuse_allowed": false,
+    "same_day_repeat_can_consume_additional_slot": false,
+    "reserved_buffer_substitutes_exact_purge": false,
     "production_integration_enabled": false
   }
 }
