@@ -44,8 +44,8 @@ def test_b18_mapping_subjects_are_active_with_review_timestamp():
     effective = load_effective_exposure_map(root=ROOT)
     active_rows = [row for row in effective["mappings"] if row["review_status"] == "ACTIVE"]
     by_subject = {row["subject_id"]: row for row in active_rows}
-    assert len(effective["mappings"]) == 195
-    assert len(active_rows) == 189
+    assert len(effective["mappings"]) == 201
+    assert len(active_rows) == 195
     assert B18_MAPPED_SUBJECTS <= set(by_subject)
     assert by_subject["6861.T"]["factor_id"] == "fx"
     assert by_subject["6861.T"]["relationship_class"] == "OTHER_DOCUMENTED"
@@ -80,10 +80,10 @@ def test_b18_mapping_review_artifact_is_completed_and_idempotent():
     assert result["approved_count"] == 0
     assert result["already_applied_count"] == 6
     assert result["redundant_already_applied_count"] == 0
-    assert len(result["exposure_map"]["mappings"]) == 195
+    assert len(result["exposure_map"]["mappings"]) == 201
 
 
-def test_b18_explicit_unmapped_tokyo_electron_is_human_reviewed_and_active_in_domain():
+def test_b18_explicit_unmapped_tokyo_electron_remains_human_reviewed_in_final_domain():
     proposal = _load("configs/external_evidence_8f_explicit_unmapped_candidates_b18_v1.json")
     review = _load("configs/external_evidence_8f_explicit_unmapped_review_decisions_b18_v1.json")
     domain = _load("configs/external_evidence_8f_research_domain_v1.json")
@@ -98,17 +98,18 @@ def test_b18_explicit_unmapped_tokyo_electron_is_human_reviewed_and_active_in_do
     assert review["decisions"][0]["source_verified"] is True
     assert review["decisions"][0]["reason_confirmed"] is True
     assert all(value is False for value in review["guards"].values())
-    assert {row["subject_id"] for row in domain["explicit_unmapped"]} == B18_EXPLICIT_UNMAPPED_SUBJECTS
-    assert domain["explicit_unmapped"][0]["reviewed_at"] == REVIEWED_AT
+    by_subject = {row["subject_id"]: row for row in domain["explicit_unmapped"]}
+    assert "8035.T" in by_subject
+    assert by_subject["8035.T"]["reviewed_at"] == REVIEWED_AT
 
 
-def test_b18_does_not_falsely_complete_207_subject_accounting_after_repair():
+def test_b18_state_is_preserved_inside_final_207_subject_accounting():
     effective = load_effective_exposure_map(root=ROOT)
     domain = _load("configs/external_evidence_8f_research_domain_v1.json")
     universe_text = (ROOT / "data/inputs/universe_master.csv").read_text(encoding="utf-8")
     audit = build_exposure_domain_audit(domain_config=domain, exposure_map=effective, universe_csv_text=universe_text)
     assert "8035.T" not in audit["mapped_subject_ids"]
-    assert audit["mapped_subject_count"] == 189
-    assert audit["explicit_unmapped_subject_count"] == 1
-    assert audit["unaccounted_subject_count"] == 17
-    assert len(audit["unaccounted_subject_ids"]) == 17
+    assert audit["mapped_subject_count"] == 195
+    assert audit["explicit_unmapped_subject_count"] == 12
+    assert audit["unaccounted_subject_count"] == 0
+    assert audit["unaccounted_subject_ids"] == []
