@@ -1,8 +1,8 @@
 """Real Phase 8I-E evaluation/readiness review without opening decision outcomes.
 
 This module is deliberately metadata-only until the frozen terminal family gate
-passes.  It records whether the real 8I-E evaluation can progress, while never
-reading peer_excess or other forward outcomes and never changing Phase 7.
+passes. It records whether the real 8I-E evaluation can progress, while never
+reading peer_excess or other forward outcome values and never changing Phase 7.
 """
 from __future__ import annotations
 
@@ -63,6 +63,12 @@ def _verify_correction(receipt: Mapping[str, Any]) -> str:
 
 
 def _reject_outcome_fields(value: Mapping[str, Any], *, path: str) -> None:
+    """Reject realized outcome payloads in dynamic review inputs only.
+
+    Frozen contracts are allowed to *name* their preregistered outcomes and
+    metrics. The ban applies to dynamic manifests/ledgers carrying outcome
+    values before the terminal gate, not to the contract definition itself.
+    """
     forbidden = (
         "peer_excess",
         "future_return",
@@ -94,7 +100,7 @@ def build_real_review_status(
 ) -> dict[str, Any]:
     """Start/re-run the real 8I-E review using metadata only.
 
-    This is not the one-shot terminal outcome evaluation.  It establishes the
+    This is not the one-shot terminal outcome evaluation. It establishes the
     real readiness state and documents every blocker before any outcome can be
     opened.
     """
@@ -106,7 +112,6 @@ def build_real_review_status(
     ):
         if not isinstance(row, Mapping):
             raise ExternalEvidence8IReviewError(f"8i_review_{name}_required")
-        _reject_outcome_fields(row, path=name)
 
     if reliability_contract.get("schema_version") != "external_evidence_8i_reliability_extension_research_v1":
         raise ExternalEvidence8IReviewError("8i_review_reliability_contract_mismatch")
@@ -116,6 +121,10 @@ def build_real_review_status(
         raise ExternalEvidence8IReviewError("8i_review_8g_manifest_mismatch")
     if holdout_ledger.get("schema_version") != "external_evidence_8g_holdout_consumption_ledger_v1":
         raise ExternalEvidence8IReviewError("8i_review_8g_holdout_ledger_mismatch")
+
+    # Dynamic upstream state must remain metadata-only before the terminal gate.
+    _reject_outcome_fields(split_manifest, path="split_manifest")
+    _reject_outcome_fields(holdout_ledger, path="holdout_ledger")
 
     correction_sha = _verify_correction(source_identity_correction)
     now = _parse_time(research_as_of, "8i_review_research_as_of_invalid")
