@@ -27,6 +27,14 @@ B19_EXPLICIT_UNMAPPED_SUBJECTS = {
     "1211.HK",
 }
 B19_ALL_SUBJECTS = B19_MAPPING_SUBJECTS | B19_EXPLICIT_UNMAPPED_SUBJECTS
+EXPECTED_MAPPINGS = {
+    "GOT.V": ("gold", "OTHER_DOCUMENTED"),
+    "SGM.AX": ("copper", "OTHER_DOCUMENTED"),
+    "TME": ("rates_policy", "FINANCING_SENSITIVITY"),
+    "GRAB": ("rates_policy", "FINANCING_SENSITIVITY"),
+    "OCGN": ("rates_policy", "FINANCING_SENSITIVITY"),
+    "NPN.JO": ("fx", "CURRENCY_TRANSLATION"),
+}
 
 
 def _load(path: str) -> dict:
@@ -105,8 +113,11 @@ def test_b19_mapping_subjects_are_active_at_human_review_timestamp():
     assert len(effective["mappings"]) == 201
     assert len(active_rows) == 195
     assert B19_MAPPING_SUBJECTS <= set(by_subject)
-    assert all(by_subject[subject]["reviewed_at"] == REVIEWED_AT for subject in B19_MAPPING_SUBJECTS)
-    assert all(by_subject[subject]["valid_from"] == REVIEWED_AT for subject in B19_MAPPING_SUBJECTS)
+    for subject, (factor_id, relationship_class) in EXPECTED_MAPPINGS.items():
+        assert by_subject[subject]["factor_id"] == factor_id
+        assert by_subject[subject]["relationship_class"] == relationship_class
+        assert by_subject[subject]["reviewed_at"] == REVIEWED_AT
+        assert by_subject[subject]["valid_from"] == REVIEWED_AT
 
 
 def test_b19_human_approval_completes_frozen_domain_accounting():
