@@ -49,13 +49,7 @@ def _git_blob_sha(path: Path) -> str:
     return hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
 
 
-def _spec(
-    spec_id: str = "ix_discovery",
-    *,
-    horizon: int = 5,
-    core_field: str = "score",
-    external_field: str = "rates_policy_level_pct",
-) -> dict:
+def _spec(spec_id: str = "ix_discovery", *, core_field: str = "score", horizon: int = 5) -> dict:
     row = {
         "interaction_spec_id": spec_id,
         "interaction_class": "CORE_X_EXTERNAL",
@@ -72,8 +66,8 @@ def _spec(
                 "factor_horizon_id": f"rates_policy_x_{horizon}t",
                 "factor_id": "rates_policy",
                 "horizon_sessions": horizon,
-                "feature_field": external_field,
-                "component_identity_sha256": _digest({"field": external_field, "horizon": horizon}),
+                "feature_field": "rates_policy_level_pct",
+                "component_identity_sha256": _digest({"field": "rates_policy_level_pct", "horizon": horizon}),
             },
         ],
         "operator": "ELEMENTWISE_PRODUCT",
@@ -126,7 +120,7 @@ def _freeze(*specs: dict) -> dict:
     return row
 
 
-def _dates(discovery_n: int = 30) -> tuple[list[pd.Timestamp], list[str]]:
+def _dates(discovery_n: int) -> tuple[list[pd.Timestamp], list[str]]:
     discovery = list(pd.date_range("2027-07-02", periods=discovery_n, freq="D", tz="UTC"))
     validation = list(pd.date_range("2027-08-10", periods=15, freq="D", tz="UTC"))
     holdout = list(pd.date_range("2027-09-05", periods=15, freq="D", tz="UTC"))
@@ -135,25 +129,20 @@ def _dates(discovery_n: int = 30) -> tuple[list[pd.Timestamp], list[str]]:
     return dates, splits
 
 
-def _feature_frame(spec: dict, *, discovery_n: int = 30) -> tuple[pd.DataFrame, list[str]]:
+def _frame(spec: dict, discovery_n: int) -> tuple[pd.DataFrame, list[str]]:
     dates, _ = _dates(discovery_n)
-    n = len(dates)
-    idx = np.arange(n, dtype=float)
-    score = np.sin(idx / 4.0) + idx / 100.0
-    rates = np.cos(idx / 7.0) + 1.5
-    other = np.sin(idx / 9.0) * 0.25
-    risk = np.cos(idx / 5.0) * 0.5
+    idx = np.arange(len(dates), dtype=float)
     frame = pd.DataFrame(
         {
-            "snapshot_id": [f"s{i:03d}" for i in range(n)],
-            "as_of": [d.isoformat() for d in dates],
-            "generated_at": [d.isoformat() for d in dates],
-            "symbol": [f"SYM{i:03d}" for i in range(n)],
-            "horizon_sessions": [int(spec["horizon_sessions"])] * n,
-            "score": score,
-            "risk": risk,
-            "rates_policy_level_pct": rates,
-            "other_main_effect": other,
+            "snapshot_id": [f"s{i:03d}" for i in range(len(dates))],
+            "as_of": [day.isoformat() for day in dates],
+            "generated_at": [day.isoformat() for day in dates],
+            "symbol": [f"SYM{i:03d}" for i in range(len(dates))],
+            "horizon_sessions": [int(spec["horizon_sessions"])] * len(dates),
+            "score": np.sin(idx / 4.0) + idx / 100.0,
+            "risk": np.cos(idx / 5.0) * 0.5,
+            "rates_policy_level_pct": np.cos(idx / 7.0) + 1.5,
+            "other_main_effect": np.sin(idx / 9.0) * 0.25,
         }
     )
     main = [str(spec["components"][0]["resolved_field"]), "rates_policy_level_pct", "other_main_effect"]
@@ -163,20 +152,20 @@ def _feature_frame(spec: dict, *, discovery_n: int = 30) -> tuple[pd.DataFrame, 
 def _construct(*specs: dict, discovery_n: int = 30):
     freeze = _freeze(*specs)
     frames: dict[str, pd.DataFrame] = {}
-    columns: dict[str, list[str]] = {}
+    main_effects: dict[str, list[str]] = {}
     for spec in specs:
-        frame, main = _feature_frame(spec, discovery_n=discovery_n)
+        frame, columns = _frame(spec, discovery_n)
         frames[spec["interaction_spec_id"]] = frame
-        columns[spec["interaction_spec_id"]] = main
-    baselines, challengers, design = construct_interaction_design_family(
+        main_effects[spec["interaction_spec_id"]] = columns
+    baselines, challengers, result = construct_interaction_design_family(
         contract=MODEL_CONTRACT,
         spec_contract=SPEC_CONTRACT,
         challenger_specs=CHALLENGER,
         freeze_result=freeze,
         standardized_frames_by_spec=frames,
-        main_effect_columns_by_spec=columns,
+        main_effect_columns_by_spec=main_effects,
     )
-    return freeze, baselines, challengers, design
+    return freeze, baselines, challengers, result
 
 
 def _manifest(freeze: dict, design: dict, *specs: dict, discovery_n: int = 30) -> dict:
@@ -202,23 +191,52 @@ def _manifest(freeze: dict, design: dict, *specs: dict, discovery_n: int = 30) -
     )
 
 
-def _outcomes(baseline: pd.DataFrame, challenger: pd.DataFrame, *, horizon: int = 5, discovery_n: int = 30) -> pd.DataFrame:
+def _outcomes(
+    baseline: pd.DataFrame,
+    challenger: pd.DataFrame,
+    *,
+    discovery_n: int = 30,
+    horizon: int = 5,
+) -> pd.DataFrame:
     identity = ["snapshot_id", "as_of", "generated_at", "symbol", "horizon_sessions"]
     work = baseline.iloc[:discovery_n][identity].copy().reset_index(drop=True)
     as_of = pd.to_datetime(work["as_of"], utc=True)
     work["start_market_date"] = as_of.dt.date.astype(str)
-    work[f"label_available_from_{horizon}t"] = (as_of + pd.Timedelta(days=4)).dt.isoformat()
-    interaction = [c for c in challenger.columns if c.startswith("interaction__")]
+    work[f"label_available_from_{horizon}t"] = (as_of + pd.Timedelta(days=4)).map(lambda value: value.isoformat())
+    interaction = [column for column in challenger.columns if column.startswith("interaction__")]
     assert len(interaction) == 1
-    y = (
+    work[f"peer_excess_{horizon}t"] = (
         challenger.iloc[:discovery_n][interaction[0]].to_numpy(dtype=float)
         + 0.3 * baseline.iloc[:discovery_n]["other_main_effect"].to_numpy(dtype=float)
     )
-    work[f"peer_excess_{horizon}t"] = y
     return work
 
 
-def test_8h_e_contract_binds_exact_parent_blobs() -> None:
+def _evaluate(spec: dict, *, discovery_n: int = 30):
+    freeze, baselines, challengers, design = _construct(spec, discovery_n=discovery_n)
+    manifest = _manifest(freeze, design, spec, discovery_n=discovery_n)
+    outcomes = {
+        spec["interaction_spec_id"]: _outcomes(
+            baselines[spec["interaction_spec_id"]],
+            challengers[spec["interaction_spec_id"]],
+            discovery_n=discovery_n,
+        )
+    }
+    result = evaluate_interaction_discovery_family(
+        contract=CONTRACT,
+        model_contract=MODEL_CONTRACT,
+        freeze_result=freeze,
+        design_result=design,
+        baseline_frames_by_spec=baselines,
+        challenger_frames_by_spec=challengers,
+        split_manifest=manifest,
+        outcome_rows_by_spec=outcomes,
+        research_as_of="2027-08-09T23:59:00Z",
+    )
+    return freeze, baselines, challengers, design, manifest, outcomes, result
+
+
+def test_contract_binds_exact_parent_blobs_and_keeps_confirmatory_splits_sealed() -> None:
     validate_discovery_contract(CONTRACT, MODEL_CONTRACT)
     parent = CONTRACT["parent_freeze"]
     assert parent["verified_parent_commit"] == "80ae64b2fa651f428290f4fb8b1d63fc7dcfcc8a"
@@ -232,9 +250,12 @@ def test_8h_e_contract_binds_exact_parent_blobs() -> None:
         "decision_research_dataset": "decision_research_dataset_git_blob_sha",
     }.items():
         assert _git_blob_sha(ROOT / parent[path_key]) == parent[sha_key]
+    assert CONTRACT["discovery_outcome_access"]["validation_outcomes_allowed_in_8h_e"] is False
+    assert CONTRACT["discovery_outcome_access"]["holdout_outcomes_allowed_in_8h_e"] is False
+    assert CONTRACT["discovery_statistics"]["holm_applied_in_8h_e"] is False
 
 
-def test_current_repository_remains_waiting_and_validation_holdout_sealed() -> None:
+def test_current_repository_waits_without_any_outcome_access() -> None:
     eligibility = bind_interaction_eligibility(
         contract=BINDING_CONTRACT,
         challenger_specs=CHALLENGER,
@@ -266,22 +287,9 @@ def test_current_repository_remains_waiting_and_validation_holdout_sealed() -> N
     assert result["holdout_outcomes_authorized"] is False
 
 
-def test_valid_discovery_flow_freezes_full_model_family_without_changing_hypotheses() -> None:
+def test_valid_discovery_freezes_models_but_never_changes_family_or_applies_holm() -> None:
     spec = _spec()
-    freeze, baselines, challengers, design = _construct(spec)
-    manifest = _manifest(freeze, design, spec)
-    outcomes = {spec["interaction_spec_id"]: _outcomes(baselines[spec["interaction_spec_id"]], challengers[spec["interaction_spec_id"]])}
-    result = evaluate_interaction_discovery_family(
-        contract=CONTRACT,
-        model_contract=MODEL_CONTRACT,
-        freeze_result=freeze,
-        design_result=design,
-        baseline_frames_by_spec=baselines,
-        challenger_frames_by_spec=challengers,
-        split_manifest=manifest,
-        outcome_rows_by_spec=outcomes,
-        research_as_of="2027-08-09T23:59:00Z",
-    )
+    freeze, _, _, _, _, _, result = _evaluate(spec)
     assert result["state"] == DISCOVERY_FAMILY_FROZEN
     assert result["confirmatory_family"] == freeze["confirmatory_family"]
     assert result["family_shrunk_or_expanded"] is False
@@ -303,15 +311,14 @@ def test_valid_discovery_flow_freezes_full_model_family_without_changing_hypothe
     assert models["holdout_refit_allowed"] is False
 
 
-def test_discovery_outcome_sign_or_p_value_cannot_cherry_pick_family() -> None:
+def test_full_frozen_family_cannot_be_cherry_picked_after_discovery_results() -> None:
     first = _spec("ix_a", core_field="score")
     second = _spec("ix_b", core_field="risk")
     freeze, baselines, challengers, design = _construct(first, second)
     manifest = _manifest(freeze, design, first, second)
     outcomes = {
         spec["interaction_spec_id"]: _outcomes(
-            baselines[spec["interaction_spec_id"]],
-            challengers[spec["interaction_spec_id"]],
+            baselines[spec["interaction_spec_id"]], challengers[spec["interaction_spec_id"]]
         )
         for spec in (first, second)
     }
@@ -327,23 +334,13 @@ def test_discovery_outcome_sign_or_p_value_cannot_cherry_pick_family() -> None:
         research_as_of="2027-08-09T23:59:00Z",
     )
     assert result["confirmatory_family"] == freeze["confirmatory_family"]
-    assert [x["hypothesis_id"] for x in result["discovery_results"]] == [
-        x["hypothesis_id"] for x in freeze["confirmatory_family"]
+    assert [row["hypothesis_id"] for row in result["discovery_results"]] == [
+        row["hypothesis_id"] for row in freeze["confirmatory_family"]
     ]
     assert len(result["frozen_model_pairs"]) == 2
     assert result["family_shrunk_or_expanded"] is False
 
-
-def test_partial_empirical_family_is_rejected_before_outcome_access() -> None:
-    first = _spec("ix_a", core_field="score")
-    second = _spec("ix_b", core_field="risk")
-    freeze, baselines, challengers, design = _construct(first, second)
-    manifest = _manifest(freeze, design, first, second)
-    outcomes = {
-        first["interaction_spec_id"]: _outcomes(
-            baselines[first["interaction_spec_id"]], challengers[first["interaction_spec_id"]]
-        )
-    }
+    partial_outcomes = {first["interaction_spec_id"]: outcomes[first["interaction_spec_id"]]}
     with pytest.raises(ExternalEvidence8HDiscoveryError, match="empirical_input_family_must_equal_full_frozen_family"):
         evaluate_interaction_discovery_family(
             contract=CONTRACT,
@@ -353,15 +350,15 @@ def test_partial_empirical_family_is_rejected_before_outcome_access() -> None:
             baseline_frames_by_spec=baselines,
             challenger_frames_by_spec=challengers,
             split_manifest=manifest,
-            outcome_rows_by_spec=outcomes,
+            outcome_rows_by_spec=partial_outcomes,
             research_as_of="2027-08-09T23:59:00Z",
         )
 
 
-def test_split_manifest_must_be_outcome_blind_full_family_and_chronological() -> None:
+def test_split_manifest_is_outcome_blind_chronological_and_frozen_before_outcomes() -> None:
     spec = _spec()
     freeze, _, _, design = _construct(spec)
-    dates, splits = _dates()
+    dates, splits = _dates(30)
     assignments = {
         spec["interaction_spec_id"]: [
             {"snapshot_id": f"s{i:03d}", "as_of": dates[i].isoformat(), "split": splits[i], "usable": True}
@@ -377,50 +374,39 @@ def test_split_manifest_must_be_outcome_blind_full_family_and_chronological() ->
             authored_at="2027-07-01T11:00:00Z",
             outcomes_read_while_assigning_splits=True,
         )
-    bad = deepcopy(assignments)
-    bad[spec["interaction_spec_id"]][1]["split"] = "HOLDOUT"
+
+    nonchronological = deepcopy(assignments)
+    nonchronological[spec["interaction_spec_id"]][1]["split"] = "HOLDOUT"
     with pytest.raises(ExternalEvidence8HDiscoveryError, match="split_order_not_chronological"):
         freeze_interaction_split_manifest(
             freeze_result=freeze,
             design_result=design,
-            assignments_by_spec=bad,
+            assignments_by_spec=nonchronological,
+            author_identity="test",
+            authored_at="2027-07-01T11:00:00Z",
+        )
+
+    predates = deepcopy(assignments)
+    predates[spec["interaction_spec_id"]][0]["as_of"] = "2027-07-01T09:00:00+00:00"
+    with pytest.raises(ExternalEvidence8HDiscoveryError, match="split_assignment_predates_spec_freeze"):
+        freeze_interaction_split_manifest(
+            freeze_result=freeze,
+            design_result=design,
+            assignments_by_spec=predates,
             author_identity="test",
             authored_at="2027-07-01T11:00:00Z",
         )
 
 
-def test_validation_or_holdout_rows_cannot_be_substituted_for_discovery_outcomes() -> None:
-    spec = _spec()
-    freeze, baselines, challengers, design = _construct(spec)
-    manifest = _manifest(freeze, design, spec)
-    bad_outcome = _outcomes(baselines[spec["interaction_spec_id"]], challengers[spec["interaction_spec_id"]])
-    validation_row = baselines[spec["interaction_spec_id"]].iloc[[30]][list(bad_outcome.columns[:5])].copy()
-    validation_as_of = pd.to_datetime(validation_row["as_of"], utc=True)
-    validation_row["start_market_date"] = validation_as_of.dt.date.astype(str)
-    validation_row["label_available_from_5t"] = (validation_as_of + pd.Timedelta(days=4)).dt.isoformat()
-    validation_row["peer_excess_5t"] = 0.0
-    bad_outcome.iloc[-1] = validation_row.iloc[0]
-    with pytest.raises(ExternalEvidence8HDiscoveryError, match="outcome_identity_mismatch"):
-        evaluate_interaction_discovery_family(
-            contract=CONTRACT,
-            model_contract=MODEL_CONTRACT,
-            freeze_result=freeze,
-            design_result=design,
-            baseline_frames_by_spec=baselines,
-            challenger_frames_by_spec=challengers,
-            split_manifest=manifest,
-            outcome_rows_by_spec={spec["interaction_spec_id"]: bad_outcome},
-            research_as_of="2027-08-20T23:59:00Z",
-        )
-
-
-def test_exact_discovery_validation_label_boundary_is_fail_closed() -> None:
+def test_discovery_label_maturity_and_validation_boundary_are_fail_closed() -> None:
     spec = _spec()
     freeze, baselines, challengers, design = _construct(spec)
     manifest = _manifest(freeze, design, spec)
     outcome = _outcomes(baselines[spec["interaction_spec_id"]], challengers[spec["interaction_spec_id"]])
+
+    boundary = outcome.copy()
     first_validation = manifest["streams"][spec["interaction_spec_id"]]["assignments"][30]["as_of"]
-    outcome.loc[outcome.index[-1], "label_available_from_5t"] = first_validation
+    boundary.loc[boundary.index[-1], "label_available_from_5t"] = first_validation
     with pytest.raises(ExternalEvidence8HDiscoveryError, match="boundary_purge_required"):
         evaluate_interaction_discovery_family(
             contract=CONTRACT,
@@ -430,17 +416,12 @@ def test_exact_discovery_validation_label_boundary_is_fail_closed() -> None:
             baseline_frames_by_spec=baselines,
             challenger_frames_by_spec=challengers,
             split_manifest=manifest,
-            outcome_rows_by_spec={spec["interaction_spec_id"]: outcome},
+            outcome_rows_by_spec={spec["interaction_spec_id"]: boundary},
             research_as_of="2027-08-20T23:59:00Z",
         )
 
-
-def test_unmatured_discovery_label_is_rejected() -> None:
-    spec = _spec()
-    freeze, baselines, challengers, design = _construct(spec)
-    manifest = _manifest(freeze, design, spec)
-    outcome = _outcomes(baselines[spec["interaction_spec_id"]], challengers[spec["interaction_spec_id"]])
-    outcome.loc[0, "label_available_from_5t"] = "2027-08-09T12:00:00Z"
+    immature = outcome.copy()
+    immature.loc[0, "label_available_from_5t"] = "2027-08-09T12:00:00Z"
     with pytest.raises(ExternalEvidence8HDiscoveryError, match="discovery_label_not_mature"):
         evaluate_interaction_discovery_family(
             contract=CONTRACT,
@@ -450,31 +431,38 @@ def test_unmatured_discovery_label_is_rejected() -> None:
             baseline_frames_by_spec=baselines,
             challenger_frames_by_spec=challengers,
             split_manifest=manifest,
-            outcome_rows_by_spec={spec["interaction_spec_id"]: outcome},
+            outcome_rows_by_spec={spec["interaction_spec_id"]: immature},
             research_as_of="2027-08-09T10:00:00Z",
         )
 
 
-def test_insufficient_discovery_evidence_keeps_validation_sealed_and_family_intact() -> None:
+def test_non_discovery_outcome_identity_cannot_be_substituted() -> None:
     spec = _spec()
-    freeze, baselines, challengers, design = _construct(spec, discovery_n=10)
-    manifest = _manifest(freeze, design, spec, discovery_n=10)
-    outcome = _outcomes(
-        baselines[spec["interaction_spec_id"]],
-        challengers[spec["interaction_spec_id"]],
-        discovery_n=10,
-    )
-    result = evaluate_interaction_discovery_family(
-        contract=CONTRACT,
-        model_contract=MODEL_CONTRACT,
-        freeze_result=freeze,
-        design_result=design,
-        baseline_frames_by_spec=baselines,
-        challenger_frames_by_spec=challengers,
-        split_manifest=manifest,
-        outcome_rows_by_spec={spec["interaction_spec_id"]: outcome},
-        research_as_of="2027-08-09T23:59:00Z",
-    )
+    freeze, baselines, challengers, design = _construct(spec)
+    manifest = _manifest(freeze, design, spec)
+    outcome = _outcomes(baselines[spec["interaction_spec_id"]], challengers[spec["interaction_spec_id"]])
+    validation = baselines[spec["interaction_spec_id"]].iloc[30]
+    outcome.loc[outcome.index[-1], "snapshot_id"] = validation["snapshot_id"]
+    outcome.loc[outcome.index[-1], "as_of"] = validation["as_of"]
+    outcome.loc[outcome.index[-1], "generated_at"] = validation["generated_at"]
+    outcome.loc[outcome.index[-1], "symbol"] = validation["symbol"]
+    with pytest.raises(ExternalEvidence8HDiscoveryError, match="outcome_identity_mismatch"):
+        evaluate_interaction_discovery_family(
+            contract=CONTRACT,
+            model_contract=MODEL_CONTRACT,
+            freeze_result=freeze,
+            design_result=design,
+            baseline_frames_by_spec=baselines,
+            challenger_frames_by_spec=challengers,
+            split_manifest=manifest,
+            outcome_rows_by_spec={spec["interaction_spec_id"]: outcome},
+            research_as_of="2027-08-20T23:59:00Z",
+        )
+
+
+def test_insufficient_discovery_evidence_keeps_family_intact_and_validation_sealed() -> None:
+    spec = _spec()
+    freeze, _, _, _, _, _, result = _evaluate(spec, discovery_n=10)
     assert result["state"] == DISCOVERY_FAMILY_INSUFFICIENT
     assert result["confirmatory_family"] == freeze["confirmatory_family"]
     assert result["full_family_model_freeze_complete"] is False
@@ -482,24 +470,3 @@ def test_insufficient_discovery_evidence_keeps_validation_sealed_and_family_inta
     assert result["validation_outcomes_authorized"] is False
     assert result["holdout_outcomes_authorized"] is False
     assert result["discovery_results"][0]["minimum_evidence_met"] is False
-
-
-def test_split_assignment_before_8h_c_freeze_is_rejected() -> None:
-    spec = _spec()
-    freeze, _, _, design = _construct(spec)
-    dates, splits = _dates()
-    assignments = {
-        spec["interaction_spec_id"]: [
-            {"snapshot_id": f"s{i:03d}", "as_of": dates[i].isoformat(), "split": splits[i], "usable": True}
-            for i in range(len(dates))
-        ]
-    }
-    assignments[spec["interaction_spec_id"]][0]["as_of"] = "2027-07-01T09:00:00+00:00"
-    with pytest.raises(ExternalEvidence8HDiscoveryError, match="split_assignment_predates_spec_freeze"):
-        freeze_interaction_split_manifest(
-            freeze_result=freeze,
-            design_result=design,
-            assignments_by_spec=assignments,
-            author_identity="test",
-            authored_at="2027-07-01T11:00:00Z",
-        )
