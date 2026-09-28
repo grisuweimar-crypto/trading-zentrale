@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from scanner.research.external_evidence.research_8g_binding_guard import (
 ROOT = Path(__file__).resolve().parents[1]
 SPECS = json.loads((ROOT / "configs" / "external_evidence_8g_challenger_specs_v1.json").read_text())
 PLAN = json.loads((ROOT / "configs" / "external_evidence_8g_split_plan_v1.json").read_text())
+CORRECTION = json.loads((ROOT / "configs" / "external_evidence_source_identity_correction_v1.json").read_text())
 
 
 def _row(factor: str, source: str, series: str, day: str, value: float) -> dict:
@@ -49,6 +51,16 @@ def _ledger() -> dict:
             _row("fx", "ECB_EXR", "EXR.D.USD.EUR.SP00.A", "2026-09-28", 1.15),
         ],
     }
+
+
+def _canonical_ledger() -> dict:
+    ledger = copy.deepcopy(_ledger())
+    for row in ledger["observations"]:
+        if row["source_id"] == "FED_H15":
+            row["source_id"] = "federal_reserve_board_h15"
+        elif row["source_id"] == "ECB_EXR":
+            row["source_id"] = "ecb_data_portal"
+    return ledger
 
 
 def _map() -> dict:
@@ -142,6 +154,55 @@ def test_frozen_series_rejects_wrong_source_id() -> None:
             exposure_map=_map(),
             specs=SPECS,
             plan=PLAN,
+        )
+
+
+def test_canonical_8f_source_ids_require_explicit_correction_receipt() -> None:
+    manifest = empty_split_manifest(SPECS, PLAN)
+    with pytest.raises(ExternalEvidence8GError, match="frozen_source_mismatch"):
+        bind_snapshot_to_manifest_guarded(
+            manifest=manifest,
+            snapshot_metadata=_snapshot("snap-1", "2026-09-29", "2026-09-29T17:00:00+00:00"),
+            macro_ledger=_canonical_ledger(),
+            exposure_map=_map(),
+            specs=SPECS,
+            plan=PLAN,
+        )
+
+
+def test_versioned_correction_accepts_canonical_8f_ids_without_mutating_ledger() -> None:
+    manifest = empty_split_manifest(SPECS, PLAN)
+    ledger = _canonical_ledger()
+    original = copy.deepcopy(ledger)
+    updated, audit = bind_snapshot_to_manifest_guarded(
+        manifest=manifest,
+        snapshot_metadata=_snapshot("snap-1", "2026-09-29", "2026-09-29T17:00:00+00:00"),
+        macro_ledger=ledger,
+        exposure_map=_map(),
+        specs=SPECS,
+        plan=PLAN,
+        source_identity_correction=CORRECTION,
+    )
+    assert len(audit["bound"]) == 12
+    assert audit["source_identity_correction_sha256"] == CORRECTION["correction_sha256"]
+    assert audit["source_identity_normalization_is_feature_side_copy_only"] is True
+    assert audit["retroactive_source_ledger_rewrite"] is False
+    assert ledger == original
+    assert all(len(stream["assignments"]) == 1 for stream in updated["streams"].values())
+
+
+def test_source_identity_correction_tamper_fails_closed() -> None:
+    correction = copy.deepcopy(CORRECTION)
+    correction["alias_to_canonical"]["FED_H15"] = "wrong_source"
+    with pytest.raises(ExternalEvidence8GError, match="alias_map_mismatch|digest_mismatch"):
+        bind_snapshot_to_manifest_guarded(
+            manifest=empty_split_manifest(SPECS, PLAN),
+            snapshot_metadata=_snapshot("snap-1", "2026-09-29", "2026-09-29T17:00:00+00:00"),
+            macro_ledger=_canonical_ledger(),
+            exposure_map=_map(),
+            specs=SPECS,
+            plan=PLAN,
+            source_identity_correction=correction,
         )
 
 
