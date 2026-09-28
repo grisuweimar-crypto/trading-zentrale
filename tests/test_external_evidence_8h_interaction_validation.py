@@ -378,7 +378,7 @@ def test_exact_validation_holdout_boundary_is_fail_closed() -> None:
             baseline_frames_by_spec=baselines,
             challenger_frames_by_spec=challengers,
             outcome_rows_by_spec={spec["interaction_spec_id"]: outcome},
-            research_as_of="2027-09-19T23:59:00Z",
+            research_as_of="2027-09-21T23:59:00Z",
         )
 
 
