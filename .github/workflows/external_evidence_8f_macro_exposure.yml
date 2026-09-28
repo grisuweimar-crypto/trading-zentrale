@@ -71,6 +71,16 @@ jobs:
               --output "/tmp/external_evidence_8f_mapping_review_b${b}.json"
           done
 
+      - name: Validate B19 documentary candidates and pending review without promotion
+        run: |
+          python scripts/run_external_evidence_8f_mapping_candidate_gate.py \
+            --candidates configs/external_evidence_8f_mapping_candidates_b19_v1.json \
+            --output /tmp/external_evidence_8f_mapping_candidate_gate_b19.json
+          python scripts/run_external_evidence_8f_mapping_review.py \
+            --candidates configs/external_evidence_8f_mapping_candidates_b19_v1.json \
+            --review configs/external_evidence_8f_mapping_review_decisions_b19_v1.json \
+            --output /tmp/external_evidence_8f_mapping_review_b19.json
+
       - name: Confirm current Phase 8F state is not falsely frozen
         run: python scripts/run_external_evidence_8f_completion_gate.py --output /tmp/external_evidence_8f_completion_gate.json
 
@@ -81,9 +91,12 @@ jobs:
 # B1-B4 remain materialized in the 60-mapping base map; B5-B18 are append-only human-reviewed overlays.
 # Repair state: 195 historical mapping intervals = 189 ACTIVE + 6 SUPERSEDED.
 # Current frozen-domain accounting: 189 mapped + 1 human-reviewed explicit-unmapped (8035.T) = 190/207 accounted; 17 remain unaccounted.
+# B19 is pending human review only: 6 documentary mapping candidates + 11 explicit-unmapped proposals partition the exact 17-subject remainder.
+# If all B19 proposals are explicitly approved, accounting would become 195 mapped + 12 explicit-unmapped = 207/207 with zero unaccounted.
 # The resolution ledger contains 18 identical audit-only re-reviews and 6 versioned human-reviewed supersessions.
 # Supersessions preserve the prior interval and activate a v2 mapping only from the later human-review timestamp.
 # B1-B18 human-review replay must be idempotent against the effective map and resolution-aware.
+# B19 review must remain non-mutating while status is PENDING_HUMAN_REVIEW.
 # Unregistered conflicting duplicates remain fail-closed.
 # No backdating, market direction, signed exposure, weights, thresholds, outcome research,
 # cross-factor research, Phase-7 integration or production external-evidence enablement is allowed here.
