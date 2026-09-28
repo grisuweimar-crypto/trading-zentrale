@@ -43,6 +43,8 @@ These entries do **not** claim absence of macro exposure. They record that the r
 - Active append-only overlays: **15** (B5-B19).
 - Resolution ledger: **18 identical audit-only re-reviews + 6 versioned supersessions**.
 
+B19 review provenance is recorded separately from the immutable candidate artifacts: candidate rows remain documentary proposals with `human_reviewed=false`, while the human-review decision artifacts and append-only overlay/domain registries activate the approved decisions. This preserves the pre-review evidence record and avoids rewriting candidate history.
+
 Full domain accounting does not by itself freeze Phase 8F. The real macro-ledger and separate completion requirements remain in force; production external-evidence enablement, outcome research, market direction, signed exposure, weights, thresholds, cross-factor optimization and Phase-7 integration remain prohibited here.
 
 ## Guardrails
