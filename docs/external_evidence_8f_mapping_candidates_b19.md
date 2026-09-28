@@ -30,29 +30,17 @@ All six mappings become usable no earlier than `2026-09-28T06:04+02:00`. Candida
 
 `LGO`, `LC0A.MU`, `MNSO`, `NOVO-B.CO`, `RCAT`, `ACB.TO`, `SMX`, `SE`, `SPCX`, `DRO.AX`, `1211.HK`.
 
-These entries do **not** claim absence of macro exposure. They record that the reviewed evidence does not justify a relationship-specific mapping to the current Phase-8F factor catalog without prohibited inference or factor substitution. Examples include Largo's documented vanadium exposure while vanadium is outside the catalog, Luckin's RMB/USD exposure rather than EUR/USD, and BYD's generic raw-material-price risk without a sufficiently specific documented lithium-price relationship.
+These entries do **not** claim absence of macro exposure. They record that the reviewed evidence does not justify a relationship-specific mapping to the current Phase-8F factor catalog without prohibited inference or factor substitution.
 
 ## Final frozen-domain accounting after B19
 
 - Historical mapping intervals: **201**.
 - Current ACTIVE mapped subjects: **195/207**.
 - Historical SUPERSEDED intervals: **6**.
-- Explicit-unmapped subjects: **12/207** (`8035.T` from B18 plus eleven from B19).
+- Explicit-unmapped subjects: **12/207**.
 - Unaccounted subjects: **0**.
 - Frozen-domain accounting: **207/207**.
 - Active append-only overlays: **15** (B5-B19).
 - Resolution ledger: **18 identical audit-only re-reviews + 6 versioned supersessions**.
 
-B19 review provenance is recorded separately from the immutable candidate artifacts: candidate rows remain documentary proposals with `human_reviewed=false`, while the human-review decision artifacts and append-only overlay/domain registries activate the approved decisions. This preserves the pre-review evidence record and avoids rewriting candidate history.
-
 Full domain accounting does not by itself freeze Phase 8F. The real macro-ledger and separate completion requirements remain in force; production external-evidence enablement, outcome research, market direction, signed exposure, weights, thresholds, cross-factor optimization and Phase-7 integration remain prohibited here.
-
-## Guardrails
-
-- No market outcomes were read or used.
-- No market direction or exposure sign was assigned.
-- No weights or thresholds were selected.
-- No sector/name/listing-currency inference was promoted.
-- No backdating occurred.
-- B19 was activated only after explicit human review.
-- Full CI validation begins only after this complete 207/207 accounting state is committed.
