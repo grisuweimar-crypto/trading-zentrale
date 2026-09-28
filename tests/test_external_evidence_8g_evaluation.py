@@ -65,10 +65,11 @@ def _result(hypothesis: str, p: float | None, effect: float | None, *, split: st
     }
 
 
-def test_evaluation_protocol_is_final_8g_subphase_and_keeps_production_off() -> None:
+def test_evaluation_protocol_is_validation_phase_and_keeps_production_off() -> None:
     validate_evaluation_protocol(PROTOCOL)
     assert PROTOCOL["phase"] == "8G-E"
-    assert PROTOCOL["next_planned_phase"] == "8H_CROSS_FACTOR_INTERACTION"
+    assert PROTOCOL["next_planned_phase"] == "8G-F_HOLDOUT_OOS"
+    assert PROTOCOL["split_policy"]["holdout"]["final_governance_owned_by"] == "8G-F"
     assert PROTOCOL["productive_integration_enabled"] is False
     assert PROTOCOL["automatic_promotion_enabled"] is False
     assert PROTOCOL["multiple_testing"]["family_size"] == 12
@@ -134,8 +135,6 @@ def _opened_rows(n: int = 40) -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:
         as_of = market_day.isoformat()
         symbol = f"SYM{i % 5}"
         target = float((i % 7) - 3) / 100.0
-        # Constant +0.01 squared-error improvement: baseline error 0.1,
-        # challenger error 0.0.
         rows.append({
             "snapshot_id": snapshot_id,
             "as_of": as_of,
