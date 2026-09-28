@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
 from scanner.research.external_evidence.exposure_map_store_8f import (
@@ -57,6 +58,19 @@ def _mapping_id(candidate_id: str) -> str:
     if not candidate_id.startswith("MAPCAND:"):
         raise ValueError(f"invalid candidate_id: {candidate_id}")
     return candidate_id.replace("MAPCAND:", "MAP:", 1)
+
+
+def _normalized_timestamp(value: object) -> str:
+    text = str(value or "").strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError as exc:
+        raise RuntimeError(f"invalid review timestamp: {value!r}") from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise RuntimeError("review timestamp must be timezone-aware")
+    return parsed.isoformat()
 
 
 def _empty_replay_result(review_config: dict, exposure_map: dict) -> dict:
@@ -136,7 +150,7 @@ def _replay_supersession_aware(
     else:
         result = _empty_replay_result(review_config, exposure_map)
 
-    reviewed_at = str(review_config.get("reviewed_at") or "")
+    reviewed_at = _normalized_timestamp(review_config.get("reviewed_at"))
     by_mapping_id = {
         str(row.get("mapping_id") or ""): row
         for row in exposure_map.get("mappings") or []
