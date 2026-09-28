@@ -183,8 +183,8 @@ def fit_discovery_preprocessor(
 
     retained_external = [column for column in expected_external if not external_numeric[column]["dropped"]]
     challenger_output = list(baseline_output)
-    challenger_output.extend(f"external::{column}" for column in retained_external)
     for column in retained_external:
+        challenger_output.append(f"external::{column}")
         challenger_output.extend(
             f"interaction::{column}::{relationship}" for relationship in relationship_classes
         )
