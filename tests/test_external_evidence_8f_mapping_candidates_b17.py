@@ -12,7 +12,8 @@ from scanner.research.external_evidence.exposure_review_queue_8f import build_ex
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REVIEWED_AT = "2026-09-27T16:38+02:00"
+REVIEW_ARTIFACT_AT = "2026-09-27T16:38+02:00"
+EFFECTIVE_AT = "2026-09-27T16:38:00+02:00"
 B17_SUBJECTS = {
     "1810.HK", "9880.HK", "CGNX", "000660.KS", "005930.KS",
     "0700.HK", "IFX.DE", "SAP.DE", "YASKY", "6506.T",
@@ -65,16 +66,16 @@ def test_b17_effective_state_distinguishes_new_audit_only_and_reclassified_subje
         assert active_by_subject[subject]["factor_id"] == "fx"
         assert active_by_subject[subject]["relationship_class"] == "OTHER_DOCUMENTED"
 
-    assert all(active_by_subject[subject]["reviewed_at"] == REVIEWED_AT for subject in B17_NEW_SUBJECTS | B17_RECLASSIFIED_SUBJECTS)
-    assert all(active_by_subject[subject]["valid_from"] == REVIEWED_AT for subject in B17_NEW_SUBJECTS | B17_RECLASSIFIED_SUBJECTS)
-    assert active_by_subject["SAP.DE"]["reviewed_at"] != REVIEWED_AT
+    assert all(active_by_subject[subject]["reviewed_at"] == EFFECTIVE_AT for subject in B17_NEW_SUBJECTS | B17_RECLASSIFIED_SUBJECTS)
+    assert all(active_by_subject[subject]["valid_from"] == EFFECTIVE_AT for subject in B17_NEW_SUBJECTS | B17_RECLASSIFIED_SUBJECTS)
+    assert active_by_subject["SAP.DE"]["reviewed_at"] != EFFECTIVE_AT
 
 
 def test_b17_review_artifact_is_explicit_human_review():
     review = _load("configs/external_evidence_8f_mapping_review_decisions_b17_v1.json")
     assert review["status"] == "HUMAN_REVIEW_COMPLETED"
     assert review["reviewer_role"] == "HUMAN_REVIEWER"
-    assert review["reviewed_at"] == REVIEWED_AT
+    assert review["reviewed_at"] == REVIEW_ARTIFACT_AT
     assert len(review["decisions"]) == 10
     assert all(item["decision"] == "APPROVE" for item in review["decisions"])
     assert all(item["source_verified"] is True for item in review["decisions"])
