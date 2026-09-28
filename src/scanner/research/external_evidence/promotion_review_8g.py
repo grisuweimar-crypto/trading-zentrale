@@ -1,11 +1,4 @@
-"""Phase 8G-H manual promotion review governance.
-
-8G-H does not discover or tune anything. It converts completed 8G-G evidence into
-an auditable manual review packet using the ten Phase-8 promotion criteria.
-Statistical success alone never promotes a factor. Source provenance, licensing,
-Survivorship/as-of-universe evidence and evidence-consumption status are hard gates.
-Approval authorizes research in top-level Phase 8H only.
-"""
+"""Phase 8G-H manual promotion review governance."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -13,11 +6,8 @@ from hashlib import sha256
 import json
 from typing import Any, Mapping, Sequence
 
-from scanner.research.external_evidence.prospective_8g import (
-    PROSPECTIVE_COMPLETION_SCHEMA,
-)
+from scanner.research.external_evidence.prospective_8g import PROSPECTIVE_COMPLETION_SCHEMA
 from scanner.research.external_evidence.research_8g import ACTIVE_FACTORS, HORIZONS
-
 
 PROMOTION_PROTOCOL_SCHEMA = "external_evidence_8g_promotion_review_v1"
 PROMOTION_PACKET_SCHEMA = "external_evidence_8g_promotion_review_packet_v1"
@@ -26,7 +16,7 @@ PROMOTION_COMPLETION_SCHEMA = "external_evidence_8g_promotion_review_completion_
 
 
 class ExternalEvidence8GPromotionError(ValueError):
-    """Raised when 8G-H promotion governance is violated."""
+    pass
 
 
 def _stable_json(value: object) -> str:
@@ -60,18 +50,12 @@ def validate_promotion_protocol(protocol: Mapping[str, Any]) -> None:
         raise ExternalEvidence8GPromotionError("automatic_promotion_must_remain_disabled")
     if tuple(protocol.get("active_factor_ids") or ()) != ACTIVE_FACTORS:
         raise ExternalEvidence8GPromotionError("active_factor_family_mismatch")
-    expected_sources = {
-        "rates_policy": ["FED_H15"],
-        "yield_curve": ["FED_H15"],
-        "fx": ["ECB_EXR"],
-    }
+    expected_sources = {"rates_policy": ["FED_H15"], "yield_curve": ["FED_H15"], "fx": ["ECB_EXR"]}
     if protocol.get("frozen_source_ids_by_factor") != expected_sources:
         raise ExternalEvidence8GPromotionError("frozen_source_identity_mismatch")
     criteria = list(protocol.get("promotion_criteria") or ())
-    if len(criteria) != 10:
-        raise ExternalEvidence8GPromotionError("exactly_10_promotion_criteria_required")
-    if [int(x.get("plan_criterion", 0)) for x in criteria] != list(range(1, 11)):
-        raise ExternalEvidence8GPromotionError("promotion_criteria_order_mismatch")
+    if len(criteria) != 10 or [int(x.get("plan_criterion", 0)) for x in criteria] != list(range(1, 11)):
+        raise ExternalEvidence8GPromotionError("exact_10_ordered_promotion_criteria_required")
     if any(x.get("required") is not True for x in criteria):
         raise ExternalEvidence8GPromotionError("all_promotion_criteria_must_be_required")
     if protocol["completion_gate"].get("next_phase") != "8H_CROSS_FACTOR_INTERACTION":
@@ -87,28 +71,23 @@ def _source_registry_index(source_registry: Mapping[str, Any]) -> dict[str, Mapp
     rows = source_registry.get("sources")
     if not isinstance(rows, Sequence):
         raise ExternalEvidence8GPromotionError("source_registry_sources_missing")
-    index: dict[str, Mapping[str, Any]] = {}
+    out: dict[str, Mapping[str, Any]] = {}
     for row in rows:
         if not isinstance(row, Mapping):
             continue
         source_id = str(row.get("source_id") or "")
         if source_id:
-            if source_id in index:
+            if source_id in out:
                 raise ExternalEvidence8GPromotionError(f"duplicate_source_registry_id:{source_id}")
-            index[source_id] = row
-    return index
+            out[source_id] = row
+    return out
 
 
 def source_governance_review(
-    *,
-    factor_id: str,
-    source_registry: Mapping[str, Any],
-    collection_receipt: Mapping[str, Any],
-    completion_gate_8f: Mapping[str, Any],
-    protocol: Mapping[str, Any],
+    *, factor_id: str, source_registry: Mapping[str, Any], collection_receipt: Mapping[str, Any],
+    completion_gate_8f: Mapping[str, Any], protocol: Mapping[str, Any],
     explicit_source_clearances: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Review frozen sources without silently treating an unknown license as cleared."""
     validate_promotion_protocol(protocol)
     if factor_id not in ACTIVE_FACTORS:
         raise ExternalEvidence8GPromotionError("unknown_factor_for_source_review")
@@ -133,24 +112,14 @@ def source_governance_review(
     blockers: list[str] = []
     for source_id in required:
         row = registry.get(source_id)
-        clearance = clearances.get(source_id) or {}
         if row is None:
-            if clearance.get("registry_resolution") is not True:
-                source_states[source_id] = {"status": "UNRESOLVED_IN_REGISTRY"}
-                blockers.append(f"SOURCE_NOT_RESOLVED_IN_REGISTRY:{source_id}")
-                continue
-            pit_status = str(clearance.get("pit_status") or "UNKNOWN")
-            license_status = str(clearance.get("license_status") or "UNKNOWN")
-            provenance_status = str(clearance.get("provenance_status") or "UNKNOWN")
-        else:
-            pit_status = str(row.get("pit_status") or "UNKNOWN")
-            license_status = str(row.get("license_status") or "UNKNOWN")
-            provenance_status = "DOCUMENTED" if row.get("documentation_url") else "UNKNOWN"
-            if clearance.get("license_status"):
-                license_status = str(clearance["license_status"])
-            if clearance.get("provenance_status"):
-                provenance_status = str(clearance["provenance_status"])
-
+            source_states[source_id] = {"status": "UNRESOLVED_IN_REGISTRY"}
+            blockers.append(f"SOURCE_NOT_RESOLVED_IN_REGISTRY:{source_id}")
+            continue
+        clearance = clearances.get(source_id) or {}
+        pit_status = str(clearance.get("pit_status") or row.get("pit_status") or "UNKNOWN")
+        license_status = str(clearance.get("license_status") or row.get("license_status") or "UNKNOWN")
+        provenance_status = str(clearance.get("provenance_status") or ("DOCUMENTED" if row.get("documentation_url") else "UNKNOWN"))
         pit_ok = pit_status in accepted_pit
         if pit_status == "PARTIAL" and protocol["source_governance"].get("partial_requires_explicit_review_justification"):
             pit_ok = pit_ok and bool(clearance.get("partial_pit_justification"))
@@ -164,30 +133,20 @@ def source_governance_review(
             blockers.append(f"SOURCE_PROVENANCE_NOT_CLEARED:{source_id}:{provenance_status}")
         source_states[source_id] = {
             "status": "CLEAR" if pit_ok and license_ok and provenance_ok else "BLOCKED",
-            "pit_status": pit_status,
-            "license_status": license_status,
-            "provenance_status": provenance_status,
+            "pit_status": pit_status, "license_status": license_status, "provenance_status": provenance_status,
         }
     return {
-        "factor_id": factor_id,
-        "required_source_ids": required,
-        "source_states": source_states,
-        "blockers": blockers,
-        "all_sources_clear": not blockers,
-        "8f_completion_gate_pass": True,
-        "raw_snapshot_provenance_pass": True,
+        "factor_id": factor_id, "required_source_ids": required, "source_states": source_states,
+        "blockers": blockers, "all_sources_clear": not blockers,
+        "8f_completion_gate_pass": True, "raw_snapshot_provenance_pass": True,
     }
 
 
 def build_promotion_review_packet(
-    *,
-    hypothesis_id: str,
-    prospective_completion: Mapping[str, Any],
-    criteria_evidence: Mapping[str, Mapping[str, Any]],
-    source_governance: Mapping[str, Any],
+    *, hypothesis_id: str, prospective_completion: Mapping[str, Any],
+    criteria_evidence: Mapping[str, Mapping[str, Any]], source_governance: Mapping[str, Any],
     protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Build an auditable review packet; it never self-approves."""
     validate_promotion_protocol(protocol)
     if prospective_completion.get("schema_version") != PROSPECTIVE_COMPLETION_SCHEMA:
         raise ExternalEvidence8GPromotionError("8g_g_completion_required")
@@ -210,22 +169,13 @@ def build_promotion_review_packet(
     criteria_rows: dict[str, Any] = {}
     blockers: list[str] = []
     for criterion in protocol["promotion_criteria"]:
-        criterion_id = str(criterion["id"])
-        evidence = criteria_evidence.get(criterion_id)
-        if not isinstance(evidence, Mapping):
-            status = "MISSING"
-            evidence_sha = None
-        else:
-            status = str(evidence.get("status") or "MISSING").upper()
-            evidence_sha = str(evidence.get("evidence_sha256") or "") or _digest(evidence)
+        cid = str(criterion["id"])
+        evidence = criteria_evidence.get(cid)
+        status = "MISSING" if not isinstance(evidence, Mapping) else str(evidence.get("status") or "MISSING").upper()
+        evidence_sha = None if not isinstance(evidence, Mapping) else str(evidence.get("evidence_sha256") or "") or _digest(evidence)
         if status != "PASS":
-            blockers.append(f"CRITERION_NOT_PASSED:{criterion_id}:{status}")
-        criteria_rows[criterion_id] = {
-            "plan_criterion": int(criterion["plan_criterion"]),
-            "status": status,
-            "evidence_sha256": evidence_sha,
-        }
-
+            blockers.append(f"CRITERION_NOT_PASSED:{cid}:{status}")
+        criteria_rows[cid] = {"plan_criterion": int(criterion["plan_criterion"]), "status": status, "evidence_sha256": evidence_sha}
     source_blockers = list(source_governance.get("blockers") or ())
     if source_governance.get("factor_id") != factor_id:
         source_blockers.append("SOURCE_GOVERNANCE_FACTOR_MISMATCH")
@@ -233,23 +183,14 @@ def build_promotion_review_packet(
         blockers.extend(source_blockers or ["SOURCE_GOVERNANCE_INCOMPLETE"])
     if not eligible:
         blockers.append(f"NOT_PROSPECTIVE_CONFIRMED:{states[hypothesis_id]}")
-
     packet: dict[str, Any] = {
-        "schema_version": PROMOTION_PACKET_SCHEMA,
-        "phase": "8G-H",
-        "hypothesis_id": hypothesis_id,
-        "factor_id": factor_id,
-        "horizon_sessions": horizon,
-        "8g_g_state": states[hypothesis_id],
-        "promotion_eligible_from_8g_g": eligible,
-        "criteria": criteria_rows,
-        "source_governance": dict(source_governance),
-        "blockers": sorted(set(blockers)),
+        "schema_version": PROMOTION_PACKET_SCHEMA, "phase": "8G-H", "hypothesis_id": hypothesis_id,
+        "factor_id": factor_id, "horizon_sessions": horizon, "8g_g_state": states[hypothesis_id],
+        "promotion_eligible_from_8g_g": eligible, "criteria": criteria_rows,
+        "source_governance": dict(source_governance), "blockers": sorted(set(blockers)),
         "all_10_criteria_pass": all(x["status"] == "PASS" for x in criteria_rows.values()),
-        "governance_clear": not blockers,
-        "manual_review_required": True,
-        "automatic_promotion_authorized": False,
-        "production_authorized": False,
+        "governance_clear": not blockers, "manual_review_required": True,
+        "automatic_promotion_authorized": False, "production_authorized": False,
         "prospective_completion_sha256": str(prospective_completion.get("completion_sha256") or _digest(prospective_completion)),
     }
     packet["packet_sha256"] = _digest(packet)
@@ -257,24 +198,16 @@ def build_promotion_review_packet(
 
 
 def record_manual_review(
-    *,
-    packet: Mapping[str, Any],
-    decision: str,
-    reviewer_identity: str,
-    reviewed_at: str,
-    rationale: str,
-    protocol: Mapping[str, Any],
+    *, packet: Mapping[str, Any], decision: str, reviewer_identity: str,
+    reviewed_at: str, rationale: str, protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Record a human disposition. Approval is research-only and hard-gated."""
     validate_promotion_protocol(protocol)
     if packet.get("schema_version") != PROMOTION_PACKET_SCHEMA:
         raise ExternalEvidence8GPromotionError("promotion_review_packet_required")
-    allowed = set(protocol["manual_review"]["allowed_decisions"])
     decision = str(decision).upper()
-    if decision not in allowed:
+    if decision not in set(protocol["manual_review"]["allowed_decisions"]):
         raise ExternalEvidence8GPromotionError("promotion_review_decision_invalid")
-    reviewer_identity = str(reviewer_identity or "").strip()
-    rationale = str(rationale or "").strip()
+    reviewer_identity, rationale = str(reviewer_identity or "").strip(), str(rationale or "").strip()
     if not reviewer_identity:
         raise ExternalEvidence8GPromotionError("reviewer_identity_required")
     if not rationale:
@@ -293,20 +226,13 @@ def record_manual_review(
     else:
         state = "REJECTED_PROMOTION_REVIEW"
     result: dict[str, Any] = {
-        "schema_version": PROMOTION_DECISION_SCHEMA,
-        "phase": "8G-H",
-        "hypothesis_id": str(packet.get("hypothesis_id")),
-        "packet_sha256": str(packet.get("packet_sha256")),
-        "decision": decision,
-        "state": state,
-        "reviewer_identity": reviewer_identity,
-        "reviewed_at": parsed_time.isoformat(),
-        "rationale": rationale,
+        "schema_version": PROMOTION_DECISION_SCHEMA, "phase": "8G-H",
+        "hypothesis_id": str(packet.get("hypothesis_id")), "packet_sha256": str(packet.get("packet_sha256")),
+        "decision": decision, "state": state, "reviewer_identity": reviewer_identity,
+        "reviewed_at": parsed_time.isoformat(), "rationale": rationale,
         "authorizes_8h_research": state == "APPROVED_FOR_8H_RESEARCH_ONLY",
-        "authorizes_production": False,
-        "authorizes_phase7_mutation": False,
-        "authorizes_8i_integration": False,
-        "authorizes_orders_or_trades": False,
+        "authorizes_production": False, "authorizes_phase7_mutation": False,
+        "authorizes_8i_integration": False, "authorizes_orders_or_trades": False,
         "rejection_authorizes_inverse_signal": False,
     }
     result["decision_sha256"] = _digest(result)
@@ -314,12 +240,9 @@ def record_manual_review(
 
 
 def finalize_promotion_review(
-    *,
-    prospective_completion: Mapping[str, Any],
-    decisions: Mapping[str, Mapping[str, Any]],
+    *, prospective_completion: Mapping[str, Any], decisions: Mapping[str, Mapping[str, Any]],
     protocol: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Finish 8G-H when every prospective-confirmed hypothesis has a disposition."""
     validate_promotion_protocol(protocol)
     if prospective_completion.get("schema_version") != PROSPECTIVE_COMPLETION_SCHEMA:
         raise ExternalEvidence8GPromotionError("8g_g_completion_required")
@@ -347,24 +270,13 @@ def finalize_promotion_review(
         if state == "APPROVED_FOR_8H_RESEARCH_ONLY":
             approved.append(hypothesis)
     complete = not pending
-    if not eligible:
-        overall = "NO_PROMOTION_CANDIDATES"
-    elif pending:
-        overall = "PROMOTION_REVIEW_INCOMPLETE"
-    else:
-        overall = "PROMOTION_REVIEW_COMPLETE"
+    overall = "NO_PROMOTION_CANDIDATES" if not eligible else ("PROMOTION_REVIEW_INCOMPLETE" if pending else "PROMOTION_REVIEW_COMPLETE")
     completion: dict[str, Any] = {
-        "schema_version": PROMOTION_COMPLETION_SCHEMA,
-        "phase": "8G-H",
-        "state": overall,
-        "empirically_complete": complete,
-        "eligible_hypotheses": eligible,
-        "pending_hypotheses": pending,
-        "approved_for_8h_research": approved,
-        "dispositions": dispositions,
-        "automatic_promotion_authorized": False,
-        "production_external_evidence_enabled": False,
-        "next_phase": "8H_CROSS_FACTOR_INTERACTION",
+        "schema_version": PROMOTION_COMPLETION_SCHEMA, "phase": "8G-H", "state": overall,
+        "empirically_complete": complete, "eligible_hypotheses": eligible,
+        "pending_hypotheses": pending, "approved_for_8h_research": approved,
+        "dispositions": dispositions, "automatic_promotion_authorized": False,
+        "production_external_evidence_enabled": False, "next_phase": "8H_CROSS_FACTOR_INTERACTION",
     }
     completion["completion_sha256"] = _digest(completion)
     return completion
