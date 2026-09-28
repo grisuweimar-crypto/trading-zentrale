@@ -1,0 +1,228 @@
+{
+  "schema_version": "external_evidence_8i_promotion_provenance_binding_v1",
+  "phase": "8I-B",
+  "title": "Promotion & Provenance Binding / Outcome-Blind Research Gate",
+  "frozen_on": "2026-09-28",
+  "status": "FROZEN_OUTCOME_BLIND_BINDING_ONLY",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "external_state_engine_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "real_decision_outcome_read_allowed": false,
+  "parent_8i_a": {
+    "path": "configs/external_evidence_8i_decision_extension_contract_v1.json",
+    "git_blob_sha": "3db4359d4ba70dc7bc6801c4d74aa0ebb85b8388",
+    "required_status": "FROZEN_OUTCOME_BLIND_WAITING_FOR_PROMOTED_EXTERNAL_EVIDENCE"
+  },
+  "upstream_contracts": {
+    "8g_promotion_review": {
+      "path": "configs/external_evidence_8g_promotion_review_v1.json",
+      "git_blob_sha": "e49378d0d84748eda7115bb147940a9cb895d108",
+      "approved_state": "APPROVED_FOR_8H_RESEARCH_ONLY",
+      "authorizes_8i_binding_directly": false
+    },
+    "8h_interaction_promotion_review": {
+      "path": "configs/external_evidence_8h_interaction_promotion_review_v1.json",
+      "git_blob_sha": "863c712f12367f61796b75fd0b163788d6395b78",
+      "approved_state": "APPROVED_FOR_8I_RESEARCH_ONLY",
+      "authorizes_8i_research_design": true,
+      "authorizes_8i_integration": false
+    },
+    "8g_challenger_specs": {
+      "path": "configs/external_evidence_8g_challenger_specs_v1.json",
+      "git_blob_sha": "f3ee0d142d422d800efeaef938cc395e35662254"
+    },
+    "source_registry_8a": {
+      "path": "configs/external_source_registry_v1.json",
+      "git_blob_sha": "66938472445d01c5235f61d4ba06e16e6ad5ecdb"
+    },
+    "source_candidates_8f": {
+      "path": "configs/external_evidence_8f_source_candidates_v1.json",
+      "git_blob_sha": "bd23e2bf32c4dcda6f277152a530be38d99fc733"
+    }
+  },
+  "binding_roles": {
+    "upstream_promotion": "Makes a component eligible to be considered for 8I-B; never activates decision influence.",
+    "8i_authorization": "Defines whether the promoted component may be bound for 8I research.",
+    "provenance_binding": "Binds exact component, source, mapping, PIT and evidence-consumption identity.",
+    "decision_activation": "Not part of 8I-B and remains false."
+  },
+  "component_types": {
+    "8g_main_effect": {
+      "required_upstream_state": "APPROVED_FOR_8H_RESEARCH_ONLY",
+      "separate_manual_8i_authorization_required": true,
+      "8i_authorization_state": "AUTHORIZED_FOR_8I_RESEARCH_BINDING_ONLY",
+      "automatic_transitive_authorization_forbidden": true,
+      "authorization_receipt_schema": "external_evidence_8i_main_effect_authorization_v1"
+    },
+    "8h_interaction": {
+      "required_upstream_state": "APPROVED_FOR_8I_RESEARCH_ONLY",
+      "separate_second_manual_approval_required": false,
+      "8i_b_contract_is_technical_binding_gate": true,
+      "automatic_decision_activation_forbidden": true
+    }
+  },
+  "main_effect_manual_authorization": {
+    "required": true,
+    "allowed_decisions": [
+      "AUTHORIZE_FOR_8I_RESEARCH_BINDING_ONLY",
+      "DEFER",
+      "REJECT"
+    ],
+    "approval_state": "AUTHORIZED_FOR_8I_RESEARCH_BINDING_ONLY",
+    "reviewer_identity_required": true,
+    "reviewed_at_required": true,
+    "rationale_required": true,
+    "exact_upstream_promotion_decision_sha256_required": true,
+    "exact_component_identity_required": true,
+    "authorizes_decision_influence": false,
+    "authorizes_production": false,
+    "authorizes_phase7_mutation": false,
+    "authorizes_orders_or_trades": false,
+    "rejection_authorizes_inverse_signal": false
+  },
+  "required_binding_fields": [
+    "component_type",
+    "component_id",
+    "factor_id",
+    "interaction_id_if_applicable",
+    "parent_factor_ids_if_applicable",
+    "horizon_sessions",
+    "model_or_spec_version",
+    "component_artifact_hash",
+    "upstream_promotion_state",
+    "upstream_promotion_receipt_sha256",
+    "8i_authorization_receipt_sha256_if_required",
+    "source_ids",
+    "source_registry_or_catalog_identity",
+    "source_identity_hashes",
+    "as_of",
+    "valid_from",
+    "mapping_version",
+    "mapping_artifact_hash",
+    "pit_status",
+    "evidence_consumption_status"
+  ],
+  "provenance_rules": {
+    "all_required_fields_must_be_present": true,
+    "all_source_ids_must_resolve": true,
+    "source_identity_hash_required": true,
+    "component_artifact_hash_required": true,
+    "promotion_receipt_hash_required": true,
+    "mapping_artifact_hash_required": true,
+    "timezone_aware_valid_from_required": true,
+    "valid_from_must_not_exceed_binding_as_of": true,
+    "pit_status_allowed": ["SAFE", "PARTIAL", "PROSPECTIVE_SAFE"],
+    "partial_pit_requires_explicit_justification": true,
+    "unknown_pit_fails_closed": true,
+    "stale_or_unresolved_source_fails_closed": true,
+    "evidence_consumption_status_allowed": [
+      "fresh_for_8i_design",
+      "spent_for_design",
+      "upstream_promotion_evidence_not_independent_8i_confirmation"
+    ],
+    "upstream_promotion_evidence_may_be_claimed_as_fresh_confirmation": false
+  },
+  "upstream_source_identity_issue": {
+    "status": "OPEN_TECHNICAL_UPSTREAM_CONTRACT_BLOCKER",
+    "classification": "TECHNICAL_SOURCE_IDENTITY_CONTRACT_ERROR_NOT_EMPIRICAL_EVIDENCE_FAILURE",
+    "8g_frozen_aliases": {
+      "FED_H15": "federal_reserve_board_h15",
+      "ECB_EXR": "ecb_data_portal"
+    },
+    "evidence": {
+      "8g_specs_use_aliases": true,
+      "8f_adapters_use_canonical_ids": true,
+      "8f_source_candidates_use_canonical_ids": true,
+      "8a_source_registry_does_not_resolve_8g_aliases": true
+    },
+    "impact": "The current 8G-H source-governance path cannot validly resolve its frozen FED_H15/ECB_EXR source IDs against external_source_registry_v1, so a future 8G-H approval must fail closed until a forward, outcome-blind upstream source-identity correction is introduced.",
+    "8i_b_may_treat_alias_map_as_retroactive_upstream_repair": false,
+    "8i_b_may_bind_8g_main_effect_while_upstream_identity_blocker_is_open": false,
+    "8i_b_may_bind_8h_interaction_depending_on_blocked_parent": false,
+    "required_resolution": "Separate versioned upstream source-identity correction; do not edit historical 8G evidence or silently reinterpret the old promotion receipt."
+  },
+  "binding_result_states": {
+    "missing_upstream_completion": "WAITING_FOR_UPSTREAM_PROMOTION_EVIDENCE",
+    "terminal_upstream_zero_approvals": "NO_PROMOTED_EXTERNAL_EVIDENCE",
+    "promoted_but_missing_8i_authorization_or_provenance": "PROMOTED_EXTERNAL_EVIDENCE_NOT_BINDABLE",
+    "open_upstream_source_identity_blocker": "BLOCKED_UPSTREAM_SOURCE_IDENTITY_CONTRACT",
+    "valid_binding": "BOUND_FOR_8I_RESEARCH_ONLY"
+  },
+  "current_repository_state": {
+    "state": "BLOCKED_UPSTREAM_SOURCE_IDENTITY_CONTRACT",
+    "real_8g_promotions_present": false,
+    "real_8h_promotions_present": false,
+    "bound_8g_main_effect_ids": [],
+    "bound_8h_interaction_ids": [],
+    "decision_active_8g_main_effect_ids": [],
+    "decision_active_8h_interaction_ids": [],
+    "external_evidence_state": "INSUFFICIENT_EXTERNAL",
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION",
+    "external_decision_influence_enabled": false
+  },
+  "fail_closed": {
+    "invalid_or_missing_hash": "REJECT_BINDING",
+    "invalid_or_missing_source_identity": "REJECT_BINDING",
+    "invalid_or_missing_mapping_identity": "REJECT_BINDING",
+    "invalid_or_missing_pit_provenance": "REJECT_BINDING",
+    "invalid_or_missing_evidence_consumption_state": "REJECT_BINDING",
+    "8g_without_separate_8i_authorization": "REJECT_BINDING",
+    "8h_without_exact_approved_8i_research_receipt": "REJECT_BINDING",
+    "open_upstream_source_identity_blocker": "REJECT_BINDING",
+    "when_no_valid_bound_external_evidence_remains": {
+      "external_evidence_state": "INSUFFICIENT_EXTERNAL",
+      "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
+    },
+    "phase7_core_remains_available_on_external_binding_failure": true
+  },
+  "outcome_blind_boundary": {
+    "real_decision_outcomes_read_in_8i_b": false,
+    "outcome_columns_allowed_as_binding_inputs": false,
+    "metric_selection_allowed": false,
+    "threshold_selection_allowed": false,
+    "sign_selection_allowed": false,
+    "aggregation_allowed": false,
+    "reliability_recompute_allowed": false,
+    "stance_recompute_allowed": false,
+    "portfolio_action_recompute_allowed": false,
+    "aggregation_belongs_to": "8I-C"
+  },
+  "authorization_boundary": {
+    "maximum_8i_b_state": "BOUND_FOR_8I_RESEARCH_ONLY",
+    "bound_component_allows_8i_c_outcome_blind_aggregation_design": true,
+    "bound_component_allows_decision_outcome_access": false,
+    "bound_component_allows_phase7_mutation": false,
+    "bound_component_allows_production": false,
+    "bound_component_allows_portfolio_action_change": false,
+    "bound_component_allows_orders_or_trades": false
+  },
+  "forbidden": [
+    "implicit_transitive_8g_to_8i_promotion",
+    "automatic_future_promotion_activation",
+    "retroactive_source_alias_repair",
+    "manual_source_identity_waiver",
+    "unverified_promotion_receipt",
+    "unverified_component_hash",
+    "unverified_mapping_hash",
+    "unknown_to_neutral_coercion",
+    "failed_hypothesis_inversion",
+    "outcome_read_in_8i_b",
+    "aggregation_in_8i_b",
+    "phase7_mutation",
+    "portfolio_action_change",
+    "order_or_trade_generation"
+  ],
+  "completion_gate": {
+    "technical_completion_requires_contract_implementation_tests_docs_and_ci": true,
+    "current_empty_or_blocked_empirical_state_is_valid_technical_completion": true,
+    "empirical_external_decision_influence_granted_by_8i_b": false,
+    "upstream_source_identity_blocker_may_not_be_hidden": true,
+    "next_subblock_after_manual_start": "8I-C_OUTCOME_BLIND_EXTERNAL_AGGREGATION_DESIGN"
+  }
+}
