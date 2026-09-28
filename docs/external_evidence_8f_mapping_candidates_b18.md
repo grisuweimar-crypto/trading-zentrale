@@ -1,21 +1,14 @@
 # Phase 8F — Mapping Candidate Batch B18
 
-Status: `HUMAN_REVIEWED_ACTIVE_PARTIAL_ACCOUNTING`
+Status: `HUMAN_REVIEWED_ACTIVE_REPAIRED_HISTORY`
 
 Batch ID: `8F_MAPPING_CANDIDATES_2026-09-27_B18`
 
 Reviewed at: `2026-09-27T17:42+02:00`
 
-## Repair note
+B18 must be read in the repaired coverage history, not the originally overstated running totals. Before B18, the effective map contained **183 current ACTIVE subjects** after accounting correctly for B16 re-reviews/reclassifications and the seven genuinely new B17 subjects.
 
-The original B18 documentation incorrectly declared full 207/207 accounting because the preceding coverage counters had double-counted re-reviews. After repair, B18 starts from **183 active mapped subjects** and **24 unaccounted subjects**.
-
-B18 adds six genuinely new active mappings and one human-reviewed explicit-unmapped subject:
-
-- new mapped: `6861.T`, `FANUY`, `9888.HK`, `BIDU`, `DVLT`, `JD`
-- explicit-unmapped: `8035.T`
-
-B18 therefore increases frozen-domain accounting by seven subjects, from 183/207 to **190/207**, not to 207/207.
+B18 added six genuinely new documentary mappings and one human-reviewed `EXPLICIT_UNMAPPED` subject, Tokyo Electron (`8035.T`). Therefore the repaired state immediately after B18 was **189 ACTIVE mapped + 1 explicit-unmapped = 190/207 accounted**, with 17 subjects still unaccounted.
 
 ## Active B18 mappings
 
@@ -38,24 +31,16 @@ Tokyo Electron documents that export sales are generally yen-denominated and tha
 
 This is not a claim that Tokyo Electron has no macro exposure. It is a narrower statement: under the current Phase-8F factor definitions and documentary standard, no mapping is accepted from the reviewed evidence.
 
-## Correct accounting after B18
+## Repaired accounting after B18
 
-- Historical mapping intervals in the repaired effective map: **195**.
-- Active mapped subjects: **189/207**.
-- Superseded historical intervals: **6**.
-- Explicit-unmapped subjects: **1/207** (`8035.T`).
-- Total accounted frozen-domain subjects: **190/207**.
-- Unaccounted subjects: **17**.
-
-The exact 17 unaccounted subjects are:
-`GOT.V`, `LGO`, `SGM.AX`, `LC0A.MU`, `MNSO`, `NOVO-B.CO`, `TME`, `RCAT`, `ACB.TO`, `SMX`, `NPN.JO`, `SE`, `GRAB`, `SPCX`, `OCGN`, `DRO.AX`, `1211.HK`.
-
-## Resolution/audit state
-
-- 18 identical re-reviews are registered audit-only and are not double-counted.
-- 6 conflicting later human reviews are represented as versioned supersessions rather than retroactive rewrites.
+- ACTIVE reviewed mapped subjects: **189/207**.
+- Explicit unmapped: **1/207** (`8035.T`).
+- Unaccounted subjects: **17/207**.
+- Accounted after B18: **190/207**.
+- B18 is overlay order 18.
+- Previously identified re-reviews remain represented in the separate resolution ledger and are not double-counted.
 - No market outcomes were read or used.
 - No market direction, exposure sign, weights or thresholds were assigned.
 - No subject was mapped from sector, domicile, ticker, listing currency or assumed business model alone.
-- Phase 8F remains unfrozen. The remaining 17 subjects must be mapped or explicitly-unmapped through the same documentary/human-review process, and the separate macro-ledger/completion requirements must also pass.
-- CI polling remains deferred until the complete 207-subject accounting is finished.
+
+B19 later resolves the genuine 17-subject remainder; the current final state must not be retroactively attributed to B18.
