@@ -13,7 +13,8 @@ from scanner.research.external_evidence.exposure_review_queue_8f import build_ex
 ROOT = Path(__file__).resolve().parents[1]
 B18_MAPPED_SUBJECTS = {"6861.T", "FANUY", "9888.HK", "BIDU", "DVLT", "JD"}
 B18_EXPLICIT_UNMAPPED_SUBJECTS = {"8035.T"}
-REVIEWED_AT = "2026-09-27T17:42+02:00"
+REVIEW_ARTIFACT_AT = "2026-09-27T17:42+02:00"
+EFFECTIVE_AT = "2026-09-27T17:42:00+02:00"
 
 
 def _load(path: str) -> dict:
@@ -59,8 +60,8 @@ def test_b18_mapping_subjects_are_active_with_review_timestamp():
     assert by_subject["DVLT"]["relationship_class"] == "REVENUE_LINK"
     assert by_subject["JD"]["factor_id"] == "rates_policy"
     assert by_subject["JD"]["relationship_class"] == "FINANCING_SENSITIVITY"
-    assert all(by_subject[subject]["reviewed_at"] == REVIEWED_AT for subject in B18_MAPPED_SUBJECTS)
-    assert all(by_subject[subject]["valid_from"] == REVIEWED_AT for subject in B18_MAPPED_SUBJECTS)
+    assert all(by_subject[subject]["reviewed_at"] == EFFECTIVE_AT for subject in B18_MAPPED_SUBJECTS)
+    assert all(by_subject[subject]["valid_from"] == EFFECTIVE_AT for subject in B18_MAPPED_SUBJECTS)
 
 
 def test_b18_mapping_review_artifact_is_completed_and_idempotent():
@@ -69,7 +70,7 @@ def test_b18_mapping_review_artifact_is_completed_and_idempotent():
     effective = load_effective_exposure_map(root=ROOT)
     assert review["status"] == "HUMAN_REVIEW_COMPLETED"
     assert review["reviewer_role"] == "HUMAN_REVIEWER"
-    assert review["reviewed_at"] == REVIEWED_AT
+    assert review["reviewed_at"] == REVIEW_ARTIFACT_AT
     assert len(review["decisions"]) == 6
     assert all(item["decision"] == "APPROVE" for item in review["decisions"])
     assert all(item["source_verified"] is True for item in review["decisions"])
@@ -91,7 +92,7 @@ def test_b18_explicit_unmapped_tokyo_electron_remains_human_reviewed_in_final_do
     assert {row["subject_id"] for row in proposal["proposals"]} == B18_EXPLICIT_UNMAPPED_SUBJECTS
     assert review["status"] == "HUMAN_REVIEW_COMPLETED"
     assert review["reviewer_role"] == "HUMAN_REVIEWER"
-    assert review["reviewed_at"] == REVIEWED_AT
+    assert review["reviewed_at"] == REVIEW_ARTIFACT_AT
     assert len(review["decisions"]) == 1
     assert review["decisions"][0]["subject_id"] == "8035.T"
     assert review["decisions"][0]["decision"] == "APPROVE_EXPLICIT_UNMAPPED"
@@ -100,7 +101,7 @@ def test_b18_explicit_unmapped_tokyo_electron_remains_human_reviewed_in_final_do
     assert all(value is False for value in review["guards"].values())
     by_subject = {row["subject_id"]: row for row in domain["explicit_unmapped"]}
     assert "8035.T" in by_subject
-    assert by_subject["8035.T"]["reviewed_at"] == REVIEWED_AT
+    assert by_subject["8035.T"]["reviewed_at"] == REVIEW_ARTIFACT_AT
     assert by_subject["8035.T"]["review_batch_id"] == "8F_MAPPING_CANDIDATES_2026-09-27_B18"
 
 
