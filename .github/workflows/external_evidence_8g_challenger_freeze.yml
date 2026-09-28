@@ -9,8 +9,10 @@ on:
       - "configs/external_evidence_8g_split_plan_v1.json"
       - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
       - "src/scanner/research/external_evidence/research_8g.py"
+      - "src/scanner/research/external_evidence/research_8g_binding_guard.py"
       - "scripts/run_external_evidence_8g_split_binding.py"
       - "tests/test_external_evidence_8g_challenger_freeze.py"
+      - "tests/test_external_evidence_8g_binding_guard.py"
       - ".github/workflows/external_evidence_8g_challenger_freeze.yml"
   pull_request:
     paths:
@@ -18,8 +20,10 @@ on:
       - "configs/external_evidence_8g_split_plan_v1.json"
       - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
       - "src/scanner/research/external_evidence/research_8g.py"
+      - "src/scanner/research/external_evidence/research_8g_binding_guard.py"
       - "scripts/run_external_evidence_8g_split_binding.py"
       - "tests/test_external_evidence_8g_challenger_freeze.py"
+      - "tests/test_external_evidence_8g_binding_guard.py"
       - ".github/workflows/external_evidence_8g_challenger_freeze.yml"
   workflow_dispatch:
 
@@ -43,15 +47,21 @@ jobs:
       - name: Re-verify Phase 8G-A pre-registration
         run: python -m pytest -q tests/test_external_evidence_8g_research_contract.py
 
-      - name: Validate Phase 8G-B factor specs, slot plan and append-only binder
+      - name: Validate Phase 8G-B factor specs and original freeze invariants
         run: python -m pytest -q tests/test_external_evidence_8g_challenger_freeze.py
+
+      - name: Validate hardened sampling-day, source and exact-boundary guards
+        run: python -m pytest -q tests/test_external_evidence_8g_binding_guard.py
 
       - name: Verify outcome-blind split binder CLI
         run: python scripts/run_external_evidence_8g_split_binding.py --help
 
-# This gate must never load forward-return or peer-excess artifacts.
-# The first eligible V1 cohort snapshot is on or after 2026-09-29T00:00:00Z.
+# This gate must never load forward-return or peer-excess values.
+# The first eligible V1 cohort sampling day is on or after 2026-09-29T00:00:00Z.
+# Repeated manual/automatic reruns sharing the same as_of date cannot inflate sample size.
 # Rates-policy, yield-curve and FX are the only active confirmatory 8G-B factors.
+# Frozen factor series must come from their pre-registered source IDs.
 # Historical observation dates from the 8F live artifact are not retrojected before their proven valid_from.
+# Reserved tail slots are only a conservative buffer; exact row-level boundary purge remains mandatory at label join.
 # Split bindings are feature-side, chronological and append-only. Holdout labels remain sealed.
 # No Phase-7 production integration or automatic Phase-8H promotion is enabled here.
