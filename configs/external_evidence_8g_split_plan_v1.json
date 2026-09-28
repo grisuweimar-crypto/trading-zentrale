@@ -1,0 +1,123 @@
+{
+  "schema_version": "external_evidence_8g_split_plan_v1",
+  "phase": "8G-B",
+  "status": "OUTCOME_BLIND_PROSPECTIVE_SLOT_PLAN_FROZEN",
+  "research_only": true,
+  "challenger_specs": "configs/external_evidence_8g_challenger_specs_v1.json",
+  "challenger_specs_commit": "94ebbdccb8cb745fa4940017690701842d6e4801",
+  "manifest_id": "8G-B-PROSPECTIVE-20260929-V1",
+  "prospective_cohort_not_before": "2026-09-29T00:00:00+00:00",
+  "outcome_values_allowed_in_assignment": false,
+  "assignment_stream": "SEPARATE_PER_FACTOR_AND_HORIZON",
+  "eligible_snapshot_order": "generated_at_ascending_then_snapshot_id_ascending",
+  "snapshot_identity": "snapshot_id",
+  "same_snapshot_may_bind_once_per_factor_horizon": true,
+  "snapshot_reassignment_allowed": false,
+  "slot_reassignment_allowed": false,
+  "assignment_after_label_inspection_allowed": false,
+  "active_factor_ids": ["rates_policy", "yield_curve", "fx"],
+  "horizons_sessions": [5, 20, 40, 60],
+  "slot_formula": {
+    "total_slots": "16 * H",
+    "discovery_raw_slots": "8 * H",
+    "validation_raw_slots": "4 * H",
+    "holdout_raw_slots": "4 * H",
+    "discovery_purge_tail_slots": "H",
+    "validation_purge_tail_slots": "H",
+    "discovery_usable_slots": "7 * H",
+    "validation_usable_slots": "3 * H",
+    "holdout_usable_slots": "4 * H",
+    "block_length_sessions": "2 * H",
+    "minimum_temporal_support_regions": 2,
+    "rationale": "With chronological 50/25/25 allocation, H-session split-boundary purges and 2H uncertainty blocks, 16H total slots leave 3H usable validation snapshots and 4H holdout snapshots, sufficient for at least two temporally separated 2H support anchors."
+  },
+  "slot_ranges_by_horizon": {
+    "5": {
+      "total": [1, 80],
+      "discovery_raw": [1, 40],
+      "discovery_usable": [1, 35],
+      "discovery_purge": [36, 40],
+      "validation_raw": [41, 60],
+      "validation_usable": [41, 55],
+      "validation_purge": [56, 60],
+      "holdout_usable": [61, 80],
+      "block_length_sessions": 10
+    },
+    "20": {
+      "total": [1, 320],
+      "discovery_raw": [1, 160],
+      "discovery_usable": [1, 140],
+      "discovery_purge": [141, 160],
+      "validation_raw": [161, 240],
+      "validation_usable": [161, 220],
+      "validation_purge": [221, 240],
+      "holdout_usable": [241, 320],
+      "block_length_sessions": 40
+    },
+    "40": {
+      "total": [1, 640],
+      "discovery_raw": [1, 320],
+      "discovery_usable": [1, 280],
+      "discovery_purge": [281, 320],
+      "validation_raw": [321, 480],
+      "validation_usable": [321, 440],
+      "validation_purge": [441, 480],
+      "holdout_usable": [481, 640],
+      "block_length_sessions": 80
+    },
+    "60": {
+      "total": [1, 960],
+      "discovery_raw": [1, 480],
+      "discovery_usable": [1, 420],
+      "discovery_purge": [421, 480],
+      "validation_raw": [481, 720],
+      "validation_usable": [481, 660],
+      "validation_purge": [661, 720],
+      "holdout_usable": [721, 960],
+      "block_length_sessions": 120
+    }
+  },
+  "factor_snapshot_eligibility": {
+    "requires_complete_scanner_snapshot": true,
+    "requires_exact_snapshot_id_and_generated_at": true,
+    "generated_at_must_be_on_or_after_cohort_start": true,
+    "requires_factor_pit_state": true,
+    "requires_factor_freshness_gate": true,
+    "requires_at_least_one_active_human_reviewed_mapping": true,
+    "requires_market_outcomes": false,
+    "requires_label_maturity": false,
+    "outcomes_or_labels_may_not_affect_eligibility": true
+  },
+  "binding_rule": {
+    "description": "For each factor and horizon independently, the next eligible complete Scanner_vNext snapshot binds permanently to the next unfilled ordinal slot. Split and purge status are determined only by the frozen slot range for that horizon.",
+    "duplicate_snapshot_same_factor_horizon": "IDEMPOTENT_NO_NEW_SLOT",
+    "conflicting_existing_binding": "FAIL_CLOSED",
+    "out_of_order_older_snapshot_after_newer_binding": "FAIL_CLOSED",
+    "cohort_full": "NO_NEW_BINDING_RELEASE_COMPLETE",
+    "missing_or_stale_factor": "SKIP_WITH_REASON_NO_SLOT_CONSUMED",
+    "no_active_mapping": "SKIP_WITH_REASON_NO_SLOT_CONSUMED"
+  },
+  "outcome_opening_gates": {
+    "discovery": "A bound usable Discovery snapshot may join its matured H-session label only after challenger spec, split plan and its snapshot binding already exist.",
+    "validation": "Validation outcomes remain closed until Discovery usable cohort is complete, Discovery model/preprocessing state is frozen, and no further estimator or feature changes are permitted.",
+    "holdout": "Holdout outcomes remain sealed until Validation analysis and the validation-to-holdout evaluation specification are frozen. Holdout is opened once only.",
+    "purged_slots": "Purged boundary slots never join labels for fitting or confirmatory evaluation."
+  },
+  "hypothesis_family": [
+    "rates_policy_x_5t", "rates_policy_x_20t", "rates_policy_x_40t", "rates_policy_x_60t",
+    "yield_curve_x_5t", "yield_curve_x_20t", "yield_curve_x_40t", "yield_curve_x_60t",
+    "fx_x_5t", "fx_x_20t", "fx_x_40t", "fx_x_60t"
+  ],
+  "multiplicity": {
+    "method": "Holm",
+    "family_wise_alpha": 0.05,
+    "family_membership_frozen": true
+  },
+  "guards": {
+    "market_outcomes_read": false,
+    "split_chosen_from_outcomes": false,
+    "threshold_search_run": false,
+    "holdout_reuse_allowed": false,
+    "production_integration_enabled": false
+  }
+}
