@@ -61,5 +61,6 @@ jobs:
 # Raw source payloads are persisted before parsing and uploaded even when a parser fails.
 # Fed H.15 is fetched from the actual /releases/h15/ page rather than its legacy HTML-meta redirect.
 # Fed H.15 and ECB collect without credentials. EIA is included only when EIA_API_KEY is configured.
-# The completion gate is expected to remain BLOCKED until reviewed exposure mappings account for the frozen domain.
+# Frozen-domain mapping accounting is complete at 195 mapped + 12 explicit-unmapped = 207/207.
+# The completion gate may still remain BLOCKED if real macro-ledger or other completion requirements are not satisfied.
 # No market outcomes, directions, weights, thresholds, Phase-7 integration or production decisions are evaluated here.
