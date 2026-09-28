@@ -1,7 +1,7 @@
 {
   "schema_version": "external_evidence_8g_evaluation_protocol_v1",
   "phase": "8G-E",
-  "title": "Confirmatory incremental-value evaluation protocol",
+  "title": "Validation / incremental-value evaluation protocol",
   "status": "PRE_REGISTERED_WAITING_FOR_FROZEN_DISCOVERY_MODELS",
   "research_only": true,
   "productive_integration_enabled": false,
@@ -69,6 +69,8 @@
       "may_change_model_or_evaluation_spec": false
     },
     "holdout": {
+      "infrastructure_prepared_in_8g_e": true,
+      "final_governance_owned_by": "8G-F",
       "outcomes_open_only_after_validation_family_freeze": true,
       "open_once": true,
       "may_change_model_or_evaluation_spec": false,
@@ -147,6 +149,6 @@
     "phase7_integration_enabled": false,
     "production_external_evidence_enabled": false
   },
-  "8g_completion_rule": "8G-E is the final 8G subphase. After the technical evaluation gate is frozen, empirical 8G completion still requires the prospective Validation and Holdout evidence defined here. Only promotion candidates may proceed to 8H interaction review.",
-  "next_planned_phase": "8H_CROSS_FACTOR_INTERACTION"
+  "8g_e_scope_rule": "8G-E owns Validation / Incremental Value. Holdout primitives may be prepared here, but candidate freezing, one-shot Holdout/OOS authorization and Holdout completion are owned by 8G-F.",
+  "next_planned_phase": "8G-F_HOLDOUT_OOS"
 }
