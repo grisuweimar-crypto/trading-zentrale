@@ -1,8 +1,8 @@
 {
   "schema_version": "external_evidence_8f_completion_v1",
   "phase": "8F_macro_exposure_context",
-  "status": "BLOCKED_PENDING_REAL_LEDGER_AND_COMPLETION_VALIDATION",
-  "freeze_allowed": false,
+  "status": "PHASE_8F_FROZEN_COMPLETION_GATE_PASSED",
+  "freeze_allowed": true,
   "requirements": {
     "foundation_contract_must_pass": true,
     "source_routing_contract_must_pass": true,
@@ -27,12 +27,15 @@
     "exposure_map",
     "exposure_domain_audit"
   ],
+  "freeze_artifact": "configs/external_evidence_8f_freeze_v1.json",
   "notes": [
     "The research denominator is frozen to the exact pre-8F universe_master.csv blob at the Phase-8E head, filtered to active stocks and deduplicated by symbol.",
-    "B19 human review completes documentary domain accounting at 195 active mapped subjects plus 12 explicit-unmapped subjects = 207/207; mapping coverage is no longer a blocker by itself.",
+    "B19 human review completes documentary domain accounting at 195 active mapped subjects plus 12 explicit-unmapped subjects = 207/207.",
+    "The real outcome-blind live snapshot collected on 2026-09-28 passed the completion gate with 25 knowable rows across four series and no blockers.",
+    "The freeze manifest cryptographically binds the passing ledger, domain audit, completion gate and raw source snapshots without promoting unobserved or deferred factor families.",
     "Synthetic fixture rows may validate code but may not satisfy the real-macro-ledger completion requirement.",
     "A mapping is not complete merely because a sector/name suggests exposure; it must satisfy the versioned documentary human-review contract.",
     "Every frozen-domain subject must remain accounted for as mapped or explicitly unmapped.",
-    "Phase 8F remains outcome-blind until the completion gate is frozen; 8G outcome research starts only afterward."
+    "Phase 8F remains outcome-blind after freeze; 8G outcome research starts only afterward."
   ]
 }
