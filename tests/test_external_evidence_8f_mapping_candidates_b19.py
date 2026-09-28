@@ -11,7 +11,8 @@ from scanner.research.external_evidence.exposure_review_queue_8f import build_ex
 
 
 ROOT = Path(__file__).resolve().parents[1]
-REVIEWED_AT = "2026-09-28T06:04+02:00"
+REVIEW_ARTIFACT_AT = "2026-09-28T06:04+02:00"
+EFFECTIVE_AT = "2026-09-28T06:04:00+02:00"
 B19_MAPPING_SUBJECTS = {"GOT.V", "SGM.AX", "TME", "GRAB", "OCGN", "NPN.JO"}
 B19_EXPLICIT_UNMAPPED_SUBJECTS = {
     "LGO",
@@ -68,7 +69,7 @@ def test_b19_mapping_review_is_completed_and_idempotent():
     effective = load_effective_exposure_map(root=ROOT)
     assert review["status"] == "HUMAN_REVIEW_COMPLETED"
     assert review["reviewer_role"] == "HUMAN_REVIEWER"
-    assert review["reviewed_at"] == REVIEWED_AT
+    assert review["reviewed_at"] == REVIEW_ARTIFACT_AT
     assert len(review["decisions"]) == 6
     assert all(item["decision"] == "APPROVE" for item in review["decisions"])
     assert all(item["source_verified"] is True for item in review["decisions"])
@@ -93,7 +94,7 @@ def test_b19_explicit_unmapped_reviews_are_completed_and_active_in_domain():
     assert all(row["promotion_allowed"] is False for row in proposal["proposals"])
     assert review["status"] == "HUMAN_REVIEW_COMPLETED"
     assert review["reviewer_role"] == "HUMAN_REVIEWER"
-    assert review["reviewed_at"] == REVIEWED_AT
+    assert review["reviewed_at"] == REVIEW_ARTIFACT_AT
     assert len(review["decisions"]) == 11
     assert {row["subject_id"] for row in review["decisions"]} == B19_EXPLICIT_UNMAPPED_SUBJECTS
     assert all(row["decision"] == "APPROVE_EXPLICIT_UNMAPPED" for row in review["decisions"])
@@ -103,7 +104,7 @@ def test_b19_explicit_unmapped_reviews_are_completed_and_active_in_domain():
 
     domain_by_subject = {row["subject_id"]: row for row in domain["explicit_unmapped"]}
     assert B19_EXPLICIT_UNMAPPED_SUBJECTS <= set(domain_by_subject)
-    assert all(domain_by_subject[subject]["reviewed_at"] == REVIEWED_AT for subject in B19_EXPLICIT_UNMAPPED_SUBJECTS)
+    assert all(domain_by_subject[subject]["reviewed_at"] == REVIEW_ARTIFACT_AT for subject in B19_EXPLICIT_UNMAPPED_SUBJECTS)
 
 
 def test_b19_mapping_subjects_are_active_at_human_review_timestamp():
@@ -116,8 +117,8 @@ def test_b19_mapping_subjects_are_active_at_human_review_timestamp():
     for subject, (factor_id, relationship_class) in EXPECTED_MAPPINGS.items():
         assert by_subject[subject]["factor_id"] == factor_id
         assert by_subject[subject]["relationship_class"] == relationship_class
-        assert by_subject[subject]["reviewed_at"] == REVIEWED_AT
-        assert by_subject[subject]["valid_from"] == REVIEWED_AT
+        assert by_subject[subject]["reviewed_at"] == EFFECTIVE_AT
+        assert by_subject[subject]["valid_from"] == EFFECTIVE_AT
 
 
 def test_b19_human_approval_completes_frozen_domain_accounting():
