@@ -1,8 +1,8 @@
 """QM-B prospective listing-evidence snapshots.
 
 Research-only infrastructure for archiving future listing/source snapshots without
-retrojecting them into historical scanner states.  The project-known ``valid_from``
-is always the actual retrieval timestamp.  Source effective dates and source file
+retrojecting them into historical scanner states. Project-known ``valid_from`` is
+always the actual retrieval timestamp. Source effective dates and source file
 creation markers are retained as evidence fields but can never move ``valid_from``
 backwards.
 """
@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
-import threading
 from typing import Any, Mapping, Sequence
 
 
@@ -25,9 +25,6 @@ DEFAULT_CONTRACT_PATH = Path(__file__).resolve().parents[4] / "configs" / "qm_b_
 
 class ProspectiveListingSnapshotError(ValueError):
     """Raised when prospective listing evidence is ambiguous or unsafe."""
-
-
-_PROCESS_LOCK = threading.Lock()
 
 
 def _clean(value: Any) -> str:
@@ -91,79 +88,75 @@ def _file_creation_marker(lines: Sequence[str]) -> str | None:
 
 
 def parse_nasdaq_symbol_directory(raw_payload: bytes, *, filename: str) -> dict[str, Any]:
-    """Parse current Nasdaq symbol-directory text without inferring missing semantics."""
+    """Parse Nasdaq symbol-directory text without inferring absent semantics."""
     name = Path(filename).name.lower()
     if name not in {"nasdaqlisted.txt", "otherlisted.txt"}:
         raise ProspectiveListingSnapshotError(f"nasdaq_symbol_directory_file_unsupported:{filename}")
     try:
         text = raw_payload.decode("utf-8-sig")
     except UnicodeDecodeError:
-        try:
-            text = raw_payload.decode("latin-1")
-        except UnicodeDecodeError as exc:  # pragma: no cover - latin-1 is total
-            raise ProspectiveListingSnapshotError("nasdaq_symbol_directory_decode_failed") from exc
+        text = raw_payload.decode("latin-1")
     lines = text.splitlines()
     if not lines:
         raise ProspectiveListingSnapshotError("nasdaq_symbol_directory_empty")
     creation_raw = _file_creation_marker(lines)
-    data_lines = [line for line in lines if not line.split("|", 1)[0].strip().lower().startswith("file creation time:")]
+    data_lines = [
+        line
+        for line in lines
+        if not line.split("|", 1)[0].strip().lower().startswith("file creation time:")
+    ]
     reader = csv.DictReader(io.StringIO("\n".join(data_lines)), delimiter="|")
     if not reader.fieldnames:
         raise ProspectiveListingSnapshotError("nasdaq_symbol_directory_header_missing")
     fields = {_clean(field) for field in reader.fieldnames if _clean(field)}
 
+    records: list[dict[str, Any]] = []
     if name == "nasdaqlisted.txt":
         required = {"Symbol", "Security Name", "Market Category", "Test Issue", "Financial Status"}
         if not required.issubset(fields):
             raise ProspectiveListingSnapshotError("nasdaqlisted_schema_invalid")
-        records: list[dict[str, Any]] = []
         for raw in reader:
             row = _strip_row(raw)
             symbol = _clean(row.get("Symbol"))
             if not symbol:
                 continue
-            records.append(
-                {
-                    "source_symbol": symbol,
-                    "security_name": _clean(row.get("Security Name")),
-                    "venue_namespace": "nasdaq_symbol_directory",
-                    "venue_code": "NASDAQ",
-                    "listing_state": "LISTED_IN_SNAPSHOT",
-                    "market_category": _clean(row.get("Market Category")) or None,
-                    "financial_status": _clean(row.get("Financial Status")) or None,
-                    "test_issue": _clean(row.get("Test Issue")) or None,
-                    "listing_start": None,
-                    "listing_end": None,
-                    "market_tradability": "UNKNOWN",
-                    "project_investability": "UNKNOWN",
-                }
-            )
+            records.append({
+                "source_symbol": symbol,
+                "security_name": _clean(row.get("Security Name")),
+                "venue_namespace": "nasdaq_symbol_directory",
+                "venue_code": "NASDAQ",
+                "listing_state": "LISTED_IN_SNAPSHOT",
+                "market_category": _clean(row.get("Market Category")) or None,
+                "financial_status": _clean(row.get("Financial Status")) or None,
+                "test_issue": _clean(row.get("Test Issue")) or None,
+                "listing_start": None,
+                "listing_end": None,
+                "market_tradability": "UNKNOWN",
+                "project_investability": "UNKNOWN",
+            })
     else:
         required = {"ACT Symbol", "Security Name", "Exchange", "Test Issue"}
         if not required.issubset(fields):
             raise ProspectiveListingSnapshotError("otherlisted_schema_invalid")
-        records = []
         for raw in reader:
             row = _strip_row(raw)
             symbol = _clean(row.get("ACT Symbol"))
             if not symbol:
                 continue
-            records.append(
-                {
-                    "source_symbol": symbol,
-                    "security_name": _clean(row.get("Security Name")),
-                    "venue_namespace": "nasdaq_symbol_directory_exchange_code",
-                    "venue_code": _clean(row.get("Exchange")) or None,
-                    "listing_state": "LISTED_IN_SNAPSHOT",
-                    "cqs_symbol": _clean(row.get("CQS Symbol")) or None,
-                    "nasdaq_symbol": _clean(row.get("NASDAQ Symbol")) or None,
-                    "test_issue": _clean(row.get("Test Issue")) or None,
-                    "listing_start": None,
-                    "listing_end": None,
-                    "market_tradability": "UNKNOWN",
-                    "project_investability": "UNKNOWN",
-                }
-            )
+            records.append({
+                "source_symbol": symbol,
+                "security_name": _clean(row.get("Security Name")),
+                "venue_namespace": "nasdaq_symbol_directory_exchange_code",
+                "venue_code": _clean(row.get("Exchange")) or None,
+                "listing_state": "LISTED_IN_SNAPSHOT",
+                "cqs_symbol": _clean(row.get("CQS Symbol")) or None,
+                "nasdaq_symbol": _clean(row.get("NASDAQ Symbol")) or None,
+                "test_issue": _clean(row.get("Test Issue")) or None,
+                "listing_start": None,
+                "listing_end": None,
+                "market_tradability": "UNKNOWN",
+                "project_investability": "UNKNOWN",
+            })
 
     records.sort(key=lambda row: (str(row.get("source_symbol")), str(row.get("venue_code"))))
     return {
@@ -180,6 +173,16 @@ def parse_nasdaq_symbol_directory(raw_payload: bytes, *, filename: str) -> dict[
             "delisting_from_absence_inferred": False,
             "project_investability_computed": False,
         },
+    }
+
+
+def _normalized_payload_from_envelope(envelope: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "parser_id": envelope.get("parser_id"),
+        "parser_version": envelope.get("parser_version"),
+        "source_generated_at_raw": envelope.get("source_generated_at_raw"),
+        "source_generated_timezone": envelope.get("source_generated_timezone"),
+        "records": envelope.get("records"),
     }
 
 
@@ -200,16 +203,20 @@ def build_snapshot_envelope(
     if not source_id or not source_url:
         raise ProspectiveListingSnapshotError("source_identity_required")
     retrieved = _utc(retrieved_at, field="retrieved_at").isoformat()
-    raw_hash = sha256_bytes(bytes(raw_payload))
-    normalized_records = parser_result.get("records")
-    if not isinstance(normalized_records, list):
+    records = parser_result.get("records")
+    if not isinstance(records, list):
         raise ProspectiveListingSnapshotError("parser_records_required")
+    parser_id = _clean(parser_result.get("parser_id"))
+    parser_version = _clean(parser_result.get("parser_version"))
+    if not parser_id or not parser_version:
+        raise ProspectiveListingSnapshotError("parser_identity_required")
+    raw_hash = sha256_bytes(bytes(raw_payload))
     normalized_payload = {
-        "parser_id": _clean(parser_result.get("parser_id")),
-        "parser_version": _clean(parser_result.get("parser_version")),
+        "parser_id": parser_id,
+        "parser_version": parser_version,
         "source_generated_at_raw": parser_result.get("source_generated_at_raw"),
         "source_generated_timezone": parser_result.get("source_generated_timezone"),
-        "records": normalized_records,
+        "records": records,
     }
     normalized_hash = sha256_bytes(_canonical_json_bytes(normalized_payload))
     identity = {"source_id": source_id, "retrieved_at": retrieved, "raw_payload_sha256": raw_hash}
@@ -225,29 +232,29 @@ def build_snapshot_envelope(
         "valid_from": retrieved,
         "raw_payload_sha256": raw_hash,
         "raw_payload_bytes": len(raw_payload),
-        "parser_id": normalized_payload["parser_id"],
-        "parser_version": normalized_payload["parser_version"],
-        "source_generated_at_raw": normalized_payload["source_generated_at_raw"],
-        "source_generated_timezone": normalized_payload["source_generated_timezone"],
+        "parser_id": parser_id,
+        "parser_version": parser_version,
+        "source_generated_at_raw": parser_result.get("source_generated_at_raw"),
+        "source_generated_timezone": parser_result.get("source_generated_timezone"),
         "normalized_payload_sha256": normalized_hash,
-        "record_count": len(normalized_records),
+        "record_count": len(records),
         "raw_archive_path": _clean(raw_archive_path),
         "normalized_archive_path": _clean(normalized_archive_path),
         "http_etag": _clean(http_etag) or None,
         "http_last_modified": _clean(http_last_modified) or None,
         "historical_retrojection_permitted": False,
         "effective_dates_can_move_valid_from_backward": False,
-        "records": normalized_records,
+        "records": records,
     }
     required = load_snapshot_contract()["required_snapshot_fields"]
-    missing = [field for field in required if envelope.get(field) in {None, ""}]
+    missing = [field for field in required if envelope.get(field) is None or envelope.get(field) == ""]
     if missing:
         raise ProspectiveListingSnapshotError("snapshot_required_fields_missing:" + ",".join(missing))
     return envelope
 
 
-def _event_hash(event_without_hash: Mapping[str, Any]) -> str:
-    return sha256_bytes(_canonical_json_bytes(event_without_hash))
+def _event_hash(value: Mapping[str, Any]) -> str:
+    return sha256_bytes(_canonical_json_bytes(value))
 
 
 def verify_snapshot_ledger(path: str | Path) -> dict[str, Any]:
@@ -265,16 +272,14 @@ def verify_snapshot_ledger(path: str | Path) -> dict[str, Any]:
             raise ProspectiveListingSnapshotError(f"ledger_invalid_json:{number}") from exc
         if event.get("schema_version") != LEDGER_SCHEMA_VERSION:
             raise ProspectiveListingSnapshotError(f"ledger_schema_invalid:{number}")
-        expected_sequence = len(snapshot_ids) + 1
-        if event.get("sequence") != expected_sequence:
+        if event.get("sequence") != len(snapshot_ids) + 1:
             raise ProspectiveListingSnapshotError(f"ledger_sequence_invalid:{number}")
         if event.get("previous_event_hash") != previous:
             raise ProspectiveListingSnapshotError(f"ledger_chain_invalid:{number}")
         supplied = _clean(event.get("event_hash"))
-        base = dict(event)
-        base.pop("event_hash", None)
-        calculated = _event_hash(base)
-        if supplied != calculated:
+        body = dict(event)
+        body.pop("event_hash", None)
+        if supplied != _event_hash(body):
             raise ProspectiveListingSnapshotError(f"ledger_hash_invalid:{number}")
         snapshot_id = _clean(event.get("snapshot_id"))
         if not snapshot_id:
@@ -292,14 +297,49 @@ def verify_snapshot_ledger(path: str | Path) -> dict[str, Any]:
     }
 
 
+def _resolve_inside_root(root: Path, relative: str) -> Path:
+    candidate = (root / relative).resolve()
+    root_resolved = root.resolve()
+    if candidate != root_resolved and root_resolved not in candidate.parents:
+        raise ProspectiveListingSnapshotError(f"archive_path_outside_root:{relative}")
+    return candidate
+
+
+def _check_write_compatible(path: Path, content: bytes) -> None:
+    if path.exists() and path.read_bytes() != content:
+        raise ProspectiveListingSnapshotError(f"archive_path_collision:{path}")
+
+
 def _write_once(path: Path, content: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
-        existing = path.read_bytes()
-        if existing != content:
-            raise ProspectiveListingSnapshotError(f"archive_path_collision:{path}")
         return
-    path.write_bytes(content)
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    try:
+        os.write(fd, content)
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _acquire_ledger_lock(ledger: Path) -> tuple[Path, int]:
+    ledger.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = ledger.with_suffix(ledger.suffix + ".lock")
+    try:
+        fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError as exc:
+        raise ProspectiveListingSnapshotError(f"ledger_lock_exists:{lock_path}") from exc
+    return lock_path, fd
+
+
+def _release_ledger_lock(lock_path: Path, fd: int) -> None:
+    try:
+        os.close(fd)
+    finally:
+        try:
+            lock_path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def archive_snapshot(
@@ -314,35 +354,37 @@ def archive_snapshot(
     snapshot_id = _clean(envelope.get("snapshot_id"))
     if not snapshot_id:
         raise ProspectiveListingSnapshotError("snapshot_id_required")
+    if _clean(envelope.get("valid_from")) != _clean(envelope.get("retrieved_at")):
+        raise ProspectiveListingSnapshotError("valid_from_must_equal_retrieved_at")
     if sha256_bytes(bytes(raw_payload)) != envelope.get("raw_payload_sha256"):
         raise ProspectiveListingSnapshotError("raw_payload_hash_mismatch")
-    normalized_content = _canonical_json_bytes(
-        {
-            "snapshot_id": snapshot_id,
-            "source_id": envelope.get("source_id"),
-            "retrieved_at": envelope.get("retrieved_at"),
-            "valid_from": envelope.get("valid_from"),
-            "records": envelope.get("records"),
-        }
-    )
-    raw_target = root / str(envelope.get("raw_archive_path"))
-    normalized_target = root / str(envelope.get("normalized_archive_path"))
-    ledger_target = Path(ledger_path)
 
-    with _PROCESS_LOCK:
+    normalized_payload = _normalized_payload_from_envelope(envelope)
+    normalized_content = _canonical_json_bytes(normalized_payload)
+    if sha256_bytes(normalized_content) != envelope.get("normalized_payload_sha256"):
+        raise ProspectiveListingSnapshotError("normalized_payload_hash_mismatch")
+    records = envelope.get("records")
+    if not isinstance(records, list) or len(records) != envelope.get("record_count"):
+        raise ProspectiveListingSnapshotError("record_count_mismatch")
+
+    raw_target = _resolve_inside_root(root, _clean(envelope.get("raw_archive_path")))
+    normalized_target = _resolve_inside_root(root, _clean(envelope.get("normalized_archive_path")))
+    _check_write_compatible(raw_target, bytes(raw_payload))
+    _check_write_compatible(normalized_target, normalized_content)
+
+    ledger_target = Path(ledger_path)
+    lock_path, lock_fd = _acquire_ledger_lock(ledger_target)
+    try:
         state = verify_snapshot_ledger(ledger_target)
         if snapshot_id in state["snapshot_ids"]:
             raise ProspectiveListingSnapshotError(f"duplicate_snapshot_identity:{snapshot_id}")
+
         _write_once(raw_target, bytes(raw_payload))
         _write_once(normalized_target, normalized_content)
-        if sha256_bytes(_canonical_json_bytes({
-            "parser_id": envelope.get("parser_id"),
-            "parser_version": envelope.get("parser_version"),
-            "source_generated_at_raw": envelope.get("source_generated_at_raw"),
-            "source_generated_timezone": envelope.get("source_generated_timezone"),
-            "records": envelope.get("records"),
-        })) != envelope.get("normalized_payload_sha256"):
-            raise ProspectiveListingSnapshotError("normalized_payload_hash_mismatch")
+        if sha256_bytes(raw_target.read_bytes()) != envelope.get("raw_payload_sha256"):
+            raise ProspectiveListingSnapshotError("raw_archive_hash_mismatch_after_write")
+        if sha256_bytes(normalized_target.read_bytes()) != envelope.get("normalized_payload_sha256"):
+            raise ProspectiveListingSnapshotError("normalized_archive_hash_mismatch_after_write")
 
         event = {
             "schema_version": LEDGER_SCHEMA_VERSION,
@@ -362,10 +404,17 @@ def archive_snapshot(
             "historical_retrojection_permitted": False,
         }
         event["event_hash"] = _event_hash(event)
-        ledger_target.parent.mkdir(parents=True, exist_ok=True)
-        with ledger_target.open("a", encoding="utf-8", newline="\n") as handle:
-            handle.write(json.dumps(event, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n")
+        line = json.dumps(event, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8") + b"\n"
+        fd = os.open(ledger_target, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o644)
+        try:
+            os.write(fd, line)
+            os.fsync(fd)
+        finally:
+            os.close(fd)
         final = verify_snapshot_ledger(ledger_target)
+    finally:
+        _release_ledger_lock(lock_path, lock_fd)
+
     return {
         "snapshot_id": snapshot_id,
         "event_count": final["event_count"],
