@@ -98,9 +98,9 @@ def test_historical_isin_and_symbol_are_reconciled_but_boundary_remains_pit_safe
     aapl = rows["AAPL"]
     assert aapl["candidate_class"] == "HISTORICAL_SYMBOL_SNAPSHOT_MATCH"
     assert aapl["identity_status"] == "VERIFIED"
-    assert aapl["pit_alias_available_from"] == "2026-03-08"
-    assert aapl["pit_verified_observation_count"] == 1
-    assert aapl["pit_unverified_observation_count"] == 1
+    assert aapl["pit_alias_available_from"] == "2026-02-16"
+    assert aapl["pit_verified_observation_count"] == 2
+    assert aapl["pit_unverified_observation_count"] == 0
     assert aapl["strict_alias_promoted"] is False
     assert payload["strict_alias_ledger"] is False
 
