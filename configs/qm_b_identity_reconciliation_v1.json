@@ -1,0 +1,76 @@
+{
+  "schema_version": "qm_b_identity_reconciliation_v1",
+  "module": "QM-B",
+  "name": "Historical Identity Reconciliation Candidates",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "principles": [
+    "stable instrument identity is separate from symbol namespace",
+    "current identifiers never prove historical identity by themselves",
+    "repository snapshots become PIT evidence only from their conservative availability date",
+    "day-granularity repository snapshots are usable from the following calendar day",
+    "an observed ISIN-looking value is not accepted as an ISIN unless it passes the ISIN checksum",
+    "exact ISIN equality may create a stable instrument candidate only when an explicit historical snapshot labels that value as ISIN",
+    "crypto base-token continuity is an asset-family candidate, not proof that quote pairs are the same instrument",
+    "absence never creates delisting or out-of-scope state",
+    "ambiguous symbol or ISIN mappings fail closed",
+    "candidate aliases are not strict QM-B aliases until PIT intervals and identity are verified",
+    "formal package validation uses repository inputs frozen at the audit-start commit so later main-branch publications cannot change the evidentiary sample"
+  ],
+  "sources": {
+    "history": "artifacts/research/history_analysis.csv",
+    "current_universe": "data/inputs/universe_master.csv",
+    "audit_input_commit": "46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef",
+    "audit_input_paths": {
+      "history": "artifacts/research/history_analysis.csv",
+      "current_universe": "data/inputs/universe_master.csv"
+    },
+    "historical_snapshots": [
+      {
+        "source_id": "repo_watchlist_vnext_merge_20260215",
+        "commit": "3fee0bf4198bbe0fc6a740b777ccaf803b2f316f",
+        "path": "data/inputs/watchlist.csv",
+        "snapshot_date": "2026-02-15",
+        "pit_available_from": "2026-02-16",
+        "schema": "legacy_watchlist"
+      },
+      {
+        "source_id": "repo_universe_master_20260307",
+        "commit": "9336cbea166ec425e43ccc20b25c864c54c80f85",
+        "path": "data/inputs/universe_master.csv",
+        "snapshot_date": "2026-03-07",
+        "pit_available_from": "2026-03-08",
+        "schema": "universe_master"
+      }
+    ],
+    "historical_git_history": {
+      "path": "data/inputs/universe_master.csv",
+      "schema": "universe_master",
+      "history_until_commit": "46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef",
+      "availability_rule": "next_calendar_day",
+      "purpose": "supplement current-only symbol candidates with commit-pinned historical symbol-to-ISIN evidence without using future repository changes"
+    }
+  },
+  "candidate_classes": [
+    "HISTORICAL_ISIN_SNAPSHOT_MATCH",
+    "HISTORICAL_SYMBOL_SNAPSHOT_MATCH",
+    "CURRENT_ISIN_ONLY_MATCH",
+    "CURRENT_SYMBOL_ONLY_MATCH",
+    "CRYPTO_BASE_LINEAGE",
+    "AMBIGUOUS",
+    "UNRESOLVED"
+  ],
+  "identity_status_values": ["VERIFIED", "PARTIAL", "UNKNOWN", "CONFLICTING"],
+  "promotion_rules": {
+    "historical_snapshot_exact_isin_may_verify_instrument_identity": true,
+    "historical_snapshot_symbol_alias_may_be_pit_verified_from_availability_date": true,
+    "current_only_match_may_verify_historical_identity": false,
+    "crypto_base_match_may_verify_stable_instrument_identity": false,
+    "observed_history_before_snapshot_availability_is_pit_verified": false,
+    "candidate_output_is_strict_alias_ledger": false,
+    "supplemental_git_history_may_upgrade_current_only_candidate_after_exact_symbol_isin_match": true,
+    "supplemental_git_history_after_frozen_cutoff_may_be_used": false,
+    "formal_validation_may_use_working_tree_inputs_instead_of_frozen_audit_inputs": false
+  }
+}

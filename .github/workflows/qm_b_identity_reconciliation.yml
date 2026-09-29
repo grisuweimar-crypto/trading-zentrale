@@ -1,0 +1,137 @@
+name: QM-B Identity Reconciliation
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_identity_reconciliation_v1.json"
+      - "src/scanner/research/governance/qm_b_identity_reconciliation.py"
+      - "src/scanner/research/governance/qm_b_identity_repo_history.py"
+      - "scripts/qm_b_identity_reconciliation.py"
+      - "scripts/qm_b_identity_repo_history.py"
+      - "tests/test_qm_b_identity_reconciliation.py"
+      - "tests/test_qm_b_identity_repo_history.py"
+      - "docs/qm_b_identity_reconciliation.md"
+      - ".github/workflows/qm_b_identity_reconciliation.yml"
+      - "artifacts/research/history_analysis.csv"
+      - "data/inputs/universe_master.csv"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QM_B_AUDIT_INPUT_COMMIT: 46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef
+  QM_B_HISTORY_SHA256: 4861bacd140b332699c02cb5c941970ff3e4bb54d218a0eb546ca2c6e4a04382
+  QM_B_UNIVERSE_SHA256: 7e3ff13933334fbef4cabe478a2b2759105d0068d129a6531582bbeb328bd181
+
+jobs:
+  qm-b-identity-reconciliation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run identity reconciliation tests
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_b_identity_reconciliation.py \
+            tests/test_qm_b_identity_repo_history.py \
+            tests/test_qm_b_observed_membership.py \
+            tests/test_qm_b_crypto_identifier.py
+      - name: Materialize frozen formal audit inputs
+        run: |
+          git show "${QM_B_AUDIT_INPUT_COMMIT}:artifacts/research/history_analysis.csv" > /tmp/qm_b_history_frozen.csv
+          git show "${QM_B_AUDIT_INPUT_COMMIT}:data/inputs/universe_master.csv" > /tmp/qm_b_universe_frozen.csv
+          test -s /tmp/qm_b_history_frozen.csv
+          test -s /tmp/qm_b_universe_frozen.csv
+          echo "${QM_B_HISTORY_SHA256}  /tmp/qm_b_history_frozen.csv" | sha256sum -c -
+          echo "${QM_B_UNIVERSE_SHA256}  /tmp/qm_b_universe_frozen.csv" | sha256sum -c -
+      - name: Reconcile frozen real history against immutable repository snapshots
+        run: |
+          PYTHONPATH=src python scripts/qm_b_identity_reconciliation.py \
+            --history /tmp/qm_b_history_frozen.csv \
+            --current-universe /tmp/qm_b_universe_frozen.csv \
+            --repo-root . \
+            --output /tmp/qm_b_identity_reconciliation.json
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_identity_reconciliation.json', encoding='utf-8'))
+          print(json.dumps({
+              'scanner_observation_count': p['scanner_observation_count'],
+              'unique_observed_identifier_count': p['unique_observed_identifier_count'],
+              'candidate_class_counts': p['candidate_class_counts'],
+              'identity_status_counts': p['identity_status_counts'],
+              'pit_verified_observation_count': p['pit_verified_observation_count'],
+              'pit_unverified_observation_count': p['pit_unverified_observation_count'],
+              'candidate_instrument_count': p['candidate_instrument_count'],
+              'pit_alias_seed_count': p['pit_alias_seed_count'],
+              'conflicting_snapshot_alias_count': p['conflicting_snapshot_alias_count'],
+              'unresolved_or_ambiguous_identifiers': p['unresolved_or_ambiguous_identifiers'],
+          }, indent=2, sort_keys=True))
+          assert p['strict_alias_ledger'] is False
+          assert p['strict_membership_ledger'] is False
+          assert p['absence_interpreted_as_out_of_scope'] is False
+          assert p['current_only_match_verifies_historical_identity'] is False
+          assert p['historical_snapshot_count'] == 2
+          assert p['scanner_observation_count'] == 37113
+          assert p['unique_observed_identifier_count'] == 300
+          assert p['candidate_class_counts'] == {
+              'CRYPTO_BASE_LINEAGE': 13,
+              'CURRENT_SYMBOL_ONLY_MATCH': 55,
+              'HISTORICAL_ISIN_SNAPSHOT_MATCH': 80,
+              'HISTORICAL_SYMBOL_SNAPSHOT_MATCH': 152,
+          }
+          assert p['identity_status_counts'] == {'PARTIAL': 68, 'VERIFIED': 232}
+          assert p['candidate_instrument_count'] == 213
+          assert p['pit_alias_seed_count'] == 411
+          assert p['conflicting_snapshot_alias_count'] == 0
+          assert p['pit_verified_observation_count'] == 31789
+          assert p['pit_unverified_observation_count'] == 5324
+          assert p['unresolved_or_ambiguous_identifiers'] == []
+          print('QM-B frozen base identity reconciliation regression verified.')
+          PY
+      - name: Audit frozen current-only candidates against frozen universe-master git history
+        run: |
+          PYTHONPATH=src python scripts/qm_b_identity_repo_history.py \
+            --history /tmp/qm_b_history_frozen.csv \
+            --current-universe /tmp/qm_b_universe_frozen.csv \
+            --repo-root . \
+            --output /tmp/qm_b_identity_repo_history.json
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_identity_repo_history.json', encoding='utf-8'))
+          print(json.dumps({
+              'history_cutoff_commit': p['history_cutoff_commit'],
+              'history_commit_count': p['history_commit_count'],
+              'base_current_only_identifier_count': p['base_current_only_identifier_count'],
+              'repo_history_status_counts': p['repo_history_status_counts'],
+              'upgraded_identifier_count': p['upgraded_identifier_count'],
+              'still_partial_identifier_count': p['still_partial_identifier_count'],
+              'still_partial_identifiers': p['still_partial_identifiers'],
+              'conflicting_identifier_count': p['conflicting_identifier_count'],
+              'conflicting_identifiers': p['conflicting_identifiers'],
+              'upgraded_scanner_observation_count': p['upgraded_scanner_observation_count'],
+              'upgraded_pit_verified_observation_count': p['upgraded_pit_verified_observation_count'],
+              'upgraded_pit_unverified_observation_count': p['upgraded_pit_unverified_observation_count'],
+          }, indent=2, sort_keys=True))
+          assert p['strict_alias_ledger'] is False
+          assert p['strict_membership_ledger'] is False
+          assert p['history_cutoff_commit'] == '46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef'
+          assert p['history_commit_count'] == 15
+          assert p['base_current_only_identifier_count'] == 55
+          assert p['repo_history_status_counts'] == {'HISTORICAL_REPO_MATCH': 55}
+          assert p['upgraded_identifier_count'] == 55
+          assert p['still_partial_identifier_count'] == 0
+          assert p['still_partial_identifiers'] == []
+          assert p['conflicting_identifier_count'] == 0
+          assert p['conflicting_identifiers'] == []
+          assert p['upgraded_scanner_observation_count'] == 3321
+          assert p['upgraded_pit_verified_observation_count'] == 3270
+          assert p['upgraded_pit_unverified_observation_count'] == 51
+          print('QM-B frozen repo-history identity regression verified without automatic promotion.')
+          PY
