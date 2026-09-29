@@ -69,7 +69,7 @@ jobs:
           correction = load("configs/external_evidence_upstream_source_identity_correction_v1.json")
           binding = load("configs/external_evidence_8i_promotion_provenance_binding_v1.json")
           e = load("configs/external_evidence_8i_reliability_extension_research_v1.json")
-          assert e["prospective_evidence"]["prospective_not_before_utc"] == "2026-09-29T00:00:00+00:00"
+          assert e["prospective_evidence"]["prospective_not_before"] == "2026-09-29T00:00:00+00:00"
 
           x = audit["exact_first_prospective_exception"]
           fields = ("snapshot_id", "attempt_id", "started_at", "generated_at", "completed_tickers", "total_tickers", "scanner_commit_sha", "history_metadata_git_blob_sha", "latest_scanner_git_blob_sha", "run_source")
