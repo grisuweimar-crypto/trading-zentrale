@@ -1,7 +1,7 @@
 """Phase 8I-G prospective-validation / holdout entry gate.
 
 The module deliberately does not open outcomes, run validation, select a rule,
-or alter Phase 7.  It only verifies whether a future frozen 8I-F stance
+or alter Phase 7. It only verifies whether a future frozen 8I-F stance
 preregistration is eligible to hand off into a separately frozen 8I-G
 prospective-validation plan.
 """
@@ -166,6 +166,7 @@ def validate_validation_entry_contract(
         "8g_or_8h_evidence_used_upstream_is_not_automatically_fresh_8i_g_confirmation",
         "failed_hypothesis_inversion_forbidden",
         "one_shot_holdout_required",
+        "automatic_promotion_from_significance_forbidden",
         "effect_size_and_uncertainty_reported_separately",
         "snapshot_identity_required",
     )
@@ -181,13 +182,11 @@ def validate_validation_entry_contract(
         "validation_or_holdout_may_change_horizon",
         "validation_or_holdout_may_change_variant",
         "repeated_interim_significance_looks_allowed",
-        "automatic_promotion_from_significance_forbidden",
         "overlapping_forward_windows_are_iid",
         "date_only_join_allowed",
     )
     for key in required_false:
-        expected = False
-        if guards.get(key) is not expected:
+        if guards.get(key) is not False:
             raise ExternalEvidence8IValidationEntryGateError(f"8i_g_guard_must_remain_false:{key}")
 
     holdout = contract.get("holdout_policy") or {}
