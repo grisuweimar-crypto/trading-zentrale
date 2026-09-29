@@ -1,0 +1,31 @@
+name: QM-A Research Governance
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_a_research_governance_v1.json"
+      - "src/scanner/research/governance/**"
+      - "scripts/qm_a_governance.py"
+      - "tests/test_qm_a*.py"
+      - "docs/qm_a_research_governance.md"
+      - ".github/workflows/qm_a_research_governance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check "pytest>=8,<9"
+      - name: Run QM-A governance tests
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q tests/test_qm_a*.py
