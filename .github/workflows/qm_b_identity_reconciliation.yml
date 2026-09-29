@@ -19,6 +19,9 @@ on:
 permissions:
   contents: read
 
+env:
+  QM_B_AUDIT_INPUT_COMMIT: 46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef
+
 jobs:
   qm-b-identity-reconciliation:
     runs-on: ubuntu-latest
@@ -38,11 +41,23 @@ jobs:
             tests/test_qm_b_identity_repo_history.py \
             tests/test_qm_b_observed_membership.py \
             tests/test_qm_b_crypto_identifier.py
-      - name: Reconcile real history against immutable repository snapshots
+      - name: Materialize frozen formal audit inputs
+        run: |
+          git show "${QM_B_AUDIT_INPUT_COMMIT}:artifacts/research/history_analysis.csv" > /tmp/qm_b_history_frozen.csv
+          git show "${QM_B_AUDIT_INPUT_COMMIT}:data/inputs/universe_master.csv" > /tmp/qm_b_universe_frozen.csv
+          test -s /tmp/qm_b_history_frozen.csv
+          test -s /tmp/qm_b_universe_frozen.csv
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          for path in (Path('/tmp/qm_b_history_frozen.csv'), Path('/tmp/qm_b_universe_frozen.csv')):
+              print(path.name, hashlib.sha256(path.read_bytes()).hexdigest())
+          PY
+      - name: Reconcile frozen real history against immutable repository snapshots
         run: |
           PYTHONPATH=src python scripts/qm_b_identity_reconciliation.py \
-            --history artifacts/research/history_analysis.csv \
-            --current-universe data/inputs/universe_master.csv \
+            --history /tmp/qm_b_history_frozen.csv \
+            --current-universe /tmp/qm_b_universe_frozen.csv \
             --repo-root . \
             --output /tmp/qm_b_identity_reconciliation.json
           python - <<'PY'
@@ -72,13 +87,13 @@ jobs:
           assert p['candidate_class_counts'].get('HISTORICAL_SYMBOL_SNAPSHOT_MATCH', 0) > 0
           assert p['candidate_class_counts'].get('CURRENT_SYMBOL_ONLY_MATCH', 0) > 0
           assert p['candidate_class_counts'].get('CRYPTO_BASE_LINEAGE', 0) > 0
-          print('QM-B base identity reconciliation safeguards verified.')
+          print('QM-B frozen base identity reconciliation safeguards verified.')
           PY
-      - name: Audit current-only candidates against frozen universe-master git history
+      - name: Audit frozen current-only candidates against frozen universe-master git history
         run: |
           PYTHONPATH=src python scripts/qm_b_identity_repo_history.py \
-            --history artifacts/research/history_analysis.csv \
-            --current-universe data/inputs/universe_master.csv \
+            --history /tmp/qm_b_history_frozen.csv \
+            --current-universe /tmp/qm_b_universe_frozen.csv \
             --repo-root . \
             --output /tmp/qm_b_identity_repo_history.json
           python - <<'PY'
