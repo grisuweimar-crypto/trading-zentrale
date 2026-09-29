@@ -14,7 +14,7 @@ from datetime import date
 from hashlib import sha256
 import json
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Mapping
 
 
 SCHEMA_VERSION = "qm_b_observed_membership_v1"
@@ -164,21 +164,29 @@ def _read_history(path: Path) -> tuple[bytes, list[dict[str, str]]]:
     return raw, rows
 
 
-def _active_current_symbols(path: Path) -> set[str]:
+def _active_current_identity_snapshot(path: Path) -> dict[str, Any]:
+    """Read current identifiers for diagnostics only, never for historical verification."""
     try:
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             rows = list(csv.DictReader(handle))
     except OSError as exc:
         raise ObservedMembershipError(f"current_universe_unreadable:{path}") from exc
-    result: set[str] = set()
+
+    symbols: set[str] = set()
+    isin_to_symbols: dict[str, set[str]] = {}
     for row in rows:
         active = _clean(row.get("active")).lower()
         if active not in {"1", "true", "yes", "y"}:
             continue
         symbol = _clean(row.get("symbol")).upper()
+        isin = _clean(row.get("isin")).upper()
         if symbol:
-            result.add(symbol)
-    return result
+            symbols.add(symbol)
+        if isin:
+            isin_to_symbols.setdefault(isin, set())
+            if symbol:
+                isin_to_symbols[isin].add(symbol)
+    return {"symbols": symbols, "isin_to_symbols": isin_to_symbols}
 
 
 def build_candidates(
@@ -267,16 +275,39 @@ def summarize_candidates(
         "repeated_scanner_observation_keys_sample": repeated_keys[:50],
         "absence_interpreted_as_out_of_scope": False,
         "historical_identity_verified": False,
-        "diagnostic_interpretation": "symbol-set differences are review triggers only, not proof of survivorship bias or historical exclusion",
+        "current_identifier_candidate_matches_verify_historical_identity": False,
+        "diagnostic_interpretation": "symbol-set and current-identifier matches are review triggers only, not proof of survivorship bias, historical exclusion or stable historical identity",
     }
 
     if current_universe_path is not None:
-        current_symbols = _active_current_symbols(Path(current_universe_path))
+        current = _active_current_identity_snapshot(Path(current_universe_path))
+        current_symbols: set[str] = current["symbols"]
+        isin_to_symbols: dict[str, set[str]] = current["isin_to_symbols"]
+        historical_only = observed_symbols - current_symbols
+        isin_matches = historical_only & set(isin_to_symbols)
+        unique_isin_matches = {
+            identifier: sorted(isin_to_symbols[identifier])
+            for identifier in sorted(isin_matches)
+            if len(isin_to_symbols[identifier]) == 1
+        }
+        ambiguous_isin_matches = {
+            identifier: sorted(isin_to_symbols[identifier])
+            for identifier in sorted(isin_matches)
+            if len(isin_to_symbols[identifier]) != 1
+        }
+        unmatched = historical_only - set(isin_to_symbols)
         summary.update(
             {
                 "current_active_symbol_count": len(current_symbols),
-                "historical_observed_missing_from_current_master_count": len(observed_symbols - current_symbols),
-                "historical_observed_missing_from_current_master": sorted(observed_symbols - current_symbols),
+                "historical_observed_missing_from_current_master_count": len(historical_only),
+                "historical_observed_missing_from_current_master": sorted(historical_only),
+                "historical_symbol_values_matching_current_isin_count": len(isin_matches),
+                "historical_symbol_values_matching_unique_current_isin_count": len(unique_isin_matches),
+                "historical_symbol_values_matching_unique_current_isin": unique_isin_matches,
+                "historical_symbol_values_matching_ambiguous_current_isin_count": len(ambiguous_isin_matches),
+                "historical_symbol_values_matching_ambiguous_current_isin": ambiguous_isin_matches,
+                "historical_symbol_values_unmatched_by_current_symbol_or_isin_count": len(unmatched),
+                "historical_symbol_values_unmatched_by_current_symbol_or_isin": sorted(unmatched),
                 "current_master_never_scanner_observed_count": len(current_symbols - observed_symbols),
                 "current_master_never_scanner_observed": sorted(current_symbols - observed_symbols),
             }
