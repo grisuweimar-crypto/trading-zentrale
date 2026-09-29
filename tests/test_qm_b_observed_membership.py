@@ -183,7 +183,7 @@ def test_current_universe_comparison_is_diagnostic_only(tmp_path: Path):
     write_csv(
         history,
         [
-            {"date": "2025-01-05", "symbol": "OLD", "observation_type": "observed_scanner", "data_source": "scanner_run"},
+            {"date": "2025-01-05", "symbol": "US0000000002", "observation_type": "observed_scanner", "data_source": "scanner_run"},
             {"date": "2025-01-05", "symbol": "KEEP", "observation_type": "observed_scanner", "data_source": "scanner_run"},
         ],
     )
@@ -193,10 +193,34 @@ def test_current_universe_comparison_is_diagnostic_only(tmp_path: Path):
         writer.writerow({"active": "1", "symbol": "KEEP", "isin": "US0000000001"})
         writer.writerow({"active": "1", "symbol": "NEW", "isin": "US0000000002"})
     _, summary = analyze_history(history, current_universe_path=current)
-    assert summary["historical_observed_missing_from_current_master"] == ["OLD"]
+    assert summary["historical_observed_missing_from_current_master"] == ["US0000000002"]
+    assert summary["historical_symbol_values_matching_current_isin_count"] == 1
+    assert summary["historical_symbol_values_matching_unique_current_isin"] == {"US0000000002": ["NEW"]}
+    assert summary["historical_symbol_values_unmatched_by_current_symbol_or_isin_count"] == 0
     assert summary["current_master_never_scanner_observed"] == ["NEW"]
+    assert summary["current_identifier_candidate_matches_verify_historical_identity"] is False
     assert "review triggers only" in summary["diagnostic_interpretation"]
     assert summary["historical_identity_verified"] is False
+
+
+def test_duplicate_current_isin_match_is_reported_ambiguous(tmp_path: Path):
+    history = tmp_path / "history_analysis.csv"
+    current = tmp_path / "universe_master.csv"
+    write_csv(
+        history,
+        [{"date": "2025-01-05", "symbol": "US0000000009", "observation_type": "observed_scanner", "data_source": "scanner_run"}],
+    )
+    with current.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["active", "symbol", "isin"])
+        writer.writeheader()
+        writer.writerow({"active": "1", "symbol": "AAA", "isin": "US0000000009"})
+        writer.writerow({"active": "1", "symbol": "BBB", "isin": "US0000000009"})
+    _, summary = analyze_history(history, current_universe_path=current)
+    assert summary["historical_symbol_values_matching_ambiguous_current_isin_count"] == 1
+    assert summary["historical_symbol_values_matching_ambiguous_current_isin"] == {
+        "US0000000009": ["AAA", "BBB"]
+    }
+    assert summary["current_identifier_candidate_matches_verify_historical_identity"] is False
 
 
 def test_no_history_row_can_create_negative_membership_claim(tmp_path: Path):
