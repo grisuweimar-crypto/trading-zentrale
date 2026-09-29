@@ -1,0 +1,173 @@
+{
+  "schema_version": "qm_b_universe_integrity_v1",
+  "module": "QM-B",
+  "name": "As-of Universe, Coverage, Survivorship & Investability",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "principles": [
+    "current universe must never define historical universe membership",
+    "current identifiers must never silently replace historical identifiers",
+    "unknown membership, identity, coverage, listing or investability is not neutral",
+    "delisted and removed instruments must remain representable historically",
+    "every historical classification must be effective-dated or explicitly unavailable",
+    "provider coverage must be evaluated by source, family, instrument and as-of date",
+    "outcome availability must be explicit before a research row can enter a denominator",
+    "identity conflicts fail closed",
+    "historical eligibility requires point-in-time verified evidence",
+    "bootstrap records from current state are current-only and may not be back-projected"
+  ],
+  "instrument_master": {
+    "required_fields": [
+      "instrument_id",
+      "asset_type",
+      "identity_status",
+      "source_id"
+    ],
+    "identity_status_values": ["VERIFIED", "PARTIAL", "UNKNOWN", "CONFLICTING"],
+    "historical_usable_status_values": ["VERIFIED"],
+    "stable_id_must_not_be_symbol": true
+  },
+  "identifier_aliases": {
+    "required_fields": [
+      "instrument_id",
+      "identifier_type",
+      "identifier_value",
+      "valid_from",
+      "valid_to",
+      "source_id",
+      "pit_verified",
+      "status"
+    ],
+    "identifier_type_values": [
+      "SYMBOL",
+      "YAHOO_SYMBOL",
+      "ISIN",
+      "CIK",
+      "FIGI",
+      "CUSIP",
+      "SEDOL",
+      "EXCHANGE_SYMBOL"
+    ],
+    "status_values": ["KNOWN", "UNKNOWN", "CONFLICTING", "RETIRED"],
+    "overlap_for_same_identifier_across_instruments": "FORBIDDEN_UNLESS_CONFLICTING",
+    "interval_semantics": "closed_open_[valid_from,valid_to)"
+  },
+  "universe_membership": {
+    "required_fields": [
+      "as_of_date",
+      "instrument_id",
+      "symbol",
+      "listing_venue",
+      "membership_status",
+      "membership_reason",
+      "listing_date",
+      "delisting_date",
+      "listing_status",
+      "investability_status",
+      "scanner_observable",
+      "source_id",
+      "pit_verified",
+      "reason_codes"
+    ],
+    "membership_status_values": [
+      "IN_SCOPE",
+      "OUT_OF_SCOPE",
+      "NOT_YET_LISTED",
+      "DELISTED",
+      "UNKNOWN"
+    ],
+    "listing_status_values": ["LISTED", "NOT_YET_LISTED", "DELISTED", "SUSPENDED", "UNKNOWN"],
+    "investability_status_values": ["INVESTABLE", "NOT_INVESTABLE", "RESTRICTED", "UNKNOWN"],
+    "historical_eligible_requires": {
+      "membership_status": "IN_SCOPE",
+      "scanner_observable": true,
+      "pit_verified": true,
+      "identity_status": "VERIFIED"
+    },
+    "date_semantics": {
+      "listing_date": "first known date the represented listing/security became listed; null only when unknown",
+      "delisting_date": "first known date the represented listing/security ceased to be listed; null when not delisted or unknown",
+      "validity_rule": "as_of rows may never contradict known listing/delisting dates"
+    }
+  },
+  "provider_coverage": {
+    "required_fields": [
+      "as_of_date",
+      "instrument_id",
+      "source_id",
+      "external_family",
+      "coverage_status",
+      "pit_verified",
+      "reason_codes"
+    ],
+    "coverage_status_values": [
+      "KNOWN",
+      "UNKNOWN",
+      "NOT_APPLICABLE",
+      "STALE",
+      "LICENSED_OUT",
+      "LOW_COVERAGE",
+      "CONFLICTING_SOURCES"
+    ]
+  },
+  "outcome_availability": {
+    "required_fields": [
+      "as_of_date",
+      "instrument_id",
+      "outcome_id",
+      "label_definition_hash",
+      "availability_status",
+      "available_from",
+      "source_id",
+      "pit_verified",
+      "reason_codes"
+    ],
+    "availability_status_values": ["AVAILABLE", "NOT_YET_AVAILABLE", "MISSING", "UNKNOWN", "INVALIDATED"]
+  },
+  "taxonomy_assignments": {
+    "required_fields": [
+      "instrument_id",
+      "taxonomy_type",
+      "taxonomy_value",
+      "valid_from",
+      "valid_to",
+      "source_id",
+      "pit_verified",
+      "status"
+    ],
+    "taxonomy_type_values": ["SECTOR", "INDUSTRY", "DOMAIN", "CATEGORY", "PILLAR", "BUCKET"],
+    "status_values": ["KNOWN", "UNKNOWN", "CONFLICTING", "RETIRED"],
+    "interval_semantics": "closed_open_[valid_from,valid_to)"
+  },
+  "sample_audit": {
+    "required_sample_fields": ["as_of_date", "instrument_id"],
+    "eligible_membership_status": "IN_SCOPE",
+    "unknown_or_missing_membership": "FAIL_CLOSED",
+    "out_of_scope_rows_must_remain_counted_in_audit": true,
+    "historical_sample_may_be_filtered_to_current_symbols": false,
+    "missing_outcomes_may_be_imputed_neutral": false
+  },
+  "bundle": {
+    "schema_version": "qm_b_universe_integrity_bundle_v1",
+    "required_collections": [
+      "instruments",
+      "identifier_aliases",
+      "universe_membership",
+      "provider_coverage",
+      "outcome_availability",
+      "taxonomy_assignments"
+    ],
+    "hash_algorithm": "sha256",
+    "version_fields": ["bundle_hash", "instrument_master_version", "universe_ledger_version"]
+  },
+  "reuse": {
+    "phase8_contract": "configs/external_universe_coverage_contract_v1.json",
+    "current_universe_master": "data/inputs/universe_master.csv",
+    "current_sec_coverage": "artifacts/research/external_evidence_8c_current_universe_coverage.json",
+    "market_context_assignment_schema": "configs/market_context_assignment_schema_v1.json",
+    "research_history": "artifacts/research/history_analysis.csv",
+    "note": "Existing mechanisms are inputs or cross-checks. None may be relabelled as a historical as-of ledger unless its own PIT contract supports that claim."
+  }
+}
