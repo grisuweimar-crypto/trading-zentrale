@@ -1,0 +1,94 @@
+name: QM-B Alias Listing Boundaries
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_alias_listing_boundaries_v1.json"
+      - "src/scanner/research/governance/qm_b_alias_listing_boundaries.py"
+      - "scripts/qm_b_alias_listing_boundaries.py"
+      - "tests/test_qm_b_alias_listing_boundaries.py"
+      - "docs/qm_b_alias_listing_boundaries.md"
+      - ".github/workflows/qm_b_alias_listing_boundaries.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QM_B_AUDIT_INPUT_COMMIT: 46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef
+
+jobs:
+  qm-b-alias-listing-boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run boundary unit tests
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_b_alias_listing_boundaries.py \
+            tests/test_qm_b_identity_reconciliation.py \
+            tests/test_qm_b_identity_repo_history.py \
+            tests/test_qm_b_observed_membership.py \
+            tests/test_qm_b_crypto_identifier.py
+      - name: Materialize frozen formal audit inputs
+        run: |
+          git show "${QM_B_AUDIT_INPUT_COMMIT}:artifacts/research/history_analysis.csv" > /tmp/qm_b_history_frozen.csv
+          git show "${QM_B_AUDIT_INPUT_COMMIT}:data/inputs/universe_master.csv" > /tmp/qm_b_universe_frozen.csv
+          test -s /tmp/qm_b_history_frozen.csv
+          test -s /tmp/qm_b_universe_frozen.csv
+      - name: Audit frozen alias and listing boundaries
+        run: |
+          PYTHONPATH=src python scripts/qm_b_alias_listing_boundaries.py \
+            --history /tmp/qm_b_history_frozen.csv \
+            --current-universe /tmp/qm_b_universe_frozen.csv \
+            --repo-root . \
+            --output /tmp/qm_b_alias_listing_boundaries.json
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_alias_listing_boundaries.json', encoding='utf-8'))
+          summary = {
+              'scanner_observation_count': p['scanner_observation_count'],
+              'unique_observed_identifier_count': p['unique_observed_identifier_count'],
+              'observation_class_counts': p['observation_class_counts'],
+              'pit_supported_observation_count': p['pit_supported_observation_count'],
+              'pit_unverified_observation_count': p['pit_unverified_observation_count'],
+              'pre_alias_boundary_non_crypto_observation_count': p['pre_alias_boundary_non_crypto_observation_count'],
+              'pre_alias_boundary_non_crypto_identifier_count': p['pre_alias_boundary_non_crypto_identifier_count'],
+              'crypto_stable_object_unresolved_observation_count': p['crypto_stable_object_unresolved_observation_count'],
+              'crypto_stable_object_unresolved_identifier_count': p['crypto_stable_object_unresolved_identifier_count'],
+              'identity_or_boundary_unresolved_observation_count': p['identity_or_boundary_unresolved_observation_count'],
+              'repo_history_commit_count': p['universe_schema_history']['commit_count'],
+              'repo_explicit_fields': p['universe_schema_history']['explicit_fields'],
+              'listing_venue_evidence_available': p['listing_venue_evidence_available'],
+              'listing_date_evidence_available': p['listing_date_evidence_available'],
+              'delisting_date_evidence_available': p['delisting_date_evidence_available'],
+              'investability_evidence_available': p['investability_evidence_available'],
+          }
+          print(json.dumps(summary, indent=2, sort_keys=True))
+          assert p['formal_audit_input_commit'] == '46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef'
+          assert p['scanner_observation_count'] == 37113
+          assert p['unique_observed_identifier_count'] == 300
+          assert p['pit_supported_observation_count'] == 35059
+          assert p['pit_unverified_observation_count'] == 2054
+          assert p['pre_alias_boundary_non_crypto_observation_count'] + p['crypto_stable_object_unresolved_observation_count'] + p['identity_or_boundary_unresolved_observation_count'] == 2054
+          assert p['identity_or_boundary_unresolved_observation_count'] == 0
+          assert p['universe_schema_history']['commit_count'] == 15
+          assert p['listing_venue_evidence_available'] is False
+          assert p['listing_date_evidence_available'] is False
+          assert p['delisting_date_evidence_available'] is False
+          assert p['investability_evidence_available'] is False
+          assert p['symbol_suffix_interpreted_as_listing_venue'] is False
+          assert p['absence_interpreted_as_delisting'] is False
+          assert p['scanner_presence_interpreted_as_investability'] is False
+          assert p['strict_instrument_master'] is False
+          assert p['strict_alias_ledger'] is False
+          assert p['strict_membership_ledger'] is False
+          print('QM-B frozen alias/listing boundary audit passed without inferred listing facts.')
+          PY
