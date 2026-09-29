@@ -1,0 +1,163 @@
+{
+  "schema_version": "external_evidence_8i_prospective_validation_entry_gate_v1",
+  "phase": "8I-G",
+  "title": "Prospective Validation / Holdout Entry Gate",
+  "frozen_on": "2026-09-29",
+  "status": "BLOCKED_WAITING_FOR_8I_F_STANCE_PREREGISTRATION",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "prospective_validation_started": false,
+  "holdout_opened": false,
+  "real_decision_outcome_read_allowed": false,
+  "scope": {
+    "8i_g_definition": "PROSPECTIVE_VALIDATION_AND_HOLDOUT",
+    "entry_gate_only_until_8i_f_stance_preregistration_complete": true,
+    "validation_plan_may_be_frozen_before_8i_f_completion": false,
+    "real_validation_may_start_before_8i_f_completion": false,
+    "holdout_may_open_before_frozen_validation_plan": false,
+    "portfolio_action_bridge_in_scope": false,
+    "production_promotion_in_scope": false,
+    "purpose": "Bind a future frozen 8I-F extended-stance challenger to a fresh, outcome-blind prospective validation and one-shot holdout protocol without changing Phase 7 or allowing validation evidence to select or tune the rule."
+  },
+  "parent_contracts": {
+    "8i_f_entry_gate": {
+      "path": "configs/external_evidence_8i_extended_stance_entry_gate_v1.json",
+      "git_blob_sha": "e76d04d9d3de284e5fc9d01e2fb53de48b3a8b2b"
+    },
+    "8i_f_entry_gate_implementation": {
+      "path": "src/scanner/research/external_evidence/extended_stance_entry_gate_8i.py",
+      "git_blob_sha": "39eeebd55d5838b9966597b9310b37d7d372e267"
+    },
+    "phase7_validation": {
+      "path": "configs/decision_validation_promotion_v1.json",
+      "git_blob_sha": "53502475564ddb8ed7bbdacc7d30b89977472d9b"
+    },
+    "decision_research_dataset": {
+      "path": "configs/decision_research_dataset_v1.json",
+      "git_blob_sha": "5040603ca0af5db56617a581754f8aff64f2636b"
+    },
+    "8i_a_decision_extension": {
+      "path": "configs/external_evidence_8i_decision_extension_contract_v1.json",
+      "git_blob_sha": "3db4359d4ba70dc7bc6801c4d74aa0ebb85b8388"
+    }
+  },
+  "required_8i_f_handoff": {
+    "actual_8i_f_stance_preregistration_complete": true,
+    "8i_g_may_start_now": true,
+    "frozen_stance_preregistration_receipt_required": true,
+    "required_receipt_schema": "external_evidence_8i_f_extended_stance_preregistration_receipt_v1",
+    "required_receipt_state": "FROZEN_FOR_8I_G_PROSPECTIVE_VALIDATION_ONLY",
+    "required_exact_fields": [
+      "stance_rule_id",
+      "stance_spec_version",
+      "stance_spec_sha256",
+      "stance_preregistration_sha256",
+      "frozen_at",
+      "8i_e_evidence_consumption_status"
+    ],
+    "required_8i_e_evidence_consumption_status": "spent_for_design",
+    "receipt_authorizes_only_8i_g_validation_plan": true,
+    "receipt_may_authorize_production": false,
+    "receipt_may_authorize_phase7_mutation": false,
+    "receipt_may_authorize_portfolio_action_change": false,
+    "receipt_may_authorize_orders_or_trades": false
+  },
+  "validation_design_guards": {
+    "exact_8i_f_rule_hash_must_be_bound_before_validation_plan_freeze": true,
+    "validation_plan_must_be_frozen_before_any_8i_g_outcome_read": true,
+    "primary_metric_must_be_frozen_before_any_8i_g_outcome_read": true,
+    "horizon_family_must_be_frozen_before_any_8i_g_outcome_read": true,
+    "multiplicity_family_must_be_frozen_before_any_8i_g_outcome_read": true,
+    "fresh_evidence_start_must_be_after_8i_f_rule_freeze": true,
+    "backdating_fresh_evidence_start_forbidden": true,
+    "8i_e_design_evidence_is_not_fresh_8i_g_confirmation": true,
+    "8g_or_8h_evidence_used_upstream_is_not_automatically_fresh_8i_g_confirmation": true,
+    "validation_may_tune_rule": false,
+    "holdout_may_tune_rule": false,
+    "holdout_may_select_rule": false,
+    "validation_or_holdout_may_change_sign": false,
+    "validation_or_holdout_may_change_threshold": false,
+    "validation_or_holdout_may_change_horizon": false,
+    "validation_or_holdout_may_change_variant": false,
+    "failed_hypothesis_inversion_forbidden": true,
+    "one_shot_holdout_required": true,
+    "repeated_interim_significance_looks_allowed": false,
+    "automatic_promotion_from_significance_forbidden": true,
+    "effect_size_and_uncertainty_reported_separately": true,
+    "overlapping_forward_windows_are_iid": false,
+    "date_only_join_allowed": false,
+    "snapshot_identity_required": true
+  },
+  "inherited_statistical_floor": {
+    "source_contract": "configs/decision_validation_promotion_v1.json",
+    "minimum_group_n": 30,
+    "minimum_temporal_support_regions": 2,
+    "uncertainty": "circular_moving_observation_date_blocks",
+    "block_length_rule": "2 x evaluated horizon sessions",
+    "allowed_reference_horizons_sessions": [5, 20, 40, 60],
+    "new_rule_specific_thresholds_selected_in_8i_g_entry_gate": false,
+    "exact_rule_specific_family_deferred_until_valid_8i_f_handoff": true
+  },
+  "holdout_policy": {
+    "holdout_exists_only_after_frozen_8i_g_validation_plan": true,
+    "holdout_identity_must_be_frozen_before_outcome_read": true,
+    "holdout_outcomes_open_once": true,
+    "holdout_used_for_rule_selection": false,
+    "holdout_used_for_threshold_tuning": false,
+    "holdout_used_for_sign_tuning": false,
+    "holdout_used_for_horizon_tuning": false,
+    "holdout_used_for_variant_tuning": false,
+    "holdout_failure_may_be_relabelled_as_opposite_success": false,
+    "holdout_success_is_automatic_production_promotion": false
+  },
+  "decision_layer_guards": {
+    "phase7_universal_stance_remains_reconstructible": true,
+    "phase7_state_transition_remains_reconstructible": true,
+    "phase7_portfolio_action_remains_reconstructible": true,
+    "8i_f_challenger_remains_separate_from_phase7_baseline": true,
+    "external_evidence_to_portfolio_action_shortcut_forbidden": true,
+    "validation_result_to_order_shortcut_forbidden": true,
+    "portfolio_action_change_requires_later_separate_gate": true,
+    "broker_execution_forbidden": true
+  },
+  "current_repository_state": {
+    "state": "BLOCKED_WAITING_FOR_8I_F_STANCE_PREREGISTRATION",
+    "8i_f_actual_stance_preregistration_complete": false,
+    "8i_f_allows_8i_g_start": false,
+    "real_8i_f_stance_preregistration_receipt_present": false,
+    "eligible_to_freeze_8i_g_validation_plan": false,
+    "prospective_validation_started": false,
+    "holdout_opened": false,
+    "real_outcomes_opened": false,
+    "extended_stance_enabled": false,
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION",
+    "portfolio_action_change_authorized": false,
+    "orders_or_trades_authorized": false
+  },
+  "fail_closed_policy": {
+    "incomplete_8i_f_preregistration": "BLOCK_8I_G_VALIDATION_PLAN",
+    "missing_or_invalid_8i_f_receipt": "BLOCK_8I_G_VALIDATION_PLAN",
+    "rule_hash_or_preregistration_hash_mismatch": "BLOCK_8I_G_VALIDATION_PLAN",
+    "nonfresh_or_backdated_validation_evidence": "EXCLUDE_FROM_8I_G_CONFIRMATION",
+    "validation_plan_not_frozen": "BLOCK_OUTCOME_READ",
+    "holdout_identity_not_frozen": "BLOCK_HOLDOUT_OPEN",
+    "on_any_entry_gate_failure": "PHASE7_ONLY + NO_CHANGE_TO_PHASE7_DECISION",
+    "technical_8i_g_failure_may_disable_phase7": false
+  },
+  "completion_gate": {
+    "entry_gate_technical_completion_requires_contract_implementation_tests_docs_and_ci": true,
+    "entry_gate_technical_completion_is_not_empirical_8i_g_validation": true,
+    "8i_g_validation_plan_frozen": false,
+    "8i_g_prospective_validation_complete": false,
+    "8i_g_holdout_complete": false,
+    "8i_g_empirical_completion": false,
+    "8i_h_may_start_now": false,
+    "next_state": "8I-F_WAIT_FOR_EMPIRICAL_ENTRY_AND_STANCE_PREREGISTRATION"
+  }
+}
