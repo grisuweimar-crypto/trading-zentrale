@@ -1,0 +1,98 @@
+{
+  "schema_version": "qm_b_prospective_listing_snapshots_v1",
+  "module": "QM-B",
+  "name": "Prospective Listing Evidence Snapshot Contract",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "prospective_collection_epoch": "2026-09-29",
+  "principles": [
+    "prospective snapshots prevent future PIT gaps but do not reconstruct the past",
+    "project-known valid_from is never earlier than ingestion time",
+    "source effective dates may describe market events but never move project-known valid_from backward",
+    "raw payload bytes are identified by SHA256 before normalization",
+    "normalized records are separately SHA256 identified",
+    "snapshot metadata ledger is append-only and hash chained",
+    "duplicate snapshot identities fail closed",
+    "same source payload hash may be observed again but remains a new retrieval only when retrieval identity differs",
+    "source-generated timestamps without an explicit timezone remain raw strings and are not converted to absolute PIT timestamps",
+    "venue codes remain in their source namespace until an explicit venue-master mapping is validated",
+    "listing state, tradability and project investability remain separate",
+    "missing fields remain UNKNOWN",
+    "no snapshot is automatically promoted into productive scanner semantics"
+  ],
+  "snapshot_identity_fields": ["source_id", "retrieved_at", "raw_payload_sha256"],
+  "required_snapshot_fields": [
+    "snapshot_id",
+    "source_id",
+    "source_url",
+    "retrieved_at",
+    "valid_from",
+    "raw_payload_sha256",
+    "raw_payload_bytes",
+    "parser_id",
+    "parser_version",
+    "normalized_payload_sha256",
+    "record_count",
+    "raw_archive_path",
+    "normalized_archive_path"
+  ],
+  "optional_snapshot_fields": [
+    "source_generated_at_raw",
+    "source_generated_timezone",
+    "http_etag",
+    "http_last_modified",
+    "transport_status",
+    "notes"
+  ],
+  "time_rules": {
+    "retrieved_at_requires_timezone": true,
+    "valid_from_equals_retrieved_at": true,
+    "effective_date_may_precede_valid_from": true,
+    "source_generated_at_can_replace_valid_from": false,
+    "historical_retrojection_permitted": false
+  },
+  "hashing": {
+    "algorithm": "sha256",
+    "canonical_json": "sort_keys_compact_utf8",
+    "metadata_chain_fields": ["sequence", "previous_event_hash", "event_hash"]
+  },
+  "ledger": {
+    "default_path": "artifacts/research/qm/qm_b_listing_snapshot_events.jsonl",
+    "append_only": true,
+    "rewrite_existing_events": false,
+    "duplicate_identity_policy": "FAIL_CLOSED"
+  },
+  "archive_layout": {
+    "raw_root": "artifacts/research/qm/listing_snapshots/raw",
+    "normalized_root": "artifacts/research/qm/listing_snapshots/normalized",
+    "raw_extension": ".bin",
+    "normalized_extension": ".json"
+  },
+  "adapter_contract": {
+    "required_adapter_fields": ["source_id", "parser_id", "parser_version"],
+    "required_methods": ["parse_raw_payload"],
+    "network_fetch_is_not_part_of_adapter_contract": true,
+    "parser_must_not_infer_missing_venue": true,
+    "parser_must_not_infer_listing_date_from_first_seen": true,
+    "parser_must_not_infer_delisting_from_absence": true,
+    "parser_must_not_compute_project_investability": true
+  },
+  "initial_adapters": {
+    "nasdaq_symbol_directory": {
+      "source_id": "nasdaq_symbol_directory",
+      "parser_id": "nasdaq_symbol_directory_v1",
+      "parser_version": "1",
+      "supported_files": ["nasdaqlisted.txt", "otherlisted.txt"],
+      "file_creation_time_is_preserved_raw": true,
+      "file_creation_timezone_inferred": false,
+      "venue_namespace": "nasdaq_symbol_directory"
+    }
+  },
+  "promotion": {
+    "strict_historical_listing_ledger": false,
+    "prospective_snapshot_collection": true,
+    "productive_scanner_integration": false,
+    "automatic_investability_derivation": false
+  }
+}
