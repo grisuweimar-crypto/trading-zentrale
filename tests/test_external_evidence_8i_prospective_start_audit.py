@@ -67,7 +67,7 @@ def test_source_identity_correction_is_exact_outcome_blind_nonretroactive(bindin
 def test_canonical_8i_e_start_remains_sep29(audit, correction, binding):
     validate_audit_contract(audit, correction, binding)
     e = load("configs/external_evidence_8i_reliability_extension_research_v1.json")
-    assert e["prospective_evidence"]["prospective_not_before_utc"] == "2026-09-29T00:00:00+00:00"
+    assert e["prospective_evidence"]["prospective_not_before"] == "2026-09-29T00:00:00+00:00"
     assert audit["canonical_blanket_start_utc"] == "2026-09-29T00:00:00+00:00"
     assert audit["canonical_blanket_start_unchanged"] is True
 
