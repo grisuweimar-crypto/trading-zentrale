@@ -1,0 +1,69 @@
+{
+  "schema_version": "qm_b_observed_membership_v1",
+  "module": "QM-B",
+  "name": "Observed Historical Membership Evidence",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "principles": [
+    "scanner observation may prove observed presence but not intended universe completeness",
+    "absence of a historical row never proves OUT_OF_SCOPE",
+    "price backfill is never universe-membership evidence",
+    "unknown provenance is fail-closed and excluded from membership claims",
+    "current symbols or current identifiers never upgrade historical identity",
+    "historical symbol observation is not stable instrument identity",
+    "all evidence rows retain source provenance and deterministic source hashes",
+    "real repeated scanner observations are retained rather than deduplicated into invented state"
+  ],
+  "source_contract": {
+    "canonical_archive": "artifacts/research/history_analysis.csv",
+    "scanner_view": "artifacts/research/history_recent.csv",
+    "current_universe": "data/inputs/universe_master.csv",
+    "scanner_observation": {
+      "observation_type_allowed": ["", "observed_scanner"],
+      "data_source_allowed": ["", "scanner_run"]
+    },
+    "backfill_indicators": {
+      "observation_type": ["backfill", "market_data", "price_backfill"],
+      "data_source": ["yfinance", "market_data", "price_backfill", "yahoo_ohlcv"]
+    }
+  },
+  "evidence_class_values": [
+    "SCANNER_OBSERVED",
+    "BACKFILL_DERIVED",
+    "UNKNOWN_PROVENANCE"
+  ],
+  "membership_claim_values": [
+    "OBSERVED_IN_SCANNER",
+    "NOT_MEMBERSHIP_EVIDENCE",
+    "UNKNOWN"
+  ],
+  "identity_status_values": [
+    "UNRESOLVED"
+  ],
+  "candidate_required_fields": [
+    "as_of_date",
+    "observed_symbol",
+    "source_path",
+    "source_row_number",
+    "source_file_sha256",
+    "source_row_sha256",
+    "evidence_class",
+    "membership_claim",
+    "identity_status",
+    "reason_codes"
+  ],
+  "promotion_rules": {
+    "scanner_observed_may_promote_to_membership_after_identity_reconciliation": true,
+    "backfill_may_promote_to_membership": false,
+    "unknown_provenance_may_promote_to_membership": false,
+    "absence_may_create_out_of_scope": false,
+    "current_master_match_may_verify_historical_identity": false,
+    "stable_identity_required_before_strict_qm_b_membership": true
+  },
+  "diagnostics": {
+    "historical_observed_missing_from_current_master_is_proof_of_survivorship_bias": false,
+    "current_master_never_observed_is_proof_of_historical_exclusion": false,
+    "all_symbol_set_differences_are_review_triggers_only": true
+  }
+}
