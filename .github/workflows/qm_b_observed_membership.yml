@@ -1,0 +1,79 @@
+name: QM-B Observed Membership Evidence
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_observed_membership_v1.json"
+      - "src/scanner/research/governance/qm_b_observed_membership.py"
+      - "src/scanner/research/governance/qm_b_crypto_identifier.py"
+      - "scripts/qm_b_observed_membership.py"
+      - "scripts/qm_b_crypto_identifier.py"
+      - "tests/test_qm_b_observed_membership.py"
+      - "tests/test_qm_b_crypto_identifier.py"
+      - "docs/qm_b_observed_membership.md"
+      - "docs/qm_b_crypto_identifier_migration.md"
+      - ".github/workflows/qm_b_observed_membership.yml"
+      - "src/scanner/reports/research_views.py"
+      - "artifacts/research/history_analysis.csv"
+      - "data/inputs/universe_master.csv"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-observed-membership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run QM-B membership and crypto identifier tests
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_b_observed_membership.py \
+            tests/test_qm_b_crypto_identifier.py
+      - name: Classify the real preserved research history
+        run: |
+          PYTHONPATH=src python scripts/qm_b_observed_membership.py \
+            --history artifacts/research/history_analysis.csv \
+            --current-universe data/inputs/universe_master.csv \
+            --summary-output /tmp/qm_b_observed_membership_summary.json
+          cat /tmp/qm_b_observed_membership_summary.json
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_observed_membership_summary.json', encoding='utf-8'))
+          assert p['historical_identity_verified'] is False
+          assert p['absence_interpreted_as_out_of_scope'] is False
+          assert p['evidence_class_counts'].get('SCANNER_OBSERVED', 0) > 0
+          assert p['unresolved_identity_count'] == p['row_count']
+          print('QM-B observed-membership safeguards verified on real history.')
+          PY
+      - name: Diagnose real crypto identifier migration
+        run: |
+          PYTHONPATH=src python scripts/qm_b_crypto_identifier.py \
+            --history artifacts/research/history_analysis.csv \
+            --current-universe data/inputs/universe_master.csv \
+            --output /tmp/qm_b_crypto_identifier.json
+          cat /tmp/qm_b_crypto_identifier.json
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_crypto_identifier.json', encoding='utf-8'))
+          expected = {'ADA', 'BTC', 'DOGE', 'ETH', 'SOL', 'XRP'}
+          rows = {row['base']: row for row in p['bases']}
+          assert expected <= set(rows)
+          assert p['stable_identity_verified'] is False
+          assert p['quote_pair_equivalence_verified'] is False
+          assert p['base_token_is_identity'] is False
+          assert p['absence_interpreted_as_out_of_scope'] is False
+          for base in expected:
+              assert rows[base]['internal_identifier_first_seen'] is not None
+              assert rows[base]['quote_pair_first_seen'] is not None
+              assert rows[base]['current_crypto_symbols']
+              assert rows[base]['lineage_status'] == 'CANDIDATE'
+              assert rows[base]['stable_identity_verified'] is False
+          print('QM-B crypto identifier migration candidates verified without identity promotion.')
+          PY
