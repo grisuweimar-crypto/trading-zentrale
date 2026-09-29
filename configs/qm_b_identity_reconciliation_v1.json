@@ -15,11 +15,17 @@
     "crypto base-token continuity is an asset-family candidate, not proof that quote pairs are the same instrument",
     "absence never creates delisting or out-of-scope state",
     "ambiguous symbol or ISIN mappings fail closed",
-    "candidate aliases are not strict QM-B aliases until PIT intervals and identity are verified"
+    "candidate aliases are not strict QM-B aliases until PIT intervals and identity are verified",
+    "formal package validation uses repository inputs frozen at the audit-start commit so later main-branch publications cannot change the evidentiary sample"
   ],
   "sources": {
     "history": "artifacts/research/history_analysis.csv",
     "current_universe": "data/inputs/universe_master.csv",
+    "audit_input_commit": "46cd7f53f239fff6f9c2e3f52ee7cc3b6eb8a6ef",
+    "audit_input_paths": {
+      "history": "artifacts/research/history_analysis.csv",
+      "current_universe": "data/inputs/universe_master.csv"
+    },
     "historical_snapshots": [
       {
         "source_id": "repo_watchlist_vnext_merge_20260215",
@@ -64,6 +70,7 @@
     "observed_history_before_snapshot_availability_is_pit_verified": false,
     "candidate_output_is_strict_alias_ledger": false,
     "supplemental_git_history_may_upgrade_current_only_candidate_after_exact_symbol_isin_match": true,
-    "supplemental_git_history_after_frozen_cutoff_may_be_used": false
+    "supplemental_git_history_after_frozen_cutoff_may_be_used": false,
+    "formal_validation_may_use_working_tree_inputs_instead_of_frozen_audit_inputs": false
   }
 }
