@@ -1,8 +1,8 @@
 """QM-A research governance and evidence-consumption controls.
 
-This module is deliberately research-only.  It does not compute scanner scores,
-Decision-Layer outputs, portfolio actions or orders.  It provides an append-only,
-hash-chained governance ledger for future research work.
+Research-only. This module does not compute scanner scores, Decision-Layer
+outputs, portfolio actions or orders. It provides an append-only, hash-chained
+governance ledger for future research work.
 """
 from __future__ import annotations
 
@@ -47,11 +47,10 @@ def load_qm_a_contract(path: str | Path | None = None) -> dict[str, Any]:
 
 
 def classify_change(*, equivalence_demonstrated: bool, outcome_driven: bool) -> str:
-    """Return the conservative QM-A change class.
+    """Classify a research change conservatively.
 
-    If equivalence is not demonstrated, preventive QA becomes a new version.
-    Any change motivated by inspected outcomes is outcome-driven regardless of
-    mechanical similarity claims.
+    Outcome-driven changes always dominate. If mechanical equivalence is not
+    demonstrated, the safe default is a preventive new version.
     """
     if outcome_driven:
         return "OUTCOME_DRIVEN_RESEARCH_CHANGE"
@@ -61,31 +60,22 @@ def classify_change(*, equivalence_demonstrated: bool, outcome_driven: bool) -> 
 
 
 class GovernanceLedger:
-    """Append-only event-sourced ledger for QM-A.
+    """Append-only event-sourced QM-A ledger with fail-closed replay."""
 
-    The ledger is single-writer by design.  A short-lived lock file prevents two
-    local writers from deriving the same next sequence number.  Each event is
-    chained to the previous event hash; validation fails closed on edits,
-    reordering, invalid transitions or identity drift.
-    """
-
-    def __init__(
-        self,
-        path: str | Path,
-        *,
-        contract_path: str | Path | None = None,
-    ) -> None:
+    def __init__(self, path: str | Path, *, contract_path: str | Path | None = None) -> None:
         self.path = Path(path)
         self.lock_path = self.path.with_suffix(self.path.suffix + ".lock")
         self.contract = load_qm_a_contract(contract_path)
-        self.states = set(self.contract["evidence_state_machine"]["states"])
-        self.allowed_transitions = {
-            key: set(values)
-            for key, values in self.contract["evidence_state_machine"]["allowed_transitions"].items()
-        }
-        self.identity_required_fields = tuple(self.contract["immutable_analysis_identity"]["required_fields"])
-        self.freeze_state = str(self.contract["evidence_state_machine"]["identity_freeze_state"])
-        self.spent_states = set(self.contract["evidence_state_machine"]["spent_states"])
+
+        sm = self.contract["evidence_state_machine"]
+        self.states = set(sm["states"])
+        self.allowed_transitions = {key: set(values) for key, values in sm["allowed_transitions"].items()}
+        self.freeze_state = str(sm["identity_freeze_state"])
+        self.spent_states = set(sm["spent_states"])
+
+        identity = self.contract["immutable_analysis_identity"]
+        self.identity_required_fields = tuple(identity["required_fields"])
+
         ec = self.contract["evidence_consumption"]
         self.change_classes = set(ec["change_classes"])
         self.access_modes = set(ec["access_modes"])
@@ -138,19 +128,62 @@ class GovernanceLedger:
                 raise GovernanceLedgerError(f"ledger_entry_hash_missing:{expected_sequence}")
             body = dict(event)
             body.pop("entry_hash", None)
-            computed = _hash_mapping(body)
-            if stored_hash != computed:
+            if stored_hash != _hash_mapping(body):
                 raise GovernanceLedgerError(f"ledger_entry_hash_invalid:{expected_sequence}")
             previous_hash = stored_hash
 
+    def _validate_inspection_payload(self, payload: Mapping[str, Any]) -> None:
+        missing = [field for field in self.required_inspection_fields if field not in payload]
+        if missing:
+            raise GovernanceLedgerError("inspection_fields_missing:" + ",".join(missing))
+
+        if str(payload.get("access_mode")) not in self.access_modes:
+            raise GovernanceLedgerError("inspection_access_mode_invalid")
+        visibility = str(payload.get("outcome_visibility_level"))
+        if visibility not in self.visibility_levels:
+            raise GovernanceLedgerError("inspection_visibility_invalid")
+        change_class = str(payload.get("change_class"))
+        if change_class not in self.change_classes:
+            raise GovernanceLedgerError("inspection_change_class_invalid")
+        effect = str(payload.get("evidence_effect"))
+        if effect not in self.evidence_effects:
+            raise GovernanceLedgerError("inspection_evidence_effect_invalid")
+        if not isinstance(payload.get("affected_hypothesis_ids"), list):
+            raise GovernanceLedgerError("affected_hypothesis_ids_must_be_list")
+
+        successor_version_id = str(payload.get("successor_version_id") or "").strip()
+        if change_class in self.successor_required_for and not successor_version_id:
+            raise GovernanceLedgerError("successor_version_required_for_change_class")
+
+        spent_for_design = bool(payload.get("spent_for_design"))
+        if change_class == "OUTCOME_DRIVEN_RESEARCH_CHANGE":
+            if visibility not in self.performance_revealing_visibility:
+                raise GovernanceLedgerError("outcome_driven_change_requires_visible_outcomes")
+            if not spent_for_design or effect != "SPENT_FOR_DESIGN":
+                raise GovernanceLedgerError("outcome_driven_change_must_spend_evidence")
+
+        if change_class == "MECHANICALLY_EQUIVALENT_REPAIR":
+            if not str(payload.get("review_or_approval_reference") or "").strip():
+                raise GovernanceLedgerError("mechanical_repair_requires_equivalence_reference")
+            if spent_for_design:
+                raise GovernanceLedgerError("mechanical_repair_cannot_mark_spent_for_design")
+
+        actor_id = str(payload.get("actor_id") or "").strip()
+        reviewer_actor_id = str(payload.get("reviewer_actor_id") or "").strip()
+        independent_review = bool(payload.get("independent_review", False))
+        if independent_review and reviewer_actor_id and reviewer_actor_id == actor_id:
+            raise GovernanceLedgerError("same_actor_review_cannot_be_marked_independent")
+
     def _replay(self, events: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
         analyses: dict[str, dict[str, Any]] = {}
+
         for event in events:
             event_type = str(event.get("event_type") or "")
             analysis_id = str(event.get("analysis_id") or "")
             version_id = str(event.get("version_id") or "")
             if not analysis_id or not version_id:
                 raise GovernanceLedgerError("ledger_analysis_identity_missing")
+
             key = self._key(analysis_id, version_id)
             payload = event.get("payload")
             if not isinstance(payload, dict):
@@ -161,9 +194,9 @@ class GovernanceLedger:
                     raise GovernanceLedgerError(f"analysis_version_already_registered:{key}")
                 supersedes = payload.get("supersedes_version_id")
                 if supersedes:
-                    prior_key = self._key(analysis_id, str(supersedes))
-                    if prior_key not in analyses:
-                        raise GovernanceLedgerError(f"superseded_version_not_registered:{prior_key}")
+                    predecessor = self._key(analysis_id, str(supersedes))
+                    if predecessor not in analyses:
+                        raise GovernanceLedgerError(f"superseded_version_not_registered:{predecessor}")
                     if str(supersedes) == version_id:
                         raise GovernanceLedgerError("analysis_version_cannot_supersede_itself")
                 analyses[key] = {
@@ -176,6 +209,7 @@ class GovernanceLedger:
                     "supersedes_version_id": supersedes,
                     "spent_for_design": False,
                     "outcome_evidence_inspected": False,
+                    "confirmatory_evidence_consumed": False,
                     "inspection_count": 0,
                     "last_event_hash": event["entry_hash"],
                 }
@@ -195,8 +229,9 @@ class GovernanceLedger:
                 if to_state not in self.allowed_transitions.get(from_state, set()):
                     raise GovernanceLedgerError(f"transition_forbidden:{from_state}->{to_state}")
 
-                supplied_identity_hash = payload.get("analysis_identity_hash")
                 supplied_identity = payload.get("analysis_identity")
+                supplied_identity_hash = payload.get("analysis_identity_hash")
+
                 if to_state == self.freeze_state and current["identity_hash"] is None:
                     identity = self._validate_identity(supplied_identity if isinstance(supplied_identity, Mapping) else {})
                     identity_hash = _hash_mapping(identity)
@@ -211,7 +246,7 @@ class GovernanceLedger:
                             raise GovernanceLedgerError("analysis_identity_changed_after_freeze")
                     if supplied_identity_hash and supplied_identity_hash != current["identity_hash"]:
                         raise GovernanceLedgerError("analysis_identity_hash_changed_after_freeze")
-                elif to_state not in {"DRAFT", "EXPLORATORY", "REJECTED", "RETIRED"}:
+                elif to_state not in {"EXPLORATORY", "REJECTED", "RETIRED"}:
                     raise GovernanceLedgerError("frozen_analysis_identity_required")
 
                 current["state"] = to_state
@@ -223,8 +258,7 @@ class GovernanceLedger:
             if event_type == "EVIDENCE_INSPECTION":
                 self._validate_inspection_payload(payload)
                 current["inspection_count"] += 1
-                visibility = str(payload["outcome_visibility_level"])
-                if visibility in self.performance_revealing_visibility:
+                if str(payload["outcome_visibility_level"]) in self.performance_revealing_visibility:
                     current["outcome_evidence_inspected"] = True
                 if bool(payload["spent_for_design"]):
                     current["spent_for_design"] = True
@@ -232,26 +266,23 @@ class GovernanceLedger:
                 continue
 
             raise GovernanceLedgerError(f"ledger_event_type_unknown:{event_type}")
+
         return analyses
 
     def _load_and_validate(self) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
         events = self._read_raw_events()
         self._verify_hash_chain(events)
-        analyses = self._replay(events)
-        return events, analyses
+        return events, self._replay(events)
 
     def verify_integrity(self) -> dict[str, Any]:
         events, analyses = self._load_and_validate()
-        head_hash = events[-1]["entry_hash"] if events else None
         return {
             "schema_version": "qm_a_ledger_verification_v1",
             "valid": True,
             "event_count": len(events),
             "analysis_version_count": len(analyses),
-            "head_hash": head_hash,
-            "states": {
-                key: value["state"] for key, value in sorted(analyses.items())
-            },
+            "head_hash": events[-1]["entry_hash"] if events else None,
+            "states": {key: value["state"] for key, value in sorted(analyses.items())},
             "spent_for_design": sorted(key for key, value in analyses.items() if value["spent_for_design"]),
         }
 
@@ -312,6 +343,14 @@ class GovernanceLedger:
                 "previous_event_hash": events[-1]["entry_hash"] if events else None,
             }
             event["entry_hash"] = _hash_mapping(event)
+
+            # Critical concurrency guard: replay the candidate while the writer
+            # lock is held. A stale from_state, duplicate registration or other
+            # semantic conflict therefore fails before any bytes are appended.
+            candidate = [*events, event]
+            self._verify_hash_chain(candidate)
+            self._replay(candidate)
+
             line = (_canonical_json(event) + "\n").encode("utf-8")
             fd = os.open(self.path, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o644)
             try:
@@ -319,9 +358,7 @@ class GovernanceLedger:
                 os.fsync(fd)
             finally:
                 os.close(fd)
-            # Re-read immediately so a semantically invalid event can never be
-            # silently accepted by callers.  All public methods validate before
-            # appending, so this is a corruption guard, not a rollback path.
+
             self._load_and_validate()
             return event
         finally:
@@ -347,6 +384,7 @@ class GovernanceLedger:
                 raise GovernanceLedgerError(f"superseded_version_not_registered:{predecessor}")
             if supersedes_version_id == version_id:
                 raise GovernanceLedgerError("analysis_version_cannot_supersede_itself")
+
         return self._append_event(
             event_type="ANALYSIS_REGISTERED",
             analysis_id=analysis_id,
@@ -409,46 +447,6 @@ class GovernanceLedger:
             },
         )
 
-    def _validate_inspection_payload(self, payload: Mapping[str, Any]) -> None:
-        missing = [field for field in self.required_inspection_fields if field not in payload]
-        if missing:
-            raise GovernanceLedgerError("inspection_fields_missing:" + ",".join(missing))
-        if str(payload.get("access_mode")) not in self.access_modes:
-            raise GovernanceLedgerError("inspection_access_mode_invalid")
-        visibility = str(payload.get("outcome_visibility_level"))
-        if visibility not in self.visibility_levels:
-            raise GovernanceLedgerError("inspection_visibility_invalid")
-        change_class = str(payload.get("change_class"))
-        if change_class not in self.change_classes:
-            raise GovernanceLedgerError("inspection_change_class_invalid")
-        effect = str(payload.get("evidence_effect"))
-        if effect not in self.evidence_effects:
-            raise GovernanceLedgerError("inspection_evidence_effect_invalid")
-        if not isinstance(payload.get("affected_hypothesis_ids"), list):
-            raise GovernanceLedgerError("affected_hypothesis_ids_must_be_list")
-
-        successor_version_id = str(payload.get("successor_version_id") or "").strip()
-        if change_class in self.successor_required_for and not successor_version_id:
-            raise GovernanceLedgerError("successor_version_required_for_change_class")
-
-        spent_for_design = bool(payload.get("spent_for_design"))
-        if change_class == "OUTCOME_DRIVEN_RESEARCH_CHANGE":
-            if visibility not in self.performance_revealing_visibility:
-                raise GovernanceLedgerError("outcome_driven_change_requires_visible_outcomes")
-            if not spent_for_design or effect != "SPENT_FOR_DESIGN":
-                raise GovernanceLedgerError("outcome_driven_change_must_spend_evidence")
-        if change_class == "MECHANICALLY_EQUIVALENT_REPAIR":
-            if not str(payload.get("review_or_approval_reference") or "").strip():
-                raise GovernanceLedgerError("mechanical_repair_requires_equivalence_reference")
-            if spent_for_design:
-                raise GovernanceLedgerError("mechanical_repair_cannot_mark_spent_for_design")
-
-        reviewer_actor_id = str(payload.get("reviewer_actor_id") or "").strip()
-        independent_review = bool(payload.get("independent_review", False))
-        actor_id = str(payload.get("actor_id") or "").strip()
-        if independent_review and reviewer_actor_id and reviewer_actor_id == actor_id:
-            raise GovernanceLedgerError("same_actor_review_cannot_be_marked_independent")
-
     def log_inspection(
         self,
         *,
@@ -458,7 +456,6 @@ class GovernanceLedger:
         actor_role: str,
         record: Mapping[str, Any],
     ) -> dict[str, Any]:
-        # Ensure the analysis exists before writing the inspection.
         self.get_analysis(analysis_id, version_id)
         payload = dict(record)
         payload.setdefault("inspection_id", str(uuid4()))
