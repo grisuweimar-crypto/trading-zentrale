@@ -115,10 +115,16 @@ jobs:
               'no_prior_legacy_alias_presence_observation_count': p['no_prior_legacy_alias_presence_observation_count'],
               'no_prior_legacy_alias_presence_identifier_count': p['no_prior_legacy_alias_presence_identifier_count'],
           }, indent=2, sort_keys=True))
+          assert p['legacy_watchlist_commit_count'] == 29
+          assert p['legacy_watchlist_commit_date_min'] == '2026-01-27'
+          assert p['legacy_watchlist_commit_date_max'] == '2026-02-14'
           assert p['pre_boundary_observation_count'] == 761
+          assert p['pit_supported_alias_presence_only_observation_count'] == 606
+          assert p['pit_supported_alias_presence_only_identifier_count'] == 141
+          assert p['no_prior_legacy_alias_presence_observation_count'] == 155
+          assert p['no_prior_legacy_alias_presence_identifier_count'] == 125
           assert p['stable_identity_upgraded'] is False
           assert p['strict_alias_ledger'] is False
           assert p['strict_membership_ledger'] is False
-          assert p['pit_supported_alias_presence_only_observation_count'] + p['no_prior_legacy_alias_presence_observation_count'] == 761
           print('QM-B legacy watchlist presence audited without back-projecting stable identity.')
           PY
