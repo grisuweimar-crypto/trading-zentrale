@@ -91,6 +91,37 @@ The top-level result states:
 - `base_token_is_identity=false`;
 - `absence_interpreted_as_out_of_scope=false`.
 
+## Real-history result
+
+CI evaluated the preserved `artifacts/research/history_analysis.csv` with source SHA-256
+`1c0a9263370424badd759b01f19c413520497ebf69a9ef09dd9fddeb82050be0`.
+It found **1,287 scanner-observed crypto rows** matching the conservative identifier
+parser: **27 quote-pair rows** and **1,260 `CRYPTO:<BASE>` rows**.
+
+| Base | Historical quote-pair identifiers | Quote-pair last seen | `CRYPTO:*` first seen | Current active crypto symbol | Overlap days |
+| --- | --- | --- | --- | --- | ---: |
+| ADA | `ADA-EUR`, `ADA-USD` | 2026-02-11 | 2026-03-01 | `ADA-USD` | 0 |
+| BTC | `BTC-USD` | 2026-02-11 | 2026-03-01 | `BTC-USD` | 0 |
+| DOGE | `DOGE-EUR` | 2026-02-11 | 2026-03-01 | `DOGE-EUR` | 0 |
+| ETH | `ETH-USD` | 2026-02-11 | 2026-03-01 | `ETH-USD` | 0 |
+| SOL | `SOL-EUR` | 2026-02-11 | 2026-03-01 | `SOL-EUR` | 0 |
+| XRP | `XRP-EUR` | 2026-02-11 | 2026-03-01 | `XRP-EUR` | 0 |
+
+For all six bases the pair-style observations begin on 2026-02-10, while the internal
+`CRYPTO:<BASE>` observations run from 2026-03-01 through the latest preserved scanner
+date 2026-09-28.
+
+This does **not** prove that the identifier switch happened exactly on 2026-03-01.
+The preserved evidence only brackets it: pair-style identifiers are last observed on
+2026-02-11 and `CRYPTO:<BASE>` identifiers are first observed on 2026-03-01. Therefore
+QM-B may state only that the namespace transition occurred **after 2026-02-11 and no
+later than 2026-03-01**, subject to the preserved-history coverage gap.
+
+The seven previously unmatched historical crypto values are therefore explained as
+part of one coherent identifier-namespace migration candidate set. They are no longer
+interpreted as seven independent disappearance/survivorship events. This is a
+reconciliation finding, not yet stable-identity promotion.
+
 ## Interpretation rule
 
 A shared base token and a clean temporal transition can support an
@@ -129,5 +160,5 @@ Optional output:
 5. current master matches are restricted to active `asset_type=crypto` rows;
 6. base-token matching never verifies stable identity;
 7. real-history CI confirms the expected historical crypto bases and prints the actual
-   transition dates;
+   transition boundaries;
 8. no productive files or historical observations are rewritten.
