@@ -1,0 +1,67 @@
+{
+  "schema_version": "qm_b_prospective_identity_bridge_v1",
+  "module": "QM-B",
+  "name": "Prospective Stable Instrument Identity Bridge",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "principles": [
+    "prospective source symbols may map to a stable instrument only through time-bounded bridge evidence",
+    "current universe symbol to ISIN mappings are prospective evidence only from the bridge snapshot valid_from",
+    "bridge evidence never repairs or relabels earlier scanner observations",
+    "stable instrument IDs use validated ISINs for non-crypto securities",
+    "source symbol matching is exact case-normalized matching only",
+    "punctuation substitution fuzzy matching and name similarity are forbidden",
+    "one alias mapping to multiple stable instruments is ambiguous and fails closed",
+    "source listing snapshot validity and bridge validity are combined using the later valid_from",
+    "venue information may constrain a future matcher but missing venue mapping does not create a match",
+    "listing presence does not imply tradability or project investability",
+    "unmatched and ambiguous source rows remain explicit",
+    "no productive scanner semantics are changed"
+  ],
+  "bridge_source": {
+    "current_universe_path": "data/inputs/universe_master.csv",
+    "required_fields": ["active", "symbol", "isin", "asset_type"],
+    "active_values": ["1", "true", "yes", "y"],
+    "stable_identity_type": "ISIN",
+    "alias_type": "SYMBOL",
+    "alias_namespace": "scanner_symbol"
+  },
+  "matching": {
+    "supported_source_ids": ["nasdaq_symbol_directory"],
+    "source_symbol_field": "source_symbol",
+    "bridge_alias_namespace": "scanner_symbol",
+    "normalization": "trim_upper_only",
+    "punctuation_rewrite_allowed": false,
+    "fuzzy_name_match_allowed": false,
+    "cross_namespace_guessing_allowed": false,
+    "unique_target_required": true,
+    "matched_valid_from_rule": "max_source_snapshot_and_bridge_valid_from"
+  },
+  "statuses": [
+    "MATCHED_UNIQUE",
+    "UNMATCHED",
+    "AMBIGUOUS_ALIAS",
+    "INVALID_SOURCE_RECORD"
+  ],
+  "bridge_record_required_fields": [
+    "bridge_record_id",
+    "stable_instrument_id",
+    "isin",
+    "alias_type",
+    "alias_value",
+    "alias_namespace",
+    "asset_type",
+    "valid_from",
+    "source_snapshot_id",
+    "source_payload_sha256"
+  ],
+  "promotion": {
+    "historical_identity_retrojection": false,
+    "prospective_matching_enabled": true,
+    "strict_membership_ledger": false,
+    "automatic_tradability_derivation": false,
+    "automatic_investability_derivation": false,
+    "productive_scanner_integration": false
+  }
+}
