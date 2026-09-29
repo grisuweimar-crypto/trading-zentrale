@@ -55,6 +55,28 @@ instrument taxonomy registry.
 
 Classification: `PASS` for reusable pattern / `PARTIAL` for system-wide coverage.
 
+### QMB-F05 – current universe has duplicate and incomplete identifiers
+
+The dedicated QM-B CI inventory of the current `data/inputs/universe_master.csv`
+reported:
+
+- 222 active rows;
+- 213 unique active symbols;
+- 9 duplicate-symbol keys;
+- 9 duplicate-ISIN keys;
+- 6 active rows with no ISIN.
+
+These counts are a current-state identity/data-quality finding only. They do not by
+themselves prove that the duplicates are erroneous securities, nor that historical
+research is biased. They do prove that current row count cannot safely be treated as
+stable-instrument count and that identity resolution must occur before historical
+membership reconstruction.
+
+Classification: `DATA_QUALITY_EVENT` / `METHODOLOGY_RISK`  
+Containment: do not deduplicate by ticker alone; resolve the affected rows through
+stable instrument identity during historical ledger population. No productive row is
+automatically removed or merged by this finding.
+
 ## Evidence impact
 
 No historical evidence is invalidated by creating QM-B infrastructure alone. No
