@@ -1,0 +1,113 @@
+name: Phase 8H-C Interaction Specification Freeze
+
+on:
+  push:
+    branches:
+      - phase8h-cross-factor-interaction
+    paths:
+      - "configs/external_evidence_8h_interaction_spec_freeze_v1.json"
+      - "src/scanner/research/external_evidence/interaction_spec_8h.py"
+      - "tests/test_external_evidence_8h_interaction_spec.py"
+      - ".github/workflows/external_evidence_8h_interaction_spec.yml"
+      - "configs/external_evidence_8h_interaction_eligibility_binding_v1.json"
+      - "src/scanner/research/external_evidence/interaction_eligibility_8h.py"
+      - "tests/test_external_evidence_8h_interaction_eligibility.py"
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/decision_research_dataset_v1.json"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8h_interaction_spec_freeze_v1.json"
+      - "src/scanner/research/external_evidence/interaction_spec_8h.py"
+      - "tests/test_external_evidence_8h_interaction_spec.py"
+      - ".github/workflows/external_evidence_8h_interaction_spec.yml"
+      - "configs/external_evidence_8h_interaction_eligibility_binding_v1.json"
+      - "src/scanner/research/external_evidence/interaction_eligibility_8h.py"
+      - "tests/test_external_evidence_8h_interaction_eligibility.py"
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/decision_research_dataset_v1.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interaction-specification-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Guard Phase 8H-A outcome-blind research contract
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_research_contract.py
+
+      - name: Guard Phase 8H-B eligibility binding
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_eligibility.py
+
+      - name: Verify Phase 8H-C interaction spec freeze
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_spec.py
+
+      - name: Guard research-only production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=""
+          while IFS= read -r file; do
+            case "$file" in
+              src/scanner/research/*) ;;
+              *) bad="${bad}${file}\n" ;;
+            esac
+          done < <(grep -RIl --exclude-dir='__pycache__' --exclude-dir='*.egg-info' -E 'interaction_spec_8h|external_evidence_8h_interaction_spec_freeze_v1' src/scanner 2>/dev/null || true)
+          if [[ -n "$bad" ]]; then
+            echo "8H-C interaction spec freeze referenced from production-facing source path(s):"
+            printf '%b' "$bad"
+            exit 1
+          fi
+
+      - name: Assert current repository stays empty and outcome-closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.external_evidence.interaction_eligibility_8h import bind_interaction_eligibility
+          from scanner.research.external_evidence.interaction_spec_8h import freeze_interaction_specs
+
+          root = Path('.')
+          binding_contract = json.loads((root / 'configs/external_evidence_8h_interaction_eligibility_binding_v1.json').read_text())
+          spec_contract = json.loads((root / 'configs/external_evidence_8h_interaction_spec_freeze_v1.json').read_text())
+          challenger = json.loads((root / 'configs/external_evidence_8g_challenger_specs_v1.json').read_text())
+          registry = json.loads((root / 'configs/external_source_registry_v1.json').read_text())
+          eligibility = bind_interaction_eligibility(
+              contract=binding_contract,
+              challenger_specs=challenger,
+              source_registry=registry,
+          )
+          result = freeze_interaction_specs(
+              contract=spec_contract,
+              challenger_specs=challenger,
+              eligibility_result=eligibility,
+          )
+          assert result['state'] == 'WAITING_FOR_ELIGIBLE_FACTOR_HORIZONS'
+          assert result['frozen_interaction_specs'] == []
+          assert result['confirmatory_family'] == []
+          assert result['interaction_dataset_model_construction_authorized'] is False
+          assert result['interaction_outcome_access_authorized'] is False
+          assert result['empirical_interaction_research_enabled'] is False
+          PY
+
+# 8H-C freezes explicit outcome-blind interaction specifications and the complete
+# confirmatory family only after exact 8H-B eligibility. It does not evaluate
+# outcomes, authorize production, mutate Phase 7, enable 8I, or place trades.

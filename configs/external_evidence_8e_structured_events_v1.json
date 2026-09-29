@@ -1,0 +1,199 @@
+{
+  "schema_version": "external_evidence_8e_structured_events_v1",
+  "phase": "8E_structured_events_news",
+  "status": "8E_SOURCE_LAYER_IMPLEMENTATION_COMPLETE_OUTCOME_RESEARCH_DEFERRED_TO_8G",
+  "principles": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false,
+    "generic_sentiment_enabled": false,
+    "first_public_release_required": true,
+    "source_hierarchy_required": true,
+    "missing_evidence_may_default_to_neutral": false,
+    "current_news_may_be_retrojected": false,
+    "phase8c_sec_event_reuse_required_where_available": true
+  },
+  "initial_event_taxonomy": [
+    "GUIDANCE_RAISE",
+    "GUIDANCE_CUT",
+    "REGULATORY_APPROVAL",
+    "REGULATORY_REJECTION",
+    "MAJOR_CONTRACT",
+    "ACQUISITION_ANNOUNCEMENT",
+    "TAKEOVER_OFFER",
+    "ACQUISITION_COMPLETION",
+    "CAPITAL_RAISE",
+    "LITIGATION_FILED",
+    "LITIGATION_RULING",
+    "LITIGATION_SETTLEMENT",
+    "MANAGEMENT_CHANGE",
+    "PRODUCT_LAUNCH",
+    "PRODUCTION_DISRUPTION"
+  ],
+  "source_classes": {
+    "PUBLIC_AUTHORITY_PRIMARY": {
+      "authority_rank": 10,
+      "examples": ["FDA", "FTC", "DOJ", "court_or_other_public_authority"],
+      "role": "authoritative_for_the_regulatory_or_legal_state_within_its_jurisdiction"
+    },
+    "MANDATORY_ISSUER_FILING": {
+      "authority_rank": 20,
+      "examples": ["SEC_EDGAR_8K_6K_and_related_filings"],
+      "role": "issuer_disclosure_with_proven_filing_publication_time"
+    },
+    "OFFICIAL_EXCHANGE_DISCLOSURE": {
+      "authority_rank": 30,
+      "examples": ["regulated_exchange_or_official_market_disclosure"],
+      "role": "official_listing_venue_disclosure_subject_to_source_specific_PIT_validation"
+    },
+    "ISSUER_PRIMARY_RELEASE": {
+      "authority_rank": 40,
+      "examples": ["issuer_investor_relations", "issuer_official_press_release"],
+      "role": "primary_company_statement_subject_to_archival_and_timestamp_proof"
+    },
+    "COUNTERPARTY_OR_AWARDING_AUTHORITY_RELEASE": {
+      "authority_rank": 50,
+      "examples": ["contract_counterparty", "government_awarding_authority"],
+      "role": "independent_primary_confirmation_for_contract_or_transaction_events"
+    },
+    "REPUTABLE_NEWS_DISCOVERY_ONLY": {
+      "authority_rank": 90,
+      "examples": ["official_press_release_feed_used_for_discovery", "wire_service", "major_financial_news_provider"],
+      "role": "discovery_only_until_a_primary_or_authoritative_event_source_is_resolved",
+      "promotion_eligible": false
+    }
+  },
+  "first_public_release_contract": {
+    "event_grouping_key": "canonical_event_key",
+    "canonical_event_key_must_be_assigned_by_domain_adapter": true,
+    "fuzzy_event_deduplication_enabled": false,
+    "eligible_evidence_requires_strict_pit": true,
+    "eligible_evidence_requires_content_hash": true,
+    "eligible_evidence_requires_timezone_aware_valid_from": true,
+    "published_at_may_equal_valid_from_without_source_specific_proof": false,
+    "first_public_release_at": "minimum_proven_published_at_across_strict_pit_eligible_evidence",
+    "valid_from": "minimum_valid_from_across_strict_pit_eligible_evidence",
+    "authority_rank_selects_earliest_timestamp": false,
+    "authority_rank_role": "resolve_conflicting_event_state_not_retroactively_move_first_public_release",
+    "later_authoritative_correction_is_new_version": true,
+    "later_source_may_backdate_knowledge": false,
+    "conflicting_sources_status": "CONFLICTING_SOURCES",
+    "no_primary_confirmation_status": "UNCONFIRMED_DISCOVERY_ONLY"
+  },
+  "source_adapters": {
+    "PHASE8C_CANONICAL_SEC_EVENTS": {
+      "status": "IMPLEMENTED_CONSERVATIVE_REUSE",
+      "source_class": "MANDATORY_ISSUER_FILING",
+      "pit_status": "SAFE_WITH_EXISTING_8C_PROVENANCE",
+      "supported_initial_events": ["MANAGEMENT_CHANGE"],
+      "unmapped_until_content_semantics_validated": [
+        "MATERIAL_DEFINITIVE_AGREEMENT",
+        "ACQUISITION_OR_DISPOSITION_COMPLETED",
+        "UNREGISTERED_EQUITY_SALE",
+        "REGULATION_FD_DISCLOSURE",
+        "OTHER_MATERIAL_EVENT",
+        "RESULTS_RELEASE"
+      ],
+      "duplicate_sec_reparse_enabled": false
+    },
+    "FDA_DRUGS_AT_FDA": {
+      "status": "IMPLEMENTED_AUTHORITATIVE_APPROVAL_STATE",
+      "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+      "pit_status": "PROSPECTIVE_SAFE_FROM_INGESTION_HISTORICAL_FIRST_PUBLIC_RELEASE_UNRESOLVED",
+      "supported_initial_events": ["REGULATORY_APPROVAL"],
+      "config": "configs/external_evidence_8e_fda_approval_v1.json"
+    },
+    "DOJ_ANTITRUST_CASE_FILINGS": {
+      "status": "IMPLEMENTED_AUTHORITATIVE_CASE_FILING_FEEDS",
+      "source_class": "PUBLIC_AUTHORITY_PRIMARY",
+      "pit_status": "PROSPECTIVE_SAFE_FROM_INGESTION_HISTORICAL_FIRST_PUBLIC_RELEASE_UNRESOLVED",
+      "supported_initial_events": ["LITIGATION_FILED"],
+      "config": "configs/external_evidence_8e_doj_antitrust_rss_v1.json"
+    },
+    "PRIMARY_RELEASE_CHALLENGER": {
+      "status": "IMPLEMENTED_PROSPECTIVE_STRUCTURED_CHALLENGER",
+      "source_classes": ["PUBLIC_AUTHORITY_PRIMARY", "ISSUER_PRIMARY_RELEASE"],
+      "pit_status": "PROSPECTIVE_SAFE_FROM_INGESTION_HISTORICAL_BACKDATING_REQUIRES_ARCHIVAL_PROOF",
+      "config": "configs/external_evidence_8e_primary_release_v1.json",
+      "semantic_status": "EXPLICIT_SOURCE_NATIVE_OR_HUMAN_REVIEWED_LABELS_ONLY_NOT_PROMOTED"
+    },
+    "FTC_COMPETITION_NEWS": {
+      "status": "IMPLEMENTED_DISCOVERY_ONLY",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "pit_status": "NOT_PROMOTION_ELIGIBLE_ALONE",
+      "supported_initial_events": [],
+      "config": "configs/external_evidence_8e_news_discovery_v1.json"
+    },
+    "DOJ_ANTITRUST_NEWS": {
+      "status": "IMPLEMENTED_DISCOVERY_ONLY",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "pit_status": "NOT_PROMOTION_ELIGIBLE_ALONE",
+      "supported_initial_events": [],
+      "config": "configs/external_evidence_8e_news_discovery_v1.json"
+    },
+    "ISSUER_IR": {
+      "status": "IMPLEMENTED_PROSPECTIVE_STRUCTURED_CHALLENGER",
+      "source_class": "ISSUER_PRIMARY_RELEASE",
+      "pit_status": "PROSPECTIVE_SAFE_FROM_INGESTION_SOURCE_SPECIFIC_ARCHIVAL_PROOF_REQUIRED_FOR_BACKDATING",
+      "supported_initial_events": [
+        "GUIDANCE_RAISE",
+        "GUIDANCE_CUT",
+        "MAJOR_CONTRACT",
+        "ACQUISITION_ANNOUNCEMENT",
+        "TAKEOVER_OFFER",
+        "ACQUISITION_COMPLETION",
+        "CAPITAL_RAISE",
+        "MANAGEMENT_CHANGE",
+        "PRODUCT_LAUNCH",
+        "PRODUCTION_DISRUPTION"
+      ],
+      "notes": "Infrastructure exists only for explicit structured labels; free-text semantic extraction is not promoted and all family-specific semantics remain challenger until validated."
+    },
+    "NEWS_DISCOVERY": {
+      "status": "IMPLEMENTED_DISCOVERY_ONLY",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "pit_status": "NOT_PROMOTION_ELIGIBLE_ALONE",
+      "supported_initial_events": [],
+      "may_create_canonical_event_without_primary_confirmation": false
+    }
+  },
+  "event_coverage_matrix": {
+    "GUIDANCE_RAISE": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR_NOT_SEMANTICALLY_PROMOTED",
+    "GUIDANCE_CUT": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR_NOT_SEMANTICALLY_PROMOTED",
+    "REGULATORY_APPROVAL": "IMPLEMENTED_FDA_DRUGSATFDA_PROSPECTIVE_PIT",
+    "REGULATORY_REJECTION": "PROSPECTIVE_STRUCTURED_CHALLENGER_FTC_DOJ_PRIMARY_RELEASE",
+    "MAJOR_CONTRACT": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR",
+    "ACQUISITION_ANNOUNCEMENT": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR",
+    "TAKEOVER_OFFER": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR",
+    "ACQUISITION_COMPLETION": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR",
+    "CAPITAL_RAISE": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR_NOT_SEMANTICALLY_PROMOTED",
+    "LITIGATION_FILED": "IMPLEMENTED_DOJ_ANTITRUST_CASE_FILING_FEEDS_PROSPECTIVE_PIT",
+    "LITIGATION_RULING": "PROSPECTIVE_STRUCTURED_CHALLENGER_FTC_DOJ_PRIMARY_RELEASE",
+    "LITIGATION_SETTLEMENT": "PROSPECTIVE_STRUCTURED_CHALLENGER_FTC_DOJ_PRIMARY_RELEASE",
+    "MANAGEMENT_CHANGE": "IMPLEMENTED_PHASE8C_CONSERVATIVE_REUSE",
+    "PRODUCT_LAUNCH": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR",
+    "PRODUCTION_DISRUPTION": "PROSPECTIVE_STRUCTURED_CHALLENGER_ISSUER_IR"
+  },
+  "overlap_with_phase8c": {
+    "phase8c_remains_source_of_truth_for_existing_sec_extraction": true,
+    "phase8e_may_add_cross_source_event_identity_and_first_public_release": true,
+    "phase8e_may_not_relabel_8c_semantics_without_new_independent_validation": true,
+    "guidance_and_capital_raise_boundaries_remain_in_force": true
+  },
+  "completion_contract": {
+    "architecture_and_source_layer_complete": true,
+    "every_initial_event_type_must_have_explicit_coverage_state": true,
+    "challenger_is_valid_completion_state_but_not_promotion": true,
+    "source_gap_or_deferred_is_valid_completion_state_when_reason_is_explicit": true,
+    "predictive_outcome_validation_belongs_to_phase8g": true,
+    "production_promotion_belongs_after_phase8g": true
+  },
+  "research_gate": {
+    "outcome_research_enabled": false,
+    "threshold_selection_enabled": false,
+    "interaction_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}

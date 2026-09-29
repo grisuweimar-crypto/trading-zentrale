@@ -1,0 +1,74 @@
+name: Phase 8G-C Baseline Challenger Construction
+
+on:
+  push:
+    branches:
+      - phase8g-incremental-evidence-research
+    paths:
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "configs/external_evidence_8g_model_construction_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "src/scanner/research/external_evidence/research_8g.py"
+      - "src/scanner/research/external_evidence/research_8g_binding_guard.py"
+      - "src/scanner/research/external_evidence/model_8g.py"
+      - "tests/test_external_evidence_8g_research_contract.py"
+      - "tests/test_external_evidence_8g_challenger_freeze.py"
+      - "tests/test_external_evidence_8g_binding_guard.py"
+      - "tests/test_external_evidence_8g_model_construction.py"
+      - ".github/workflows/external_evidence_8g_model_construction.yml"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "configs/external_evidence_8g_model_construction_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "src/scanner/research/external_evidence/research_8g.py"
+      - "src/scanner/research/external_evidence/research_8g_binding_guard.py"
+      - "src/scanner/research/external_evidence/model_8g.py"
+      - "tests/test_external_evidence_8g_research_contract.py"
+      - "tests/test_external_evidence_8g_challenger_freeze.py"
+      - "tests/test_external_evidence_8g_binding_guard.py"
+      - "tests/test_external_evidence_8g_model_construction.py"
+      - ".github/workflows/external_evidence_8g_model_construction.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-challenger-construction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Re-verify Phase 8G-A research contract
+        run: python -m pytest -q tests/test_external_evidence_8g_research_contract.py
+
+      - name: Re-verify Phase 8G-B freeze and binding guards
+        run: >-
+          python -m pytest -q
+          tests/test_external_evidence_8g_challenger_freeze.py
+          tests/test_external_evidence_8g_binding_guard.py
+
+      - name: Validate Phase 8G-C outcome-blind paired construction
+        run: python -m pytest -q tests/test_external_evidence_8g_model_construction.py
+
+# Phase 8G-C is construction-only.
+# It may not read forward-return, peer-excess or path-risk label values.
+# It may not fit preprocessing, Ridge coefficients, directions, thresholds or transforms.
+# Baseline and challenger rows must be identical except for exactly one frozen external factor family.
+# Every constructed row set must be anchored to an immutable hardened Phase-8G-B binding.
+# Unmapped subjects are excluded; conflicting relationship classes fail closed for that subject.
+# Discovery outcome access remains a separate later Phase-8G-D action.
+# No Phase-7 production integration or automatic Phase-8H promotion is enabled here.

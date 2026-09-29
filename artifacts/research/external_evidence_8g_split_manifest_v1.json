@@ -1,0 +1,25 @@
+{
+  "schema_version": "external_evidence_8g_split_manifest_v1",
+  "phase": "8G-B",
+  "manifest_id": "8G-B-PROSPECTIVE-20260928-V1",
+  "status": "OUTCOME_BLIND_APPEND_ONLY_BINDINGS",
+  "research_only": true,
+  "challenger_specs_commit": "4bb27afe5b40613b06b40146026e19e331ce1e5a",
+  "prospective_cohort_not_before": "2026-09-28T05:24:30.406650+00:00",
+  "outcomes_read": false,
+  "bindings_are_append_only": true,
+  "streams": {
+    "rates_policy_x_5t": {"factor_id": "rates_policy", "horizon_sessions": 5, "target_slots": 80, "assignments": [], "status": "COLLECTING"},
+    "rates_policy_x_20t": {"factor_id": "rates_policy", "horizon_sessions": 20, "target_slots": 320, "assignments": [], "status": "COLLECTING"},
+    "rates_policy_x_40t": {"factor_id": "rates_policy", "horizon_sessions": 40, "target_slots": 640, "assignments": [], "status": "COLLECTING"},
+    "rates_policy_x_60t": {"factor_id": "rates_policy", "horizon_sessions": 60, "target_slots": 960, "assignments": [], "status": "COLLECTING"},
+    "yield_curve_x_5t": {"factor_id": "yield_curve", "horizon_sessions": 5, "target_slots": 80, "assignments": [], "status": "COLLECTING"},
+    "yield_curve_x_20t": {"factor_id": "yield_curve", "horizon_sessions": 20, "target_slots": 320, "assignments": [], "status": "COLLECTING"},
+    "yield_curve_x_40t": {"factor_id": "yield_curve", "horizon_sessions": 40, "target_slots": 640, "assignments": [], "status": "COLLECTING"},
+    "yield_curve_x_60t": {"factor_id": "yield_curve", "horizon_sessions": 60, "target_slots": 960, "assignments": [], "status": "COLLECTING"},
+    "fx_x_5t": {"factor_id": "fx", "horizon_sessions": 5, "target_slots": 80, "assignments": [], "status": "COLLECTING"},
+    "fx_x_20t": {"factor_id": "fx", "horizon_sessions": 20, "target_slots": 320, "assignments": [], "status": "COLLECTING"},
+    "fx_x_40t": {"factor_id": "fx", "horizon_sessions": 40, "target_slots": 640, "assignments": [], "status": "COLLECTING"},
+    "fx_x_60t": {"factor_id": "fx", "horizon_sessions": 60, "target_slots": 960, "assignments": [], "status": "COLLECTING"}
+  }
+}

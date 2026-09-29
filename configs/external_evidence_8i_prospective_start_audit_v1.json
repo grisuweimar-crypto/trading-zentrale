@@ -1,0 +1,79 @@
+{
+  "schema_version": "external_evidence_8i_prospective_start_audit_v1",
+  "phase": "8I-E",
+  "title": "Prospective Start Audit / Exact Snapshot Exception",
+  "frozen_on": "2026-09-29",
+  "state": "FROZEN_OUTCOME_BLIND_EXACT_SNAPSHOT_EXCEPTION",
+  "research_only": true,
+  "shadow_mode": true,
+  "outcomes_read": false,
+  "canonical_blanket_start_utc": "2026-09-29T00:00:00+00:00",
+  "canonical_blanket_start_unchanged": true,
+  "audited_prestart_shadow": {
+    "start_utc": "2026-09-18T00:00:00+00:00",
+    "end_before_utc": "2026-09-29T00:00:00+00:00",
+    "default_classification": "AUDITED_PRESTART_SHADOW",
+    "counts_toward_8i_e_confirmatory_family": false,
+    "may_be_used_for_pit_and_operational_audit_only": true,
+    "does_not_retroactively_create_prospective_evidence": true
+  },
+  "exact_first_prospective_exception": {
+    "classification": "ADMITTED_FIRST_PROSPECTIVE",
+    "snapshot_id": "e2444010-ad30-4c08-af92-037bb0cc28d6",
+    "attempt_id": "e2444010-ad30-4c08-af92-037bb0cc28d6",
+    "started_at": "2026-09-28T16:17:13.819811+00:00",
+    "generated_at": "2026-09-28T16:17:31.855174+00:00",
+    "completed_tickers": 213,
+    "total_tickers": 213,
+    "scanner_commit_sha": "efd4d60fd9fa1ca57555f9d68f2515995bc4439b",
+    "history_metadata_git_blob_sha": "78097bc67ab4d2d2d727d5ebc634aade912f99a6",
+    "latest_scanner_git_blob_sha": "92463ee9cb2ca570659a99f5afcbf648d00f96bb",
+    "run_source": "github-36449782706-1",
+    "required_prior_freezes": {
+      "8i_d_final_commit_sha": "bac30fa99b921c5cd1c85e89cfa6942bbe5c79f8",
+      "8i_e_contract_commit_sha": "7b43953ab40e927b8c8f9da02d78f96dff36d201",
+      "8i_e_contract_frozen_at_utc": "2026-09-28T15:32:28+00:00"
+    },
+    "requires_exact_identity_match": true,
+    "requires_outcome_blind_source_identity_correction": true,
+    "counts_toward_8i_e_confirmatory_family_if_all_ordinary_binding_annotation_and_maturity_gates_pass": true,
+    "does_not_itself_create_a_valid_8i_e_annotation": true,
+    "does_not_itself_increase_empirical_sample": true
+  },
+  "source_identity_correction": {
+    "path": "configs/external_evidence_upstream_source_identity_correction_v1.json",
+    "git_blob_sha": "e87f5f643defd6868bf1a43f18aa6e25287061c9",
+    "correction_sha256": "52ea6a5d4d59d02c86f870f78c7675107ded473e8be192f27dbd71ebf173c6d6",
+    "required_state": "RESOLVED_OUTCOME_BLIND_VERSIONED",
+    "outcomes_read_required": false,
+    "retroactive_evidence_rewrite_required": false
+  },
+  "classification_rules": {
+    "before_2026_09_29_except_exact_snapshot": "AUDITED_PRESTART_SHADOW",
+    "exact_snapshot": "ADMITTED_FIRST_PROSPECTIVE",
+    "on_or_after_canonical_blanket_start": "STANDARD_PROSPECTIVE",
+    "arbitrary_2026_09_28_snapshot_may_be_admitted": false
+  },
+  "outcome_blind_boundary": {
+    "outcome_fields_allowed": false,
+    "effect_estimates_allowed": false,
+    "p_values_allowed": false,
+    "confidence_intervals_allowed": false,
+    "hypothesis_selection_allowed": false,
+    "threshold_or_sign_tuning_allowed": false
+  },
+  "decision_boundary": {
+    "phase7_mutation_authorized": false,
+    "extended_reliability_enabled": false,
+    "extended_stance_enabled": false,
+    "portfolio_action_change_authorized": false,
+    "orders_or_trades_authorized": false,
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
+  },
+  "empirical_status": {
+    "real_8i_e_outcomes_opened": false,
+    "8i_e_empirically_complete": false,
+    "exception_is_eligibility_not_empirical_completion": true
+  },
+  "audit_sha256": "0c7982be1a9554c33d62e17bda5858d97ab00f87ffde6c8bfb787f58dac760d2"
+}

@@ -1,0 +1,295 @@
+{
+  "schema_version": "external_evidence_8i_decision_extension_contract_v1",
+  "phase": "8I-A",
+  "title": "Decision Extension Contract / Outcome-Blind Freeze",
+  "frozen_on": "2026-09-28",
+  "status": "FROZEN_OUTCOME_BLIND_WAITING_FOR_PROMOTED_EXTERNAL_EVIDENCE",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "external_state_engine_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "parent_freeze": {
+    "base_branch": "phase8h-cross-factor-interaction",
+    "base_commit_sha": "e31990b826ab093bbfdc5d7426c58d657bffc51c",
+    "upstream_files": [
+      {
+        "path": "configs/decision_layer_input_contract_v1.json",
+        "git_blob_sha": "c1f48e9b85bd44e49c4f0a184abce10ed32fb734"
+      },
+      {
+        "path": "configs/decision_universal_stance_v1.json",
+        "git_blob_sha": "088ed8564d35ef477887f557c2ad4972b981b6db"
+      },
+      {
+        "path": "configs/decision_reliability_explainability_v1.json",
+        "git_blob_sha": "0936d82a3f4e4ab049bb52e47617df159fbc8d7a"
+      },
+      {
+        "path": "configs/decision_state_transition_v1.json",
+        "git_blob_sha": "e89b96e226fcfadec91600b87a94795c24be239c"
+      },
+      {
+        "path": "configs/decision_portfolio_action_v1.json",
+        "git_blob_sha": "61e931d2c5f4f4257944f3d7b795003c444332a8"
+      },
+      {
+        "path": "configs/decision_validation_promotion_v1.json",
+        "git_blob_sha": "53502475564ddb8ed7bbdacc7d30b89977472d9b"
+      },
+      {
+        "path": "configs/decision_research_dataset_v1.json",
+        "git_blob_sha": "5040603ca0af5db56617a581754f8aff64f2636b"
+      },
+      {
+        "path": "configs/external_evidence_8_contract_v1.json",
+        "git_blob_sha": "20529a3140a12b411e2616a7001c005bfe825757"
+      },
+      {
+        "path": "configs/external_conflict_matrix_v1.json",
+        "git_blob_sha": "cff60dc2b0f2d97afd43758e40cd127347ff2f66"
+      },
+      {
+        "path": "configs/external_evidence_8g_research_contract_v1.json",
+        "git_blob_sha": "6d71232f7cccebbbbe04d80fe2d09a22494c9d6c"
+      },
+      {
+        "path": "configs/external_evidence_8g_promotion_review_v1.json",
+        "git_blob_sha": "e49378d0d84748eda7115bb147940a9cb895d108"
+      },
+      {
+        "path": "configs/external_evidence_8h_interaction_research_contract_v1.json",
+        "git_blob_sha": "6556119ed9002f2309466a1335948c41049d806d"
+      },
+      {
+        "path": "configs/external_evidence_8h_interaction_promotion_review_v1.json",
+        "git_blob_sha": "863c712f12367f61796b75fd0b163788d6395b78"
+      }
+    ]
+  },
+  "scope": {
+    "goal": "Attach external evidence to the frozen Phase-7 Decision Layer as a separate, auditable and empirically testable interpretation layer without overwriting Phase 7.",
+    "output_layers": [
+      "phase7_core_state",
+      "external_evidence",
+      "extended_decision_state"
+    ],
+    "phase7_core_is_immutable_baseline": true,
+    "8i_a_is_contract_only": true,
+    "real_decision_outcome_read_allowed": false,
+    "runtime_component_binding_in_8i_a": false,
+    "runtime_state_engine_in_8i_a": false,
+    "reliability_recompute_in_8i_a": false,
+    "stance_recompute_in_8i_a": false,
+    "portfolio_action_recompute_in_8i_a": false
+  },
+  "input_eligibility": {
+    "8g_main_effects": {
+      "upstream_approval_state": "APPROVED_FOR_8H_RESEARCH_ONLY",
+      "upstream_authorizes_8i_decision_layer_integration": false,
+      "eligible_for_8i_decision_use_with_existing_receipt": false,
+      "requires_separate_8i_research_authorization": true,
+      "implicit_transitive_promotion_forbidden": true
+    },
+    "8h_interactions": {
+      "required_upstream_state": "APPROVED_FOR_8I_RESEARCH_ONLY",
+      "upstream_authorizes_8i_research_design_only": true,
+      "upstream_authorizes_8i_integration": false,
+      "requires_8i_contract_and_future_binding_before_decision_use": true,
+      "required_exact_bindings": [
+        "interaction_id",
+        "interaction_spec_version",
+        "interaction_spec_hash",
+        "parent_factor_ids",
+        "horizon",
+        "promotion_receipt",
+        "source_ids",
+        "source_registry_version",
+        "as_of",
+        "valid_from",
+        "mapping_version",
+        "pit_status",
+        "evidence_consumption_status"
+      ],
+      "automatic_activation_forbidden": true
+    },
+    "current_decision_active_8g_main_effect_ids": [],
+    "current_decision_active_8h_interaction_ids": []
+  },
+  "state_model": {
+    "source_contract": "configs/external_conflict_matrix_v1.json",
+    "external_direction_states": [
+      "POSITIVE",
+      "NEGATIVE",
+      "MIXED",
+      "UNKNOWN",
+      "INSUFFICIENT_EXTERNAL"
+    ],
+    "external_evidence_relation_states": [
+      "CONFIRMING",
+      "CONFLICTING",
+      "EXTERNAL_ONLY",
+      "MIXED_EXTERNAL",
+      "UNKNOWN",
+      "INSUFFICIENT_EXTERNAL"
+    ],
+    "unknown_is_not_insufficient": true,
+    "relation_mapping_may_not_be_reinterpreted_in_8i_a": true,
+    "descriptive_relation_is_not_decision_policy": true
+  },
+  "current_empirical_entry_state": {
+    "state": "NO_PROMOTED_EXTERNAL_EVIDENCE",
+    "operational_status": "WAITING_FOR_PROMOTED_EXTERNAL_EVIDENCE",
+    "decision_active_8g_main_effect_ids": [],
+    "decision_active_8h_interaction_ids": [],
+    "external_direction_state": "INSUFFICIENT_EXTERNAL",
+    "external_evidence_state": "INSUFFICIENT_EXTERNAL",
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION",
+    "extended_decision_research_enabled": false
+  },
+  "fail_closed_rules": {
+    "triggers": [
+      "no_promoted_external_evidence",
+      "missing_promotion_receipt",
+      "invalid_promotion_receipt",
+      "promotion_scope_does_not_authorize_8i_use",
+      "component_or_spec_hash_mismatch",
+      "missing_or_invalid_pit_provenance",
+      "stale_external_data",
+      "missing_required_provenance",
+      "unresolved_source_id",
+      "unresolved_mapping_version",
+      "unapproved_interaction",
+      "evidence_consumption_status_not_permitted_for_requested_research_role"
+    ],
+    "on_rejected_or_unusable_external_evidence": "EXCLUDE_FROM_DECISION_INFLUENCE",
+    "when_no_valid_external_evidence_remains": {
+      "external_direction_state": "INSUFFICIENT_EXTERNAL",
+      "external_evidence_state": "INSUFFICIENT_EXTERNAL",
+      "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
+    },
+    "technical_external_failure_may_disable_phase7_core": false,
+    "unknown_valid_external_evidence_may_be_silently_rewritten_as_insufficient": false
+  },
+  "backward_compatibility": {
+    "no_eligible_external_evidence_invariant": "NO_PROMOTED_EXTERNAL_EVIDENCE -> INSUFFICIENT_EXTERNAL + NO_CHANGE_TO_PHASE7_DECISION",
+    "phase7_universal_stance_unchanged": true,
+    "phase7_reliability_unchanged": true,
+    "phase7_state_transition_unchanged": true,
+    "phase7_portfolio_action_unchanged": true,
+    "phase7_swing_management_unchanged": true,
+    "only_additive_external_block_allowed": true,
+    "phase7_output_must_remain_reconstructible": true,
+    "hidden_meta_score_forbidden": true
+  },
+  "integration_order": {
+    "sequence": [
+      "frozen_phase7_core",
+      "external_evidence_state",
+      "future_separately_validated_extended_interpretation",
+      "portfolio_action"
+    ],
+    "universal_stance_remains_depot_independent": true,
+    "portfolio_action_remains_downstream": true,
+    "direct_external_to_portfolio_action_forbidden": true,
+    "direct_external_to_order_or_trade_forbidden": true
+  },
+  "reliability_vs_stance": {
+    "first_future_research_layer": "EXTENDED_RELIABILITY_SEPARATE_FROM_PHASE7_RELIABILITY",
+    "phase7_reliability_must_remain_reconstructible": true,
+    "external_state_may_not_change_phase7_reliability_without_later_empirical_gate": true,
+    "stance_extension_requires_separate_later_preregistration_and_validation": true,
+    "stance_extension_enabled_now": false
+  },
+  "aggregation_guards": {
+    "numeric_vote_counting_forbidden": true,
+    "arbitrary_weights_forbidden": true,
+    "main_effect_plus_dependent_interaction_independent_vote_forbidden": true,
+    "interaction_parent_dependency_must_be_preserved": true,
+    "aggregation_logic_deferred_to_8i_c_and_must_be_outcome_blind": true,
+    "failed_hypothesis_inversion_forbidden": true
+  },
+  "provenance_required_fields": [
+    "source",
+    "source_id",
+    "factor_id",
+    "interaction_id_if_applicable",
+    "as_of",
+    "valid_from",
+    "mapping_version",
+    "promotion_receipt",
+    "evidence_consumption_status",
+    "model_or_spec_version",
+    "horizon",
+    "pit_status",
+    "component_artifact_hash"
+  ],
+  "comparison_ladder": [
+    {
+      "id": "BASELINE",
+      "definition": "Frozen Phase-7 Decision Layer"
+    },
+    {
+      "id": "CHALLENGER_EXTERNAL_STATE_ONLY",
+      "definition": "Frozen Phase-7 Decision Layer plus external_evidence annotation with no decision change"
+    },
+    {
+      "id": "CHALLENGER_EXTENDED_RELIABILITY",
+      "definition": "Frozen Phase-7 Decision Layer plus separately preregistered extended reliability logic",
+      "enabled_in_8i_a": false
+    },
+    {
+      "id": "CHALLENGER_EXTENDED_STANCE",
+      "definition": "Frozen Phase-7 Decision Layer plus separately preregistered and validated stance extension",
+      "enabled_in_8i_a": false
+    }
+  ],
+  "outcome_and_partition_policy": {
+    "upstream_label_catalog": "configs/decision_research_dataset_v1.json",
+    "allowed_reference_labels": [
+      "return",
+      "peer_excess",
+      "adverse_excursion",
+      "path_max_drawdown"
+    ],
+    "8i_primary_decision_metric": "NOT_YET_DEFINED_NO_OUTCOME_READ",
+    "metric_selection_after_8i_outcome_read_forbidden": true,
+    "exact_8i_discovery_validation_holdout_or_prospective_partitions_must_be_frozen_before_outcome_read": true,
+    "phase7_or_8g_or_8h_consumed_evidence_is_not_fresh_8i_confirmation": true,
+    "overlapping_forward_windows_are_iid": false,
+    "effect_size_and_uncertainty_reported_separately": true,
+    "outcome_read_in_8i_a": false
+  },
+  "evidence_consumption": {
+    "outcome_informed_rule_design_marks_evidence": "spent_for_design",
+    "8i_a_consumes_real_decision_outcomes": false,
+    "8g_and_8h_promotion_evidence_may_not_be_claimed_as_independent_8i_confirmation": true,
+    "holdout_may_select_rule": false,
+    "validation_or_holdout_may_tune_thresholds_weights_signs_or_horizons": false,
+    "promotion_by_significance_forbidden": true
+  },
+  "parked_audit": {
+    "possible_earlier_prospective_collection_start": "2026-09-18",
+    "status": "PARKED_OUT_OF_SCOPE",
+    "may_be_changed_in_8i_a": false,
+    "requires_separate_pit_outcome_blind_audit": true
+  },
+  "production_gate": {
+    "state": "CLOSED",
+    "research_only_shadow_until_manual_final_review": true,
+    "may_overwrite_phase7_output": false,
+    "may_change_portfolio_action": false,
+    "may_generate_orders": false,
+    "automatic_future_8g_or_8h_promotion_activation": false
+  },
+  "completion_gate": {
+    "technical_completion_requires_contract_tests_docs_and_ci": true,
+    "empirical_promotion_granted_by_8i_a": false,
+    "8i_a_complete_does_not_enable_external_decision_influence": true,
+    "next_subblock_after_manual_start": "8I-B_PROMOTION_AND_PROVENANCE_BINDING"
+  }
+}

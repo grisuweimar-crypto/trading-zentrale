@@ -1,0 +1,78 @@
+{
+  "schema_version": "external_evidence_8f_mapping_candidates_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "DOCUMENTARY_CANDIDATES_PENDING_HUMAN_REVIEW",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B13",
+  "created_date": "2026-09-27",
+  "promotion_rules": {
+    "candidate_may_enter_exposure_map_without_human_review": false,
+    "candidate_may_be_backdated_before_review": false,
+    "sector_or_name_alone_is_sufficient_evidence": false,
+    "market_outcomes_may_be_used": false,
+    "direction_or_signed_exposure_may_be_assigned": false,
+    "weight_or_threshold_may_be_selected": false,
+    "reviewer_must_verify_source_and_relationship_class": true,
+    "approved_mapping_valid_from_must_be_at_or_after_reviewed_at": true
+  },
+  "candidates": [
+    {
+      "candidate_id": "MAPCAND:ASTS:rates_policy:1",
+      "subject_id": "ASTS",
+      "factor_id": "rates_policy",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "SEC_10K",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1780312/000178031226000006/asts-20251231.htm",
+      "evidence_summary": "AST SpaceMobile discloses a $420 million subsidiary bridge financing facility bearing Term SOFR plus 2.0%; because the parent is not liable as borrower or guarantor, the relationship is documented conservatively as rate-linked financing exposure rather than parent-level FINANCING_SENSITIVITY.",
+      "evidence_record_sha256": "78978dc0b5e71754897162143a30fb3e288a846bfab8e16eb93e6441c4cf0c43",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:CDNL:rates_policy:1",
+      "subject_id": "CDNL",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "SEC_10K",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/2079999/000119312526120014/cdnl-20251231.htm",
+      "evidence_summary": "Cardinal Infrastructure reports $120 million outstanding under its October 2025 credit facility bearing SOFR plus 2.375%, while SOFR-based facility borrowings carry contractual spreads, directly documenting current floating-rate financing sensitivity.",
+      "evidence_record_sha256": "8e04fffb0c92348a55ad5b39ca5354c0167e77ae8393da20b04baf3c57a229ba",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:RGTI:rates_policy:1",
+      "subject_id": "RGTI",
+      "factor_id": "rates_policy",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "SEC_10Q",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1838359/000110465926091993/rgti-20260630x10q.htm",
+      "evidence_summary": "Rigetti reports $513.5 million of short- and long-term available-for-sale investments held in U.S. Treasury securities and states that declining interest rates would reduce future interest income as securities mature and are reinvested, directly documenting interest-rate sensitivity.",
+      "evidence_record_sha256": "9d92e6667073632ccafa649c1e477d58be67df2d4750f8b17367fd4b54dfe876",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:RKLB:rates_policy:1",
+      "subject_id": "RKLB",
+      "factor_id": "rates_policy",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "SEC_10K",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1819994/000181999426000013/rklb-20251231.htm",
+      "evidence_summary": "Rocket Lab identifies interest rates as a primary market-risk exposure and reports $270.2 million of marketable securities including U.S. Treasury and other debt securities, directly documenting interest-rate sensitivity of its treasury portfolio.",
+      "evidence_record_sha256": "1f6efe8fa6c9a68e54661ea9f994d40b04dd211a77bce21c277f6a243f0a1b85",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    }
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "candidate_count": 4,
+    "active_exposure_map_modified": false,
+    "human_review_claimed": false,
+    "automatic_sector_mapping_promoted": false
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "eia_status": "SKIPPED_NO_API_KEY",
+  "guards": {
+    "append_only_ledger_used": true,
+    "historical_current_values_retrojected": false,
+    "market_outcomes_read": false,
+    "phase7_integration_enabled": false,
+    "raw_payloads_persisted_before_parsing": true
+  },
+  "ingested_at": "2026-09-28T05:24:30.406650+00:00",
+  "ledger_knowable_row_count": 25,
+  "ledger_row_count": 25,
+  "new_observation_count": 25,
+  "phase": "8F_macro_exposure_context",
+  "raw_snapshots": [
+    {
+      "path": "artifacts/research/external_evidence_8f_raw/federal_reserve_board_h15/2026-09-28T05-24-30.406650_00-00_5be657c8ba10.html",
+      "sha256": "5be657c8ba106b6a1fc887db5c3f7c7c03b4bc3f3735998805fb109aede4ef5e",
+      "source_id": "federal_reserve_board_h15",
+      "url": "https://www.federalreserve.gov/releases/h15/"
+    },
+    {
+      "path": "artifacts/research/external_evidence_8f_raw/ecb_data_portal/2026-09-28T05-24-30.406650_00-00_b97555e3aab3.csv",
+      "sha256": "b97555e3aab37044c063bf6bcc0ee765a5178b0922227f76877a2a62028e8796",
+      "source_id": "ecb_data_portal",
+      "url": "https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A?format=csvdata&lastNObservations=10"
+    }
+  ],
+  "schema_version": "external_evidence_8f_prospective_collection_v1",
+  "status": "COLLECTED_OUTCOME_BLIND_PIT_SNAPSHOT"
+}

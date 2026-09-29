@@ -1,0 +1,156 @@
+{
+  "schema_version": "external_evidence_8i_production_readiness_final_review_v1",
+  "phase": "8I-H",
+  "title": "Production Readiness / Final Review Entry Gate",
+  "frozen_on": "2026-09-29",
+  "status": "BLOCKED_WAITING_FOR_8I_G_EMPIRICAL_COMPLETION",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "real_decision_outcome_read_allowed": false,
+  "scope": {
+    "8i_h_definition": "PRODUCTION_READINESS_AND_FINAL_REVIEW",
+    "entry_gate_only_until_8i_g_empirical_completion": true,
+    "automatic_production_promotion_allowed": false,
+    "final_review_may_enable_production_directly": false,
+    "separate_explicit_production_change_required_after_approval": true,
+    "portfolio_action_bridge_implementation_in_scope_now": false,
+    "broker_execution_in_scope_now": false,
+    "purpose": "Perform the final manual research review only after successful prospective validation and one-shot holdout, while keeping Phase 7 authoritative until a later explicit production-integration change."
+  },
+  "parent_contracts": {
+    "8i_g_entry_gate": {
+      "path": "configs/external_evidence_8i_prospective_validation_entry_gate_v1.json",
+      "git_blob_sha": "0fa5c07b1941c2c17a977ea7cef3cc9d58a03800"
+    },
+    "8i_g_entry_gate_implementation": {
+      "path": "src/scanner/research/external_evidence/prospective_validation_entry_gate_8i.py",
+      "git_blob_sha": "ae06da0eb6dc2e486b817722be309f04ff9fca87"
+    },
+    "phase7_validation": {
+      "path": "configs/decision_validation_promotion_v1.json",
+      "git_blob_sha": "53502475564ddb8ed7bbdacc7d30b89977472d9b"
+    },
+    "phase7_portfolio_action": {
+      "path": "configs/decision_portfolio_action_v1.json",
+      "git_blob_sha": "61e931d2c5f4f4257944f3d7b795003c444332a8"
+    },
+    "8i_a_decision_extension": {
+      "path": "configs/external_evidence_8i_decision_extension_contract_v1.json",
+      "git_blob_sha": "3db4359d4ba70dc7bc6801c4d74aa0ebb85b8388"
+    }
+  },
+  "required_8i_g_handoff": {
+    "8i_g_validation_plan_frozen": true,
+    "8i_g_prospective_validation_complete": true,
+    "8i_g_holdout_complete": true,
+    "8i_g_empirical_completion": true,
+    "8i_h_may_start_now": true,
+    "empirical_review_receipt_required": true,
+    "required_receipt_schema": "external_evidence_8i_g_empirical_review_receipt_v1",
+    "required_receipt_state": "APPROVED_FOR_8I_H_FINAL_REVIEW_ONLY",
+    "required_exact_fields": [
+      "stance_rule_id",
+      "stance_spec_sha256",
+      "stance_preregistration_sha256",
+      "validation_plan_sha256",
+      "holdout_manifest_sha256",
+      "terminal_result_sha256",
+      "reviewed_at"
+    ],
+    "receipt_requires_fresh_evidence_verified": true,
+    "receipt_requires_one_shot_holdout_consumed": true,
+    "receipt_requires_no_postfreeze_tuning": true,
+    "receipt_requires_effect_size_and_uncertainty_reviewed_separately": true,
+    "receipt_requires_multiplicity_review_complete": true,
+    "receipt_requires_failed_hypothesis_inversion_forbidden": true,
+    "receipt_authorizes_only_8i_h_final_review": true,
+    "receipt_may_authorize_production": false,
+    "receipt_may_authorize_phase7_mutation": false,
+    "receipt_may_authorize_portfolio_action_change": false,
+    "receipt_may_authorize_orders_or_trades": false
+  },
+  "final_review_requirements": {
+    "manual_review_required": true,
+    "technical_ci_success_is_not_empirical_approval": true,
+    "statistical_significance_is_not_automatic_approval": true,
+    "effect_size_and_uncertainty_must_be_reviewed": true,
+    "pit_and_provenance_lineage_must_be_complete": true,
+    "evidence_consumption_lineage_must_be_complete": true,
+    "phase7_baseline_must_remain_reconstructible": true,
+    "external_failure_must_not_disable_phase7": true,
+    "no_hidden_meta_score": true,
+    "no_direct_external_to_portfolio_action_path": true,
+    "no_direct_validation_result_to_order_path": true,
+    "no_automatic_position_sizing": true,
+    "no_automatic_target_weight": true,
+    "rollback_or_disable_path_required_before_production_change": true,
+    "audit_provenance_required_before_production_change": true,
+    "private_position_state_must_not_be_committed_publicly": true
+  },
+  "final_review_decision_model": {
+    "allowed_states": [
+      "NOT_REVIEWED",
+      "CONTINUE_RESEARCH",
+      "REJECTED",
+      "APPROVED_FOR_SEPARATE_PRODUCTION_INTEGRATION_CHANGE_ONLY"
+    ],
+    "default_state": "NOT_REVIEWED",
+    "automatic_state_change_allowed": false,
+    "approval_is_production_activation": false,
+    "approval_is_phase7_mutation": false,
+    "approval_is_portfolio_action_change": false,
+    "approval_is_order_authorization": false,
+    "approved_state_requires_separate_explicit_change": true,
+    "rejection_may_be_inverted_into_opposite_signal": false
+  },
+  "production_change_boundary": {
+    "separate_change_must_bind_exact_approved_8i_f_rule_hash": true,
+    "separate_change_must_bind_exact_8i_g_validation_and_holdout_hashes": true,
+    "separate_change_must_define_runtime_fallback_to_phase7": true,
+    "separate_change_must_define_portfolio_action_bridge_if_any_action_changes": true,
+    "separate_change_must_preserve_no_order_generation_unless_independently_authorized": true,
+    "8i_h_itself_may_modify_production_runtime": false,
+    "8i_h_itself_may_modify_phase7_contracts": false,
+    "8i_h_itself_may_enable_broker_execution": false
+  },
+  "current_repository_state": {
+    "state": "BLOCKED_WAITING_FOR_8I_G_EMPIRICAL_COMPLETION",
+    "8i_g_validation_plan_frozen": false,
+    "8i_g_prospective_validation_complete": false,
+    "8i_g_holdout_complete": false,
+    "8i_g_empirical_completion": false,
+    "8i_h_allowed_to_start_final_review": false,
+    "real_8i_g_empirical_review_receipt_present": false,
+    "final_review_complete": false,
+    "final_review_state": "NOT_REVIEWED",
+    "productive_integration_enabled": false,
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION",
+    "portfolio_action_change_authorized": false,
+    "orders_or_trades_authorized": false
+  },
+  "fail_closed_policy": {
+    "incomplete_8i_g_empirical_validation": "BLOCK_8I_H_FINAL_REVIEW",
+    "missing_or_invalid_8i_g_review_receipt": "BLOCK_8I_H_FINAL_REVIEW",
+    "lineage_hash_mismatch": "BLOCK_8I_H_FINAL_REVIEW",
+    "unresolved_pit_or_provenance_issue": "BLOCK_PRODUCTION_APPROVAL",
+    "missing_rollback_or_audit_plan": "BLOCK_PRODUCTION_APPROVAL",
+    "on_any_gate_failure": "PHASE7_ONLY + NO_CHANGE_TO_PHASE7_DECISION",
+    "technical_8i_h_failure_may_disable_phase7": false
+  },
+  "completion_gate": {
+    "technical_completion_requires_contract_implementation_tests_docs_and_ci": true,
+    "technical_completion_is_not_final_empirical_approval": true,
+    "8i_h_final_review_complete": false,
+    "8i_h_production_integration_approved": false,
+    "8i_h_production_integration_enabled": false,
+    "phase_8i_empirical_completion": false,
+    "phase_8i_production_completion": false,
+    "next_state": "8I-G_WAIT_FOR_EMPIRICAL_VALIDATION_AND_HOLDOUT"
+  }
+}

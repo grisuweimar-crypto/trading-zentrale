@@ -1,0 +1,91 @@
+{
+  "schema_version": "external_evidence_8f_mapping_candidates_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "DOCUMENTARY_CANDIDATES_PENDING_HUMAN_REVIEW",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B15",
+  "created_date": "2026-09-27",
+  "promotion_rules": {
+    "candidate_may_enter_exposure_map_without_human_review": false,
+    "candidate_may_be_backdated_before_review": false,
+    "sector_or_name_alone_is_sufficient_evidence": false,
+    "market_outcomes_may_be_used": false,
+    "direction_or_signed_exposure_may_be_assigned": false,
+    "weight_or_threshold_may_be_selected": false,
+    "reviewer_must_verify_source_and_relationship_class": true,
+    "approved_mapping_valid_from_must_be_at_or_after_reviewed_at": true
+  },
+  "candidates": [
+    {
+      "candidate_id": "MAPCAND:SYM:rates_policy:1",
+      "subject_id": "SYM",
+      "factor_id": "rates_policy",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "SEC_10K",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1837240/000183724025000278/sym-20250927.htm",
+      "evidence_summary": "Symbotic reports $1.245 billion of cash and cash equivalents, including short-duration investments, and explicitly identifies changes in market interest rates as a market-risk exposure while noting the exposure was not material because of the instruments' short duration.",
+      "evidence_record_sha256": "50facc60191031d38c837ba281ae3ee8a48b878675b7235e48c57b21a9afbe03",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:USAR:rates_policy:1",
+      "subject_id": "USAR",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "SEC_FILING",
+      "evidence_reference": "https://www.sec.gov/Archives/edgar/data/1970622/000121390026100190/ea030552601ex99-1.htm",
+      "evidence_summary": "Following the September 2026 SVRE merger, USA Rare Earth states that it assumed SVRE's DFC debt; the Initial Loan bears Term SOFR plus 4.0%, directly documenting current financing sensitivity to rates.",
+      "evidence_record_sha256": "37120200c67590eab6574429172b58ff694a2610b56fb6acf2913d4a4a736333",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:NESN.SW:rates_policy:1",
+      "subject_id": "NESN.SW",
+      "factor_id": "rates_policy",
+      "relationship_class": "FINANCING_SENSITIVITY",
+      "evidence_type": "ISSUER_FINANCIAL_STATEMENTS",
+      "evidence_reference": "https://www.nestle.com/sites/default/files/2026-02/financial-statements-2025-en.pdf",
+      "evidence_summary": "Nestlé reports primary exposure to USD and EUR interest-rate fluctuations on financial debt and quantifies that a 100-basis-point increase would raise annualized net financing cost by CHF 17 million after interest derivatives.",
+      "evidence_record_sha256": "fbd25eca3185f32983aac6c079910529c17c23df335d0871b59a87308a8c74bb",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:TOM.OL:fx:1",
+      "subject_id": "TOM.OL",
+      "factor_id": "fx",
+      "relationship_class": "CURRENCY_TRANSLATION",
+      "evidence_type": "ISSUER_ANNUAL_REPORT",
+      "evidence_reference": "https://www.tomra.com/-/media/project/tomra/tomra/investor-relations/annual-reports/2025/tomra-annual-report-2025.pdf",
+      "evidence_summary": "TOMRA states that EUR is its main currency exposure and presentation currency, that currency gains and losses are mostly exposed to EUR/USD, and that it hedges balance-sheet items and expected cash flows with forwards and swaps.",
+      "evidence_record_sha256": "5f90dd78ea0bd914ef53ff015882786d70b5447462c88af1ff76b882a1a60404",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    },
+    {
+      "candidate_id": "MAPCAND:UMI.BR:fx:1",
+      "subject_id": "UMI.BR",
+      "factor_id": "fx",
+      "relationship_class": "OTHER_DOCUMENTED",
+      "evidence_type": "ISSUER_FULL_YEAR_RESULTS",
+      "evidence_reference": "https://www.umicore.com/en/files/secure-documents/7893839e-71dc-414a-b5ec-1aa47454a114.pdf",
+      "evidence_summary": "Umicore reports proactive hedging of structural currency exposure and states that 70% of its 2026 EUR/USD exposure was hedged at year-end 2025, while translation of overseas subsidiaries into EUR remains unhedged.",
+      "evidence_record_sha256": "af1258801daa58b1533fd8dfe1a6fd16b66bd09104948f27aafd040782b30b34",
+      "candidate_status": "PENDING_HUMAN_REVIEW",
+      "human_reviewed": false,
+      "promotion_allowed": false
+    }
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "candidate_count": 5,
+    "active_exposure_map_modified": false,
+    "human_review_claimed": false,
+    "automatic_sector_mapping_promoted": false
+  }
+}

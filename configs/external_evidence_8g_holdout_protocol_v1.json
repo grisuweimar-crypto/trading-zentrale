@@ -1,0 +1,115 @@
+{
+  "schema_version": "external_evidence_8g_holdout_protocol_v1",
+  "phase": "8G-F",
+  "title": "Holdout / OOS one-shot confirmation protocol",
+  "status": "PRE_REGISTERED_HOLDOUT_SEALED",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "automatic_promotion_enabled": false,
+  "parent_8g_e_protocol": "configs/external_evidence_8g_evaluation_protocol_v1.json",
+  "holdout_consumption_ledger": "artifacts/research/external_evidence_8g_holdout_consumption_v1.json",
+  "active_factor_ids": ["rates_policy", "yield_curve", "fx"],
+  "horizons_sessions": [5, 20, 40, 60],
+  "frozen_hypothesis_family": [
+    "rates_policy_x_5t", "rates_policy_x_20t", "rates_policy_x_40t", "rates_policy_x_60t",
+    "yield_curve_x_5t", "yield_curve_x_20t", "yield_curve_x_40t", "yield_curve_x_60t",
+    "fx_x_5t", "fx_x_20t", "fx_x_40t", "fx_x_60t"
+  ],
+  "entry_gates": {
+    "frozen_validation_family_receipt_required": true,
+    "validation_results_hash_must_match_receipt": true,
+    "all_12_validation_hypotheses_present_after_holm": true,
+    "candidate_set_frozen_before_any_holdout_outcome_access": true,
+    "candidate_set_changes_after_freeze_allowed": false,
+    "holdout_model_refit_allowed": false,
+    "holdout_feature_change_allowed": false,
+    "holdout_threshold_change_allowed": false,
+    "holdout_horizon_reselection_allowed": false,
+    "holdout_variant_selection_allowed": false,
+    "holdout_cross_factor_research_allowed": false
+  },
+  "candidate_freeze_rule": {
+    "source_split": "VALIDATION",
+    "selection_uses_holdout_values": false,
+    "candidate_requires": [
+      "minimum_evidence_met",
+      "primary_effect_gt_zero",
+      "holm_positive"
+    ],
+    "non_candidate_state": "NOT_SELECTED_FROM_VALIDATION",
+    "empty_candidate_set_state": "NO_VALIDATION_CANDIDATES",
+    "candidate_set_is_ordered_by_frozen_hypothesis_family": true
+  },
+  "holdout_access": {
+    "split": "HOLDOUT",
+    "open_once_per_frozen_candidate": true,
+    "non_candidate_holdout_access_allowed": false,
+    "candidate_must_be_in_frozen_authorization": true,
+    "consumption_ledger_must_be_sealed_before_open": true,
+    "successful_evaluation_consumes_stream": true,
+    "second_open_or_re_evaluation_allowed": false,
+    "holdout_outcome_inspection_before_authorization_allowed": false
+  },
+  "holdout_evaluation": {
+    "reuse_8g_e_frozen_metric_and_diagnostics": true,
+    "primary_outcome": "peer_excess_{H}t",
+    "primary_metric": "snapshot_aggregated_paired_squared_error_improvement",
+    "uncertainty": "percentile_circular_moving_block_bootstrap",
+    "block_length_sessions": "2 * H",
+    "bootstrap_repetitions": 1000,
+    "bootstrap_seed": 20260928,
+    "confidence_level": 0.95,
+    "minimum_paired_n": 30,
+    "minimum_temporal_support_regions": 2,
+    "non_overlap_sensitivity_required": true,
+    "regime_domain_diagnostics_required": true,
+    "coverage_missingness_required": true,
+    "concentration_report_required": true
+  },
+  "multiple_testing": {
+    "method": "Holm",
+    "family_wise_alpha": 0.05,
+    "family_size": 12,
+    "full_frozen_family_retained": true,
+    "non_candidates_enter_holdout_family_as_p": 1.0,
+    "underpowered_candidates_enter_holdout_family_as_p": 1.0,
+    "candidate_selection_does_not_reduce_family_size": true
+  },
+  "holdout_confirmation_states": {
+    "candidate_confirmed": "HOLDOUT_CONFIRMED",
+    "candidate_not_confirmed": "HOLDOUT_NOT_CONFIRMED",
+    "candidate_underpowered": "INSUFFICIENT_EVIDENCE",
+    "not_selected_from_validation": "NOT_SELECTED_FROM_VALIDATION",
+    "not_yet_consumed": "HOLDOUT_PENDING"
+  },
+  "confirmation_gate": {
+    "requires_validation_holm_positive": true,
+    "requires_holdout_minimum_evidence": true,
+    "requires_holdout_primary_effect_gt_zero": true,
+    "requires_holdout_holm_positive": true,
+    "requires_holdout_ci_low_gt_zero": true,
+    "requires_validation_holdout_effect_direction_agree": true,
+    "requires_non_overlap_not_materially_contradictory": true,
+    "requires_pit_integrity_pass": true,
+    "requires_coverage_missingness_complete": true,
+    "requires_regime_domain_diagnostics_complete_or_explicitly_insufficient": true,
+    "rejection_authorizes_inverse_signal": false
+  },
+  "completion_gate": {
+    "technical_completion_requires_protocol_tests_and_ci": true,
+    "empirical_completion_requires_all_frozen_candidates_consumed_or_explicitly_insufficient": true,
+    "empty_candidate_set_is_valid_empirical_completion": true,
+    "next_subphase": "8G-G_PROSPECTIVE_CONFIRMATION"
+  },
+  "guards": {
+    "holdout_outcomes_opened_during_protocol_definition": false,
+    "holdout_used_for_candidate_selection": false,
+    "holdout_refit_run": false,
+    "holdout_threshold_search_run": false,
+    "holdout_feature_search_run": false,
+    "holdout_horizon_reselection_run": false,
+    "cross_factor_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}

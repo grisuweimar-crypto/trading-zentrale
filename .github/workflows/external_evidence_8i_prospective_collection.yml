@@ -1,0 +1,169 @@
+name: Phase 8I-E Prospective Collection
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase8i-decision-layer-extension
+    paths:
+      - ".github/8i_e_collection_trigger.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: phase8i-e-prospective-collection
+  cancel-in-progress: false
+
+jobs:
+  collect-and-bind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+    steps:
+      - name: Checkout 8I research branch
+        uses: actions/checkout@v4
+        with:
+          ref: phase8i-decision-layer-extension
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Read latest complete scanner snapshot from main
+        id: scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git show origin/main:artifacts/research/history_metadata.json > "$RUNNER_TEMP/history_metadata.json"
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+          from datetime import date
+          from pathlib import Path
+
+          p = Path(os.environ["RUNNER_TEMP"]) / "history_metadata.json"
+          row = json.loads(p.read_text())
+          if row.get("latest_run_complete") is not True:
+              raise SystemExit("latest main scanner snapshot is not complete")
+          as_of = date.fromisoformat(str(row["as_of"]))
+          frozen_start = date(2026, 9, 29)
+          print(f"snapshot_id={row['snapshot_id']}")
+          print(f"as_of={as_of.isoformat()}")
+          print(f"generated_at={row['generated_at']}")
+          print(f"eligible={'true' if as_of >= frozen_start else 'false'}")
+          PY
+
+      - name: Report pre-start snapshot without consuming a slot
+        if: steps.scanner.outputs.eligible != 'true'
+        run: |
+          echo "Latest complete main snapshot is ${{ steps.scanner.outputs.as_of }}."
+          echo "Frozen 8I-E / corrected 8G prospective collection starts at 2026-09-29."
+          echo "No 8F collection and no 8G slot binding will be performed from this earlier snapshot."
+
+      - name: Collect official-source Phase 8F macro snapshot
+        if: steps.scanner.outputs.eligible == 'true'
+        run: python scripts/collect_external_evidence_8f_prospective.py
+
+      - name: Build Phase 8F research-domain audit
+        if: steps.scanner.outputs.eligible == 'true'
+        run: >-
+          python scripts/run_external_evidence_8f_exposure_domain_audit.py
+          --output artifacts/research/external_evidence_8f_exposure_domain_audit.json
+
+      - name: Require passing Phase 8F completion gate
+        if: steps.scanner.outputs.eligible == 'true'
+        run: >-
+          python scripts/run_external_evidence_8f_completion_gate.py
+          --macro-ledger artifacts/research/external_evidence_8f_macro_ledger.json
+          --exposure-domain-audit artifacts/research/external_evidence_8f_exposure_domain_audit.json
+          --output artifacts/research/external_evidence_8f_completion_gate.json
+          --require-pass
+
+      - name: Guard corrected 8G source identity binding
+        if: steps.scanner.outputs.eligible == 'true'
+        run: pytest -q tests/test_external_evidence_8g_binding_guard.py
+
+      - name: Bind current scanner day into frozen 8G prospective manifest
+        if: steps.scanner.outputs.eligible == 'true'
+        run: >-
+          python scripts/run_external_evidence_8g_split_binding.py
+          --snapshot-metadata "$RUNNER_TEMP/history_metadata.json"
+          --macro-ledger artifacts/research/external_evidence_8f_macro_ledger.json
+          --source-identity-correction configs/external_evidence_source_identity_correction_v1.json
+          --output artifacts/research/external_evidence_8g_split_manifest_v1.json
+          --audit-output artifacts/research/external_evidence_8g_split_binding_latest.json
+
+      - name: Run real metadata-only Phase 8I-E review
+        run: >-
+          python scripts/run_external_evidence_8i_reliability_review.py
+          --output artifacts/research/external_evidence_8i_evaluation_review_latest.json
+
+      - name: Verify no premature outcome opening or decision activation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          row = json.loads(Path("artifacts/research/external_evidence_8i_evaluation_review_latest.json").read_text())
+          assert row["evaluation_started"] is True
+          assert row["review_started"] is True
+          assert row["real_outcomes_opened"] is False
+          assert row["real_outcome_values_read_by_review"] is False
+          assert row["extended_reliability_enabled"] is False
+          assert row["extended_stance_enabled"] is False
+          assert row["decision_effect"] == "NO_CHANGE_TO_PHASE7_DECISION"
+          print(json.dumps({"state": row["state"], "blockers": row["blockers"]}, sort_keys=True))
+          PY
+
+      - name: Persist prospective research state
+        run: |
+          set -euo pipefail
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action Bot"
+          git add artifacts/research/external_evidence_8i_evaluation_review_latest.json
+          if [ "${{ steps.scanner.outputs.eligible }}" = "true" ]; then
+            git add \
+              artifacts/research/external_evidence_8f_macro_ledger.json \
+              artifacts/research/external_evidence_8f_collection_latest.json \
+              artifacts/research/external_evidence_8f_exposure_domain_audit.json \
+              artifacts/research/external_evidence_8f_completion_gate.json \
+              artifacts/research/external_evidence_8g_split_manifest_v1.json \
+              artifacts/research/external_evidence_8g_split_binding_latest.json
+          fi
+          if ! git diff --cached --quiet; then
+            git commit -m "research(8i-e): prospective collection state ${{ steps.scanner.outputs.as_of }} [skip ci]"
+            git push origin HEAD:phase8i-decision-layer-extension
+          fi
+
+      - name: Upload raw and audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8i-e-prospective-collection-${{ github.run_id }}
+          path: |
+            artifacts/research/external_evidence_8i_evaluation_review_latest.json
+            artifacts/research/external_evidence_8f_macro_ledger.json
+            artifacts/research/external_evidence_8f_collection_latest.json
+            artifacts/research/external_evidence_8f_exposure_domain_audit.json
+            artifacts/research/external_evidence_8f_completion_gate.json
+            artifacts/research/external_evidence_8f_raw/**
+            artifacts/research/external_evidence_8g_split_manifest_v1.json
+            artifacts/research/external_evidence_8g_split_binding_latest.json
+          if-no-files-found: warn
+          retention-days: 90
+
+# The workflow consumes the latest complete product scanner metadata from main but
+# keeps all Phase-8I research state on the phase8i branch.  A snapshot dated before
+# 2026-09-29 is never allowed to consume an 8G prospective slot.
+# Official-source macro data are collected only after that date gate.  The 8G binder
+# consumes the versioned source-identity correction receipt on a feature-side copy;
+# historical ledgers, outcomes and frozen 8G specs are never rewritten.
+# 8I-E remains shadow/research only.  The one-shot terminal outcome family remains
+# sealed until its independently frozen evidence-count/maturity gate passes.

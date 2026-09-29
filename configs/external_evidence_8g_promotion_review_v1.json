@@ -1,0 +1,81 @@
+{
+  "schema_version": "external_evidence_8g_promotion_review_v1",
+  "phase": "8G-H",
+  "title": "Manual family promotion review",
+  "status": "PRE_REGISTERED_WAITING_FOR_8G_G_COMPLETION",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "automatic_promotion_enabled": false,
+  "parent_prospective_protocol": "configs/external_evidence_8g_prospective_protocol_v1.json",
+  "source_registry": "configs/external_source_registry_v1.json",
+  "upstream_8f_completion_gate": "artifacts/research/external_evidence_8f_freeze_2026-09-28/external_evidence_8f_completion_gate.json",
+  "upstream_8f_collection_receipt": "artifacts/research/external_evidence_8f_freeze_2026-09-28/external_evidence_8f_collection_latest.json",
+  "active_factor_ids": ["rates_policy", "yield_curve", "fx"],
+  "frozen_source_ids_by_factor": {
+    "rates_policy": ["FED_H15"],
+    "yield_curve": ["FED_H15"],
+    "fx": ["ECB_EXR"]
+  },
+  "entry_gate": {
+    "8g_g_empirical_completion_required": true,
+    "eligible_state_from_8g_g": "PROSPECTIVE_CONFIRMED",
+    "non_confirmed_hypotheses_review_state": "NOT_PROMOTION_ELIGIBLE",
+    "review_may_not_change_model_features_thresholds_horizon_or_candidate_set": true
+  },
+  "promotion_criteria": [
+    {"id": "PIT_CLEAN", "plan_criterion": 1, "required": true},
+    {"id": "COVERAGE_SUFFICIENT", "plan_criterion": 2, "required": true},
+    {"id": "INCREMENTAL_OOS_VALUE", "plan_criterion": 3, "required": true},
+    {"id": "REGIME_STABILITY", "plan_criterion": 4, "required": true},
+    {"id": "MISSINGNESS_ROBUST", "plan_criterion": 5, "required": true},
+    {"id": "COST_BENEFIT_ACCEPTABLE", "plan_criterion": 6, "required": true},
+    {"id": "MULTIPLE_TESTING_PROTECTED", "plan_criterion": 7, "required": true},
+    {"id": "PROVENANCE_AND_LICENSE_CLEAR", "plan_criterion": 8, "required": true},
+    {"id": "ASOF_UNIVERSE_SURVIVORSHIP_PROVEN", "plan_criterion": 9, "required": true},
+    {"id": "EVIDENCE_CONSUMPTION_DOCUMENTED", "plan_criterion": 10, "required": true}
+  ],
+  "source_governance": {
+    "all_frozen_source_ids_must_resolve_in_source_registry": true,
+    "accepted_pit_status": ["SAFE", "PARTIAL"],
+    "partial_requires_explicit_review_justification": true,
+    "accepted_license_status": ["USABLE", "CLEARED"],
+    "unknown_license_blocks_promotion": true,
+    "restricted_license_blocks_promotion_without_explicit_clearance": true,
+    "raw_snapshot_provenance_required": true,
+    "8f_completion_gate_must_pass": true
+  },
+  "manual_review": {
+    "required": true,
+    "allowed_decisions": ["APPROVE_FOR_8H_RESEARCH_ONLY", "DEFER", "REJECT"],
+    "approval_requires_all_10_criteria_pass": true,
+    "approval_requires_no_governance_blockers": true,
+    "reviewer_identity_required": true,
+    "reviewed_at_required": true,
+    "rationale_required": true,
+    "rejection_authorizes_inverse_signal": false
+  },
+  "approval_scope": {
+    "approved_state": "APPROVED_FOR_8H_RESEARCH_ONLY",
+    "authorizes_top_level_phase": "8H_CROSS_FACTOR_INTERACTION",
+    "authorizes_production": false,
+    "authorizes_phase7_mutation": false,
+    "authorizes_8i_decision_layer_integration": false,
+    "authorizes_orders_or_trades": false
+  },
+  "completion_gate": {
+    "technical_completion_requires_protocol_tests_and_ci": true,
+    "empirical_completion_requires_review_disposition_for_every_prospective_confirmed_hypothesis": true,
+    "empty_eligible_set_is_valid_empirical_completion": true,
+    "next_phase": "8H_CROSS_FACTOR_INTERACTION"
+  },
+  "guards": {
+    "automatic_promotion": false,
+    "post_hoc_model_change": false,
+    "post_hoc_feature_change": false,
+    "post_hoc_threshold_change": false,
+    "post_hoc_horizon_reselection": false,
+    "cross_factor_research_enabled_in_8g_h": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}

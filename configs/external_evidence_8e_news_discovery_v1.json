@@ -1,0 +1,34 @@
+{
+  "schema_version": "external_evidence_8e_news_discovery_v1",
+  "phase": "8E_B4_news_discovery",
+  "status": "DISCOVERY_ONLY_NOT_PROMOTION_ELIGIBLE",
+  "feeds": {
+    "FTC_COMPETITION_PRESS_RELEASES": {
+      "provider": "Federal Trade Commission",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "url": "https://www.ftc.gov/feeds/press-release-competition.xml"
+    },
+    "DOJ_ANTITRUST_PRESS_RELEASES": {
+      "provider": "U.S. Department of Justice Antitrust Division",
+      "source_class": "REPUTABLE_NEWS_DISCOVERY_ONLY",
+      "url": "https://www.justice.gov/news/rss?field_component=376&require_all=0&search_api_language=en&show_public_archived=0&type%5B0%5D=image_gallery&type%5B1%5D=press_release&type%5B2%5D=speech&type%5B3%5D=youtube_video"
+    }
+  },
+  "contract": {
+    "may_create_canonical_event": false,
+    "may_assign_event_type": false,
+    "may_assign_market_direction": false,
+    "may_enter_production_external_evidence": false,
+    "may_trigger_primary_source_resolution": true,
+    "reported_pubdate_is_descriptive_metadata_only": true,
+    "ingested_at_required_timezone_aware": true,
+    "raw_xml_sha256_required": true,
+    "item_content_sha256_required": true
+  },
+  "hard_boundaries": {
+    "generic_sentiment_enabled": false,
+    "market_outcomes_may_be_read": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  }
+}

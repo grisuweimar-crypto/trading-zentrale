@@ -1,0 +1,46 @@
+{
+  "schema_version": "external_evidence_upstream_source_identity_correction_v1",
+  "phase": "8I-B/8I-E governance correction",
+  "title": "Outcome-Blind Upstream Source Identity Correction",
+  "version": "v1",
+  "state": "RESOLVED_OUTCOME_BLIND_VERSIONED",
+  "authored_at": "2026-09-29T07:33:00+00:00",
+  "outcomes_read": false,
+  "retroactive_evidence_rewrite": false,
+  "identity_only": true,
+  "alias_to_canonical": {
+    "FED_H15": "federal_reserve_board_h15",
+    "ECB_EXR": "ecb_data_portal"
+  },
+  "binding_contract": {
+    "path": "configs/external_evidence_8i_promotion_provenance_binding_v1.json",
+    "git_blob_sha": "0bba5affe58aa837f9750ae46431dc6306f7af06",
+    "classification": "TECHNICAL_SOURCE_IDENTITY_CONTRACT_ERROR_NOT_EMPIRICAL_EVIDENCE_FAILURE"
+  },
+  "permitted_effect": "Resolve frozen upstream aliases to already-existing canonical source identities for forward research binding and PIT identity audit only.",
+  "forbidden_changes": [
+    "observed_source_values",
+    "factor_values",
+    "predictions",
+    "model_pair_or_model_hashes",
+    "direction_or_sign_rules",
+    "thresholds_or_deadbands",
+    "horizons",
+    "mapping_semantics",
+    "outcome_labels_or_values",
+    "evidence_consumption_state",
+    "historical_promotion_receipts"
+  ],
+  "historical_semantics": {
+    "historical_8g_artifacts_are_not_edited": true,
+    "old_evidence_is_not_rewritten": true,
+    "alias_resolution_is_versioned_forward": true,
+    "may_validate_historical_snapshot_source_identity_without_rewriting_evidence": true
+  },
+  "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION",
+  "authorizes_extended_reliability": false,
+  "authorizes_extended_stance": false,
+  "authorizes_portfolio_action_change": false,
+  "authorizes_orders_or_trades": false,
+  "correction_sha256": "52ea6a5d4d59d02c86f870f78c7675107ded473e8be192f27dbd71ebf173c6d6"
+}

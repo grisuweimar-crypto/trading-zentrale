@@ -1,0 +1,31 @@
+{
+  "schema_version": "external_evidence_upstream_source_identity_correction_v1",
+  "phase": "8I-B_UPSTREAM_TECHNICAL_CORRECTION",
+  "state": "RESOLVED_OUTCOME_BLIND_VERSIONED",
+  "created_at": "2026-09-28T15:25:00+00:00",
+  "applies_forward_from": "2026-09-28T15:25:00+00:00",
+  "classification": "TECHNICAL_SOURCE_IDENTITY_CONTRACT_ERROR_NOT_EMPIRICAL_EVIDENCE_FAILURE",
+  "alias_to_canonical": {
+    "FED_H15": "federal_reserve_board_h15",
+    "ECB_EXR": "ecb_data_portal"
+  },
+  "evidence": {
+    "8g_specs_path": "configs/external_evidence_8g_challenger_specs_v1.json",
+    "8g_specs_git_blob_sha": "f3ee0d142d422d800efeaef938cc395e35662254",
+    "8f_source_catalog_path": "configs/external_evidence_8f_source_candidates_v1.json",
+    "8f_source_catalog_git_blob_sha": "bd23e2bf32c4dcda6f277152a530be38d99fc733",
+    "8a_source_registry_path": "configs/external_source_registry_v1.json",
+    "8a_source_registry_git_blob_sha": "66938472445d01c5235f61d4ba06e16e6ad5ecdb"
+  },
+  "outcomes_read": false,
+  "retroactive_evidence_rewrite": false,
+  "historical_promotion_receipts_reinterpreted": false,
+  "source_series_or_values_changed": false,
+  "mapping_changes_factor_semantics": false,
+  "notes": [
+    "FED_H15 is an 8G alias for the Federal Reserve Board H.15 source already represented canonically as federal_reserve_board_h15 in the 8F source catalog.",
+    "ECB_EXR is an 8G alias for the ECB exchange-rate source already represented canonically as ecb_data_portal in the 8F source catalog.",
+    "This receipt repairs source identity only for forward governance; it does not rewrite historical evidence, PIT timestamps, model results, or promotion decisions."
+  ],
+  "correction_sha256": "d019d179ae1c2de98eb622664afcedb155747016a0b9562e10d9e9ba62dd3595"
+}
