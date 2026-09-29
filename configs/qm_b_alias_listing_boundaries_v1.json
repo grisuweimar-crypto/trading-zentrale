@@ -10,6 +10,7 @@
     "scanner observation proves observed presence only",
     "stable identity support and PIT alias support are separate questions",
     "observations before the first conservative alias evidence boundary remain PIT-unverified",
+    "legacy watchlist presence may prove that an identifier string was configured at that time but does not by itself prove stable instrument identity",
     "crypto base continuity does not define the stable listed object",
     "symbol suffixes are namespace hints and never proof of listing venue",
     "universe-master presence does not prove listing date",
@@ -22,13 +23,25 @@
     "history_path": "artifacts/research/history_analysis.csv",
     "current_universe_path": "data/inputs/universe_master.csv",
     "identity_contract": "configs/qm_b_identity_reconciliation_v1.json",
-    "universe_integrity_contract": "configs/qm_b_universe_integrity_v1.json"
+    "universe_integrity_contract": "configs/qm_b_universe_integrity_v1.json",
+    "legacy_root_watchlist_history": {
+      "path": "watchlist.csv",
+      "history_until_commit": "8eab71c55d7e8a3c17529adbc121764be2348343",
+      "availability_rule": "next_calendar_day",
+      "identifier_fields": ["Ticker", "Yahoo"],
+      "semantics": "alias_presence_only_not_stable_identity"
+    }
   },
   "observation_classes": [
     "PIT_IDENTITY_ALIAS_SUPPORTED",
     "PRE_ALIAS_PIT_BOUNDARY_NON_CRYPTO",
     "CRYPTO_STABLE_OBJECT_UNRESOLVED",
     "IDENTITY_OR_BOUNDARY_UNRESOLVED"
+  ],
+  "legacy_alias_presence_status_values": [
+    "PIT_SUPPORTED_ALIAS_PRESENCE_ONLY",
+    "NO_PRIOR_LEGACY_ALIAS_PRESENCE",
+    "NOT_APPLICABLE"
   ],
   "listing_evidence_status_values": [
     "EXPLICIT_REPO_EVIDENCE",
@@ -53,6 +66,7 @@
     "strict_instrument_master": false,
     "strict_alias_ledger": false,
     "strict_membership_ledger": false,
+    "legacy_alias_presence_may_verify_stable_identity": false,
     "symbol_suffix_may_verify_listing_venue": false,
     "first_scanner_observation_may_be_used_as_listing_date": false,
     "last_scanner_observation_may_be_used_as_delisting_date": false,
