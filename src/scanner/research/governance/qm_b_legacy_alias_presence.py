@@ -79,7 +79,7 @@ def collect_legacy_watchlist_history(
     spec = _source_spec(contract_path)
     path = str(spec["path"])
     cutoff = str(spec["history_until_commit"])
-    fields = [str(value) for value in spec["identifier_fields"]]
+    configured_fields = [str(value) for value in spec["identifier_fields"]]
     root = Path(repo_root)
     raw_log = _git_text(
         root,
@@ -99,6 +99,8 @@ def collect_legacy_watchlist_history(
 
     by_identifier: dict[str, list[dict[str, Any]]] = defaultdict(list)
     snapshot_row_count = 0
+    schema_variants = Counter()
+    schema_by_commit: list[dict[str, Any]] = []
     for commit, commit_date in commits:
         text = _git_text(
             root,
@@ -106,12 +108,43 @@ def collect_legacy_watchlist_history(
             error_code=f"legacy_watchlist_snapshot_unreadable:{commit}:{path}",
         )
         reader = csv.DictReader(io.StringIO(text))
-        if not reader.fieldnames or any(field not in reader.fieldnames for field in fields):
-            raise LegacyAliasPresenceError(f"legacy_watchlist_schema_invalid:{commit}:{path}")
+        if not reader.fieldnames:
+            raise LegacyAliasPresenceError(f"legacy_watchlist_header_missing:{commit}:{path}")
+
+        actual_by_lower = {
+            _clean(name).lower(): _clean(name)
+            for name in reader.fieldnames
+            if _clean(name)
+        }
+        present_fields = [
+            actual_by_lower[field.lower()]
+            for field in configured_fields
+            if field.lower() in actual_by_lower
+        ]
+        if not present_fields:
+            raise LegacyAliasPresenceError(f"legacy_watchlist_no_identifier_field:{commit}:{path}")
+
+        variant_key = ",".join(sorted(field.lower() for field in present_fields))
+        schema_variants[variant_key] += 1
+        schema_by_commit.append(
+            {
+                "commit": commit,
+                "commit_date": commit_date,
+                "identifier_fields_used": sorted(present_fields),
+                "all_fields": [_clean(value) for value in reader.fieldnames],
+            }
+        )
+
         available_from = (_parse_date(commit_date, field=f"commit:{commit}") + timedelta(days=1)).isoformat()
         for row_number, row in enumerate(reader, start=2):
             snapshot_row_count += 1
-            identifiers = sorted({_upper(row.get(field)) for field in fields if _upper(row.get(field))})
+            identifiers = sorted(
+                {
+                    _upper(row.get(field))
+                    for field in present_fields
+                    if _upper(row.get(field))
+                }
+            )
             for identifier in identifiers:
                 by_identifier[identifier].append(
                     {
@@ -121,12 +154,15 @@ def collect_legacy_watchlist_history(
                         "source_path": path,
                         "source_row_number": row_number,
                         "identifier": identifier,
+                        "identifier_fields_used": sorted(present_fields),
                         "name": _clean(row.get("Name") or row.get("name")),
                     }
                 )
 
     for identifier in by_identifier:
-        by_identifier[identifier].sort(key=lambda row: (row["pit_available_from"], row["commit"], row["source_row_number"]))
+        by_identifier[identifier].sort(
+            key=lambda row: (row["pit_available_from"], row["commit"], row["source_row_number"])
+        )
 
     return {
         "source_path": path,
@@ -136,6 +172,8 @@ def collect_legacy_watchlist_history(
         "commit_date_max": max((value for _, value in commits), default=None),
         "snapshot_row_count": snapshot_row_count,
         "unique_identifier_count": len(by_identifier),
+        "schema_variant_counts": dict(sorted(schema_variants.items())),
+        "schema_by_commit": schema_by_commit,
         "by_identifier": dict(by_identifier),
     }
 
@@ -168,7 +206,8 @@ def audit_pre_boundary_legacy_alias_presence(
         as_of = _parse_date(row.get("as_of_date"), field=f"observation:{identifier}")
         events = [dict(value) for value in by_identifier.get(identifier, [])]
         prior = [
-            event for event in events
+            event
+            for event in events
             if _parse_date(event.get("pit_available_from"), field=f"legacy_boundary:{identifier}") <= as_of
         ]
         if prior:
@@ -189,12 +228,21 @@ def audit_pre_boundary_legacy_alias_presence(
                 "legacy_alias_first_pit_available_from": first_available,
                 "latest_prior_commit": latest_prior.get("commit") if latest_prior else None,
                 "latest_prior_commit_date": latest_prior.get("commit_date") if latest_prior else None,
+                "latest_prior_identifier_fields_used": latest_prior.get("identifier_fields_used") if latest_prior else [],
             }
         )
 
     counts = Counter(row["legacy_alias_presence_status"] for row in audited)
-    supported = [row for row in audited if row["legacy_alias_presence_status"] == "PIT_SUPPORTED_ALIAS_PRESENCE_ONLY"]
-    missing = [row for row in audited if row["legacy_alias_presence_status"] == "NO_PRIOR_LEGACY_ALIAS_PRESENCE"]
+    supported = [
+        row
+        for row in audited
+        if row["legacy_alias_presence_status"] == "PIT_SUPPORTED_ALIAS_PRESENCE_ONLY"
+    ]
+    missing = [
+        row
+        for row in audited
+        if row["legacy_alias_presence_status"] == "NO_PRIOR_LEGACY_ALIAS_PRESENCE"
+    ]
     return {
         "schema_version": SCHEMA_VERSION,
         "research_only": True,
@@ -208,6 +256,7 @@ def audit_pre_boundary_legacy_alias_presence(
         "legacy_watchlist_commit_date_min": history.get("commit_date_min"),
         "legacy_watchlist_commit_date_max": history.get("commit_date_max"),
         "legacy_watchlist_unique_identifier_count": history.get("unique_identifier_count"),
+        "legacy_watchlist_schema_variant_counts": history.get("schema_variant_counts", {}),
         "pre_boundary_observation_count": len(audited),
         "legacy_alias_presence_status_counts": dict(sorted(counts.items())),
         "pit_supported_alias_presence_only_observation_count": len(supported),
