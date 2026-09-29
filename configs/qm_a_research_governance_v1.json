@@ -1,0 +1,175 @@
+{
+  "schema_version": "qm_a_research_governance_v1",
+  "module": "QM-A",
+  "name": "Research Governance & Evidence Consumption",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Bind human and automated research decisions to auditable evidence states, immutable confirmatory identities and append-only evidence-consumption records.",
+  "principles": {
+    "engineering_completion_is_not_empirical_promotion": true,
+    "missing_is_not_neutral": true,
+    "spent_evidence_may_not_be_relabelled_unspent": true,
+    "outcome_driven_redesign_spends_inspected_evidence_for_design": true,
+    "preventive_qa_is_distinct_from_outcome_driven_redesign": true,
+    "uncertain_equivalence_defaults_to_new_version": true,
+    "in_place_registry_rewrite_forbidden": true,
+    "forbidden_transition_fails_closed": true,
+    "aggregate_or_indirect_performance_views_can_consume_evidence": true,
+    "productive_scanner_and_decision_semantics_must_not_change": true
+  },
+  "evidence_state_machine": {
+    "initial_state": "DRAFT",
+    "states": [
+      "DRAFT",
+      "EXPLORATORY",
+      "FROZEN_FOR_CONFIRMATION",
+      "CONFIRMATORY_EVALUATED",
+      "CONFIRMATORY_SPENT",
+      "REPLICATION_PENDING",
+      "PROSPECTIVE_SHADOW",
+      "PROMOTION_ELIGIBLE",
+      "PROMOTED",
+      "REJECTED",
+      "RETIRED",
+      "INVALIDATED"
+    ],
+    "allowed_transitions": {
+      "DRAFT": ["EXPLORATORY", "FROZEN_FOR_CONFIRMATION", "REJECTED", "RETIRED"],
+      "EXPLORATORY": ["FROZEN_FOR_CONFIRMATION", "REJECTED", "RETIRED"],
+      "FROZEN_FOR_CONFIRMATION": ["CONFIRMATORY_EVALUATED", "REJECTED", "INVALIDATED", "RETIRED"],
+      "CONFIRMATORY_EVALUATED": ["CONFIRMATORY_SPENT", "REPLICATION_PENDING", "REJECTED", "INVALIDATED", "RETIRED"],
+      "CONFIRMATORY_SPENT": ["REPLICATION_PENDING", "REJECTED", "INVALIDATED", "RETIRED"],
+      "REPLICATION_PENDING": ["PROSPECTIVE_SHADOW", "REJECTED", "INVALIDATED", "RETIRED"],
+      "PROSPECTIVE_SHADOW": ["PROMOTION_ELIGIBLE", "REJECTED", "INVALIDATED", "RETIRED"],
+      "PROMOTION_ELIGIBLE": ["PROMOTED", "REJECTED", "INVALIDATED", "RETIRED"],
+      "PROMOTED": ["RETIRED", "INVALIDATED"],
+      "REJECTED": ["RETIRED"],
+      "RETIRED": [],
+      "INVALIDATED": ["RETIRED"]
+    },
+    "identity_freeze_state": "FROZEN_FOR_CONFIRMATION",
+    "spent_states": [
+      "CONFIRMATORY_EVALUATED",
+      "CONFIRMATORY_SPENT",
+      "REPLICATION_PENDING",
+      "PROSPECTIVE_SHADOW",
+      "PROMOTION_ELIGIBLE",
+      "PROMOTED"
+    ],
+    "evaluated_confirmatory_evidence_cannot_return_to_unspent": true
+  },
+  "immutable_analysis_identity": {
+    "required_from_state": "FROZEN_FOR_CONFIRMATION",
+    "required_fields": [
+      "hypothesis_version_hash",
+      "analysis_plan_hash",
+      "code_or_commit_hash",
+      "config_hash",
+      "dataset_snapshot_hash",
+      "universe_ledger_version",
+      "instrument_master_version",
+      "label_definition_hash",
+      "benchmark_definition_hash",
+      "environment_or_dependency_fingerprint",
+      "evaluation_cohort_id",
+      "temporal_boundary"
+    ],
+    "hash_algorithm": "sha256",
+    "mutable_aliases_may_not_substitute_for_hashes": true
+  },
+  "evidence_consumption": {
+    "change_classes": [
+      "MECHANICALLY_EQUIVALENT_REPAIR",
+      "PREVENTIVE_QA_NEW_VERSION",
+      "OUTCOME_DRIVEN_RESEARCH_CHANGE"
+    ],
+    "default_if_equivalence_uncertain": "PREVENTIVE_QA_NEW_VERSION",
+    "access_modes": [
+      "NONE",
+      "RAW_ROWS",
+      "AGGREGATE_METRIC",
+      "CHART",
+      "DASHBOARD",
+      "EXPORTED_FILE",
+      "GENERATED_REPORT",
+      "API_QUERY",
+      "TEST_OR_FAILURE_REPORT"
+    ],
+    "outcome_visibility_levels": [
+      "NONE",
+      "BLINDED",
+      "AGGREGATE",
+      "SUBGROUP",
+      "ROW_LEVEL",
+      "INDIRECT_PERFORMANCE_REVEAL"
+    ],
+    "evidence_effects": [
+      "NO_OUTCOME_EVIDENCE_SEEN",
+      "OUTCOME_EVIDENCE_INSPECTED",
+      "SPENT_FOR_DESIGN",
+      "INVALIDATED",
+      "RECLASSIFIED"
+    ],
+    "performance_revealing_visibility": [
+      "AGGREGATE",
+      "SUBGROUP",
+      "ROW_LEVEL",
+      "INDIRECT_PERFORMANCE_REVEAL"
+    ],
+    "successor_version_required_for": [
+      "PREVENTIVE_QA_NEW_VERSION",
+      "OUTCOME_DRIVEN_RESEARCH_CHANGE"
+    ],
+    "equivalence_reference_required_for_mechanical_repair": true,
+    "outcome_driven_change_marks_inspected_evidence_spent_for_design": true,
+    "spent_evidence_may_not_confirm_redesigned_rule": true
+  },
+  "append_only_ledger": {
+    "schema_version": "qm_a_ledger_event_v1",
+    "hash_chain_required": true,
+    "hash_algorithm": "sha256",
+    "event_types": [
+      "ANALYSIS_REGISTERED",
+      "STATE_TRANSITION",
+      "EVIDENCE_INSPECTION"
+    ],
+    "default_path": "artifacts/research/qm/qm_a_governance_events.jsonl",
+    "runtime_artifact_may_not_mutate_canonical_research_inputs": true
+  },
+  "required_inspection_fields": [
+    "inspection_id",
+    "inspected_at",
+    "actor_id",
+    "actor_role",
+    "access_mode",
+    "dataset_snapshot_id",
+    "label_version_id",
+    "universe_ledger_version_id",
+    "analysis_plan_version_id",
+    "artifact_hash",
+    "inspection_scope",
+    "outcome_visibility_level",
+    "question",
+    "reason_for_access",
+    "decision_taken",
+    "change_class",
+    "spent_for_design",
+    "affected_hypothesis_ids",
+    "code_or_config_version",
+    "evidence_effect",
+    "review_or_approval_reference"
+  ],
+  "review_policy": {
+    "independent_review_preferred_when_practicable": true,
+    "same_actor_approval_must_be_marked_not_independent": true
+  },
+  "boundaries": {
+    "phase7_validation_contract_rewritten": false,
+    "phase8_external_evidence_semantics_rewritten": false,
+    "selection_timing_probability_risk_confidence_or_elliott_retrained": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "historical_pit_data_repaired_by_guessing": false
+  }
+}
