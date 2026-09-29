@@ -1,0 +1,49 @@
+name: QM-B Universe Integrity
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_universe_integrity_v1.json"
+      - "configs/external_universe_coverage_contract_v1.json"
+      - "src/scanner/research/governance/qm_b.py"
+      - "scripts/qm_b_universe_integrity.py"
+      - "tests/test_qm_b*.py"
+      - "docs/qm_b_asof_universe_integrity.md"
+      - ".github/workflows/qm_b_universe_integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run QM-B tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_b*.py
+      - name: Inventory current universe without historical inference
+        run: |
+          PYTHONPATH=src python scripts/qm_b_universe_integrity.py \
+            inventory-current \
+            --universe data/inputs/universe_master.csv \
+            --output /tmp/qm_b_current_universe_inventory.json
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_current_universe_inventory.json', encoding='utf-8'))
+          assert p['scope'] == 'CURRENT_STATE_ONLY_NOT_HISTORICAL_MEMBERSHIP'
+          assert p['historical_membership_inferred'] is False
+          assert p['historical_identity_inferred'] is False
+          print(json.dumps({
+              'active_row_count': p['active_row_count'],
+              'unique_active_symbol_count': p['unique_active_symbol_count'],
+              'duplicate_symbol_count': len(p['duplicate_symbols']),
+              'duplicate_isin_count': len(p['duplicate_isins']),
+              'missing_isin_count': len(p['missing_isin_rows']),
+          }, indent=2, sort_keys=True))
+          PY
