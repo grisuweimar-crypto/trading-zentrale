@@ -1,0 +1,116 @@
+name: Phase 8I-E Prospective Start Audit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "configs/external_evidence_upstream_source_identity_correction_v1.json"
+      - "configs/external_evidence_8i_prospective_start_audit_v1.json"
+      - "src/scanner/research/external_evidence/prospective_start_audit_8i.py"
+      - "tests/test_external_evidence_8i_prospective_start_audit.py"
+      - "docs/external_evidence_8i_prospective_start_audit.md"
+      - ".github/workflows/external_evidence_8i_prospective_start_audit.yml"
+      - "configs/external_evidence_8i_promotion_provenance_binding_v1.json"
+      - "src/scanner/research/external_evidence/decision_binding_8i.py"
+      - "configs/external_evidence_8i_reliability_extension_research_v1.json"
+  pull_request:
+    paths:
+      - "configs/external_evidence_upstream_source_identity_correction_v1.json"
+      - "configs/external_evidence_8i_prospective_start_audit_v1.json"
+      - "src/scanner/research/external_evidence/prospective_start_audit_8i.py"
+      - "tests/test_external_evidence_8i_prospective_start_audit.py"
+      - "docs/external_evidence_8i_prospective_start_audit.md"
+      - ".github/workflows/external_evidence_8i_prospective_start_audit.yml"
+      - "configs/external_evidence_8i_promotion_provenance_binding_v1.json"
+      - "src/scanner/research/external_evidence/decision_binding_8i.py"
+      - "configs/external_evidence_8i_reliability_extension_research_v1.json"
+
+permissions:
+  contents: read
+
+jobs:
+  prospective-start-audit-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest
+
+      - name: Guard Phase 8I-B binding boundary
+        run: pytest -q tests/test_external_evidence_8i_promotion_provenance_binding.py
+
+      - name: Guard Phase 8I-E frozen reliability contract
+        run: pytest -q tests/test_external_evidence_8i_reliability_extension.py
+
+      - name: Validate prospective start audit
+        run: pytest -q tests/test_external_evidence_8i_prospective_start_audit.py
+
+      - name: Prove exact snapshot exception and unchanged blanket start
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.external_evidence.prospective_start_audit_8i import classify_snapshot
+
+          def load(path):
+              return json.loads(Path(path).read_text())
+
+          audit = load("configs/external_evidence_8i_prospective_start_audit_v1.json")
+          correction = load("configs/external_evidence_upstream_source_identity_correction_v1.json")
+          binding = load("configs/external_evidence_8i_promotion_provenance_binding_v1.json")
+          e = load("configs/external_evidence_8i_reliability_extension_research_v1.json")
+          assert e["prospective_evidence"]["prospective_not_before_utc"] == "2026-09-29T00:00:00+00:00"
+
+          x = audit["exact_first_prospective_exception"]
+          fields = ("snapshot_id", "attempt_id", "started_at", "generated_at", "completed_tickers", "total_tickers", "scanner_commit_sha", "history_metadata_git_blob_sha", "latest_scanner_git_blob_sha", "run_source")
+          row = {k: x[k] for k in fields}
+          result = classify_snapshot(audit=audit, correction=correction, binding_contract=binding, snapshot=row)
+          assert result["classification"] == "ADMITTED_FIRST_PROSPECTIVE"
+          assert result["counts_toward_8i_e_confirmatory_family_if_other_gates_pass"] is True
+          assert result["extended_reliability_enabled"] is False
+          assert result["decision_effect"] == "NO_CHANGE_TO_PHASE7_DECISION"
+          print("Exact 28-Sep snapshot admitted; blanket 29-Sep start unchanged")
+          PY
+
+      - name: Prove arbitrary 28-Sep row remains shadow
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.external_evidence.prospective_start_audit_8i import classify_snapshot
+
+          def load(path): return json.loads(Path(path).read_text())
+          result = classify_snapshot(
+              audit=load("configs/external_evidence_8i_prospective_start_audit_v1.json"),
+              correction=load("configs/external_evidence_upstream_source_identity_correction_v1.json"),
+              binding_contract=load("configs/external_evidence_8i_promotion_provenance_binding_v1.json"),
+              snapshot={"snapshot_id": "arbitrary-28-sep", "generated_at": "2026-09-28T23:59:59+00:00"},
+          )
+          assert result["classification"] == "AUDITED_PRESTART_SHADOW"
+          assert result["counts_toward_8i_e_confirmatory_family_if_other_gates_pass"] is False
+          print("No blanket 28-Sep backdating")
+          PY
+
+      - name: Guard production namespace
+        run: |
+          set -euo pipefail
+          refs=$(grep -R -l --exclude-dir=research \
+            -e "external_evidence_8i_prospective_start_audit_v1" \
+            -e "prospective_start_audit_8i" \
+            src/scanner 2>/dev/null || true)
+          if [ -n "$refs" ]; then
+            echo "Prospective start audit referenced outside research namespace:"
+            echo "$refs"
+            exit 1
+          fi
+          echo "No production-facing prospective-start audit references found."
