@@ -1,0 +1,78 @@
+{
+  "schema_version": "qm_c4_closure_v1",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C4",
+  "display_status": "QM-C COMPLETE — VERSIONED RESEARCH DISCIPLINE CHAIN ACTIVE",
+  "engineering_status": "COMPLETE",
+  "qm_c_axis_status": "COMPLETE",
+  "empirical_promotion_claimed": false,
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "completed_work_packages": {
+    "QM-C1": "QM-C1 COMPLETE — VERSIONED HYPOTHESIS REGISTRY ACTIVE",
+    "QM-C2": "QM-C2 COMPLETE — ANALYSIS PLAN FREEZE GATE ACTIVE",
+    "QM-C3": "QM-C3 COMPLETE — MULTIPLICITY AND SEQUENTIAL MONITORING GATES ACTIVE",
+    "QM-C4": "QM-C COMPLETE — VERSIONED RESEARCH DISCIPLINE CHAIN ACTIVE"
+  },
+  "completed_capabilities": [
+    "symmetric_positive_negative_inconclusive_result_retention",
+    "rejected_and_retired_without_evaluation_retention",
+    "immutable_versioned_result_registry",
+    "exact_confirmatory_c1_c2_c3_qm_a_result_binding",
+    "confirmatory_result_requires_consumed_evidence",
+    "deterministic_cross_id_duplicate_hypothesis_audit",
+    "no_fuzzy_or_automatic_duplicate_merging",
+    "full_qm_c1_to_c4_integrity_audit",
+    "full_qm_c_cross_reference_audit",
+    "end_to_end_negative_result_regression_path",
+    "stable_identity_chain_for_qm_i",
+    "ba_qm2_handoff_manifest"
+  ],
+  "integration_contracts": {
+    "qm_a": {
+      "contract_schema": "qm_a_research_governance_v1",
+      "confirmatory_results_require_consumed_evidence_state": true
+    },
+    "qm_b": {
+      "closure_schema": "qm_b_closure_v1",
+      "engineering_complete": true,
+      "strict_historical_promotion_remains_blocked_by_external_evidence": true,
+      "external_blockers_do_not_reopen_qm_b_engineering": true
+    },
+    "qm_c1": {
+      "contract_schema": "qm_c_hypothesis_registry_v1",
+      "stable_hypothesis_identity_preserved": true
+    },
+    "qm_c2": {
+      "contract_schema": "qm_c_analysis_plan_v1",
+      "stable_analysis_plan_identity_preserved": true
+    },
+    "qm_c3": {
+      "contract_schema": "qm_c_multiplicity_monitoring_v1",
+      "stable_control_plan_identity_preserved": true
+    },
+    "qm_c4": {
+      "contract_schema": "qm_c_results_audit_v1",
+      "stable_result_identity_active": true
+    }
+  },
+  "stable_identity_chain": [
+    "hypothesis_id+hypothesis_version+hypothesis_version_hash",
+    "analysis_plan_id+analysis_plan_version+analysis_plan_hash",
+    "control_plan_id+control_plan_version+control_plan_hash",
+    "result_id+result_version+result_hash"
+  ],
+  "ba_qm2_handoff_ready": true,
+  "remaining_external_evidence_constraint": "QM-B strict historical promotion remains BLOCKED_EXTERNAL_EVIDENCE until independently sufficient listing, market-tradability and execution-channel evidence exists.",
+  "boundaries": {
+    "historical_results_invented": false,
+    "fuzzy_duplicate_merging_performed": false,
+    "qm_b_external_blockers_overridden": false,
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  },
+  "next_mandatory_work_package": "BA-QM3 / QM-I"
+}
