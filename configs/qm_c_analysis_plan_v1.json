@@ -1,0 +1,148 @@
+{
+  "schema_version": "qm_c_analysis_plan_v1",
+  "module": "QM-C2",
+  "name": "Analysis Plan & Freeze",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Bind every confirmatory hypothesis version to one explicit, immutable analysis-plan version before confirmatory evaluation can be considered ready.",
+  "principles": {
+    "analysis_plan_versions_are_immutable": true,
+    "confirmation_requires_predeclared_plan": true,
+    "plan_freeze_precedes_confirmation_readiness": true,
+    "hypothesis_and_plan_hashes_must_match_qm_a_identity": true,
+    "qm_b_strict_universe_blockers_remain_fail_closed": true,
+    "missing_is_not_neutral": true,
+    "successor_versions_must_be_explicit": true,
+    "productive_scanner_and_decision_semantics_must_not_change": true
+  },
+  "registry": {
+    "event_schema_version": "qm_c_analysis_plan_event_v1",
+    "hash_algorithm": "sha256",
+    "hash_chain_required": true,
+    "default_path": "artifacts/research/qm/qm_c_analysis_plan_registry.jsonl",
+    "event_types": [
+      "ANALYSIS_PLAN_REGISTERED",
+      "ANALYSIS_PLAN_FROZEN",
+      "ANALYSIS_PLAN_STATE_TRANSITION"
+    ]
+  },
+  "analysis_plan": {
+    "required_fields": [
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "hypothesis_id",
+      "hypothesis_version",
+      "hypothesis_version_hash",
+      "research_mode",
+      "primary_estimand",
+      "primary_metrics",
+      "population_definition",
+      "universe_requirement",
+      "evaluation_windows",
+      "exclusion_rules",
+      "outcome_definitions",
+      "planned_sensitivity_analyses"
+    ],
+    "research_modes": ["DISCOVERY", "CONFIRMATION"],
+    "initial_state": "DRAFT",
+    "states": [
+      "DRAFT",
+      "EXPLORATORY",
+      "FROZEN_FOR_CONFIRMATION",
+      "INVALIDATED",
+      "RETIRED"
+    ],
+    "allowed_transitions": {
+      "DRAFT": ["EXPLORATORY", "FROZEN_FOR_CONFIRMATION", "INVALIDATED", "RETIRED"],
+      "EXPLORATORY": ["INVALIDATED", "RETIRED"],
+      "FROZEN_FOR_CONFIRMATION": ["INVALIDATED", "RETIRED"],
+      "INVALIDATED": ["RETIRED"],
+      "RETIRED": []
+    },
+    "mode_state_rules": {
+      "DISCOVERY": {
+        "allowed_nonterminal_states": ["DRAFT", "EXPLORATORY"]
+      },
+      "CONFIRMATION": {
+        "allowed_nonterminal_states": ["DRAFT", "FROZEN_FOR_CONFIRMATION"]
+      }
+    },
+    "nonempty_list_fields": [
+      "primary_metrics",
+      "evaluation_windows",
+      "outcome_definitions"
+    ],
+    "list_fields": [
+      "primary_metrics",
+      "evaluation_windows",
+      "exclusion_rules",
+      "outcome_definitions",
+      "planned_sensitivity_analyses"
+    ]
+  },
+  "freeze_context": {
+    "required_fields": [
+      "code_or_commit_hash",
+      "config_hash",
+      "dataset_snapshot_hash",
+      "universe_ledger_version",
+      "instrument_master_version",
+      "label_definition_hash",
+      "benchmark_definition_hash",
+      "environment_or_dependency_fingerprint",
+      "evaluation_cohort_id",
+      "temporal_boundary"
+    ]
+  },
+  "qm_c1_binding": {
+    "hypothesis_id_must_match": true,
+    "hypothesis_version_must_match": true,
+    "hypothesis_version_hash_must_match": true,
+    "research_mode_must_match": true,
+    "universe_requirement_must_match": true,
+    "confirmation_plan_must_freeze_while_hypothesis_is_still_draft": true
+  },
+  "qm_a_binding": {
+    "required_contract_schema": "qm_a_research_governance_v1",
+    "shared_freeze_state": "FROZEN_FOR_CONFIRMATION",
+    "required_identity_fields": [
+      "hypothesis_version_hash",
+      "analysis_plan_hash",
+      "code_or_commit_hash",
+      "config_hash",
+      "dataset_snapshot_hash",
+      "universe_ledger_version",
+      "instrument_master_version",
+      "label_definition_hash",
+      "benchmark_definition_hash",
+      "environment_or_dependency_fingerprint",
+      "evaluation_cohort_id",
+      "temporal_boundary"
+    ]
+  },
+  "qm_b_binding": {
+    "required_closure_schema": "qm_b_closure_v1",
+    "strict_universe_requirement": "STRICT_ASOF_INVESTABLE",
+    "strict_promotion_boolean_field": "productive_strict_asof_investable_universe_promoted",
+    "blocked_status_field": "strict_historical_promotion_status",
+    "strict_confirmation_fails_closed_when_not_promoted": true
+  },
+  "confirmation_readiness": {
+    "plan_state_required": "FROZEN_FOR_CONFIRMATION",
+    "hypothesis_state_required": "FROZEN_FOR_CONFIRMATION",
+    "qm_a_state_required": "FROZEN_FOR_CONFIRMATION",
+    "all_qm_a_identity_fields_must_match": true,
+    "direct_qm_c1_freeze_without_matching_plan_is_not_ready": true
+  },
+  "boundaries": {
+    "multiplicity_implemented_here": false,
+    "sequential_monitoring_implemented_here": false,
+    "negative_results_registry_implemented_here": false,
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false
+  }
+}
