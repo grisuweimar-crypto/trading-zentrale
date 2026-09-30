@@ -1,0 +1,48 @@
+name: QM-C Results Audit and Closure
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_c_results_audit_v1.json"
+      - "configs/qm_c4_closure_v1.json"
+      - "configs/ba_qm2_handoff_v1.json"
+      - "src/scanner/research/governance/qm_c_results.py"
+      - "src/scanner/research/governance/qm_c4_closure.py"
+      - "tests/test_qm_c*.py"
+      - "tests/test_qm_a*.py"
+      - "tests/test_qm_b_closure.py"
+      - "docs/qm_c_final_closure_and_ba_qm2_handoff.md"
+      - ".github/workflows/qm_c_results_audit_closure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-c4:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run full QM-C1-to-C4 and cross-module governance suite
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_c*.py \
+            tests/test_qm_a_research_governance.py \
+            tests/test_qm_a_concurrency_guard.py \
+            tests/test_qm_b_closure.py
+      - name: Validate final QM-C closure and BA-QM2 handoff
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          from scanner.research.governance.qm_c4_closure import validate_closure_file, validate_handoff_file
+          c = validate_closure_file()
+          h = validate_handoff_file()
+          assert c['display_status'] == 'QM-C COMPLETE — VERSIONED RESEARCH DISCIPLINE CHAIN ACTIVE'
+          assert h['display_status'] == 'BA-QM2 GOVERNANCE COMPLETE — READY FOR QM-I LINEAGE; QM-B STRICT PROMOTION REMAINS EXTERNALLY BLOCKED'
+          print(c['display_status'])
+          print(h['display_status'])
+          PY
