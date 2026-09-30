@@ -7,6 +7,7 @@ on:
       - "src/scanner/research/decision_layer/**"
       - "tests/test_decision_depot_watch_7h.py"
       - "tests/test_decision_depot_watch_orchestration.py"
+      - "tests/test_decision_depot_watch_prospective_gate.py"
       - "tests/test_decision_reliability_explainability_7g.py"
       - "tests/test_decision_portfolio_action_7f.py"
       - "tests/test_decision_state_transitions_7e.py"
@@ -16,6 +17,7 @@ on:
       - "scripts/build_current_decision_evidence_7a.py"
       - "docs/decision_layer_7h.md"
       - "docs/decision_depot_watch_orchestration.md"
+      - "docs/decision_depot_watch_prospective_boundary.md"
       - ".github/workflows/decision_layer_7h.yml"
   workflow_dispatch:
 
@@ -43,6 +45,7 @@ jobs:
           tests/test_decision_reliability_explainability_7g.py
           tests/test_decision_depot_watch_7h.py
           tests/test_decision_depot_watch_orchestration.py
+          tests/test_decision_depot_watch_prospective_gate.py
       - name: Smoke-test 7H CLIs
         run: |
           python scripts/run_depot_watch_7h.py --help
