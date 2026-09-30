@@ -26,8 +26,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install test dependency
-        run: python -m pip install --upgrade pytest
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
       - name: Run QM-I plus predecessor governance regression suite
         run: |
           PYTHONPATH=src python -m pytest -q \
