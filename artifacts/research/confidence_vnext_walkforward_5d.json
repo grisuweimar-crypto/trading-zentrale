@@ -1,0 +1,68 @@
+{
+  "phase": "5D_walkforward_evaluation",
+  "schema_version": "phase5d_walkforward_evaluation_v1",
+  "status": "awaiting_phase5c_candidate_versions",
+  "source_phase5c_schema_version": "phase5c_progressive_learning_v1",
+  "claims": 6604,
+  "mature_outcomes": 0,
+  "phase5c_versions": 0,
+  "finalized_evaluations": 0,
+  "new_finalized_evaluations": [],
+  "evaluation_chain_tip": null,
+  "as_known_at": null,
+  "horizons": {
+    "5": {
+      "phase5c_versions": 0,
+      "finalized_evaluation_epochs": 0,
+      "finalized_status": [],
+      "latest_provisional": null
+    },
+    "20": {
+      "phase5c_versions": 0,
+      "finalized_evaluation_epochs": 0,
+      "finalized_status": [],
+      "latest_provisional": null
+    },
+    "40": {
+      "phase5c_versions": 0,
+      "finalized_evaluation_epochs": 0,
+      "finalized_status": [],
+      "latest_provisional": null
+    },
+    "60": {
+      "phase5c_versions": 0,
+      "finalized_evaluation_epochs": 0,
+      "finalized_status": [],
+      "latest_provisional": null
+    }
+  },
+  "blockers": [
+    "20T_no_phase5c_version",
+    "40T_no_phase5c_version",
+    "5T_no_phase5c_version",
+    "60T_no_phase5c_version"
+  ],
+  "promotion": {
+    "status": "insufficient_evidence",
+    "reason": "Phase 5D records genuine future epochs but does not define or claim a scalar learner advantage over the frozen baseline.",
+    "production_change_performed": false
+  },
+  "semantics": {
+    "research_only": true,
+    "strictly_future_claims_only": true,
+    "same_version_training_rows_reused_for_evaluation": false,
+    "finalized_epoch_boundary_is_next_same_horizon_training_cutoff": true,
+    "epoch_boundary_selected_from_performance": false,
+    "latest_version_evaluation_is_provisional": true,
+    "provisional_counts_as_promotion_evidence": false,
+    "shorter_horizon_labels_borrowed": false,
+    "overlapping_forward_windows_treated_as_independent": false,
+    "state_names_assumed_ordinal": false,
+    "scalar_confidence_created": false,
+    "adaptive_production_weights_created": false,
+    "production_confidence_changed": false,
+    "portfolio_or_depot_watch_changed": false,
+    "evaluation_archive_hash_chained": true,
+    "previous_report_anchors_append_only_prefix": true
+  }
+}
