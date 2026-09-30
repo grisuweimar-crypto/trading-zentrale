@@ -4,11 +4,16 @@ on:
   pull_request:
     paths:
       - "configs/qm_b_prospective_listing_snapshots_v1.json"
+      - "configs/qm_b_listing_persistence_policy_v1.json"
+      - "configs/qm_b_listing_metadata_sources_v1.json"
       - "src/scanner/research/governance/qm_b_prospective_listing_snapshots.py"
+      - "src/scanner/research/governance/qm_b_listing_persistence_gate.py"
       - "scripts/qm_b_archive_listing_snapshot.py"
       - "tests/test_qm_b_prospective_listing_snapshots.py"
       - "tests/test_qm_b_prospective_listing_snapshot_integrity.py"
+      - "tests/test_qm_b_listing_persistence_gate.py"
       - "docs/qm_b_prospective_listing_snapshots.md"
+      - "docs/qm_b_listing_persistence_gate.md"
       - ".github/workflows/qm_b_prospective_listing_snapshots.yml"
   workflow_dispatch:
 
@@ -25,13 +30,14 @@ jobs:
           python-version: "3.11"
       - name: Install test dependency
         run: python -m pip install --upgrade pytest
-      - name: Run prospective listing snapshot tests
+      - name: Run prospective listing snapshot and persistence-gate tests
         run: |
           PYTHONPATH=src python -m pytest -q \
             tests/test_qm_b_prospective_listing_snapshots.py \
             tests/test_qm_b_prospective_listing_snapshot_integrity.py \
-            tests/test_qm_b_listing_metadata_evidence.py
-      - name: End-to-end local archive smoke test
+            tests/test_qm_b_listing_metadata_evidence.py \
+            tests/test_qm_b_listing_persistence_gate.py
+      - name: End-to-end local ephemeral archive smoke test
         run: |
           rm -rf /tmp/qm_b_snapshot_smoke
           mkdir -p /tmp/qm_b_snapshot_smoke
@@ -47,6 +53,7 @@ jobs:
             --retrieved-at 2026-09-29T21:00:00+00:00 \
             --repo-root /tmp/qm_b_snapshot_smoke \
             --ledger /tmp/qm_b_snapshot_smoke/artifacts/research/qm/qm_b_listing_snapshot_events.jsonl \
+            --persistence-scope local_ephemeral \
             > /tmp/qm_b_snapshot_smoke/result.json
           PYTHONPATH=src python - <<'PY'
           import json
@@ -55,8 +62,12 @@ jobs:
 
           root = Path('/tmp/qm_b_snapshot_smoke')
           result = json.loads((root / 'result.json').read_text(encoding='utf-8'))
+          gate = result['persistence_gate']
           envelope = result['envelope']
           archive = result['archive']
+          assert gate['gate_status'] == 'ALLOWED_QM_TEST_ONLY'
+          assert gate['license_clearance_inferred'] is False
+          assert gate['may_be_committed_or_redistributed'] is False
           assert envelope['valid_from'] == '2026-09-29T21:00:00+00:00'
           assert envelope['retrieved_at'] == envelope['valid_from']
           assert envelope['historical_retrojection_permitted'] is False
@@ -73,6 +84,26 @@ jobs:
               'valid_from': envelope['valid_from'],
               'record_count': envelope['record_count'],
               'ledger_head_hash': ledger['head_hash'],
+              'persistence_gate': gate['gate_status'],
           }, indent=2, sort_keys=True))
-          print('QM-B prospective listing snapshot smoke test passed without retrojection.')
           PY
+      - name: Public repository persistence must fail closed for uncleared source
+        run: |
+          rm -rf /tmp/qm_b_public_block
+          mkdir -p /tmp/qm_b_public_block
+          set +e
+          PYTHONPATH=src python scripts/qm_b_archive_listing_snapshot.py \
+            --source-id nasdaq_symbol_directory \
+            --source-url https://example.invalid/nasdaqlisted.txt \
+            --raw-file /tmp/nasdaqlisted.txt \
+            --retrieved-at 2026-09-29T21:00:00+00:00 \
+            --repo-root /tmp/qm_b_public_block \
+            --persistence-scope public_repository \
+            > /tmp/qm_b_public_block/stdout.txt \
+            2> /tmp/qm_b_public_block/stderr.txt
+          STATUS=$?
+          set -e
+          test "$STATUS" -eq 2
+          grep -q 'persistence_blocked:nasdaq_symbol_directory:public_repository' /tmp/qm_b_public_block/stderr.txt
+          test ! -d /tmp/qm_b_public_block/artifacts
+          echo 'QM-B public repository listing persistence correctly blocked.'

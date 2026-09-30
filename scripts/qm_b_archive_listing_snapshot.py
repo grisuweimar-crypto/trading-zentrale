@@ -4,6 +4,9 @@
 Network acquisition is deliberately outside this CLI. The caller must provide the
 raw file plus its actual retrieval timestamp; this prevents hidden fetch timing from
 being guessed by the parser.
+
+Durable public-repository persistence is separately gated. Public availability of a
+source never implies permission to commit or redistribute its data.
 """
 from __future__ import annotations
 
@@ -16,6 +19,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+from scanner.research.governance.qm_b_listing_persistence_gate import (  # noqa: E402
+    ListingPersistenceGateError,
+    require_persistence_allowed,
+)
 from scanner.research.governance.qm_b_prospective_listing_snapshots import (  # noqa: E402
     ProspectiveListingSnapshotError,
     archive_snapshot,
@@ -35,12 +42,22 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--ledger")
     p.add_argument("--http-etag")
     p.add_argument("--http-last-modified")
+    p.add_argument(
+        "--persistence-scope",
+        choices=["local_ephemeral", "public_repository"],
+        required=True,
+        help="Public repository persistence is fail-closed unless source redistribution rights are explicitly cleared.",
+    )
     return p
 
 
 def main() -> int:
     args = parser().parse_args()
     try:
+        gate = require_persistence_allowed(
+            args.source_id,
+            persistence_scope=args.persistence_scope,
+        )
         repo_root = Path(args.repo_root)
         raw_path = Path(args.raw_file)
         raw = raw_path.read_bytes()
@@ -68,9 +85,13 @@ def main() -> int:
             envelope=envelope,
             repository_root=repo_root,
         )
-        print(json.dumps({"envelope": {k: v for k, v in envelope.items() if k != "records"}, "archive": result}, indent=2, sort_keys=True))
+        print(json.dumps({
+            "persistence_gate": gate,
+            "envelope": {k: v for k, v in envelope.items() if k != "records"},
+            "archive": result,
+        }, indent=2, sort_keys=True))
         return 0
-    except (OSError, KeyError, ProspectiveListingSnapshotError) as exc:
+    except (OSError, KeyError, ListingPersistenceGateError, ProspectiveListingSnapshotError) as exc:
         print(f"QM-B PROSPECTIVE SNAPSHOT ERROR: {exc}", file=sys.stderr)
         return 2
 
