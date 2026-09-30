@@ -1,0 +1,106 @@
+{
+  "schema_version": "qm_b_historical_taxonomy_integrity_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "audit_base_commit": "b4b104c47abeb4d21bd77423ac31358d9849cfe7",
+  "taxonomy_fields": [
+    "category",
+    "sector",
+    "industry",
+    "pillar_primary",
+    "pillar_tags",
+    "pillar_confidence",
+    "pillar_reason",
+    "bucket_type"
+  ],
+  "rules": {
+    "current_taxonomy_may_define_historical_sample_membership": false,
+    "current_taxonomy_may_retroactively_enrich_historical_rows": false,
+    "stored_contemporaneous_taxonomy_is_historical_evidence": true,
+    "versioned_pit_assignment_is_historical_evidence": true,
+    "missing_historical_taxonomy_may_be_filled_from_current_metadata": false,
+    "display_only_current_taxonomy_is_historical_evidence": false,
+    "new_candidate_requires_explicit_review": true
+  },
+  "dispositions": [
+    {
+      "path": "configs/qm_b_universe_integrity_v1.json",
+      "status": "SAFE",
+      "reason": "Governance contract names taxonomy fields and current/historical sources but does not create or filter a historical research sample."
+    },
+    {
+      "path": "scripts/run_external_evidence_8c_universe_coverage.py",
+      "status": "SAFE",
+      "reason": "Explicitly current-snapshot feasibility only; scanner_sector is carried as current descriptive metadata and is not used to define historical eligibility."
+    },
+    {
+      "path": "src/scanner/reports/daily_research.py",
+      "status": "SAFE",
+      "reason": "Taxonomy is read from the current published scanner row for current classification/display; HistoricalMatcher consumes stored historical score/rank/r_code/rs3m/trend200 state and is not enriched from current taxonomy."
+    },
+    {
+      "path": "src/scanner/reports/research_views.py",
+      "status": "SAFE",
+      "reason": "Taxonomy fields are copied from the same observed scanner rows into append-only history; the module does not load universe_master to backfill old taxonomy."
+    },
+    {
+      "path": ".github/workflows/qm_b_prospective_listing_snapshots.yml",
+      "status": "SAFE",
+      "reason": "Prospective listing governance workflow; taxonomy-like text is not used to construct historical research groups."
+    },
+    {
+      "path": "configs/elliott_vnext_contract_v2.json",
+      "status": "SAFE",
+      "reason": "Research contract references sector context but does not bind historical rows to present-day taxonomy."
+    },
+    {
+      "path": "configs/market_context_assignment_schema_v1.json",
+      "status": "SAFE",
+      "reason": "Schema requires explicit versioned/PIT context assignments rather than present-day sector or industry lookup."
+    },
+    {
+      "path": "src/scanner/domain/scoring_engine/quality/snapshots.py",
+      "status": "SAFE",
+      "reason": "Sector is captured contemporaneously from the scored row when the snapshot is written; no current universe lookup is applied to prior rows."
+    },
+    {
+      "path": "src/scanner/reports/history_delta.py",
+      "status": "SAFE",
+      "reason": "Sector/pillar/bucket values are persisted from each current watchlist snapshot; historical rows retain their stored values and delta ranking is not defined by current taxonomy."
+    },
+    {
+      "path": "src/scanner/reports/selection_timing.py",
+      "status": "SAFE",
+      "reason": "Sector is read only from the historical row itself as one conservative crypto marker; no current taxonomy source is joined to historical events."
+    },
+    {
+      "path": "src/scanner/research/decision_layer/depot_watch.py",
+      "status": "SAFE",
+      "reason": "Current Decision-Layer presentation/integration path; it does not build a retrospective taxonomy-stratified research sample."
+    },
+    {
+      "path": "src/scanner/research/elliott_vnext/market_context.py",
+      "status": "SAFE",
+      "reason": "Historical context requires explicit valid_from/valid_to intervals and PIT-verified assignments; present-day sector/industry is not retrojected."
+    },
+    {
+      "path": "src/scanner/research/governance/qm_b_observed_membership.py",
+      "status": "SAFE",
+      "reason": "QM-B governance diagnostic; it does not create a production or historical taxonomy research sample."
+    },
+    {
+      "path": "src/scanner/research/governance/qm_b_prospective_listing_snapshots.py",
+      "status": "SAFE",
+      "reason": "Prospective listing evidence code; source category fields are not used as historical scanner taxonomy."
+    },
+    {
+      "path": "src/scanner/research/query_api.py",
+      "status": "SAFE",
+      "reason": "Query API only returns taxonomy already stored in history_recent; it performs no current metadata lookup or enrichment."
+    }
+  ],
+  "confirmed_current_taxonomy_dependencies": 0,
+  "confirmed_current_metadata_retrojections": 0,
+  "promotion_status": "PASS_IF_SCAN_MATCHES_DISPOSITIONS"
+}
