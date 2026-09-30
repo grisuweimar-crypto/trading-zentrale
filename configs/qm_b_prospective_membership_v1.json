@@ -1,0 +1,53 @@
+{
+  "schema_version": "qm_b_prospective_membership_v1",
+  "module": "QM-B",
+  "name": "Prospective Project Universe Membership Evidence",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "principles": [
+    "project-universe membership is separate from exchange listing, tradability and project investability",
+    "a project membership observation becomes knowable only at the actual universe snapshot observation time",
+    "active=1 is positive project-membership evidence for a stable supported security identity",
+    "active=0 is retained as an explicit inactive-row observation but is not automatically promoted to OUT_OF_SCOPE",
+    "absence from a snapshot is UNKNOWN and never an automatic negative membership claim",
+    "later snapshot absence does not silently carry forward or terminate an earlier positive claim",
+    "stable security identity requires a valid ISIN; crypto remains outside automatic stable-identity promotion",
+    "multiple rows sharing one ISIN are aggregated at security-identity level and surfaced as quality flags",
+    "listing status, venue, market tradability and project investability remain UNKNOWN in this layer",
+    "historical retrojection and productive scanner integration are forbidden"
+  ],
+  "supported_asset_types": ["stock", "etf", "fund"],
+  "row_active_true_values": ["1", "true", "yes", "y"],
+  "row_active_false_values": ["0", "false", "no", "n"],
+  "claim_status_values": [
+    "OBSERVED_IN_PROJECT_UNIVERSE",
+    "EXPLICIT_INACTIVE_ROWS_ONLY"
+  ],
+  "unresolved_status_values": [
+    "IDENTITY_UNRESOLVED_INVALID_OR_MISSING_ISIN",
+    "UNSUPPORTED_ASSET_TYPE",
+    "INVALID_ACTIVE_FLAG"
+  ],
+  "as_of_query_status_values": [
+    "OBSERVED_IN_PROJECT_UNIVERSE",
+    "EXPLICIT_INACTIVE_ROWS_ONLY",
+    "UNKNOWN_ABSENT_FROM_LATEST_SNAPSHOT",
+    "UNKNOWN_NO_SNAPSHOT_AT_OR_BEFORE_QUERY"
+  ],
+  "time_rules": {
+    "membership_valid_from_equals_universe_observed_at": true,
+    "historical_retrojection_permitted": false,
+    "absence_can_close_prior_positive_membership": false,
+    "positive_claim_carry_forward_without_new_snapshot_evidence": false
+  },
+  "promotion": {
+    "positive_project_membership_evidence_allowed": true,
+    "negative_out_of_scope_promotion": false,
+    "strict_qm_b_membership_bundle_promotion": false,
+    "listing_status_promotion": false,
+    "tradability_promotion": false,
+    "project_investability_promotion": false,
+    "productive_scanner_integration": false
+  }
+}
