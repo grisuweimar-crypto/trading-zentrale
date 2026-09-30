@@ -1,0 +1,77 @@
+{
+  "schema_version": "qm_b_project_investability_v1",
+  "module": "QM-B",
+  "name": "Project Investability Evidence Contract",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "principles": [
+    "project-universe membership does not imply listing",
+    "listing does not imply market tradability",
+    "market tradability does not imply project investability",
+    "current symbol suffixes, price availability or scanner presence are not investability evidence",
+    "project investability requires explicit PIT evidence for every required dimension",
+    "missing evidence is UNKNOWN and never neutral or positive",
+    "explicit negative or restriction evidence must not be overwritten by positive evidence from another dimension",
+    "effective dates never move evidence availability backward"
+  ],
+  "status_values": ["INVESTABLE", "NOT_INVESTABLE", "RESTRICTED", "UNKNOWN"],
+  "required_dimensions": [
+    "stable_identity",
+    "project_membership",
+    "listing_state",
+    "market_tradability",
+    "execution_channel",
+    "project_restrictions"
+  ],
+  "dimension_status_values": {
+    "stable_identity": ["VERIFIED", "PARTIAL", "UNKNOWN", "CONFLICTING"],
+    "project_membership": ["OBSERVED_IN_PROJECT_UNIVERSE", "NOT_OBSERVED", "UNKNOWN"],
+    "listing_state": ["LISTED", "NOT_YET_LISTED", "DELISTED", "SUSPENDED", "UNKNOWN"],
+    "market_tradability": ["TRADABLE", "NOT_TRADABLE", "SUSPENDED", "UNKNOWN"],
+    "execution_channel": ["AVAILABLE", "UNAVAILABLE", "RESTRICTED", "UNKNOWN"],
+    "project_restrictions": ["CLEAR", "BLOCKED", "RESTRICTED", "UNKNOWN"]
+  },
+  "positive_requirements": {
+    "stable_identity": "VERIFIED",
+    "project_membership": "OBSERVED_IN_PROJECT_UNIVERSE",
+    "listing_state": "LISTED",
+    "market_tradability": "TRADABLE",
+    "execution_channel": "AVAILABLE",
+    "project_restrictions": "CLEAR"
+  },
+  "hard_negative_values": {
+    "project_membership": ["NOT_OBSERVED"],
+    "listing_state": ["NOT_YET_LISTED", "DELISTED"],
+    "market_tradability": ["NOT_TRADABLE", "SUSPENDED"],
+    "execution_channel": ["UNAVAILABLE"],
+    "project_restrictions": ["BLOCKED"]
+  },
+  "restricted_values": {
+    "listing_state": ["SUSPENDED"],
+    "execution_channel": ["RESTRICTED"],
+    "project_restrictions": ["RESTRICTED"]
+  },
+  "pit_rules": {
+    "every_dimension_requires_pit_verified_evidence": true,
+    "investability_valid_from_is_max_evidence_valid_from": true,
+    "historical_retrojection_permitted": false,
+    "absence_is_negative_evidence": false
+  },
+  "current_repository_evidence_policy": {
+    "universe_master_active_field_proves": "PROJECT_MEMBERSHIP_ONLY_WHEN_CAPTURED_BY_MEMBERSHIP_LEDGER",
+    "universe_master_symbol_proves_listing": false,
+    "universe_master_country_proves_venue": false,
+    "universe_master_currency_proves_execution_support": false,
+    "scanner_price_availability_proves_tradability": false,
+    "repository_has_execution_channel_evidence": false,
+    "repository_has_project_restriction_evidence": false
+  },
+  "promotion": {
+    "strict_universe_bundle_requires_status": "INVESTABLE",
+    "unknown_may_promote": false,
+    "restricted_may_promote": false,
+    "productive_scanner_integration": false
+  }
+}
