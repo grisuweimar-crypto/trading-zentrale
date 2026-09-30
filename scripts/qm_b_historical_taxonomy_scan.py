@@ -16,6 +16,7 @@ EXCLUDED_PARTS = {"__pycache__", ".git"}
 EXCLUDED_NAMES = {
     "qm_b_historical_taxonomy_scan.py",
     "qm_b_historical_taxonomy_integrity.py",
+    "qm_b_historical_taxonomy_integrity_v1.json",
 }
 
 TAXONOMY_TERMS = (
