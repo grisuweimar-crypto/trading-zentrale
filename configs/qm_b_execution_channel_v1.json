@@ -1,0 +1,56 @@
+{
+  "schema_version": "qm_b_execution_channel_v1",
+  "module": "QM-B",
+  "name": "Execution Channel Evidence Contract",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "order_execution_enabled": false,
+  "principles": [
+    "execution-channel availability is separate from listing state and market tradability",
+    "an instrument is AVAILABLE only with explicit instrument-level PIT evidence from a registered execution channel",
+    "absence of evidence is UNKNOWN and never AVAILABLE or UNAVAILABLE",
+    "price availability, scanner presence, symbol suffixes and universe membership are not execution-channel evidence",
+    "no credentials, account identifiers or personal authentication material may be stored in QM evidence",
+    "multiple channels may coexist; one PIT-verified AVAILABLE channel is sufficient for the execution-channel dimension",
+    "restrictions and explicit unavailability must remain representable",
+    "evidence is never back-projected"
+  ],
+  "status_values": ["AVAILABLE", "UNAVAILABLE", "RESTRICTED", "UNKNOWN"],
+  "required_evidence_fields": [
+    "instrument_id",
+    "channel_id",
+    "status",
+    "valid_from",
+    "pit_verified",
+    "source_id"
+  ],
+  "forbidden_evidence_fields": [
+    "account_id",
+    "account_number",
+    "username",
+    "password",
+    "token",
+    "api_key",
+    "secret",
+    "credential"
+  ],
+  "channel_registry": [],
+  "aggregation": {
+    "available_if_any_channel_available": true,
+    "restricted_if_no_available_and_any_restricted": true,
+    "unavailable_if_at_least_one_channel_observed_and_all_are_unavailable": true,
+    "unknown_if_no_pit_channel_evidence": true,
+    "same_channel_latest_conflict": "UNKNOWN"
+  },
+  "pit_rules": {
+    "historical_retrojection_permitted": false,
+    "future_evidence_usable_for_past_as_of": false,
+    "valid_to_semantics": "closed_open_[valid_from,valid_to)"
+  },
+  "current_repository_assessment": {
+    "registered_channel_count": 0,
+    "instrument_level_execution_evidence_present": false,
+    "current_gap_status": "BLOCKED_NO_EXECUTION_CHANNEL_EVIDENCE"
+  }
+}
