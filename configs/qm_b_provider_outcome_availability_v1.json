@@ -1,0 +1,74 @@
+{
+  "schema_version": "qm_b_provider_outcome_availability_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "frozen_input_commit": "d329e497aed7699325f2ad761482699224448a80",
+  "inputs": {
+    "history_analysis": {
+      "path": "artifacts/research/history_analysis.csv",
+      "sha256": "4861bacd140b332699c02cb5c941970ff3e4bb54d218a0eb546ca2c6e4a04382"
+    },
+    "history_recent": {
+      "path": "artifacts/research/history_recent.csv",
+      "sha256": "e3509d7ce6972bc9a8d956e68d8754c93633657091e386efdb33e8ba51f1794c"
+    },
+    "price_backfill": {
+      "path": "artifacts/research/price_backfill.csv",
+      "sha256": "8256d3559783d41d4896d5c5c518239a54f62878c7f1c3d3dc1b456724fc5fe9"
+    },
+    "latest_scanner": {
+      "path": "artifacts/research/latest_scanner.csv",
+      "sha256": "a70db1f5cd6d0191477dd790e9007cce3d8dba244fce4cf414ff2e7240e2c7f8"
+    },
+    "metadata": {
+      "path": "artifacts/research/history_metadata.json",
+      "expected_as_of": "2026-09-29"
+    }
+  },
+  "provider_coverage": {
+    "strict_ledger_promotion_enabled": false,
+    "price_history_is_provider_coverage_proof": false,
+    "current_fetch_attempt_is_historical_coverage_proof": false,
+    "post_snapshot_fetch_is_snapshot_pit_evidence": false,
+    "provider_symbol_without_timestamp_is_pit_evidence": false,
+    "current_reachability_classes": [
+      "PIT_OBSERVED_AT_OR_BEFORE_SNAPSHOT",
+      "POST_SNAPSHOT_OBSERVED",
+      "ATTEMPT_WITHOUT_PRICE_COVERAGE",
+      "NO_ATTEMPT_EVIDENCE"
+    ]
+  },
+  "outcome_availability": {
+    "strict_ledger_promotion_enabled": false,
+    "horizons_trading_sessions": [5, 10, 20, 40],
+    "event_deduplication": "first stored observed scanner row per symbol/date",
+    "start_price_requirement": "exact event-date valid close for the observed symbol",
+    "target_rule": "h-th later valid stored price session for the same observed symbol",
+    "available_status": "AVAILABLE",
+    "missing_start_status": "MISSING",
+    "unresolved_target_status": "UNKNOWN",
+    "not_yet_available_requires_external_calendar_or_equivalent_evidence": true,
+    "neutral_imputation_allowed": false,
+    "denominator_eligible_statuses": ["AVAILABLE"],
+    "price_rows_prove_prior_analysis_time_availability": false,
+    "frozen_repository_snapshot_proves_current_audit_possession_only": true
+  },
+  "market_date_semantics": {
+    "productive_yahoo_enricher": "calendar_run_date_utc",
+    "historical_matcher": "exact_event_calendar_date_price_required",
+    "phase1_precedent": "previous_observed_market_session_at_or_before_run_date_with_max_7_calendar_days_then_deduplicate_by_symbol_session_keep_latest_observation",
+    "finding_id": "QM-B-POA-001",
+    "finding_status": "METHODOLOGY_RISK",
+    "finding_scope": "HistoricalMatcher / daily_research cross-universe outcomes",
+    "not_claimed_scope": "Phase 1 Selection/Timing, which already uses session-aware alignment",
+    "automatic_fix_enabled": false,
+    "challenger_only": true
+  },
+  "pit_rules": {
+    "historical_retrojection_permitted": false,
+    "current_state_may_not_rewrite_prior_provider_coverage": true,
+    "missing_outcome_may_not_enter_denominator": true,
+    "unknown_outcome_may_not_enter_denominator": true
+  }
+}
