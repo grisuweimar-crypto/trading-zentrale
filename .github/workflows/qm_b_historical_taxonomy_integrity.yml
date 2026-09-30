@@ -1,0 +1,38 @@
+name: QM-B Historical Taxonomy Integrity
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "scripts/qm_b_historical_taxonomy_*"
+      - "configs/qm_b_historical_taxonomy_*"
+      - "docs/qm_b_historical_taxonomy_*"
+      - "tests/test_qm_b_historical_taxonomy_*"
+      - ".github/workflows/qm_b_historical_taxonomy_integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-historical-taxonomy-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Scan taxonomy/historical co-occurrence candidates
+        run: python scripts/qm_b_historical_taxonomy_scan.py --output /tmp/qm_b_historical_taxonomy_scan.json
+      - name: Show candidate summary
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_historical_taxonomy_scan.json'))
+          print(json.dumps({
+              'files_scanned': p['files_scanned'],
+              'candidate_count': p['candidate_count'],
+              'high_priority_count': p['high_priority_count'],
+              'candidates': p['candidates'],
+          }, indent=2, sort_keys=True))
+          PY
