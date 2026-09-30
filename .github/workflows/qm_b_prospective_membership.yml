@@ -1,0 +1,64 @@
+name: QM-B Prospective Membership Ledger
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_prospective_membership_v1.json"
+      - "src/scanner/research/governance/qm_b_prospective_membership.py"
+      - "scripts/qm_b_prospective_membership.py"
+      - "tests/test_qm_b_prospective_membership.py"
+      - "docs/qm_b_prospective_membership.md"
+      - ".github/workflows/qm_b_prospective_membership.yml"
+      - "src/scanner/research/governance/qm_b_identity_reconciliation.py"
+      - "src/scanner/research/governance/qm_b_prospective_identity_match.py"
+      - "data/inputs/universe_master.csv"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-prospective-membership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run prospective membership tests
+        run: |
+          PYTHONPATH=src python -m pytest -q tests/test_qm_b_prospective_membership.py
+      - name: Build and verify a real current-universe membership snapshot
+        run: |
+          OBSERVED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          SNAPSHOT_ID="ci-universe-${GITHUB_SHA}-${GITHUB_RUN_ID}"
+          PYTHONPATH=src python scripts/qm_b_prospective_membership.py build \
+            --universe data/inputs/universe_master.csv \
+            --universe-snapshot-id "$SNAPSHOT_ID" \
+            --observed-at "$OBSERVED_AT" \
+            --output /tmp/qm_b_membership_snapshot.json \
+            --ledger /tmp/qm_b_membership_ledger.jsonl \
+            > /tmp/qm_b_membership_summary.json
+          cat /tmp/qm_b_membership_summary.json
+          PYTHONPATH=src python scripts/qm_b_prospective_membership.py verify \
+            --ledger /tmp/qm_b_membership_ledger.jsonl
+          python - <<'PY'
+          import json
+          p = json.load(open('/tmp/qm_b_membership_snapshot.json', encoding='utf-8'))
+          assert p['stable_instrument_claim_count'] > 0
+          assert p['claim_status_counts'].get('OBSERVED_IN_PROJECT_UNIVERSE', 0) > 0
+          assert p['absence_interpreted_as_out_of_scope'] is False
+          assert p['negative_membership_promotion_performed'] is False
+          assert p['strict_qm_b_membership_bundle_promotion_performed'] is False
+          assert p['listing_status_promotion_performed'] is False
+          assert p['tradability_promotion_performed'] is False
+          assert p['project_investability_promotion_performed'] is False
+          for claim in p['claims']:
+              assert claim['listing_status'] == 'UNKNOWN'
+              assert claim['tradability_status'] == 'UNKNOWN'
+              assert claim['project_investability_status'] == 'UNKNOWN'
+              assert claim['negative_out_of_scope_verified'] is False
+          print('QM-B prospective membership safeguards verified on current universe.')
+          PY
