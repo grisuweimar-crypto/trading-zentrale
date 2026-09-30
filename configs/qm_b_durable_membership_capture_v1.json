@@ -1,0 +1,47 @@
+{
+  "schema_version": "qm_b_durable_membership_capture_v1",
+  "module": "QM-B",
+  "name": "Durable Prospective Project-Universe Membership Capture",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "source_path": "data/inputs/universe_master.csv",
+  "archive_root": "artifacts/research/qm/qm_b_membership",
+  "ledger_filename": "membership_events.jsonl",
+  "latest_manifest_filename": "latest.json",
+  "principles": [
+    "capture only states that are actually observed prospectively",
+    "the exact triggering universe bytes are the evidence source even if main advances later",
+    "identical universe content hashes do not create repeated membership observations",
+    "observation time is the actual capture time and is never backdated to source-effective dates",
+    "raw source bytes and normalized membership snapshot are both retained",
+    "all persistent membership events remain append-only and hash chained",
+    "absence never becomes automatic OUT_OF_SCOPE",
+    "listing venue tradability and investability remain separate evidence classes",
+    "workflow archive commits must not alter productive scanner inputs or outputs"
+  ],
+  "deduplication": {
+    "key": "universe_sha256",
+    "same_hash_action": "NO_CHANGE",
+    "repeat_observation_for_same_hash": false
+  },
+  "source_commit": {
+    "required": true,
+    "accepted_hex_lengths": [40, 64],
+    "universe_snapshot_id_format": "git:<commit_sha>:data/inputs/universe_master.csv"
+  },
+  "archive": {
+    "raw_subdirectory": "raw",
+    "snapshot_subdirectory": "snapshots",
+    "retain_raw_bytes_exactly": true,
+    "retain_normalized_snapshot": true,
+    "write_latest_manifest": true
+  },
+  "promotion": {
+    "strict_qm_b_membership_bundle": false,
+    "listing_status": false,
+    "tradability": false,
+    "project_investability": false,
+    "productive_scanner_integration": false
+  }
+}
