@@ -1,0 +1,47 @@
+{
+  "schema_version": "qm_c1_closure_v1",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C1",
+  "display_status": "QM-C1 COMPLETE — VERSIONED HYPOTHESIS REGISTRY ACTIVE",
+  "engineering_status": "COMPLETE",
+  "empirical_promotion_claimed": false,
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "completed_capabilities": [
+    "stable_hypothesis_id",
+    "explicit_hypothesis_version",
+    "immutable_semantic_version_hash",
+    "append_only_hash_chained_registry",
+    "explicit_successor_versioning",
+    "discovery_confirmation_separation",
+    "rejected_and_retired_retention",
+    "qm_a_analysis_binding",
+    "qm_b_strict_universe_fail_closed_binding",
+    "integration_regression_tests"
+  ],
+  "integration_contracts": {
+    "qm_a": {
+      "contract_schema": "qm_a_research_governance_v1",
+      "shared_identity_field": "hypothesis_version_hash",
+      "shared_freeze_state": "FROZEN_FOR_CONFIRMATION"
+    },
+    "qm_b": {
+      "closure_schema": "qm_b_closure_v1",
+      "strict_universe_promotion_respected": true,
+      "current_external_blockers_are_not_overridden": true
+    }
+  },
+  "deferred_to_later_qm_c_blocks": [
+    "analysis_plan_and_freeze",
+    "multiplicity_control",
+    "sequential_monitoring",
+    "negative_result_registry_and_qm_c_closure"
+  ],
+  "boundaries": {
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false
+  },
+  "next_mandatory_work_package": "QM-C2"
+}
