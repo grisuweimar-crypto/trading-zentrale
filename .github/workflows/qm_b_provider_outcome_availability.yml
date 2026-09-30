@@ -6,6 +6,7 @@ on:
       - "configs/qm_b_provider_outcome_availability_v1.json"
       - "src/scanner/research/governance/qm_b_provider_outcome_availability.py"
       - "scripts/qm_b_provider_outcome_availability.py"
+      - "scripts/qm_b_provider_outcome_diagnostics.py"
       - "tests/test_qm_b_provider_outcome_availability.py"
       - "docs/qm_b_provider_outcome_availability.md"
       - ".github/workflows/qm_b_provider_outcome_availability.yml"
@@ -51,3 +52,5 @@ jobs:
               'price_diagnostics': p['outcome_availability']['price_diagnostics'],
           }, indent=2, sort_keys=True))
           PY
+      - name: Decompose missing start prices and unresolved targets
+        run: PYTHONPATH=src python scripts/qm_b_provider_outcome_diagnostics.py --output /tmp/qm_b_provider_outcome_diagnostics.json
