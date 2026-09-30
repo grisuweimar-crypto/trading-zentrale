@@ -1,0 +1,64 @@
+name: QM-B As-of Candidate Fusion
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_asof_candidate_fusion_v1.json"
+      - "src/scanner/research/governance/qm_b_asof_candidate_fusion.py"
+      - "scripts/qm_b_asof_candidate_fusion.py"
+      - "tests/test_qm_b_asof_candidate_fusion.py"
+      - "docs/qm_b_asof_candidate_fusion.md"
+      - ".github/workflows/qm_b_asof_candidate_fusion.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-asof-candidate-fusion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run fusion unit tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_b_asof_candidate_fusion.py
+      - name: Audit current durable membership against actually available listing evidence
+        run: |
+          set -euo pipefail
+          python - <<'PY' > /tmp/membership_path.txt
+          import json
+          from pathlib import Path
+          latest = json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          print(latest['normalized_snapshot_path'])
+          PY
+          MEMBERSHIP="$(cat /tmp/membership_path.txt)"
+          PYTHONPATH=src python scripts/qm_b_asof_candidate_fusion.py \
+            --membership "$MEMBERSHIP" \
+            --output /tmp/qm_b_asof_fusion_current.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/qm_b_asof_fusion_current.json').read_text(encoding='utf-8'))
+          latest = json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          membership = json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+          positive = sum(1 for row in membership['claims'] if row['membership_observation_status'] == 'OBSERVED_IN_PROJECT_UNIVERSE')
+          nonpositive = len(membership['claims']) - positive
+          assert result['fused_candidate_count'] == 0
+          assert result['status_counts'].get('BLOCKED_NO_LISTING_EVIDENCE', 0) == positive
+          assert result['status_counts'].get('BLOCKED_MEMBERSHIP_NOT_POSITIVE', 0) == nonpositive
+          assert result['strict_bundle_promotion_performed'] is False
+          assert result['project_investability_promotion_performed'] is False
+          assert result['historical_retrojection_permitted'] is False
+          print(json.dumps({
+              'membership_snapshot_id': result['membership_snapshot_id'],
+              'membership_claims': len(membership['claims']),
+              'positive_membership_claims': positive,
+              'fused_candidates': result['fused_candidate_count'],
+              'status_counts': result['status_counts'],
+              'strict_bundle_blocker': result['strict_bundle_blocker'],
+          }, indent=2, sort_keys=True))
+          PY

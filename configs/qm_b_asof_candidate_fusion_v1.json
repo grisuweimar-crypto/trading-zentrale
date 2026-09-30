@@ -1,0 +1,40 @@
+{
+  "schema_version": "qm_b_asof_candidate_fusion_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "purpose": "Fuse PIT-safe stable identity, project-universe membership and listing evidence into pre-strict as-of universe candidates without inferring tradability or investability.",
+  "time_rules": {
+    "candidate_valid_from_is_max_of_input_evidence_times": true,
+    "historical_retrojection_permitted": false,
+    "absence_can_create_negative_membership": false
+  },
+  "required_membership_status": "OBSERVED_IN_PROJECT_UNIVERSE",
+  "required_identity_match_status": "MATCHED",
+  "required_listing_state": "LISTED_IN_SNAPSHOT",
+  "candidate_status_values": [
+    "FUSED_LISTED_MEMBER_CANDIDATE",
+    "BLOCKED_NO_LISTING_EVIDENCE",
+    "BLOCKED_NO_IDENTITY_MATCH",
+    "BLOCKED_MEMBERSHIP_NOT_POSITIVE",
+    "BLOCKED_IDENTITY_MISMATCH",
+    "BLOCKED_LISTING_NOT_POSITIVE",
+    "BLOCKED_VENUE_MISSING",
+    "REVIEW_REQUIRED_DUPLICATE_LISTING_VENUE"
+  ],
+  "strict_bundle_promotion": {
+    "performed_by_this_package": false,
+    "requires_project_investability_resolution": true,
+    "requires_market_tradability_resolution": false,
+    "unknown_investability_may_not_be_silently_promoted_to_investable": true
+  },
+  "prohibited_inferences": [
+    "ticker suffix to legal listing venue",
+    "name matching",
+    "symbol normalization beyond already validated exact identity match",
+    "delisting from absence",
+    "project investability from listing",
+    "market tradability from listing",
+    "historical membership before evidence availability"
+  ]
+}
