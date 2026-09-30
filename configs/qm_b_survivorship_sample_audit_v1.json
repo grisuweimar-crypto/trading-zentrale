@@ -18,6 +18,18 @@
   ],
   "known_safe_paths": {
     "src/scanner/reports/research_views.py": "Historical scanner views are built from observed scanner rows and run groups; no current universe master is used to define historical membership.",
-    "src/scanner/research/query_api.py": "History queries filter only explicit requested symbols and dates; no current universe master is loaded."
+    "src/scanner/research/query_api.py": "History queries filter only explicit requested symbols and dates; no current universe master is loaded.",
+    "src/scanner/reports/daily_research.py": "Latest scanner is the intended current target population for the daily report; history is queried for those current symbols and is not used as a retrospective universe-wide validation sample.",
+    "src/scanner/reports/research_validation.py": "Cross-file integrity validation checks hashes, provenance, ranks and view derivation; it does not filter historical archive membership against a current universe.",
+    "scripts/audit_phase4_risk_scale.py": "Diagnostic compares full historical stock metric distributions with the current snapshot to detect scale breaks; current symbols do not define the historical sample.",
+    "scripts/collect_external_evidence_8c_sec_snapshot.py": "Current scanner rows define prospective SEC acquisition targets; research history is used only to derive a document acquisition window, explicitly not feature/sample membership.",
+    "scripts/qm_b_alias_listing_boundaries.py": "QM-B diagnostic intentionally compares preserved historical observations with current/historical identity sources; it does not create a productive historical research sample.",
+    "scripts/qm_b_crypto_identifier.py": "QM-B identity diagnostic uses current master only as reference evidence and explicitly forbids current mappings from proving historical identity or membership.",
+    "scripts/qm_b_identity_reconciliation.py": "QM-B identity reconciliation is an audit layer with fail-closed PIT rules, not a historical selection/performance sample builder.",
+    "scripts/qm_b_identity_repo_history.py": "QM-B repository-history audit examines historical identity evidence against a frozen cutoff and does not define return-research membership from the current universe.",
+    "scripts/qm_b_observed_membership.py": "QM-B staging preserves scanner-observed historical membership evidence and keeps current matches from becoming historical membership proof.",
+    "scripts/run_confidence_vnext_prospective_4e.py": "Latest scanner is used to issue prospective shadow claims; historical prices mature prior claims and do not retrospectively select historical members by current presence.",
+    "scripts/run_confidence_vnext_prospective_5b.py": "Phase 5B is a prospective claim/outcome stream plus frozen baseline; latest state is current claim input, not a filter defining the historical research universe.",
+    "scripts/run_confidence_vnext_research_4.py": "Historical Phase 1-3 evidence is kept separate from current-state applicability; latest scanner is the current application target and does not filter the historical validation registry."
   }
 }
