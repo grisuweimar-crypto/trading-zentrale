@@ -1,0 +1,38 @@
+name: QM-C Hypothesis Registry
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_c_hypothesis_registry_v1.json"
+      - "configs/qm_c1_closure_v1.json"
+      - "src/scanner/research/governance/qm_c.py"
+      - "src/scanner/research/governance/qm_c_closure.py"
+      - "tests/test_qm_c*.py"
+      - "docs/qm_c_hypothesis_registry.md"
+      - ".github/workflows/qm_c_hypothesis_registry.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-c1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run QM-C1 registry and integration tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_c_hypothesis_registry.py tests/test_qm_c1_closure.py
+      - name: Validate QM-C1 closure manifest
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          from scanner.research.governance.qm_c_closure import validate_closure_file
+          p = validate_closure_file()
+          assert p['display_status'] == 'QM-C1 COMPLETE — VERSIONED HYPOTHESIS REGISTRY ACTIVE'
+          assert p['next_mandatory_work_package'] == 'QM-C2'
+          print(p['display_status'])
+          PY
