@@ -1,0 +1,67 @@
+{
+  "schema_version": "qm_b_closure_v1",
+  "qm_axis": "QM-B",
+  "research_governance_status": "COMPLETE",
+  "strict_historical_promotion_status": "BLOCKED_EXTERNAL_EVIDENCE",
+  "display_status": "QM-B COMPLETE — STRICT PROMOTION BLOCKED BY EXTERNAL EVIDENCE",
+  "historical_retrojection_permitted": false,
+  "missing_is_neutral": false,
+  "unknown_is_promotable": false,
+  "productive_strict_asof_investable_universe_promoted": false,
+  "completed_blocks": [
+    "strict_asof_universe_integrity_foundation",
+    "observed_membership_staging_and_crypto_namespace_diagnostics",
+    "historical_noncrypto_stable_identity_reconciliation",
+    "alias_pit_boundaries_and_legacy_watchlist_evidence",
+    "listing_metadata_source_assessment",
+    "prospective_listing_snapshot_archive",
+    "durable_prospective_membership_universe_capture",
+    "identity_membership_listing_evidence_fusion",
+    "listing_persistence_and_license_gate",
+    "investability_contract",
+    "project_restrictions",
+    "integrated_investability_gap_audit",
+    "execution_channel_evidence_contract_and_source_gap",
+    "market_tradability_evidence_contract_and_source_gap",
+    "survivorship_and_historical_sample_audit",
+    "provider_coverage_and_outcome_availability",
+    "historical_taxonomy_and_classification_audit",
+    "crypto_stable_object_semantics",
+    "evidence_impact_audit",
+    "historical_matcher_session_alignment"
+  ],
+  "resolved_internal_findings": [
+    {
+      "finding_id": "QM-B-POA-001",
+      "status": "RESOLVED",
+      "resolution": "HistoricalMatcher resolves raw scanner run dates only to the latest stored price session at or before the run date, with a maximum 7-calendar-day lookback; repeated run dates resolving to one symbol/session are deduplicated using the latest scanner observation; raw MarketDate remains unchanged; no future session or live lookup is permitted."
+    }
+  ],
+  "external_blockers": [
+    {
+      "id": "LISTING_EVIDENCE",
+      "classification": "EXTERNAL_EVIDENCE_GAP",
+      "state": "UNKNOWN_FAIL_CLOSED",
+      "remaining_qm_b_engineering_task": false
+    },
+    {
+      "id": "MARKET_TRADABILITY_EVIDENCE",
+      "classification": "EXTERNAL_EVIDENCE_GAP",
+      "state": "UNKNOWN_FAIL_CLOSED",
+      "remaining_qm_b_engineering_task": false
+    },
+    {
+      "id": "EXECUTION_CHANNEL_EVIDENCE",
+      "classification": "EXTERNAL_EVIDENCE_GAP",
+      "state": "UNKNOWN_FAIL_CLOSED",
+      "remaining_qm_b_engineering_task": false
+    }
+  ],
+  "closure_rules": {
+    "external_blockers_do_not_reopen_qm_b_engineering": true,
+    "strict_promotion_must_remain_blocked_while_external_blockers_exist": true,
+    "unknown_must_remain_unknown": true,
+    "absence_must_not_be_interpreted_as_negative_evidence": true,
+    "current_state_must_not_be_back_projected": true
+  }
+}
