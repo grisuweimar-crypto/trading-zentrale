@@ -235,4 +235,4 @@ jobs:
       - name: Dispatch Phase 5D as a fresh workflow root
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run confidence_vnext_5d.yml --ref main
+        run: gh workflow run confidence_vnext_5d.yml --repo grisuweimar-crypto/trading-zentrale --ref main
