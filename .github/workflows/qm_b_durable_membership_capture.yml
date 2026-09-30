@@ -1,0 +1,173 @@
+name: QM-B Durable Membership Capture
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_durable_membership_capture_v1.json"
+      - "src/scanner/research/governance/qm_b_durable_membership_capture.py"
+      - "scripts/qm_b_capture_membership_snapshot.py"
+      - "tests/test_qm_b_durable_membership_capture.py"
+      - "docs/qm_b_durable_membership_capture.md"
+      - ".github/workflows/qm_b_durable_membership_capture.yml"
+      - "src/scanner/research/governance/qm_b_prospective_membership.py"
+      - "scripts/qm_b_prospective_membership.py"
+      - "data/inputs/universe_master.csv"
+  push:
+    branches: [main]
+    paths:
+      - "data/inputs/universe_master.csv"
+      - "configs/qm_b_durable_membership_capture_v1.json"
+      - "src/scanner/research/governance/qm_b_durable_membership_capture.py"
+      - "scripts/qm_b_capture_membership_snapshot.py"
+      - "tests/test_qm_b_durable_membership_capture.py"
+      - "docs/qm_b_durable_membership_capture.md"
+      - ".github/workflows/qm_b_durable_membership_capture.yml"
+      - "src/scanner/research/governance/qm_b_prospective_membership.py"
+      - "scripts/qm_b_prospective_membership.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qm-b-durable-membership-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run durable and prospective membership tests
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_b_durable_membership_capture.py \
+            tests/test_qm_b_prospective_membership.py
+      - name: Local end-to-end durable archive smoke test
+        run: |
+          rm -rf /tmp/qm_b_durable_smoke
+          mkdir -p /tmp/qm_b_durable_smoke
+          cp data/inputs/universe_master.csv /tmp/qm_b_durable_smoke/universe_master.csv
+          PYTHONPATH=src python scripts/qm_b_capture_membership_snapshot.py \
+            --universe /tmp/qm_b_durable_smoke/universe_master.csv \
+            --repo-root /tmp/qm_b_durable_smoke \
+            --observed-at 2026-09-30T06:30:00Z \
+            --source-commit-sha aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+            --trigger ci-smoke \
+            --result-file /tmp/qm_b_durable_smoke/result1.json
+          PYTHONPATH=src python scripts/qm_b_capture_membership_snapshot.py \
+            --universe /tmp/qm_b_durable_smoke/universe_master.csv \
+            --repo-root /tmp/qm_b_durable_smoke \
+            --observed-at 2026-09-30T06:31:00Z \
+            --source-commit-sha bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+            --trigger ci-smoke-repeat \
+            --result-file /tmp/qm_b_durable_smoke/result2.json
+          PYTHONPATH=src python scripts/qm_b_prospective_membership.py verify \
+            --ledger /tmp/qm_b_durable_smoke/artifacts/research/qm/qm_b_membership/membership_events.jsonl
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('/tmp/qm_b_durable_smoke')
+          first = json.loads((root / 'result1.json').read_text(encoding='utf-8'))
+          second = json.loads((root / 'result2.json').read_text(encoding='utf-8'))
+          latest = json.loads((root / 'artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          assert first['capture_status'] == 'ARCHIVED'
+          assert second['capture_status'] == 'NO_CHANGE'
+          assert first['ledger_event_count'] == 1
+          assert second['ledger_event_appended'] is False
+          assert latest['source_commit_sha'] == 'a' * 40
+          assert latest['historical_retrojection_permitted'] is False
+          assert latest['listing_status_promotion_performed'] is False
+          assert latest['tradability_promotion_performed'] is False
+          assert latest['project_investability_promotion_performed'] is False
+          assert len(list((root / 'artifacts/research/qm/qm_b_membership/raw').glob('*.csv'))) == 1
+          assert len(list((root / 'artifacts/research/qm/qm_b_membership/snapshots').glob('*.json'))) == 1
+          print(json.dumps({'first': first, 'second': second}, indent=2, sort_keys=True))
+          PY
+
+  capture-main:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Preserve exact triggering universe bytes and observation time
+        id: evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRIGGER_FILE="$RUNNER_TEMP/qm_b_trigger_universe_master.csv"
+          git show "${GITHUB_SHA}:data/inputs/universe_master.csv" > "$TRIGGER_FILE"
+          OBSERVED_AT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "trigger_file=$TRIGGER_FILE" >> "$GITHUB_OUTPUT"
+          echo "observed_at=$OBSERVED_AT" >> "$GITHUB_OUTPUT"
+          sha256sum "$TRIGGER_FILE"
+      - name: Archive on latest main without force push
+        shell: bash
+        env:
+          TRIGGER_FILE: ${{ steps.evidence.outputs.trigger_file }}
+          OBSERVED_AT: ${{ steps.evidence.outputs.observed_at }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "QM-B durable capture attempt $attempt"
+            git fetch origin main
+            git checkout -B qm-b-membership-capture-work origin/main
+            git reset --hard origin/main
+
+            RESULT_FILE="$RUNNER_TEMP/qm_b_capture_result.json"
+            PYTHONPATH=src python scripts/qm_b_capture_membership_snapshot.py \
+              --universe "$TRIGGER_FILE" \
+              --repo-root . \
+              --observed-at "$OBSERVED_AT" \
+              --source-commit-sha "$GITHUB_SHA" \
+              --trigger "github:${GITHUB_EVENT_NAME}:run-${GITHUB_RUN_ID}" \
+              --result-file "$RESULT_FILE"
+            cat "$RESULT_FILE"
+            STATUS="$(python -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["capture_status"])' "$RESULT_FILE")"
+            if [ "$STATUS" = "NO_CHANGE" ]; then
+              echo "Universe content already archived; no repository write required."
+              exit 0
+            fi
+            if [ "$STATUS" != "ARCHIVED" ]; then
+              echo "Unexpected capture status: $STATUS" >&2
+              exit 2
+            fi
+
+            git add artifacts/research/qm/qm_b_membership
+            if git diff --cached --quiet; then
+              echo "Capture reported ARCHIVED but produced no staged audit changes." >&2
+              exit 2
+            fi
+            if ! git diff --cached --name-only | grep -vq '^artifacts/research/qm/qm_b_membership/'; then
+              :
+            fi
+            BAD_PATHS="$(git diff --cached --name-only | grep -v '^artifacts/research/qm/qm_b_membership/' || true)"
+            if [ -n "$BAD_PATHS" ]; then
+              echo "Refusing to commit non-QM paths:" >&2
+              echo "$BAD_PATHS" >&2
+              exit 2
+            fi
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "QM-B: archive project-universe membership snapshot [skip ci]"
+            if git push origin HEAD:main; then
+              echo "Durable QM-B membership snapshot committed to main."
+              exit 0
+            fi
+            echo "main advanced before push; retrying against newest ledger without force push."
+          done
+          echo "Failed to append durable membership evidence after 3 safe retries." >&2
+          exit 1
