@@ -1,0 +1,92 @@
+{
+  "schema_version": "qm_b_market_tradability_v1",
+  "module": "QM-B",
+  "name": "Market Tradability Evidence Contract",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "principles": [
+    "market tradability is venue-specific and separate from listing state, project membership and execution-channel availability",
+    "TRADABLE requires explicit instrument-level PIT evidence from at least one registered venue/source",
+    "absence of a halt or suspension record is not positive tradability evidence",
+    "price availability, non-zero volume, scanner presence, successful provider quotes and symbol suffixes are not market-tradability evidence",
+    "listing alone does not prove current tradability",
+    "SUSPENDED and NOT_TRADABLE must be representable without converting missing coverage into a negative claim",
+    "source evidence is never back-projected",
+    "same-venue conflicting latest evidence fails closed to UNKNOWN"
+  ],
+  "status_values": ["TRADABLE", "SUSPENDED", "NOT_TRADABLE", "UNKNOWN"],
+  "required_evidence_fields": [
+    "instrument_id",
+    "venue_id",
+    "status",
+    "valid_from",
+    "pit_verified",
+    "source_id"
+  ],
+  "registered_sources": [],
+  "candidate_sources": [
+    {
+      "source_id": "nasdaq_trade_halt_rss",
+      "provider": "Nasdaq Trader",
+      "geography": ["US"],
+      "source_class": "OFFICIAL_EXCHANGE",
+      "instrument_level": true,
+      "capability": "HALT_AND_RESUME_EVENTS",
+      "pit_status": "PROSPECTIVE_CAPABLE",
+      "license_status": "REVIEW_REQUIRED",
+      "promotion_eligible": false,
+      "documentation_url": "https://www.nasdaqtrader.com/Trader.aspx?id=TradeHaltRSS",
+      "blockers": ["SOURCE_NOT_YET_ADAPTED", "LICENSE_REVIEW_REQUIRED", "NOT_GLOBAL"]
+    },
+    {
+      "source_id": "jpx_trading_halts",
+      "provider": "Japan Exchange Group / TSE",
+      "geography": ["JP"],
+      "source_class": "OFFICIAL_EXCHANGE",
+      "instrument_level": true,
+      "capability": "HALT_AND_RESUME_EVENTS",
+      "pit_status": "PROSPECTIVE_CAPABLE",
+      "license_status": "REVIEW_REQUIRED",
+      "promotion_eligible": false,
+      "documentation_url": "https://www.jpx.co.jp/english/markets/equities/suspended/index.html",
+      "blockers": ["SOURCE_NOT_YET_ADAPTED", "LICENSE_REVIEW_REQUIRED", "NOT_GLOBAL"]
+    },
+    {
+      "source_id": "hkex_suspension_reporting",
+      "provider": "HKEX",
+      "geography": ["HK"],
+      "source_class": "OFFICIAL_EXCHANGE",
+      "instrument_level": false,
+      "capability": "REFERENCE_SUSPENSION_REPORTING",
+      "pit_status": "REFERENCE_ONLY",
+      "license_status": "REVIEW_REQUIRED",
+      "promotion_eligible": false,
+      "documentation_url": "https://www.hkex.com.hk/News/Market-Communications",
+      "blockers": ["NOT_CURRENT_INSTRUMENT_LEVEL_TRADABILITY_LEDGER", "LICENSE_REVIEW_REQUIRED", "NOT_GLOBAL"]
+    }
+  ],
+  "aggregation": {
+    "tradable_if_any_venue_latest_status_tradable": true,
+    "suspended_if_no_tradable_and_any_venue_suspended": true,
+    "not_tradable_if_at_least_one_venue_observed_and_all_latest_venue_states_not_tradable": true,
+    "unknown_if_no_pit_venue_evidence": true,
+    "same_venue_latest_conflict": "UNKNOWN"
+  },
+  "pit_rules": {
+    "historical_retrojection_permitted": false,
+    "future_evidence_usable_for_past_as_of": false,
+    "valid_to_semantics": "closed_open_[valid_from,valid_to)",
+    "absence_of_event_is_positive_evidence": false
+  },
+  "current_repository_assessment": {
+    "registered_source_count": 0,
+    "instrument_level_market_tradability_evidence_present": false,
+    "current_gap_status": "BLOCKED_NO_MARKET_TRADABILITY_EVIDENCE"
+  },
+  "promotion": {
+    "tradable_requires_registered_source": true,
+    "unknown_may_promote": false,
+    "productive_scanner_integration": false
+  }
+}

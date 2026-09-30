@@ -1,0 +1,51 @@
+name: QM-B Market Tradability Evidence
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_market_tradability_v1.json"
+      - "src/scanner/research/governance/qm_b_market_tradability.py"
+      - "scripts/qm_b_market_tradability.py"
+      - "tests/test_qm_b_market_tradability.py"
+      - "docs/qm_b_market_tradability.md"
+      - ".github/workflows/qm_b_market_tradability.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-market-tradability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run market-tradability tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_b_market_tradability.py
+      - name: Audit current durable membership without tradability evidence
+        run: |
+          MEMBERSHIP="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text())
+          print(p['normalized_snapshot_path'])
+          PY
+          )"
+          PYTHONPATH=src python scripts/qm_b_market_tradability.py \
+            --membership "$MEMBERSHIP" \
+            --output /tmp/qm_b_market_tradability.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_market_tradability.json'))
+          assert p['instrument_count'] == 207
+          assert p['registered_source_count'] == 0
+          assert p['status_counts'] == {'UNKNOWN': 207}
+          assert p['positive_tradability_count'] == 0
+          assert p['current_gap_status'] == 'BLOCKED_NO_MARKET_TRADABILITY_EVIDENCE'
+          assert p['historical_retrojection_permitted'] is False
+          print('QM-B market tradability gate passed; current source gap remains explicit.')
+          PY
