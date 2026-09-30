@@ -1,0 +1,68 @@
+name: QM-B Investability Gap Integration
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/governance/qm_b_investability_gap_integration.py"
+      - "scripts/qm_b_current_investability_gap.py"
+      - "tests/test_qm_b_investability_gap_integration.py"
+      - "docs/qm_b_investability_gap_integration.md"
+      - ".github/workflows/qm_b_investability_gap_integration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-investability-gap-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run integration tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_b_investability_gap_integration.py
+      - name: Audit current gap using actual policy Git boundary
+        run: |
+          MEMBERSHIP="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text())
+          print(p['normalized_snapshot_path'])
+          PY
+          )"
+          POLICY_SHA="$(git log -1 --format=%H -- configs/qm_b_project_restrictions_v1.json)"
+          POLICY_TIME="$(git show -s --format=%cI "$POLICY_SHA")"
+          PYTHONPATH=src python scripts/qm_b_current_investability_gap.py \
+            --membership "$MEMBERSHIP" \
+            --policy-commit-sha "$POLICY_SHA" \
+            --policy-observed-at "$POLICY_TIME" \
+            --as-of "$POLICY_TIME" \
+            --output /tmp/qm_b_current_gap.json >/dev/null
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_current_gap.json'))
+          assert p['instrument_count'] == 207
+          assert p['status_counts'] == {'UNKNOWN': 207}
+          assert p['strict_universe_promotion_ready_count'] == 0
+          assert p['project_restriction_status_counts'] == {'CLEAR': 207}
+          assert p['evidence_gap_counts']['stable_identity'] == 0
+          assert p['evidence_gap_counts']['project_membership'] == 0
+          assert p['evidence_gap_counts']['project_restrictions'] == 0
+          assert p['evidence_gap_counts']['listing_state'] == 207
+          assert p['evidence_gap_counts']['market_tradability'] == 207
+          assert p['evidence_gap_counts']['execution_channel'] == 207
+          print(json.dumps({
+            'instrument_count': p['instrument_count'],
+            'status_counts': p['status_counts'],
+            'project_restriction_status_counts': p['project_restriction_status_counts'],
+            'evidence_gap_counts': p['evidence_gap_counts'],
+            'strict_universe_promotion_ready_count': p['strict_universe_promotion_ready_count'],
+            'as_of': p['as_of'],
+          }, indent=2, sort_keys=True))
+          PY
