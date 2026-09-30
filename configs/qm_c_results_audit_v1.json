@@ -1,0 +1,126 @@
+{
+  "schema_version": "qm_c_results_audit_v1",
+  "module": "QM-C4",
+  "name": "Negative Results, Audit & Closure",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Retain positive, negative, inconclusive and rejected hypothesis outcomes symmetrically; detect deterministic duplicate hypotheses; audit the complete QM-C identity chain; and provide the stable-ID handoff required by QM-I.",
+  "principles": {
+    "negative_results_are_retained": true,
+    "rejected_hypotheses_are_retained": true,
+    "positive_results_do_not_receive_special_retention": true,
+    "result_versions_are_immutable": true,
+    "duplicate_detection_is_deterministic_not_fuzzy_inference": true,
+    "confirmatory_results_require_exact_c1_c2_c3_qm_a_binding": true,
+    "qm_b_blockers_remain_authoritative": true,
+    "missing_is_not_neutral": true,
+    "technical_completion_is_not_empirical_promotion": true,
+    "productive_scanner_and_decision_semantics_must_not_change": true
+  },
+  "result_registry": {
+    "event_schema_version": "qm_c_result_event_v1",
+    "hash_algorithm": "sha256",
+    "hash_chain_required": true,
+    "default_path": "artifacts/research/qm/qm_c_results.jsonl",
+    "event_types": ["RESULT_REGISTERED"]
+  },
+  "result_record": {
+    "required_fields": [
+      "result_id",
+      "result_version",
+      "hypothesis_id",
+      "hypothesis_version",
+      "hypothesis_version_hash",
+      "evidence_scope",
+      "outcome_classification",
+      "conclusion",
+      "evidence_artifact_hash",
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "control_plan_id",
+      "control_plan_version",
+      "control_plan_hash",
+      "qm_a_analysis_id",
+      "qm_a_version_id"
+    ],
+    "evidence_scopes": [
+      "NO_OUTCOME_EVIDENCE",
+      "EXPLORATORY",
+      "CONFIRMATORY"
+    ],
+    "outcome_classifications": [
+      "POSITIVE",
+      "NEGATIVE",
+      "INCONCLUSIVE",
+      "REJECTED_PRE_EVALUATION",
+      "RETIRED_WITHOUT_EVALUATION"
+    ],
+    "evaluated_classifications": ["POSITIVE", "NEGATIVE", "INCONCLUSIVE"],
+    "no_outcome_classifications": ["REJECTED_PRE_EVALUATION", "RETIRED_WITHOUT_EVALUATION"],
+    "confirmatory_required_binding_fields": [
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "control_plan_id",
+      "control_plan_version",
+      "control_plan_hash",
+      "qm_a_analysis_id",
+      "qm_a_version_id"
+    ],
+    "no_outcome_binding_fields_must_be_null": [
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "control_plan_id",
+      "control_plan_version",
+      "control_plan_hash",
+      "qm_a_analysis_id",
+      "qm_a_version_id",
+      "evidence_artifact_hash"
+    ]
+  },
+  "duplicate_audit": {
+    "method": "DETERMINISTIC_NORMALIZED_SEMANTIC_FINGERPRINT",
+    "fingerprint_fields": [
+      "research_question",
+      "hypothesis_statement",
+      "research_mode",
+      "universe_requirement"
+    ],
+    "normalization": "unicode_casefold_and_whitespace_collapse",
+    "same_hypothesis_id_versions_are_not_cross_id_duplicates": true,
+    "automatic_merge_or_deletion_allowed": false,
+    "finding_classification": "POTENTIAL_EXACT_SEMANTIC_DUPLICATE"
+  },
+  "bindings": {
+    "qm_c1_contract_schema": "qm_c_hypothesis_registry_v1",
+    "qm_c2_contract_schema": "qm_c_analysis_plan_v1",
+    "qm_c3_contract_schema": "qm_c_multiplicity_monitoring_v1",
+    "qm_a_contract_schema": "qm_a_research_governance_v1",
+    "qm_b_closure_schema": "qm_b_closure_v1"
+  },
+  "full_audit": {
+    "required_integrity_layers": ["QM-C1", "QM-C2", "QM-C3", "QM-C4"],
+    "confirmatory_result_requires_completed_or_stopped_control_plan": true,
+    "confirmatory_result_requires_consumed_qm_a_evidence": true,
+    "result_member_must_exist_in_control_plan": true,
+    "stable_ids_required_for_qm_i_handoff": [
+      "hypothesis_id+hypothesis_version+hypothesis_version_hash",
+      "analysis_plan_id+analysis_plan_version+analysis_plan_hash",
+      "control_plan_id+control_plan_version+control_plan_hash",
+      "result_id+result_version+result_hash"
+    ]
+  },
+  "boundaries": {
+    "fuzzy_duplicate_merging_performed": false,
+    "historical_results_invented": false,
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  }
+}
