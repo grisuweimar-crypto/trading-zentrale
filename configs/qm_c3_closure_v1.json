@@ -1,0 +1,65 @@
+{
+  "schema_version": "qm_c3_closure_v1",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C3",
+  "display_status": "QM-C3 COMPLETE — MULTIPLICITY AND SEQUENTIAL MONITORING GATES ACTIVE",
+  "engineering_status": "COMPLETE",
+  "empirical_promotion_claimed": false,
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "completed_capabilities": [
+    "versioned_hypothesis_family_control_plan",
+    "immutable_control_plan_hash",
+    "explicit_successor_control_plan_versioning",
+    "exact_qm_c1_hypothesis_family_binding",
+    "exact_qm_c2_analysis_plan_binding",
+    "predeclared_multiplicity_strategy",
+    "fwer_fdr_and_custom_strategy_contracts",
+    "predeclared_sequential_look_schedule",
+    "out_of_order_and_unplanned_look_rejection",
+    "predeclared_early_stop_enforcement",
+    "qm_a_evidence_state_guard_between_looks",
+    "qm_b_fail_closed_binding_via_qm_c2",
+    "end_to_end_evaluation_readiness_gate",
+    "append_only_hash_chained_monitoring_history",
+    "integration_regression_tests"
+  ],
+  "integration_contracts": {
+    "qm_c1": {
+      "contract_schema": "qm_c_hypothesis_registry_v1",
+      "family_id_must_match": true,
+      "hypothesis_version_hash_must_match": true
+    },
+    "qm_c2": {
+      "contract_schema": "qm_c_analysis_plan_v1",
+      "analysis_plan_hash_must_match": true,
+      "every_family_member_must_be_confirmation_ready_at_control_freeze": true
+    },
+    "qm_a": {
+      "contract_schema": "qm_a_research_governance_v1",
+      "first_look_requires_frozen_confirmation_state": true,
+      "later_looks_require_consumed_confirmatory_evidence_state": true
+    },
+    "qm_b": {
+      "closure_schema": "qm_b_closure_v1",
+      "binding_reused_through_qm_c2": true,
+      "current_external_blockers_are_not_overridden": true
+    }
+  },
+  "deferred_to_next_qm_c_block": [
+    "negative_and_rejected_results_registry",
+    "duplicate_hypothesis_audit",
+    "qm_c_full_closure_gate",
+    "ba_qm2_handoff"
+  ],
+  "boundaries": {
+    "adjusted_p_values_computed": false,
+    "effect_estimates_computed": false,
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  },
+  "next_mandatory_work_package": "QM-C4"
+}

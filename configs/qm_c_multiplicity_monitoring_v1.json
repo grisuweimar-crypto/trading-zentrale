@@ -1,0 +1,147 @@
+{
+  "schema_version": "qm_c_multiplicity_monitoring_v1",
+  "module": "QM-C3",
+  "name": "Multiplicity & Sequential Monitoring",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Freeze confirmatory hypothesis families, multiplicity strategy and permitted outcome-inspection schedule before confirmatory evaluation begins.",
+  "principles": {
+    "family_members_are_exact_versioned_objects": true,
+    "multiplicity_strategy_is_predeclared": true,
+    "sequential_looks_are_predeclared": true,
+    "unplanned_peeking_fails_closed": true,
+    "family_membership_cannot_change_after_freeze": true,
+    "c2_confirmation_readiness_is_required_for_every_member": true,
+    "qm_b_blockers_remain_authoritative": true,
+    "missing_is_not_neutral": true,
+    "technical_completion_is_not_empirical_promotion": true,
+    "productive_scanner_and_decision_semantics_must_not_change": true
+  },
+  "registry": {
+    "event_schema_version": "qm_c_multiplicity_monitoring_event_v1",
+    "hash_algorithm": "sha256",
+    "hash_chain_required": true,
+    "default_path": "artifacts/research/qm/qm_c_multiplicity_monitoring.jsonl",
+    "event_types": [
+      "CONTROL_PLAN_REGISTERED",
+      "CONTROL_PLAN_FROZEN",
+      "MONITORING_LOOK_RECORDED",
+      "CONTROL_PLAN_STATE_TRANSITION"
+    ]
+  },
+  "control_plan": {
+    "required_fields": [
+      "control_plan_id",
+      "control_plan_version",
+      "hypothesis_family_id",
+      "research_mode",
+      "family_members",
+      "multiplicity_strategy",
+      "multiplicity_parameters",
+      "sequential_monitoring"
+    ],
+    "research_mode_required": "CONFIRMATION",
+    "initial_state": "DRAFT",
+    "states": [
+      "DRAFT",
+      "FROZEN_FOR_CONFIRMATION",
+      "MONITORING",
+      "COMPLETE",
+      "STOPPED",
+      "INVALIDATED",
+      "RETIRED"
+    ],
+    "terminal_states": ["COMPLETE", "STOPPED", "RETIRED"],
+    "allowed_transitions": {
+      "DRAFT": ["INVALIDATED", "RETIRED"],
+      "FROZEN_FOR_CONFIRMATION": ["INVALIDATED", "RETIRED"],
+      "MONITORING": ["INVALIDATED", "RETIRED"],
+      "COMPLETE": ["RETIRED"],
+      "STOPPED": ["RETIRED"],
+      "INVALIDATED": ["RETIRED"],
+      "RETIRED": []
+    }
+  },
+  "family_member": {
+    "required_fields": [
+      "hypothesis_id",
+      "hypothesis_version",
+      "hypothesis_version_hash",
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "qm_a_analysis_id",
+      "qm_a_version_id"
+    ]
+  },
+  "multiplicity": {
+    "strategies": [
+      "PREDECLARED_SINGLE_PRIMARY",
+      "BONFERRONI_FWER",
+      "HOLM_FWER",
+      "BENJAMINI_HOCHBERG_FDR",
+      "CUSTOM_PREDECLARED"
+    ],
+    "single_primary_requires_one_member": true,
+    "fwer_strategies": ["BONFERRONI_FWER", "HOLM_FWER"],
+    "fwer_parameter": "family_alpha",
+    "fdr_strategies": ["BENJAMINI_HOCHBERG_FDR"],
+    "fdr_parameter": "fdr_q",
+    "probability_parameter_open_interval": [0.0, 1.0],
+    "custom_required_fields": ["method_name", "rule_hash", "rationale"]
+  },
+  "sequential_monitoring": {
+    "modes": [
+      "FIXED_HORIZON_NO_INTERIM",
+      "PREDECLARED_LOOKS",
+      "CUSTOM_PREDECLARED"
+    ],
+    "required_fields": [
+      "mode",
+      "planned_looks",
+      "early_stop_allowed",
+      "stopping_rule"
+    ],
+    "look_required_fields": ["look_id", "information_fraction"],
+    "final_information_fraction": 1.0,
+    "fractions_must_be_strictly_increasing": true,
+    "fixed_horizon_requires_single_final_look": true,
+    "fixed_horizon_early_stop_allowed": false,
+    "custom_required_fields": ["rule_hash", "rationale"],
+    "look_decisions": [
+      "CONTINUE",
+      "STOP_EFFICACY",
+      "STOP_FUTILITY",
+      "FINAL_COMPLETE"
+    ]
+  },
+  "bindings": {
+    "qm_c1_contract_schema": "qm_c_hypothesis_registry_v1",
+    "qm_c2_contract_schema": "qm_c_analysis_plan_v1",
+    "qm_a_contract_schema": "qm_a_research_governance_v1",
+    "qm_b_closure_schema": "qm_b_closure_v1",
+    "all_members_must_share_hypothesis_family_id": true,
+    "all_member_hashes_must_match": true,
+    "all_members_must_be_c2_confirmation_ready_at_freeze": true
+  },
+  "evaluation_gate": {
+    "control_plan_state_required_before_first_look": "FROZEN_FOR_CONFIRMATION",
+    "next_look_only": true,
+    "look_id_must_be_predeclared": true,
+    "no_look_after_stop_or_complete": true,
+    "final_look_requires_final_complete_decision": true,
+    "early_stop_decision_requires_early_stop_allowed": true
+  },
+  "boundaries": {
+    "adjusted_p_values_computed_here": false,
+    "effect_estimates_computed_here": false,
+    "negative_result_registry_implemented_here": false,
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  }
+}
