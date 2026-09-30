@@ -1,0 +1,94 @@
+{
+  "schema_version": "qm_b_evidence_impact_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "source_documents": {
+    "alias_boundaries": {
+      "path": "docs/qm_b_alias_listing_boundaries.md",
+      "git_blob_sha": "667f31d1b32f3f4ef06cef6e42ecc8f4f7d79260"
+    },
+    "survivorship": {
+      "path": "docs/qm_b_survivorship_sample_audit.md",
+      "git_blob_sha": "949b77e2135ba170a2b930ffe46c387533f46f23"
+    },
+    "provider_outcomes": {
+      "path": "docs/qm_b_provider_outcome_availability.md",
+      "git_blob_sha": "6054bd5637a1bed2f7e18e73d3cf636f680a8288"
+    },
+    "historical_taxonomy": {
+      "path": "docs/qm_b_historical_taxonomy_integrity.md",
+      "git_blob_sha": "9f8cf1acf75d90899bc3e5df63f056fed4d6c139"
+    },
+    "crypto_objects": {
+      "path": "docs/qm_b_crypto_object_semantics.md",
+      "git_blob_sha": "4bc201e67144722986d1b0c5c036c3b2a62c4f6b"
+    }
+  },
+  "impact_classes": [
+    "NO_INVALIDATION",
+    "SCOPE_RESTRICTION",
+    "LOCAL_REVALIDATION_REQUIRED",
+    "INTERPRETATION_RESTRICTION",
+    "SEGMENT_OR_EXCLUDE"
+  ],
+  "impact_register": [
+    {
+      "finding_id": "QM-B-IMPACT-001",
+      "finding": "No confirmed current-universe survivorship dependency in reviewed historical research paths.",
+      "impact_class": "NO_INVALIDATION",
+      "affected_scope": "historical sample membership",
+      "automatic_global_invalidation": false
+    },
+    {
+      "finding_id": "QM-B-IMPACT-002",
+      "finding": "No confirmed present-day taxonomy retrojection into historical samples.",
+      "impact_class": "NO_INVALIDATION",
+      "affected_scope": "historical taxonomy/classification",
+      "automatic_global_invalidation": false
+    },
+    {
+      "finding_id": "QM-B-IMPACT-003",
+      "finding": "35,059 frozen scanner observations have strict identity/alias PIT support; 761 early non-crypto observations remain before the strict alias boundary and 1,293 crypto rows remain outside strict stable-object identity.",
+      "impact_class": "SCOPE_RESTRICTION",
+      "affected_scope": "stable-instrument longitudinal interpretation",
+      "automatic_global_invalidation": false
+    },
+    {
+      "finding_id": "QM-B-IMPACT-004",
+      "finding": "HistoricalMatcher uses exact calendar-run-date price sessions while the productive scanner MarketDate is a calendar run date; Phase 1 already uses a session-aware rule and is not affected by this finding.",
+      "impact_class": "LOCAL_REVALIDATION_REQUIRED",
+      "affected_scope": "daily_research HistoricalMatcher / cross-universe historical matches",
+      "automatic_global_invalidation": false
+    },
+    {
+      "finding_id": "QM-B-IMPACT-005",
+      "finding": "Stored price history proves current audit possession, not prior-analysis-time outcome availability; missing or unknown outcomes cannot enter denominators.",
+      "impact_class": "INTERPRETATION_RESTRICTION",
+      "affected_scope": "prior outcome denominators",
+      "automatic_global_invalidation": false
+    },
+    {
+      "finding_id": "QM-B-IMPACT-006",
+      "finding": "Historical repository evidence does not prove listing venue/date, delisting, market tradability, execution-channel availability or complete project investability for the historical sample.",
+      "impact_class": "INTERPRETATION_RESTRICTION",
+      "affected_scope": "strict investable-universe/backtest claims",
+      "automatic_global_invalidation": false
+    },
+    {
+      "finding_id": "QM-B-IMPACT-007",
+      "finding": "CRYPTO:<BASE> and <BASE>-<QUOTE> are different semantic object classes; shared base tokens do not prove stable identity or pair equivalence.",
+      "impact_class": "SEGMENT_OR_EXCLUDE",
+      "affected_scope": "cross-namespace crypto longitudinal research",
+      "automatic_global_invalidation": false
+    }
+  ],
+  "expected_conclusions": {
+    "global_research_invalidation_required": false,
+    "phase1_selection_timing_invalidation_required": false,
+    "daily_research_historical_matcher_revalidation_required": true,
+    "strict_asof_backtest_claim_allowed": false,
+    "crypto_cross_namespace_merge_allowed": false,
+    "historical_observations_deleted_or_neutralized": false
+  }
+}
