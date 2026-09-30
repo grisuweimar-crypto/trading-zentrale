@@ -1,0 +1,57 @@
+{
+  "schema_version": "qm_b_prospective_identity_match_v1",
+  "module": "QM-B",
+  "name": "Prospective Listing Snapshot to Stable Instrument Candidate",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "principles": [
+    "prospective listing evidence and stable instrument identity remain separate facts",
+    "automatic matching requires exact identifier equality and one active universe row with one valid ISIN",
+    "symbol normalization, name matching, suffix inference and venue inference are forbidden",
+    "the identity-match valid_from is the later of listing-snapshot valid_from and universe-observed-at",
+    "a listing snapshot may not create historical identity before both evidence inputs were project-known",
+    "duplicate current-master rows require review even when they share the same ISIN",
+    "an exact symbol match with multiple ISINs is ambiguous and fails closed",
+    "unmatched records remain unmatched; missing is not neutral",
+    "identity matching never implies historical universe membership, tradability or project investability",
+    "crypto and unsupported instrument classes are not auto-promoted by this matcher"
+  ],
+  "match_status_values": [
+    "MATCHED",
+    "UNMATCHED",
+    "AMBIGUOUS",
+    "REVIEW_REQUIRED_DUPLICATE_MASTER_ROWS",
+    "UNSUPPORTED"
+  ],
+  "required_snapshot_fields": [
+    "snapshot_id",
+    "source_id",
+    "valid_from",
+    "records"
+  ],
+  "required_universe_observation_fields": [
+    "universe_snapshot_id",
+    "universe_observed_at",
+    "universe_sha256"
+  ],
+  "automatic_match": {
+    "requires_active_row": true,
+    "requires_exact_symbol_match": true,
+    "requires_valid_isin": true,
+    "requires_exactly_one_master_row": true,
+    "allowed_asset_types": ["stock", "etf", "fund"],
+    "symbol_normalization_allowed": false,
+    "name_matching_allowed": false,
+    "ticker_suffix_inference_allowed": false,
+    "venue_inference_allowed": false
+  },
+  "promotion": {
+    "stable_instrument_candidate_allowed": true,
+    "strict_alias_ledger_promotion": false,
+    "historical_membership_promotion": false,
+    "tradability_promotion": false,
+    "project_investability_promotion": false,
+    "productive_scanner_integration": false
+  }
+}
