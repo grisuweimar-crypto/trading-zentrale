@@ -16,6 +16,7 @@ from scanner.data.price_history import validated_rows
 MIN_MATCHES = 20
 COOLDOWN_TRADING_DAYS = 5
 HORIZONS = (5, 10, 20, 40)
+MAX_SESSION_LOOKBACK_CALENDAR_DAYS = 7
 # Rank intervals include their upper bound; metric intervals include their lower
 # bound. Values are fractions (0.15 = 15%), never inferred percentage units.
 BUCKETS = {
@@ -64,7 +65,7 @@ def finite_number(value):
 def parse_date(value):
     try:
         return date.fromisoformat(str(value))
-    except ValueError:
+    except (TypeError, ValueError):
         return None
 
 
@@ -118,18 +119,34 @@ class PriceSessions:
             self.closes.setdefault(row["symbol"], {})[parse_date(row["date"])] = float(row["close"])
         self.dates = {symbol: sorted(values) for symbol, values in self.closes.items()}
 
+    def resolve_on_or_before(self, symbol, run_day, max_age=MAX_SESSION_LOOKBACK_CALENDAR_DAYS):
+        """Resolve a scanner run date to the latest stored market session, fail closed."""
+        days = self.dates.get(symbol, [])
+        if run_day is None or not days:
+            return None
+        position = bisect_right(days, run_day) - 1
+        if position < 0:
+            return None
+        session = days[position]
+        if (run_day - session).days > max_age:
+            return None
+        return session
+
     def elapsed(self, symbol, start, end):
         days = self.dates.get(symbol, [])
         return bisect_right(days, end) - bisect_right(days, start)
 
-    def forward_return(self, symbol, start, horizon, as_of):
+    def forward_return(self, symbol, start_session, horizon, as_of):
+        if start_session is None:
+            return None
         days = self.dates.get(symbol, [])
-        index = bisect_left(days, start)
+        index = bisect_left(days, start_session)
         target = index + horizon
-        if index >= len(days) or days[index] != start or target >= len(days) or days[target] > as_of:
+        if (index >= len(days) or days[index] != start_session
+                or target >= len(days) or days[target] > as_of):
             return None
         closes = self.closes[symbol]
-        result = closes[days[target]] / closes[start] - 1
+        result = closes[days[target]] / closes[start_session] - 1
         return result if math.isfinite(result) else None
 
 
@@ -143,21 +160,42 @@ class HistoricalMatcher:
     def __init__(self, history_rows, price_rows=(), policy=None):
         self.policy = policy or MatchPolicy()
         self.prices = PriceSessions(price_rows)
-        # The first stored scanner observation of each symbol/date wins intact.
-        # Never merge fields from separate intraday runs or fill missing ranks.
-        seen, self.events = set(), []
+        # First stored scanner observation per symbol/run-date wins intact. A run
+        # date is then aligned only backwards to an observed price session. When
+        # several run dates map to the same symbol/session, the latest scanner
+        # observation represents that one market session (Phase-1 precedent).
+        seen, raw_events = set(), []
         derived_ranks = _historical_rank_percentiles(history_rows)
         for index, row in enumerate(history_rows):
             symbol = str(row.get("symbol") or "").strip()
-            day = parse_date(row.get("date"))
-            if not symbol or day is None or not observed(row) or (symbol, day) in seen:
+            run_day = parse_date(row.get("date"))
+            if not symbol or run_day is None or not observed(row) or (symbol, run_day) in seen:
                 continue
-            seen.add((symbol, day))
+            seen.add((symbol, run_day))
             enriched = row
             if not str(row.get("rank_percentile") or "").strip() and index in derived_ranks:
                 enriched = dict(row, rank_percentile=str(derived_ranks[index]))
-            self.events.append((day, symbol, features(enriched)))
-        self.events.sort(key=lambda event: (event[0], event[1]))
+            session = self.prices.resolve_on_or_before(symbol, run_day)
+            raw_events.append((run_day, session, index, symbol, features(enriched)))
+
+        resolved, unresolved = {}, []
+        for event in raw_events:
+            run_day, session, index, symbol, state = event
+            if session is None:
+                unresolved.append(event)
+                continue
+            key = (symbol, session)
+            previous = resolved.get(key)
+            if previous is None or (run_day, index) > (previous[0], previous[2]):
+                resolved[key] = event
+
+        # Keep raw run date as provenance. It is never rewritten to the market
+        # session. Unresolved events remain visible but cannot produce outcomes.
+        self.events = [
+            (run_day, session, symbol, state)
+            for run_day, session, _, symbol, state in [*resolved.values(), *unresolved]
+        ]
+        self.events.sort(key=lambda event: (event[0], event[2]))
         self.cache = {}
 
     def summary(self, current_row):
@@ -176,13 +214,13 @@ class HistoricalMatcher:
             wanted = {field: current[field] for field in fields}
             events, last = [], {}
             if as_of is not None and all(value is not None for value in wanted.values()):
-                for day, symbol, state in self.events:
-                    if day >= as_of or any(state[field] != value for field, value in wanted.items()):
+                for run_day, session, symbol, state in self.events:
+                    if run_day >= as_of or any(state[field] != value for field, value in wanted.items()):
                         continue
-                    if symbol in last and self.prices.elapsed(symbol, last[symbol], day) < self.policy.cooldown_trading_days:
+                    if symbol in last and self.prices.elapsed(symbol, last[symbol], run_day) < self.policy.cooldown_trading_days:
                         continue
-                    events.append((day, symbol))
-                    last[symbol] = day
+                    events.append((run_day, session, symbol))
+                    last[symbol] = run_day
             attempts[f"level_{level}"] = len(events)
             if events:
                 kept, selected, conditions = events, f"level_{level}", wanted
@@ -190,9 +228,9 @@ class HistoricalMatcher:
                 break
         # With too few events even at L3, report the actual L3 sample explicitly.
         values = {horizon: [] for horizon in HORIZONS}
-        for day, symbol in kept:
+        for _, session, symbol in kept:
             for horizon in HORIZONS:
-                value = self.prices.forward_return(symbol, day, horizon, as_of)
+                value = self.prices.forward_return(symbol, session, horizon, as_of)
                 if value is not None:
                     values[horizon].append(value)
         result = {
@@ -213,12 +251,14 @@ class HistoricalMatcher:
 
 def method_metadata(policy):
     return {
-        "version": "cross_universe_v1", **asdict(policy), "buckets": BUCKETS,
+        "version": "cross_universe_v2_session_aligned", **asdict(policy), "buckets": BUCKETS,
         "event_source": "artifacts/research/history_recent.csv",
         "session_source": "artifacts/research/price_backfill.csv",
         "universe": "all stored scanner symbols",
-        "level_selection": "independent event N before outcome availability",
-        "duplicate_events": "first stored observation per symbol/date, no field merging",
-        "missing_sessions": "no inferred sessions; first event retained, subsequent events require observed cooldown",
-        "outcomes": "exact event-day close to h-th later valid price session, at or before snapshot as_of",
+        "level_selection": "independent session-aligned event N before outcome maturity",
+        "duplicate_events": "first stored observation per symbol/run-date; latest run-date per resolved symbol/session",
+        "session_alignment": "latest stored price session <= raw scanner run date, maximum 7 calendar days; never future",
+        "raw_market_date_preserved": True,
+        "missing_sessions": "remain unresolved; no inferred calendar, no live lookup, no outcome",
+        "outcomes": "resolved start-session close to h-th later valid price session, at or before snapshot as_of",
     }
