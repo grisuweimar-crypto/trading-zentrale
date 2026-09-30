@@ -1,0 +1,89 @@
+{
+  "schema_version": "qm_c3_families_multiplicity_v1",
+  "module": "QM-C3",
+  "name": "Hypothesis Families & Multiplicity",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Freeze exact confirmatory hypothesis-family membership and the multiplicity strategy before any confirmatory outcome inspection. Sequential monitoring is explicitly deferred to QM-C4.",
+  "principles": {
+    "family_members_are_exact_versioned_objects": true,
+    "multiplicity_strategy_is_predeclared": true,
+    "family_membership_cannot_change_after_freeze": true,
+    "c2_confirmation_readiness_is_required_for_every_member": true,
+    "sequential_monitoring_is_not_part_of_qm_c3": true,
+    "qm_b_blockers_remain_authoritative": true,
+    "missing_is_not_neutral": true,
+    "technical_completion_is_not_empirical_promotion": true
+  },
+  "registry": {
+    "event_schema_version": "qm_c3_family_multiplicity_event_v1",
+    "hash_algorithm": "sha256",
+    "hash_chain_required": true,
+    "default_path": "artifacts/research/qm/qm_c3_family_multiplicity.jsonl",
+    "event_types": ["CONTROL_PLAN_REGISTERED", "CONTROL_PLAN_FROZEN", "CONTROL_PLAN_STATE_TRANSITION"]
+  },
+  "control_plan": {
+    "required_fields": [
+      "control_plan_id",
+      "control_plan_version",
+      "hypothesis_family_id",
+      "research_mode",
+      "family_members",
+      "multiplicity_strategy",
+      "multiplicity_parameters"
+    ],
+    "research_mode_required": "CONFIRMATION",
+    "states": ["DRAFT", "FROZEN_FOR_CONFIRMATION", "INVALIDATED", "RETIRED"],
+    "allowed_transitions": {
+      "DRAFT": ["INVALIDATED", "RETIRED"],
+      "FROZEN_FOR_CONFIRMATION": ["INVALIDATED", "RETIRED"],
+      "INVALIDATED": ["RETIRED"],
+      "RETIRED": []
+    }
+  },
+  "family_member": {
+    "required_fields": [
+      "hypothesis_id",
+      "hypothesis_version",
+      "hypothesis_version_hash",
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "qm_a_analysis_id",
+      "qm_a_version_id"
+    ]
+  },
+  "multiplicity": {
+    "strategies": [
+      "PREDECLARED_SINGLE_PRIMARY",
+      "BONFERRONI_FWER",
+      "HOLM_FWER",
+      "BENJAMINI_HOCHBERG_FDR",
+      "CUSTOM_PREDECLARED"
+    ],
+    "fwer_strategies": ["BONFERRONI_FWER", "HOLM_FWER"],
+    "fwer_parameter": "family_alpha",
+    "fdr_strategies": ["BENJAMINI_HOCHBERG_FDR"],
+    "fdr_parameter": "fdr_q",
+    "custom_required_fields": ["method_name", "rule_hash", "rationale"]
+  },
+  "bindings": {
+    "qm_c1_contract_schema": "qm_c_hypothesis_registry_v1",
+    "qm_c2_contract_schema": "qm_c_analysis_plan_v1",
+    "qm_a_contract_schema": "qm_a_research_governance_v1",
+    "qm_b_closure_schema": "qm_b_closure_v1",
+    "all_members_must_share_hypothesis_family_id": true,
+    "all_members_must_be_c2_confirmation_ready_at_freeze": true
+  },
+  "boundaries": {
+    "sequential_look_schedule_defined_here": false,
+    "outcomes_inspected_here": false,
+    "adjusted_p_values_computed_here": false,
+    "negative_result_registry_implemented_here": false,
+    "scanner_or_decision_semantics_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  }
+}
