@@ -1,0 +1,44 @@
+name: QM-C Multiplicity and Sequential Monitoring
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_c_multiplicity_monitoring_v1.json"
+      - "configs/qm_c3_closure_v1.json"
+      - "src/scanner/research/governance/qm_c_multiplicity.py"
+      - "src/scanner/research/governance/qm_c3_closure.py"
+      - "tests/test_qm_c*.py"
+      - "tests/test_qm_a*.py"
+      - "tests/test_qm_b_closure.py"
+      - "docs/qm_c_multiplicity_monitoring.md"
+      - ".github/workflows/qm_c_multiplicity_monitoring.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-c3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run QM-C1/C2/C3 and cross-module governance tests
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_c*.py \
+            tests/test_qm_a_research_governance.py \
+            tests/test_qm_a_concurrency_guard.py \
+            tests/test_qm_b_closure.py
+      - name: Validate QM-C3 closure manifest
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          from scanner.research.governance.qm_c3_closure import validate_closure_file
+          p = validate_closure_file()
+          assert p['display_status'] == 'QM-C3 COMPLETE — MULTIPLICITY AND SEQUENTIAL MONITORING GATES ACTIVE'
+          print(p['display_status'])
+          PY
