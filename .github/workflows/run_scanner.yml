@@ -86,6 +86,17 @@ jobs:
         if: steps.research.outputs.complete == 'true'
         run: python scripts/generate_daily_research.py
 
+      - name: Aktuelle Phase-7A Decision-Evidence archivieren
+        id: decision_evidence
+        if: steps.research.outputs.complete == 'true'
+        continue-on-error: true
+        run: python scripts/build_current_decision_evidence_7a.py --archive
+
+      - name: Decision-Evidence Ausfall fail-closed markieren
+        if: steps.research.outputs.complete == 'true' && steps.decision_evidence.outcome != 'success'
+        run: |
+          echo "::warning::Phase-7A Decision-Evidence konnte fuer diesen Snapshot nicht archiviert werden. Scanner-Publikation bleibt gueltig; Depot-Watch muss fuer diesen Snapshot fail-closed bleiben."
+
       - name: History Delta erzeugen (Scanner-interne Verläufe)
         if: steps.research.outputs.complete == 'true'
         env:
