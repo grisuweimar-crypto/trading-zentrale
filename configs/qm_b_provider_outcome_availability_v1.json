@@ -9,6 +9,10 @@
       "path": "artifacts/research/history_analysis.csv",
       "sha256": "4861bacd140b332699c02cb5c941970ff3e4bb54d218a0eb546ca2c6e4a04382"
     },
+    "history_recent": {
+      "path": "artifacts/research/history_recent.csv",
+      "sha256": "e3509d7ce6972bc9a8d956e68d8754c93633657091e386efdb33e8ba51f1794c"
+    },
     "price_backfill": {
       "path": "artifacts/research/price_backfill.csv",
       "sha256": "8256d3559783d41d4896d5c5c518239a54f62878c7f1c3d3dc1b456724fc5fe9"
@@ -49,6 +53,17 @@
     "denominator_eligible_statuses": ["AVAILABLE"],
     "price_rows_prove_prior_analysis_time_availability": false,
     "frozen_repository_snapshot_proves_current_audit_possession_only": true
+  },
+  "market_date_semantics": {
+    "productive_yahoo_enricher": "calendar_run_date_utc",
+    "historical_matcher": "exact_event_calendar_date_price_required",
+    "phase1_precedent": "previous_observed_market_session_at_or_before_run_date_with_max_7_calendar_days_then_deduplicate_by_symbol_session_keep_latest_observation",
+    "finding_id": "QM-B-POA-001",
+    "finding_status": "METHODOLOGY_RISK",
+    "finding_scope": "HistoricalMatcher / daily_research cross-universe outcomes",
+    "not_claimed_scope": "Phase 1 Selection/Timing, which already uses session-aware alignment",
+    "automatic_fix_enabled": false,
+    "challenger_only": true
   },
   "pit_rules": {
     "historical_retrojection_permitted": false,
