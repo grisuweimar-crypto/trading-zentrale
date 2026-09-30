@@ -1,0 +1,117 @@
+{
+  "schema_version": "qm_c_hypothesis_registry_v1",
+  "module": "QM-C1",
+  "name": "Versioned Hypothesis Registry",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Provide stable, versioned and auditable hypothesis identities that bind cleanly into QM-A governance and respect QM-B historical-universe promotion constraints.",
+  "principles": {
+    "hypothesis_versions_are_immutable": true,
+    "frozen_versions_may_not_be_rewritten": true,
+    "successor_versions_must_be_explicit": true,
+    "discovery_and_confirmation_are_distinct": true,
+    "rejected_and_retired_versions_are_retained": true,
+    "missing_is_not_neutral": true,
+    "qm_a_is_the_evidence_lifecycle_authority": true,
+    "qm_b_is_the_historical_universe_integrity_authority": true,
+    "productive_scanner_and_decision_semantics_must_not_change": true
+  },
+  "registry": {
+    "event_schema_version": "qm_c_hypothesis_event_v1",
+    "hash_algorithm": "sha256",
+    "hash_chain_required": true,
+    "default_path": "artifacts/research/qm/qm_c_hypothesis_registry.jsonl",
+    "event_types": [
+      "HYPOTHESIS_REGISTERED",
+      "HYPOTHESIS_STATE_TRANSITION"
+    ]
+  },
+  "hypothesis": {
+    "required_fields": [
+      "hypothesis_id",
+      "hypothesis_version",
+      "research_question",
+      "hypothesis_statement",
+      "hypothesis_family_id",
+      "research_mode",
+      "qm_a_analysis_id",
+      "universe_requirement"
+    ],
+    "research_modes": [
+      "DISCOVERY",
+      "CONFIRMATION"
+    ],
+    "universe_requirements": [
+      "NONE",
+      "OBSERVED_SCANNER_UNIVERSE",
+      "STRICT_ASOF_INVESTABLE"
+    ],
+    "initial_state": "DRAFT",
+    "states": [
+      "DRAFT",
+      "EXPLORATORY",
+      "FROZEN_FOR_CONFIRMATION",
+      "REJECTED",
+      "RETIRED"
+    ],
+    "allowed_transitions": {
+      "DRAFT": [
+        "EXPLORATORY",
+        "FROZEN_FOR_CONFIRMATION",
+        "REJECTED",
+        "RETIRED"
+      ],
+      "EXPLORATORY": [
+        "REJECTED",
+        "RETIRED"
+      ],
+      "FROZEN_FOR_CONFIRMATION": [
+        "REJECTED",
+        "RETIRED"
+      ],
+      "REJECTED": [
+        "RETIRED"
+      ],
+      "RETIRED": []
+    },
+    "mode_state_rules": {
+      "DISCOVERY": {
+        "allowed_nonterminal_states": [
+          "DRAFT",
+          "EXPLORATORY"
+        ]
+      },
+      "CONFIRMATION": {
+        "allowed_nonterminal_states": [
+          "DRAFT",
+          "FROZEN_FOR_CONFIRMATION"
+        ]
+      }
+    }
+  },
+  "qm_a_binding": {
+    "required_contract_schema": "qm_a_research_governance_v1",
+    "shared_freeze_state": "FROZEN_FOR_CONFIRMATION",
+    "identity_field": "hypothesis_version_hash",
+    "analysis_id_must_match": true,
+    "frozen_hash_must_match": true
+  },
+  "qm_b_binding": {
+    "required_closure_schema": "qm_b_closure_v1",
+    "strict_universe_requirement": "STRICT_ASOF_INVESTABLE",
+    "strict_promotion_boolean_field": "productive_strict_asof_investable_universe_promoted",
+    "blocked_status_field": "strict_historical_promotion_status",
+    "blocked_status_value": "BLOCKED_EXTERNAL_EVIDENCE",
+    "strict_confirmation_fails_closed_when_not_promoted": true
+  },
+  "boundaries": {
+    "analysis_plan_implemented_here": false,
+    "multiplicity_implemented_here": false,
+    "sequential_monitoring_implemented_here": false,
+    "scanner_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false
+  }
+}
