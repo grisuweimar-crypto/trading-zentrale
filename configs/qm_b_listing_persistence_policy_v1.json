@@ -1,0 +1,26 @@
+{
+  "schema_version": "qm_b_listing_persistence_policy_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "purpose": "Prevent third-party listing data from being durably persisted to the public repository unless source rights are explicitly cleared in project governance.",
+  "persistence_scopes": ["local_ephemeral", "public_repository"],
+  "local_ephemeral": {
+    "allowed_for_qm_test_execution": true,
+    "implies_license_clearance": false,
+    "may_be_committed_or_redistributed": false
+  },
+  "public_repository": {
+    "default_allowed": false,
+    "required_source_license_status": "USABLE",
+    "requires_explicit_redistribution_clearance": true,
+    "explicitly_cleared_source_ids": []
+  },
+  "principles": [
+    "public availability is not equivalent to redistribution permission",
+    "research collection eligibility is not equivalent to public repository persistence eligibility",
+    "license review required must fail closed for public repository persistence",
+    "a source may be enabled only through an explicit reviewed policy change",
+    "local ephemeral QM tests do not imply any broader data-use or redistribution right"
+  ]
+}
