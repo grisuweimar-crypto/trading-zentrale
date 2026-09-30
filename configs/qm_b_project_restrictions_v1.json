@@ -1,0 +1,40 @@
+{
+  "schema_version": "qm_b_project_restrictions_v1",
+  "module": "QM-B",
+  "name": "Project Restriction Policy",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "policy_scope": "scanner_project_policy_only",
+  "principles": [
+    "project restrictions are internal scanner/research policy and are separate from exchange listing, market tradability, broker availability, legal eligibility and regulatory restrictions",
+    "a CLEAR project restriction status does not imply that an instrument is listed, tradable, executable or legally available",
+    "policy evidence becomes usable only when the policy version is actually observable",
+    "policy changes are never back-projected",
+    "missing or malformed instrument attributes fail closed"
+  ],
+  "allowed_asset_types": ["stock", "etf", "fund"],
+  "blocked_instrument_ids": [],
+  "restricted_instrument_ids": [],
+  "status_values": ["CLEAR", "BLOCKED", "RESTRICTED", "UNKNOWN"],
+  "decision_rules": {
+    "blocked_id_precedence": true,
+    "restricted_id_precedence_after_blocked": true,
+    "unsupported_asset_type": "BLOCKED",
+    "missing_asset_type": "UNKNOWN",
+    "mixed_asset_types_same_instrument": "UNKNOWN",
+    "allowed_asset_type_and_no_explicit_restriction": "CLEAR"
+  },
+  "pit_rules": {
+    "policy_valid_from_is_observation_time": true,
+    "historical_retrojection_permitted": false,
+    "policy_commit_sha_required": true
+  },
+  "non_claims": {
+    "legal_eligibility_evaluated": false,
+    "broker_availability_evaluated": false,
+    "market_tradability_evaluated": false,
+    "listing_state_evaluated": false,
+    "sanctions_or_regulatory_screening_evaluated": false
+  }
+}
