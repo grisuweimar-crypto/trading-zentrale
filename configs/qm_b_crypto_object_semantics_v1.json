@@ -1,0 +1,57 @@
+{
+  "schema_version": "qm_b_crypto_object_semantics_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "frozen_input_commit": "c8ca34f591665baddbbd2070cb853e51582ddd51",
+  "inputs": {
+    "history_analysis": {
+      "path": "artifacts/research/history_analysis.csv",
+      "sha256": "4861bacd140b332699c02cb5c941970ff3e4bb54d218a0eb546ca2c6e4a04382"
+    },
+    "current_universe": {
+      "path": "data/inputs/universe_master.csv",
+      "sha256": "7e3ff13933334fbef4cabe478a2b2759105d0068d129a6531582bbeb328bd181"
+    }
+  },
+  "object_classes": {
+    "INTERNAL_BASE_REFERENCE": {
+      "description": "Project namespace reference such as CRYPTO:BTC. It references a base crypto asset concept but is not by itself a venue/provider trading instrument.",
+      "stable_asset_identity_verified": false,
+      "tradability_implied": false,
+      "listing_implied": false,
+      "investability_implied": false
+    },
+    "QUOTE_PAIR_REFERENCE": {
+      "description": "Quoted pair identifier such as BTC-USD. Base and quote are semantically material; provider/venue instrument identity remains unknown without separate evidence.",
+      "stable_asset_identity_verified": false,
+      "provider_instrument_identity_verified": false,
+      "tradability_implied": false,
+      "listing_implied": false,
+      "investability_implied": false
+    }
+  },
+  "rules": {
+    "shared_base_token_proves_identity": false,
+    "internal_base_equals_quote_pair": false,
+    "different_quote_pairs_are_equivalent": false,
+    "quote_currency_may_be_dropped": false,
+    "provider_namespace_may_be_inferred": false,
+    "venue_may_be_inferred": false,
+    "current_crypto_symbol_may_rewrite_historical_identifier": false,
+    "historical_pair_may_promote_current_membership": false,
+    "pair_presence_proves_asset_listing": false,
+    "pair_presence_proves_asset_tradability": false,
+    "pair_presence_proves_project_investability": false,
+    "base_component_relationship_allowed": true,
+    "exact_identifier_observation_may_be_preserved": true
+  },
+  "promotion": {
+    "stable_asset_identity": false,
+    "stable_provider_instrument_identity": false,
+    "strict_membership": false,
+    "listing": false,
+    "tradability": false,
+    "investability": false
+  }
+}
