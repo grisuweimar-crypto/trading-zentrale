@@ -9,6 +9,7 @@ on:
       - "scripts/qm_b_provider_outcome_diagnostics.py"
       - "scripts/qm_b_market_date_semantics_diagnostics.py"
       - "scripts/qm_b_historical_matcher_session_challenger.py"
+      - "scripts/qm_b_provider_gap_lineage_diagnostics.py"
       - "tests/test_qm_b_provider_outcome_availability.py"
       - "docs/qm_b_provider_outcome_availability.md"
       - ".github/workflows/qm_b_provider_outcome_availability.yml"
@@ -79,3 +80,5 @@ jobs:
           print(json.dumps(rows, indent=2, sort_keys=True))
           assert len(rows) == p['price_coverage']['unavailable_symbol_count']
           PY
+      - name: Trace DV.V and SLVR.V repository lineage
+        run: PYTHONPATH=src python scripts/qm_b_provider_gap_lineage_diagnostics.py --output /tmp/qm_b_provider_gap_lineage.json
