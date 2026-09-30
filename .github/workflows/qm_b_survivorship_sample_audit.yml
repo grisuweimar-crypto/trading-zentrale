@@ -1,0 +1,37 @@
+name: QM-B Survivorship Sample Audit
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_survivorship_sample_audit_v1.json"
+      - "src/scanner/research/governance/qm_b_survivorship_sample_audit.py"
+      - "scripts/qm_b_survivorship_sample_audit.py"
+      - "tests/test_qm_b_survivorship_sample_audit.py"
+      - ".github/workflows/qm_b_survivorship_sample_audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-survivorship-sample-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run unit tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_b_survivorship_sample_audit.py
+      - name: Scan repository for candidate current-universe dependencies
+        run: |
+          PYTHONPATH=src python scripts/qm_b_survivorship_sample_audit.py --output /tmp/qm_b_survivorship.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_survivorship.json'))
+          print(json.dumps(p['candidates'], indent=2, sort_keys=True))
+          assert p['defect_claims_performed'] is False
+          assert p['historical_retrojection_permitted'] is False
+          PY
