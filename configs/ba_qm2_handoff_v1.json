@@ -1,0 +1,61 @@
+{
+  "schema_version": "ba_qm2_handoff_v1",
+  "business_area": "BA-QM2",
+  "name": "Historical Integrity & Research Discipline",
+  "display_status": "BA-QM2 GOVERNANCE COMPLETE — READY FOR QM-I LINEAGE; QM-B STRICT PROMOTION REMAINS EXTERNALLY BLOCKED",
+  "engineering_governance_status": "COMPLETE",
+  "strict_historical_promotion_status": "BLOCKED_EXTERNAL_EVIDENCE",
+  "empirical_promotion_claimed": false,
+  "qm_b": {
+    "closure_schema": "qm_b_closure_v1",
+    "display_status": "QM-B COMPLETE — STRICT PROMOTION BLOCKED BY EXTERNAL EVIDENCE",
+    "external_blockers": [
+      "LISTING_EVIDENCE",
+      "MARKET_TRADABILITY_EVIDENCE",
+      "EXECUTION_CHANNEL_EVIDENCE"
+    ],
+    "external_blockers_reopen_engineering": false
+  },
+  "qm_c": {
+    "closure_schema": "qm_c4_closure_v1",
+    "display_status": "QM-C COMPLETE — VERSIONED RESEARCH DISCIPLINE CHAIN ACTIVE",
+    "work_packages_complete": ["QM-C1", "QM-C2", "QM-C3", "QM-C4"]
+  },
+  "stable_lineage_identities": {
+    "hypothesis": ["hypothesis_id", "hypothesis_version", "hypothesis_version_hash"],
+    "analysis_plan": ["analysis_plan_id", "analysis_plan_version", "analysis_plan_hash"],
+    "multiplicity_monitoring_control": ["control_plan_id", "control_plan_version", "control_plan_hash"],
+    "result": ["result_id", "result_version", "result_hash"],
+    "qm_a_analysis": ["analysis_id", "version_id", "identity_hash"],
+    "qm_b_universe": ["universe_ledger_version", "instrument_master_version"]
+  },
+  "lineage_contract_for_qm_i": {
+    "required_path": [
+      "raw_source_id",
+      "feature_id",
+      "derived_metric_id",
+      "hypothesis_identity",
+      "analysis_plan_identity",
+      "control_plan_identity",
+      "result_identity",
+      "calibration_identity",
+      "decision_identity",
+      "watch_identity"
+    ],
+    "qm_i_may_reference_qm_c_ids_without_rekeying": true,
+    "mutable_names_may_not_replace_stable_ids": true,
+    "historical_pit_constraints_from_qm_b_remain_authoritative": true,
+    "evidence_consumption_state_from_qm_a_remains_authoritative": true
+  },
+  "handoff_preconditions": {
+    "qm_b_engineering_complete": true,
+    "qm_c_engineering_complete": true,
+    "qm_c_stable_ids_and_versions_available": true,
+    "qm_b_stable_identity_and_universe_versions_available": true,
+    "strict_historical_promotion_required_for_starting_qm_i": false,
+    "external_qm_b_blockers_must_remain_visible_in_lineage": true
+  },
+  "next_business_area": "BA-QM3",
+  "next_qm_axis": "QM-I",
+  "next_work_package": "Evidence Lineage / Double Counting"
+}
