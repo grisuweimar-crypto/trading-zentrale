@@ -8,6 +8,7 @@ on:
       - "scripts/qm_b_provider_outcome_availability.py"
       - "scripts/qm_b_provider_outcome_diagnostics.py"
       - "scripts/qm_b_market_date_semantics_diagnostics.py"
+      - "scripts/qm_b_historical_matcher_session_challenger.py"
       - "tests/test_qm_b_provider_outcome_availability.py"
       - "docs/qm_b_provider_outcome_availability.md"
       - ".github/workflows/qm_b_provider_outcome_availability.yml"
@@ -57,3 +58,24 @@ jobs:
         run: PYTHONPATH=src python scripts/qm_b_provider_outcome_diagnostics.py --output /tmp/qm_b_provider_outcome_diagnostics.json
       - name: Trace market_date semantics
         run: PYTHONPATH=src python scripts/qm_b_market_date_semantics_diagnostics.py --output /tmp/qm_b_market_date_semantics.json
+      - name: Quantify HistoricalMatcher session challenger
+        run: |
+          PYTHONPATH=src python scripts/qm_b_historical_matcher_session_challenger.py --output /tmp/qm_b_historical_matcher_session_challenger.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_historical_matcher_session_challenger.json'))
+          assert p['finding_status'] == 'METHODOLOGY_RISK'
+          assert p['phase1_affected'] is False
+          assert p['automatic_fix_applied'] is False
+          assert p['challenger_recovered_start_count_before_session_dedup'] > 0
+          print(json.dumps(p, indent=2, sort_keys=True))
+          PY
+      - name: Show unavailable current price-coverage symbols
+        run: |
+          python - <<'PY'
+          import json
+          p=json.load(open('artifacts/research/history_metadata.json'))
+          rows={s:d for s,d in p['price_coverage']['symbols'].items() if d.get('status') not in {'price_data_ok','price_data_partial'}}
+          print(json.dumps(rows, indent=2, sort_keys=True))
+          assert len(rows) == p['price_coverage']['unavailable_symbol_count']
+          PY
