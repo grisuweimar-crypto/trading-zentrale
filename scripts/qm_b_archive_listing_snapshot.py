@@ -45,7 +45,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--persistence-scope",
         choices=["local_ephemeral", "public_repository"],
-        default="local_ephemeral",
+        required=True,
         help="Public repository persistence is fail-closed unless source redistribution rights are explicitly cleared.",
     )
     return p
