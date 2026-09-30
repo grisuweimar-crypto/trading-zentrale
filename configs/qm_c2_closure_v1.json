@@ -1,0 +1,55 @@
+{
+  "schema_version": "qm_c2_closure_v1",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C2",
+  "display_status": "QM-C2 COMPLETE — ANALYSIS PLAN FREEZE GATE ACTIVE",
+  "engineering_status": "COMPLETE",
+  "empirical_promotion_claimed": false,
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "completed_capabilities": [
+    "versioned_analysis_plan_registry",
+    "immutable_analysis_plan_hash",
+    "explicit_successor_plan_versioning",
+    "primary_estimand_and_metric_contract",
+    "population_universe_window_outcome_contract",
+    "exclusion_and_sensitivity_contract",
+    "preconfirmation_plan_freeze",
+    "immutable_freeze_context",
+    "qm_c1_exact_hypothesis_binding",
+    "qm_a_full_identity_binding",
+    "qm_b_strict_universe_fail_closed_binding",
+    "end_to_end_confirmation_readiness_gate",
+    "integration_regression_tests"
+  ],
+  "integration_contracts": {
+    "qm_c1": {
+      "contract_schema": "qm_c_hypothesis_registry_v1",
+      "hypothesis_version_hash_must_match": true,
+      "direct_hypothesis_freeze_alone_is_not_confirmation_ready": true
+    },
+    "qm_a": {
+      "contract_schema": "qm_a_research_governance_v1",
+      "hypothesis_version_hash_must_match": true,
+      "analysis_plan_hash_must_match": true,
+      "all_freeze_identity_fields_must_match": true
+    },
+    "qm_b": {
+      "closure_schema": "qm_b_closure_v1",
+      "strict_universe_promotion_respected": true,
+      "current_external_blockers_are_not_overridden": true
+    }
+  },
+  "deferred_to_later_qm_c_blocks": [
+    "multiplicity_and_sequential_monitoring",
+    "negative_result_registry_and_qm_c_closure"
+  ],
+  "boundaries": {
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "selection_timing_probability_risk_confidence_or_elliott_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  },
+  "next_mandatory_work_package": "QM-C3"
+}
