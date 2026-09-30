@@ -7,6 +7,7 @@ on:
       - "src/scanner/research/governance/qm_b_provider_outcome_availability.py"
       - "scripts/qm_b_provider_outcome_availability.py"
       - "scripts/qm_b_provider_outcome_diagnostics.py"
+      - "scripts/qm_b_market_date_semantics_diagnostics.py"
       - "tests/test_qm_b_provider_outcome_availability.py"
       - "docs/qm_b_provider_outcome_availability.md"
       - ".github/workflows/qm_b_provider_outcome_availability.yml"
@@ -54,3 +55,5 @@ jobs:
           PY
       - name: Decompose missing start prices and unresolved targets
         run: PYTHONPATH=src python scripts/qm_b_provider_outcome_diagnostics.py --output /tmp/qm_b_provider_outcome_diagnostics.json
+      - name: Trace market_date semantics
+        run: PYTHONPATH=src python scripts/qm_b_market_date_semantics_diagnostics.py --output /tmp/qm_b_market_date_semantics.json
