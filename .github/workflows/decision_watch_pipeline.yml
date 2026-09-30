@@ -1,0 +1,146 @@
+name: Decision Watch Integration Pipeline
+
+on:
+  workflow_run:
+    workflows: ['Phase 2 Probability Calibration']
+    types: [completed]
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/decision_watch_pipeline.yml'
+      - 'scripts/build_integrated_decision_evidence_7a.py'
+      - 'src/scanner/research/decision_layer/integrated_evidence.py'
+      - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
+      - 'tests/test_decision_integrated_evidence.py'
+      - 'tests/test_decision_depot_watch_orchestration.py'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('decision-watch-integration-pr-{0}', github.event.pull_request.number) || 'decision-watch-integration-main' }}
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Run Decision integration regressions
+        run: >-
+          pytest -q
+          tests/test_decision_integrated_evidence.py
+          tests/test_decision_depot_watch_orchestration.py
+          tests/test_decision_depot_watch_prospective_gate.py
+          tests/test_decision_universal_stance_7d.py
+          tests/test_decision_state_transitions_7e.py
+          tests/test_decision_portfolio_action_7f.py
+          tests/test_decision_reliability_explainability_7g.py
+          tests/test_decision_depot_watch_7h.py
+
+  integrate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install -e '.[test]'
+
+      - name: Validate authoritative scanner snapshot
+        run: python scripts/generate_daily_research.py --validate-only
+
+      - name: Run unchanged Phase 3 Risk vNext for the current snapshot
+        run: python scripts/run_risk_vnext_3.py --output "$RUNNER_TEMP/risk_vnext_3.json"
+
+      - name: Run unchanged Phase 4 risk-scale guard
+        run: python scripts/audit_phase4_risk_scale.py --output "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
+
+      - name: Build unchanged Phase 4 current empirical registry
+        run: >-
+          python scripts/run_confidence_vnext_research_4.py
+          --phase2 artifacts/research/probability_calibration_2.json
+          --risk "$RUNNER_TEMP/risk_vnext_3.json"
+          --risk-scale "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
+          --output "$RUNNER_TEMP/confidence_vnext_research_4.json"
+
+      - name: Build final same-snapshot Phase 7A evidence
+        run: >-
+          python scripts/build_integrated_decision_evidence_7a.py
+          --phase4-report "$RUNNER_TEMP/confidence_vnext_research_4.json"
+          --archive
+
+      - name: Validate final packet set without portfolio data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          packets = json.loads(Path('artifacts/research/current_decision_packets_7a.json').read_text(encoding='utf-8'))
+          assert packets['snapshot_id'] == daily['snapshot_id']
+          assert packets['packet_count'] == daily['universe_size']
+          assert packets['semantics']['integrated_evidence_v1'] is True
+          assert packets['semantics']['phase2_phase3_phase4_outputs_consumed'] is True
+          assert packets['semantics']['phase5_unpromoted_changes_decision'] is False
+          assert packets['semantics']['elliott_unpromoted_changes_decision'] is False
+          assert packets['semantics']['external_evidence_phase8_activated'] is False
+          assert {p['as_of'] for p in packets['packets']} == {packets['as_of']}
+          assert all(p.get('orchestration_stage') == 'integrated_current_evidence_v1' for p in packets['packets'])
+          print(json.dumps({
+              'snapshot_id': packets['snapshot_id'],
+              'packet_count': packets['packet_count'],
+              'phase4_symbol_count': packets.get('phase4_symbol_count'),
+              'path_review_count': packets.get('path_review_count'),
+              'decision_as_of': packets['as_of'],
+          }, indent=2))
+          PY
+
+      - name: Refuse stale publication if main advanced during integration
+        run: |
+          git fetch origin main --force
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
+            echo 'main advanced while Decision evidence was being built; refuse stale current publication'
+            exit 1
+          }
+
+      - name: Persist final public Decision evidence only
+        run: |
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add \
+            artifacts/research/current_decision_packets_7a.json \
+            artifacts/research/decision_evidence_7a.jsonl
+          if ! git diff --cached --quiet; then
+            git commit -m '🧭 Finalize Decision Watch evidence [skip ci]'
+            git push origin HEAD:main
+          fi
