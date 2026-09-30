@@ -1,0 +1,68 @@
+name: QM-B Project Restrictions
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_b_project_restrictions_v1.json"
+      - "src/scanner/research/governance/qm_b_project_restrictions.py"
+      - "scripts/qm_b_project_restrictions.py"
+      - "tests/test_qm_b_project_restrictions.py"
+      - "docs/qm_b_project_restrictions.md"
+      - ".github/workflows/qm_b_project_restrictions.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-b-project-restrictions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pytest
+      - name: Run project restriction tests
+        run: PYTHONPATH=src python -m pytest -q tests/test_qm_b_project_restrictions.py
+      - name: Audit current durable membership against observed policy version
+        run: |
+          MEMBERSHIP="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text())
+          print(p['normalized_snapshot_path'])
+          PY
+          )"
+          POLICY_SHA="$(git rev-parse HEAD)"
+          POLICY_TIME="$(git show -s --format=%cI HEAD)"
+          PYTHONPATH=src python scripts/qm_b_project_restrictions.py \
+            --membership "$MEMBERSHIP" \
+            --policy-commit-sha "$POLICY_SHA" \
+            --policy-observed-at "$POLICY_TIME" \
+            --output /tmp/qm_b_project_restrictions.json >/dev/null
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_project_restrictions.json'))
+          assert p['instrument_count'] == 207
+          assert p['status_counts'] == {'CLEAR': 207}
+          assert p['historical_retrojection_permitted'] is False
+          assert p['legal_eligibility_evaluated'] is False
+          assert p['broker_availability_evaluated'] is False
+          assert p['market_tradability_evaluated'] is False
+          assert p['listing_state_evaluated'] is False
+          print(json.dumps({
+            'instrument_count': p['instrument_count'],
+            'status_counts': p['status_counts'],
+            'evidence_valid_from': p['evidence_valid_from'],
+            'non_claims': {
+              'legal_eligibility_evaluated': p['legal_eligibility_evaluated'],
+              'broker_availability_evaluated': p['broker_availability_evaluated'],
+              'market_tradability_evaluated': p['market_tradability_evaluated'],
+              'listing_state_evaluated': p['listing_state_evaluated'],
+            },
+          }, indent=2, sort_keys=True))
+          PY
