@@ -81,7 +81,7 @@
     "minimum_rows_per_subgroup": 20,
     "log_loss_clip_epsilon": 1e-12,
     "outcome_values": [0, 1],
-    "pit_rule": "prediction_as_of_must_precede_outcome_available_at",
+    "pit_rule": "prediction_as_of_must_precede_outcome_available_at_and_outcome_must_be_available_by_audit_as_of",
     "empty_reliability_bins_remain_empty": true,
     "automatic_recalibration_allowed": false,
     "productive_probability_update_allowed": false
@@ -90,6 +90,7 @@
     "required_audit_fields": [
       "audit_id",
       "audit_version",
+      "audit_as_of",
       "analysis_plan_id",
       "analysis_plan_version",
       "analysis_plan_hash",
