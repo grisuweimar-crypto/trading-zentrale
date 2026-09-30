@@ -1,0 +1,128 @@
+{
+  "schema_version": "qm_de_dependence_calibration_v1",
+  "business_area": "BA-QM4",
+  "qm_axes": ["QM-D", "QM-E"],
+  "name": "Dependence, Effective N & Calibration",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Audit dependence, effective information and robustness separately from probability calibration, while binding both audits to stable analysis/result/lineage identities and refusing to treat missing cluster or prediction evidence as neutral.",
+  "principles": {
+    "raw_n_is_not_effective_n": true,
+    "no_single_universal_effective_n": true,
+    "effective_n_methods_must_be_labelled": true,
+    "overlapping_forward_windows_are_not_independent": true,
+    "missing_cluster_metadata_is_unknown_not_neutral": true,
+    "robustness_checks_do_not_reselect_hypotheses": true,
+    "calibration_requires_point_in_time_prediction_outcome_pairs": true,
+    "aggregate_probability_reports_are_not_row_level_calibration_pairs": true,
+    "prediction_and_label_definitions_are_immutable_inputs": true,
+    "insufficient_subgroups_remain_insufficient": true,
+    "calibration_does_not_auto_retrain_or_promote": true,
+    "qm_i_lineage_identity_is_reused": true,
+    "qm_c_analysis_and_result_identity_is_reused": true
+  },
+  "dependence": {
+    "required_observation_fields": [
+      "observation_id",
+      "symbol",
+      "observed_at",
+      "value",
+      "interval_start",
+      "interval_end",
+      "lineage_node_id",
+      "lineage_version_id"
+    ],
+    "optional_cluster_fields": ["sector", "time_block"],
+    "methods": [
+      "RAW_N",
+      "POOLED_WITHIN_SYMBOL_AR1",
+      "SYMBOL_CLUSTER_CONCENTRATION",
+      "SECTOR_CLUSTER_CONCENTRATION",
+      "TIME_BLOCK_CLUSTER_CONCENTRATION",
+      "OVERLAP_CONCURRENCY_PROXY",
+      "LEAVE_ONE_SYMBOL_OUT",
+      "LEAVE_ONE_SECTOR_OUT",
+      "LEAVE_ONE_TIME_BLOCK_OUT",
+      "SYMBOL_CLUSTER_BOOTSTRAP",
+      "TIME_BLOCK_BOOTSTRAP"
+    ],
+    "minimum_ar1_observations_per_symbol": 4,
+    "minimum_cluster_count_for_leave_one_out": 2,
+    "minimum_bootstrap_clusters": 2,
+    "default_bootstrap_reps": 500,
+    "effective_n_floor": 1.0,
+    "effective_n_ceiling_is_raw_n": true,
+    "sector_method_requires_complete_sector_metadata": true,
+    "time_block_method_requires_complete_time_block_metadata": true,
+    "intervals_are_closed_open": true
+  },
+  "calibration": {
+    "required_prediction_fields": [
+      "prediction_id",
+      "predicted_probability",
+      "outcome",
+      "prediction_as_of",
+      "outcome_available_at",
+      "lineage_node_id",
+      "lineage_version_id"
+    ],
+    "optional_group_fields": ["subgroup", "time_block"],
+    "metrics": [
+      "BRIER_SCORE",
+      "LOG_LOSS",
+      "CALIBRATION_INTERCEPT",
+      "CALIBRATION_SLOPE",
+      "RELIABILITY_BINS"
+    ],
+    "default_reliability_bins": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "minimum_rows_for_calibration_regression": 20,
+    "minimum_rows_per_subgroup": 20,
+    "log_loss_clip_epsilon": 1e-12,
+    "outcome_values": [0, 1],
+    "pit_rule": "prediction_as_of_must_precede_outcome_available_at",
+    "empty_reliability_bins_remain_empty": true,
+    "automatic_recalibration_allowed": false,
+    "productive_probability_update_allowed": false
+  },
+  "identity_binding": {
+    "required_audit_fields": [
+      "audit_id",
+      "audit_version",
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "result_id",
+      "result_version",
+      "result_hash",
+      "dataset_snapshot_hash",
+      "lineage_registry_head_hash"
+    ],
+    "prediction_definition_hash_required_for_calibration": true,
+    "label_definition_hash_required_for_calibration": true
+  },
+  "existing_phase2_bridge": {
+    "module": "scanner.reports.probability_calibration",
+    "recognized_block_method": "circular_moving_observation_date_blocks",
+    "iid_diagnostics_must_remain_diagnostics_only": true,
+    "aggregate_phase2_report_is_sufficient_for_row_level_brier_logloss": false,
+    "insufficient_status": "INSUFFICIENT_ROW_LEVEL_PREDICTION_OUTCOME_PAIRS"
+  },
+  "qm_i_binding": {
+    "closure_schema": "ba_qm3_qm_i_closure_v1",
+    "lineage_node_must_exist": true,
+    "missing_lineage_fails_closed": true
+  },
+  "boundaries": {
+    "selection_or_timing_retrained": false,
+    "probability_or_confidence_retrained": false,
+    "risk_or_elliott_retrained": false,
+    "scanner_weights_changed": false,
+    "decision_layer_semantics_changed": false,
+    "productive_calibration_changed": false,
+    "portfolio_action_changed": false,
+    "orders_generated": false,
+    "empirical_promotion_performed": false
+  }
+}
