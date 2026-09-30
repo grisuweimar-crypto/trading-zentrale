@@ -5,15 +5,11 @@ on:
     paths:
       - "configs/qm_b_universe_integrity_v1.json"
       - "configs/external_universe_coverage_contract_v1.json"
-      - "configs/qm_b_historical_taxonomy_*"
       - "src/scanner/research/governance/qm_b.py"
       - "scripts/qm_b_universe_integrity.py"
-      - "scripts/qm_b_historical_taxonomy_*"
       - "tests/test_qm_b*.py"
       - "docs/qm_b_asof_universe_integrity.md"
-      - "docs/qm_b_historical_taxonomy_*"
       - ".github/workflows/qm_b_universe_integrity.yml"
-      - ".github/workflows/qm_b_historical_taxonomy_integrity.yml"
   workflow_dispatch:
 
 permissions:
@@ -51,5 +47,3 @@ jobs:
               'missing_isin_count': len(p['missing_isin_rows']),
           }, indent=2, sort_keys=True))
           PY
-      - name: Scan historical taxonomy integrity candidates
-        run: python scripts/qm_b_historical_taxonomy_scan.py --output /tmp/qm_b_historical_taxonomy_scan.json
