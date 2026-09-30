@@ -1,0 +1,23 @@
+{
+  "schema_version": "qm_b_survivorship_sample_audit_v1",
+  "module": "QM-B",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "scan_roots": ["src", "scripts"],
+  "historical_markers": ["history_analysis", "history_recent", "score_history", "price_backfill"],
+  "current_universe_markers": ["universe_master", "load_universe", "active_universe"],
+  "current_snapshot_markers": ["latest_scanner"],
+  "classifications": ["SAFE", "CURRENT_UNIVERSE_DEPENDENCY", "CURRENT_METADATA_ENRICHMENT", "CURRENT_SNAPSHOT_DEPENDENCY", "REVIEW_REQUIRED"],
+  "principles": [
+    "current-universe use is not automatically survivorship bias",
+    "a candidate requires manual call-path review before defect classification",
+    "historical sample membership must not be defined by current active universe membership",
+    "current metadata must not be silently treated as historical point-in-time truth",
+    "current latest scanner state must not define historical labels or sample eligibility",
+    "absence from the current universe is not historical OUT_OF_SCOPE evidence"
+  ],
+  "known_safe_paths": {
+    "src/scanner/reports/research_views.py": "Historical scanner views are built from observed scanner rows and run groups; no current universe master is used to define historical membership.",
+    "src/scanner/research/query_api.py": "History queries filter only explicit requested symbols and dates; no current universe master is loaded."
+  }
+}
