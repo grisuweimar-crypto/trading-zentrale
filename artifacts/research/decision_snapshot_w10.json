@@ -1,0 +1,95 @@
+{
+  "downstream_contract": {
+    "chain": [
+      "7D",
+      "7E",
+      "7F",
+      "7G",
+      "7H"
+    ],
+    "phase6_effect_boundary": "7F_review_context_only",
+    "private_position_data_persisted": false,
+    "private_runner": "scripts/run_depot_watch_orchestrated.py",
+    "requires_same_snapshot_id": true
+  },
+  "guards": {
+    "final_7a_requires_all_upstream_stages_resolved": true,
+    "later_evidence_backdating_allowed": false,
+    "phase6_missing_is_neutral_evidence": false,
+    "private_position_data_persisted": false,
+    "runtime_stage_available_from_is_recorded_not_supplied": true
+  },
+  "pre_7a_frozen_at": "2026-10-01T11:45:14.864936+00:00",
+  "schema_version": "decision_snapshot_orchestration_w10_v1",
+  "sealed_at": "2026-10-01T11:45:32.025897+00:00",
+  "snapshot_as_of": "2026-09-30",
+  "snapshot_id": "1596e19c-5d01-47e0-b4f9-c85e54d1de7b",
+  "stages": {
+    "final_7a": {
+      "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/current_decision_packets_7a.json",
+      "artifact_sha256": "8cee6a9f55c06eee2968d652cb03094fc9cb99ce85a32f88a2e431f2d230d2ea",
+      "availability_source": "current_decision_packets_7a.as_of",
+      "available_from": "2026-10-01T11:45:25.964379+00:00",
+      "snapshot_identity_state": "verified",
+      "status": "available"
+    },
+    "phase2_probability": {
+      "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/probability_calibration_2.json",
+      "artifact_sha256": "7b81d65e283fe9c91bb1507425b6a7bbbbf86765010720e728bdc413428cce18",
+      "availability_source": "git_commit_time",
+      "available_from": "2026-09-30T20:08:28+00:00",
+      "snapshot_identity_state": "verified",
+      "source_commit": "e8f25e02cca1702840e3e65ee30b428fc55c9add",
+      "status": "available"
+    },
+    "phase3_risk": {
+      "artifact_path": "/home/runner/work/_temp/risk_vnext_3.json",
+      "artifact_sha256": "1122ae5868923748fb21177fdfe9a7717d413f0fddd33c60e8d71428b5450250",
+      "availability_source": "w10_runtime_recorded_after_stage",
+      "available_from": "2026-10-01T11:45:10.880351+00:00",
+      "snapshot_identity_state": "verified",
+      "status": "available"
+    },
+    "phase4_confidence": {
+      "artifact_path": "/home/runner/work/_temp/confidence_vnext_research_4.json",
+      "artifact_sha256": "2f8e602ddb4acf494c3de8f6693d689c852f0d18256e35d9012c949cbc364044",
+      "availability_source": "w10_runtime_recorded_after_stage",
+      "available_from": "2026-10-01T11:45:13.439962+00:00",
+      "snapshot_identity_state": "not_expressed_by_artifact",
+      "status": "available"
+    },
+    "phase5_governance": {
+      "artifact_path": "/home/runner/work/_temp/confidence_vnext_promotion_5e.json",
+      "artifact_sha256": "f029992111c4181a366a511f121f061ddf46294f833c1c7d759292a850dd0bfc",
+      "availability_source": "git_commit_time",
+      "available_from": "2026-09-30T10:13:28+00:00",
+      "snapshot_identity_state": "not_market_snapshot_evidence",
+      "source_commit": "5cfee12c79188dc7758d9434a3894b8827c96349",
+      "status": "available"
+    },
+    "phase6_elliott": {
+      "availability_source": null,
+      "decision_effect": "none",
+      "missing_is_neutral_evidence": false,
+      "resolved_at": "2026-10-01T11:45:14.492450+00:00",
+      "snapshot_identity_state": "not_applicable",
+      "status": "not_supplied"
+    },
+    "phase7a_archive": {
+      "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/decision_evidence_7a.jsonl",
+      "artifact_sha256": "ba74d7ee8b91d6914feb4c0ab55b12a92a6f681cf3d583025e25ecd494dce5f9",
+      "availability_source": "w10_runtime_recorded_after_archive_write",
+      "available_from": "2026-10-01T11:45:32.025897+00:00",
+      "snapshot_identity_state": "inherits_final_7a",
+      "status": "available"
+    },
+    "scanner_daily_research": {
+      "availability_source": "daily_research.generated_at",
+      "available_from": "2026-09-30T19:59:21.494424+00:00",
+      "snapshot_identity_state": "verified",
+      "status": "available"
+    }
+  },
+  "started_at": "2026-10-01T11:42:58.108625+00:00",
+  "status": "sealed"
+}
