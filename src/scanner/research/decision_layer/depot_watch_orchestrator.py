@@ -27,6 +27,7 @@ from .depot_watch import (
 )
 from .input_contract import validate_input_packet
 from .integrated_evidence import PATH_CONTEXT_TYPE
+from .phase5_shadow import Phase5ShadowAdapterError, phase5_shadow_from_packet
 from .portfolio_action import compute_portfolio_action
 from .reliability_explainability import build_reliability_explanation
 from .state_transition import build_state_transition_history
@@ -172,6 +173,13 @@ def _path_review(packet: Mapping[str, object]) -> dict[str, object] | None:
     return matches[0] if matches else None
 
 
+def _phase5_shadow(packet: Mapping[str, object]) -> dict[str, object] | None:
+    try:
+        return phase5_shadow_from_packet(packet)
+    except Phase5ShadowAdapterError as exc:
+        raise DepotWatchOrchestrationError(str(exc)) from exc
+
+
 def build_decision_bundle_set(
     daily: Mapping[str, object],
     position_book: Mapping[str, object],
@@ -191,6 +199,7 @@ def build_decision_bundle_set(
     bundles: list[dict[str, object]] = []
     missing_symbols: list[str] = []
     path_review_symbols: list[str] = []
+    phase5_shadow_symbols: list[str] = []
     for position in positions["positions"]:
         symbol = str(position["symbol"])
         packet = _current_packet_for_symbol(
@@ -215,8 +224,11 @@ def build_decision_bundle_set(
         action = compute_portfolio_action(transition, position, swing_context=None)
         explanation = build_reliability_explanation(packet, stance, transition, action)
         path_context = _path_review(packet)
+        phase5_context = _phase5_shadow(packet)
         if path_context and path_context.get("review_state") == "profit_protection_review":
             path_review_symbols.append(symbol)
+        if phase5_context is not None:
+            phase5_shadow_symbols.append(symbol)
         bundles.append({
             "schema_version": BUNDLE_SCHEMA_VERSION,
             "packet": packet,
@@ -225,6 +237,7 @@ def build_decision_bundle_set(
             "action": action,
             "explanation": explanation,
             "path_review": path_context,
+            "phase5_confidence_shadow": phase5_context,
         })
 
     bundle_set = {
@@ -240,6 +253,8 @@ def build_decision_bundle_set(
         "bundle_count": len(bundles),
         "missing_current_packet_symbols": sorted(missing_symbols),
         "path_review_symbols": sorted(path_review_symbols),
+        "phase5_shadow_symbols": sorted(phase5_shadow_symbols),
+        "phase5_shadow_changes_portfolio_action": False,
         "phase8_external_evidence_activated": False,
         "selection_direction_inferred": False,
         "scanner_scalar_fallback_used": False,
@@ -286,6 +301,51 @@ def _attach_path_reviews(
     return watch
 
 
+def _attach_phase5_shadow(
+    watch: dict[str, object],
+    bundle_set: Mapping[str, object],
+) -> dict[str, object]:
+    raw_bundles = bundle_set.get("bundles")
+    if not isinstance(raw_bundles, list):
+        return watch
+    context_by_symbol: dict[str, dict[str, object]] = {}
+    for bundle in raw_bundles:
+        if not isinstance(bundle, Mapping):
+            continue
+        packet = bundle.get("packet")
+        symbol = str(packet.get("symbol") or "") if isinstance(packet, Mapping) else ""
+        context = bundle.get("phase5_confidence_shadow")
+        if symbol and isinstance(context, Mapping):
+            context_by_symbol[symbol] = deepcopy(dict(context))
+
+    rows = watch.get("rows")
+    if not isinstance(rows, list):
+        return watch
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        symbol = str(row.get("symbol") or "")
+        context = context_by_symbol.get(symbol)
+        if context is None:
+            continue
+        row["phase5_confidence_shadow"] = deepcopy(context)
+        decision = row.get("decision")
+        if isinstance(decision, dict):
+            payload = context.get("payload")
+            payload = payload if isinstance(payload, Mapping) else {}
+            decision["phase5_shadow_integration_mode"] = context.get("integration_mode")
+            decision["phase5_shadow_status"] = payload.get("status")
+            decision["phase5_shadow_insufficient_evidence_horizons"] = deepcopy(
+                payload.get("insufficient_evidence_horizons", [])
+            )
+            decision["phase5_shadow_eligible_review_horizons"] = deepcopy(
+                payload.get("eligible_horizons_for_separate_promotion_review", [])
+            )
+            decision["phase5_shadow_production_change_performed"] = False
+            decision["phase5_shadow_changes_portfolio_action"] = False
+    return watch
+
+
 def build_orchestrated_depot_watch(
     daily: Mapping[str, object],
     position_book: Mapping[str, object],
@@ -300,4 +360,5 @@ def build_orchestrated_depot_watch(
     decision_daily = decision_bound_daily_snapshot(daily, diagnostics["decision_as_of"])
     watch = build_depot_watch(decision_daily, position_book, bundle_set)
     watch = _attach_path_reviews(watch, bundle_set)
+    watch = _attach_phase5_shadow(watch, bundle_set)
     return watch, diagnostics
