@@ -1,0 +1,175 @@
+{
+  "schema_version": "qm_j_phase1a_lag1_investigation_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+  "investigation_type": "POST_TRIGGER_DESCRIPTIVE_ROOT_CAUSE_INVESTIGATION",
+  "research_only": true,
+  "root_cause_assigned_by_code": false,
+  "diagnostic_thresholds_introduced": false,
+  "promotion_performed": false,
+  "production_logic_changed": false,
+  "source": {
+    "history_sha256": "e902354b1b755e6de0defc426ab1021d0556d859f503fb21f59b5f9ce5dc0fa8",
+    "price_sha256": "ec57efd5cc707ba0a6cfba55c2ef6595c6aa240d3f5f6eb45bc3153abfed64e0",
+    "stable_start": "2026-04-15",
+    "horizon_sessions": 20,
+    "min_cross_section": 20
+  },
+  "coverage": {
+    "phase1a_events": 19274,
+    "matched_observations": 15446,
+    "matched_days": 98,
+    "matched_symbols": 164,
+    "event_date_min": "2026-04-16",
+    "event_date_max": "2026-09-01"
+  },
+  "score_persistence": {
+    "global_current_lag_spearman": 0.9966339839043021,
+    "global_current_lag_pearson": 0.9971415884708454,
+    "daily_current_lag_spearman": {
+      "min": 0.9862030454643148,
+      "p10": 0.9938880628005683,
+      "p25": 0.9954815561493877,
+      "median": 0.9964118298432567,
+      "p75": 0.9973438474679651,
+      "p90": 0.9979889834161093,
+      "max": 0.9987010809786878,
+      "mean": 0.9961164829391079
+    },
+    "daily_current_lag_pearson": {
+      "min": 0.9904850275409328,
+      "p10": 0.9954035834563695,
+      "p25": 0.9965939265150043,
+      "median": 0.9975978115582864,
+      "p75": 0.998130990903441,
+      "p90": 0.998594994787307,
+      "max": 0.9988806559645852,
+      "mean": 0.9972151449211752
+    },
+    "exact_same_score_rate": 0.020458371099313737,
+    "absolute_score_change": {
+      "min": 0.0,
+      "p10": 0.03999999999999915,
+      "p25": 0.10999999999999943,
+      "median": 0.26000000000000156,
+      "p75": 0.5300000000000011,
+      "p90": 0.9000000000000004,
+      "max": 5.989999999999998,
+      "mean": 0.3981088955069274
+    }
+  },
+  "observation_spacing_calendar_days": {
+    "min": 1.0,
+    "p10": 1.0,
+    "p25": 1.0,
+    "median": 1.0,
+    "p75": 1.0,
+    "p90": 3.0,
+    "max": 6.0,
+    "mean": 1.4651689757866113
+  },
+  "predictive_comparison": {
+    "current_mean_daily_spearman": 0.028247224219975102,
+    "lag_mean_daily_spearman": 0.028320276156366626,
+    "daily_current_minus_lag": {
+      "min": -0.030084227029718878,
+      "p10": -0.015062953529649585,
+      "p25": -0.006288661975834015,
+      "median": 0.000985380360226138,
+      "p75": 0.005830884818427534,
+      "p90": 0.01348818645404926,
+      "max": 0.031582238295869765,
+      "mean": -7.305193639152601e-05
+    },
+    "fraction_days_current_stronger_than_lag": 0.5408163265306123,
+    "fraction_days_equal": 0.0,
+    "score_change_mean_daily_spearman": -0.00387338683094239,
+    "rank_change_mean_daily_spearman": -0.0032126670502650163,
+    "daily_score_change_return_spearman": {
+      "min": -0.3999477804123257,
+      "p10": -0.22148084837850443,
+      "p25": -0.10719506816477868,
+      "median": 0.01347974203263401,
+      "p75": 0.08222130726668371,
+      "p90": 0.19340929008383262,
+      "max": 0.48356345648083837,
+      "mean": -0.00387338683094239
+    },
+    "daily_rank_change_return_spearman": {
+      "min": -0.28898059112873914,
+      "p10": -0.1896589724291365,
+      "p25": -0.08943585786225294,
+      "median": 0.001711550961933566,
+      "p75": 0.08564762567690982,
+      "p90": 0.148183637395855,
+      "max": 0.37434687479664186,
+      "mean": -0.0032126670502650163
+    }
+  },
+  "subperiods": [
+    {
+      "month": "2026-04",
+      "days": 11,
+      "current_mean_daily_spearman": 0.00015586002534326673,
+      "lag_mean_daily_spearman": -0.00240228109591345,
+      "current_minus_lag_mean": 0.0025581411212567146,
+      "score_change_mean_daily_spearman": 0.02638897502856775,
+      "mean_daily_current_lag_score_spearman": 0.9972337797725992
+    },
+    {
+      "month": "2026-05",
+      "days": 21,
+      "current_mean_daily_spearman": 0.08613114026151061,
+      "lag_mean_daily_spearman": 0.08611553341673439,
+      "current_minus_lag_mean": 1.5606844776232453e-05,
+      "score_change_mean_daily_spearman": 0.0024851477301787517,
+      "mean_daily_current_lag_score_spearman": 0.9960331070834927
+    },
+    {
+      "month": "2026-06",
+      "days": 22,
+      "current_mean_daily_spearman": -0.015973156917749788,
+      "lag_mean_daily_spearman": -0.014992398932392504,
+      "current_minus_lag_mean": -0.0009807579853572902,
+      "score_change_mean_daily_spearman": -0.009484363821550618,
+      "mean_daily_current_lag_score_spearman": 0.996462750907278
+    },
+    {
+      "month": "2026-07",
+      "days": 22,
+      "current_mean_daily_spearman": -0.07490590219488781,
+      "lag_mean_daily_spearman": -0.0752152752161688,
+      "current_minus_lag_mean": 0.00030937302128098494,
+      "score_change_mean_daily_spearman": -0.00833471469843721,
+      "mean_daily_current_lag_score_spearman": 0.996174739722096
+    },
+    {
+      "month": "2026-08",
+      "days": 21,
+      "current_mean_daily_spearman": 0.14648155327894222,
+      "lag_mean_daily_spearman": 0.14774563980549255,
+      "current_minus_lag_mean": -0.0012640865265503866,
+      "score_change_mean_daily_spearman": -0.018516267534955094,
+      "mean_daily_current_lag_score_spearman": 0.9950962067338096
+    },
+    {
+      "month": "2026-09",
+      "days": 1,
+      "current_mean_daily_spearman": -0.11901375059269793,
+      "lag_mean_daily_spearman": -0.12470365101944048,
+      "current_minus_lag_mean": 0.005689900426742542,
+      "score_change_mean_daily_spearman": 0.05880260859343589,
+      "mean_daily_current_lag_score_spearman": 0.9981033665244191
+    }
+  ],
+  "interpretation_guard": {
+    "descriptive_only": true,
+    "post_trigger": true,
+    "may_not_be_used_as_confirmation": true,
+    "may_not_select_new_thresholds": true,
+    "root_cause_requires_separate_governance_transition": true,
+    "finding_remains_promotion_blocked_until_evidence_disposition": true
+  },
+  "result_hash": "27ae7c66a2e931a5008301d88f96b73539917fe6798852218a846455d7817a23"
+}
