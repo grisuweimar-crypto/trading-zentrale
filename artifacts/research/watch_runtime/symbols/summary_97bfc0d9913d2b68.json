@@ -1,0 +1,82 @@
+{
+  "decision_as_of": "2026-10-01T19:59:44.434846+00:00",
+  "decision_logic_changed": false,
+  "latest_universal_stance": {
+    "conflicts": [],
+    "direction": "positive",
+    "known_directional_claim_ids": [
+      "timing:NOW:42bcd8a34d314c09:5T",
+      "timing:NOW:0671faf1011640c5:5T",
+      "timing:NOW:f483a5247b57affc:20T",
+      "timing:NOW:cad5eb04910821c4:20T",
+      "timing:NOW:b158fef8cbfb5c55:20T",
+      "timing:NOW:3e260f25164f48ce:40T",
+      "timing:NOW:e3f414dec0e09a39:40T",
+      "timing:NOW:a0bebf08166a0860:60T",
+      "timing:NOW:fe6ff0aee1bf447a:60T",
+      "timing:NOW:92ad9e5c355866b9:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 10
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
+  },
+  "portfolio_action_computed": false,
+  "private_position_data_included": false,
+  "schema_version": "decision_watch_symbol_state_summary_v1",
+  "snapshot_id": "3dced257-e6a3-4ef3-b633-0ffa5f35418a",
+  "stance_history": [
+    {
+      "as_of": "2026-09-30T09:51:58.582444+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "27d49db9-f743-4545-83e1-a1e29292f844",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-01T16:44:40.667002+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "1596e19c-5d01-47e0-b4f9-c85e54d1de7b",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-01T19:59:44.434846+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "3dced257-e6a3-4ef3-b633-0ffa5f35418a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    }
+  ],
+  "state_history_path_memory": {
+    "deterioration": {
+      "r_code_downgrade": false,
+      "rank_worsening_5t": true,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
+      "trend200_falling_5t": true
+    },
+    "last_overextension_date": "2026-10-01",
+    "last_overextension_rs3m": 0.2604137888222453,
+    "overextension_active": true,
+    "recent_overextension": true,
+    "sessions_since_last_overextension": 0,
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "overextension_with_fading_dynamics"
+  },
+  "state_history_state": "overextension_with_momentum_loss",
+  "symbol": "NOW",
+  "transition_state": {
+    "pending_confirmation_count": 1,
+    "pending_direction": "positive",
+    "required_confirmation_count": 2,
+    "stable_anchor_is_current_stance": false,
+    "stable_directional_anchor": null,
+    "status": "bootstrap_pending"
+  }
+}

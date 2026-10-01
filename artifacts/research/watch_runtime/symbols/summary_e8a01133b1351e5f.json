@@ -1,0 +1,75 @@
+{
+  "decision_as_of": "2026-10-01T19:59:44.434846+00:00",
+  "decision_logic_changed": false,
+  "latest_universal_stance": {
+    "conflicts": [],
+    "direction": "negative",
+    "known_directional_claim_ids": [
+      "timing:ON:cce5c47f08a2bf66:60T",
+      "timing:ON:b0fb906b9f3e02ec:60T",
+      "timing:ON:1691f75766881bca:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 3
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "negative",
+    "support_structure": "same_family_correlated_support"
+  },
+  "portfolio_action_computed": false,
+  "private_position_data_included": false,
+  "schema_version": "decision_watch_symbol_state_summary_v1",
+  "snapshot_id": "3dced257-e6a3-4ef3-b633-0ffa5f35418a",
+  "stance_history": [
+    {
+      "as_of": "2026-09-30T09:51:58.582444+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "27d49db9-f743-4545-83e1-a1e29292f844",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-01T16:44:40.667002+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "1596e19c-5d01-47e0-b4f9-c85e54d1de7b",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-01T19:59:44.434846+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "3dced257-e6a3-4ef3-b633-0ffa5f35418a",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
+    }
+  ],
+  "state_history_path_memory": {
+    "deterioration": {
+      "r_code_downgrade": false,
+      "rank_worsening_5t": false,
+      "rs3m_falling_5t": false,
+      "score_falling_5t": false,
+      "trend200_falling_5t": false
+    },
+    "last_overextension_date": "2026-07-15",
+    "last_overextension_rs3m": 0.1952035703006116,
+    "overextension_active": false,
+    "recent_overextension": false,
+    "sessions_since_last_overextension": 77,
+    "upstream_review_state": "none",
+    "upstream_sequence_state": "no_recent_overextension_context"
+  },
+  "state_history_state": "post_overextension_correction",
+  "symbol": "ON",
+  "transition_state": {
+    "pending_confirmation_count": 1,
+    "pending_direction": "negative",
+    "required_confirmation_count": 2,
+    "stable_anchor_is_current_stance": false,
+    "stable_directional_anchor": null,
+    "status": "bootstrap_pending"
+  }
+}
