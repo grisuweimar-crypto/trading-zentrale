@@ -84,9 +84,22 @@ def validate_closure_manifest(payload: Mapping[str, Any], *, ba_qm3_closure: Map
     if not isinstance(integrations, Mapping):
         raise ValueError("ba_qm4_integrations_missing")
     qc, qi, p2 = integrations.get("qm_c"), integrations.get("qm_i"), integrations.get("phase2_probability")
-    if not isinstance(qc, Mapping) or qc.get("analysis_plan_ids_reused") is not True or qc.get("result_ids_reused") is not True or qc.get("result_plan_binding_checked_in_qm_e") is not True:
+    if (
+        not isinstance(qc, Mapping)
+        or qc.get("analysis_plan_ids_reused") is not True
+        or qc.get("analysis_plan_hash_reused") is not True
+        or qc.get("result_ids_reused") is not True
+        or qc.get("result_hash_reused") is not True
+        or qc.get("result_plan_binding_checked_in_qm_e") is not True
+    ):
         raise ValueError("ba_qm4_qm_c_integration_invalid")
-    if not isinstance(qi, Mapping) or qi.get("closure_schema") != "ba_qm3_qm_i_closure_v1" or qi.get("lineage_registry_head_hash_required") is not True or qi.get("missing_lineage_fails_closed") is not True:
+    if (
+        not isinstance(qi, Mapping)
+        or qi.get("closure_schema") != "ba_qm3_qm_i_closure_v1"
+        or qi.get("lineage_registry_head_hash_required") is not True
+        or qi.get("observation_and_prediction_lineage_nodes_must_exist") is not True
+        or qi.get("missing_lineage_fails_closed") is not True
+    ):
         raise ValueError("ba_qm4_qm_i_integration_invalid")
     if not isinstance(p2, Mapping) or p2.get("module") != "scanner.reports.probability_calibration" or p2.get("existing_moving_block_bootstrap_recognized") is not True or p2.get("iid_diagnostics_remain_diagnostics_only") is not True or p2.get("aggregate_report_is_row_level_calibration_data") is not False:
         raise ValueError("ba_qm4_phase2_bridge_invalid")
