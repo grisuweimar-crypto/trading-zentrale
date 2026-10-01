@@ -1,0 +1,95 @@
+{
+  "schema_version": "ba_qm7_qm_j_closure_v1",
+  "business_area": "BA-QM7",
+  "qm_axis": "QM-J",
+  "display_status_qm_j": "QM-J COMPLETE — MULTI-LEVEL NEGATIVE CONTROLS & FALSIFICATION ACTIVE",
+  "business_area_status": "BA-QM7 COMPLETE — FALSIFICATION COVERAGE COMPLETE; SELECTION FRESHNESS CAPA PRESERVED",
+  "engineering_status": "COMPLETE",
+  "negative_control_coverage_status": "COMPLETE",
+  "empirical_validation_status": "NOT_ESTABLISHED",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "empirical_promotion_claimed": false,
+  "all_negative_controls_passed": false,
+  "triggered_negative_controls": [
+    "PHASE1A_DATA_LAG1_SHIFTED_SCORE"
+  ],
+  "control_levels": {
+    "DATA": {
+      "real_application": "PHASE1A past-only Lag-1 shifted score",
+      "result": "TRIGGERED_PROMOTION_STOP_INVESTIGATION_CAPA",
+      "artifact": "artifacts/research/qm/qm_j_phase1a_data_research_falsification.json"
+    },
+    "FEATURE": {
+      "real_application": "PHASE1A within-day score permutation null",
+      "result": "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG",
+      "artifact": "artifacts/research/qm/qm_j_phase1a_selection_falsification.json"
+    },
+    "RESEARCH": {
+      "real_application": "64 deterministic outcome-blind pseudo signals",
+      "result": "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG",
+      "artifact": "artifacts/research/qm/qm_j_phase1a_data_research_falsification.json"
+    },
+    "DECISION_LAYER": {
+      "real_application": "non-authorized placebo sidecar evidence",
+      "result": "ZERO_DECISION_EFFECT",
+      "artifact": "artifacts/research/qm/qm_j_decision_e2e_falsification.json"
+    },
+    "END_TO_END": {
+      "real_application": "isolated W11-valid pipeline with destroyed directional predictive information",
+      "result": "PIPELINE_REACTED_TO_DESTROYED_INFORMATION_WITHOUT_STRUCTURAL_BREAK",
+      "artifact": "artifacts/research/qm/qm_j_decision_e2e_falsification.json"
+    }
+  },
+  "open_capa": {
+    "finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+    "capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+    "status": "IMPLEMENTED",
+    "evidence_impact": "PROMOTION_BLOCKED",
+    "effectiveness_verification": "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE",
+    "closure_does_not_close_capa": true,
+    "automatic_release_allowed": false
+  },
+  "completed_capabilities": [
+    "five_level_negative_control_harness",
+    "data_shifted_past_only_control",
+    "feature_permutation_null_distribution",
+    "research_pseudo_signal_null_distribution",
+    "decision_placebo_evidence_isolation",
+    "end_to_end_destroyed_predictive_information_attack",
+    "matched_grid_comparison_for_phase1a",
+    "outcome_blind_control_generation",
+    "reproducible_control_hashes_and_result_hashes",
+    "promotion_stop_on_similarly_strong_control",
+    "qm_h_finding_and_capa_escalation",
+    "post_trigger_root_cause_investigation",
+    "fail_closed_selection_freshness_guard",
+    "promotion_block_preserved_pending_prospective_effectiveness",
+    "no_negative_control_result_auto_promotes_system"
+  ],
+  "integration_contracts": {
+    "ba_qm6_closure_required": true,
+    "qm_a_governance_preserved": true,
+    "qm_b_historical_taxonomy_integrity_preserved": true,
+    "qm_h_capa_lifecycle_required_for_trigger": true,
+    "w11_integrity_interpretation_only": true,
+    "open_promotion_block_must_survive_ba_qm7_closure": true
+  },
+  "boundaries": {
+    "history_or_prices_mutated": false,
+    "scanner_logic_changed": false,
+    "scanner_weights_changed": false,
+    "selection_signal_changed": false,
+    "timing_signal_changed": false,
+    "decision_semantics_changed": false,
+    "depot_watch_semantics_changed": false,
+    "productive_artifacts_replaced": false,
+    "orders_generated": false,
+    "execution_enabled": false,
+    "productive_integration_enabled": false,
+    "empirical_promotion_performed": false,
+    "open_capa_closed_by_engineering_closure": false
+  },
+  "next_mandatory_work_package": "BA-QM8 / End-to-End Scanner Audit"
+}
