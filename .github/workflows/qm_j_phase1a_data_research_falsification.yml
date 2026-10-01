@@ -1,0 +1,50 @@
+name: BA-QM7 Phase1A Data and Research Falsification
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/governance/qm_j_phase1a_data_research.py"
+      - "src/scanner/research/governance/qm_j_negative_controls.py"
+      - "src/scanner/research/governance/qm_j_phase1a_selection.py"
+      - "configs/qm_j_phase1a_data_research_controls_v1.json"
+      - "scripts/run_qm_j_phase1a_data_research_falsification.py"
+      - "src/scanner/reports/selection_timing.py"
+      - "artifacts/research/history_analysis.csv"
+      - "artifacts/research/price_backfill.csv"
+      - "tests/test_qm_j_phase1a_data_research.py"
+      - "tests/test_qm_j_phase1a_selection.py"
+      - "tests/test_qm_j_negative_controls.py"
+      - "tests/test_selection_timing.py"
+      - ".github/workflows/qm_j_phase1a_data_research_falsification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase1a-data-research-falsification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run QM-J and Phase1A regressions
+        run: >-
+          python -m pytest -q
+          tests/test_qm_j_phase1a_data_research.py
+          tests/test_qm_j_phase1a_selection.py
+          tests/test_qm_j_negative_controls.py
+          tests/test_selection_timing.py
+      - name: Run frozen Phase1A data and research falsification
+        run: >-
+          python scripts/run_qm_j_phase1a_data_research_falsification.py
+          --output /tmp/qm_j_phase1a_data_research_falsification.json
+      - name: Upload falsification result
+        uses: actions/upload-artifact@v4
+        with:
+          name: qm-j-phase1a-data-research-falsification
+          path: /tmp/qm_j_phase1a_data_research_falsification.json
+          retention-days: 14
