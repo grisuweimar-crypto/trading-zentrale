@@ -1,0 +1,57 @@
+name: QM-I Evidence Lineage and Double Counting
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_i_evidence_lineage_v1.json"
+      - "configs/ba_qm3_qm_i_closure_v1.json"
+      - "configs/ba_qm2_handoff_v2.json"
+      - "configs/qm_h_capa_v1.json"
+      - "configs/qm_h_closure_v1.json"
+      - "configs/qm_c*.json"
+      - "src/scanner/research/governance/qm_i_lineage.py"
+      - "src/scanner/research/governance/qm_i_closure.py"
+      - "src/scanner/research/governance/qm_h*.py"
+      - "src/scanner/research/governance/qm_c*.py"
+      - "tests/test_qm_i*.py"
+      - "tests/test_qm_h*.py"
+      - "tests/test_qm_c*.py"
+      - "tests/test_qm_a*.py"
+      - "tests/test_qm_b_closure.py"
+      - "docs/qm_i_evidence_lineage.md"
+      - ".github/workflows/qm_i_evidence_lineage.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-i:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run QM-I and predecessor governance regression suite
+        run: |
+          PYTHONPATH=src python -m pytest -q \
+            tests/test_qm_i*.py \
+            tests/test_qm_h*.py \
+            tests/test_qm_c*.py \
+            tests/test_qm_a_research_governance.py \
+            tests/test_qm_a_concurrency_guard.py \
+            tests/test_qm_b_closure.py
+      - name: Validate BA-QM3 / QM-I closure
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          from scanner.research.governance.qm_i_closure import validate_closure_file
+          payload = validate_closure_file()
+          assert payload['display_status'] == 'QM-I COMPLETE — TYPED EVIDENCE LINEAGE AND DOUBLE-COUNTING REVIEW ACTIVE'
+          assert payload['business_area_status'] == 'BA-QM3 COMPLETE — EVIDENCE LINEAGE READY FOR DEPENDENCE AND CALIBRATION QM'
+          assert payload['next_mandatory_work_package'].startswith('BA-QM4 / QM-D + QM-E')
+          print(payload['display_status'])
+          print(payload['business_area_status'])
+          PY
