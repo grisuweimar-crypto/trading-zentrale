@@ -1,0 +1,86 @@
+{
+  "schema_version": "qm_j_phase1a_selection_falsification_result_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "application": "PHASE1A_CROSS_SECTIONAL_SELECTION_SCORE_PERMUTATION",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "source": {
+    "history_sha256": "e902354b1b755e6de0defc426ab1021d0556d859f503fb21f59b5f9ce5dc0fa8",
+    "price_sha256": "ec57efd5cc707ba0a6cfba55c2ef6595c6aa240d3f5f6eb45bc3153abfed64e0"
+  },
+  "plan": {
+    "stable_start": "2026-04-15",
+    "min_cross_section": 20,
+    "horizon_sessions": 20,
+    "primary_metric": "phase1a_20t_mean_daily_spearman",
+    "permutation_count": 64,
+    "permutation_quantile": 0.95,
+    "similarity_margin": 0.01,
+    "secondary_horizons_used_for_selection": []
+  },
+  "coverage": {
+    "phase1a_events": 19274,
+    "metric_observations": 15610,
+    "metric_days": 99,
+    "symbols": 164,
+    "event_date_min": "2026-04-15",
+    "event_date_max": "2026-09-01"
+  },
+  "real_metric": {
+    "mean_daily_spearman": 0.02850462831260115
+  },
+  "placebo_distribution": {
+    "min": -0.023809715092507355,
+    "median": 0.00010432247771826113,
+    "p95_higher": 0.014359942986365427,
+    "max": 0.020320008831346888,
+    "placebo_ge_real_rate": 0.0
+  },
+  "comparison_context_hash": "b0c7d86cf25ba5a09fc2139a7b297dece4c73442b257023a5fec8e8b72be9c8d",
+  "falsification_evaluation": {
+    "schema_version": "qm_j_falsification_evaluation_v1",
+    "module": "QM-J",
+    "business_area": "BA-QM7",
+    "plan": {
+      "plan_id": "QM-J-PHASE1A-SELECTION-PERMUTATION",
+      "plan_version": "v1",
+      "frozen_at": "2026-10-01T10:53:00+00:00",
+      "outcome_visibility_at_freeze": "NONE",
+      "primary_metric": "phase1a_20t_mean_daily_spearman",
+      "metric_direction": "HIGHER_IS_BETTER",
+      "similarity_margin": 0.01
+    },
+    "real_result": {
+      "result_id": "phase1a-real-selection",
+      "metric_name": "phase1a_20t_mean_daily_spearman",
+      "metric_value": 0.02850462831260115,
+      "comparison_context_hash": "b0c7d86cf25ba5a09fc2139a7b297dece4c73442b257023a5fec8e8b72be9c8d",
+      "n_observations": 15610
+    },
+    "control_results": [
+      {
+        "result_id": "phase1a-score-permutation-q95",
+        "metric_name": "phase1a_20t_mean_daily_spearman",
+        "metric_value": 0.014359942986365427,
+        "comparison_context_hash": "b0c7d86cf25ba5a09fc2139a7b297dece4c73442b257023a5fec8e8b72be9c8d",
+        "n_observations": 15610
+      }
+    ],
+    "status": "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG",
+    "triggered_controls": [],
+    "promotion_blocked_by_qm_j": false,
+    "investigation_required": false,
+    "capa_required": false,
+    "promotion_performed": false,
+    "productive_integration_enabled": false,
+    "execution_allowed": false,
+    "diagnostic_classes_if_triggered": [],
+    "evaluation_id": "7975762339e70a7963e7d179dc3dae6be008f91082611159b92190b5d53fbe52"
+  },
+  "phase1a_logic_changed": false,
+  "history_or_prices_changed": false,
+  "promotion_performed": false,
+  "result_hash": "8fca2c6b4619720ab8f21929c843bc42c889f6e17067061f06d622639a660b6d"
+}
