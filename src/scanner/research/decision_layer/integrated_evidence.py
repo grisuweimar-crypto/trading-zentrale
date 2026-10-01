@@ -200,6 +200,43 @@ def _path_evidence(
     }
 
 
+def _selection_scanner_generated_at(packet_set: Mapping[str, object]) -> str:
+    """Return the one raw scanner generation time carried by Selection evidence.
+
+    The packet-set ``as_of`` is the later daily-research publication time.  Phase
+    4, however, is bound to the underlying raw scanner generation.  Keeping both
+    timestamps separate preserves exact snapshot identity without weakening PIT.
+    """
+    raw_packets = packet_set.get("packets")
+    if not isinstance(raw_packets, list) or not raw_packets:
+        raise IntegratedDecisionEvidenceError("packet_set_packets_required")
+
+    generated: set[str] = set()
+    for raw_packet in raw_packets:
+        if not isinstance(raw_packet, Mapping):
+            raise IntegratedDecisionEvidenceError("packet_must_be_object")
+        symbol = str(raw_packet.get("symbol") or "")
+        evidence = raw_packet.get("evidence")
+        if not isinstance(evidence, list):
+            raise IntegratedDecisionEvidenceError(f"packet_evidence_missing:{symbol}")
+        selection_rows = [
+            row for row in evidence
+            if isinstance(row, Mapping) and row.get("family") == "selection"
+        ]
+        if len(selection_rows) != 1:
+            raise IntegratedDecisionEvidenceError(f"selection_claim_count_invalid:{symbol}")
+        generated.add(
+            _utc(
+                selection_rows[0].get("as_of"),
+                "selection_scanner_generated_at",
+            ).isoformat()
+        )
+
+    if len(generated) != 1:
+        raise IntegratedDecisionEvidenceError("selection_scanner_generation_inconsistent")
+    return next(iter(generated))
+
+
 def integrate_current_packet_set(
     *,
     packet_set: Mapping[str, object],
@@ -218,11 +255,16 @@ def integrate_current_packet_set(
     if snapshot_id != str(daily.get("snapshot_id") or ""):
         raise IntegratedDecisionEvidenceError("daily_packet_snapshot_mismatch")
     daily_as_of = str(daily.get("as_of") or "")
-    scanner_available_from = str(daily.get("generated_at") or "")
-    scanner_time = _utc(scanner_available_from, "daily_generated_at")
+    daily_available_from = str(daily.get("generated_at") or "")
+    daily_time = _utc(daily_available_from, "daily_generated_at")
+    scanner_generated_at = _selection_scanner_generated_at(packet_set)
+    scanner_time = _utc(scanner_generated_at, "selection_scanner_generated_at")
+    if scanner_time > daily_time:
+        raise IntegratedDecisionEvidenceError("scanner_generated_after_daily")
+
     final_text = finalized_at or datetime.now(timezone.utc).isoformat()
     final_time = _utc(final_text, "finalized_at")
-    if final_time < scanner_time:
+    if final_time < daily_time:
         raise IntegratedDecisionEvidenceError("integrated_evidence_before_scanner_publication")
 
     raw_symbols = daily.get("symbols")
@@ -233,7 +275,7 @@ def integrate_current_packet_set(
             phase4_report,
             expected_snapshot_id=snapshot_id,
             expected_daily_as_of=daily_as_of,
-            expected_scanner_generated_at=scanner_available_from,
+            expected_scanner_generated_at=scanner_generated_at,
         )
     except Phase4ConfidenceAdapterError as exc:
         raise IntegratedDecisionEvidenceError(str(exc)) from exc
@@ -286,7 +328,7 @@ def integrate_current_packet_set(
                 daily_symbol=daily_symbol,
                 history=history,
                 daily_as_of=daily_as_of,
-                scanner_available_from=scanner_available_from,
+                scanner_available_from=daily_available_from,
             )
         ]
         if additions[0]["payload"]["review_state"] == "profit_protection_review":
@@ -299,7 +341,7 @@ def integrate_current_packet_set(
                 symbol=symbol,
                 selection_claim_id=selection_claim_id,
                 phase4_rows=rows4,
-                scanner_as_of=scanner_available_from,
+                scanner_as_of=scanner_generated_at,
                 available_from=final_text,
                 source_version=source_version,
             )
@@ -327,7 +369,8 @@ def integrate_current_packet_set(
             evidence=[deepcopy(dict(row)) for row in base_evidence] + additions,
         )
         packet["orchestration_stage"] = INTEGRATED_STAGE
-        packet["scanner_generated_at"] = scanner_available_from
+        packet["scanner_generated_at"] = scanner_generated_at
+        packet["daily_research_generated_at"] = daily_available_from
         integrated.append(packet)
 
     result = deepcopy(dict(packet_set))
@@ -367,6 +410,7 @@ def integrate_current_packet_set(
     validation = deepcopy(dict(result.get("validation") or {}))
     validation["packet_as_of_utc"] = final_time.isoformat()
     validation["scanner_generated_at_utc"] = scanner_time.isoformat()
+    validation["daily_research_generated_at_utc"] = daily_time.isoformat()
     validation["phase4_snapshot_id"] = snapshot_id
     validation["phase4_same_snapshot_verified"] = True
     validation["phase5_source_commit"] = str(phase5_source_commit) if phase5_normalized is not None else None
