@@ -1,0 +1,50 @@
+name: W12 Ferrari Regression
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/decision_watch_w12.yml'
+      - 'src/scanner/research/decision_layer/depot_action_policy.py'
+      - 'src/scanner/research/decision_layer/portfolio_action.py'
+      - 'src/scanner/research/decision_layer/phase7_state_history.py'
+      - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
+      - 'tests/test_w12_ferrari_regression.py'
+      - 'tests/test_w8_action_matrix.py'
+      - 'tests/test_decision_portfolio_action_7f.py'
+      - 'docs/decision_ferrari_regression_w12.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/decision_watch_w12.yml'
+      - 'src/scanner/research/decision_layer/depot_action_policy.py'
+      - 'src/scanner/research/decision_layer/portfolio_action.py'
+      - 'src/scanner/research/decision_layer/phase7_state_history.py'
+      - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
+      - 'tests/test_w12_ferrari_regression.py'
+      - 'tests/test_w8_action_matrix.py'
+      - 'tests/test_decision_portfolio_action_7f.py'
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Run W12 Ferrari contract and surrounding 7F regressions
+        run: >-
+          pytest -q
+          tests/test_w12_ferrari_regression.py
+          tests/test_w8_action_matrix.py
+          tests/test_decision_portfolio_action_7f.py
+          tests/test_decision_depot_watch_orchestration.py
+          tests/test_decision_depot_watch_7h.py
