@@ -1,0 +1,35 @@
+{
+  "schema_version": "qm_c6_closure_v1",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C6",
+  "display_status": "QM-C COMPLETE — SIX-STEP RESEARCH DISCIPLINE CHAIN ACTIVE",
+  "engineering_status": "COMPLETE",
+  "qm_c_axis_status": "COMPLETE",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "empirical_promotion_claimed": false,
+  "required_work_packages": {
+    "QM-C1": "QM-C1 COMPLETE — VERSIONED HYPOTHESIS REGISTRY ACTIVE",
+    "QM-C2": "QM-C2 COMPLETE — ANALYSIS PLAN FREEZE GATE ACTIVE",
+    "QM-C3": "QM-C3 COMPLETE — HYPOTHESIS FAMILIES AND MULTIPLICITY GATE ACTIVE",
+    "QM-C4": "QM-C4 COMPLETE — SEQUENTIAL MONITORING GATE ACTIVE",
+    "QM-C5": "QM-C5 COMPLETE — NEGATIVE AND REJECTED RESULT RETENTION ACTIVE",
+    "QM-C6": "QM-C COMPLETE — SIX-STEP RESEARCH DISCIPLINE CHAIN ACTIVE"
+  },
+  "stable_identity_chain": [
+    "hypothesis_id+hypothesis_version+hypothesis_version_hash",
+    "analysis_plan_id+analysis_plan_version+analysis_plan_hash",
+    "control_plan_id+control_plan_version+control_plan_hash",
+    "monitoring_plan_id+monitoring_plan_version+monitoring_plan_hash",
+    "result_id+result_version+result_hash"
+  ],
+  "required_audits": ["hash_chain_integrity", "cross_reference_integrity", "deterministic_duplicate_hypothesis_review", "qm_b_external_blocker_visibility", "six_step_manifest_consistency"],
+  "boundaries": {
+    "qm_b_external_blockers_overridden": false,
+    "scanner_semantics_changed": false,
+    "decision_layer_semantics_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  },
+  "next_step_after_user_authorization": "BA-QM3 / QM-I"
+}
