@@ -14,7 +14,9 @@
     "qm_h_may_not_mutate_qm_a_state": true,
     "qm_b_external_gaps_do_not_reopen_engineering": true,
     "missing_external_evidence_remains_fail_closed": true,
-    "stable_upstream_identities_are_reused_without_rekeying": true
+    "stable_upstream_identities_are_reused_without_rekeying": true,
+    "non_blocker_upstream_identity_references_require_authoritative_resolution": true,
+    "evidence_impact_changes_require_traceable_reference_and_rationale": true
   },
   "finding_categories": [
     "DEFECT",
@@ -80,6 +82,8 @@
   ],
   "closure_guards": {
     "nonzero_evidence_impact_requires_disposition_reference": true,
+    "prospective_evidence_impact_is_checked_before_closure": true,
+    "evidence_impact_downgrade_requires_disposition_reference": true,
     "external_evidence_gap_requires_resolution_reference": true,
     "effectiveness_verified_requires_effective_result": true
   }
