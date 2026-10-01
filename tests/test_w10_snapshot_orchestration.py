@@ -70,7 +70,10 @@ def _collect_upstream(tmp_path: Path):
         now=_dt(17, 3),
     )
 
-    phase5 = _json(tmp_path / "p5.json", {"phase": "5e"})
+    phase5 = _json(
+        tmp_path / "p5.json",
+        {"phase": "5e", "snapshot_id": "historical-governance-sample"},
+    )
     manifest = record_preexisting_artifact(
         manifest,
         stage="phase5_governance",
@@ -97,6 +100,10 @@ def test_w10_phase6_absence_is_explicit_not_neutral(tmp_path: Path):
     assert phase6["decision_effect"] == "none"
     assert phase6["missing_is_neutral_evidence"] is False
     assert manifest["guards"]["phase6_missing_is_neutral_evidence"] is False
+    assert (
+        manifest["stages"]["phase5_governance"]["snapshot_identity_state"]
+        == "not_market_snapshot_evidence"
+    )
 
 
 def test_w10_runtime_availability_cannot_be_backdated_by_caller(tmp_path: Path):
