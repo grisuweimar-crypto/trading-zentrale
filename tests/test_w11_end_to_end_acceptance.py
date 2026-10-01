@@ -38,22 +38,38 @@ def _daily():
     }
 
 
+def _position(symbol: str):
+    return {
+        "schema_version": "decision_position_snapshot_v1",
+        "symbol": symbol,
+        "source_snapshot_id": f"private-{symbol}",
+        "as_of": "2026-10-01T10:28:00+00:00",
+        "position_state": "long",
+        "quantity": 10,
+        "currency": "USD",
+        "average_entry_price": 90.0,
+        "current_price": 100.0,
+    }
+
+
 def _position_book(symbol: str = "TEST"):
     return {
         "schema_version": "decision_depot_position_book_v1",
         "source_snapshot_id": "private-w11-book",
         "as_of": "2026-10-01T10:29:00+00:00",
-        "positions": [{
-            "schema_version": "decision_position_snapshot_v1",
-            "symbol": symbol,
-            "source_snapshot_id": f"private-{symbol}",
-            "as_of": "2026-10-01T10:28:00+00:00",
-            "position_state": "long",
-            "quantity": 10,
-            "currency": "USD",
-            "average_entry_price": 90.0,
-            "current_price": 100.0,
-        }],
+        "positions": [_position(symbol)],
+    }
+
+
+def _position_book_with_unmapped():
+    return {
+        "schema_version": "decision_depot_position_book_v1",
+        "source_snapshot_id": "private-w11-book",
+        "as_of": "2026-10-01T10:29:00+00:00",
+        "positions": [
+            _position("TEST"),
+            _position("UNMAPPED:PRIVATE_HOLDING"),
+        ],
     }
 
 
@@ -172,16 +188,38 @@ def test_w11_accepts_complete_same_snapshot_chain():
     )
     assert receipt["status"] == "passed"
     assert receipt["snapshot_id"] == SNAPSHOT
+    assert receipt["watch_status"] == "complete"
+    assert receipt["expected_unmapped_position_count"] == 0
     assert all(receipt["checks"].values())
     assert receipt["receipt_contains_position_rows"] is False
 
 
-def test_w11_rejects_partial_or_unavailable_watch():
+def test_w11_accepts_partial_watch_when_only_explicit_unmapped_positions_fail_closed():
+    packet = _packet()
+    watch, diagnostics = build_orchestrated_depot_watch(
+        _daily(), _position_book_with_unmapped(), [packet]
+    )
+    assert watch["watch_status"] == "partial"
+    receipt = validate_w11_end_to_end(
+        manifest=_manifest(),
+        archive_packets=[packet],
+        watch=watch,
+        diagnostics=diagnostics,
+    )
+    assert receipt["status"] == "passed"
+    assert receipt["watch_status"] == "partial"
+    assert receipt["expected_unmapped_position_count"] == 1
+    assert receipt["expected_unmapped_symbols"] == ["UNMAPPED:PRIVATE_HOLDING"]
+    assert receipt["checks"]["expected_unmapped_positions_fail_closed"] is True
+    assert receipt["checks"]["all_mapped_positions_have_decisions"] is True
+
+
+def test_w11_rejects_unexpected_missing_mapped_position():
     packet = _packet()
     watch, diagnostics = build_orchestrated_depot_watch(
         _daily(), _position_book("MISSING"), [packet]
     )
-    with pytest.raises(W11EndToEndError, match="watch_not_complete"):
+    with pytest.raises(W11EndToEndError, match="unexpected_unavailable_position"):
         validate_w11_end_to_end(
             manifest=_manifest(),
             archive_packets=[packet],
