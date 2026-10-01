@@ -22,39 +22,77 @@ def _utc(value: object) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
-def _sealed_final_7a_view(packets, daily, manifest):
-    """Keep only the sealed final-7A revision for the current scanner snapshot.
+def _canonical_revision_view(packets, daily, manifest):
+    """Canonicalize append-only 7A revisions using existing Decision semantics.
 
-    The append-only archive may contain earlier revisions under the same scanner
-    snapshot identity. Existing Decision orchestration resolves those revisions
-    by decision time. W10 supplies the authoritative final-7A available_from;
-    QM-J mirrors that existing rule rather than redefining currentness.
+    The production orchestrator's `_stance_history` keeps the latest evidence
+    revision of each (symbol, scanner-snapshot) at or before the current
+    Decision time, while `_current_packet_for_symbol` requires the current
+    snapshot revision to match that Decision time exactly. QM-J mirrors those
+    rules before running the isolated controls. This changes no claim content
+    and deliberately fails closed on equal-time duplicate revisions.
     """
     snapshot_id = str(daily.get("snapshot_id") or "").strip()
     stages = manifest.get("stages") or {}
     final_7a = stages.get("final_7a") or {}
     decision_time = _utc(final_7a.get("available_from"))
-    retained = []
-    dropped_current_revisions = 0
-    current_symbols = set()
+
+    by_symbol_snapshot = {}
+    dropped_future_revisions = 0
+    dropped_earlier_current_revisions = 0
+    superseded_revisions = 0
+
     for packet in packets:
-        if str(packet.get("source_snapshot_id") or "") != snapshot_id:
-            retained.append(packet)
-            continue
-        if _utc(packet.get("as_of")) != decision_time:
-            dropped_current_revisions += 1
-            continue
+        packet_time = _utc(packet.get("as_of"))
+        packet_snapshot = str(packet.get("source_snapshot_id") or "")
         symbol = str(packet.get("symbol") or "")
-        if symbol in current_symbols:
-            raise ValueError(f"duplicate_sealed_final_7a_symbol:{symbol}")
-        current_symbols.add(symbol)
-        retained.append(packet)
+        if packet_time > decision_time:
+            dropped_future_revisions += 1
+            continue
+        if packet_snapshot == snapshot_id and packet_time != decision_time:
+            dropped_earlier_current_revisions += 1
+            continue
+
+        key = (symbol, packet_snapshot)
+        previous = by_symbol_snapshot.get(key)
+        if previous is None:
+            by_symbol_snapshot[key] = packet
+            continue
+        previous_time = _utc(previous.get("as_of"))
+        if packet_time == previous_time:
+            raise ValueError(
+                f"duplicate_symbol_snapshot_revision:{symbol}:{packet_snapshot}"
+            )
+        if packet_time > previous_time:
+            by_symbol_snapshot[key] = packet
+            superseded_revisions += 1
+        else:
+            superseded_revisions += 1
+
+    retained = sorted(
+        by_symbol_snapshot.values(),
+        key=lambda packet: (
+            _utc(packet.get("as_of")),
+            str(packet.get("source_snapshot_id") or ""),
+            str(packet.get("symbol") or ""),
+        ),
+    )
+    current_symbols = {
+        str(packet.get("symbol") or "")
+        for packet in retained
+        if str(packet.get("source_snapshot_id") or "") == snapshot_id
+        and _utc(packet.get("as_of")) == decision_time
+    }
     if not current_symbols:
         raise ValueError("sealed_final_7a_packets_missing")
+
     return retained, {
         "sealed_final_7a_available_from": decision_time.isoformat(),
         "current_symbol_count": len(current_symbols),
-        "dropped_earlier_current_snapshot_revisions": dropped_current_revisions,
+        "dropped_earlier_current_snapshot_revisions": dropped_earlier_current_revisions,
+        "dropped_future_revisions": dropped_future_revisions,
+        "superseded_historical_revisions": superseded_revisions,
+        "canonical_packet_count": len(retained),
         "archive_revision_resolution_redefined": False,
     }
 
@@ -71,7 +109,7 @@ def main() -> int:
     daily = json.loads(Path(args.daily).read_text(encoding="utf-8"))
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
     packets, archive_meta = load_evidence_archive(args.archive, missing_ok=False)
-    packets, revision_meta = _sealed_final_7a_view(packets, daily, manifest)
+    packets, revision_meta = _canonical_revision_view(packets, daily, manifest)
     result = run_falsification(
         daily=daily,
         archive_packets=packets,
@@ -84,7 +122,7 @@ def main() -> int:
         "snapshot_count": archive_meta.get("snapshot_count"),
         "as_of_min": archive_meta.get("as_of_min"),
         "as_of_max": archive_meta.get("as_of_max"),
-        "effective_packet_count_after_sealed_revision_selection": len(packets),
+        "effective_packet_count_after_canonical_revision_selection": len(packets),
         **revision_meta,
     }
     target = Path(args.output)
