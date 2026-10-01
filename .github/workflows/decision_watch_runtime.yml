@@ -51,6 +51,10 @@ jobs:
           tests/test_decision_depot_watch_orchestration.py
           tests/test_w11_end_to_end_acceptance.py
           tests/test_w12_ferrari_regression.py
+      - name: Build current public Watch reference probe
+        run: python scripts/build_watch_runtime_w10.py --output-dir /tmp/watch_runtime_probe
+      - name: Print current public Watch reference CSV
+        run: cat /tmp/watch_runtime_probe/public_long_reference.csv
 
   publish:
     if: >-
