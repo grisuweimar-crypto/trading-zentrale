@@ -7,6 +7,7 @@ on:
       - "src/scanner/research/decision_layer/**"
       - "tests/test_decision_layer_input_contract.py"
       - "tests/test_w2_probability_annotations_7a.py"
+      - "tests/test_w2_probability_artifact_alignment.py"
       - "scripts/run_decision_input_7a.py"
       - "docs/decision_layer_7a.md"
       - ".github/workflows/decision_layer_7a.yml"
@@ -32,5 +33,6 @@ jobs:
           pytest -q
           tests/test_decision_layer_input_contract.py
           tests/test_w2_probability_annotations_7a.py
+          tests/test_w2_probability_artifact_alignment.py
       - name: Smoke-test Phase 7A validator CLI
         run: python scripts/run_decision_input_7a.py --help
