@@ -1,0 +1,49 @@
+{
+  "schema_version": "qm_j_phase1a_selection_placebo_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "name": "Phase 1A Selection Score Permutation Falsification",
+  "status": "frozen_before_execution",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "freeze_evidence": {
+    "frozen_at": "2026-10-01T10:55:38+00:00",
+    "freeze_commit": "94de2cfe54d04782c8348b99a81b6962e8a63709",
+    "outcome_visibility_at_freeze": "NONE"
+  },
+  "source_contract": {
+    "history": "artifacts/research/history_analysis.csv",
+    "prices": "artifacts/research/price_backfill.csv",
+    "phase1a_module": "scanner.reports.selection_timing",
+    "stable_start": "2026-04-15",
+    "min_cross_section": 20
+  },
+  "primary_test": {
+    "horizon_sessions": 20,
+    "metric": "phase1a_20t_mean_daily_spearman",
+    "metric_direction": "HIGHER_IS_BETTER",
+    "similarity_margin": 0.01,
+    "permutation_count": 64,
+    "permutation_quantile": 0.95,
+    "seed_prefix": "qm-j-phase1a-selection-v1",
+    "outcome_visibility_at_freeze": "NONE",
+    "rationale": "Reuse the existing Phase-1A cross-sectional selection estimand at a single predeclared 20-session horizon. Permute score percentile only within each observation date so the cross-sectional score distribution, event grid and realized forward returns remain unchanged while symbol-score alignment is destroyed."
+  },
+  "secondary_horizons_used_for_selection": [],
+  "promotion_semantics": {
+    "negative_control_nontrigger_is_not_promotion": true,
+    "trigger_status": "PROMOTION_STOP_INVESTIGATION_CAPA_REQUIRED",
+    "automatic_qm_h_mutation_from_ci": false
+  },
+  "boundaries": {
+    "phase1a_logic_changed": false,
+    "history_or_prices_changed": false,
+    "scanner_weights_changed": false,
+    "decision_layer_changed": false,
+    "depot_watch_changed": false,
+    "orders_generated": false,
+    "execution_enabled": false,
+    "promotion_performed": false
+  }
+}
