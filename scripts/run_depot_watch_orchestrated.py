@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the private Depot Watch from authoritative Decision evidence and positions."""
+"""Run the private Depot Watch from one sealed W10 snapshot and positions."""
 from __future__ import annotations
 
 import argparse
@@ -11,6 +11,10 @@ from scanner.reports.daily_research import validate_daily_research
 from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
 from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
+from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
+
+
+DEFAULT_W10_MANIFEST = "artifacts/research/decision_snapshot_w10.json"
 
 
 def _load(path: Path) -> dict:
@@ -22,7 +26,10 @@ def _load(path: Path) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Build the Phase-7H Watch from current daily_research, archived 7A evidence and private positions"
+        description=(
+            "Build the Phase-7H Watch from one sealed W10 snapshot, "
+            "archived 7A evidence and private positions"
+        )
     )
     parser.add_argument(
         "--root",
@@ -32,6 +39,14 @@ def main() -> int:
     )
     parser.add_argument("--positions", required=True, type=Path, help="Private decision_depot_position_book_v1 JSON")
     parser.add_argument("--archive", default=DEFAULT_ARCHIVE, help="Prospective decision_evidence_7a JSONL path relative to root")
+    parser.add_argument(
+        "--w10-manifest",
+        default=DEFAULT_W10_MANIFEST,
+        help=(
+            "Sealed W10 same-snapshot manifest relative to root. "
+            "The private 7D->7H chain refuses to run without it."
+        ),
+    )
     parser.add_argument(
         "--elliott-6h-source",
         type=Path,
@@ -53,6 +68,14 @@ def main() -> int:
     args = parser.parse_args()
 
     daily = validate_daily_research(args.root)
+    manifest_path = Path(args.w10_manifest)
+    if not manifest_path.is_absolute():
+        manifest_path = args.root / manifest_path
+    manifest = validate_sealed_manifest(
+        _load(manifest_path),
+        expected_snapshot_id=str(daily["snapshot_id"]),
+    )
+
     positions = _load(args.positions)
     elliott_6h_source = _load(args.elliott_6h_source) if args.elliott_6h_source else None
     packets, archive_metadata = load_evidence_archive(args.root / args.archive, missing_ok=True)
@@ -62,7 +85,15 @@ def main() -> int:
         packets,
         elliott_6h_source=elliott_6h_source,
     )
-    diagnostics = {**diagnostics, "archive_status": archive_metadata.get("status")}
+    diagnostics = {
+        **diagnostics,
+        "archive_status": archive_metadata.get("status"),
+        "w10_manifest_status": manifest["status"],
+        "w10_snapshot_id": manifest["snapshot_id"],
+        "w10_pre_7a_frozen_at": manifest["pre_7a_frozen_at"],
+        "w10_sealed_at": manifest["sealed_at"],
+        "w10_no_backdating_guard": True,
+    }
 
     text = json.dumps(watch, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
     if args.output:
