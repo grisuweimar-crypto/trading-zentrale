@@ -6,6 +6,7 @@ on:
       - "configs/decision_depot_watch_v1.json"
       - "src/scanner/research/decision_layer/**"
       - "tests/test_decision_depot_watch_7h.py"
+      - "tests/test_w1_daily_context_7h.py"
       - "tests/test_decision_depot_watch_orchestration.py"
       - "tests/test_decision_depot_watch_prospective_gate.py"
       - "tests/test_decision_reliability_explainability_7g.py"
@@ -44,6 +45,7 @@ jobs:
           tests/test_decision_portfolio_action_7f.py
           tests/test_decision_reliability_explainability_7g.py
           tests/test_decision_depot_watch_7h.py
+          tests/test_w1_daily_context_7h.py
           tests/test_decision_depot_watch_orchestration.py
           tests/test_decision_depot_watch_prospective_gate.py
       - name: Smoke-test 7H CLIs
