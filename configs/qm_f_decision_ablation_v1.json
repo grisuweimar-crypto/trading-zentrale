@@ -1,0 +1,57 @@
+{
+  "schema_version": "qm_f_decision_ablation_v1",
+  "module": "QM-F",
+  "business_area": "BA-QM5",
+  "name": "Stateful Decision-Layer Incremental Ablation",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "must_not_relabel_phase7i_validation": true,
+  "candidate_ladder": ["B0_FLAT", "B0_LONG", "B1", "B2", "B3", "B4", "B5", "B6"],
+  "principles": {
+    "primary_estimand_declared_before_evaluation": true,
+    "stateful_policy_evaluation_required": true,
+    "claim_level_pairing_insufficient_after_path_divergence": true,
+    "b0_flat_and_b0_long_separate": true,
+    "b5_b6_common_starting_state_required": true,
+    "b5_b6_same_eligibility_required": true,
+    "b5_b6_same_tradeability_required": true,
+    "b5_b6_same_action_availability_required": true,
+    "b5_b6_same_execution_cost_model_required": true,
+    "b5_b6_qm_i_core_lineage_equivalence_required": true,
+    "b6_registered_elliott_adjustment_is_only_allowed_lineage_delta": true,
+    "path_divergence_must_be_modeled": true,
+    "realized_policy_value_requires_explicit_benchmark": true,
+    "execution_remains_disabled_until_separate_promotion": true
+  },
+  "supported_estimands": ["REALIZED_POLICY_VALUE", "NET_RETURN_DELTA", "TURNOVER_DELTA", "MAX_DRAWDOWN_DELTA"],
+  "policy_path": {
+    "required_step_fields": ["policy_id", "symbol", "as_of", "source_snapshot_id", "exposure_before", "exposure_after", "asset_return", "transaction_cost_bps", "eligible", "tradeable", "action_available"],
+    "exposure_range": [0.0, 1.0],
+    "state_discontinuity_fails_closed": true,
+    "state_change_when_action_unavailable_fails_closed": true,
+    "transaction_costs_applied_to_turnover": true,
+    "b0_flat_exposure_fixed": 0.0,
+    "b0_long_exposure_fixed": 1.0
+  },
+  "b5_b6_lineage": {
+    "qm_i_node_id_version_hash_reused": true,
+    "lineage_must_be_complete": true,
+    "registered_elliott_adjustment_refs_required_for_b6_delta": true,
+    "core_lineage_must_match_after_elliott_removal": true,
+    "different_labels_do_not_establish_equivalence": true
+  },
+  "boundaries": {
+    "phase7i_validation_relabelled": false,
+    "scanner_weights_changed": false,
+    "selection_or_timing_retrained": false,
+    "probability_or_confidence_retrained": false,
+    "risk_or_elliott_retrained": false,
+    "decision_layer_semantics_changed": false,
+    "portfolio_action_changed": false,
+    "orders_generated": false,
+    "productive_integration_enabled": false,
+    "empirical_promotion_performed": false
+  }
+}
