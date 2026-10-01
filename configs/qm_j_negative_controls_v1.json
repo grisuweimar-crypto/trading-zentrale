@@ -1,0 +1,81 @@
+{
+  "schema_version": "qm_j_negative_controls_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "name": "Negative Controls & Falsification",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Actively try to falsify apparent Scanner-vNext edge with isolated synthetic controls across data, feature, research, Decision-Layer, and end-to-end levels. Strong placebo performance blocks promotion and requires investigation and QM-H CAPA handling.",
+  "negative_control_types": {
+    "DATA": ["SHIFTED_DATA"],
+    "FEATURE": ["PERMUTED_FEATURE", "IRRELEVANT_FEATURE"],
+    "RESEARCH": ["PSEUDO_SIGNAL", "PSEUDO_EVENT"],
+    "DECISION_LAYER": ["PLACEBO_EVIDENCE"],
+    "END_TO_END": ["DESTROYED_PREDICTIVE_INFORMATION"]
+  },
+  "principles": {
+    "productive_data_must_never_be_modified": true,
+    "controls_must_be_synthetic_and_auditable": true,
+    "deterministic_controls_require_frozen_seed": true,
+    "outcomes_may_not_build_controls": true,
+    "missing_stays_missing": true,
+    "shifted_data_uses_past_rows_only": true,
+    "permutation_preserves_source_row_count": true,
+    "placebo_evidence_may_not_enter_live_decision_path": true,
+    "end_to_end_controls_run_only_in_isolated_research_path": true,
+    "similarity_rule_must_be_frozen_before_outcome_evaluation": true,
+    "negative_control_pass_does_not_itself_promote_any_model": true,
+    "strong_placebo_requires_promotion_stop_investigation_and_capa": true,
+    "qm_h_remains_capa_authority": true,
+    "qm_i_lineage_should_be_reused_when_persisted_controls_are_evaluated": true
+  },
+  "falsification_evaluation": {
+    "required_plan_fields": [
+      "plan_id",
+      "plan_version",
+      "frozen_at",
+      "outcome_visibility_at_freeze",
+      "primary_metric",
+      "metric_direction",
+      "similarity_margin"
+    ],
+    "required_outcome_visibility_at_freeze": "NONE",
+    "metric_directions": ["HIGHER_IS_BETTER", "LOWER_IS_BETTER"],
+    "similarity_margin_must_be_predeclared": true,
+    "same_metric_required": true,
+    "same_comparison_context_hash_required": true,
+    "same_observation_count_required": true,
+    "trigger_status": "PROMOTION_STOP_INVESTIGATION_CAPA_REQUIRED",
+    "diagnostic_classes": [
+      "LEAKAGE",
+      "OVERFITTING",
+      "MULTIPLE_TESTING",
+      "DEPENDENCE_ERROR",
+      "PIPELINE_BIAS"
+    ]
+  },
+  "qm_h_bridge": {
+    "finding_category": "METHODOLOGY_FINDING",
+    "evidence_impact": "PROMOTION_BLOCKED",
+    "finding_is_open_before_root_cause_investigation": true,
+    "automatic_root_cause_assignment_forbidden": true,
+    "automatic_capa_closure_forbidden": true
+  },
+  "boundaries": {
+    "scanner_weights_changed": false,
+    "selection_timing_probability_risk_confidence_changed": false,
+    "elliott_core_changed": false,
+    "universal_stance_changed": false,
+    "w6_changed": false,
+    "w8_changed": false,
+    "w10_changed": false,
+    "portfolio_action_changed": false,
+    "depot_watch_changed": false,
+    "productive_data_changed": false,
+    "orders_generated": false,
+    "execution_enabled": false,
+    "empirical_promotion_performed": false
+  }
+}
