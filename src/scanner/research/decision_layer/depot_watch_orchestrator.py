@@ -1,24 +1,13 @@
 """Canonical research-only orchestration for the private Depot Watch.
 
-The orchestrator never invents upstream evidence. It consumes validated archived
-Phase-7A packets, derives the existing 7D->7G chain, injects the explicit private
-position snapshot only at 7F, and finally delegates presentation to 7H.
+The orchestrator consumes validated archived Phase-7A packets, derives the
+existing 7D->7G chain, injects private position context only at 7F and delegates
+presentation to 7H. W6 contributes review-only Elliott context, W7 contributes
+PIT state/history context, and W8 resolves the explicit 7F action matrix without
+changing 7D direction or creating broker execution.
 
-A scanner snapshot may have an early conservative 7A packet and a later final
-same-snapshot evidence revision after Phase 2/3/4 finish. The archive keeps both
-for auditability, while the operational chain uses only the latest revision of
-each snapshot so one market observation can never count twice for hysteresis.
-
-W6 may additionally consume an explicit PIT-stamped Elliott-vNext 6H source at
-7F. Elliott remains review context only: it cannot alter 7D direction, cannot
-resolve its own route conflicts, and cannot create an order.
-
-W7 transports the already-existing scanner path/history state to 7F. It adds no
-new trading rule and cannot alter Universal Stance or Portfolio Action; W8 owns
-any later action-policy review that consumes this context.
-
-Phase-8 external evidence is deliberately absent here until a separately approved
-production-integration change binds it into the canonical Decision Layer.
+Phase-8 external evidence remains outside this canonical path until a separately
+approved production-integration change binds it into the Decision Layer.
 """
 from __future__ import annotations
 
@@ -26,6 +15,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Mapping, Sequence
 
+from .depot_action_policy import DepotActionPolicyError, apply_depot_action_policy
 from .depot_watch import (
     BUNDLE_SCHEMA_VERSION,
     BUNDLE_SET_SCHEMA_VERSION,
@@ -74,13 +64,7 @@ def decision_bound_daily_snapshot(
     daily: Mapping[str, object],
     decision_as_of: object | None = None,
 ) -> dict[str, object]:
-    """Return a 7H-facing copy bound to the actual Decision evidence time.
-
-    The scanner's market date and publication timestamp remain preserved. A final
-    Decision packet may legitimately become available later, after Phase 2/3/4
-    finish. Binding 7H to that later timestamp avoids backdating evidence while
-    retaining the exact scanner snapshot identity.
-    """
+    """Return a 7H-facing copy bound to the actual Decision evidence time."""
     validated = validate_daily_research_snapshot(daily)
     generated_at = str(validated.get("generated_at") or "").strip()
     base_value = generated_at or validated["as_of"]
@@ -241,6 +225,11 @@ def build_decision_bundle_set(
     elliott_actionable_symbols: list[str] = []
     state_history_symbols: list[str] = []
     state_history_counts: dict[str, int] = {}
+    w8_policy_symbols: list[str] = []
+    w8_changed_action_symbols: list[str] = []
+    w8_conflict_symbols: list[str] = []
+    w8_reassessment_symbols: list[str] = []
+
     for position in positions["positions"]:
         symbol = str(position["symbol"])
         packet = _current_packet_for_symbol(
@@ -287,17 +276,31 @@ def build_decision_bundle_set(
             state_name = str(state_history_context.get("state") or "")
             state_history_counts[state_name] = state_history_counts.get(state_name, 0) + 1
 
-        # W6 is deliberately downstream of 7D/7E. Elliott can modify only the
-        # position-aware review state accepted by 7F; it never recomputes stance.
+        # W6 changes review routing only downstream of 7D/7E.
         action = compute_portfolio_action(
             transition, position, swing_context=swing_context
         )
-        # W7 is evidence transport only. Attaching state/history context must not
-        # modify either the pre-existing 7F action or the preserved 7D stance.
+        # W7 transports typed path/history state without changing the action.
         try:
             action = attach_state_history_to_7f(action, state_history_context)
         except StateHistoryContextError as exc:
             raise DepotWatchOrchestrationError(str(exc)) from exc
+        # W8 is the explicit action-matrix resolution step. It may change only
+        # the 7F review state, never the preserved Universal Stance or execution.
+        try:
+            action = apply_depot_action_policy(action, state_history_context)
+        except DepotActionPolicyError as exc:
+            raise DepotWatchOrchestrationError(str(exc)) from exc
+
+        policy = action.get("depot_action_policy")
+        if isinstance(policy, Mapping):
+            w8_policy_symbols.append(symbol)
+            if policy.get("action_changed") is True:
+                w8_changed_action_symbols.append(symbol)
+            if policy.get("conflict") is True:
+                w8_conflict_symbols.append(symbol)
+            if policy.get("reassessment_required") is True:
+                w8_reassessment_symbols.append(symbol)
 
         explanation = build_reliability_explanation(packet, stance, transition, action)
         path_context = _path_review(packet)
@@ -306,6 +309,8 @@ def build_decision_bundle_set(
             path_review_symbols.append(symbol)
         if phase5_context is not None:
             phase5_shadow_symbols.append(symbol)
+
+        attached_state_history = action.get("state_history_context")
         bundles.append({
             "schema_version": BUNDLE_SCHEMA_VERSION,
             "packet": packet,
@@ -316,7 +321,14 @@ def build_decision_bundle_set(
             "path_review": path_context,
             "phase5_confidence_shadow": phase5_context,
             "elliott_swing_context": deepcopy(swing_context),
-            "state_history_context": deepcopy(state_history_context),
+            "state_history_context": (
+                deepcopy(dict(attached_state_history))
+                if isinstance(attached_state_history, Mapping)
+                else deepcopy(state_history_context)
+            ),
+            "depot_action_policy": (
+                deepcopy(dict(policy)) if isinstance(policy, Mapping) else None
+            ),
         })
 
     bundle_set = {
@@ -345,8 +357,16 @@ def build_decision_bundle_set(
         "state_history_symbols": sorted(state_history_symbols),
         "state_history_counts": dict(sorted(state_history_counts.items())),
         "state_history_changes_universal_stance": False,
-        "state_history_changes_portfolio_action": False,
-        "state_history_w8_action_policy_evaluated": False,
+        "state_history_changes_portfolio_action": bool(w8_changed_action_symbols),
+        "state_history_w8_action_policy_evaluated": True,
+        "w8_action_policy_symbols": sorted(w8_policy_symbols),
+        "w8_changed_action_symbols": sorted(w8_changed_action_symbols),
+        "w8_conflict_symbols": sorted(w8_conflict_symbols),
+        "w8_reassessment_symbols": sorted(w8_reassessment_symbols),
+        "w8_ferrari_regression_contract": "f1_f4_v1",
+        "w8_created_indicator_threshold": False,
+        "w8_created_market_evidence": False,
+        "w8_generated_broker_order": False,
         "phase8_external_evidence_activated": False,
         "selection_direction_inferred": False,
         "scanner_scalar_fallback_used": False,
@@ -363,14 +383,18 @@ def _attach_state_history_context(
     if not isinstance(raw_bundles, list):
         return watch
     context_by_symbol: dict[str, dict[str, object]] = {}
+    policy_by_symbol: dict[str, dict[str, object]] = {}
     for bundle in raw_bundles:
         if not isinstance(bundle, Mapping):
             continue
         packet = bundle.get("packet")
         symbol = str(packet.get("symbol") or "") if isinstance(packet, Mapping) else ""
         context = bundle.get("state_history_context")
+        policy = bundle.get("depot_action_policy")
         if symbol and isinstance(context, Mapping):
             context_by_symbol[symbol] = deepcopy(dict(context))
+        if symbol and isinstance(policy, Mapping):
+            policy_by_symbol[symbol] = deepcopy(dict(policy))
 
     rows = watch.get("rows")
     if not isinstance(rows, list):
@@ -380,18 +404,31 @@ def _attach_state_history_context(
             continue
         symbol = str(row.get("symbol") or "")
         context = context_by_symbol.get(symbol)
-        if context is None:
-            continue
-        row["state_history_context"] = deepcopy(context)
+        policy = policy_by_symbol.get(symbol)
+        if context is not None:
+            row["state_history_context"] = deepcopy(context)
+        if policy is not None:
+            row["depot_action_policy"] = deepcopy(policy)
         decision = row.get("decision")
-        if isinstance(decision, dict):
+        if not isinstance(decision, dict):
+            continue
+        if context is not None:
             decision["state_history_state"] = context.get("state")
             decision["state_history_sequence"] = deepcopy(
                 context.get("state_sequence", [])
             )
+        if policy is not None:
             decision["state_history_changed_universal_stance"] = False
-            decision["state_history_changed_portfolio_action"] = False
-            decision["state_history_w8_action_policy_evaluated"] = False
+            decision["state_history_changed_portfolio_action"] = policy.get(
+                "action_changed"
+            )
+            decision["state_history_w8_action_policy_evaluated"] = True
+            decision["w8_action_policy_case"] = policy.get("policy_case")
+            decision["w8_action_policy_warning_code"] = policy.get("warning_code")
+            decision["w8_action_policy_conflict"] = policy.get("conflict")
+            decision["w8_reassessment_required"] = policy.get(
+                "reassessment_required"
+            )
     return watch
 
 
@@ -423,13 +460,19 @@ def _attach_path_reviews(
         if path is None:
             continue
         row["path_review"] = deepcopy(path)
-        if path.get("review_state") == "profit_protection_review":
+        policy = row.get("depot_action_policy")
+        suppressed = (
+            isinstance(policy, Mapping)
+            and policy.get("policy_case") == "f3_delayed_profit_protection_suppressed"
+        )
+        if path.get("review_state") == "profit_protection_review" and not suppressed:
             row["attention_required"] = True
         decision = row.get("decision")
         if isinstance(decision, dict):
             decision["path_review_state"] = path.get("review_state")
             decision["path_sequence_state"] = path.get("sequence_state")
             decision["path_review_is_trade_decision"] = False
+            decision["path_review_suppressed_by_w8"] = suppressed
     return watch
 
 
