@@ -273,7 +273,11 @@ def _daily_context(value: Mapping[str, object]) -> dict[str, object]:
         "trend200", "cycle", "confidence", "confidence_label", "close",
         "currency", "sector", "cluster", "cluster_official",
     )
-    return {key: deepcopy(current.get(key)) for key in allowed if key in current}
+    context = {key: deepcopy(current.get(key)) for key in allowed if key in current}
+    for field in ("current", "dynamics", "persistence", "classification"):
+        payload = value.get(field)
+        context[field] = deepcopy(dict(payload)) if isinstance(payload, Mapping) else {}
+    return context
 
 
 def _position_add_capacity(position: Mapping[str, object]) -> str:
