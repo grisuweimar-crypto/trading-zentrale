@@ -1,0 +1,38 @@
+{
+  "schema_version": "qm_g_scenario_stability_v1",
+  "module": "QM-G",
+  "business_area": "BA-QM6",
+  "name": "Scenario Stability Challenger Feature",
+  "status": "research_only_executable_challenger_feature",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Operationalize the documented Scenario Stability challenger without changing the frozen Elliott core: compare only the primary scenario_id of consecutive PIT-available validated 6H outputs.",
+  "feature": {
+    "feature_id": "qm_g_scenario_stability_primary_id_v1",
+    "definition": "Primary scenario identity is stable iff consecutive validated 6H outputs for the same symbol/timeframe/degree expose the same non-missing primary_scenario.scenario_id.",
+    "identity_field": "primary_scenario.scenario_id",
+    "comparison": "STRICT_EQUALITY_BETWEEN_CONSECUTIVE_AVAILABLE_OUTPUTS",
+    "threshold_allowed": false,
+    "smoothing_allowed": false,
+    "pattern_or_direction_substitution_allowed": false,
+    "missing_state": "INSUFFICIENT_EVIDENCE"
+  },
+  "pit": {
+    "source_available_from_required": true,
+    "output_as_of_may_not_exceed_source_availability_date": true,
+    "availability_order_strictly_increasing": true,
+    "future_output_forbidden": true,
+    "outcomes_used_to_build_feature": false,
+    "retroactive_reclassification_allowed": false
+  },
+  "boundaries": {
+    "count_selection_performed": false,
+    "hard_rule_changed": false,
+    "review_context_created": false,
+    "universal_stance_changed": false,
+    "portfolio_action_changed": false,
+    "order_or_execution_generated": false,
+    "productive_promotion_performed": false
+  }
+}
