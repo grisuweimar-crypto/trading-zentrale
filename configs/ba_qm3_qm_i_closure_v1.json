@@ -9,10 +9,12 @@
   "research_only": true,
   "productive_integration_enabled": false,
   "prerequisite": {
-    "ba_qm2_handoff_schema": "ba_qm2_handoff_v1",
+    "ba_qm2_handoff_schema": "ba_qm2_handoff_v2",
+    "qm_h_closure_schema": "qm_h_closure_v1",
     "qm_b_and_qm_c_stable_ids_required": true,
     "qm_b_strict_historical_promotion_required": false,
-    "qm_b_external_blockers_must_remain_visible": true
+    "qm_b_external_blockers_must_remain_visible": true,
+    "qm_h_continuous_control_must_remain_active": true
   },
   "completed_capabilities": [
     "typed_versioned_provenance_graph",
@@ -27,6 +29,7 @@
     "decision_ids",
     "watch_ids",
     "qm_c_stable_identity_reuse",
+    "qm_c_sequential_monitoring_identity_reuse",
     "independence_claim_registry",
     "common_ancestry_detector_with_paths",
     "direct_dependency_detector",
@@ -37,7 +40,7 @@
     "phase7_claim_and_claim_ref_integration",
     "phase7_decision_lineage_integration",
     "phase7_native_watch_id_reuse",
-    "end_to_end_raw_feature_indicator_score_claim_calibration_decision_watch_test",
+    "qm_h_prerequisite_validation",
     "cross_qm_regression_tests"
   ],
   "integration_contracts": {
@@ -51,8 +54,14 @@
       "strict_promotion_blockers_overridden": false
     },
     "qm_c": {
-      "handoff_schema": "ba_qm2_handoff_v1",
-      "stable_ids_reused_without_rekeying": true
+      "handoff_schema": "ba_qm2_handoff_v2",
+      "stable_ids_reused_without_rekeying": true,
+      "sequential_monitoring_identity_reused": true
+    },
+    "qm_h": {
+      "closure_schema": "qm_h_closure_v1",
+      "continuous_control_preserved": true,
+      "findings_closed_by_qm_i": false
     },
     "phase7": {
       "input_contract_schema": "decision_layer_input_contract_v1",
@@ -81,11 +90,14 @@
     "historical_lineage_backfilled_by_guessing": false,
     "independence_inferred_from_family_names": false,
     "common_ancestry_treated_as_automatic_defect": false,
+    "qm_a_state_mutated": false,
+    "qm_h_findings_closed_by_qm_i": false,
     "scanner_weights_changed": false,
     "decision_layer_semantics_changed": false,
     "portfolio_action_changed": false,
     "orders_generated": false,
-    "empirical_promotion_performed": false
+    "empirical_promotion_performed": false,
+    "ba_qm4_implemented_by_this_closure": false
   },
   "next_mandatory_work_package": "BA-QM4 / QM-D + QM-E — Dependence, Effective N & Calibration"
 }

@@ -5,14 +5,15 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
-from scanner.research.governance.qm_c4_closure import validate_handoff_file as validate_ba_qm2_handoff_file
+from scanner.research.governance.qm_c6_closure import validate_ba_qm2_handoff
+from scanner.research.governance.qm_h_closure import validate_qm_h_closure
 from scanner.research.governance.qm_i_lineage import load_qm_i_contract
 
-
+ROOT = Path(__file__).resolve().parents[4]
 EXPECTED_DISPLAY_STATUS = "QM-I COMPLETE — TYPED EVIDENCE LINEAGE AND DOUBLE-COUNTING REVIEW ACTIVE"
 EXPECTED_BA_STATUS = "BA-QM3 COMPLETE — EVIDENCE LINEAGE READY FOR DEPENDENCE AND CALIBRATION QM"
-DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parents[4] / "configs" / "ba_qm3_qm_i_closure_v1.json"
-DEFAULT_STANCE_CONTRACT_PATH = Path(__file__).resolve().parents[4] / "configs" / "decision_universal_stance_v1.json"
+DEFAULT_MANIFEST_PATH = ROOT / "configs/ba_qm3_qm_i_closure_v1.json"
+DEFAULT_STANCE_CONTRACT_PATH = ROOT / "configs/decision_universal_stance_v1.json"
 
 _REQUIRED_CAPABILITIES = {
     "typed_versioned_provenance_graph",
@@ -27,6 +28,7 @@ _REQUIRED_CAPABILITIES = {
     "decision_ids",
     "watch_ids",
     "qm_c_stable_identity_reuse",
+    "qm_c_sequential_monitoring_identity_reuse",
     "independence_claim_registry",
     "common_ancestry_detector_with_paths",
     "direct_dependency_detector",
@@ -37,10 +39,9 @@ _REQUIRED_CAPABILITIES = {
     "phase7_claim_and_claim_ref_integration",
     "phase7_decision_lineage_integration",
     "phase7_native_watch_id_reuse",
-    "end_to_end_raw_feature_indicator_score_claim_calibration_decision_watch_test",
+    "qm_h_prerequisite_validation",
     "cross_qm_regression_tests",
 }
-
 _EXPECTED_QM_B_BLOCKERS = {
     "LISTING_EVIDENCE",
     "MARKET_TRADABILITY_EVIDENCE",
@@ -48,20 +49,21 @@ _EXPECTED_QM_B_BLOCKERS = {
 }
 
 
-def _read_json(path: Path, *, error_prefix: str) -> dict[str, Any]:
+def _read_json(path: Path, *, prefix: str) -> dict[str, Any]:
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"{error_prefix}_unreadable:{path}") from exc
-    if not isinstance(payload, dict):
-        raise ValueError(f"{error_prefix}_must_be_object")
-    return payload
+        raise ValueError(f"{prefix}_unreadable:{path}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{prefix}_must_be_object")
+    return value
 
 
 def validate_closure_manifest(
     payload: Mapping[str, Any],
     *,
     ba_qm2_handoff: Mapping[str, Any],
+    qm_h_closure: Mapping[str, Any],
     lineage_contract: Mapping[str, Any],
     phase7_stance_contract: Mapping[str, Any],
 ) -> dict[str, Any]:
@@ -72,10 +74,8 @@ def validate_closure_manifest(
         raise ValueError("qm_i_closure_schema_invalid")
     if result.get("business_area") != "BA-QM3" or result.get("qm_axis") != "QM-I":
         raise ValueError("qm_i_closure_identity_invalid")
-    if result.get("display_status") != EXPECTED_DISPLAY_STATUS:
+    if result.get("display_status") != EXPECTED_DISPLAY_STATUS or result.get("business_area_status") != EXPECTED_BA_STATUS:
         raise ValueError("qm_i_display_status_invalid")
-    if result.get("business_area_status") != EXPECTED_BA_STATUS:
-        raise ValueError("ba_qm3_display_status_invalid")
     if result.get("engineering_status") != "COMPLETE":
         raise ValueError("qm_i_engineering_status_invalid")
     if result.get("empirical_promotion_claimed") is not False:
@@ -86,18 +86,17 @@ def validate_closure_manifest(
     prerequisite = result.get("prerequisite")
     if not isinstance(prerequisite, Mapping):
         raise ValueError("qm_i_prerequisite_missing")
-    if prerequisite.get("ba_qm2_handoff_schema") != "ba_qm2_handoff_v1":
+    if prerequisite.get("ba_qm2_handoff_schema") != "ba_qm2_handoff_v2":
         raise ValueError("qm_i_ba_qm2_schema_invalid")
-    if prerequisite.get("qm_b_and_qm_c_stable_ids_required") is not True:
-        raise ValueError("qm_i_stable_id_prerequisite_missing")
+    if prerequisite.get("qm_h_closure_schema") != "qm_h_closure_v1":
+        raise ValueError("qm_i_qm_h_schema_invalid")
+    for field in ("qm_b_and_qm_c_stable_ids_required", "qm_b_external_blockers_must_remain_visible", "qm_h_continuous_control_must_remain_active"):
+        if prerequisite.get(field) is not True:
+            raise ValueError(f"qm_i_prerequisite_guard_missing:{field}")
     if prerequisite.get("qm_b_strict_historical_promotion_required") is not False:
         raise ValueError("qm_i_must_not_require_qm_b_external_promotion")
-    if prerequisite.get("qm_b_external_blockers_must_remain_visible") is not True:
-        raise ValueError("qm_i_qm_b_blocker_visibility_missing")
 
-    if ba_qm2_handoff.get("schema_version") != "ba_qm2_handoff_v1":
-        raise ValueError("qm_i_actual_ba_qm2_handoff_invalid")
-    if ba_qm2_handoff.get("engineering_governance_status") != "COMPLETE":
+    if ba_qm2_handoff.get("schema_version") != "ba_qm2_handoff_v2" or ba_qm2_handoff.get("engineering_governance_status") != "COMPLETE":
         raise ValueError("qm_i_ba_qm2_not_complete")
     if ba_qm2_handoff.get("strict_historical_promotion_status") != "BLOCKED_EXTERNAL_EVIDENCE":
         raise ValueError("qm_i_ba_qm2_strict_status_changed")
@@ -105,16 +104,24 @@ def validate_closure_manifest(
     if blockers != _EXPECTED_QM_B_BLOCKERS:
         raise ValueError("qm_i_qm_b_external_blockers_mismatch")
 
+    if qm_h_closure.get("schema_version") != "qm_h_closure_v1" or qm_h_closure.get("engineering_status") != "COMPLETE":
+        raise ValueError("qm_i_qm_h_not_complete")
+    if qm_h_closure.get("continuous_control_status") != "ACTIVE":
+        raise ValueError("qm_i_qm_h_not_active")
+
     if lineage_contract.get("schema_version") != "qm_i_evidence_lineage_v1":
         raise ValueError("qm_i_lineage_contract_invalid")
-    if lineage_contract.get("principles", {}).get("stable_upstream_ids_must_be_reused") is not True:
-        raise ValueError("qm_i_stable_upstream_id_guard_missing")
-    if lineage_contract.get("principles", {}).get("missing_lineage_is_not_independence") is not True:
-        raise ValueError("qm_i_missing_lineage_guard_missing")
-    required_types = {"RAW_SOURCE", "FEATURE", "INDICATOR", "SCORE", "CLAIM", "CALIBRATION", "DECISION", "WATCH"}
+    principles = lineage_contract.get("principles") or {}
+    for field in ("stable_upstream_ids_must_be_reused", "missing_lineage_is_not_independence", "qm_a_evidence_state_remains_authoritative", "qm_b_pit_constraints_remain_authoritative", "qm_c_identity_chain_remains_authoritative", "qm_h_capa_authority_preserved"):
+        if principles.get(field) is not True:
+            raise ValueError(f"qm_i_principle_guard_missing:{field}")
+    required_types = {"RAW_SOURCE", "FEATURE", "INDICATOR", "SCORE", "CLAIM", "CALIBRATION", "DECISION", "WATCH", "HYPOTHESIS", "ANALYSIS_PLAN", "CONTROL_PLAN", "MONITORING_PLAN", "RESULT"}
     actual_types = set((lineage_contract.get("node") or {}).get("node_types") or [])
     if not required_types.issubset(actual_types):
         raise ValueError("qm_i_required_lineage_node_types_missing")
+    qm_c_integration = lineage_contract.get("qm_c_integration") or {}
+    if qm_c_integration.get("handoff_schema") != "ba_qm2_handoff_v2" or qm_c_integration.get("reuse_monitoring_plan_identity") is not True:
+        raise ValueError("qm_i_qm_c_contract_not_current")
 
     capabilities = set(result.get("completed_capabilities") or [])
     missing = sorted(_REQUIRED_CAPABILITIES - capabilities)
@@ -127,38 +134,31 @@ def validate_closure_manifest(
     qa = integrations.get("qm_a")
     qb = integrations.get("qm_b")
     qc = integrations.get("qm_c")
+    qh = integrations.get("qm_h")
     p7 = integrations.get("phase7")
     if not isinstance(qa, Mapping) or qa.get("contract_schema") != "qm_a_research_governance_v1" or qa.get("evidence_consumption_authority_preserved") is not True:
         raise ValueError("qm_i_qm_a_integration_invalid")
-    if not isinstance(qb, Mapping) or qb.get("closure_schema") != "qm_b_closure_v1" or qb.get("pit_authority_preserved") is not True:
+    if not isinstance(qb, Mapping) or qb.get("closure_schema") != "qm_b_closure_v1" or qb.get("pit_authority_preserved") is not True or qb.get("strict_promotion_blockers_overridden") is not False:
         raise ValueError("qm_i_qm_b_integration_invalid")
-    if qb.get("strict_promotion_blockers_overridden") is not False:
-        raise ValueError("qm_i_qm_b_blocker_override_forbidden")
-    if not isinstance(qc, Mapping) or qc.get("handoff_schema") != "ba_qm2_handoff_v1" or qc.get("stable_ids_reused_without_rekeying") is not True:
+    if not isinstance(qc, Mapping) or qc.get("handoff_schema") != "ba_qm2_handoff_v2" or qc.get("stable_ids_reused_without_rekeying") is not True or qc.get("sequential_monitoring_identity_reused") is not True:
         raise ValueError("qm_i_qm_c_integration_invalid")
+    if not isinstance(qh, Mapping) or qh.get("closure_schema") != "qm_h_closure_v1" or qh.get("continuous_control_preserved") is not True or qh.get("findings_closed_by_qm_i") is not False:
+        raise ValueError("qm_i_qm_h_integration_invalid")
     if not isinstance(p7, Mapping) or p7.get("input_contract_schema") != "decision_layer_input_contract_v1":
         raise ValueError("qm_i_phase7_integration_invalid")
-    if p7.get("relation_graph_semantics_replaced") is not False:
-        raise ValueError("qm_i_must_not_replace_phase7_relation_semantics")
-    if p7.get("claim_ids_reused") is not True or p7.get("claim_ref_lineage_recorded") is not True:
-        raise ValueError("qm_i_phase7_claim_lineage_guards_missing")
+    if p7.get("relation_graph_semantics_replaced") is not False or p7.get("claim_ids_reused") is not True or p7.get("claim_ref_lineage_recorded") is not True:
+        raise ValueError("qm_i_phase7_lineage_guards_invalid")
     if p7.get("decision_ids_guessed_when_absent") is not False or p7.get("watch_id_reused") is not True:
         raise ValueError("qm_i_phase7_id_guards_invalid")
 
     stance_guards = phase7_stance_contract.get("guards")
     if not isinstance(stance_guards, Mapping):
         raise ValueError("qm_i_phase7_stance_guards_missing")
-    required_phase7_guards = (
-        "probability_is_not_independent_vote",
-        "confidence_is_not_independent_vote",
-        "same_family_timing_is_correlated_not_independent",
-    )
-    if any(stance_guards.get(field) is not True for field in required_phase7_guards):
-        raise ValueError("qm_i_phase7_independence_semantics_changed")
+    for field in ("probability_is_not_independent_vote", "confidence_is_not_independent_vote", "same_family_timing_is_correlated_not_independent"):
+        if stance_guards.get(field) is not True:
+            raise ValueError("qm_i_phase7_independence_semantics_changed")
 
     review = result.get("review_semantics")
-    if not isinstance(review, Mapping):
-        raise ValueError("qm_i_review_semantics_missing")
     expected_review = {
         "common_ancestry_is_automatic_defect": False,
         "common_ancestry_requires_review": True,
@@ -167,6 +167,8 @@ def validate_closure_manifest(
         "automatic_weight_change_allowed": False,
         "automatic_scanner_or_decision_change_allowed": False,
     }
+    if not isinstance(review, Mapping):
+        raise ValueError("qm_i_review_semantics_missing")
     for field, expected in expected_review.items():
         if review.get(field) is not expected:
             raise ValueError(f"qm_i_review_semantics_invalid:{field}")
@@ -183,14 +185,9 @@ def validate_closure_manifest(
 
 
 def validate_closure_file(path: str | Path | None = None) -> dict[str, Any]:
-    ba_qm2 = validate_ba_qm2_handoff_file()
-    lineage_contract = load_qm_i_contract()
-    phase7_stance = _read_json(DEFAULT_STANCE_CONTRACT_PATH, error_prefix="phase7_stance_contract")
-    manifest_path = Path(path) if path is not None else DEFAULT_MANIFEST_PATH
-    payload = _read_json(manifest_path, error_prefix="qm_i_closure")
-    return validate_closure_manifest(
-        payload,
-        ba_qm2_handoff=ba_qm2,
-        lineage_contract=lineage_contract,
-        phase7_stance_contract=phase7_stance,
-    )
+    ba_qm2 = validate_ba_qm2_handoff(ROOT)["handoff"]
+    qm_h = validate_qm_h_closure(ROOT)["closure"]
+    lineage = load_qm_i_contract(ROOT / "configs/qm_i_evidence_lineage_v1.json")
+    stance = _read_json(DEFAULT_STANCE_CONTRACT_PATH, prefix="phase7_stance_contract")
+    manifest = _read_json(Path(path) if path is not None else DEFAULT_MANIFEST_PATH, prefix="qm_i_closure")
+    return validate_closure_manifest(manifest, ba_qm2_handoff=ba_qm2, qm_h_closure=qm_h, lineage_contract=lineage, phase7_stance_contract=stance)

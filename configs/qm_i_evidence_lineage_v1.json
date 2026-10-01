@@ -7,7 +7,7 @@
   "research_only": true,
   "productive_integration_enabled": false,
   "execution_allowed": false,
-  "purpose": "Represent material evidence provenance as a typed immutable graph, preserve stable upstream identities, test independence claims against known ancestry, and trigger review when evidence combined in research or decisions has common, direct, or incompletely known ancestry.",
+  "purpose": "Represent material evidence provenance as a typed immutable graph, preserve stable upstream identities, test independence claims against known ancestry, and trigger review when combined evidence has common, direct, or incompletely known ancestry.",
   "principles": {
     "stable_upstream_ids_must_be_reused": true,
     "mutable_labels_may_not_replace_stable_ids": true,
@@ -19,7 +19,8 @@
     "lineage_does_not_change_scanner_or_decision_semantics": true,
     "qm_a_evidence_state_remains_authoritative": true,
     "qm_b_pit_constraints_remain_authoritative": true,
-    "qm_c_identity_chain_remains_authoritative": true
+    "qm_c_identity_chain_remains_authoritative": true,
+    "qm_h_capa_authority_preserved": true
   },
   "registry": {
     "event_schema_version": "qm_i_lineage_event_v1",
@@ -53,6 +54,7 @@
       "HYPOTHESIS",
       "ANALYSIS_PLAN",
       "CONTROL_PLAN",
+      "MONITORING_PLAN",
       "RESULT",
       "EXTERNAL_EVIDENCE",
       "DECISION",
@@ -67,6 +69,7 @@
       "HYPOTHESIS": "hypothesis_id",
       "ANALYSIS_PLAN": "analysis_plan_id",
       "CONTROL_PLAN": "control_plan_id",
+      "MONITORING_PLAN": "monitoring_plan_id",
       "RESULT": "result_id",
       "DECISION": "decision_id",
       "WATCH": "watch_id"
@@ -166,10 +169,11 @@
     "historical_decision_ids_may_not_be_guessed": true
   },
   "qm_c_integration": {
-    "handoff_schema": "ba_qm2_handoff_v1",
+    "handoff_schema": "ba_qm2_handoff_v2",
     "reuse_hypothesis_identity": true,
     "reuse_analysis_plan_identity": true,
     "reuse_control_plan_identity": true,
+    "reuse_monitoring_plan_identity": true,
     "reuse_result_identity": true
   },
   "required_lineage_path_types": [
@@ -186,6 +190,8 @@
     "independence_inferred_from_different_family_names": false,
     "common_ancestry_treated_as_automatic_defect": false,
     "historical_lineage_backfilled_by_guessing": false,
+    "qm_a_state_mutated": false,
+    "qm_h_findings_closed_by_qm_i": false,
     "scanner_weights_changed": false,
     "decision_layer_semantics_changed": false,
     "portfolio_action_changed": false,
