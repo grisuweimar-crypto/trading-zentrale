@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 import json
-from pathlib import Path
 
 import pytest
 
@@ -47,7 +46,7 @@ def test_ba_qm7_closure_is_complete_without_claiming_validation_or_closing_capa(
     assert result["open_capa"]["evidence_impact"] == "PROMOTION_BLOCKED"
     assert result["open_capa"]["effectiveness_verification"] == "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE"
     assert result["open_capa"]["closure_does_not_close_capa"] is True
-    assert result["next_mandatory_work_package"] == "BA-QM8 / End-to-End Scanner Audit"
+    assert result["next_mandatory_work_package"] == "BA-QM8 – End-to-End Scanner Audit"
 
 
 def test_closure_rejects_rewriting_trigger_as_all_controls_passed() -> None:
@@ -63,6 +62,14 @@ def test_closure_rejects_dropping_triggered_control() -> None:
     changed = copy.deepcopy(result)
     changed["triggered_negative_controls"] = []
     with pytest.raises(ValueError, match="ba_qm7_triggered_control_set_invalid"):
+        validate_closure_manifest(changed, **_dependencies())
+
+
+def test_closure_rejects_missing_negative_control_level() -> None:
+    result = validate_closure_file()
+    changed = copy.deepcopy(result)
+    del changed["control_levels"]["END_TO_END"]
+    with pytest.raises(ValueError, match="ba_qm7_control_level_coverage_invalid"):
         validate_closure_manifest(changed, **_dependencies())
 
 
