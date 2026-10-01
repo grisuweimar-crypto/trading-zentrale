@@ -5,7 +5,7 @@ import json
 import pandas as pd
 import pytest
 
-from scripts.run_confidence_vnext_research_4 import _stamp_current_snapshot_identity
+from scanner.reports.confidence_snapshot_identity import stamp_current_snapshot_identity
 
 
 def test_w4_stamps_exact_snapshot_identity_without_changing_confidence_rows(tmp_path):
@@ -28,7 +28,7 @@ def test_w4_stamps_exact_snapshot_identity_without_changing_confidence_rows(tmp_
     rows = [{"as_of": "2026-09-30", "symbol": "RACE", "horizon_sessions": 5}]
     result = {"current": {"as_of": "2026-09-30", "rows": rows.copy()}}
 
-    _stamp_current_snapshot_identity(result, latest, output)
+    stamp_current_snapshot_identity(result, latest, output)
 
     assert result["current"]["snapshot_id"] == "snap-exact"
     assert result["current"]["generated_at"] == "2026-09-30T20:00:00+00:00"
@@ -57,4 +57,4 @@ def test_w4_refuses_mixed_snapshot_identity(tmp_path):
     result = {"current": {"as_of": "2026-09-30", "rows": []}}
 
     with pytest.raises(ValueError, match="phase4_snapshot_id_not_unique"):
-        _stamp_current_snapshot_identity(result, latest, output)
+        stamp_current_snapshot_identity(result, latest, output)
