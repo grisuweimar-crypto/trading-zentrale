@@ -1,0 +1,91 @@
+name: Decision Watch Symbol Views
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build_watch_symbol_views.py'
+      - '.github/workflows/decision_watch_symbol_views.yml'
+  workflow_run:
+    workflows: ['Decision Watch Runtime Publish']
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: decision-watch-symbol-views-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Build per-symbol views from validated runtime
+        run: python scripts/build_watch_symbol_views.py
+
+      - name: Validate symbol-view identity and privacy
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          runtime = json.loads(Path('artifacts/research/watch_runtime/manifest.json').read_text(encoding='utf-8'))
+          index = json.loads(Path('artifacts/research/watch_runtime/symbols/index.json').read_text(encoding='utf-8'))
+          assert index['snapshot_id'] == runtime['snapshot_id']
+          assert index['decision_as_of'] == runtime['decision_as_of']
+          assert index['symbol_count'] == runtime['symbol_count']
+          assert index['packet_count'] == runtime['packet_count']
+          assert index['private_position_data_included'] is False
+          assert index['decision_logic_changed'] is False
+          assert index['source_runtime_projection_sha256'] == runtime['runtime_projection_sha256']
+          for symbol, filename in index['symbol_files'].items():
+              row = json.loads((Path('artifacts/research/watch_runtime/symbols') / filename).read_text(encoding='utf-8'))
+              assert row['symbol'] == symbol
+              assert row['snapshot_id'] == runtime['snapshot_id']
+              assert row['private_position_data_included'] is False
+              assert row['decision_logic_changed'] is False
+              assert row['packets']
+              assert all(packet['symbol'] == symbol for packet in row['packets'])
+              assert row['packets'][-1]['source_snapshot_id'] == runtime['snapshot_id']
+          print({'symbol_count': index['symbol_count'], 'packet_count': index['packet_count']})
+          PY
+
+      - name: Refuse stale publication if main advanced
+        run: |
+          git fetch origin main --force
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
+            echo 'main advanced while symbol views were being built; refuse stale publication'
+            exit 1
+          }
+
+      - name: Persist public symbol views only
+        run: |
+          git config --local user.email 'action@github.com'
+          git config --local user.name 'GitHub Action Bot'
+          git add artifacts/research/watch_runtime/symbols
+          if ! git diff --cached --quiet; then
+            git commit -m '🧭 Publish per-symbol Decision Watch runtime [skip ci]'
+            git push origin HEAD:main
+          fi
