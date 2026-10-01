@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Publish small per-symbol views from the already validated Watch runtime shards.
 
-Transport only: no Decision evidence, stance, hysteresis, portfolio action,
-reliability, or Depot-Watch logic is recomputed.
+Transport only: Decision logic is imported from the production modules. The
+public summaries remain portfolio-independent and contain no private holdings.
 """
 from __future__ import annotations
 
@@ -10,8 +10,10 @@ import argparse
 from hashlib import sha256
 import json
 from pathlib import Path
+import sys
 
 SCHEMA_VERSION = "decision_watch_symbol_runtime_v1"
+SUMMARY_SCHEMA_VERSION = "decision_watch_symbol_state_summary_v1"
 INDEX_SCHEMA_VERSION = "decision_watch_symbol_runtime_index_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 
@@ -23,8 +25,8 @@ def _load(path: Path) -> dict:
     return value
 
 
-def _filename(symbol: str) -> str:
-    return f"symbol_{sha256(symbol.encode('utf-8')).hexdigest()[:16]}.json"
+def _token(symbol: str) -> str:
+    return sha256(symbol.encode("utf-8")).hexdigest()[:16]
 
 
 def main() -> int:
@@ -33,8 +35,15 @@ def main() -> int:
     parser.add_argument("--runtime-dir", default=DEFAULT_RUNTIME_DIR)
     args = parser.parse_args()
 
-    runtime_dir = (args.root / args.runtime_dir).resolve()
+    root = args.root.resolve()
+    sys.path.insert(0, str(root / "src"))
+    from scanner.research.decision_layer.universal_stance import compute_universal_stance
+    from scanner.research.decision_layer.state_transition import build_state_transition_history
+    from scanner.research.decision_layer.phase7_state_history import build_state_history_context
+
+    runtime_dir = (root / args.runtime_dir).resolve()
     manifest = _load(runtime_dir / "manifest.json")
+    daily = _load(root / "artifacts/research/daily_research.json")
     if manifest.get("schema_version") != "decision_watch_runtime_manifest_v1":
         raise ValueError("unsupported runtime manifest")
     if manifest.get("private_position_data_included") is not False:
@@ -45,16 +54,22 @@ def main() -> int:
     snapshot_id = str(manifest.get("snapshot_id") or "")
     decision_as_of = str(manifest.get("decision_as_of") or "")
     symbol_shards = manifest.get("symbol_shards")
+    daily_symbols = daily.get("symbols")
     if not snapshot_id or not decision_as_of or not isinstance(symbol_shards, dict):
         raise ValueError("runtime manifest identity incomplete")
+    if str(daily.get("snapshot_id") or "") != snapshot_id or not isinstance(daily_symbols, dict):
+        raise ValueError("daily/runtime snapshot mismatch")
 
     shard_cache: dict[str, dict] = {}
     symbol_dir = runtime_dir / "symbols"
     symbol_dir.mkdir(parents=True, exist_ok=True)
     for old in symbol_dir.glob("symbol_*.json"):
         old.unlink()
+    for old in symbol_dir.glob("summary_*.json"):
+        old.unlink()
 
-    index: dict[str, str] = {}
+    packet_files: dict[str, str] = {}
+    summary_files: dict[str, str] = {}
     total_packets = 0
     for symbol in sorted(map(str, symbol_shards)):
         shard_name = str(symbol_shards[symbol])
@@ -73,8 +88,10 @@ def main() -> int:
             raise ValueError(f"runtime symbol packets missing: {symbol}")
         if str(packets[-1].get("source_snapshot_id") or "") != snapshot_id:
             raise ValueError(f"runtime latest packet snapshot mismatch: {symbol}")
-        filename = _filename(symbol)
-        payload = {
+
+        token = _token(symbol)
+        packet_filename = f"symbol_{token}.json"
+        packet_payload = {
             "schema_version": SCHEMA_VERSION,
             "symbol": symbol,
             "snapshot_id": snapshot_id,
@@ -85,20 +102,68 @@ def main() -> int:
             "private_position_data_included": False,
             "decision_logic_changed": False,
         }
-        (symbol_dir / filename).write_text(
-            json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n",
+        (symbol_dir / packet_filename).write_text(
+            json.dumps(packet_payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
-        index[symbol] = filename
+
+        stances = [compute_universal_stance(packet) for packet in packets]
+        transition = build_state_transition_history(stances)
+        latest_stance = stances[-1]
+        structure = latest_stance["evidence_structure"]
+        universal = latest_stance["universal_stance"]
+        state_history = build_state_history_context(packets[-1], daily_symbols.get(symbol, {}))
+        stance_history = []
+        for stance in stances:
+            u = stance["universal_stance"]
+            s = stance["evidence_structure"]
+            stance_history.append({
+                "as_of": stance["as_of"],
+                "source_snapshot_id": stance["source_snapshot_id"],
+                "state": u["state"],
+                "direction": u["direction"],
+                "relation_state": s["relation_state"],
+                "support_structure": s["support_structure"],
+            })
+        summary_filename = f"summary_{token}.json"
+        summary_payload = {
+            "schema_version": SUMMARY_SCHEMA_VERSION,
+            "symbol": symbol,
+            "snapshot_id": snapshot_id,
+            "decision_as_of": decision_as_of,
+            "latest_universal_stance": {
+                "state": universal["state"],
+                "direction": universal["direction"],
+                "relation_state": structure["relation_state"],
+                "support_structure": structure["support_structure"],
+                "known_directional_claim_ids": structure["known_directional_claim_ids"],
+                "known_directional_family_counts": structure["known_directional_family_counts"],
+                "conflicts": structure["conflicts"],
+            },
+            "stance_history": stance_history,
+            "transition_state": transition["transition_state"],
+            "state_history_state": None if state_history is None else state_history["state"],
+            "state_history_path_memory": None if state_history is None else state_history["path_memory"],
+            "private_position_data_included": False,
+            "portfolio_action_computed": False,
+            "decision_logic_changed": False,
+        }
+        (symbol_dir / summary_filename).write_text(
+            json.dumps(summary_payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        packet_files[symbol] = packet_filename
+        summary_files[symbol] = summary_filename
         total_packets += len(packets)
 
     index_payload = {
         "schema_version": INDEX_SCHEMA_VERSION,
         "snapshot_id": snapshot_id,
         "decision_as_of": decision_as_of,
-        "symbol_count": len(index),
+        "symbol_count": len(packet_files),
         "packet_count": total_packets,
-        "symbol_files": index,
+        "symbol_files": packet_files,
+        "summary_files": summary_files,
         "source_runtime_projection_sha256": str(manifest.get("runtime_projection_sha256") or ""),
         "private_position_data_included": False,
         "decision_logic_changed": False,
@@ -110,7 +175,7 @@ def main() -> int:
     print(json.dumps({
         "status": "ok",
         "snapshot_id": snapshot_id,
-        "symbol_count": len(index),
+        "symbol_count": len(packet_files),
         "packet_count": total_packets,
         "private_position_data_included": False,
         "decision_logic_changed": False,
