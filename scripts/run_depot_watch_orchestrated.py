@@ -11,6 +11,10 @@ from scanner.reports.daily_research import validate_daily_research
 from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
 from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
+from scanner.research.decision_layer.watch_runtime import (
+    DEFAULT_RUNTIME_DIR,
+    load_runtime_packets_for_symbols,
+)
 from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
 
 
@@ -27,8 +31,8 @@ def _load(path: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Build the Phase-7H Watch from one sealed W10 snapshot, "
-            "archived 7A evidence and private positions"
+            "Build the Phase-7H Watch from one sealed W10 snapshot, compact public "
+            "Watch runtime evidence and private positions"
         )
     )
     parser.add_argument(
@@ -38,7 +42,21 @@ def main() -> int:
         help="Repository root containing artifacts/research/daily_research.json",
     )
     parser.add_argument("--positions", required=True, type=Path, help="Private decision_depot_position_book_v1 JSON")
-    parser.add_argument("--archive", default=DEFAULT_ARCHIVE, help="Prospective decision_evidence_7a JSONL path relative to root")
+    parser.add_argument(
+        "--runtime-dir",
+        default=DEFAULT_RUNTIME_DIR,
+        help="Compact public Watch runtime directory relative to root",
+    )
+    parser.add_argument(
+        "--archive",
+        default=DEFAULT_ARCHIVE,
+        help="Legacy full 7A archive fallback path relative to root",
+    )
+    parser.add_argument(
+        "--legacy-archive",
+        action="store_true",
+        help="Explicitly bypass compact runtime and use the full archive",
+    )
     parser.add_argument(
         "--w10-manifest",
         default=DEFAULT_W10_MANIFEST,
@@ -78,7 +96,27 @@ def main() -> int:
 
     positions = _load(args.positions)
     elliott_6h_source = _load(args.elliott_6h_source) if args.elliott_6h_source else None
-    packets, archive_metadata = load_evidence_archive(args.root / args.archive, missing_ok=True)
+
+    if args.legacy_archive:
+        packets, transport_metadata = load_evidence_archive(args.root / args.archive, missing_ok=False)
+        transport_metadata = {**transport_metadata, "transport": "legacy_full_archive"}
+    else:
+        raw_positions = positions.get("positions")
+        if not isinstance(raw_positions, list):
+            raise ValueError("position_book_positions_must_be_list")
+        symbols = [
+            str(row.get("symbol") or "")
+            for row in raw_positions
+            if isinstance(row, dict) and str(row.get("symbol") or "").strip()
+        ]
+        packets, transport_metadata = load_runtime_packets_for_symbols(
+            args.root / args.runtime_dir,
+            symbols,
+            w10_manifest=manifest,
+            expected_snapshot_id=str(daily["snapshot_id"]),
+        )
+        transport_metadata = {**transport_metadata, "transport": "compact_watch_runtime"}
+
     watch, diagnostics = build_orchestrated_depot_watch(
         daily,
         positions,
@@ -87,7 +125,10 @@ def main() -> int:
     )
     diagnostics = {
         **diagnostics,
-        "archive_status": archive_metadata.get("status"),
+        "evidence_transport": transport_metadata.get("transport"),
+        "archive_status": transport_metadata.get("status"),
+        "runtime_loaded_shard_count": transport_metadata.get("loaded_shard_count"),
+        "runtime_loaded_packet_count": transport_metadata.get("loaded_packet_count"),
         "w10_manifest_status": manifest["status"],
         "w10_snapshot_id": manifest["snapshot_id"],
         "w10_pre_7a_frozen_at": manifest["pre_7a_frozen_at"],
