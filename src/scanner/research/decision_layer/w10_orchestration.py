@@ -121,7 +121,6 @@ def begin_manifest(
         raise W10OrchestrationError("snapshot_id_required")
     if not snapshot_as_of:
         raise W10OrchestrationError("snapshot_as_of_required")
-
     return {
         "schema_version": SCHEMA_VERSION,
         "snapshot_id": snapshot_id,
@@ -159,13 +158,7 @@ def _mutable_stages(manifest: Mapping[str, object]) -> dict[str, object]:
     return stages
 
 
-def record_runtime_artifact(
-    manifest: Mapping[str, object],
-    *,
-    stage: str,
-    artifact_path: Path,
-    now: datetime | None = None,
-) -> dict[str, object]:
+def record_runtime_artifact(manifest: Mapping[str, object], *, stage: str, artifact_path: Path, now: datetime | None = None) -> dict[str, object]:
     """Record an artifact immediately after this orchestration produced it."""
     out = deepcopy(dict(manifest))
     stages = _mutable_stages(out)
@@ -173,8 +166,7 @@ def record_runtime_artifact(
         raise W10OrchestrationError(f"stage_already_recorded:{stage}")
     recorded = _now(now)
     payload = _load_object(artifact_path)
-    snapshot_id = str(out["snapshot_id"])
-    identity = _assert_snapshot_if_expressed(payload, snapshot_id, stage=stage)
+    identity = _assert_snapshot_if_expressed(payload, str(out["snapshot_id"]), stage=stage)
     stages[stage] = {
         "status": "available",
         "available_from": _iso(recorded),
@@ -186,15 +178,7 @@ def record_runtime_artifact(
     return out
 
 
-def record_preexisting_artifact(
-    manifest: Mapping[str, object],
-    *,
-    stage: str,
-    artifact_path: Path,
-    source_commit: str,
-    source_available_from: str,
-    require_snapshot_match: bool,
-) -> dict[str, object]:
+def record_preexisting_artifact(manifest: Mapping[str, object], *, stage: str, artifact_path: Path, source_commit: str, source_available_from: str, require_snapshot_match: bool) -> dict[str, object]:
     """Record persisted evidence using its repository-derived availability."""
     out = deepcopy(dict(manifest))
     stages = _mutable_stages(out)
@@ -209,15 +193,11 @@ def record_preexisting_artifact(
         raise W10OrchestrationError(f"source_commit_required:{stage}")
     payload = _load_object(artifact_path)
     if require_snapshot_match:
-        identity = _assert_snapshot_if_expressed(
-            payload, str(out["snapshot_id"]), stage=stage
-        )
+        identity = _assert_snapshot_if_expressed(payload, str(out["snapshot_id"]), stage=stage)
         if identity != "verified":
             raise W10OrchestrationError(f"snapshot_identity_not_expressed:{stage}")
     else:
-        identity = _assert_snapshot_if_expressed(
-            payload, str(out["snapshot_id"]), stage=stage
-        )
+        identity = "not_market_snapshot_evidence"
     stages[stage] = {
         "status": "available",
         "available_from": _iso(available),
@@ -230,12 +210,7 @@ def record_preexisting_artifact(
     return out
 
 
-def resolve_phase6(
-    manifest: Mapping[str, object],
-    *,
-    artifact_path: Path | None,
-    now: datetime | None = None,
-) -> dict[str, object]:
+def resolve_phase6(manifest: Mapping[str, object], *, artifact_path: Path | None, now: datetime | None = None) -> dict[str, object]:
     """Resolve Phase 6 before 7A; absence is explicit and never neutral evidence."""
     out = deepcopy(dict(manifest))
     stages = _mutable_stages(out)
@@ -253,7 +228,6 @@ def resolve_phase6(
             "missing_is_neutral_evidence": False,
         }
         return out
-
     payload = _load_object(artifact_path)
     if payload.get("schema_version") != "decision_elliott_6h_source_v1":
         raise W10OrchestrationError("unsupported_phase6_source_schema")
@@ -281,24 +255,15 @@ def resolve_phase6(
     return out
 
 
-def freeze_pre_7a(
-    manifest: Mapping[str, object],
-    *,
-    now: datetime | None = None,
-) -> dict[str, object]:
+def freeze_pre_7a(manifest: Mapping[str, object], *, now: datetime | None = None) -> dict[str, object]:
     """Freeze all upstream stages before the final 7A packet may be built."""
     out = deepcopy(dict(manifest))
     stages = _mutable_stages(out)
     missing = [stage for stage in REQUIRED_PRE_7A_STAGES if stage not in stages]
     if missing:
-        raise W10OrchestrationError(
-            "upstream_stage_unresolved:" + ",".join(missing)
-        )
+        raise W10OrchestrationError("upstream_stage_unresolved:" + ",".join(missing))
     freeze_time = _now(now)
-    scanner_time = _utc(
-        stages["scanner_daily_research"]["available_from"],
-        "scanner_available_from",
-    )
+    scanner_time = _utc(stages["scanner_daily_research"]["available_from"], "scanner_available_from")
     if freeze_time < scanner_time:
         raise W10OrchestrationError("freeze_before_scanner_publication")
     for stage in REQUIRED_PRE_7A_STAGES:
@@ -317,13 +282,7 @@ def freeze_pre_7a(
     return out
 
 
-def seal_final_7a(
-    manifest: Mapping[str, object],
-    *,
-    packet_set_path: Path,
-    archive_path: Path,
-    now: datetime | None = None,
-) -> dict[str, object]:
+def seal_final_7a(manifest: Mapping[str, object], *, packet_set_path: Path, archive_path: Path, now: datetime | None = None) -> dict[str, object]:
     """Seal the final 7A packet/archive after the upstream set is immutable."""
     if manifest.get("schema_version") != SCHEMA_VERSION:
         raise W10OrchestrationError("unsupported_w10_manifest")
@@ -345,7 +304,6 @@ def seal_final_7a(
         raise W10OrchestrationError("final_7a_predates_upstream_freeze")
     if decision_time > sealed:
         raise W10OrchestrationError("final_7a_from_future")
-    archive_hash = _sha256(archive_path)
     stages["final_7a"] = {
         "status": "available",
         "available_from": _iso(decision_time),
@@ -359,7 +317,7 @@ def seal_final_7a(
         "available_from": _iso(sealed),
         "availability_source": "w10_runtime_recorded_after_archive_write",
         "artifact_path": str(archive_path),
-        "artifact_sha256": archive_hash,
+        "artifact_sha256": _sha256(archive_path),
         "snapshot_identity_state": "inherits_final_7a",
     }
     out["status"] = "sealed"
@@ -374,11 +332,7 @@ def seal_final_7a(
     return out
 
 
-def validate_sealed_manifest(
-    manifest: Mapping[str, object],
-    *,
-    expected_snapshot_id: str | None = None,
-) -> dict[str, object]:
+def validate_sealed_manifest(manifest: Mapping[str, object], *, expected_snapshot_id: str | None = None) -> dict[str, object]:
     if manifest.get("schema_version") != SCHEMA_VERSION:
         raise W10OrchestrationError("unsupported_w10_manifest")
     if manifest.get("status") != "sealed":
