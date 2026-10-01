@@ -36,7 +36,8 @@ jobs:
           verification = ledger.verify_integrity()
           finding = ledger.get_finding("QM-H-QMJ-PHASE1A-LAG1-001")
           assert verification["valid"] is True
-          assert finding["status"] == "TRIAGED"
+          assert finding["status"] == "ACTION_PLANNED"
+          assert finding["capa_id"] == "QM-H-CAPA-QMJ-PHASE1A-LAG1-001"
           assert finding["category"] == "METHODOLOGY_FINDING"
           assert finding["evidence_impact"] == "PROMOTION_BLOCKED"
           print(verification)
