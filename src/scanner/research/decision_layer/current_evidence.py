@@ -4,8 +4,10 @@ This adapter is intentionally conservative. It binds the exact current scanner
 snapshot to Phase-7A without inventing a Selection direction. The only automatic
 directional claims are matches of the already-frozen Phase-1B timing catalogue.
 Frozen Phase-2 probability calibration is attached as non-directional annotation
-through claim_ref. Missing Risk, Confidence, Elliott or external-evidence adapters
-stay missing rather than being reconstructed from convenient scanner scalars.
+through claim_ref. Existing Phase-3 Risk-vNext fields are transported as
+non-directional context without recalculation. Missing Confidence, Elliott or
+external-evidence adapters stay missing rather than being reconstructed from
+convenient scanner scalars.
 """
 from __future__ import annotations
 
@@ -34,6 +36,7 @@ from .phase2_probability import (
     probability_calibration_digest,
     validate_probability_calibration,
 )
+from .phase3_risk import build_phase3_risk_row
 
 
 CURRENT_PACKET_SET_SCHEMA_VERSION = "decision_current_packet_set_7a_v1"
@@ -255,9 +258,9 @@ def build_current_packet_set_from_frames(
     """Build one validated 7A packet per current scanner symbol.
 
     Selection stays current context without inferred direction. Frozen Timing is
-    matched from point-in-time features. When supplied, frozen Phase-2
-    probability calibration is attached to those exact claims as annotation;
-    it is never converted into an additional directional vote.
+    matched from point-in-time features. Frozen Phase-2 Probability is attached
+    to its exact claim. Existing same-snapshot Phase-3 Risk-vNext fields are
+    attached as non-directional context without any new risk calculation.
     """
     snapshot_id, daily_as_of, decision_time = _require_current_identity(daily, latest)
     packet_as_of = str(daily.get("generated_at"))
@@ -295,6 +298,8 @@ def build_current_packet_set_from_frames(
     symbols_with_timing = 0
     probability_claims = 0
     symbols_with_probability = 0
+    risk_claims = 0
+    symbols_with_risk = 0
     for _, series in current.sort_values("symbol", kind="mergesort").iterrows():
         row = series.to_dict()
         symbol = str(row["symbol"])
@@ -324,11 +329,20 @@ def build_current_packet_set_from_frames(
             symbols_with_probability += 1
             probability_claims += len(probability)
 
+        risk = build_phase3_risk_row(
+            row=row,
+            expected_snapshot_id=snapshot_id,
+        )
+        risk_evidence = [risk] if risk is not None else []
+        if risk is not None:
+            symbols_with_risk += 1
+            risk_claims += 1
+
         packet = build_input_packet(
             symbol=symbol,
             as_of=packet_as_of,
             source_snapshot_id=snapshot_id,
-            evidence=[selection, *timing, *probability],
+            evidence=[selection, *timing, *probability, *risk_evidence],
         )
         packets.append(packet)
 
@@ -343,6 +357,8 @@ def build_current_packet_set_from_frames(
         "symbols_with_timing_claims": symbols_with_timing,
         "probability_claim_count": probability_claims,
         "symbols_with_probability_claims": symbols_with_probability,
+        "risk_claim_count": risk_claims,
+        "symbols_with_risk_claims": symbols_with_risk,
         "packets": packets,
         "semantics": {
             "exact_daily_snapshot_bound": True,
@@ -354,6 +370,10 @@ def build_current_packet_set_from_frames(
             "probability_is_directional_vote": False,
             "probability_source": "phase2_probability_calibration" if validated_probability is not None else None,
             "risk_reconstructed": False,
+            "phase3_risk_context_attached": True,
+            "risk_is_directional_vote": False,
+            "risk_source": "phase3_risk_vnext_current",
+            "risk_missing_values_backfilled": False,
             "confidence_reconstructed": False,
             "elliott_reconstructed": False,
             "external_evidence_phase8_activated": False,
