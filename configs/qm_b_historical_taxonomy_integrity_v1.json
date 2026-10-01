@@ -50,6 +50,11 @@
       "reason": "Prospective listing governance workflow; taxonomy-like text is not used to construct historical research groups."
     },
     {
+      "path": "configs/ba_qm4_qm_de_closure_v1.json",
+      "status": "SAFE",
+      "reason": "BA-QM4 closure metadata names sector/time-block robustness checks and existing QM-B historical promotion blockers; it does not construct or enrich historical rows from current taxonomy."
+    },
+    {
       "path": "configs/elliott_vnext_contract_v2.json",
       "status": "SAFE",
       "reason": "Research contract references sector context but does not bind historical rows to present-day taxonomy."
@@ -58,6 +63,11 @@
       "path": "configs/market_context_assignment_schema_v1.json",
       "status": "SAFE",
       "reason": "Schema requires explicit versioned/PIT context assignments rather than present-day sector or industry lookup."
+    },
+    {
+      "path": "configs/qm_de_dependence_calibration_v1.json",
+      "status": "SAFE",
+      "reason": "BA-QM4 dependence contract accepts sector only as optional cluster metadata supplied with each audited observation; it contains no lookup or backfill from current taxonomy."
     },
     {
       "path": "src/scanner/domain/scoring_engine/quality/snapshots.py",
@@ -93,6 +103,11 @@
       "path": "src/scanner/research/governance/qm_b_prospective_listing_snapshots.py",
       "status": "SAFE",
       "reason": "Prospective listing evidence code; source category fields are not used as historical scanner taxonomy."
+    },
+    {
+      "path": "src/scanner/research/governance/qm_de_closure.py",
+      "status": "SAFE",
+      "reason": "BA-QM4 closure validator checks governance declarations and preserved blockers only; it does not read current taxonomy into historical research samples."
     },
     {
       "path": "src/scanner/research/query_api.py",

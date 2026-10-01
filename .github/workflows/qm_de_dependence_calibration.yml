@@ -1,0 +1,66 @@
+name: BA-QM4 Dependence and Calibration
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_de_dependence_calibration_v1.json"
+      - "configs/ba_qm4_qm_de_closure_v1.json"
+      - "configs/qm_de_identity_notes_v1.json"
+      - "configs/ba_qm2_handoff_v2.json"
+      - "configs/qm_h_*.json"
+      - "configs/qm_i_*.json"
+      - "configs/ba_qm3_qm_i_closure_v1.json"
+      - "src/scanner/research/governance/qm_d_dependence.py"
+      - "src/scanner/research/governance/qm_e_calibration.py"
+      - "src/scanner/research/governance/qm_de_closure.py"
+      - "src/scanner/research/governance/qm_h_*.py"
+      - "src/scanner/research/governance/qm_i_*.py"
+      - "src/scanner/research/governance/qm_c*.py"
+      - "src/scanner/research/governance/qm_a.py"
+      - "src/scanner/research/governance/qm_b_closure.py"
+      - "tests/test_qm_de*.py"
+      - "tests/test_probability_calibration.py"
+      - "tests/test_qm_i*.py"
+      - "tests/test_qm_h*.py"
+      - "tests/test_qm_c*.py"
+      - "tests/test_qm_a*.py"
+      - "tests/test_qm_b_closure.py"
+      - "docs/qm_de_dependence_calibration.md"
+      - ".github/workflows/qm_de_dependence_calibration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-de:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run BA-QM4 and predecessor governance regression suite
+        run: |
+          python -m pytest -q \
+            tests/test_qm_de*.py \
+            tests/test_probability_calibration.py \
+            tests/test_qm_i*.py \
+            tests/test_qm_h*.py \
+            tests/test_qm_c*.py \
+            tests/test_qm_a*.py \
+            tests/test_qm_b_closure.py
+      - name: Validate BA-QM4 closure
+        run: |
+          python - <<'PY'
+          from scanner.research.governance.qm_de_closure import validate_closure_file
+          result = validate_closure_file()
+          assert result['display_status_qm_d'] == 'QM-D COMPLETE — DEPENDENCE AND EFFECTIVE-N AUDIT ACTIVE'
+          assert result['display_status_qm_e'] == 'QM-E COMPLETE — POINT-IN-TIME CALIBRATION AUDIT ACTIVE'
+          assert result['business_area_status'] == 'BA-QM4 COMPLETE — DEPENDENCE AND CALIBRATION QM READY FOR DECISION ABLATION'
+          print(result['display_status_qm_d'])
+          print(result['display_status_qm_e'])
+          print(result['business_area_status'])
+          PY
