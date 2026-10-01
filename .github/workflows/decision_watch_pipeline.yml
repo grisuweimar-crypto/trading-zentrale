@@ -10,9 +10,12 @@ on:
     paths:
       - '.github/workflows/decision_watch_pipeline.yml'
       - 'scripts/build_integrated_decision_evidence_7a.py'
+      - 'scripts/run_confidence_vnext_research_4.py'
       - 'src/scanner/research/decision_layer/integrated_evidence.py'
+      - 'src/scanner/research/decision_layer/phase4_confidence.py'
       - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
       - 'tests/test_decision_integrated_evidence.py'
+      - 'tests/test_w4_confidence_snapshot_identity.py'
       - 'tests/test_decision_depot_watch_orchestration.py'
 
 permissions:
@@ -42,6 +45,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_decision_integrated_evidence.py
+          tests/test_w4_confidence_snapshot_identity.py
           tests/test_decision_depot_watch_orchestration.py
           tests/test_decision_depot_watch_prospective_gate.py
           tests/test_decision_universal_stance_7d.py
@@ -85,7 +89,7 @@ jobs:
       - name: Run unchanged Phase 4 risk-scale guard
         run: python scripts/audit_phase4_risk_scale.py --output "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
 
-      - name: Build unchanged Phase 4 current empirical registry
+      - name: Build guarded Phase 4 current registry with exact snapshot identity
         run: >-
           python scripts/run_confidence_vnext_research_4.py
           --phase2 artifacts/research/probability_calibration_2.json
@@ -111,15 +115,33 @@ jobs:
           assert packets['packet_count'] == daily['universe_size']
           assert packets['semantics']['integrated_evidence_v1'] is True
           assert packets['semantics']['phase2_phase3_phase4_outputs_consumed'] is True
+          assert packets['semantics']['phase2_probability_source_preserved'] is True
+          assert packets['semantics']['phase3_risk_source_preserved'] is True
+          assert packets['semantics']['phase4_confidence_annotations_attached'] is True
+          assert packets['semantics']['confidence_is_directional_vote'] is False
+          assert packets['semantics']['confidence_encodes_attractiveness'] is False
+          assert packets['validation']['phase4_same_snapshot_verified'] is True
+          assert packets['validation']['phase4_snapshot_id'] == daily['snapshot_id']
           assert packets['semantics']['phase5_unpromoted_changes_decision'] is False
           assert packets['semantics']['elliott_unpromoted_changes_decision'] is False
           assert packets['semantics']['external_evidence_phase8_activated'] is False
           assert {p['as_of'] for p in packets['packets']} == {packets['as_of']}
           assert all(p.get('orchestration_stage') == 'integrated_current_evidence_v1' for p in packets['packets'])
+          for packet in packets['packets']:
+              claim_ids = [row['claim_id'] for row in packet['evidence']]
+              assert len(claim_ids) == len(set(claim_ids))
+              for row in packet['evidence']:
+                  if row['family'] == 'confidence':
+                      payload = json.dumps(row['payload'], sort_keys=True)
+                      assert '"direction"' not in payload
+                      assert '"stance"' not in payload
+                      assert '"vote"' not in payload
+                      assert '"attractiveness"' not in payload
           print(json.dumps({
               'snapshot_id': packets['snapshot_id'],
               'packet_count': packets['packet_count'],
               'phase4_symbol_count': packets.get('phase4_symbol_count'),
+              'phase4_confidence_claim_count': packets.get('phase4_confidence_claim_count'),
               'path_review_count': packets.get('path_review_count'),
               'decision_as_of': packets['as_of'],
           }, indent=2))
