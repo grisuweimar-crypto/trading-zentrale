@@ -1,0 +1,91 @@
+{
+  "schema_version": "ba_qm3_qm_i_closure_v1",
+  "business_area": "BA-QM3",
+  "qm_axis": "QM-I",
+  "display_status": "QM-I COMPLETE — TYPED EVIDENCE LINEAGE AND DOUBLE-COUNTING REVIEW ACTIVE",
+  "business_area_status": "BA-QM3 COMPLETE — EVIDENCE LINEAGE READY FOR DEPENDENCE AND CALIBRATION QM",
+  "engineering_status": "COMPLETE",
+  "empirical_promotion_claimed": false,
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "prerequisite": {
+    "ba_qm2_handoff_schema": "ba_qm2_handoff_v1",
+    "qm_b_and_qm_c_stable_ids_required": true,
+    "qm_b_strict_historical_promotion_required": false,
+    "qm_b_external_blockers_must_remain_visible": true
+  },
+  "completed_capabilities": [
+    "typed_versioned_provenance_graph",
+    "append_only_hash_chained_lineage_registry",
+    "raw_source_ids",
+    "feature_ids",
+    "indicator_ids",
+    "score_ids",
+    "derived_metric_ids",
+    "claim_ids",
+    "calibration_ids",
+    "decision_ids",
+    "watch_ids",
+    "qm_c_stable_identity_reuse",
+    "independence_claim_registry",
+    "common_ancestry_detector_with_paths",
+    "direct_dependency_detector",
+    "incomplete_lineage_unknown_state",
+    "double_counting_review_trigger",
+    "independence_claim_contradiction_detection",
+    "material_lineage_cycle_rejection",
+    "phase7_claim_and_claim_ref_integration",
+    "phase7_decision_lineage_integration",
+    "phase7_native_watch_id_reuse",
+    "end_to_end_raw_feature_indicator_score_claim_calibration_decision_watch_test",
+    "cross_qm_regression_tests"
+  ],
+  "integration_contracts": {
+    "qm_a": {
+      "contract_schema": "qm_a_research_governance_v1",
+      "evidence_consumption_authority_preserved": true
+    },
+    "qm_b": {
+      "closure_schema": "qm_b_closure_v1",
+      "pit_authority_preserved": true,
+      "strict_promotion_blockers_overridden": false
+    },
+    "qm_c": {
+      "handoff_schema": "ba_qm2_handoff_v1",
+      "stable_ids_reused_without_rekeying": true
+    },
+    "phase7": {
+      "input_contract_schema": "decision_layer_input_contract_v1",
+      "relation_graph_semantics_replaced": false,
+      "claim_ids_reused": true,
+      "claim_ref_lineage_recorded": true,
+      "decision_ids_guessed_when_absent": false,
+      "watch_id_reused": true
+    }
+  },
+  "review_semantics": {
+    "common_ancestry_is_automatic_defect": false,
+    "common_ancestry_requires_review": true,
+    "missing_lineage_proves_independence": false,
+    "direct_reference_is_independent_confirmation": false,
+    "automatic_weight_change_allowed": false,
+    "automatic_scanner_or_decision_change_allowed": false
+  },
+  "known_limitations": [
+    "Existing historical artifacts without explicit stable lineage IDs are not backfilled by guessing.",
+    "Phase-7D and Phase-7F artifacts do not natively expose stable decision/action IDs; QM-I therefore requires explicit supplied IDs for new lineage registration.",
+    "The deterministic lineage graph can reveal known common ancestry but cannot prove absence of undocumented upstream dependencies.",
+    "QM-B strict historical promotion remains blocked by external listing, market-tradability and execution-channel evidence gaps."
+  ],
+  "boundaries": {
+    "historical_lineage_backfilled_by_guessing": false,
+    "independence_inferred_from_family_names": false,
+    "common_ancestry_treated_as_automatic_defect": false,
+    "scanner_weights_changed": false,
+    "decision_layer_semantics_changed": false,
+    "portfolio_action_changed": false,
+    "orders_generated": false,
+    "empirical_promotion_performed": false
+  },
+  "next_mandatory_work_package": "BA-QM4 / QM-D + QM-E — Dependence, Effective N & Calibration"
+}
