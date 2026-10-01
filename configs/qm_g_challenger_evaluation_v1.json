@@ -1,0 +1,42 @@
+{
+  "schema_version": "qm_g_challenger_evaluation_v1",
+  "module": "QM-G",
+  "business_area": "BA-QM6",
+  "name": "Frozen Core vs Challenger Stateful Shadow Evaluation",
+  "status": "research_only_evaluation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Measure a registered Elliott challenger's incremental Decision-Layer value against the frozen B6 core using the existing QM-F stateful policy evaluator without changing productive semantics.",
+  "arms": {
+    "core": "B6_CORE_FROZEN",
+    "challenger": "B6_CHALLENGER_SHADOW",
+    "qm_f_policy_engine_id": "B6"
+  },
+  "principles": {
+    "valid_qm_g_readiness_required": true,
+    "qm_a_evidence_must_be_frozen_unspent": true,
+    "same_starting_state_required": true,
+    "same_observation_grid_required": true,
+    "same_eligibility_required": true,
+    "same_tradeability_required": true,
+    "same_action_availability_required": true,
+    "same_execution_cost_model_required": true,
+    "same_realized_asset_returns_required": true,
+    "stateful_policy_evaluation_required": true,
+    "path_divergence_permitted": true,
+    "claim_level_pairing_after_divergence_forbidden": true,
+    "registered_challenger_lineage_node_is_only_allowed_delta": true,
+    "winner_not_declared_by_engine": true,
+    "automatic_promotion_forbidden": true
+  },
+  "boundaries": {
+    "elliott_core_changed": false,
+    "universal_stance_changed": false,
+    "w6_interface_changed": false,
+    "w8_action_matrix_changed": false,
+    "portfolio_action_semantics_changed": false,
+    "execution_enabled": false,
+    "productive_promotion_performed": false
+  }
+}
