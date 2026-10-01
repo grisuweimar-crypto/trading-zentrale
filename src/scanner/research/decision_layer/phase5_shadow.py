@@ -1,7 +1,7 @@
 """Typed Phase-5 Confidence shadow/promotion context for the Decision Layer.
 
 W5 exposes the already-existing Phase-5E promotion state without activating the
-adaptive shadow policy.  The adapter transports governance/evidence-readiness
+adaptive shadow policy. The adapter transports governance/evidence-readiness
 only; it never evaluates the policy for the current symbol and never creates a
 directional vote, stance or portfolio action.
 """
@@ -125,12 +125,8 @@ def phase5_shadow_context(
             "production_change_performed": False,
         }
 
-    integration_mode = (
-        "eligible_after_promotion_review" if eligible_horizons else "shadow_only"
-    )
-    maturity_state = (
-        "not_yet_mature" if eligible_horizons else "insufficient_evidence"
-    )
+    integration_mode = "eligible_after_promotion_review" if eligible_horizons else "shadow_only"
+    maturity_state = "not_yet_mature" if eligible_horizons else "insufficient_evidence"
     coverage_state = "limited" if eligible_horizons else "insufficient"
     policy = report.get("policy")
     policy = policy if isinstance(policy, Mapping) else {}
@@ -200,3 +196,28 @@ def build_phase5_shadow_row(
         "integration_mode": normalized["integration_mode"],
         "payload": normalized["context"],
     }
+
+
+def phase5_shadow_from_packet(packet: Mapping[str, object]) -> dict[str, object] | None:
+    """Return the one W5 shadow context from a validated packet, if present."""
+    evidence = packet.get("evidence")
+    if not isinstance(evidence, list):
+        return None
+    matches: list[dict[str, object]] = []
+    for row in evidence:
+        if not isinstance(row, Mapping) or row.get("family") != "confidence":
+            continue
+        payload = row.get("payload")
+        if isinstance(payload, Mapping) and payload.get("context_type") == PHASE5_CONTEXT_TYPE:
+            matches.append({
+                "claim_id": str(row.get("claim_id") or ""),
+                "claim_ref": str(row.get("claim_ref") or ""),
+                "integration_mode": str(row.get("integration_mode") or ""),
+                "coverage_state": str(row.get("coverage_state") or ""),
+                "maturity_state": str(row.get("maturity_state") or ""),
+                "pit_state": str(row.get("pit_state") or ""),
+                "payload": deepcopy(dict(payload)),
+            })
+    if len(matches) > 1:
+        raise Phase5ShadowAdapterError(f"duplicate_phase5_shadow_context:{packet.get('symbol')}")
+    return matches[0] if matches else None
