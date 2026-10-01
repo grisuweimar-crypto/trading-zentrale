@@ -10,12 +10,10 @@ No diagnostic threshold is introduced and no root cause is assigned by code.
 from __future__ import annotations
 
 from hashlib import sha256
-import json
 import math
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from scanner.reports.selection_timing import Phase1AConfig, _score_percentile, build_events
@@ -49,18 +47,21 @@ def _quantiles(series: pd.Series) -> dict[str, float | None]:
     }
 
 
-def _spearman(left: pd.Series, right: pd.Series) -> float | None:
-    frame = pd.DataFrame({"left": left, "right": right}).dropna()
-    if len(frame) < 3 or frame["left"].nunique() < 2 or frame["right"].nunique() < 2:
-        return None
-    return _finite_or_none(frame["left"].corr(frame["right"], method="spearman"))
-
-
 def _pearson(left: pd.Series, right: pd.Series) -> float | None:
     frame = pd.DataFrame({"left": left, "right": right}).dropna()
     if len(frame) < 3 or frame["left"].nunique() < 2 or frame["right"].nunique() < 2:
         return None
     return _finite_or_none(frame["left"].corr(frame["right"], method="pearson"))
+
+
+def _spearman(left: pd.Series, right: pd.Series) -> float | None:
+    """Spearman rho as Pearson correlation of average ranks; no scipy dependency."""
+    frame = pd.DataFrame({"left": left, "right": right}).dropna()
+    if len(frame) < 3 or frame["left"].nunique() < 2 or frame["right"].nunique() < 2:
+        return None
+    left_rank = frame["left"].rank(method="average")
+    right_rank = frame["right"].rank(method="average")
+    return _pearson(left_rank, right_rank)
 
 
 def _reconstruct_matched_grid(events: pd.DataFrame, *, min_cross_section: int, horizon: int) -> pd.DataFrame:
