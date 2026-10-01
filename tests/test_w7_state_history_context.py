@@ -366,7 +366,8 @@ def test_w7_end_to_end_watch_exposes_post_correction_but_leaves_7f_hold():
     assert row["state_history_context"]["state"] == "post_overextension_correction"
     assert row["decision"]["state_history_state"] == "post_overextension_correction"
     assert row["decision"]["state_history_changed_portfolio_action"] is False
-    assert row["decision"]["state_history_w8_action_policy_evaluated"] is False
+    assert row["decision"]["state_history_w8_action_policy_evaluated"] is True
+    assert row["decision"]["w8_action_policy_case"] == "f3_post_correction_positive_hold_reassess"
     assert diagnostics["state_history_symbols"] == ["TEST"]
     assert diagnostics["state_history_counts"] == {"post_overextension_correction": 1}
     assert diagnostics["state_history_changes_portfolio_action"] is False
