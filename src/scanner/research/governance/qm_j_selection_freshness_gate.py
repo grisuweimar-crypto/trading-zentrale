@@ -42,7 +42,7 @@ def validate_gate(value: Mapping[str, Any]) -> dict[str, Any]:
         raise SelectionFreshnessGateError("freshness_gate_scope_invalid")
     if value.get("finding_id") != "QM-H-QMJ-PHASE1A-LAG1-001":
         raise SelectionFreshnessGateError("freshness_gate_finding_invalid")
-    if value.get("capa_id") != "QM-H-CAPA-PHASE1A-LAG-FRESHNESS-001":
+    if value.get("capa_id") != "QM-H-CAPA-QMJ-PHASE1A-LAG1-001":
         raise SelectionFreshnessGateError("freshness_gate_capa_invalid")
     if value.get("status") != "IMPLEMENTED_GOVERNANCE_GUARD_PENDING_EFFECTIVENESS_VERIFICATION":
         raise SelectionFreshnessGateError("freshness_gate_status_invalid")
@@ -62,6 +62,12 @@ def validate_gate(value: Mapping[str, Any]) -> dict[str, Any]:
         raise SelectionFreshnessGateError("freshness_gate_investigation_hash_invalid")
     if blocked.get("evidence_impact") != "PROMOTION_BLOCKED" or blocked.get("promotion_allowed") is not False:
         raise SelectionFreshnessGateError("freshness_gate_promotion_block_missing")
+
+    root_cause = value.get("root_cause_basis")
+    if not isinstance(root_cause, Mapping):
+        raise SelectionFreshnessGateError("freshness_gate_root_cause_required")
+    if root_cause.get("classification") != "TEMPORAL_REDUNDANCY_IN_SELECTION_LEVEL_SCORE":
+        raise SelectionFreshnessGateError("freshness_gate_root_cause_classification_invalid")
 
     corrective = value.get("corrective_guard")
     if not isinstance(corrective, Mapping):
