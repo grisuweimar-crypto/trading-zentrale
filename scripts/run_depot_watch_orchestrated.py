@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the private Depot Watch from the authoritative snapshot and archived 7A evidence."""
+"""Run the private Depot Watch from authoritative Decision evidence and positions."""
 from __future__ import annotations
 
 import argparse
@@ -33,6 +33,14 @@ def main() -> int:
     parser.add_argument("--positions", required=True, type=Path, help="Private decision_depot_position_book_v1 JSON")
     parser.add_argument("--archive", default=DEFAULT_ARCHIVE, help="Prospective decision_evidence_7a JSONL path relative to root")
     parser.add_argument(
+        "--elliott-6h-source",
+        type=Path,
+        help=(
+            "Optional PIT-stamped decision_elliott_6h_source_v1 JSON. "
+            "Only frozen 6H review contexts are passed to 7F; no Elliott direction becomes a vote."
+        ),
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         help="Optional private output path. Omit to print the Watch to stdout.",
@@ -46,8 +54,14 @@ def main() -> int:
 
     daily = validate_daily_research(args.root)
     positions = _load(args.positions)
+    elliott_6h_source = _load(args.elliott_6h_source) if args.elliott_6h_source else None
     packets, archive_metadata = load_evidence_archive(args.root / args.archive, missing_ok=True)
-    watch, diagnostics = build_orchestrated_depot_watch(daily, positions, packets)
+    watch, diagnostics = build_orchestrated_depot_watch(
+        daily,
+        positions,
+        packets,
+        elliott_6h_source=elliott_6h_source,
+    )
     diagnostics = {**diagnostics, "archive_status": archive_metadata.get("status")}
 
     text = json.dumps(watch, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
