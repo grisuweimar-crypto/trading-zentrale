@@ -1,0 +1,34 @@
+name: BA-QM5 Decision Ablation
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/governance/qm_f_*.py"
+      - "configs/qm_f_decision_ablation_v1.json"
+      - "configs/ba_qm5_qm_f_closure_v1.json"
+      - "src/scanner/research/governance/qm_de_closure.py"
+      - "configs/ba_qm4_qm_de_closure_v1.json"
+      - "src/scanner/research/governance/qm_i_*.py"
+      - "configs/qm_i_evidence_lineage_v1.json"
+      - "tests/test_qm_f_*.py"
+      - "docs/qm_f_decision_ablation.md"
+      - ".github/workflows/qm_f_decision_ablation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm-f:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run QM-F and predecessor closure tests
+        run: python -m pytest -q tests/test_qm_f_decision_ablation.py tests/test_qm_f_closure.py tests/test_qm_de_closure.py tests/test_qm_i_closure.py
+      - name: Validate BA-QM5 closure
+        run: python -c "from scanner.research.governance.qm_f_closure import validate_closure_file; print(validate_closure_file()['business_area_status'])"
