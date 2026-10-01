@@ -54,7 +54,7 @@ jobs:
           assert result["open_capa"]["status"] == "IMPLEMENTED"
           assert result["open_capa"]["evidence_impact"] == "PROMOTION_BLOCKED"
           assert result["open_capa"]["effectiveness_verification"] == "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE"
-          assert result["next_mandatory_work_package"] == "BA-QM8 / End-to-End Scanner Audit"
+          assert result["next_mandatory_work_package"] == "BA-QM8 – End-to-End Scanner Audit"
           print(result["display_status_qm_j"])
           print(result["business_area_status"])
           PY
