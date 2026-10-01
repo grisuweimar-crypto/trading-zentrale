@@ -65,10 +65,22 @@ def test_phase7_decision_to_portfolio_action_lineage_uses_explicit_ids(tmp_path)
         actor_role="researcher",
     )
     assert saved["node_type"] == "PORTFOLIO_ACTION"
-    ancestry = registry.analyze_ancestry(
+
+    decision_ancestry = registry.analyze_ancestry(
         left_node_id="DECISION-ACTION-001",
         left_version_id="v1",
         right_node_id="PORTFOLIO-ACTION-001",
         right_version_id="v1",
     )
-    assert ancestry["classification"] == "DIRECT_DEPENDENCY"
+    assert decision_ancestry["classification"] == "DIRECT_DEPENDENCY"
+
+    position = registry.get_node("position-snapshot-001", "2026-09-30T16:00:00Z")
+    assert position["node_type"] == "POSITION_SNAPSHOT"
+    assert position["lineage_complete"] is True
+    position_ancestry = registry.analyze_ancestry(
+        left_node_id="position-snapshot-001",
+        left_version_id="2026-09-30T16:00:00Z",
+        right_node_id="PORTFOLIO-ACTION-001",
+        right_version_id="v1",
+    )
+    assert position_ancestry["classification"] == "DIRECT_DEPENDENCY"
