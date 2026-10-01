@@ -2,7 +2,7 @@ name: Decision Watch Integration Pipeline
 
 on:
   workflow_run:
-    workflows: ['Phase 2 Probability Calibration']
+    workflows: ['Phase 2 Probability Calibration', 'Phase 5E Adaptive Shadow and Promotion']
     types: [completed]
   workflow_dispatch:
   pull_request:
@@ -13,9 +13,11 @@ on:
       - 'scripts/run_confidence_vnext_research_4.py'
       - 'src/scanner/research/decision_layer/integrated_evidence.py'
       - 'src/scanner/research/decision_layer/phase4_confidence.py'
+      - 'src/scanner/research/decision_layer/phase5_shadow.py'
       - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
       - 'tests/test_decision_integrated_evidence.py'
       - 'tests/test_w4_confidence_snapshot_identity.py'
+      - 'tests/test_w5_phase5_shadow_integration.py'
       - 'tests/test_decision_depot_watch_orchestration.py'
 
 permissions:
@@ -35,6 +37,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -46,6 +49,7 @@ jobs:
           pytest -q
           tests/test_decision_integrated_evidence.py
           tests/test_w4_confidence_snapshot_identity.py
+          tests/test_w5_phase5_shadow_integration.py
           tests/test_decision_depot_watch_orchestration.py
           tests/test_decision_depot_watch_prospective_gate.py
           tests/test_decision_universal_stance_7d.py
@@ -53,6 +57,34 @@ jobs:
           tests/test_decision_portfolio_action_7f.py
           tests/test_decision_reliability_explainability_7g.py
           tests/test_decision_depot_watch_7h.py
+
+      - name: Validate current isolated Phase 5E shadow report
+        run: |
+          PHASE5_PATH='artifacts/research/confidence_vnext_promotion_5e.json'
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          PHASE5_COMMIT=$(git log -1 --format=%H origin/phase4e-shadow-data -- "$PHASE5_PATH")
+          test -n "$PHASE5_COMMIT"
+          PHASE5_AVAILABLE_FROM=$(git show -s --format=%cI "$PHASE5_COMMIT")
+          git show "$PHASE5_COMMIT:$PHASE5_PATH" > "$RUNNER_TEMP/confidence_vnext_promotion_5e.json"
+          PHASE5_COMMIT="$PHASE5_COMMIT" PHASE5_AVAILABLE_FROM="$PHASE5_AVAILABLE_FROM" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from scanner.research.decision_layer.phase5_shadow import phase5_shadow_context
+
+          report = json.loads((Path(os.environ['RUNNER_TEMP']) / 'confidence_vnext_promotion_5e.json').read_text(encoding='utf-8'))
+          normalized = phase5_shadow_context(
+              report,
+              source_commit=os.environ['PHASE5_COMMIT'],
+              available_from=os.environ['PHASE5_AVAILABLE_FROM'],
+          )
+          context = normalized['context']
+          assert context['production_change_performed'] is False
+          assert context['current_symbol_shadow_policy_evaluated'] is False
+          assert context['changes_universal_stance'] is False
+          assert context['changes_portfolio_action'] is False
+          assert set(context['insufficient_evidence_horizons']) | set(context['eligible_horizons_for_separate_promotion_review']) == {5, 20, 40, 60}
+          print('W5 live Phase 5E shadow contract ok:', normalized['integration_mode'])
+          PY
 
   integrate:
     if: >-
@@ -97,10 +129,24 @@ jobs:
           --risk-scale "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
           --output "$RUNNER_TEMP/confidence_vnext_research_4.json"
 
-      - name: Build final same-snapshot Phase 7A evidence
+      - name: Restore exact isolated Phase 5E shadow report and provenance
+        run: |
+          PHASE5_PATH='artifacts/research/confidence_vnext_promotion_5e.json'
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          PHASE5_COMMIT=$(git log -1 --format=%H origin/phase4e-shadow-data -- "$PHASE5_PATH")
+          test -n "$PHASE5_COMMIT" || { echo 'Phase 5E shadow report provenance missing'; exit 1; }
+          PHASE5_AVAILABLE_FROM=$(git show -s --format=%cI "$PHASE5_COMMIT")
+          git show "$PHASE5_COMMIT:$PHASE5_PATH" > "$RUNNER_TEMP/confidence_vnext_promotion_5e.json"
+          echo "PHASE5_SOURCE_COMMIT=$PHASE5_COMMIT" >> "$GITHUB_ENV"
+          echo "PHASE5_AVAILABLE_FROM=$PHASE5_AVAILABLE_FROM" >> "$GITHUB_ENV"
+
+      - name: Build final same-snapshot Phase 7A evidence with Phase 5 shadow context
         run: >-
           python scripts/build_integrated_decision_evidence_7a.py
           --phase4-report "$RUNNER_TEMP/confidence_vnext_research_4.json"
+          --phase5-report "$RUNNER_TEMP/confidence_vnext_promotion_5e.json"
+          --phase5-source-commit "$PHASE5_SOURCE_COMMIT"
+          --phase5-available-from "$PHASE5_AVAILABLE_FROM"
           --archive
 
       - name: Validate final packet set without portfolio data
@@ -122,7 +168,13 @@ jobs:
           assert packets['semantics']['confidence_encodes_attractiveness'] is False
           assert packets['validation']['phase4_same_snapshot_verified'] is True
           assert packets['validation']['phase4_snapshot_id'] == daily['snapshot_id']
+          assert packets['semantics']['phase5_shadow_context_attached'] is True
+          assert packets['semantics']['phase5_shadow_integration_mode'] in {'shadow_only', 'eligible_after_promotion_review'}
+          assert packets['semantics']['phase5_current_symbol_policy_evaluated'] is False
+          assert packets['semantics']['phase5_production_change_performed'] is False
           assert packets['semantics']['phase5_unpromoted_changes_decision'] is False
+          assert packets['validation']['phase5_source_commit']
+          assert packets['validation']['phase5_report_is_market_snapshot_evidence'] is False
           assert packets['semantics']['elliott_unpromoted_changes_decision'] is False
           assert packets['semantics']['external_evidence_phase8_activated'] is False
           assert {p['as_of'] for p in packets['packets']} == {packets['as_of']}
@@ -130,18 +182,30 @@ jobs:
           for packet in packets['packets']:
               claim_ids = [row['claim_id'] for row in packet['evidence']]
               assert len(claim_ids) == len(set(claim_ids))
+              phase5 = []
               for row in packet['evidence']:
                   if row['family'] == 'confidence':
-                      payload = json.dumps(row['payload'], sort_keys=True)
-                      assert '"direction"' not in payload
-                      assert '"stance"' not in payload
-                      assert '"vote"' not in payload
-                      assert '"attractiveness"' not in payload
+                      payload_text = json.dumps(row['payload'], sort_keys=True)
+                      assert '"direction"' not in payload_text
+                      assert '"stance"' not in payload_text
+                      assert '"vote"' not in payload_text
+                      assert '"attractiveness"' not in payload_text
+                      if row['payload'].get('context_type') == 'phase5_confidence_shadow_governance_v1':
+                          phase5.append(row)
+              assert len(phase5) == 1
+              shadow = phase5[0]
+              assert shadow['integration_mode'] in {'shadow_only', 'eligible_after_promotion_review'}
+              assert shadow['payload']['production_change_performed'] is False
+              assert shadow['payload']['current_symbol_shadow_policy_evaluated'] is False
+              assert shadow['payload']['changes_universal_stance'] is False
+              assert shadow['payload']['changes_portfolio_action'] is False
           print(json.dumps({
               'snapshot_id': packets['snapshot_id'],
               'packet_count': packets['packet_count'],
               'phase4_symbol_count': packets.get('phase4_symbol_count'),
               'phase4_confidence_claim_count': packets.get('phase4_confidence_claim_count'),
+              'phase5_shadow_claim_count': packets.get('phase5_shadow_claim_count'),
+              'phase5_shadow_integration_mode': packets['semantics']['phase5_shadow_integration_mode'],
               'path_review_count': packets.get('path_review_count'),
               'decision_as_of': packets['as_of'],
           }, indent=2))
