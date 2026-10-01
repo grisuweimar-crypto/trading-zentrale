@@ -34,6 +34,26 @@ def _utc(value: object, field: str) -> datetime:
     return parsed.astimezone(timezone.utc)
 
 
+def _calendar_date(value: object, field: str) -> str:
+    """Canonicalize a daily as-of value without weakening day identity.
+
+    Phase-4's legacy PIT compatibility layer normalizes current scanner ``as_of``
+    values to timezone-naive midnight datetimes before building the registry.
+    The registry may therefore serialize a row as ``YYYY-MM-DD 00:00:00`` while
+    its report-level daily identity remains ``YYYY-MM-DD``.  Both encode the same
+    daily observation.  A genuinely different calendar day must still fail.
+    """
+    text = str(value or "").strip()
+    if not text:
+        raise Phase4ConfidenceAdapterError(f"{field}_required")
+    normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise Phase4ConfidenceAdapterError(f"invalid_{field}") from exc
+    return parsed.date().isoformat()
+
+
 def _strip_forbidden(value: object) -> object:
     if isinstance(value, Mapping):
         return {
@@ -73,7 +93,8 @@ def index_guarded_phase4_rows(
         raise Phase4ConfidenceAdapterError("phase4_current_required")
     if str(current.get("snapshot_id") or "") != expected_snapshot_id:
         raise Phase4ConfidenceAdapterError("phase4_snapshot_mismatch")
-    if str(current.get("as_of") or "") != expected_daily_as_of:
+    expected_day = _calendar_date(expected_daily_as_of, "expected_daily_as_of")
+    if _calendar_date(current.get("as_of"), "phase4_as_of") != expected_day:
         raise Phase4ConfidenceAdapterError("phase4_as_of_mismatch")
     if _utc(current.get("generated_at"), "phase4_scanner_generated_at") != _utc(
         expected_scanner_generated_at, "expected_scanner_generated_at"
@@ -90,7 +111,7 @@ def index_guarded_phase4_rows(
         symbol = str(raw.get("symbol") or "").strip()
         if not symbol:
             raise Phase4ConfidenceAdapterError("phase4_current_symbol_required")
-        if str(raw.get("as_of") or "") != expected_daily_as_of:
+        if _calendar_date(raw.get("as_of"), f"phase4_row_as_of:{symbol}") != expected_day:
             raise Phase4ConfidenceAdapterError(f"phase4_row_as_of_mismatch:{symbol}")
         horizon = int(raw.get("horizon_sessions") or 0)
         if horizon <= 0:
