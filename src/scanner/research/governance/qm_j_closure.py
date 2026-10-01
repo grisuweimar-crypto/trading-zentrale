@@ -19,7 +19,7 @@ from scanner.research.governance.qm_j_selection_freshness_gate import load_gate
 
 EXPECTED_QM_J_STATUS = "QM-J COMPLETE — MULTI-LEVEL NEGATIVE CONTROLS & FALSIFICATION ACTIVE"
 EXPECTED_BA_STATUS = "BA-QM7 COMPLETE — FALSIFICATION COVERAGE COMPLETE; SELECTION FRESHNESS CAPA PRESERVED"
-NEXT_WORK_PACKAGE = "BA-QM8 / End-to-End Scanner Audit"
+NEXT_WORK_PACKAGE = "BA-QM8 – End-to-End Scanner Audit"
 DEFAULT_MANIFEST_PATH = Path(__file__).resolve().parents[4] / "configs" / "ba_qm7_qm_j_closure_v1.json"
 QM_DIR = Path(__file__).resolve().parents[4] / "artifacts" / "research" / "qm"
 
@@ -138,7 +138,7 @@ def validate_closure_manifest(
         raise ValueError("ba_qm7_feature_result_invalid")
     _validate_research_only(feature_result, "feature")
     feature_eval = feature_result.get("falsification_evaluation") or {}
-    if feature_eval.get("status") != "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG" or feature_eval.get("triggered_controls") not in ([], ()): 
+    if feature_eval.get("status") != "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG" or feature_eval.get("triggered_controls") not in ([], ()):
         raise ValueError("ba_qm7_feature_control_unexpected_trigger")
 
     if data_research_result.get("schema_version") != "qm_j_phase1a_data_research_falsification_result_v1" or data_research_result.get("result_hash") != EXPECTED_HASHES["data_research"]:
