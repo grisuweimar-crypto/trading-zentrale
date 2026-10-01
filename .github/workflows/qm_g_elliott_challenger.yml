@@ -5,6 +5,9 @@ on:
     paths:
       - "src/scanner/research/governance/qm_g_*.py"
       - "configs/qm_g_*.json"
+      - "configs/ba_qm6_qm_g_closure_v1.json"
+      - "src/scanner/research/governance/qm_f_closure.py"
+      - "configs/ba_qm5_qm_f_closure_v1.json"
       - "src/scanner/research/governance/qm_c*.py"
       - "configs/qm_c*.json"
       - "src/scanner/research/governance/qm_i_*.py"
@@ -15,6 +18,7 @@ on:
       - "src/scanner/research/decision_layer/phase6_elliott.py"
       - "src/scanner/research/decision_layer/depot_action_policy.py"
       - "tests/test_qm_g_*.py"
+      - "tests/test_qm_f_closure.py"
       - "tests/test_w6_elliott_6h_to_7f.py"
       - "tests/test_w8_action_matrix.py"
       - "docs/qm_g_elliott_challengers.md"
@@ -40,7 +44,11 @@ jobs:
           tests/test_qm_g_elliott_challengers.py
           tests/test_qm_g_scenario_stability.py
           tests/test_qm_g_challenger_evaluation.py
+          tests/test_qm_g_closure.py
           tests/test_qm_f_decision_ablation.py
+          tests/test_qm_f_closure.py
           tests/test_qm_i_lineage.py
           tests/test_w6_elliott_6h_to_7f.py
           tests/test_w8_action_matrix.py
+      - name: Validate BA-QM6 closure
+        run: python -c "from scanner.research.governance.qm_g_closure import validate_closure_file; print(validate_closure_file()['business_area_status'])"

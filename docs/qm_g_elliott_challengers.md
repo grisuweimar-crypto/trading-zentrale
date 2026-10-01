@@ -62,3 +62,16 @@ Shared ancestry between core and challenger must remain visible to QM-I. It must
 ## Promotion semantics
 
 A challenger registry entry, an executable feature, or a positive shadow comparison is not by itself evidence for production promotion. Confirmatory evaluation remains bound to QM-C/QM-A/QM-I and preserves QM-B fail-closed constraints. Any later promotion requires separately demonstrated incremental benefit under the frozen plan and a separate promotion decision.
+
+## BA-QM6 engineering closure
+
+BA-QM6 is technically complete when `ba_qm6_qm_g_closure_v1` validates. That closure is deliberately narrower than an empirical validation claim:
+
+- the challenger governance and evaluation path is complete;
+- **Scenario Stability** is the first executable challenger and proves the end-to-end research path;
+- the other eleven Masterplan examples remain documented candidates rather than implemented or validated rules;
+- no challenger is promoted;
+- empirical usefulness remains `NOT_ESTABLISHED`;
+- productive integration and execution remain disabled.
+
+The next mandatory work package is **BA-QM7 / QM-J — Negative Controls & Falsifikation**.
