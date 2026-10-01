@@ -26,9 +26,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install test dependency
-        run: python -m pip install --upgrade pytest
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
       - name: Run QM-F and predecessor closure tests
-        run: PYTHONPATH=src python -m pytest -q tests/test_qm_f_decision_ablation.py tests/test_qm_f_closure.py tests/test_qm_de_closure.py tests/test_qm_i_closure.py
+        run: python -m pytest -q tests/test_qm_f_decision_ablation.py tests/test_qm_f_closure.py tests/test_qm_de_closure.py tests/test_qm_i_closure.py
       - name: Validate BA-QM5 closure
-        run: PYTHONPATH=src python -c "from scanner.research.governance.qm_f_closure import validate_closure_file; print(validate_closure_file()['business_area_status'])"
+        run: python -c "from scanner.research.governance.qm_f_closure import validate_closure_file; print(validate_closure_file()['business_area_status'])"
