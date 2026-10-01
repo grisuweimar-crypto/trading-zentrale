@@ -1,0 +1,147 @@
+{
+  "schema_version": "qm_g_elliott_challenger_registry_v1",
+  "module": "QM-G",
+  "business_area": "BA-QM6",
+  "name": "Elliott Challenger Registry",
+  "status": "research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Keep the existing Elliott-vNext implementation frozen as core while allowing new Elliott ideas only as versioned, PIT-safe, outcome-blind sidecar challengers bound to QM-C, QM-A, QM-I and the existing QM-F B5/B6 ablation path.",
+  "documented_challenger_examples": [
+    "W3 Momentum Expansion",
+    "W3 Volume Expansion",
+    "W4 Volume Contraction",
+    "W4 Sideways Character",
+    "W5 Momentum Divergence",
+    "W5 Volume Divergence",
+    "Alternation",
+    "Channel Fit",
+    "causal Channel Break",
+    "Deep Correction Reclaim",
+    "Scenario Stability",
+    "Ending Diagonal Reversal"
+  ],
+  "registry": {
+    "event_schema_version": "qm_g_elliott_challenger_event_v1",
+    "hash_algorithm": "sha256",
+    "hash_chain_required": true,
+    "event_types": ["CHALLENGER_REGISTERED"],
+    "default_path": "artifacts/research/qm/qm_g_elliott_challengers.jsonl",
+    "successor_versions_must_be_explicit": true
+  },
+  "challenger": {
+    "required_fields": [
+      "challenger_id",
+      "challenger_version",
+      "hypothesis_id",
+      "hypothesis_version",
+      "hypothesis_version_hash",
+      "hypothesis_family_id",
+      "analysis_plan_id",
+      "analysis_plan_version",
+      "analysis_plan_hash",
+      "control_plan_id",
+      "control_plan_version",
+      "control_plan_hash",
+      "qm_a_analysis_id",
+      "qm_a_version_id",
+      "evidence_state",
+      "feature_definition",
+      "pit_contract",
+      "core_binding",
+      "count_scenario_freeze",
+      "decision_layer_evaluation",
+      "lineage_binding",
+      "boundaries"
+    ]
+  },
+  "feature_definition": {
+    "required_fields": ["feature_id", "definition", "inputs", "missing_policy"]
+  },
+  "pit_contract": {
+    "required_fields": [
+      "as_of_field",
+      "available_from_field",
+      "future_data_forbidden",
+      "outcome_data_excluded_from_feature_build",
+      "retroactive_reclassification_forbidden",
+      "missing_policy"
+    ]
+  },
+  "core_binding": {
+    "required_fields": [
+      "source_commit",
+      "module",
+      "schema_version",
+      "integration_contract",
+      "core_content_hash",
+      "core_frozen",
+      "hard_rules_overridden"
+    ],
+    "expected_module": "6H_module_output",
+    "expected_schema_version": "elliott_vnext_output_v2",
+    "expected_integration_contract": "elliott_vnext_integration_contract_v1"
+  },
+  "count_scenario_freeze": {
+    "required_fields": [
+      "freeze_id",
+      "frozen_at",
+      "count_or_scenario_id",
+      "frozen_output_hash",
+      "outcome_visibility_at_freeze",
+      "retrofit_after_outcome_forbidden"
+    ],
+    "required_outcome_visibility_at_freeze": "NONE"
+  },
+  "evidence_state": {
+    "authority": "QM-A",
+    "allowed_registration_states": ["DRAFT", "EXPLORATORY", "FROZEN_FOR_CONFIRMATION"],
+    "evaluation_state_required": "FROZEN_FOR_CONFIRMATION",
+    "spent_evidence_may_not_confirm_redesigned_rule": true
+  },
+  "lineage_binding": {
+    "authority": "QM-I",
+    "required_fields": ["core", "challenger", "independent_confirmation_claimed"],
+    "independent_confirmation_claimed_required": false,
+    "common_ancestry_requires_review_but_is_not_automatic_defect": true
+  },
+  "decision_layer_evaluation": {
+    "required_fields": [
+      "comparison",
+      "stateful_policy_required",
+      "same_starting_state_required",
+      "same_observation_grid_required",
+      "same_eligibility_required",
+      "same_tradeability_required",
+      "same_action_availability_required",
+      "same_cost_model_required",
+      "qm_f_incremental_ablation_required"
+    ],
+    "required_comparison": "B5_VS_B6",
+    "promotion_requires_incremental_core_benefit": true
+  },
+  "boundaries": {
+    "required_record_fields": [
+      "sidecar_evidence_only",
+      "elliott_core_changed",
+      "hard_rules_changed",
+      "universal_stance_changed",
+      "w6_interface_replaced",
+      "w8_action_matrix_replaced",
+      "portfolio_action_directly_changed",
+      "order_or_execution_generated",
+      "productive_promotion_performed"
+    ],
+    "required_false_fields": [
+      "elliott_core_changed",
+      "hard_rules_changed",
+      "universal_stance_changed",
+      "w6_interface_replaced",
+      "w8_action_matrix_replaced",
+      "portfolio_action_directly_changed",
+      "order_or_execution_generated",
+      "productive_promotion_performed"
+    ]
+  }
+}
