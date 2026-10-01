@@ -6,6 +6,8 @@ on:
       - "configs/decision_layer_input_contract_v1.json"
       - "src/scanner/research/decision_layer/**"
       - "tests/test_decision_layer_input_contract.py"
+      - "tests/test_w2_probability_annotations_7a.py"
+      - "tests/test_w2_probability_artifact_alignment.py"
       - "scripts/run_decision_input_7a.py"
       - "docs/decision_layer_7a.md"
       - ".github/workflows/decision_layer_7a.yml"
@@ -26,7 +28,11 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Run Phase 7A contract tests
-        run: pytest -q tests/test_decision_layer_input_contract.py
+      - name: Run Phase 7A contract and W2 probability tests
+        run: >-
+          pytest -q
+          tests/test_decision_layer_input_contract.py
+          tests/test_w2_probability_annotations_7a.py
+          tests/test_w2_probability_artifact_alignment.py
       - name: Smoke-test Phase 7A validator CLI
         run: python scripts/run_decision_input_7a.py --help

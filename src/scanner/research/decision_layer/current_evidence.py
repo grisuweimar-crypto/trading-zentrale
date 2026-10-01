@@ -3,8 +3,9 @@
 This adapter is intentionally conservative. It binds the exact current scanner
 snapshot to Phase-7A without inventing a Selection direction. The only automatic
 directional claims are matches of the already-frozen Phase-1B timing catalogue.
-Missing Probability, Risk, Confidence, Elliott or external-evidence adapters stay
-missing rather than being reconstructed from convenient scanner scalars.
+Frozen Phase-2 probability calibration is attached as non-directional annotation
+through claim_ref. Missing Risk, Confidence, Elliott or external-evidence adapters
+stay missing rather than being reconstructed from convenient scanner scalars.
 """
 from __future__ import annotations
 
@@ -27,12 +28,19 @@ from .evidence_archive import (
     write_normalized_archive,
 )
 from .input_contract import build_input_packet, validate_input_packet
+from .phase2_probability import (
+    build_phase2_probability_rows,
+    load_probability_calibration,
+    probability_calibration_digest,
+    validate_probability_calibration,
+)
 
 
 CURRENT_PACKET_SET_SCHEMA_VERSION = "decision_current_packet_set_7a_v1"
 DEFAULT_LATEST = "artifacts/research/latest_scanner.csv"
 DEFAULT_HISTORY = "artifacts/research/history_analysis.csv"
 DEFAULT_TIMING_CATALOG = "artifacts/research/timing_patterns_1b_frozen.json"
+DEFAULT_PROBABILITY_CALIBRATION = "artifacts/research/probability_calibration_2.json"
 DEFAULT_ARCHIVE = "artifacts/research/decision_evidence_7a.jsonl"
 DEFAULT_OUTPUT = "artifacts/research/current_decision_packets_7a.json"
 
@@ -146,8 +154,6 @@ def _current_features(history: pd.DataFrame, latest: pd.DataFrame, daily_as_of: 
         raise CurrentDecisionEvidenceError("history_date_required")
     dates = pd.to_datetime(work["date"], errors="coerce")
     work = work.loc[dates.isna() | (dates <= pd.Timestamp(daily_as_of))].copy()
-    # Appending the exact authoritative current rows ensures same-day reruns use
-    # this snapshot when Phase-1B deduplicates symbol/date observations.
     combined = pd.concat([work, latest], ignore_index=True, sort=False)
     features, _ = feature_rows(combined, Phase1BConfig())
     if "snapshot_id" not in features.columns:
@@ -244,20 +250,20 @@ def build_current_packet_set_from_frames(
     latest: pd.DataFrame,
     history: pd.DataFrame,
     timing_catalog: Mapping[str, object],
+    probability_calibration: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Build one validated 7A packet per current scanner symbol.
 
-    The adapter intentionally does not create Probability/Confidence/Elliott or
-    external-evidence claims. Those families require their own typed prospective
-    adapters and promotion state. Selection is preserved as current context but
-    receives no inferred direction.
+    Selection stays current context without inferred direction. Frozen Timing is
+    matched from point-in-time features. When supplied, frozen Phase-2
+    probability calibration is attached to those exact claims as annotation;
+    it is never converted into an additional directional vote.
     """
     snapshot_id, daily_as_of, decision_time = _require_current_identity(daily, latest)
     packet_as_of = str(daily.get("generated_at"))
     catalog_raw = json.dumps(timing_catalog, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     catalog_digest = sha256(catalog_raw.encode("utf-8")).hexdigest()
 
-    # Validate the catalog before evaluating any current condition.
     horizons = timing_catalog.get("horizons")
     if timing_catalog.get("schema_version") != "phase1b_frozen_patterns_v1" or not isinstance(horizons, Mapping):
         raise CurrentDecisionEvidenceError("unsupported_timing_catalog")
@@ -265,6 +271,12 @@ def build_current_packet_set_from_frames(
         block = horizons.get(str(horizon))
         if not isinstance(block, Mapping) or not isinstance(block.get("frozen_patterns"), list):
             raise CurrentDecisionEvidenceError(f"timing_catalog_horizon_invalid:{horizon}")
+
+    validated_probability = None
+    probability_digest = None
+    if probability_calibration is not None:
+        validated_probability = validate_probability_calibration(probability_calibration)
+        probability_digest = probability_calibration_digest(validated_probability)
 
     current_features = _current_features(history, latest, daily_as_of, snapshot_id)
     feature_index = {
@@ -281,6 +293,8 @@ def build_current_packet_set_from_frames(
     packets: list[dict[str, object]] = []
     timing_claims = 0
     symbols_with_timing = 0
+    probability_claims = 0
+    symbols_with_probability = 0
     for _, series in current.sort_values("symbol", kind="mergesort").iterrows():
         row = series.to_dict()
         symbol = str(row["symbol"])
@@ -295,11 +309,26 @@ def build_current_packet_set_from_frames(
         if timing:
             symbols_with_timing += 1
             timing_claims += len(timing)
+
+        probability: list[dict[str, object]] = []
+        if validated_probability is not None:
+            probability = build_phase2_probability_rows(
+                symbol=symbol,
+                selection=selection,
+                timing=timing,
+                calibration=validated_probability,
+                packet_as_of=packet_as_of,
+                source_digest=probability_digest,
+            )
+        if probability:
+            symbols_with_probability += 1
+            probability_claims += len(probability)
+
         packet = build_input_packet(
             symbol=symbol,
             as_of=packet_as_of,
             source_snapshot_id=snapshot_id,
-            evidence=[selection, *timing],
+            evidence=[selection, *timing, *probability],
         )
         packets.append(packet)
 
@@ -312,6 +341,8 @@ def build_current_packet_set_from_frames(
         "packet_count": len(packets),
         "timing_claim_count": timing_claims,
         "symbols_with_timing_claims": symbols_with_timing,
+        "probability_claim_count": probability_claims,
+        "symbols_with_probability_claims": symbols_with_probability,
         "packets": packets,
         "semantics": {
             "exact_daily_snapshot_bound": True,
@@ -319,6 +350,9 @@ def build_current_packet_set_from_frames(
             "timing_direction_source": "frozen_phase1b_discovery_direction",
             "timing_match_from_pit_features": True,
             "probability_reconstructed": False,
+            "phase2_probability_annotations_attached": validated_probability is not None,
+            "probability_is_directional_vote": False,
+            "probability_source": "phase2_probability_calibration" if validated_probability is not None else None,
             "risk_reconstructed": False,
             "confidence_reconstructed": False,
             "elliott_reconstructed": False,
@@ -342,11 +376,13 @@ def build_current_packet_set(root: str | Path) -> dict[str, object]:
     latest = pd.read_csv(root / DEFAULT_LATEST)
     history = pd.read_csv(root / DEFAULT_HISTORY, low_memory=False)
     catalog = _load_timing_catalog(root / DEFAULT_TIMING_CATALOG)
+    probability = load_probability_calibration(root / DEFAULT_PROBABILITY_CALIBRATION)
     return build_current_packet_set_from_frames(
         daily=daily,
         latest=latest,
         history=history,
         timing_catalog=catalog,
+        probability_calibration=probability,
     )
 
 
