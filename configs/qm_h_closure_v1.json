@@ -1,0 +1,38 @@
+{
+  "schema_version": "qm_h_closure_v1",
+  "qm_axis": "QM-H",
+  "name": "Defect / Near-Miss / CAPA Management",
+  "display_status": "QM-H COMPLETE — DEFECT / NEAR-MISS / CAPA CONTINUOUS CONTROL ACTIVE",
+  "engineering_status": "COMPLETE",
+  "continuous_control_status": "ACTIVE",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "empirical_promotion_claimed": false,
+  "completed_capabilities": [
+    "typed_findings",
+    "append_only_hash_chained_finding_ledger",
+    "capa_lifecycle",
+    "cause_corrective_preventive_action_capture",
+    "evidence_impact_capture_without_qm_a_state_mutation",
+    "upstream_qm_a_qm_b_qm_c_identity_reuse",
+    "external_evidence_gap_fail_closed_guards",
+    "effectiveness_verification_before_closure",
+    "static_integration_validation_with_ba_qm2"
+  ],
+  "scope_boundary": {
+    "qm_a_authority_duplicated": false,
+    "qm_a_state_mutation_by_qm_h_permitted": false,
+    "qm_b_engineering_reopened": false,
+    "historical_findings_backfilled_without_evidence": false,
+    "ba_qm3_implemented_by_this_closure": false,
+    "next_step_after_user_authorization": "BA-QM3 / QM-I"
+  },
+  "upstream_requirements": {
+    "qm_a_continuous_control_remains_authoritative": true,
+    "qm_b_engineering_must_remain_complete": true,
+    "qm_b_external_blockers_must_remain_visible": true,
+    "qm_c_six_step_chain_must_remain_complete": true,
+    "ba_qm2_must_remain_complete": true
+  }
+}
