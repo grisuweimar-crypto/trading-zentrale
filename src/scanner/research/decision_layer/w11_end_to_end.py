@@ -2,7 +2,9 @@
 
 W11 adds no investment logic. It verifies that one already sealed W10 snapshot
 can traverse the existing 7A->7H chain without violating snapshot identity,
-point-in-time, missing-evidence, privacy or Phase-8 boundaries.
+point-in-time, missing-evidence, privacy or Phase-8 boundaries. Explicitly
+unmapped private positions may remain unavailable by construction; that expected
+fail-closed state must not invalidate otherwise complete mapped-position results.
 """
 from __future__ import annotations
 
@@ -87,6 +89,44 @@ def _validate_final_watch_shape(watch: Mapping[str, object]) -> dict[str, object
     return deepcopy(dict(watch))
 
 
+def _expected_unmapped_symbols(watch: Mapping[str, object]) -> list[str]:
+    """Accept only explicit ``UNMAPPED:`` rows as expected partial coverage."""
+    rows = watch.get("rows")
+    if not isinstance(rows, list):
+        raise W11EndToEndError("watch_rows_required")
+    unavailable: list[str] = []
+    available_count = 0
+    for raw in rows:
+        if not isinstance(raw, Mapping):
+            raise W11EndToEndError("watch_row_invalid")
+        symbol = str(raw.get("symbol") or "")
+        availability = str(raw.get("availability") or "")
+        if availability == "decision_available":
+            available_count += 1
+            continue
+        if not symbol.startswith("UNMAPPED:"):
+            raise W11EndToEndError(
+                f"unexpected_unavailable_position:{symbol}:{availability}"
+            )
+        if availability != "symbol_not_in_daily_research":
+            raise W11EndToEndError(
+                f"unmapped_position_wrong_failure_mode:{symbol}:{availability}"
+            )
+        if raw.get("decision") is not None:
+            raise W11EndToEndError(f"unmapped_position_exposes_decision:{symbol}")
+        unavailable.append(symbol)
+
+    status = str(watch.get("watch_status") or "")
+    if unavailable:
+        if available_count <= 0:
+            raise W11EndToEndError("watch_has_no_mapped_decision_rows")
+        if status != "partial":
+            raise W11EndToEndError("expected_unmapped_requires_partial_watch")
+    elif status != "complete":
+        raise W11EndToEndError("watch_not_complete")
+    return sorted(unavailable)
+
+
 def _current_packets(
     archive_packets: Sequence[Mapping[str, object]], *, snapshot_id: str
 ) -> list[dict[str, object]]:
@@ -130,7 +170,7 @@ def validate_w11_end_to_end(
     watch: Mapping[str, object],
     diagnostics: Mapping[str, object],
 ) -> dict[str, object]:
-    """Validate one complete real W11 snapshot and return a sanitized receipt."""
+    """Validate one real W11 snapshot and return a sanitized receipt."""
     sealed = validate_sealed_manifest(manifest)
     snapshot_id = str(sealed["snapshot_id"])
     validated_watch = _validate_final_watch_shape(watch)
@@ -138,8 +178,16 @@ def validate_w11_end_to_end(
         raise W11EndToEndError("watch_snapshot_mismatch")
     if str(diagnostics.get("snapshot_id") or "") != snapshot_id:
         raise W11EndToEndError("diagnostics_snapshot_mismatch")
-    if validated_watch.get("watch_status") != "complete":
-        raise W11EndToEndError("watch_not_complete")
+
+    expected_unmapped = _expected_unmapped_symbols(validated_watch)
+    diagnostic_missing = sorted(map(str, diagnostics.get("missing_current_packet_symbols") or []))
+    if diagnostic_missing != expected_unmapped:
+        raise W11EndToEndError(
+            "unexpected_missing_current_packets:"
+            + ",".join(diagnostic_missing)
+            + ":expected:"
+            + ",".join(expected_unmapped)
+        )
 
     stages = sealed.get("stages")
     assert isinstance(stages, Mapping)
@@ -218,6 +266,7 @@ def validate_w11_end_to_end(
     if downstream.get("private_position_data_persisted") is not False:
         raise W11EndToEndError("downstream_private_persistence_guard_invalid")
 
+    watch_status = str(validated_watch.get("watch_status"))
     return {
         "schema_version": SCHEMA_VERSION,
         "status": "passed",
@@ -233,8 +282,12 @@ def validate_w11_end_to_end(
             "no_duplicate_current_evidence": True,
             "no_super_score": True,
             "no_unauthorized_phase8_effect": True,
+            "expected_unmapped_positions_fail_closed": True,
+            "all_mapped_positions_have_decisions": True,
         },
         "w10_manifest_status": "sealed",
-        "watch_status": "complete",
+        "watch_status": watch_status,
+        "expected_unmapped_position_count": len(expected_unmapped),
+        "expected_unmapped_symbols": expected_unmapped,
         "receipt_contains_position_rows": False,
     }
