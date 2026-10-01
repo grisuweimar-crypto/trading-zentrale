@@ -11,14 +11,18 @@ on:
       - '.github/workflows/decision_watch_pipeline.yml'
       - 'scripts/build_integrated_decision_evidence_7a.py'
       - 'scripts/run_confidence_vnext_research_4.py'
+      - 'scripts/run_w10_snapshot_orchestration.py'
+      - 'scripts/run_depot_watch_orchestrated.py'
       - 'src/scanner/research/decision_layer/integrated_evidence.py'
       - 'src/scanner/research/decision_layer/phase4_confidence.py'
       - 'src/scanner/research/decision_layer/phase5_shadow.py'
       - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
+      - 'src/scanner/research/decision_layer/w10_orchestration.py'
       - 'tests/test_decision_integrated_evidence.py'
       - 'tests/test_w4_confidence_snapshot_identity.py'
       - 'tests/test_w5_phase5_shadow_integration.py'
       - 'tests/test_decision_depot_watch_orchestration.py'
+      - 'tests/test_w10_snapshot_orchestration.py'
 
 permissions:
   contents: read
@@ -57,6 +61,7 @@ jobs:
           tests/test_decision_portfolio_action_7f.py
           tests/test_decision_reliability_explainability_7g.py
           tests/test_decision_depot_watch_7h.py
+          tests/test_w10_snapshot_orchestration.py
 
       - name: Validate current isolated Phase 5E shadow report
         run: |
@@ -115,8 +120,22 @@ jobs:
       - name: Validate authoritative scanner snapshot
         run: python scripts/generate_daily_research.py --validate-only
 
+      - name: Initialize W10 same-snapshot lineage and bind persisted Phase 2
+        run: |
+          python scripts/run_w10_snapshot_orchestration.py init
+          python scripts/run_w10_snapshot_orchestration.py record-git \
+            --stage phase2_probability \
+            --artifact artifacts/research/probability_calibration_2.json \
+            --require-snapshot-match
+
       - name: Run unchanged Phase 3 Risk vNext for the current snapshot
         run: python scripts/run_risk_vnext_3.py --output "$RUNNER_TEMP/risk_vnext_3.json"
+
+      - name: Record actual Phase 3 availability
+        run: >-
+          python scripts/run_w10_snapshot_orchestration.py record-runtime
+          --stage phase3_risk
+          --artifact "$RUNNER_TEMP/risk_vnext_3.json"
 
       - name: Run unchanged Phase 4 risk-scale guard
         run: python scripts/audit_phase4_risk_scale.py --output "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
@@ -129,6 +148,12 @@ jobs:
           --risk-scale "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
           --output "$RUNNER_TEMP/confidence_vnext_research_4.json"
 
+      - name: Record actual Phase 4 availability
+        run: >-
+          python scripts/run_w10_snapshot_orchestration.py record-runtime
+          --stage phase4_confidence
+          --artifact "$RUNNER_TEMP/confidence_vnext_research_4.json"
+
       - name: Restore exact isolated Phase 5E shadow report and provenance
         run: |
           PHASE5_PATH='artifacts/research/confidence_vnext_promotion_5e.json'
@@ -140,6 +165,19 @@ jobs:
           echo "PHASE5_SOURCE_COMMIT=$PHASE5_COMMIT" >> "$GITHUB_ENV"
           echo "PHASE5_AVAILABLE_FROM=$PHASE5_AVAILABLE_FROM" >> "$GITHUB_ENV"
 
+      - name: Record real Phase 5 governance availability from Git provenance
+        run: >-
+          python scripts/run_w10_snapshot_orchestration.py record-git
+          --stage phase5_governance
+          --artifact "$RUNNER_TEMP/confidence_vnext_promotion_5e.json"
+          --source-commit "$PHASE5_SOURCE_COMMIT"
+
+      - name: Resolve Phase 6 boundary explicitly before final 7A
+        run: python scripts/run_w10_snapshot_orchestration.py resolve-phase6
+
+      - name: Freeze complete W10 upstream set before final 7A
+        run: python scripts/run_w10_snapshot_orchestration.py freeze
+
       - name: Build final same-snapshot Phase 7A evidence with Phase 5 shadow context
         run: >-
           python scripts/build_integrated_decision_evidence_7a.py
@@ -148,6 +186,12 @@ jobs:
           --phase5-source-commit "$PHASE5_SOURCE_COMMIT"
           --phase5-available-from "$PHASE5_AVAILABLE_FROM"
           --archive
+          --force-revision
+
+      - name: Seal W10 final 7A and archive after upstream freeze
+        run: |
+          python scripts/run_w10_snapshot_orchestration.py seal
+          python scripts/run_w10_snapshot_orchestration.py validate
 
       - name: Validate final packet set without portfolio data
         run: |
@@ -157,7 +201,13 @@ jobs:
 
           daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
           packets = json.loads(Path('artifacts/research/current_decision_packets_7a.json').read_text(encoding='utf-8'))
-          assert packets['snapshot_id'] == daily['snapshot_id']
+          manifest = json.loads(Path('artifacts/research/decision_snapshot_w10.json').read_text(encoding='utf-8'))
+          assert packets['snapshot_id'] == daily['snapshot_id'] == manifest['snapshot_id']
+          assert manifest['status'] == 'sealed'
+          assert manifest['guards']['later_evidence_backdating_allowed'] is False
+          assert manifest['guards']['phase6_missing_is_neutral_evidence'] is False
+          assert manifest['guards']['private_position_data_persisted'] is False
+          assert manifest['stages']['phase6_elliott']['status'] in {'available', 'not_supplied'}
           assert packets['packet_count'] == daily['universe_size']
           assert packets['semantics']['integrated_evidence_v1'] is True
           assert packets['semantics']['phase2_phase3_phase4_outputs_consumed'] is True
@@ -206,6 +256,9 @@ jobs:
               'phase4_confidence_claim_count': packets.get('phase4_confidence_claim_count'),
               'phase5_shadow_claim_count': packets.get('phase5_shadow_claim_count'),
               'phase5_shadow_integration_mode': packets['semantics']['phase5_shadow_integration_mode'],
+              'phase6_status': manifest['stages']['phase6_elliott']['status'],
+              'w10_pre_7a_frozen_at': manifest['pre_7a_frozen_at'],
+              'w10_sealed_at': manifest['sealed_at'],
               'path_review_count': packets.get('path_review_count'),
               'decision_as_of': packets['as_of'],
           }, indent=2))
@@ -219,13 +272,14 @@ jobs:
             exit 1
           }
 
-      - name: Persist final public Decision evidence only
+      - name: Persist final public Decision evidence and W10 lineage only
         run: |
           git config --local user.email 'action@github.com'
           git config --local user.name 'GitHub Action Bot'
           git add \
             artifacts/research/current_decision_packets_7a.json \
-            artifacts/research/decision_evidence_7a.jsonl
+            artifacts/research/decision_evidence_7a.jsonl \
+            artifacts/research/decision_snapshot_w10.json
           if ! git diff --cached --quiet; then
             git commit -m '🧭 Finalize Decision Watch evidence [skip ci]'
             git push origin HEAD:main
