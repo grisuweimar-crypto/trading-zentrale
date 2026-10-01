@@ -47,9 +47,31 @@ def validate_qm_h_closure(root: str | Path | None = None) -> dict[str, Any]:
         raise QMHClosureError("qm_h_empirical_promotion_forbidden")
 
     principles = contract.get("principles", {})
-    required_true = ["append_only_audit_trail", "hash_chained_events", "no_retroactive_event_invention", "qm_a_remains_evidence_consumption_authority", "qm_h_may_not_mutate_qm_a_state", "qm_b_external_gaps_do_not_reopen_engineering", "missing_external_evidence_remains_fail_closed", "stable_upstream_identities_are_reused_without_rekeying"]
+    required_true = [
+        "append_only_audit_trail",
+        "hash_chained_events",
+        "no_retroactive_event_invention",
+        "qm_a_remains_evidence_consumption_authority",
+        "qm_h_may_not_mutate_qm_a_state",
+        "qm_b_external_gaps_do_not_reopen_engineering",
+        "missing_external_evidence_remains_fail_closed",
+        "stable_upstream_identities_are_reused_without_rekeying",
+        "non_blocker_upstream_identity_references_require_authoritative_resolution",
+        "evidence_impact_changes_require_traceable_reference_and_rationale",
+    ]
     if any(principles.get(key) is not True for key in required_true):
         raise QMHClosureError("qm_h_principle_guard_missing")
+
+    guards = contract.get("closure_guards", {})
+    required_guards = [
+        "nonzero_evidence_impact_requires_disposition_reference",
+        "prospective_evidence_impact_is_checked_before_closure",
+        "evidence_impact_downgrade_requires_disposition_reference",
+        "external_evidence_gap_requires_resolution_reference",
+        "effectiveness_verified_requires_effective_result",
+    ]
+    if any(guards.get(key) is not True for key in required_guards):
+        raise QMHClosureError("qm_h_closure_guard_missing")
 
     expected_categories = ["DEFECT", "NEAR_MISS", "METHODOLOGY_FINDING", "EXTERNAL_EVIDENCE_GAP"]
     if contract.get("finding_categories") != expected_categories:
@@ -69,8 +91,16 @@ def validate_qm_h_closure(root: str | Path | None = None) -> dict[str, Any]:
         if declared_identity_contract.get(kind) != fields:
             raise QMHClosureError(f"qm_h_identity_contract_mismatch:{kind}")
 
-    qm_b_blockers = {str(row.get("id")): str(row.get("state")) for row in qm_b.get("external_blockers", []) if isinstance(row, Mapping)}
-    qm_h_blockers = {str(row.get("blocker_id")): str(row.get("state")) for row in contract.get("known_qm_b_external_blockers", []) if isinstance(row, Mapping)}
+    qm_b_blockers = {
+        str(row.get("id")): str(row.get("state"))
+        for row in qm_b.get("external_blockers", [])
+        if isinstance(row, Mapping)
+    }
+    qm_h_blockers = {
+        str(row.get("blocker_id")): str(row.get("state"))
+        for row in contract.get("known_qm_b_external_blockers", [])
+        if isinstance(row, Mapping)
+    }
     if qm_h_blockers != qm_b_blockers:
         raise QMHClosureError("qm_h_qm_b_external_blocker_contract_mismatch")
     if any(state != "UNKNOWN_FAIL_CLOSED" for state in qm_h_blockers.values()):
@@ -97,4 +127,11 @@ def validate_qm_h_closure(root: str | Path | None = None) -> dict[str, Any]:
     if ba_qm2.get("scope_boundary", {}).get("ba_qm3_implemented_by_this_handoff") is not False:
         raise QMHClosureError("ba_qm2_scope_boundary_invalid")
 
-    return {"valid": True, "display_status": closure["display_status"], "finding_categories": expected_categories, "known_qm_b_external_blockers": sorted(qm_h_blockers), "next_step_after_user_authorization": scope["next_step_after_user_authorization"], "closure": closure}
+    return {
+        "valid": True,
+        "display_status": closure["display_status"],
+        "finding_categories": expected_categories,
+        "known_qm_b_external_blockers": sorted(qm_h_blockers),
+        "next_step_after_user_authorization": scope["next_step_after_user_authorization"],
+        "closure": closure,
+    }
