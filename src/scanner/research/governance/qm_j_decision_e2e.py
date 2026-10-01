@@ -17,10 +17,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from scanner.research.decision_layer.depot_watch_orchestrator import (
-    build_decision_bundle_set,
-    build_orchestrated_depot_watch,
-)
+from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
 from scanner.research.decision_layer.input_contract import validate_input_packet
 from scanner.research.decision_layer.w11_end_to_end import validate_w11_end_to_end
 from scanner.research.governance.qm_j_negative_controls import (
@@ -159,34 +156,14 @@ def build_synthetic_long_position_book(
     }
 
 
-def _bundle_signature(bundle_set: Mapping[str, object]) -> dict[str, dict[str, object]]:
-    raw = bundle_set.get("bundles")
-    if not isinstance(raw, list):
-        raise NegativeControlError("qm_j_bundle_set_invalid")
-    result: dict[str, dict[str, object]] = {}
-    for bundle in raw:
-        if not isinstance(bundle, Mapping):
-            raise NegativeControlError("qm_j_bundle_invalid")
-        packet = bundle.get("packet")
-        stance = bundle.get("stance")
-        action = bundle.get("action")
-        if not all(isinstance(value, Mapping) for value in (packet, stance, action)):
-            raise NegativeControlError("qm_j_bundle_members_invalid")
-        symbol = str(packet.get("symbol") or "")
-        universal = stance.get("universal_stance")
-        portfolio = action.get("portfolio_action")
-        if not isinstance(universal, Mapping) or not isinstance(portfolio, Mapping):
-            raise NegativeControlError("qm_j_bundle_semantics_missing")
-        result[symbol] = {
-            "stance_state": universal.get("state"),
-            "stance_direction": universal.get("direction"),
-            "portfolio_action_state": portfolio.get("state"),
-            "portfolio_action_reason_code": portfolio.get("reason_code"),
-        }
-    return result
-
-
 def _watch_signature(watch: Mapping[str, object]) -> dict[str, dict[str, object]]:
+    """Read preserved 7D/7F semantics from the validated 7H Watch once.
+
+    `build_orchestrated_depot_watch` already builds the canonical bundle set and
+    then copies Universal Stance and Portfolio Action into each decision row.
+    Reading those fields here avoids a second, semantically redundant full
+    `build_decision_bundle_set` pass without changing the tested Decision path.
+    """
     rows = watch.get("rows")
     if not isinstance(rows, list):
         raise NegativeControlError("qm_j_watch_rows_invalid")
@@ -216,7 +193,6 @@ def _run_chain(
     packets: Sequence[Mapping[str, object]],
     manifest: Mapping[str, object],
 ) -> dict[str, object]:
-    bundle_set, _ = build_decision_bundle_set(daily, position_book, packets)
     watch, diagnostics = build_orchestrated_depot_watch(daily, position_book, packets)
     receipt = validate_w11_end_to_end(
         manifest=manifest,
@@ -225,7 +201,6 @@ def _run_chain(
         diagnostics=diagnostics,
     )
     return {
-        "bundle_signature": _bundle_signature(bundle_set),
         "watch_signature": _watch_signature(watch),
         "watch_status": watch.get("watch_status"),
         "w11_receipt": receipt,
@@ -353,10 +328,12 @@ def run_falsification(
     placebo_packets = placebo_artifact["records"]
     placebo = _run_chain(daily=daily, position_book=position_book, packets=placebo_packets, manifest=manifest)
     placebo_stance_changes = _changed_symbols(
-        baseline["bundle_signature"], placebo["bundle_signature"], ["stance_state", "stance_direction"]
+        baseline["watch_signature"], placebo["watch_signature"],
+        ["universal_stance_state", "universal_stance_direction"],
     )
     placebo_action_changes = _changed_symbols(
-        baseline["bundle_signature"], placebo["bundle_signature"], ["portfolio_action_state", "portfolio_action_reason_code"]
+        baseline["watch_signature"], placebo["watch_signature"],
+        ["portfolio_action_state", "portfolio_action_reason_code"],
     )
     placebo_watch_changes = _changed_symbols(
         baseline["watch_signature"], placebo["watch_signature"],
@@ -376,11 +353,13 @@ def run_falsification(
         destroyed = _run_chain(daily=daily, position_book=position_book, packets=destroyed_packets, manifest=manifest)
         affected = set(str(symbol) for symbol in destruction["changed_directional_symbols"])
         all_stance_changes = _changed_symbols(
-            baseline["bundle_signature"], destroyed["bundle_signature"], ["stance_state", "stance_direction"]
+            baseline["watch_signature"], destroyed["watch_signature"],
+            ["universal_stance_state", "universal_stance_direction"],
         )
         destroyed_stance_changes = sorted(affected & set(all_stance_changes))
         destroyed_action_changes = _changed_symbols(
-            baseline["bundle_signature"], destroyed["bundle_signature"], ["portfolio_action_state", "portfolio_action_reason_code"]
+            baseline["watch_signature"], destroyed["watch_signature"],
+            ["portfolio_action_state", "portfolio_action_reason_code"],
         )
         destroyed_watch_changes = _changed_symbols(
             baseline["watch_signature"], destroyed["watch_signature"],
@@ -419,13 +398,10 @@ def run_falsification(
             "persisted": False,
         },
         "baseline": {
-            "bundle_count": len(baseline["bundle_signature"]),
+            "bundle_count": len(baseline["watch_signature"]),
             "watch_status": baseline["watch_status"],
             "w11_status": baseline["w11_receipt"]["status"],
-            "semantic_signature_hash": content_hash({
-                "bundles": baseline["bundle_signature"],
-                "watch": baseline["watch_signature"],
-            }),
+            "semantic_signature_hash": content_hash(baseline["watch_signature"]),
         },
         "placebo_sidecar": {
             "control_artifact_hash": placebo_artifact.get("artifact_hash"),
