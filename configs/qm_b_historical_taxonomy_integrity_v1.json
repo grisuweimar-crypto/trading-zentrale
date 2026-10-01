@@ -50,6 +50,11 @@
       "reason": "Prospective listing governance workflow; taxonomy-like text is not used to construct historical research groups."
     },
     {
+      "path": ".github/workflows/qm_j_phase1a_lag1_investigation.yml",
+      "status": "SAFE",
+      "reason": "Post-trigger QM-J diagnostic reads only stored historical scanner observations and price outcomes. The workflow does not load current universe taxonomy or use present-day category/sector/industry metadata to define, enrich, or filter historical samples."
+    },
+    {
       "path": "configs/ba_qm4_qm_de_closure_v1.json",
       "status": "SAFE",
       "reason": "BA-QM4 closure metadata names sector/time-block robustness checks and existing QM-B historical promotion blockers; it does not construct or enrich historical rows from current taxonomy."

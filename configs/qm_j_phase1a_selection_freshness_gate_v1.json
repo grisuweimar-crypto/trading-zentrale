@@ -1,0 +1,66 @@
+{
+  "schema_version": "qm_j_phase1a_selection_freshness_gate_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+  "capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+  "status": "IMPLEMENTED_GOVERNANCE_GUARD_PENDING_EFFECTIVENESS_VERIFICATION",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "blocked_evidence": {
+    "application": "PHASE1A_SELECTION_LEVEL_SCORE_20_SESSION",
+    "falsification_result_hash": "a646d5eb4397f32d60f922ddd333e30cf61562cde8b5b1a6d1f791d3e380f483",
+    "investigation_result_hash": "27ae7c66a2e931a5008301d88f96b73539917fe6798852218a846455d7817a23",
+    "evidence_impact": "PROMOTION_BLOCKED",
+    "promotion_allowed": false,
+    "reason": "The current level-score evidence did not demonstrate incremental freshness versus the immediately preceding observed score under the frozen QM-J Lag-1 control."
+  },
+  "root_cause_basis": {
+    "classification": "TEMPORAL_REDUNDANCY_IN_SELECTION_LEVEL_SCORE",
+    "global_current_lag_spearman": 0.9966339839043021,
+    "daily_current_lag_spearman_median": 0.9964118298432567,
+    "median_absolute_score_change": 0.26000000000000156,
+    "median_observation_gap_calendar_days": 1.0,
+    "score_change_mean_daily_spearman": -0.00387338683094239,
+    "rank_change_mean_daily_spearman": -0.0032126670502650163,
+    "current_minus_lag_mean_daily_spearman": -0.00007305193639152601
+  },
+  "corrective_guard": {
+    "existing_phase1a_level_score_evidence_may_support_promotion": false,
+    "existing_falsification_trigger_may_be_reinterpreted_as_validation": false,
+    "production_scanner_score_or_weights_changed": false,
+    "decision_layer_changed": false,
+    "depot_watch_changed": false
+  },
+  "future_promotion_requirements": {
+    "prospective_unspent_evidence_required": true,
+    "analysis_plan_must_be_preregistered_before_outcome_visibility": true,
+    "past_only_lag_or_persistence_negative_control_required": true,
+    "real_and_lag_control_must_use_identical_eligible_grid": true,
+    "incremental_freshness_estimand_required": true,
+    "overlap_and_dependence_handling_must_be_declared": true,
+    "multiplicity_handling_must_be_declared_if_multiple_freshness_tests_are_used": true,
+    "acceptance_rule_must_be_frozen_before_outcome_visibility": true,
+    "acceptance_threshold_defined_by_this_capa": false,
+    "post_trigger_threshold_selection_allowed": false,
+    "historical_spent_evidence_may_verify_effectiveness": false
+  },
+  "release_guard": {
+    "qm_h_effectiveness_verified_required": true,
+    "evidence_disposition_reference_required": true,
+    "automatic_release_from_promotion_block": false,
+    "automatic_promotion_allowed": false
+  },
+  "boundaries": {
+    "scanner_logic_changed": false,
+    "scanner_weights_changed": false,
+    "selection_signal_changed": false,
+    "timing_signal_changed": false,
+    "decision_semantics_changed": false,
+    "portfolio_action_changed": false,
+    "orders_generated": false,
+    "execution_enabled": false,
+    "promotion_performed": false
+  }
+}

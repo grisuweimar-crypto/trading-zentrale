@@ -1,0 +1,80 @@
+{
+  "schema_version": "qm_j_phase1a_data_research_controls_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "name": "Phase 1A Data and Research Follow-on Falsification",
+  "status": "frozen_before_control_execution",
+  "freeze_evidence": {
+    "predeclaration_commit": "ae7cf13d7ded2f731c3d2f5aa15ae9c2397a8ce3",
+    "new_control_outcomes_visibility_at_freeze": "NONE"
+  },
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "knowledge_state": {
+    "prior_phase1a_real_result_visibility_at_freeze": "KNOWN",
+    "new_control_outcomes_visibility_at_freeze": "NONE",
+    "confirmatory_promotion_use_allowed": false,
+    "reason": "The earlier Phase-1A Selection permutation falsification has already exposed the real 20-session baseline. These follow-on controls are therefore one-way falsification diagnostics only and cannot strengthen or promote the baseline evidence."
+  },
+  "source_contract": {
+    "history": "artifacts/research/history_analysis.csv",
+    "prices": "artifacts/research/price_backfill.csv",
+    "phase1a_module": "scanner.reports.selection_timing",
+    "stable_start": "2026-04-15",
+    "min_cross_section": 20,
+    "horizon_sessions": 20,
+    "primary_metric": "phase1a_20t_mean_daily_spearman",
+    "metric_direction": "HIGHER_IS_BETTER",
+    "similarity_margin": 0.01,
+    "secondary_horizons_used_for_selection": []
+  },
+  "data_control": {
+    "control_type": "SHIFTED_DATA",
+    "source_field": "score",
+    "entity_field": "symbol",
+    "shift_by_observations": 1,
+    "direction": "PAST_TO_CURRENT_ONLY",
+    "uses_future_rows": false,
+    "leading_missing_preserved_as_missing": true,
+    "matched_grid_required": true,
+    "recompute_real_and_control_score_percentiles_on_identical_matched_daily_cross_sections": true,
+    "rationale": "Replace each current scanner score only with that symbol's immediately preceding observed score. This attacks temporal information alignment without introducing future information."
+  },
+  "research_control": {
+    "control_type": "PSEUDO_SIGNAL",
+    "identity_fields": ["obs_date", "symbol"],
+    "states": ["NEGATIVE", "NEUTRAL", "POSITIVE"],
+    "numeric_map": {
+      "NEGATIVE": -1.0,
+      "NEUTRAL": 0.0,
+      "POSITIVE": 1.0
+    },
+    "seed_prefix": "qm-j-phase1a-pseudo-signal-v1",
+    "control_count": 64,
+    "control_quantile": 0.95,
+    "outcomes_used_to_generate_signals": false,
+    "matched_grid_required": true,
+    "rationale": "Generate deterministic pseudo-signals from event identity only and compare the predeclared 95th percentile of their 20-session daily-Spearman null distribution with the real Phase-1A metric."
+  },
+  "decision_rule": {
+    "trigger_status": "PROMOTION_STOP_INVESTIGATION_CAPA_REQUIRED",
+    "nontrigger_status": "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG",
+    "data_trigger": "shifted_data_metric_within_similarity_margin_of_real_or_better",
+    "research_trigger": "pseudo_signal_p95_within_similarity_margin_of_real_or_better",
+    "automatic_promotion_allowed": false,
+    "nontrigger_is_validation": false,
+    "automatic_qm_h_mutation_from_ci": false
+  },
+  "boundaries": {
+    "history_or_prices_mutated": false,
+    "phase1a_logic_changed": false,
+    "scanner_weights_changed": false,
+    "decision_layer_changed": false,
+    "depot_watch_changed": false,
+    "productive_artifacts_replaced": false,
+    "orders_generated": false,
+    "execution_enabled": false,
+    "promotion_performed": false
+  }
+}
