@@ -13,6 +13,10 @@ from scanner.research.governance.qm_de_closure import (
 from scanner.research.governance.qm_i_closure import validate_closure_file as validate_ba_qm3_closure_file
 
 
+def _validate(payload):
+    return validate_closure_manifest(payload, ba_qm3_closure=validate_ba_qm3_closure_file(), qm_de_contract=load_qm_de_contract())
+
+
 def test_ba_qm4_closure_validates_against_actual_ba_qm3_and_contract():
     result = validate_closure_file()
     assert result["display_status_qm_d"] == EXPECTED_QM_D_STATUS
@@ -24,49 +28,41 @@ def test_ba_qm4_closure_validates_against_actual_ba_qm3_and_contract():
 
 
 def test_closure_preserves_qm_b_external_blockers_and_no_reopen():
-    result = validate_closure_file()
-    qm_b = result["qm_b_constraints"]
+    qm_b = validate_closure_file()["qm_b_constraints"]
     assert qm_b["strict_historical_promotion_status"] == "BLOCKED_EXTERNAL_EVIDENCE"
-    assert set(qm_b["external_blockers"]) == {
-        "LISTING_EVIDENCE",
-        "MARKET_TRADABILITY_EVIDENCE",
-        "EXECUTION_CHANNEL_EVIDENCE",
-    }
+    assert set(qm_b["external_blockers"]) == {"LISTING_EVIDENCE", "MARKET_TRADABILITY_EVIDENCE", "EXECUTION_CHANNEL_EVIDENCE"}
     assert qm_b["blockers_overridden"] is False
     assert qm_b["qm_b_engineering_reopened"] is False
 
 
 def test_closure_rejects_relabelling_phase2_aggregate_report_as_row_level_calibration():
-    good = validate_closure_file()
-    bad = copy.deepcopy(good)
+    bad = copy.deepcopy(validate_closure_file())
     bad["integration_contracts"]["phase2_probability"]["aggregate_report_is_row_level_calibration_data"] = True
-    with pytest.raises(ValueError, match="ba_qm4_phase2_aggregate_relabel_forbidden"):
-        validate_closure_manifest(
-            bad,
-            ba_qm3_closure=validate_ba_qm3_closure_file(),
-            qm_de_contract=load_qm_de_contract(),
-        )
+    with pytest.raises(ValueError, match="ba_qm4_phase2_bridge_invalid"):
+        _validate(bad)
 
 
 def test_closure_rejects_single_universal_effective_n_claim():
-    good = validate_closure_file()
-    bad = copy.deepcopy(good)
+    bad = copy.deepcopy(validate_closure_file())
     bad["dependence_scope"]["single_universal_effective_n_selected"] = True
-    with pytest.raises(ValueError, match="ba_qm4_universal_effective_n_forbidden"):
-        validate_closure_manifest(
-            bad,
-            ba_qm3_closure=validate_ba_qm3_closure_file(),
-            qm_de_contract=load_qm_de_contract(),
-        )
+    with pytest.raises(ValueError, match="ba_qm4_dependence_boundary_violation"):
+        _validate(bad)
 
 
 def test_closure_rejects_productive_boundary_change():
-    good = validate_closure_file()
-    bad = copy.deepcopy(good)
+    bad = copy.deepcopy(validate_closure_file())
     bad["boundaries"]["productive_calibration_changed"] = True
-    with pytest.raises(ValueError, match="ba_qm4_unsafe_boundary_enabled:productive_calibration_changed"):
-        validate_closure_manifest(
-            bad,
-            ba_qm3_closure=validate_ba_qm3_closure_file(),
-            qm_de_contract=load_qm_de_contract(),
-        )
+    with pytest.raises(ValueError, match="ba_qm4_boundary_values_must_be_false"):
+        _validate(bad)
+
+
+def test_closure_rejects_missing_or_non_boolean_boundary_keys():
+    bad = copy.deepcopy(validate_closure_file())
+    bad["boundaries"].pop("orders_generated")
+    with pytest.raises(ValueError, match="ba_qm4_boundary_keys_mismatch"):
+        _validate(bad)
+
+    bad = copy.deepcopy(validate_closure_file())
+    bad["boundaries"]["orders_generated"] = None
+    with pytest.raises(ValueError, match="ba_qm4_boundary_values_must_be_false"):
+        _validate(bad)
