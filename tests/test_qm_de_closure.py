@@ -66,3 +66,18 @@ def test_closure_rejects_missing_or_non_boolean_boundary_keys():
     bad["boundaries"]["orders_generated"] = None
     with pytest.raises(ValueError, match="ba_qm4_boundary_values_must_be_false"):
         _validate(bad)
+
+
+def test_closure_rejects_disabled_qm_c_hash_reuse_guards():
+    for field in ("analysis_plan_hash_reused", "result_hash_reused"):
+        bad = copy.deepcopy(validate_closure_file())
+        bad["integration_contracts"]["qm_c"][field] = False
+        with pytest.raises(ValueError, match="ba_qm4_qm_c_integration_invalid"):
+            _validate(bad)
+
+
+def test_closure_rejects_disabled_qm_i_lineage_node_guard():
+    bad = copy.deepcopy(validate_closure_file())
+    bad["integration_contracts"]["qm_i"]["observation_and_prediction_lineage_nodes_must_exist"] = False
+    with pytest.raises(ValueError, match="ba_qm4_qm_i_integration_invalid"):
+        _validate(bad)
