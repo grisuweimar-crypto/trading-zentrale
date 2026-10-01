@@ -1,0 +1,341 @@
+name: Module 6 Elliott Prospective Shadow
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/scanner/research/elliott_vnext/prospective_capture.py"
+      - "scripts/run_elliott_prospective_capture_6h.py"
+      - "tests/test_elliott_vnext_prospective_capture.py"
+      - "docs/elliott_vnext_prospective_capture.md"
+      - ".github/workflows/elliott_vnext_prospective_capture.yml"
+  workflow_run:
+    workflows: ["Scanner_vNext Autopilot"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: elliott-vnext-prospective-shadow
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    if: >-
+      github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout PR head
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Checkout current main for prospective binding
+        if: github.event_name != 'pull_request'
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Bind to oldest uncaptured scanner publication
+        id: bind
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --force
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          python - <<'PY'
+          import csv
+          import hashlib
+          import io
+          import json
+          import os
+          import re
+          import subprocess
+
+          SCANNER_SUBJECT = '📊 Autopilot: artifacts update [skip ci]'
+          WORKFLOW_PATH = '.github/workflows/elliott_vnext_prospective_capture.yml'
+          ARCHIVE_PATH = 'artifacts/research/elliott_vnext_prospective_history_6h.jsonl'
+          REQUIRED_CHANGED = {
+              'artifacts/research/history_metadata.json',
+              'artifacts/research/latest_scanner.csv',
+          }
+          REQUIRED_PRESENT = {
+              'artifacts/research/history_metadata.json',
+              'artifacts/research/latest_scanner.csv',
+              'artifacts/research/daily_research.json',
+              'artifacts/market_data/yahoo_ohlcv.csv',
+          }
+
+          def git_text(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(
+                      ['git', *args], text=True, stderr=subprocess.DEVNULL
+                  )
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          def git_bytes(*args, allow_fail=False):
+              try:
+                  return subprocess.check_output(
+                      ['git', *args], stderr=subprocess.DEVNULL
+                  )
+              except subprocess.CalledProcessError:
+                  if allow_fail:
+                      return None
+                  raise
+
+          def exists(sha, path):
+              return git_text('cat-file', '-e', f'{sha}:{path}', allow_fail=True) is not None
+
+          def scanner_publication(sha):
+              subject = git_text('show', '-s', '--format=%s', sha, allow_fail=True)
+              if subject is None or subject.strip() != SCANNER_SUBJECT:
+                  return None
+              changed = set(
+                  (git_text('diff-tree', '--no-commit-id', '--name-only', '-r', sha, allow_fail=True) or '').splitlines()
+              )
+              if not REQUIRED_CHANGED.issubset(changed):
+                  return None
+              if not all(exists(sha, path) for path in REQUIRED_PRESENT):
+                  return None
+              raw_meta = git_bytes('show', f'{sha}:artifacts/research/history_metadata.json', allow_fail=True)
+              raw_latest = git_bytes('show', f'{sha}:artifacts/research/latest_scanner.csv', allow_fail=True)
+              raw_daily = git_bytes('show', f'{sha}:artifacts/research/daily_research.json', allow_fail=True)
+              if not raw_meta or not raw_latest or not raw_daily:
+                  return None
+              try:
+                  metadata = json.loads(raw_meta.decode('utf-8'))
+              except (UnicodeDecodeError, json.JSONDecodeError):
+                  return None
+              daily_run = metadata.get('daily_run') or {}
+              run_id = str(daily_run.get('run_id') or '').strip()
+              if not re.fullmatch(r'github-\d+-\d+', run_id):
+                  return None
+              if metadata.get('latest_run_complete') is not True or daily_run.get('scanner_status') != 'success':
+                  return None
+              if (metadata.get('latest_scanner') or {}).get('sha256') != hashlib.sha256(raw_latest).hexdigest():
+                  return None
+              if (metadata.get('daily_research') or {}).get('sha256') != hashlib.sha256(raw_daily).hexdigest():
+                  return None
+              parent_raw = git_bytes('show', f'{sha}^:artifacts/research/history_metadata.json', allow_fail=True)
+              if parent_raw:
+                  try:
+                      parent = json.loads(parent_raw.decode('utf-8'))
+                  except (UnicodeDecodeError, json.JSONDecodeError):
+                      parent = {}
+                  parent_run = str(((parent.get('daily_run') or {}).get('run_id')) or '').strip()
+                  if parent_run == run_id:
+                      return None
+              return metadata
+
+          claimed_run_ids = set()
+          archive = git_text(
+              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+          )
+          if archive:
+              for line_number, line in enumerate(archive.splitlines(), start=1):
+                  if not line.strip():
+                      continue
+                  try:
+                      row = json.loads(line)
+                  except json.JSONDecodeError as exc:
+                      raise SystemExit(f'invalid Elliott shadow archive line {line_number}: {exc}')
+                  if row.get('schema_version') != 'elliott_vnext_prospective_capture_v1':
+                      raise SystemExit(f'unsupported Elliott shadow archive line {line_number}')
+                  run_id = str(row.get('run_id') or '').strip()
+                  if not run_id:
+                      raise SystemExit(f'missing run_id in Elliott shadow archive line {line_number}')
+                  claimed_run_ids.add(run_id)
+
+          candidates = []
+          shas = git_text(
+              'rev-list', '--reverse', 'origin/main', '--first-parent', '--',
+              'artifacts/research/history_metadata.json',
+          ).splitlines()
+          for sha in shas:
+              if not exists(sha, WORKFLOW_PATH):
+                  continue
+              metadata = scanner_publication(sha)
+              if metadata is None:
+                  continue
+              run_id = str(((metadata.get('daily_run') or {}).get('run_id')) or '').strip()
+              if run_id in claimed_run_ids:
+                  continue
+              published_at = git_text('show', '-s', '--format=%cI', sha).strip()
+              candidates.append((sha, run_id, published_at))
+
+          output = os.environ['GITHUB_OUTPUT']
+          with open(output, 'a', encoding='utf-8') as handle:
+              if not candidates:
+                  handle.write('process=false\n')
+                  handle.write('backlog_count=0\n')
+              else:
+                  sha, run_id, published_at = candidates[0]
+                  handle.write('process=true\n')
+                  handle.write(f'commit={sha}\n')
+                  handle.write(f'run_id={run_id}\n')
+                  handle.write(f'published_at={published_at}\n')
+                  handle.write(f'backlog_count={len(candidates) - 1}\n')
+          print(json.dumps({
+              'claimed_runs': len(claimed_run_ids),
+              'uncaptured_publications': len(candidates),
+              'selected': candidates[0] if candidates else None,
+          }, indent=2))
+          PY
+
+      - name: Checkout exact scanner publication
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        run: git checkout --detach "${{ steps.bind.outputs.commit }}"
+
+      - uses: actions/setup-python@v6
+        if: github.event_name == 'pull_request' || steps.bind.outputs.process == 'true'
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install project and test dependencies
+        if: github.event_name == 'pull_request' || steps.bind.outputs.process == 'true'
+        run: python -m pip install -e '.[test]'
+
+      - name: Run frozen-core and prospective-capture regressions
+        if: github.event_name == 'pull_request' || steps.bind.outputs.process == 'true'
+        run: >-
+          pytest -q
+          tests/test_elliott_vnext_prospective_capture.py
+          tests/test_elliott_vnext_pivots.py
+          tests/test_elliott_vnext_scenarios.py
+          tests/test_elliott_vnext_fibonacci.py
+          tests/test_elliott_vnext_routing.py
+          tests/test_elliott_vnext_output.py
+          tests/test_elliott_vnext_output_contract.py
+          tests/test_qm_g_scenario_stability.py
+
+      - name: Runner smoke test
+        if: github.event_name == 'pull_request'
+        run: python scripts/run_elliott_prospective_capture_6h.py --help
+
+      - name: Restore isolated Elliott shadow history
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
+            artifacts/research/elliott_vnext_prospective_current_6h.json
+          do
+            if git cat-file -e "origin/elliott-vnext-shadow-data:$path" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/elliott-vnext-shadow-data:$path" > "$path"
+            else
+              rm -f "$path"
+            fi
+          done
+
+      - name: Capture frozen Elliott 6A through 6H for bound publication
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        run: >-
+          python scripts/run_elliott_prospective_capture_6h.py
+          --publication-commit "${{ steps.bind.outputs.commit }}"
+          --publication-available-from "${{ steps.bind.outputs.published_at }}"
+          --expected-run-id "${{ steps.bind.outputs.run_id }}"
+
+      - name: Validate research-only capture boundary
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        env:
+          EXPECTED_COMMIT: ${{ steps.bind.outputs.commit }}
+          EXPECTED_RUN_ID: ${{ steps.bind.outputs.run_id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path('artifacts/research/elliott_vnext_prospective_current_6h.json')
+          capture = json.loads(path.read_text(encoding='utf-8'))
+          assert capture['schema_version'] == 'elliott_vnext_prospective_capture_v1'
+          assert capture['source_publication_commit'] == os.environ['EXPECTED_COMMIT']
+          assert capture['run_id'] == os.environ['EXPECTED_RUN_ID']
+          assert capture['validation_partition'] == 'prospective_unspent'
+          guards = capture['guards']
+          assert guards['research_only'] is True
+          assert guards['productive_integration_enabled'] is False
+          assert guards['w10_source_emitted'] is False
+          assert guards['changes_universal_stance'] is False
+          assert guards['changes_portfolio_action'] is False
+          assert guards['direct_ordering_allowed'] is False
+          assert guards['future_rows_used'] is False
+          assert guards['missing_evidence_not_imputed'] is True
+          assert guards['frozen_elliott_core_modified'] is False
+          assert guards['multi_degree_outputs_retained_without_reducer'] is True
+          for output in capture['outputs']:
+              assert output['research_only'] is True
+              assert output['integration']['productive_integration_enabled'] is False
+              assert output['integration']['direct_ordering_allowed'] is False
+              assert 'trade_decision' not in json.dumps(output, sort_keys=True)
+              assert 'order_instruction' not in json.dumps(output, sort_keys=True)
+          print(json.dumps({
+              'snapshot_id': capture['snapshot_id'],
+              'run_id': capture['run_id'],
+              'output_count': capture['output_count'],
+              'symbols_with_outputs': capture['symbols_with_outputs'],
+              'validation_partition': capture['validation_partition'],
+          }, indent=2))
+          PY
+
+      - name: Preserve shadow publication payload
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        run: |
+          mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
+          cp artifacts/research/elliott_vnext_prospective_history_6h.jsonl "$RUNNER_TEMP/elliott-shadow-payload/"
+          cp artifacts/research/elliott_vnext_prospective_current_6h.json "$RUNNER_TEMP/elliott-shadow-payload/"
+
+      - name: Publish isolated Elliott shadow data branch
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
+            git checkout -B elliott-vnext-shadow-data origin/elliott-vnext-shadow-data
+          else
+            git checkout -B elliott-vnext-shadow-data origin/main
+          fi
+          mkdir -p artifacts/research
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl" artifacts/research/
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json" artifacts/research/
+          git add \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
+            artifacts/research/elliott_vnext_prospective_current_6h.json
+          if ! git diff --cached --quiet; then
+            git commit -m '🧪 Elliott vNext prospective shadow [skip ci]'
+            git push origin HEAD:refs/heads/elliott-vnext-shadow-data
+          fi
+
+      - name: Continue prospective queue when backlog remains
+        if: >-
+          github.event_name != 'pull_request' &&
+          steps.bind.outputs.process == 'true' &&
+          steps.bind.outputs.backlog_count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run elliott_vnext_prospective_capture.yml --ref main
+
+      - name: Report no uncaptured scanner publication
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process != 'true'
+        run: echo "No eligible uncaptured Scanner_vNext publication found."
