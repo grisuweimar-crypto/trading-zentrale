@@ -289,8 +289,14 @@ class LineageRegistry:
             supersedes = payload.get("supersedes_version_id")
             if supersedes is not None:
                 supersedes = _text(supersedes, "independence_claim.supersedes_version_id")
-                if self._key(record["independence_claim_id"], supersedes) not in claims or latest_claims.get(record["independence_claim_id"]) != supersedes:
+                predecessor_key = self._key(record["independence_claim_id"], supersedes)
+                predecessor = claims.get(predecessor_key)
+                if predecessor is None or latest_claims.get(record["independence_claim_id"]) != supersedes:
                     raise LineageError("independence_claim_successor_must_supersede_latest_version")
+                predecessor_left = self._key(predecessor["left_node_id"], predecessor["left_version_id"])
+                predecessor_right = self._key(predecessor["right_node_id"], predecessor["right_version_id"])
+                if self._pair(predecessor_left, predecessor_right) != self._pair(left, right):
+                    raise LineageError("independence_claim_successor_must_preserve_endpoints")
             elif record["independence_claim_id"] in latest_claims:
                 raise LineageError("independence_claim_successor_requires_supersedes_reference")
             claims[key] = {**record, "supersedes_version_id": supersedes, "registered_at": event["recorded_at"], "registered_by": event["actor_id"]}
@@ -569,8 +575,21 @@ class LineageRegistry:
         self.get_node(decision_id, decision_version_id)
         action_id = _text(action_id, "portfolio_action_id")
         version_id = _text(version_id, "portfolio_action.version_id")
+        position = validated.get("position_context")
+        cost = validated.get("cost_context")
+        if not isinstance(position, Mapping):
+            raise LineageError("phase7_position_context_missing")
+        position_id = _text(position.get("source_snapshot_id"), "position_source_snapshot_id")
+        position_version = _text(position.get("as_of"), "position_snapshot.version_id")
+        position_material = {
+            "symbol": validated.get("symbol"),
+            "position_context": dict(position),
+            "transaction_cost_bps": cost.get("transaction_cost_bps") if isinstance(cost, Mapping) else None,
+        }
+        self._ensure_node({"node_id": position_id, "version_id": position_version, "node_type": "POSITION_SNAPSHOT", "content_hash": content_hash(position_material), "lineage_complete": True, "as_of": position_version, "metadata": {"phase": "7F", "source": "position_context", "research_only": True}}, actor_id, actor_role)
         self._ensure_node({"node_id": action_id, "version_id": version_id, "node_type": "PORTFOLIO_ACTION", "content_hash": content_hash(validated), "lineage_complete": False, "as_of": str(validated["as_of"]), "metadata": {"phase": "7F", "schema_version": validated["schema_version"], "research_only": True}}, actor_id, actor_role)
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([decision_id, decision_version_id, action_id, version_id, "INFORMS"])[:24], "from_node_id": decision_id, "from_version_id": decision_version_id, "to_node_id": action_id, "to_version_id": version_id, "relation": "INFORMS", "material_for_ancestry": True}, actor_id, actor_role)
+        self._ensure_edge({"edge_id": "qm-i:" + content_hash([position_id, position_version, action_id, version_id, "USES_POSITION"])[:24], "from_node_id": position_id, "from_version_id": position_version, "to_node_id": action_id, "to_version_id": version_id, "relation": "USES_POSITION", "material_for_ancestry": True}, actor_id, actor_role)
         return self.get_node(action_id, version_id)
 
     def register_phase7_watch(self, watch: Mapping[str, Any], *, parent_nodes: Sequence[Mapping[str, str]], actor_id: str, actor_role: str) -> dict[str, Any]:
