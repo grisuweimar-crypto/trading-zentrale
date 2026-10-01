@@ -1,0 +1,71 @@
+name: QM-H Defect Near-Miss CAPA
+
+on:
+  pull_request:
+    paths:
+      - 'configs/qm_a_research_governance_v1.json'
+      - 'configs/qm_b_closure_v1.json'
+      - 'configs/ba_qm2_handoff_v2.json'
+      - 'configs/qm_c*.json'
+      - 'configs/qm_h*.json'
+      - 'src/scanner/research/governance/qm_a.py'
+      - 'src/scanner/research/governance/qm_b*.py'
+      - 'src/scanner/research/governance/qm_c*.py'
+      - 'src/scanner/research/governance/qm_h*.py'
+      - 'tests/test_qm_a*.py'
+      - 'tests/test_qm_b*.py'
+      - 'tests/test_qm_c*.py'
+      - 'tests/test_qm_h*.py'
+      - 'docs/qm_h_defect_near_miss_capa.md'
+      - '.github/workflows/qm_h_capa.yml'
+  push:
+    branches:
+      - main
+      - 'qm-h-*'
+    paths:
+      - 'configs/qm_a_research_governance_v1.json'
+      - 'configs/qm_b_closure_v1.json'
+      - 'configs/ba_qm2_handoff_v2.json'
+      - 'configs/qm_c*.json'
+      - 'configs/qm_h*.json'
+      - 'src/scanner/research/governance/qm_a.py'
+      - 'src/scanner/research/governance/qm_b*.py'
+      - 'src/scanner/research/governance/qm_c*.py'
+      - 'src/scanner/research/governance/qm_h*.py'
+      - 'tests/test_qm_a*.py'
+      - 'tests/test_qm_b*.py'
+      - 'tests/test_qm_c*.py'
+      - 'tests/test_qm_h*.py'
+      - 'docs/qm_h_defect_near_miss_capa.md'
+      - '.github/workflows/qm_h_capa.yml'
+  workflow_dispatch:
+
+jobs:
+  qm-h-capa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+      - name: Run QM-A/B/C regression and QM-H suite
+        run: |
+          pytest -q \
+            tests/test_qm_a*.py \
+            tests/test_qm_b*.py \
+            tests/test_qm_c*.py \
+            tests/test_qm_h*.py
+      - name: Validate QM-H closure and handoff boundary
+        run: |
+          python - <<'PY'
+          from scanner.research.governance.qm_h_closure import validate_qm_h_closure
+          result = validate_qm_h_closure()
+          assert result['valid'] is True
+          assert result['display_status'] == 'QM-H COMPLETE — DEFECT / NEAR-MISS / CAPA CONTINUOUS CONTROL ACTIVE'
+          assert result['next_step_after_user_authorization'] == 'BA-QM3 / QM-I'
+          assert result['closure']['scope_boundary']['ba_qm3_implemented_by_this_closure'] is False
+          PY

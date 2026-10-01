@@ -1,0 +1,90 @@
+{
+  "schema_version": "qm_h_capa_v1",
+  "module": "QM-H",
+  "name": "Defect / Near-Miss / CAPA Management",
+  "research_only": true,
+  "continuous_control": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "principles": {
+    "append_only_audit_trail": true,
+    "hash_chained_events": true,
+    "no_retroactive_event_invention": true,
+    "qm_a_remains_evidence_consumption_authority": true,
+    "qm_h_may_not_mutate_qm_a_state": true,
+    "qm_b_external_gaps_do_not_reopen_engineering": true,
+    "missing_external_evidence_remains_fail_closed": true,
+    "stable_upstream_identities_are_reused_without_rekeying": true,
+    "non_blocker_upstream_identity_references_require_authoritative_resolution": true,
+    "evidence_impact_changes_require_traceable_reference_and_rationale": true
+  },
+  "finding_categories": [
+    "DEFECT",
+    "NEAR_MISS",
+    "METHODOLOGY_FINDING",
+    "EXTERNAL_EVIDENCE_GAP"
+  ],
+  "severity_levels": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+  "evidence_impact_classes": [
+    "NO_KNOWN_EVIDENCE_IMPACT",
+    "EVIDENCE_REVIEW_REQUIRED",
+    "EVIDENCE_USE_RESTRICTED",
+    "PROMOTION_BLOCKED",
+    "EVIDENCE_INVALIDATION_REVIEW_REQUIRED"
+  ],
+  "state_machine": {
+    "initial_state": "OPEN",
+    "states": [
+      "OPEN",
+      "TRIAGED",
+      "ROOT_CAUSE_IDENTIFIED",
+      "ACTION_PLANNED",
+      "IMPLEMENTED",
+      "EFFECTIVENESS_VERIFIED",
+      "CLOSED",
+      "INVALIDATED"
+    ],
+    "terminal_states": ["CLOSED", "INVALIDATED"],
+    "allowed_transitions": {
+      "OPEN": ["TRIAGED", "INVALIDATED"],
+      "TRIAGED": ["ROOT_CAUSE_IDENTIFIED", "INVALIDATED"],
+      "ROOT_CAUSE_IDENTIFIED": ["ACTION_PLANNED", "INVALIDATED"],
+      "ACTION_PLANNED": ["IMPLEMENTED", "INVALIDATED"],
+      "IMPLEMENTED": ["EFFECTIVENESS_VERIFIED", "ACTION_PLANNED", "INVALIDATED"],
+      "EFFECTIVENESS_VERIFIED": ["CLOSED", "ACTION_PLANNED", "INVALIDATED"],
+      "CLOSED": [],
+      "INVALIDATED": []
+    }
+  },
+  "required_transition_fields": {
+    "TRIAGED": ["severity", "scope", "triage_rationale"],
+    "ROOT_CAUSE_IDENTIFIED": ["cause", "cause_classification"],
+    "ACTION_PLANNED": ["capa_id", "corrective_action", "preventive_action", "action_owner"],
+    "IMPLEMENTED": ["capa_id", "implementation_reference", "implementation_summary"],
+    "EFFECTIVENESS_VERIFIED": ["capa_id", "effectiveness_evidence_reference", "effectiveness_result"],
+    "CLOSED": ["capa_id", "closure_reference", "closure_rationale"],
+    "INVALIDATED": ["invalidation_reference", "invalidation_rationale"]
+  },
+  "identity_reference_contract": {
+    "QM_A_ANALYSIS": ["analysis_id", "version_id", "identity_hash"],
+    "QM_B_UNIVERSE": ["universe_ledger_version", "instrument_master_version"],
+    "QM_C_HYPOTHESIS": ["hypothesis_id", "hypothesis_version", "hypothesis_version_hash"],
+    "QM_C_ANALYSIS_PLAN": ["analysis_plan_id", "analysis_plan_version", "analysis_plan_hash"],
+    "QM_C_MULTIPLICITY_CONTROL": ["control_plan_id", "control_plan_version", "control_plan_hash"],
+    "QM_C_SEQUENTIAL_MONITORING": ["monitoring_plan_id", "monitoring_plan_version", "monitoring_plan_hash"],
+    "QM_C_RESULT": ["result_id", "result_version", "result_hash"],
+    "QM_B_EXTERNAL_BLOCKER": ["blocker_id", "state"]
+  },
+  "known_qm_b_external_blockers": [
+    {"blocker_id": "LISTING_EVIDENCE", "state": "UNKNOWN_FAIL_CLOSED"},
+    {"blocker_id": "MARKET_TRADABILITY_EVIDENCE", "state": "UNKNOWN_FAIL_CLOSED"},
+    {"blocker_id": "EXECUTION_CHANNEL_EVIDENCE", "state": "UNKNOWN_FAIL_CLOSED"}
+  ],
+  "closure_guards": {
+    "nonzero_evidence_impact_requires_disposition_reference": true,
+    "prospective_evidence_impact_is_checked_before_closure": true,
+    "evidence_impact_downgrade_requires_disposition_reference": true,
+    "external_evidence_gap_requires_resolution_reference": true,
+    "effectiveness_verified_requires_effective_result": true
+  }
+}
