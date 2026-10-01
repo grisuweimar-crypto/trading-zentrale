@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "src/scanner/research/governance/qm_j_phase1a_lag1_investigation.py"
+      - "src/scanner/research/governance/qm_j_selection_freshness_gate.py"
       - "scripts/run_qm_j_phase1a_lag1_investigation.py"
       - "tests/test_qm_j_phase1a_lag1_investigation.py"
+      - "tests/test_qm_j_selection_freshness_gate.py"
       - "src/scanner/research/governance/qm_h_capa.py"
       - "configs/qm_h_capa_v1.json"
+      - "configs/qm_j_phase1a_selection_freshness_gate_v1.json"
       - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
       - "artifacts/research/qm/qm_j_phase1a_data_research_falsification.json"
+      - "artifacts/research/qm/qm_j_phase1a_lag1_investigation.json"
       - "artifacts/research/history_analysis.csv"
       - "artifacts/research/price_backfill.csv"
       - ".github/workflows/qm_j_phase1a_lag1_investigation.yml"
@@ -28,22 +32,40 @@ jobs:
           python-version: "3.11"
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Verify QM-H ledger and investigation regressions
+      - name: Verify QM-H ledger, CAPA guard and investigation regressions
         run: |
           python - <<'PY'
           from scanner.research.governance.qm_h_capa import CapaLedger
+          from scanner.research.governance.qm_j_selection_freshness_gate import (
+              assert_evidence_promotion_blocked,
+              load_gate,
+          )
+
           ledger = CapaLedger("artifacts/research/qm/qm_h_capa_ledger.jsonl")
           verification = ledger.verify_integrity()
           finding = ledger.get_finding("QM-H-QMJ-PHASE1A-LAG1-001")
           assert verification["valid"] is True
-          assert finding["status"] == "ACTION_PLANNED"
+          assert finding["status"] == "IMPLEMENTED"
           assert finding["capa_id"] == "QM-H-CAPA-QMJ-PHASE1A-LAG1-001"
           assert finding["category"] == "METHODOLOGY_FINDING"
           assert finding["evidence_impact"] == "PROMOTION_BLOCKED"
+
+          gate = load_gate()
+          assert gate["capa_id"] == finding["capa_id"]
+          blocked = assert_evidence_promotion_blocked(
+              "a646d5eb4397f32d60f922ddd333e30cf61562cde8b5b1a6d1f791d3e380f483",
+              gate,
+          )
+          assert blocked["promotion_allowed"] is False
+          assert blocked["effectiveness_verification_pending"] is True
           print(verification)
           print(finding)
+          print(blocked)
           PY
-          python -m pytest -q tests/test_qm_j_phase1a_lag1_investigation.py tests/test_qm_h_capa.py
+          python -m pytest -q \
+            tests/test_qm_j_phase1a_lag1_investigation.py \
+            tests/test_qm_j_selection_freshness_gate.py \
+            tests/test_qm_h_capa.py
       - name: Run post-trigger descriptive investigation
         run: >-
           python scripts/run_qm_j_phase1a_lag1_investigation.py
