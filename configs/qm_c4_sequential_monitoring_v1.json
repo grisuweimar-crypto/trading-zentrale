@@ -1,0 +1,58 @@
+{
+  "schema_version": "qm_c4_sequential_monitoring_v1",
+  "module": "QM-C4",
+  "name": "Sequential Monitoring",
+  "status": "active_research_governance",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Freeze the permitted confirmatory outcome-inspection schedule against an already frozen QM-C3 family/multiplicity plan and fail closed on undeclared or out-of-order looks.",
+  "principles": {
+    "qm_c3_plan_is_immutable_input": true,
+    "sequential_looks_are_predeclared": true,
+    "unplanned_peeking_fails_closed": true,
+    "out_of_order_peeking_fails_closed": true,
+    "repeat_looks_require_consumed_qm_a_evidence": true,
+    "technical_completion_is_not_empirical_promotion": true
+  },
+  "registry": {
+    "event_schema_version": "qm_c4_sequential_monitoring_event_v1",
+    "hash_chain_required": true,
+    "default_path": "artifacts/research/qm/qm_c4_sequential_monitoring.jsonl",
+    "event_types": ["MONITORING_PLAN_REGISTERED", "MONITORING_PLAN_FROZEN", "MONITORING_LOOK_RECORDED", "MONITORING_PLAN_STATE_TRANSITION"]
+  },
+  "monitoring_plan": {
+    "required_fields": ["monitoring_plan_id", "monitoring_plan_version", "control_plan_id", "control_plan_version", "control_plan_hash", "mode", "planned_looks", "early_stop_allowed", "stopping_rule"],
+    "states": ["DRAFT", "FROZEN_FOR_CONFIRMATION", "MONITORING", "COMPLETE", "STOPPED", "INVALIDATED", "RETIRED"],
+    "allowed_manual_transitions": {
+      "DRAFT": ["INVALIDATED", "RETIRED"],
+      "FROZEN_FOR_CONFIRMATION": ["INVALIDATED", "RETIRED"],
+      "MONITORING": ["INVALIDATED", "RETIRED"],
+      "COMPLETE": ["RETIRED"],
+      "STOPPED": ["RETIRED"],
+      "INVALIDATED": ["RETIRED"],
+      "RETIRED": []
+    }
+  },
+  "schedule": {
+    "modes": ["FIXED_HORIZON_NO_INTERIM", "PREDECLARED_LOOKS", "CUSTOM_PREDECLARED"],
+    "look_required_fields": ["look_id", "information_fraction"],
+    "final_information_fraction": 1.0,
+    "custom_required_fields": ["rule_hash", "rationale"],
+    "look_decisions": ["CONTINUE", "STOP_EFFICACY", "STOP_FUTILITY", "FINAL_COMPLETE"]
+  },
+  "bindings": {
+    "qm_c3_contract_schema": "qm_c3_families_multiplicity_v1",
+    "qm_a_contract_schema": "qm_a_research_governance_v1",
+    "control_plan_must_be_frozen": true,
+    "control_plan_hash_must_match": true
+  },
+  "boundaries": {
+    "hypothesis_family_membership_defined_here": false,
+    "multiplicity_strategy_defined_here": false,
+    "result_classification_defined_here": false,
+    "scanner_or_decision_semantics_changed": false,
+    "portfolio_action_or_order_generation_allowed": false,
+    "empirical_promotion_performed": false
+  }
+}

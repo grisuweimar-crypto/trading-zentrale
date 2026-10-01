@@ -1,0 +1,40 @@
+{
+  "schema_version": "ba_qm2_handoff_v2",
+  "business_area": "BA-QM2",
+  "name": "Historical Integrity & Research Discipline",
+  "display_status": "BA-QM2 GOVERNANCE COMPLETE — QM-B PLUS SIX-STEP QM-C COMPLETE; STRICT PROMOTION REMAINS EXTERNALLY BLOCKED",
+  "engineering_governance_status": "COMPLETE",
+  "strict_historical_promotion_status": "BLOCKED_EXTERNAL_EVIDENCE",
+  "empirical_promotion_claimed": false,
+  "qm_b": {
+    "closure_schema": "qm_b_closure_v1",
+    "display_status": "QM-B COMPLETE — STRICT PROMOTION BLOCKED BY EXTERNAL EVIDENCE",
+    "external_blockers": ["LISTING_EVIDENCE", "MARKET_TRADABILITY_EVIDENCE", "EXECUTION_CHANNEL_EVIDENCE"],
+    "external_blockers_reopen_engineering": false
+  },
+  "qm_c": {
+    "closure_schema": "qm_c6_closure_v1",
+    "display_status": "QM-C COMPLETE — SIX-STEP RESEARCH DISCIPLINE CHAIN ACTIVE",
+    "work_packages_complete": ["QM-C1", "QM-C2", "QM-C3", "QM-C4", "QM-C5", "QM-C6"]
+  },
+  "stable_lineage_identities": {
+    "hypothesis": ["hypothesis_id", "hypothesis_version", "hypothesis_version_hash"],
+    "analysis_plan": ["analysis_plan_id", "analysis_plan_version", "analysis_plan_hash"],
+    "multiplicity_control": ["control_plan_id", "control_plan_version", "control_plan_hash"],
+    "sequential_monitoring": ["monitoring_plan_id", "monitoring_plan_version", "monitoring_plan_hash"],
+    "result": ["result_id", "result_version", "result_hash"],
+    "qm_a_analysis": ["analysis_id", "version_id", "identity_hash"],
+    "qm_b_universe": ["universe_ledger_version", "instrument_master_version"]
+  },
+  "handoff_preconditions": {
+    "qm_b_engineering_complete": true,
+    "qm_c_engineering_complete": true,
+    "six_distinct_qm_c_work_packages_complete": true,
+    "strict_historical_promotion_required_for_future_qm_work": false,
+    "external_qm_b_blockers_must_remain_visible": true
+  },
+  "scope_boundary": {
+    "ba_qm3_implemented_by_this_handoff": false,
+    "next_business_area_may_start_only_after_separate_user_authorization": true
+  }
+}

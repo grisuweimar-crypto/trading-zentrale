@@ -1,0 +1,14 @@
+{
+  "schema_version": "qm_c5_closure_v1",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C5",
+  "display_status": "QM-C5 COMPLETE — NEGATIVE AND REJECTED RESULT RETENTION ACTIVE",
+  "engineering_status": "COMPLETE",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "depends_on": ["QM-C1", "QM-C2", "QM-C3", "QM-C4", "QM-A"],
+  "contract_schema": "qm_c5_negative_results_v1",
+  "completed_capabilities": ["symmetric_positive_negative_inconclusive_retention", "rejected_pre_evaluation_retention", "retired_without_evaluation_retention", "immutable_result_versions", "exact_c1_c2_c3_c4_qm_a_binding", "confirmatory_consumed_evidence_guard"],
+  "explicitly_deferred": ["full_chain_audit_and_ba_qm2_handoff_to_QM-C6"],
+  "next_mandatory_work_package": "QM-C6"
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": "qm_c4_closure_v2",
+  "qm_axis": "QM-C",
+  "work_package": "QM-C4",
+  "display_status": "QM-C4 COMPLETE — SEQUENTIAL MONITORING GATE ACTIVE",
+  "engineering_status": "COMPLETE",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "depends_on": ["QM-C3", "QM-A"],
+  "contract_schema": "qm_c4_sequential_monitoring_v1",
+  "completed_capabilities": ["separate_versioned_monitoring_plan", "exact_qm_c3_id_hash_binding", "predeclared_look_schedule", "out_of_order_look_rejection", "unplanned_early_stop_rejection", "repeat_look_qm_a_consumption_guard"],
+  "explicitly_deferred": ["result_retention_to_QM-C5", "axis_closure_to_QM-C6"],
+  "next_mandatory_work_package": "QM-C5"
+}

@@ -1,0 +1,57 @@
+name: QM-C Six-Step Research Discipline
+
+on:
+  pull_request:
+    paths:
+      - 'configs/qm_c*.json'
+      - 'configs/ba_qm2_handoff_v2.json'
+      - 'src/scanner/research/governance/qm_c*.py'
+      - 'tests/test_qm_c*.py'
+      - 'docs/qm_c_six_step_research_discipline.md'
+      - '.github/workflows/qm_c_six_step.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'configs/qm_c*.json'
+      - 'configs/ba_qm2_handoff_v2.json'
+      - 'src/scanner/research/governance/qm_c*.py'
+      - 'tests/test_qm_c*.py'
+      - 'docs/qm_c_six_step_research_discipline.md'
+      - '.github/workflows/qm_c_six_step.yml'
+  workflow_dispatch:
+
+jobs:
+  qm-c-six-step:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install project and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+      - name: Run QM-C1 through QM-C6 and predecessor regression suite
+        run: |
+          pytest -q \
+            tests/test_qm_a_research_governance.py \
+            tests/test_qm_a_concurrency_guard.py \
+            tests/test_qm_b_closure.py \
+            tests/test_qm_c_hypothesis_registry.py \
+            tests/test_qm_c_analysis_plan.py \
+            tests/test_qm_c1_closure.py \
+            tests/test_qm_c2_closure.py \
+            tests/test_qm_c_six_step_structure.py
+      - name: Validate exact six-step closure and BA-QM2 handoff
+        run: |
+          python - <<'PY'
+          from scanner.research.governance.qm_c6_closure import validate_six_step_manifests, validate_ba_qm2_handoff
+          closure = validate_six_step_manifests()
+          assert closure['valid'] is True
+          assert closure['work_package_order'] == ['QM-C1','QM-C2','QM-C3','QM-C4','QM-C5','QM-C6']
+          assert closure['display_status'] == 'QM-C COMPLETE — SIX-STEP RESEARCH DISCIPLINE CHAIN ACTIVE'
+          handoff = validate_ba_qm2_handoff()
+          assert handoff['valid'] is True
+          assert handoff['handoff']['scope_boundary']['ba_qm3_implemented_by_this_handoff'] is False
+          PY
