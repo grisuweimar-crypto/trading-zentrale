@@ -13,7 +13,11 @@ on:
       - 'scripts/run_depot_watch_orchestrated.py'
       - 'scripts/run_depot_watch_e2e_w11.py'
       - 'src/scanner/research/decision_layer/watch_runtime.py'
+      - 'src/scanner/research/decision_layer/public_long_reference.py'
+      - 'src/scanner/research/decision_layer/w11_end_to_end.py'
       - 'tests/test_watch_runtime_transport.py'
+      - 'tests/test_public_long_reference.py'
+      - 'tests/test_w11_end_to_end_acceptance.py'
 
 permissions:
   contents: read
@@ -39,10 +43,11 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e '.[test]'
-      - name: Prove compact transport preserves Decision semantics
+      - name: Prove compact transport and public long reference preserve Decision semantics
         run: >-
           pytest -q
           tests/test_watch_runtime_transport.py
+          tests/test_public_long_reference.py
           tests/test_decision_depot_watch_orchestration.py
           tests/test_w11_end_to_end_acceptance.py
           tests/test_w12_ferrari_regression.py
@@ -81,7 +86,7 @@ jobs:
       - name: Build compact sharded Watch runtime from sealed W10 evidence
         run: python scripts/build_watch_runtime_w10.py
 
-      - name: Validate runtime identity, privacy and transport size
+      - name: Validate runtime identity, privacy, public long reference and transport size
         run: |
           python - <<'PY'
           import json
@@ -92,6 +97,7 @@ jobs:
           root = Path('.')
           runtime_dir = root / 'artifacts/research/watch_runtime'
           runtime = json.loads((runtime_dir / 'manifest.json').read_text(encoding='utf-8'))
+          public_long = json.loads((runtime_dir / 'public_long_reference.json').read_text(encoding='utf-8'))
           w10 = json.loads((root / 'artifacts/research/decision_snapshot_w10.json').read_text(encoding='utf-8'))
           sealed = validate_sealed_manifest(w10)
           validated = validate_runtime_manifest(runtime, w10_manifest=sealed, expected_snapshot_id=sealed['snapshot_id'])
@@ -101,13 +107,25 @@ jobs:
           assert validated['decision_logic_changed'] is False
           assert validated['symbol_count'] > 0
           assert validated['packet_count'] >= validated['symbol_count']
+          assert public_long['schema_version'] == 'decision_watch_public_long_reference_v1'
+          assert public_long['snapshot_id'] == sealed['snapshot_id']
+          assert public_long['row_count'] == validated['symbol_count']
+          assert public_long['position_assumption']['hypothetical'] is True
+          assert public_long['position_assumption']['actual_holdings_included'] is False
+          assert public_long['position_assumption']['private_position_data_included'] is False
+          assert public_long['semantics']['decision_logic_changed'] is False
+          assert all(row['availability'] == 'decision_available' for row in public_long['rows'])
           max_size = max(path.stat().st_size for path in shard_paths)
           assert max_size < 2_000_000, f'runtime shard too large for pragmatic transport: {max_size}'
+          public_long_csv = runtime_dir / 'public_long_reference.csv'
+          assert public_long_csv.exists() and public_long_csv.stat().st_size < 1_000_000
           print(json.dumps({
               'snapshot_id': validated['snapshot_id'],
               'symbol_count': validated['symbol_count'],
               'packet_count': validated['packet_count'],
+              'public_long_reference_rows': public_long['row_count'],
               'max_shard_bytes': max_size,
+              'public_long_csv_bytes': public_long_csv.stat().st_size,
               'private_position_data_included': False,
           }, sort_keys=True))
           PY
