@@ -12,11 +12,13 @@ import json
 import os
 from pathlib import Path
 import re
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from uuid import uuid4
 
 EVENT_SCHEMA_VERSION = "qm_h_ledger_event_v1"
 DEFAULT_CONTRACT_PATH = Path(__file__).resolve().parents[4] / "configs" / "qm_h_capa_v1.json"
+
+IdentityResolver = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 
 
 class CapaLedgerError(ValueError):
@@ -46,13 +48,69 @@ def load_qm_h_contract(path: str | Path | None = None) -> dict[str, Any]:
     return value
 
 
+def _registry_resolver(registry: Any, getter_name: str, id_fields: tuple[str, ...]) -> IdentityResolver:
+    """Build a fail-closed resolver against one existing upstream registry."""
+
+    def resolve(identity: Mapping[str, Any]) -> Mapping[str, Any]:
+        getter = getattr(registry, getter_name)
+        record = getter(*(str(identity[field]) for field in id_fields))
+        if not isinstance(record, Mapping):
+            raise CapaLedgerError(f"identity_resolver_return_invalid:{getter_name}")
+        return record
+
+    return resolve
+
+
+def build_identity_resolvers(
+    *,
+    qm_a_ledger: Any | None = None,
+    hypothesis_registry: Any | None = None,
+    analysis_plan_registry: Any | None = None,
+    control_registry: Any | None = None,
+    monitoring_registry: Any | None = None,
+    result_registry: Any | None = None,
+    qm_b_universe_resolver: IdentityResolver | None = None,
+) -> dict[str, IdentityResolver]:
+    """Bind QM-H identity checks to the authoritative upstream registries."""
+    resolvers: dict[str, IdentityResolver] = {}
+    if qm_a_ledger is not None:
+        resolvers["QM_A_ANALYSIS"] = _registry_resolver(qm_a_ledger, "get_analysis", ("analysis_id", "version_id"))
+    if hypothesis_registry is not None:
+        resolvers["QM_C_HYPOTHESIS"] = _registry_resolver(
+            hypothesis_registry, "get_hypothesis", ("hypothesis_id", "hypothesis_version")
+        )
+    if analysis_plan_registry is not None:
+        resolvers["QM_C_ANALYSIS_PLAN"] = _registry_resolver(
+            analysis_plan_registry, "get_plan", ("analysis_plan_id", "analysis_plan_version")
+        )
+    if control_registry is not None:
+        resolvers["QM_C_MULTIPLICITY_CONTROL"] = _registry_resolver(
+            control_registry, "get_control_plan", ("control_plan_id", "control_plan_version")
+        )
+    if monitoring_registry is not None:
+        resolvers["QM_C_SEQUENTIAL_MONITORING"] = _registry_resolver(
+            monitoring_registry, "get_monitoring_plan", ("monitoring_plan_id", "monitoring_plan_version")
+        )
+    if result_registry is not None:
+        resolvers["QM_C_RESULT"] = _registry_resolver(result_registry, "get_result", ("result_id", "result_version"))
+    if qm_b_universe_resolver is not None:
+        resolvers["QM_B_UNIVERSE"] = qm_b_universe_resolver
+    return resolvers
+
+
 class CapaLedger:
     """Append-only, hash-chained event ledger for QM-H findings and CAPA."""
 
     _FINDING_ID = re.compile(r"^QM-H-[A-Z0-9][A-Z0-9._-]*$")
     _CAPA_ID = re.compile(r"^QM-H-CAPA-[A-Z0-9][A-Z0-9._-]*$")
 
-    def __init__(self, path: str | Path, *, contract_path: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        contract_path: str | Path | None = None,
+        identity_resolvers: Mapping[str, IdentityResolver] | None = None,
+    ) -> None:
         self.path = Path(path)
         self.lock_path = self.path.with_suffix(self.path.suffix + ".lock")
         self.contract = load_qm_h_contract(contract_path)
@@ -64,9 +122,17 @@ class CapaLedger:
         self.categories = set(self.contract["finding_categories"])
         self.severities = set(self.contract["severity_levels"])
         self.evidence_impacts = set(self.contract["evidence_impact_classes"])
-        self.required_transition_fields = {key: tuple(values) for key, values in self.contract["required_transition_fields"].items()}
-        self.identity_contract = {key: tuple(values) for key, values in self.contract["identity_reference_contract"].items()}
-        self.known_external_blockers = {str(row["blocker_id"]): str(row["state"]) for row in self.contract["known_qm_b_external_blockers"]}
+        self.required_transition_fields = {
+            key: tuple(values) for key, values in self.contract["required_transition_fields"].items()
+        }
+        self.identity_contract = {
+            key: tuple(values) for key, values in self.contract["identity_reference_contract"].items()
+        }
+        self.known_external_blockers = {
+            str(row["blocker_id"]): str(row["state"])
+            for row in self.contract["known_qm_b_external_blockers"]
+        }
+        self.identity_resolvers = dict(identity_resolvers or {})
 
     def _validate_finding_id(self, finding_id: str) -> str:
         finding_id = str(finding_id).strip()
@@ -94,9 +160,11 @@ class CapaLedger:
             if not isinstance(identity, Mapping):
                 raise CapaLedgerError(f"identity_ref_identity_must_be_object:{index}")
             identity = dict(identity)
-            missing = [field for field in self.identity_contract[kind] if not str(identity.get(field) or "").strip()]
+            fields = self.identity_contract[kind]
+            missing = [field for field in fields if not str(identity.get(field) or "").strip()]
             if missing:
                 raise CapaLedgerError(f"identity_ref_missing:{kind}:" + ",".join(missing))
+
             if kind == "QM_B_EXTERNAL_BLOCKER":
                 blocker_id = str(identity["blocker_id"])
                 expected_state = self.known_external_blockers.get(blocker_id)
@@ -104,7 +172,30 @@ class CapaLedger:
                     raise CapaLedgerError(f"qm_b_external_blocker_unknown:{blocker_id}")
                 if str(identity["state"]) != expected_state:
                     raise CapaLedgerError(f"qm_b_external_blocker_state_mismatch:{blocker_id}")
-            normalized.append({"kind": kind, "identity": identity, "relationship": str(ref.get("relationship") or "AFFECTED_BY_FINDING")})
+            else:
+                resolver = self.identity_resolvers.get(kind)
+                if resolver is None:
+                    raise CapaLedgerError(f"identity_ref_resolver_required:{kind}")
+                try:
+                    resolved = resolver(identity)
+                except Exception as exc:
+                    raise CapaLedgerError(f"identity_ref_not_resolved:{kind}") from exc
+                if not isinstance(resolved, Mapping):
+                    raise CapaLedgerError(f"identity_ref_resolver_return_invalid:{kind}")
+                mismatched = [
+                    field for field in fields
+                    if str(resolved.get(field) or "") != str(identity.get(field) or "")
+                ]
+                if mismatched:
+                    raise CapaLedgerError(f"identity_ref_registry_mismatch:{kind}:" + ",".join(mismatched))
+
+            normalized.append(
+                {
+                    "kind": kind,
+                    "identity": identity,
+                    "relationship": str(ref.get("relationship") or "AFFECTED_BY_FINDING"),
+                }
+            )
         return normalized
 
     def _validate_evidence_impact(self, value: Any) -> str:
@@ -112,6 +203,27 @@ class CapaLedger:
         if impact not in self.evidence_impacts:
             raise CapaLedgerError(f"evidence_impact_invalid:{impact}")
         return impact
+
+    def _prospective_evidence_impact(
+        self, finding: Mapping[str, Any], details: Mapping[str, Any]
+    ) -> str:
+        current = self._validate_evidence_impact(finding["evidence_impact"])
+        if "evidence_impact" not in details:
+            return current
+        proposed = self._validate_evidence_impact(details["evidence_impact"])
+        if proposed == current:
+            return proposed
+        if not str(details.get("evidence_impact_change_reference") or "").strip():
+            raise CapaLedgerError("evidence_impact_change_requires_reference")
+        if not str(details.get("evidence_impact_change_rationale") or "").strip():
+            raise CapaLedgerError("evidence_impact_change_requires_rationale")
+        if (
+            current != "NO_KNOWN_EVIDENCE_IMPACT"
+            and proposed == "NO_KNOWN_EVIDENCE_IMPACT"
+            and not str(details.get("evidence_disposition_reference") or "").strip()
+        ):
+            raise CapaLedgerError("evidence_impact_downgrade_requires_disposition_reference")
+        return proposed
 
     def _read_raw_events(self) -> list[dict[str, Any]]:
         if not self.path.exists():
@@ -158,8 +270,11 @@ class CapaLedger:
         if missing:
             raise CapaLedgerError(f"transition_fields_missing:{to_status}:" + ",".join(missing))
 
-    def _validate_transition_details(self, *, finding: Mapping[str, Any], to_status: str, details: Mapping[str, Any]) -> None:
+    def _validate_transition_details(
+        self, *, finding: Mapping[str, Any], to_status: str, details: Mapping[str, Any]
+    ) -> None:
         self._require_fields(to_status, details)
+        prospective_impact = self._prospective_evidence_impact(finding, details)
         if to_status == "TRIAGED" and str(details["severity"]) not in self.severities:
             raise CapaLedgerError("severity_invalid")
         if to_status in {"ACTION_PLANNED", "IMPLEMENTED", "EFFECTIVENESS_VERIFIED", "CLOSED"}:
@@ -170,9 +285,15 @@ class CapaLedger:
         if to_status == "EFFECTIVENESS_VERIFIED" and str(details.get("effectiveness_result")) != "EFFECTIVE":
             raise CapaLedgerError("effectiveness_verified_requires_effective_result")
         if to_status == "CLOSED":
-            if finding["evidence_impact"] != "NO_KNOWN_EVIDENCE_IMPACT" and not str(details.get("evidence_disposition_reference") or "").strip():
+            if (
+                prospective_impact != "NO_KNOWN_EVIDENCE_IMPACT"
+                and not str(details.get("evidence_disposition_reference") or "").strip()
+            ):
                 raise CapaLedgerError("closure_requires_evidence_disposition_reference")
-            if finding["category"] == "EXTERNAL_EVIDENCE_GAP" and not str(details.get("external_evidence_resolution_reference") or "").strip():
+            if (
+                finding["category"] == "EXTERNAL_EVIDENCE_GAP"
+                and not str(details.get("external_evidence_resolution_reference") or "").strip()
+            ):
                 raise CapaLedgerError("external_evidence_gap_requires_resolution_reference")
 
     def _replay(self, events: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -243,7 +364,17 @@ class CapaLedger:
 
     def verify_integrity(self) -> dict[str, Any]:
         events, findings = self._load_and_validate()
-        return {"schema_version": "qm_h_ledger_verification_v1", "valid": True, "event_count": len(events), "finding_count": len(findings), "head_hash": events[-1]["entry_hash"] if events else None, "states": {key: value["status"] for key, value in sorted(findings.items())}, "open_findings": sorted(key for key, value in findings.items() if value["status"] not in self.terminal_states)}
+        return {
+            "schema_version": "qm_h_ledger_verification_v1",
+            "valid": True,
+            "event_count": len(events),
+            "finding_count": len(findings),
+            "head_hash": events[-1]["entry_hash"] if events else None,
+            "states": {key: value["status"] for key, value in sorted(findings.items())},
+            "open_findings": sorted(
+                key for key, value in findings.items() if value["status"] not in self.terminal_states
+            ),
+        }
 
     def get_finding(self, finding_id: str) -> dict[str, Any]:
         _, findings = self._load_and_validate()
@@ -268,7 +399,15 @@ class CapaLedger:
             except FileNotFoundError:
                 pass
 
-    def _append_event(self, *, event_type: str, finding_id: str, actor_id: str, actor_role: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+    def _append_event(
+        self,
+        *,
+        event_type: str,
+        finding_id: str,
+        actor_id: str,
+        actor_role: str,
+        payload: Mapping[str, Any],
+    ) -> dict[str, Any]:
         if event_type not in {"FINDING_REGISTERED", "FINDING_TRANSITION"}:
             raise CapaLedgerError(f"unsupported_event_type:{event_type}")
         finding_id = self._validate_finding_id(finding_id)
@@ -277,7 +416,18 @@ class CapaLedger:
         lock_fd = self._acquire_lock()
         try:
             events, _ = self._load_and_validate()
-            event: dict[str, Any] = {"schema_version": EVENT_SCHEMA_VERSION, "sequence": len(events) + 1, "event_id": str(uuid4()), "event_type": event_type, "recorded_at": _utc_now(), "finding_id": finding_id, "actor_id": str(actor_id), "actor_role": str(actor_role), "payload": dict(payload), "previous_event_hash": events[-1]["entry_hash"] if events else None}
+            event: dict[str, Any] = {
+                "schema_version": EVENT_SCHEMA_VERSION,
+                "sequence": len(events) + 1,
+                "event_id": str(uuid4()),
+                "event_type": event_type,
+                "recorded_at": _utc_now(),
+                "finding_id": finding_id,
+                "actor_id": str(actor_id),
+                "actor_role": str(actor_role),
+                "payload": dict(payload),
+                "previous_event_hash": events[-1]["entry_hash"] if events else None,
+            }
             event["entry_hash"] = _hash_mapping(event)
             candidate = [*events, event]
             self._verify_hash_chain(candidate)
@@ -290,9 +440,52 @@ class CapaLedger:
         finally:
             self._release_lock(lock_fd)
 
-    def register_finding(self, *, finding_id: str, category: str, title: str, description: str, source_reference: str, evidence_impact: str, identity_refs: list[Mapping[str, Any]] | None, actor_id: str, actor_role: str) -> dict[str, Any]:
-        return self._append_event(event_type="FINDING_REGISTERED", finding_id=finding_id, actor_id=actor_id, actor_role=actor_role, payload={"category": str(category), "title": str(title), "description": str(description), "source_reference": str(source_reference), "evidence_impact": str(evidence_impact), "identity_refs": list(identity_refs or [])})
+    def register_finding(
+        self,
+        *,
+        finding_id: str,
+        category: str,
+        title: str,
+        description: str,
+        source_reference: str,
+        evidence_impact: str,
+        identity_refs: list[Mapping[str, Any]] | None,
+        actor_id: str,
+        actor_role: str,
+    ) -> dict[str, Any]:
+        return self._append_event(
+            event_type="FINDING_REGISTERED",
+            finding_id=finding_id,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            payload={
+                "category": str(category),
+                "title": str(title),
+                "description": str(description),
+                "source_reference": str(source_reference),
+                "evidence_impact": str(evidence_impact),
+                "identity_refs": list(identity_refs or []),
+            },
+        )
 
-    def transition(self, *, finding_id: str, to_status: str, actor_id: str, actor_role: str, details: Mapping[str, Any]) -> dict[str, Any]:
+    def transition(
+        self,
+        *,
+        finding_id: str,
+        to_status: str,
+        actor_id: str,
+        actor_role: str,
+        details: Mapping[str, Any],
+    ) -> dict[str, Any]:
         current = self.get_finding(finding_id)
-        return self._append_event(event_type="FINDING_TRANSITION", finding_id=finding_id, actor_id=actor_id, actor_role=actor_role, payload={"from_status": current["status"], "to_status": str(to_status), "details": dict(details)})
+        return self._append_event(
+            event_type="FINDING_TRANSITION",
+            finding_id=finding_id,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            payload={
+                "from_status": current["status"],
+                "to_status": str(to_status),
+                "details": dict(details),
+            },
+        )
