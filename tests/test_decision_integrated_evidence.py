@@ -3,15 +3,18 @@ from __future__ import annotations
 import json
 
 import pandas as pd
+import pytest
 
 from scanner.research.decision_layer.input_contract import build_input_packet
 from scanner.research.decision_layer.integrated_evidence import (
     INTEGRATED_STAGE,
     PATH_CONTEXT_TYPE,
+    IntegratedDecisionEvidenceError,
     build_scanner_path_state,
     integrate_current_packet_set,
 )
 from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
+from scanner.research.decision_layer.universal_stance import compute_universal_stance
 
 
 SNAPSHOT = "snapshot-current"
@@ -52,6 +55,37 @@ def _timing(symbol: str, as_of: str, suffix: str = "positive") -> dict[str, obje
             "match_from_pit_features": True,
             "direction": "positive",
         },
+    }
+
+
+def _probability(symbol: str, selection_claim_id: str, as_of: str) -> dict[str, object]:
+    return {
+        "family": "probability",
+        "claim_id": f"probability:{symbol}:selection:5T",
+        "claim_ref": selection_claim_id,
+        "as_of": as_of,
+        "available_from": as_of,
+        "source_version": "phase2_probability_calibration:test",
+        "coverage_state": "available",
+        "maturity_state": "robust",
+        "pit_state": "verified",
+        "integration_mode": "research_only",
+        "payload": {"horizon_sessions": 5, "state": "robust", "probability": 0.62},
+    }
+
+
+def _phase3_risk(symbol: str, snapshot: str, as_of: str) -> dict[str, object]:
+    return {
+        "family": "risk",
+        "claim_id": f"risk:{symbol}:phase3:{snapshot}",
+        "as_of": as_of,
+        "available_from": as_of,
+        "source_version": "phase3_risk_vnext_current:v1:research_views_v1",
+        "coverage_state": "available",
+        "maturity_state": "not_yet_mature",
+        "pit_state": "verified",
+        "integration_mode": "production_existing",
+        "payload": {"aggregate_risk": 41.0, "risk_is_directional_vote": False},
     }
 
 
@@ -108,6 +142,84 @@ def _daily() -> dict[str, object]:
     }
 
 
+def _phase4(snapshot: str = SNAPSHOT) -> dict[str, object]:
+    return {
+        "phase": "4_confidence_vnext_empirical_research",
+        "semantics": {
+            "research_only": True,
+            "production_confidence_changed": False,
+            "scalar_confidence_mapping_created": False,
+            "confidence_thresholds_created": False,
+        },
+        "config": {"evidence_version": "phase4_confidence_research_v1"},
+        "current": {
+            "snapshot_id": snapshot,
+            "as_of": "2026-09-30",
+            "generated_at": SCANNER_TIME,
+            "rows": [{
+                "as_of": "2026-09-30",
+                "symbol": "RACE",
+                "horizon_sessions": 5,
+                "selection": {"state": "robust", "direction": "positive", "N": 100},
+                "timing": {"state": "robust_claim", "direction": "positive"},
+                "risk": {
+                    "state": "elevated",
+                    "features": [{
+                        "feature": "drawdown",
+                        "level": "high",
+                        "direction": "higher_is_riskier",
+                    }],
+                },
+                "data_quality": {"selection": {"state": "proxy_complete"}},
+                "model_agreement": {
+                    "state": "conflict",
+                    "conflicts": ["positive_return_claim_vs_elevated_downside_risk"],
+                },
+                "regime": {"state": "unknown_unvalidated", "counted_as_model_vote": False},
+            }],
+        },
+    }
+
+
+def _base_packet_set() -> dict[str, object]:
+    selection = _selection("RACE", SNAPSHOT, SCANNER_TIME)
+    packet = build_input_packet(
+        symbol="RACE",
+        as_of=SCANNER_TIME,
+        source_snapshot_id=SNAPSHOT,
+        evidence=[
+            selection,
+            _timing("RACE", SCANNER_TIME),
+            _probability("RACE", str(selection["claim_id"]), SCANNER_TIME),
+            _phase3_risk("RACE", SNAPSHOT, SCANNER_TIME),
+        ],
+    )
+    return {
+        "schema_version": "decision_current_packet_set_7a_v1",
+        "phase": "7A-current-orchestration",
+        "snapshot_id": SNAPSHOT,
+        "as_of": SCANNER_TIME,
+        "daily_as_of": "2026-09-30",
+        "packet_count": 1,
+        "timing_claim_count": 1,
+        "symbols_with_timing_claims": 1,
+        "probability_claim_count": 1,
+        "symbols_with_probability_claims": 1,
+        "risk_claim_count": 1,
+        "symbols_with_risk_claims": 1,
+        "packets": [packet],
+        "semantics": {},
+        "validation": {"research_only": True},
+    }
+
+
+def _history() -> pd.DataFrame:
+    return pd.DataFrame([
+        {"date": "2026-09-22", "symbol": "RACE", "rs3m": 0.18, "observation_type": "observed_scanner"},
+        {"date": "2026-09-29", "symbol": "RACE", "rs3m": 0.01, "observation_type": "observed_scanner"},
+    ])
+
+
 def test_ferrari_like_path_memory_survives_after_current_overextension_flag_clears():
     history = pd.DataFrame([
         {"date": "2026-09-18", "symbol": "RACE", "rs3m": 0.12, "observation_type": "observed_scanner"},
@@ -138,77 +250,62 @@ def test_ferrari_like_path_memory_survives_after_current_overextension_flag_clea
     assert state["deterioration"]["r_code_downgrade"] is True
 
 
-def test_integrated_packet_adds_phase4_context_without_new_directional_votes():
-    base_packet = build_input_packet(
-        symbol="RACE",
-        as_of=SCANNER_TIME,
-        source_snapshot_id=SNAPSHOT,
-        evidence=[_selection("RACE", SNAPSHOT, SCANNER_TIME), _timing("RACE", SCANNER_TIME)],
-    )
-    base = {
-        "schema_version": "decision_current_packet_set_7a_v1",
-        "phase": "7A-current-orchestration",
-        "snapshot_id": SNAPSHOT,
-        "as_of": SCANNER_TIME,
-        "daily_as_of": "2026-09-30",
-        "packet_count": 1,
-        "timing_claim_count": 1,
-        "symbols_with_timing_claims": 1,
-        "packets": [base_packet],
-        "semantics": {},
-        "validation": {"research_only": True},
-    }
-    history = pd.DataFrame([
-        {"date": "2026-09-22", "symbol": "RACE", "rs3m": 0.18, "observation_type": "observed_scanner"},
-        {"date": "2026-09-29", "symbol": "RACE", "rs3m": 0.01, "observation_type": "observed_scanner"},
-    ])
-    phase4 = {
-        "phase": "4_confidence_vnext_empirical_research",
-        "config": {"evidence_version": "phase4_confidence_research_v1"},
-        "current": {
-            "rows": [{
-                "symbol": "RACE",
-                "horizon_sessions": 5,
-                "selection": {
-                    "state": "robust",
-                    "direction": "positive",
-                    "N": 100,
-                    "probability_advantage_vs_baseline": 0.04,
-                },
-                "timing": {"state": "robust_claim", "direction": "positive"},
-                "risk": {
-                    "state": "elevated",
-                    "features": [{"feature": "drawdown", "level": "high", "direction": "higher_is_riskier"}],
-                },
-                "data_quality": {"selection": {"state": "proxy_complete"}},
-                "model_agreement": {"state": "conflict", "conflicts": ["positive_return_claim_vs_elevated_downside_risk"]},
-                "regime": {"state": "unknown_unvalidated", "counted_as_model_vote": False},
-            }]
-        },
-    }
+def test_w4_integrated_packet_preserves_w2_w3_and_adds_confidence_only():
+    base = _base_packet_set()
+    before = base["packets"][0]
+    base_stance = compute_universal_stance(before)
+
     integrated = integrate_current_packet_set(
         packet_set=base,
         daily=_daily(),
-        history=history,
-        phase4_report=phase4,
+        history=_history(),
+        phase4_report=_phase4(),
         finalized_at=FINAL_TIME,
     )
     packet = integrated["packets"][0]
     assert packet["as_of"] == FINAL_TIME
     assert packet["orchestration_stage"] == INTEGRATED_STAGE
-    families = [row["family"] for row in packet["evidence"]]
-    assert "probability" in families
-    assert families.count("risk") == 2
-    assert "confidence" in families
-    assert integrated["semantics"]["phase2_phase3_phase4_outputs_consumed"] is True
-    assert integrated["semantics"]["scanner_path_state_is_directional_vote"] is False
 
-    for row in packet["evidence"]:
-        if row["family"] in {"probability", "risk", "confidence"}:
-            serialized = json.dumps(row["payload"], sort_keys=True)
-            assert '"direction"' not in serialized
-            assert '"stance"' not in serialized
-            assert '"vote"' not in serialized
+    families = [row["family"] for row in packet["evidence"]]
+    assert families.count("probability") == 1
+    assert families.count("risk") == 2  # Phase 3 + scanner path state; no Phase-4 replacement risk.
+    assert families.count("confidence") == 1
+
+    probability = next(row for row in packet["evidence"] if row["family"] == "probability")
+    assert probability["source_version"] == "phase2_probability_calibration:test"
+    phase3 = next(row for row in packet["evidence"] if row["claim_id"].startswith("risk:RACE:phase3:"))
+    assert phase3["source_version"].startswith("phase3_risk_vnext_current")
+
+    confidence = next(row for row in packet["evidence"] if row["family"] == "confidence")
+    assert confidence["claim_ref"] == "selection:RACE:snapshot-current"
+    assert confidence["payload"]["phase4_role"] == "ordinal_reliability_context_not_directional_vote"
+    serialized = json.dumps(confidence["payload"], sort_keys=True)
+    for forbidden in ('"direction"', '"stance"', '"vote"', '"attractiveness"'):
+        assert forbidden not in serialized
+
+    with_confidence = compute_universal_stance(packet)
+    assert with_confidence["universal_stance"] == base_stance["universal_stance"]
+    assert with_confidence["evidence_structure"]["known_directional_claim_ids"] == base_stance["evidence_structure"]["known_directional_claim_ids"]
+    assert with_confidence["evidence_structure"]["annotation_count"] == base_stance["evidence_structure"]["annotation_count"] + 1
+    assert with_confidence["semantics"]["probability_and_confidence_count_as_votes"] is False
+
+    assert integrated["phase4_confidence_claim_count"] == 1
+    assert integrated["validation"]["phase4_same_snapshot_verified"] is True
+    assert integrated["semantics"]["phase2_probability_source_preserved"] is True
+    assert integrated["semantics"]["phase3_risk_source_preserved"] is True
+    assert integrated["semantics"]["confidence_is_directional_vote"] is False
+    assert integrated["semantics"]["confidence_encodes_attractiveness"] is False
+
+
+def test_w4_rejects_phase4_from_another_snapshot():
+    with pytest.raises(IntegratedDecisionEvidenceError, match="phase4_snapshot_mismatch"):
+        integrate_current_packet_set(
+            packet_set=_base_packet_set(),
+            daily=_daily(),
+            history=_history(),
+            phase4_report=_phase4(snapshot="stale-snapshot"),
+            finalized_at=FINAL_TIME,
+        )
 
 
 def test_orchestrator_uses_final_same_snapshot_revision_once_and_surfaces_path_review():
