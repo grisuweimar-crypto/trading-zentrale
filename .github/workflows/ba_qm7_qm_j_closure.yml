@@ -1,0 +1,60 @@
+name: BA-QM7 QM-J Closure
+
+on:
+  pull_request:
+    paths:
+      - "configs/ba_qm7_qm_j_closure_v1.json"
+      - "src/scanner/research/governance/qm_j_closure.py"
+      - "tests/test_qm_j_closure.py"
+      - "src/scanner/research/governance/qm_j_negative_controls.py"
+      - "src/scanner/research/governance/qm_j_selection_freshness_gate.py"
+      - "configs/qm_j_negative_controls_v1.json"
+      - "configs/qm_j_phase1a_selection_freshness_gate_v1.json"
+      - "artifacts/research/qm/qm_j_phase1a_selection_falsification.json"
+      - "artifacts/research/qm/qm_j_phase1a_data_research_falsification.json"
+      - "artifacts/research/qm/qm_j_decision_e2e_falsification.json"
+      - "artifacts/research/qm/qm_j_phase1a_lag1_investigation.json"
+      - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
+      - "configs/ba_qm6_qm_g_closure_v1.json"
+      - "src/scanner/research/governance/qm_g_closure.py"
+      - ".github/workflows/ba_qm7_qm_j_closure.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ba-qm7-closure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run BA-QM7 closure and boundary regressions
+        run: |
+          python -m pytest -q \
+            tests/test_qm_j_closure.py \
+            tests/test_qm_j_negative_controls.py \
+            tests/test_qm_j_phase1a_data_research.py \
+            tests/test_qm_j_decision_e2e.py \
+            tests/test_qm_j_phase1a_lag1_investigation.py \
+            tests/test_qm_j_selection_freshness_gate.py \
+            tests/test_qm_h_capa.py \
+            tests/test_qm_g_closure.py
+          python - <<'PY'
+          from scanner.research.governance.qm_j_closure import validate_closure_file
+          result = validate_closure_file()
+          assert result["engineering_status"] == "COMPLETE"
+          assert result["negative_control_coverage_status"] == "COMPLETE"
+          assert result["empirical_validation_status"] == "NOT_ESTABLISHED"
+          assert result["all_negative_controls_passed"] is False
+          assert result["open_capa"]["status"] == "IMPLEMENTED"
+          assert result["open_capa"]["evidence_impact"] == "PROMOTION_BLOCKED"
+          assert result["open_capa"]["effectiveness_verification"] == "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE"
+          assert result["next_mandatory_work_package"] == "BA-QM8 / End-to-End Scanner Audit"
+          print(result["display_status_qm_j"])
+          print(result["business_area_status"])
+          PY
