@@ -3,8 +3,18 @@ name: QM-H Defect Near-Miss CAPA
 on:
   pull_request:
     paths:
+      - 'configs/qm_a_research_governance_v1.json'
+      - 'configs/qm_b_closure_v1.json'
+      - 'configs/ba_qm2_handoff_v2.json'
+      - 'configs/qm_c*.json'
       - 'configs/qm_h*.json'
+      - 'src/scanner/research/governance/qm_a.py'
+      - 'src/scanner/research/governance/qm_b*.py'
+      - 'src/scanner/research/governance/qm_c*.py'
       - 'src/scanner/research/governance/qm_h*.py'
+      - 'tests/test_qm_a*.py'
+      - 'tests/test_qm_b*.py'
+      - 'tests/test_qm_c*.py'
       - 'tests/test_qm_h*.py'
       - 'docs/qm_h_defect_near_miss_capa.md'
       - '.github/workflows/qm_h_capa.yml'
@@ -13,8 +23,18 @@ on:
       - main
       - 'qm-h-*'
     paths:
+      - 'configs/qm_a_research_governance_v1.json'
+      - 'configs/qm_b_closure_v1.json'
+      - 'configs/ba_qm2_handoff_v2.json'
+      - 'configs/qm_c*.json'
       - 'configs/qm_h*.json'
+      - 'src/scanner/research/governance/qm_a.py'
+      - 'src/scanner/research/governance/qm_b*.py'
+      - 'src/scanner/research/governance/qm_c*.py'
       - 'src/scanner/research/governance/qm_h*.py'
+      - 'tests/test_qm_a*.py'
+      - 'tests/test_qm_b*.py'
+      - 'tests/test_qm_c*.py'
       - 'tests/test_qm_h*.py'
       - 'docs/qm_h_defect_near_miss_capa.md'
       - '.github/workflows/qm_h_capa.yml'
