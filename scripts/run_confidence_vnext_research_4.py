@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from scanner.reports.confidence_snapshot_identity import stamp_current_snapshot_identity
 from scanner.reports.confidence_vnext_research import Phase4ResearchConfig
 from scanner.reports.confidence_vnext_research_guarded import run
 
@@ -18,20 +19,25 @@ def main() -> int:
     parser.add_argument("--output", default="artifacts/research/confidence_vnext_research_4.json")
     args = parser.parse_args()
 
+    latest_path = Path(args.latest)
+    output_path = Path(args.output)
     result = run(
         Path(args.history),
-        Path(args.latest),
+        latest_path,
         Path(args.phase2),
         Path(args.risk),
-        Path(args.output),
+        output_path,
         Phase4ResearchConfig(),
         risk_scale_path=Path(args.risk_scale) if args.risk_scale else None,
     )
+    stamp_current_snapshot_identity(result, latest_path, output_path)
     print(
         json.dumps(
             {
                 "phase": result["phase"],
                 "as_of": result["current"]["as_of"],
+                "snapshot_id": result["current"]["snapshot_id"],
+                "scanner_generated_at": result["current"]["generated_at"],
                 "scanner_rows": result["current"]["scanner_rows"],
                 "excluded_unsupported_crypto_rows": result["current"]["excluded_unsupported_crypto_rows"],
                 "agreement_counts": result["agreement_counts"],

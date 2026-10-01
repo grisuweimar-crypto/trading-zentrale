@@ -1,14 +1,10 @@
 """Final same-snapshot evidence bridge for the Decision Layer.
 
-This module does not change any upstream model.  It takes the conservative
-current 7A packet set (Selection + frozen Timing), attaches already-computed
-Phase-2/3/4 research context, and adds a non-directional scanner path-state
-context so transient warnings do not disappear from the Depot Watch merely
-because the current scalar crossed back through a threshold.
-
-The bridge is deliberately research-only. Probability and Confidence remain
-annotations, Risk/path state remains context, and no additional directional vote
-or portfolio action is created here.
+W2 and W3 already place Phase-2 Probability and Phase-3 Risk in the base 7A
+packet. W4 therefore consumes guarded Phase-4 output only as typed Confidence
+(reliability/evidence context) and keeps the existing non-directional scanner
+path-state context. No additional directional vote or portfolio action is
+created here.
 """
 from __future__ import annotations
 
@@ -20,6 +16,11 @@ import pandas as pd
 
 from .current_evidence import CURRENT_PACKET_SET_SCHEMA_VERSION
 from .input_contract import build_input_packet
+from .phase4_confidence import (
+    Phase4ConfidenceAdapterError,
+    build_phase4_confidence_rows,
+    index_guarded_phase4_rows,
+)
 
 
 INTEGRATED_STAGE = "integrated_current_evidence_v1"
@@ -54,64 +55,6 @@ def _number(value: object) -> float | None:
     return result if pd.notna(result) else None
 
 
-def _strip_keys(value: object, forbidden: set[str]) -> object:
-    if isinstance(value, Mapping):
-        return {
-            str(key): _strip_keys(item, forbidden)
-            for key, item in value.items()
-            if str(key) not in forbidden
-        }
-    if isinstance(value, list):
-        return [_strip_keys(item, forbidden) for item in value]
-    if isinstance(value, tuple):
-        return [_strip_keys(item, forbidden) for item in value]
-    return value
-
-
-def _maturity_from_state(state: object) -> str:
-    text = str(state or "").strip()
-    if text == "robust":
-        return "robust"
-    if text in {"directional_only", "robust_claim"}:
-        return "directional_but_immature"
-    if text in {"immature", "unknown", "middle", "low", "elevated", "mixed"}:
-        return "not_yet_mature"
-    if text in {"internal_conflict", "conflict", "insufficient_evidence", "proxy_insufficient"}:
-        return "insufficient_evidence"
-    if text in {"unavailable", "not_applicable", ""}:
-        return "unavailable"
-    return "not_yet_mature"
-
-
-def _coverage_from_state(state: object) -> str:
-    text = str(state or "").strip()
-    if text in {"unavailable", ""}:
-        return "unavailable"
-    if text in {"immature", "unknown", "proxy_insufficient", "insufficient_evidence"}:
-        return "limited"
-    return "available"
-
-
-def _phase4_rows_by_symbol(report: Mapping[str, object]) -> dict[str, list[dict[str, object]]]:
-    if report.get("phase") != "4_confidence_vnext_empirical_research":
-        raise IntegratedDecisionEvidenceError("phase4_report_identity_invalid")
-    current = report.get("current")
-    rows = current.get("rows") if isinstance(current, Mapping) else None
-    if not isinstance(rows, list):
-        raise IntegratedDecisionEvidenceError("phase4_current_rows_required")
-    result: dict[str, list[dict[str, object]]] = {}
-    for raw in rows:
-        if not isinstance(raw, Mapping):
-            raise IntegratedDecisionEvidenceError("phase4_current_row_invalid")
-        symbol = str(raw.get("symbol") or "").strip()
-        if not symbol:
-            raise IntegratedDecisionEvidenceError("phase4_current_symbol_required")
-        result.setdefault(symbol, []).append(deepcopy(dict(raw)))
-    for symbol in result:
-        result[symbol].sort(key=lambda row: int(row.get("horizon_sessions") or 0))
-    return result
-
-
 def _observed_history(history: pd.DataFrame, symbol: str, current_date: str) -> pd.DataFrame:
     if "symbol" not in history.columns or "date" not in history.columns:
         return pd.DataFrame()
@@ -142,14 +85,7 @@ def build_scanner_path_state(
     history: pd.DataFrame,
     current_date: str,
 ) -> dict[str, object]:
-    """Build a non-directional path-memory context from PIT scanner history.
-
-    The only level threshold reused here is the already-existing Daily Research
-    overextension definition (RS3M >= 15%).  The review state is deliberately a
-    review flag, not a sell signal: it requires recent overextension, falling
-    5-session relative strength and at least one additional deterioration in
-    Score, ranking, Trend200 or R-code.
-    """
+    """Build a non-directional path-memory context from PIT scanner history."""
     current = daily_symbol.get("current")
     dynamics = daily_symbol.get("dynamics")
     current = current if isinstance(current, Mapping) else {}
@@ -259,88 +195,6 @@ def _path_evidence(
     }
 
 
-def _phase4_evidence_rows(
-    *,
-    symbol: str,
-    selection_claim_id: str,
-    phase4_rows: list[dict[str, object]],
-    scanner_as_of: str,
-    available_from: str,
-    source_version: str,
-) -> list[dict[str, object]]:
-    evidence: list[dict[str, object]] = []
-    for row in phase4_rows:
-        horizon = int(row.get("horizon_sessions") or 0)
-        if horizon <= 0:
-            raise IntegratedDecisionEvidenceError(f"phase4_horizon_invalid:{symbol}")
-
-        selection = row.get("selection") if isinstance(row.get("selection"), Mapping) else {}
-        selection_state = str(selection.get("state") or "unavailable")
-        probability_payload = _strip_keys(selection, {"direction", "stance", "vote"})
-        assert isinstance(probability_payload, Mapping)
-        probability_payload = {"horizon_sessions": horizon, **dict(probability_payload)}
-        evidence.append({
-            "family": "probability",
-            "claim_id": f"probability:{symbol}:selection:{horizon}T",
-            "claim_ref": selection_claim_id,
-            "as_of": scanner_as_of,
-            "available_from": available_from,
-            "source_version": source_version,
-            "coverage_state": _coverage_from_state(selection_state),
-            "maturity_state": _maturity_from_state(selection_state),
-            "pit_state": "verified",
-            "integration_mode": "research_only",
-            "payload": probability_payload,
-        })
-
-        risk = row.get("risk") if isinstance(row.get("risk"), Mapping) else {}
-        risk_state = str(risk.get("state") or "unavailable")
-        risk_payload = _strip_keys(risk, {"direction", "stance", "vote"})
-        assert isinstance(risk_payload, Mapping)
-        evidence.append({
-            "family": "risk",
-            "claim_id": f"risk:{symbol}:phase4:{horizon}T",
-            "as_of": scanner_as_of,
-            "available_from": available_from,
-            "source_version": source_version,
-            "coverage_state": _coverage_from_state(risk_state),
-            "maturity_state": _maturity_from_state(risk_state),
-            "pit_state": "verified",
-            "integration_mode": "research_only",
-            "payload": {"horizon_sessions": horizon, **dict(risk_payload)},
-        })
-
-        model_agreement = row.get("model_agreement") if isinstance(row.get("model_agreement"), Mapping) else {}
-        data_quality = row.get("data_quality") if isinstance(row.get("data_quality"), Mapping) else {}
-        regime = row.get("regime") if isinstance(row.get("regime"), Mapping) else {}
-        confidence_payload = {
-            "horizon_sessions": horizon,
-            "selection_statistical_state": selection_state,
-            "timing_model_state": (row.get("timing") or {}).get("state") if isinstance(row.get("timing"), Mapping) else None,
-            "risk_model_state": risk_state,
-            "model_agreement": deepcopy(dict(model_agreement)),
-            "data_quality": deepcopy(dict(data_quality)),
-            "regime": deepcopy(dict(regime)),
-            "phase4_role": "ordinal_reliability_context_not_directional_vote",
-        }
-        confidence_payload = _strip_keys(confidence_payload, {"direction", "stance", "vote", "attractiveness"})
-        assert isinstance(confidence_payload, Mapping)
-        evidence.append({
-            "family": "confidence",
-            "claim_id": f"confidence:{symbol}:phase4:{horizon}T",
-            "claim_ref": selection_claim_id,
-            "as_of": scanner_as_of,
-            "available_from": available_from,
-            "source_version": source_version,
-            "coverage_state": "available",
-            "maturity_state": "not_yet_mature",
-            "pit_state": "verified",
-            "integration_mode": "research_only",
-            "payload": confidence_payload,
-        })
-    return evidence
-
-
 def integrate_current_packet_set(
     *,
     packet_set: Mapping[str, object],
@@ -349,7 +203,7 @@ def integrate_current_packet_set(
     phase4_report: Mapping[str, object],
     finalized_at: str | None = None,
 ) -> dict[str, object]:
-    """Attach Phase-2/3/4 context and scanner path memory to current 7A packets."""
+    """Attach guarded Phase-4 Confidence and scanner path memory to current 7A."""
     if packet_set.get("schema_version") != CURRENT_PACKET_SET_SCHEMA_VERSION:
         raise IntegratedDecisionEvidenceError("unsupported_current_packet_set")
     snapshot_id = str(packet_set.get("snapshot_id") or "")
@@ -366,8 +220,15 @@ def integrate_current_packet_set(
     raw_symbols = daily.get("symbols")
     if not isinstance(raw_symbols, Mapping):
         raise IntegratedDecisionEvidenceError("daily_symbols_required")
-    phase4_index = _phase4_rows_by_symbol(phase4_report)
-    source_version = str(((phase4_report.get("config") or {}).get("evidence_version")) or "phase4_confidence_research_v1")
+    try:
+        phase4_index, source_version = index_guarded_phase4_rows(
+            phase4_report,
+            expected_snapshot_id=snapshot_id,
+            expected_daily_as_of=daily_as_of,
+            expected_scanner_generated_at=scanner_available_from,
+        )
+    except Phase4ConfidenceAdapterError as exc:
+        raise IntegratedDecisionEvidenceError(str(exc)) from exc
 
     raw_packets = packet_set.get("packets")
     if not isinstance(raw_packets, list):
@@ -375,6 +236,7 @@ def integrate_current_packet_set(
 
     integrated: list[dict[str, object]] = []
     phase4_symbols = 0
+    phase4_confidence_claims = 0
     path_reviews = 0
     for raw_packet in raw_packets:
         if not isinstance(raw_packet, Mapping):
@@ -386,7 +248,10 @@ def integrate_current_packet_set(
         base_evidence = raw_packet.get("evidence")
         if not isinstance(base_evidence, list):
             raise IntegratedDecisionEvidenceError(f"packet_evidence_missing:{symbol}")
-        selection_rows = [row for row in base_evidence if isinstance(row, Mapping) and row.get("family") == "selection"]
+        selection_rows = [
+            row for row in base_evidence
+            if isinstance(row, Mapping) and row.get("family") == "selection"
+        ]
         if len(selection_rows) != 1:
             raise IntegratedDecisionEvidenceError(f"selection_claim_count_invalid:{symbol}")
         selection_claim_id = str(selection_rows[0].get("claim_id") or "")
@@ -406,14 +271,16 @@ def integrate_current_packet_set(
         rows4 = phase4_index.get(symbol, [])
         if rows4:
             phase4_symbols += 1
-            additions.extend(_phase4_evidence_rows(
+            confidence = build_phase4_confidence_rows(
                 symbol=symbol,
                 selection_claim_id=selection_claim_id,
                 phase4_rows=rows4,
                 scanner_as_of=scanner_available_from,
                 available_from=final_text,
                 source_version=source_version,
-            ))
+            )
+            phase4_confidence_claims += len(confidence)
+            additions.extend(confidence)
 
         packet = build_input_packet(
             symbol=symbol,
@@ -431,6 +298,7 @@ def integrate_current_packet_set(
     result["packet_count"] = len(integrated)
     result["packets"] = integrated
     result["phase4_symbol_count"] = phase4_symbols
+    result["phase4_confidence_claim_count"] = phase4_confidence_claims
     result["path_review_count"] = path_reviews
     semantics = deepcopy(dict(result.get("semantics") or {}))
     semantics.update({
@@ -438,6 +306,11 @@ def integrate_current_packet_set(
         "probability_reconstructed": False,
         "risk_reconstructed": False,
         "confidence_reconstructed": False,
+        "phase2_probability_source_preserved": True,
+        "phase3_risk_source_preserved": True,
+        "phase4_confidence_annotations_attached": True,
+        "confidence_is_directional_vote": False,
+        "confidence_encodes_attractiveness": False,
         "phase2_phase3_phase4_outputs_consumed": True,
         "phase5_unpromoted_changes_decision": False,
         "elliott_unpromoted_changes_decision": False,
@@ -449,6 +322,8 @@ def integrate_current_packet_set(
     validation = deepcopy(dict(result.get("validation") or {}))
     validation["packet_as_of_utc"] = final_time.isoformat()
     validation["scanner_generated_at_utc"] = scanner_time.isoformat()
+    validation["phase4_snapshot_id"] = snapshot_id
+    validation["phase4_same_snapshot_verified"] = True
     validation["research_only"] = True
     result["validation"] = validation
     return result
