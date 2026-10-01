@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -36,5 +38,31 @@ jobs:
           tests/test_decision_state_transitions_7e.py
           tests/test_decision_portfolio_action_7f.py
           tests/test_w6_elliott_6h_to_7f.py
+      - name: Validate frozen Module 6H integration boundary
+        run: |
+          git fetch origin module6h-elliott-vnext-output:refs/remotes/origin/module6h-elliott-vnext-output --force
+          git show origin/module6h-elliott-vnext-output:configs/elliott_vnext_integration_contract_v1.json > "$RUNNER_TEMP/elliott_vnext_integration_contract_v1.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          contract = json.loads((Path(os.environ['RUNNER_TEMP']) / 'elliott_vnext_integration_contract_v1.json').read_text(encoding='utf-8'))
+          assert contract['schema_version'] == 'elliott_vnext_integration_contract_v1'
+          assert contract['module'] == '6H_module_output'
+          assert contract['productive_integration_enabled'] is False
+          assert contract['research_only'] is True
+          guards = contract['required_guards']
+          assert guards['routing_is_trade_decision'] is False
+          assert guards['decision_layer_required'] is True
+          assert guards['automatic_validation_promotion_allowed'] is False
+          assert guards['technical_completion_equals_empirical_validation'] is False
+          assert guards['missing_evidence_must_remain_missing'] is True
+          assert set(contract['forbidden_output_keys_recursive']) == {'trade_decision', 'order_instruction'}
+          boundary = contract['integration_boundary']
+          assert 'future_global_decision_layer_input_after_separate_integration_review' in boundary['allowed']
+          assert 'autonomous_buy_sell_hold_reduce_decision' in boundary['not_allowed']
+          assert 'silent_depot_watch_decision_change' in boundary['not_allowed']
+          print('W6 frozen 6H integration boundary verified')
+          PY
       - name: Smoke-test 7F CLI
         run: python scripts/run_portfolio_action_7f.py --help
