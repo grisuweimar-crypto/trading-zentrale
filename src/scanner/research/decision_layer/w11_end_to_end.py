@@ -10,7 +10,6 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Mapping, Sequence
 
-from .depot_watch import validate_depot_watch
 from .input_contract import validate_input_packet
 from .w10_orchestration import validate_sealed_manifest
 
@@ -65,6 +64,29 @@ def _require_false(mapping: Mapping[str, object], key: str) -> None:
         raise W11EndToEndError(f"guard_must_be_false:{key}")
 
 
+def _validate_final_watch_shape(watch: Mapping[str, object]) -> dict[str, object]:
+    """Validate final 7H semantics after W6/W7/W8 sidecars were attached.
+
+    ``build_depot_watch`` seals and validates the base 7H object before the
+    existing orchestrator adds review/history/policy sidecars. W11 therefore
+    validates the final semantic contract directly instead of pretending that
+    the original base ``watch_id`` hashes those later sidecars too.
+    """
+    if watch.get("schema_version") != "decision_depot_watch_v1":
+        raise W11EndToEndError("unsupported_depot_watch_schema")
+    if watch.get("phase") != "7H":
+        raise W11EndToEndError("invalid_depot_watch_phase")
+    if watch.get("watch_status") not in {"complete", "partial", "unavailable"}:
+        raise W11EndToEndError("invalid_watch_status")
+    if not str(watch.get("source_snapshot_id") or "").strip():
+        raise W11EndToEndError("watch_source_snapshot_id_required")
+    if not isinstance(watch.get("rows"), list):
+        raise W11EndToEndError("watch_rows_required")
+    if not str(watch.get("watch_id") or "").strip():
+        raise W11EndToEndError("base_watch_id_required")
+    return deepcopy(dict(watch))
+
+
 def _current_packets(
     archive_packets: Sequence[Mapping[str, object]], *, snapshot_id: str
 ) -> list[dict[str, object]]:
@@ -111,7 +133,7 @@ def validate_w11_end_to_end(
     """Validate one complete real W11 snapshot and return a sanitized receipt."""
     sealed = validate_sealed_manifest(manifest)
     snapshot_id = str(sealed["snapshot_id"])
-    validated_watch = validate_depot_watch(watch)
+    validated_watch = _validate_final_watch_shape(watch)
     if str(validated_watch.get("source_snapshot_id")) != snapshot_id:
         raise W11EndToEndError("watch_snapshot_mismatch")
     if str(diagnostics.get("snapshot_id") or "") != snapshot_id:
