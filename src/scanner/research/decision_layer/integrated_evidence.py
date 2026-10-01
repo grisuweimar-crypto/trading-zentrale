@@ -1,10 +1,10 @@
 """Final same-snapshot evidence bridge for the Decision Layer.
 
-W2 and W3 already place Phase-2 Probability and Phase-3 Risk in the base 7A
-packet. W4 therefore consumes guarded Phase-4 output only as typed Confidence
-(reliability/evidence context) and keeps the existing non-directional scanner
-path-state context. No additional directional vote or portfolio action is
-created here.
+W2 and W3 place Phase-2 Probability and Phase-3 Risk in the base 7A packet.
+W4 consumes guarded Phase-4 output only as typed Confidence. W5 additionally
+surfaces the independently published Phase-5 promotion state as shadow-only
+Confidence governance context. Phase 5 is never evaluated for the current
+symbol here and cannot create a directional vote, stance or portfolio action.
 """
 from __future__ import annotations
 
@@ -20,6 +20,11 @@ from .phase4_confidence import (
     Phase4ConfidenceAdapterError,
     build_phase4_confidence_rows,
     index_guarded_phase4_rows,
+)
+from .phase5_shadow import (
+    Phase5ShadowAdapterError,
+    build_phase5_shadow_row,
+    phase5_shadow_context,
 )
 
 
@@ -201,9 +206,12 @@ def integrate_current_packet_set(
     daily: Mapping[str, object],
     history: pd.DataFrame,
     phase4_report: Mapping[str, object],
+    phase5_report: Mapping[str, object] | None = None,
+    phase5_source_commit: str | None = None,
+    phase5_available_from: str | None = None,
     finalized_at: str | None = None,
 ) -> dict[str, object]:
-    """Attach guarded Phase-4 Confidence and scanner path memory to current 7A."""
+    """Attach guarded Phase-4 Confidence, Phase-5 shadow state and path memory."""
     if packet_set.get("schema_version") != CURRENT_PACKET_SET_SCHEMA_VERSION:
         raise IntegratedDecisionEvidenceError("unsupported_current_packet_set")
     snapshot_id = str(packet_set.get("snapshot_id") or "")
@@ -230,6 +238,21 @@ def integrate_current_packet_set(
     except Phase4ConfidenceAdapterError as exc:
         raise IntegratedDecisionEvidenceError(str(exc)) from exc
 
+    phase5_normalized: dict[str, object] | None = None
+    if phase5_report is not None:
+        if not phase5_source_commit or not phase5_available_from:
+            raise IntegratedDecisionEvidenceError("phase5_source_provenance_required")
+        try:
+            phase5_normalized = phase5_shadow_context(
+                phase5_report,
+                source_commit=phase5_source_commit,
+                available_from=phase5_available_from,
+            )
+        except Phase5ShadowAdapterError as exc:
+            raise IntegratedDecisionEvidenceError(str(exc)) from exc
+        if _utc(phase5_normalized["available_from"], "phase5_available_from") > final_time:
+            raise IntegratedDecisionEvidenceError("phase5_report_not_yet_available")
+
     raw_packets = packet_set.get("packets")
     if not isinstance(raw_packets, list):
         raise IntegratedDecisionEvidenceError("packet_set_packets_required")
@@ -237,6 +260,7 @@ def integrate_current_packet_set(
     integrated: list[dict[str, object]] = []
     phase4_symbols = 0
     phase4_confidence_claims = 0
+    phase5_shadow_claims = 0
     path_reviews = 0
     for raw_packet in raw_packets:
         if not isinstance(raw_packet, Mapping):
@@ -282,6 +306,20 @@ def integrate_current_packet_set(
             phase4_confidence_claims += len(confidence)
             additions.extend(confidence)
 
+        if phase5_normalized is not None:
+            try:
+                shadow = build_phase5_shadow_row(
+                    symbol=symbol,
+                    selection_claim_id=selection_claim_id,
+                    report=phase5_report,
+                    source_commit=str(phase5_source_commit),
+                    available_from=str(phase5_available_from),
+                )
+            except Phase5ShadowAdapterError as exc:
+                raise IntegratedDecisionEvidenceError(str(exc)) from exc
+            additions.append(shadow)
+            phase5_shadow_claims += 1
+
         packet = build_input_packet(
             symbol=symbol,
             as_of=final_text,
@@ -299,6 +337,7 @@ def integrate_current_packet_set(
     result["packets"] = integrated
     result["phase4_symbol_count"] = phase4_symbols
     result["phase4_confidence_claim_count"] = phase4_confidence_claims
+    result["phase5_shadow_claim_count"] = phase5_shadow_claims
     result["path_review_count"] = path_reviews
     semantics = deepcopy(dict(result.get("semantics") or {}))
     semantics.update({
@@ -312,6 +351,12 @@ def integrate_current_packet_set(
         "confidence_is_directional_vote": False,
         "confidence_encodes_attractiveness": False,
         "phase2_phase3_phase4_outputs_consumed": True,
+        "phase5_shadow_context_attached": phase5_normalized is not None,
+        "phase5_shadow_integration_mode": (
+            phase5_normalized["integration_mode"] if phase5_normalized is not None else None
+        ),
+        "phase5_current_symbol_policy_evaluated": False,
+        "phase5_production_change_performed": False,
         "phase5_unpromoted_changes_decision": False,
         "elliott_unpromoted_changes_decision": False,
         "external_evidence_phase8_activated": False,
@@ -324,6 +369,11 @@ def integrate_current_packet_set(
     validation["scanner_generated_at_utc"] = scanner_time.isoformat()
     validation["phase4_snapshot_id"] = snapshot_id
     validation["phase4_same_snapshot_verified"] = True
+    validation["phase5_source_commit"] = str(phase5_source_commit) if phase5_normalized is not None else None
+    validation["phase5_available_from_utc"] = (
+        str(phase5_normalized["available_from"]) if phase5_normalized is not None else None
+    )
+    validation["phase5_report_is_market_snapshot_evidence"] = False
     validation["research_only"] = True
     result["validation"] = validation
     return result
