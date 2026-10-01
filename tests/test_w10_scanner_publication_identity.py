@@ -64,7 +64,10 @@ def _daily() -> dict[str, object]:
     }
 
 
-def _phase4(generated_at: str = SCANNER_TIME) -> dict[str, object]:
+def _phase4(
+    generated_at: str = SCANNER_TIME,
+    row_as_of: str = "2026-09-30",
+) -> dict[str, object]:
     return {
         "phase": "4_confidence_vnext_empirical_research",
         "semantics": {
@@ -80,7 +83,7 @@ def _phase4(generated_at: str = SCANNER_TIME) -> dict[str, object]:
             "generated_at": generated_at,
             "rows": [
                 {
-                    "as_of": "2026-09-30",
+                    "as_of": row_as_of,
                     "symbol": "RACE",
                     "horizon_sessions": 5,
                     "selection": {"state": "robust"},
@@ -112,6 +115,32 @@ def test_w10_distinguishes_raw_scanner_time_from_later_daily_publication() -> No
     confidence = next(row for row in packet["evidence"] if row["family"] == "confidence")
     assert confidence["as_of"] == SCANNER_TIME
     assert confidence["available_from"] == FINAL_TIME
+
+
+def test_w10_accepts_phase4_midnight_serialization_for_same_daily_as_of() -> None:
+    integrated = integrate_current_packet_set(
+        packet_set=_packet_set(),
+        daily=_daily(),
+        history=pd.DataFrame(),
+        phase4_report=_phase4(row_as_of="2026-09-30 00:00:00"),
+        finalized_at=FINAL_TIME,
+    )
+
+    confidence = next(
+        row for row in integrated["packets"][0]["evidence"] if row["family"] == "confidence"
+    )
+    assert confidence["as_of"] == SCANNER_TIME
+
+
+def test_w10_rejects_genuinely_different_phase4_row_day() -> None:
+    with pytest.raises(IntegratedDecisionEvidenceError, match="phase4_row_as_of_mismatch:RACE"):
+        integrate_current_packet_set(
+            packet_set=_packet_set(),
+            daily=_daily(),
+            history=pd.DataFrame(),
+            phase4_report=_phase4(row_as_of="2026-09-29 00:00:00"),
+            finalized_at=FINAL_TIME,
+        )
 
 
 def test_w10_keeps_strict_phase4_raw_scanner_identity_guard() -> None:
