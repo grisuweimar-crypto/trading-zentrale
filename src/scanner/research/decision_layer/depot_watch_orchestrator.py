@@ -10,8 +10,12 @@ for auditability, while the operational chain uses only the latest revision of
 each snapshot so one market observation can never count twice for hysteresis.
 
 W6 may additionally consume an explicit PIT-stamped Elliott-vNext 6H source at
-7F.  Elliott remains review context only: it cannot alter 7D direction, cannot
+7F. Elliott remains review context only: it cannot alter 7D direction, cannot
 resolve its own route conflicts, and cannot create an order.
+
+W7 transports the already-existing scanner path/history state to 7F. It adds no
+new trading rule and cannot alter Universal Stance or Portfolio Action; W8 owns
+any later action-policy review that consumes this context.
 
 Phase-8 external evidence is deliberately absent here until a separately approved
 production-integration change binds it into the canonical Decision Layer.
@@ -36,6 +40,11 @@ from .phase6_elliott import (
     Elliott6HAdapterError,
     build_elliott_7f_swing_context,
     index_elliott_6h_source,
+)
+from .phase7_state_history import (
+    StateHistoryContextError,
+    attach_state_history_to_7f,
+    build_state_history_context,
 )
 from .portfolio_action import compute_portfolio_action
 from .reliability_explainability import build_reliability_explanation
@@ -150,7 +159,9 @@ def _stance_history(
             continue
         previous_time = _utc(previous.get("as_of"), "packet_as_of")
         if packet_time == previous_time:
-            raise DepotWatchOrchestrationError(f"duplicate_symbol_snapshot_revision:{symbol}:{snapshot_id}")
+            raise DepotWatchOrchestrationError(
+                f"duplicate_symbol_snapshot_revision:{symbol}:{snapshot_id}"
+            )
         if packet_time > previous_time:
             by_snapshot[snapshot_id] = packet
 
@@ -162,7 +173,9 @@ def _stance_history(
         latest.get("source_snapshot_id") != current_packet.get("source_snapshot_id")
         or _utc(latest.get("as_of")) != current_time
     ):
-        raise DepotWatchOrchestrationError(f"current_packet_not_latest_in_history:{symbol}")
+        raise DepotWatchOrchestrationError(
+            f"current_packet_not_latest_in_history:{symbol}"
+        )
     return [compute_universal_stance(packet) for packet in eligible]
 
 
@@ -178,7 +191,9 @@ def _path_review(packet: Mapping[str, object]) -> dict[str, object] | None:
         if isinstance(payload, Mapping) and payload.get("context_type") == PATH_CONTEXT_TYPE:
             matches.append(deepcopy(dict(payload)))
     if len(matches) > 1:
-        raise DepotWatchOrchestrationError(f"duplicate_path_context:{packet.get('symbol')}")
+        raise DepotWatchOrchestrationError(
+            f"duplicate_path_context:{packet.get('symbol')}"
+        )
     return matches[0] if matches else None
 
 
@@ -204,7 +219,9 @@ def build_decision_bundle_set(
         daily=validated_daily,
     )
     decision_daily = decision_bound_daily_snapshot(validated_daily, decision_as_of)
-    positions = validate_position_book(position_book, decision_as_of=decision_daily["as_of"])
+    positions = validate_position_book(
+        position_book, decision_as_of=decision_daily["as_of"]
+    )
     try:
         elliott_index, elliott_source_meta = index_elliott_6h_source(
             elliott_6h_source,
@@ -213,12 +230,17 @@ def build_decision_bundle_set(
     except Elliott6HAdapterError as exc:
         raise DepotWatchOrchestrationError(str(exc)) from exc
 
+    daily_symbols = validated_daily.get("symbols")
+    assert isinstance(daily_symbols, Mapping)
+
     bundles: list[dict[str, object]] = []
     missing_symbols: list[str] = []
     path_review_symbols: list[str] = []
     phase5_shadow_symbols: list[str] = []
     elliott_symbols: list[str] = []
     elliott_actionable_symbols: list[str] = []
+    state_history_symbols: list[str] = []
+    state_history_counts: dict[str, int] = {}
     for position in positions["positions"]:
         symbol = str(position["symbol"])
         packet = _current_packet_for_symbol(
@@ -230,6 +252,9 @@ def build_decision_bundle_set(
         if packet is None:
             missing_symbols.append(symbol)
             continue
+        daily_symbol = daily_symbols.get(symbol)
+        if not isinstance(daily_symbol, Mapping):
+            raise DepotWatchOrchestrationError(f"daily_symbol_missing:{symbol}")
         history = _stance_history(
             archive_packets,
             symbol=symbol,
@@ -253,9 +278,27 @@ def build_decision_bundle_set(
             if swing_context.get("review_contexts"):
                 elliott_actionable_symbols.append(symbol)
 
+        try:
+            state_history_context = build_state_history_context(packet, daily_symbol)
+        except StateHistoryContextError as exc:
+            raise DepotWatchOrchestrationError(str(exc)) from exc
+        if state_history_context is not None:
+            state_history_symbols.append(symbol)
+            state_name = str(state_history_context.get("state") or "")
+            state_history_counts[state_name] = state_history_counts.get(state_name, 0) + 1
+
         # W6 is deliberately downstream of 7D/7E. Elliott can modify only the
         # position-aware review state accepted by 7F; it never recomputes stance.
-        action = compute_portfolio_action(transition, position, swing_context=swing_context)
+        action = compute_portfolio_action(
+            transition, position, swing_context=swing_context
+        )
+        # W7 is evidence transport only. Attaching state/history context must not
+        # modify either the pre-existing 7F action or the preserved 7D stance.
+        try:
+            action = attach_state_history_to_7f(action, state_history_context)
+        except StateHistoryContextError as exc:
+            raise DepotWatchOrchestrationError(str(exc)) from exc
+
         explanation = build_reliability_explanation(packet, stance, transition, action)
         path_context = _path_review(packet)
         phase5_context = _phase5_shadow(packet)
@@ -273,6 +316,7 @@ def build_decision_bundle_set(
             "path_review": path_context,
             "phase5_confidence_shadow": phase5_context,
             "elliott_swing_context": deepcopy(swing_context),
+            "state_history_context": deepcopy(state_history_context),
         })
 
     bundle_set = {
@@ -298,12 +342,57 @@ def build_decision_bundle_set(
         "elliott_6h_actionable_symbols": sorted(elliott_actionable_symbols),
         "elliott_changed_universal_stance": False,
         "elliott_direction_used_as_vote": False,
+        "state_history_symbols": sorted(state_history_symbols),
+        "state_history_counts": dict(sorted(state_history_counts.items())),
+        "state_history_changes_universal_stance": False,
+        "state_history_changes_portfolio_action": False,
+        "state_history_w8_action_policy_evaluated": False,
         "phase8_external_evidence_activated": False,
         "selection_direction_inferred": False,
         "scanner_scalar_fallback_used": False,
         "private_position_data_persisted": False,
     }
     return bundle_set, diagnostics
+
+
+def _attach_state_history_context(
+    watch: dict[str, object],
+    bundle_set: Mapping[str, object],
+) -> dict[str, object]:
+    raw_bundles = bundle_set.get("bundles")
+    if not isinstance(raw_bundles, list):
+        return watch
+    context_by_symbol: dict[str, dict[str, object]] = {}
+    for bundle in raw_bundles:
+        if not isinstance(bundle, Mapping):
+            continue
+        packet = bundle.get("packet")
+        symbol = str(packet.get("symbol") or "") if isinstance(packet, Mapping) else ""
+        context = bundle.get("state_history_context")
+        if symbol and isinstance(context, Mapping):
+            context_by_symbol[symbol] = deepcopy(dict(context))
+
+    rows = watch.get("rows")
+    if not isinstance(rows, list):
+        return watch
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        symbol = str(row.get("symbol") or "")
+        context = context_by_symbol.get(symbol)
+        if context is None:
+            continue
+        row["state_history_context"] = deepcopy(context)
+        decision = row.get("decision")
+        if isinstance(decision, dict):
+            decision["state_history_state"] = context.get("state")
+            decision["state_history_sequence"] = deepcopy(
+                context.get("state_sequence", [])
+            )
+            decision["state_history_changed_universal_stance"] = False
+            decision["state_history_changed_portfolio_action"] = False
+            decision["state_history_w8_action_policy_evaluated"] = False
+    return watch
 
 
 def _attach_path_reviews(
@@ -420,7 +509,9 @@ def _attach_elliott_swing_context(
         decision = row.get("decision")
         if isinstance(decision, dict):
             decision["elliott_source_output_id"] = context.get("source_output_id")
-            decision["elliott_review_contexts"] = deepcopy(context.get("review_contexts", []))
+            decision["elliott_review_contexts"] = deepcopy(
+                context.get("review_contexts", [])
+            )
             decision["elliott_changed_universal_stance"] = False
             decision["elliott_review_contexts_are_actions"] = False
     return watch
@@ -441,6 +532,7 @@ def build_orchestrated_depot_watch(
     )
     decision_daily = decision_bound_daily_snapshot(daily, diagnostics["decision_as_of"])
     watch = build_depot_watch(decision_daily, position_book, bundle_set)
+    watch = _attach_state_history_context(watch, bundle_set)
     watch = _attach_path_reviews(watch, bundle_set)
     watch = _attach_phase5_shadow(watch, bundle_set)
     watch = _attach_elliott_swing_context(watch, bundle_set)
