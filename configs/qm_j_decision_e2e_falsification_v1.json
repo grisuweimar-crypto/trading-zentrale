@@ -1,0 +1,85 @@
+{
+  "schema_version": "qm_j_decision_e2e_falsification_v1",
+  "module": "QM-J",
+  "business_area": "BA-QM7",
+  "name": "Decision-Layer and isolated End-to-End falsification",
+  "status": "frozen_before_execution",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "frozen_against_main_commit": "2735d18634e4fafb160cf44adf615dd4f464edb0",
+  "source_contract": {
+    "daily_research": "artifacts/research/daily_research.json",
+    "evidence_archive": "artifacts/research/decision_evidence_7a.jsonl",
+    "w10_manifest": "artifacts/research/decision_snapshot_w10.json",
+    "decision_orchestrator": "scanner.research.decision_layer.depot_watch_orchestrator",
+    "w11_validator": "scanner.research.decision_layer.w11_end_to_end",
+    "productive_sources_read_only": true,
+    "private_positions_used": false,
+    "synthetic_position_book_only": true
+  },
+  "placebo_sidecar_test": {
+    "test_id": "QM-J-DECISION-PLACEBO-SIDECAR-INVARIANCE",
+    "control_type": "PLACEBO_EVIDENCE",
+    "seed": "qm-j-decision-placebo-v1",
+    "injection_location": "packet_top_level_unadmitted_sidecar",
+    "must_not_enter_evidence_list": true,
+    "primary_rule": "ZERO_DECISION_EFFECT",
+    "required_unchanged_outputs": [
+      "universal_stance_state_direction",
+      "portfolio_action_semantics",
+      "final_watch_action_semantics"
+    ],
+    "trigger_on_any_change": true
+  },
+  "destroyed_information_test": {
+    "test_id": "QM-J-E2E-DESTROYED-DIRECTIONAL-INFORMATION",
+    "control_type": "DESTROYED_PREDICTIVE_INFORMATION",
+    "seed": "qm-j-e2e-direction-permutation-v1",
+    "predictive_information": "explicit payload.direction on eligible Selection/Timing claims",
+    "permutation_scope": "current_snapshot_eligible_directional_claims_across_symbols",
+    "preserve_overall_direction_marginal": true,
+    "preserved_fields": [
+      "symbol",
+      "claim_id",
+      "family",
+      "as_of",
+      "available_from",
+      "source_version",
+      "coverage_state",
+      "maturity_state",
+      "pit_state",
+      "integration_mode",
+      "source_snapshot_id",
+      "non_direction_payload_fields",
+      "probability_risk_confidence_elliott_evidence"
+    ],
+    "control_effectiveness_gate": {
+      "minimum_changed_directional_claims": 1,
+      "minimum_changed_directional_symbols": 1,
+      "ineffective_control_status": "BLOCKED_CONTROL_INEFFECTIVE"
+    },
+    "primary_metric": "affected_universal_stance_change_count",
+    "primary_rule": "MUST_BE_GREATER_THAN_ZERO_AFTER_EFFECTIVE_DESTRUCTION",
+    "trigger_if_effective_control_has_zero_stance_changes": true,
+    "secondary_metrics": [
+      "directional_stance_preservation_rate",
+      "portfolio_action_change_count",
+      "watch_action_change_count"
+    ],
+    "w11_acceptance_is_integrity_only_not_predictive_validation": true
+  },
+  "trigger_status": "PROMOTION_STOP_INVESTIGATION_CAPA_REQUIRED",
+  "nontrigger_status": "NEGATIVE_CONTROLS_NOT_SIMILARLY_STRONG",
+  "boundaries": {
+    "production_artifacts_mutated": false,
+    "scanner_weights_changed": false,
+    "selection_timing_probability_risk_confidence_changed": false,
+    "universal_stance_logic_changed": false,
+    "portfolio_action_logic_changed": false,
+    "depot_watch_logic_changed": false,
+    "w10_or_w11_logic_changed": false,
+    "orders_generated": false,
+    "promotion_performed": false
+  }
+}
