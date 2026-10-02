@@ -267,3 +267,25 @@ def test_downtrend_wave2_depth_and_retracement_map_are_symmetric():
     assert result["direction"] == "down"
     centers = [round(zone["center_price"], 2) for zone in result["zones"]]
     assert centers == [107.64, 110.0, 112.36, 115.72, 117.74]
+
+
+def test_downtrend_non_positive_w3_projection_is_suppressed_not_emitted():
+    pivots = [
+        _sp("origin", "2026-03-02", "2026-03-04", 100.0, "high"),
+        _sp("wave_1", "2026-03-10", "2026-03-12", 10.0, "low"),
+        _sp("wave_2", "2026-03-18", "2026-03-20", 50.0, "high"),
+    ]
+    raw = [
+        _raw("2026-03-02", "2026-03-04", 100.0, "high", atr=3.0),
+        _raw("2026-03-10", "2026-03-12", 10.0, "low", atr=3.0),
+        _raw("2026-03-18", "2026-03-20", 50.0, "high", atr=3.0),
+    ]
+    primary = _scenario("wave_2_complete", pivots)
+    primary["direction"] = "down"
+
+    result = attach_fibonacci_geometry(_set(primary), source_pivots=raw)
+
+    assert result["projection_zones"] == []
+    assert "wave3_projection_suppressed_non_positive_price" in result["warnings"]
+    assert result["fibonacci_selects_wave_count"] is False
+    assert result["single_true_count_claimed"] is False
