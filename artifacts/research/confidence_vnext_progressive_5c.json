@@ -1,20 +1,20 @@
 {
   "phase": "5C_progressive_learning",
   "schema_version": "phase5c_progressive_learning_v1",
-  "status": "collecting_prospective_evidence",
+  "status": "progressive_learning_active",
   "source_schema_version": "phase5b_shadow_v2",
-  "claims": 8260,
-  "mature_outcomes": 197,
+  "claims": 9088,
+  "mature_outcomes": 392,
   "horizons": {
     "5": {
-      "stage": "mature_outcomes_accumulating",
-      "pilot_ready": false,
+      "stage": "pilot_learning",
+      "pilot_ready": true,
       "robust_learning_base": false,
-      "training_rows": 197,
-      "symbols": 197,
-      "directional_rows": 89,
-      "directional_symbols": 89,
-      "observation_dates": 1,
+      "training_rows": 202,
+      "symbols": 202,
+      "directional_rows": 91,
+      "directional_symbols": 91,
+      "observation_dates": 2,
       "support_regions": 1,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -24,9 +24,9 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 10
       },
-      "latest_candidate_version": null,
-      "candidate_version_from_current_evidence": null,
-      "version_count": 0
+      "latest_candidate_version": "phase5c-5T-bec967d8ec2046e2",
+      "candidate_version_from_current_evidence": "phase5c-5T-bec967d8ec2046e2",
+      "version_count": 1
     },
     "20": {
       "stage": "collecting",
@@ -95,9 +95,11 @@
       "version_count": 0
     }
   },
-  "model_versions": 0,
-  "version_chain_tip": null,
-  "new_model_versions": [],
+  "model_versions": 1,
+  "version_chain_tip": "a32c8f5afffd096c3b45dba01b125190275358c4d66332211734be25e6f2e01e",
+  "new_model_versions": [
+    "phase5c-5T-bec967d8ec2046e2"
+  ],
   "semantics": {
     "research_only": true,
     "dynamic_horizon_specific_learning": true,
