@@ -11,6 +11,9 @@ from scanner.reports.daily_research import validate_daily_research
 from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
 from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
+from scanner.research.decision_layer.phase6_elliott import (
+    build_elliott_6h_source_from_prospective_capture,
+)
 from scanner.research.decision_layer.watch_runtime import (
     DEFAULT_RUNTIME_DIR,
     load_runtime_packets_for_symbols,
@@ -69,8 +72,17 @@ def main() -> int:
         "--elliott-6h-source",
         type=Path,
         help=(
-            "Optional PIT-stamped decision_elliott_6h_source_v1 JSON. "
+            "Optional exact W10-frozen decision_elliott_6h_source_v1 JSON. "
             "Only frozen 6H review contexts are passed to 7F; no Elliott direction becomes a vote."
+        ),
+    )
+    parser.add_argument(
+        "--elliott-prospective-capture",
+        type=Path,
+        help=(
+            "Optional Stage-1 elliott_vnext_prospective_capture_v1 JSON. "
+            "When W10 froze Phase 6 as available, reconstruct the exact W6 source "
+            "from the manifest provenance without selecting a wave degree."
         ),
     )
     parser.add_argument(
@@ -95,7 +107,41 @@ def main() -> int:
     )
 
     positions = _load(args.positions)
-    elliott_6h_source = _load(args.elliott_6h_source) if args.elliott_6h_source else None
+    if args.elliott_6h_source and args.elliott_prospective_capture:
+        raise ValueError("supply_only_one_elliott_source_form")
+
+    phase6 = manifest.get("stages", {}).get("phase6_elliott")
+    if not isinstance(phase6, dict):
+        raise ValueError("w10_phase6_stage_missing")
+    phase6_status = str(phase6.get("status") or "")
+    elliott_6h_source = None
+    if phase6_status == "available":
+        if args.elliott_6h_source:
+            elliott_6h_source = _load(args.elliott_6h_source)
+            if str(elliott_6h_source.get("source_commit") or "") != str(phase6.get("source_commit") or ""):
+                raise ValueError("elliott_source_commit_not_w10_frozen")
+            if str(elliott_6h_source.get("available_from") or "") != str(phase6.get("available_from") or ""):
+                raise ValueError("elliott_source_availability_not_w10_frozen")
+            if phase6.get("source_capture_id") and str(elliott_6h_source.get("source_capture_id") or "") != str(phase6.get("source_capture_id") or ""):
+                raise ValueError("elliott_source_capture_not_w10_frozen")
+        elif args.elliott_prospective_capture:
+            capture = _load(args.elliott_prospective_capture)
+            elliott_6h_source = build_elliott_6h_source_from_prospective_capture(
+                capture,
+                source_commit=str(phase6.get("source_commit") or ""),
+                available_from=str(phase6.get("available_from") or ""),
+                expected_snapshot_id=str(daily["snapshot_id"]),
+                expected_as_of=str(daily["as_of"]),
+            )
+            if phase6.get("source_capture_id") and str(elliott_6h_source.get("source_capture_id") or "") != str(phase6.get("source_capture_id") or ""):
+                raise ValueError("elliott_capture_not_w10_frozen")
+        else:
+            raise ValueError("w10_phase6_available_requires_frozen_elliott_source")
+    elif phase6_status == "not_supplied":
+        if args.elliott_6h_source or args.elliott_prospective_capture:
+            raise ValueError("w10_phase6_not_supplied_forbids_late_elliott_injection")
+    else:
+        raise ValueError(f"unsupported_w10_phase6_status:{phase6_status}")
 
     if args.legacy_archive:
         packets, transport_metadata = load_evidence_archive(args.root / args.archive, missing_ok=False)
@@ -134,6 +180,8 @@ def main() -> int:
         "w10_pre_7a_frozen_at": manifest["pre_7a_frozen_at"],
         "w10_sealed_at": manifest["sealed_at"],
         "w10_no_backdating_guard": True,
+        "w10_phase6_status": phase6_status,
+        "elliott_w6_source_applied": elliott_6h_source is not None,
     }
 
     text = json.dumps(watch, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
