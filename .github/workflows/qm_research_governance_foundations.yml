@@ -1,0 +1,28 @@
+name: QM Research Governance Foundations
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_research_governance_v1.json"
+      - "docs/qm_research_governance_foundations.md"
+      - "docs/qm_post_phase8_handover.md"
+      - "tests/test_qm_research_governance_foundations.py"
+      - ".github/workflows/qm_research_governance_foundations.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+      - name: Run QM foundation guards
+        run: python -m pytest -q tests/test_qm_research_governance_foundations.py

@@ -1,0 +1,77 @@
+{
+  "schema_version": "external_evidence_8f_freeze_v1",
+  "phase": "8F_macro_exposure_context",
+  "status": "PHASE_8F_SOURCE_AND_EXPOSURE_LAYER_FROZEN_OUTCOME_RESEARCH_PENDING_8G",
+  "frozen_at": "2026-09-28T08:02:30+02:00",
+  "source_live_run": {
+    "workflow_run_id": 36381751961,
+    "head_sha": "10f37e7d28e533d1ec9599ab75edc5beb0e82e6f",
+    "artifact_id": 10952906750,
+    "artifact_name": "phase8f-live-macro-pit-36381751961",
+    "artifact_sha256": "dee7955a0198e4775b76725442516498f91e64a8d8494ab9c4e03855273ba692",
+    "ingested_at": "2026-09-28T05:24:30.406650+00:00"
+  },
+  "completion": {
+    "status": "PASS_8F_COMPLETION",
+    "freeze_allowed": true,
+    "active_reviewed_mapping_count": 195,
+    "explicit_unmapped_subject_count": 12,
+    "domain_subject_count": 207,
+    "domain_accounted_count": 207,
+    "unaccounted_subject_count": 0,
+    "knowable_ledger_row_count": 25,
+    "ledger_series_count": 4,
+    "observed_factor_ids": ["fx", "rates_policy", "yield_curve"]
+  },
+  "frozen_artifact_hashes": {
+    "macro_ledger_sha256": "407a9d86bcaad5d7ed131124d4e7a6954779e02ccb7c0773632d37d29f9310a0",
+    "collection_metadata_sha256": "bb37d52d80bae371fc883cd04fcc54072bf7d70f2acf64e802bf80db506b408c",
+    "exposure_domain_audit_sha256": "4e52ffe104ae1ad9c344ef3ed5b31a80b4ac65b6b0980e214ea048e0c34fba95",
+    "completion_gate_sha256": "d58cbcc41464a00a74f97377189967151fe3fc3752b5edf3c38ea2357ff9ab13",
+    "fed_h15_raw_sha256": "5be657c8ba106b6a1fc887db5c3f7c7c03b4bc3f3735998805fb109aede4ef5e",
+    "ecb_fx_raw_sha256": "b97555e3aab37044c063bf6bcc0ee765a5178b0922227f76877a2a62028e8796"
+  },
+  "persisted_repository_artifacts": {
+    "completion_gate": "artifacts/research/external_evidence_8f_freeze_2026-09-28/external_evidence_8f_completion_gate.json",
+    "collection_metadata": "artifacts/research/external_evidence_8f_freeze_2026-09-28/external_evidence_8f_collection_latest.json"
+  },
+  "research_domain": {
+    "version": "8F_RESEARCH_DOMAIN_PRE8F_ACTIVE_STOCKS_2c6efec912ea",
+    "source_ref": "feef4e572283613739b2f24cf42b837ff68a1508",
+    "source_blob_sha": "2c6efec912ea7478096f77dc8f88d7eed2a0581b",
+    "mapped_subject_count": 195,
+    "explicit_unmapped_subject_count": 12,
+    "accounted_subject_count": 207
+  },
+  "factor_states": {
+    "rates_policy": "IMPLEMENTED_AND_REAL_PIT_OBSERVED_AT_FREEZE",
+    "yield_curve": "IMPLEMENTED_AND_REAL_PIT_OBSERVED_AT_FREEZE",
+    "fx": "IMPLEMENTED_AND_REAL_PIT_OBSERVED_AT_FREEZE",
+    "inflation": "IMPLEMENTED_ARCHIVED_RELEASE_ADAPTER_NOT_PRESENT_IN_FREEZE_LIVE_SNAPSHOT",
+    "oil": "IMPLEMENTED_PROSPECTIVE_ADAPTER_NOT_OBSERVED_AT_FREEZE_EIA_KEY_UNAVAILABLE",
+    "gas": "IMPLEMENTED_PROSPECTIVE_ADAPTER_NOT_OBSERVED_AT_FREEZE_EIA_KEY_UNAVAILABLE",
+    "gold": "DEFERRED_HISTORICAL_VINTAGE_RECONSTRUCTION_NOT_PROMOTED_IN_8F",
+    "silver": "DEFERRED_HISTORICAL_VINTAGE_RECONSTRUCTION_NOT_PROMOTED_IN_8F",
+    "copper": "DEFERRED_HISTORICAL_VINTAGE_RECONSTRUCTION_NOT_PROMOTED_IN_8F",
+    "uranium": "MARKET_PROXY_CHALLENGERS_REGISTERED_NOT_PROMOTED_IN_8F",
+    "lithium": "MARKET_PROXY_CHALLENGERS_REGISTERED_NOT_PROMOTED_IN_8F"
+  },
+  "scope_decisions": {
+    "eia_status_at_freeze": "SKIPPED_NO_API_KEY",
+    "eia_missing_blocks_freeze": false,
+    "world_bank_gold_silver_copper_status": "DEFERRED_NOT_PIT_PROMOTED",
+    "world_bank_reason": "Official monthly data, archive publications and CC BY 4.0 dataset metadata exist, but a complete row-level historical first-release/vintage reconstruction was not proven within 8F.",
+    "deferred_factors_may_be_treated_as_known": false,
+    "unobserved_adapters_may_be_treated_as_known": false
+  },
+  "guards": {
+    "market_outcomes_read": false,
+    "market_direction_assigned": false,
+    "signed_exposure_inference_enabled": false,
+    "threshold_selection_run": false,
+    "cross_factor_research_enabled": false,
+    "phase7_integration_enabled": false,
+    "production_external_evidence_enabled": false
+  },
+  "next_phase": "8G_incremental_evidence_research"
+}

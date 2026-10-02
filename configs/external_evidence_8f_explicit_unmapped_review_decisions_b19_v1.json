@@ -1,0 +1,27 @@
+{
+  "schema_version": "external_evidence_8f_explicit_unmapped_review_decisions_v1",
+  "phase": "8F_macro_exposure_context",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-28_B19",
+  "status": "HUMAN_REVIEW_COMPLETED",
+  "reviewer_role": "HUMAN_REVIEWER",
+  "reviewed_at": "2026-09-28T06:04+02:00",
+  "decisions": [
+    {"subject_id":"LGO","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Documentary exposure is primarily vanadium, which is outside the current Phase-8F factor catalog; no commodity substitution is allowed."},
+    {"subject_id":"LC0A.MU","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Reviewed evidence supports RMB/USD rather than the current EUR/USD fx factor and does not establish another accepted factor relationship."},
+    {"subject_id":"MNSO","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Broad RMB-centered multinational FX exposure does not isolate a sufficiently specific EUR/USD relationship."},
+    {"subject_id":"NOVO-B.CO","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Primary documented FX sensitivity is versus DKK and EUR risk is explicitly described as low; no EUR/USD substitution is made."},
+    {"subject_id":"RCAT","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Reviewed filing does not establish a sufficiently specific relationship to the current Phase-8F factor catalog."},
+    {"subject_id":"ACB.TO","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Reviewed financial-market exposures do not establish a clean relationship-specific match to the current factor definitions."},
+    {"subject_id":"SMX","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Structured financing and valuation inputs do not establish a current benchmark-linked exposure sufficient for mapping."},
+    {"subject_id":"SE","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Material FX exposure exists, but the principal currencies in the reviewed filing do not establish an EUR/USD-specific relationship."},
+    {"subject_id":"SPCX","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Public disclosures are insufficient for a relationship-specific Phase-8F mapping; no inference from sector or presumed financing structure is used."},
+    {"subject_id":"DRO.AX","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Documented currency sensitivity is AUD-centered; deriving EUR/USD exposure would require prohibited cross-rate inference."},
+    {"subject_id":"1211.HK","decision":"APPROVE_EXPLICIT_UNMAPPED","source_verified":true,"reason_confirmed":true,"notes":"Explicit human approval. Reviewed disclosure does not establish a sufficiently specific lithium-price relationship; battery/EV activity alone is not sufficient evidence."}
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "automatic_approval_allowed": false,
+    "domain_membership_change_allowed": false,
+    "mapping_substitution_allowed": false
+  }
+}

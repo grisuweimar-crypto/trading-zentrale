@@ -1,0 +1,23 @@
+{
+  "schema_version": "external_evidence_8f_mapping_review_decisions_v1",
+  "phase": "8F_macro_exposure_context",
+  "candidate_batch_id": "8F_MAPPING_CANDIDATES_2026-09-27_B18",
+  "status": "HUMAN_REVIEW_COMPLETED",
+  "reviewer_role": "HUMAN_REVIEWER",
+  "reviewed_at": "2026-09-27T17:42+02:00",
+  "decisions": [
+    {"candidate_id":"MAPCAND:6861.T:fx:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Issuer materials quantify USD- and EUR-linked FX effects and sensitivities; OTHER_DOCUMENTED retained conservatively. No market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:FANUY:fx:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Issuer materials document concurrent Yen/USD and Yen/EUR operating exposure; OTHER_DOCUMENTED retained conservatively. No market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:9888.HK:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Material interest-bearing borrowing and interest-earning balance-sheet positions support OTHER_DOCUMENTED rates-policy exposure. No market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:BIDU:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Material interest-bearing borrowing and interest-earning balance-sheet positions support OTHER_DOCUMENTED rates-policy exposure. No market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:DVLT:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Filing explicitly links elevated interest rates to customer IT spending and demand, supporting REVENUE_LINK. No market outcomes, direction, weights or thresholds used."},
+    {"candidate_id":"MAPCAND:JD:rates_policy:1","decision":"APPROVE","source_verified":true,"relationship_class_confirmed":true,"notes":"Explicit human approval. Benchmark-linked term-loan pricing directly supports FINANCING_SENSITIVITY. No market outcomes, direction, weights or thresholds used."}
+  ],
+  "guards": {
+    "market_outcomes_read": false,
+    "automatic_approval_allowed": false,
+    "backdating_before_review_allowed": false,
+    "direction_or_signed_exposure_assigned": false,
+    "weights_or_thresholds_selected": false
+  }
+}

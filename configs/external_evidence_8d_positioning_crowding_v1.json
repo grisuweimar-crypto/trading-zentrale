@@ -1,0 +1,257 @@
+{
+  "schema_version": "external_evidence_8d_positioning_crowding_v1",
+  "phase": "8D_positioning_crowding",
+  "status": "8D_A1_A2_B1_B2_IMPLEMENTED_B3_PASSED_B4_B5_IMPLEMENTED_OUTCOME_BLIND",
+  "principles": {
+    "market_outcomes_may_be_read": false,
+    "market_direction_may_be_assigned": false,
+    "production_external_evidence_enabled": false,
+    "phase7_integration_enabled": false,
+    "single_family_before_interactions": true,
+    "missing_evidence_may_default_to_neutral": false,
+    "absolute_high_or_low_positioning_implies_direction": false
+  },
+  "families": {
+    "SHORT_INTEREST": {
+      "status": "SOURCE_ACCEPTED_A1_A2_IMPLEMENTED_WITH_VINTAGE_LIMITATION",
+      "source_authority": "FINRA",
+      "dataset": "Consolidated Short Interest",
+      "dataset_group": "otcmarket",
+      "dataset_name": "consolidatedShortInterest",
+      "source_urls": [
+        "https://www.finra.org/finra-data/browse-catalog/equity-short-interest",
+        "https://developer.finra.org/docs",
+        "https://www.finra.org/filing-reporting/regulatory-filing-systems/short-interest"
+      ],
+      "credential_type": "PUBLIC",
+      "coverage": "US exchange-listed and OTC equity short-interest publications available through FINRA data products, subject to dataset-specific market coverage and symbol identity",
+      "cadence": "TWICE_MONTHLY",
+      "raw_fields": [
+        "symbolCode",
+        "settlementDate",
+        "currentShortPositionQuantity",
+        "previousShortPositionQuantity",
+        "changePreviousNumber",
+        "changePercent",
+        "averageDailyVolumeQuantity",
+        "daysToCoverQuantity",
+        "revisionFlag",
+        "stockSplitFlag",
+        "marketClassCode"
+      ],
+      "event_time_policy": "settlementDate",
+      "published_at_policy": "FINRA_PUBLICATION_DATE_AT_16_40_AMERICA_NEW_YORK",
+      "valid_from_policy": "ACTUAL_INGESTED_AT_UNLESS_ORIGINAL_PUBLICATION_VINTAGE_IS_INDEPENDENTLY_PROVEN",
+      "publication_time_note": "Dataset documentation states availability by 4:40 PM ET on publication date. That scheduled publication time is descriptive provenance, not permission to retroject a later retrieval backward in time.",
+      "vintage_policy": {
+        "historical_backfill": "LATEST_AVAILABLE_VINTAGE_NOT_ORIGINAL_PUBLICATION_VINTAGE",
+        "prospective_collection": "STORE_EACH_PUBLICATION_SNAPSHOT_WITH_INGESTED_AT_RAW_PAGE_HASHES_AND_CANONICAL_RAW_HASH",
+        "prospective_valid_from": "INGESTED_AT",
+        "reason": "FINRA notes that corrected items carry a Revision Flag and only the most recent data is made available. A later retrieval therefore cannot prove the exact originally published vintage.",
+        "strict_pit_eligibility": "PROSPECTIVE_SNAPSHOT_FROM_ACTUAL_INGESTION_FORWARD_OR_OTHERWISE_PROVEN_ORIGINAL_VINTAGE_ONLY"
+      },
+      "acquisition_contract": {
+        "prospective_only_for_strict_pit": true,
+        "one_settlement_date_per_snapshot": true,
+        "request_method": "FILTERED_POST_WITH_PAGINATION",
+        "synchronous_record_limit_per_request": 5000,
+        "minimum_request_interval_seconds_default": 0.25,
+        "record_total_header_must_reconcile_when_present": true,
+        "raw_page_sha256_required": true,
+        "canonical_raw_snapshot_sha256_required": true,
+        "publication_time_retrojection_enabled": false,
+        "ci_live_network_access": false
+      },
+      "coverage_contract": {
+        "scanner_source": "artifacts/research/latest_scanner.csv",
+        "single_finra_settlement_date_required": true,
+        "match_method": "EXACT_SYMBOL_ONLY",
+        "ticker_suffix_stripping_enabled": false,
+        "adr_substitution_enabled": false,
+        "fuzzy_name_matching_enabled": false,
+        "ambiguous_market_class_auto_selection_enabled": false,
+        "missing_evidence_status": "UNKNOWN_NOT_IN_FINRA_SNAPSHOT",
+        "ambiguous_evidence_status": "AMBIGUOUS_MULTIPLE_FINRA_ROWS",
+        "missing_evidence_may_default_to_neutral": false
+      },
+      "initial_features": [
+        "short_position_quantity",
+        "short_position_change_quantity",
+        "short_position_change_percent",
+        "days_to_cover"
+      ],
+      "disabled_features": {
+        "short_interest_percent_float": "DISABLED_UNTIL_PIT_SAFE_FLOAT_DENOMINATOR_EXISTS",
+        "daily_short_interest": "DISABLED_SHORT_SALE_VOLUME_IS_NOT_SHORT_INTEREST"
+      },
+      "artifact_schemas": {
+        "normalized_snapshot": "external_evidence_8d_finra_short_interest_snapshot_v1",
+        "acquisition_manifest": "external_evidence_8d_finra_short_interest_acquisition_v1",
+        "current_universe_coverage": "external_evidence_8d_finra_short_interest_coverage_v1"
+      },
+      "direction": "UNASSIGNED"
+    },
+    "INSIDER_ACTIVITY": {
+      "status": "SOURCE_VALIDATED_B3_PASS_B4_FEATURES_B5_ASOF_IDENTITY_IMPLEMENTED_OUTCOME_BLIND",
+      "source_authority": "U.S. SEC EDGAR",
+      "forms": ["4", "4/A"],
+      "source_urls": [
+        "https://www.sec.gov/data-research/sec-markets-data/insider-transactions-data-sets",
+        "https://www.sec.gov/files/insider_transactions_readme.pdf"
+      ],
+      "bulk_dataset": "Insider Transactions Data Sets",
+      "bulk_tables": ["SUBMISSION", "REPORTINGOWNER", "NONDERIV_TRANS"],
+      "bulk_semantics": "AS_FILED_QUARTERLY_FLAT_EXTRACTION",
+      "identity": ["issuer_cik", "accession_number", "nonderiv_trans_sk"],
+      "event_time_policy": "TRANS_DATE",
+      "valid_from_policy": "EXACT_ACCESSION_JOIN_TO_SEC_SUBMISSIONS_ACCEPTANCE_METADATA",
+      "amendment_policy": "4/A_RETAINED_AS_SEPARATE_VERSIONED_EVIDENCE_NO_SILENT_OVERWRITE",
+      "initial_transaction_scope": {
+        "P": "OPEN_MARKET_OR_PRIVATE_PURCHASE",
+        "S": "OPEN_MARKET_OR_PRIVATE_SALE"
+      },
+      "b1_b2_contract": {
+        "official_quarterly_bulk_only": true,
+        "verified_sec_bundle_required": true,
+        "exact_accession_join_required": true,
+        "exact_issuer_cik_join_required": true,
+        "current_ticker_used_as_historical_identity": false,
+        "forms_restricted_to_4_and_4_a": true,
+        "nonderivative_table_only": true,
+        "transaction_form_type_4_required_for_discretionary_candidate": true,
+        "transaction_codes_restricted_to_p_and_s": true,
+        "p_requires_acquired_code_a": true,
+        "s_requires_disposed_code_d": true,
+        "equity_swaps_excluded_from_discretionary_candidate": true,
+        "aff10b5one_true_excluded_from_discretionary_candidate": true,
+        "aff10b5one_unknown_not_assumed_discretionary": true,
+        "source_zip_sha256_required": true,
+        "source_member_sha256_required": true,
+        "ci_live_network_access": false
+      },
+      "b3_validation_contract": {
+        "config": "configs/external_evidence_8d_insider_validation_v1.json",
+        "status": "PASS_SOURCE_SEMANTICS_VALIDATION",
+        "first_real_corpus": "2026Q2",
+        "pool_with_earlier_quarters": false,
+        "reviewed_annotation_count": 299,
+        "market_outcomes_read": false,
+        "phase7_integration_enabled": false,
+        "mechanical_false_counts": {
+          "transaction_price_correct_when_present": 1,
+          "transaction_shares_correct": 1
+        },
+        "all_other_mechanical_fields_true_for_all_reviewed_rows": true,
+        "candidate_status_name_is_not_proof_of_subjective_discretion": true,
+        "semantic_target": "P_S_EXTRACTION_AND_PROVENANCE_WITHOUT_MOTIVE_INFERENCE"
+      },
+      "b4_feature_contract": {
+        "config": "configs/external_evidence_8d_insider_features_v1.json",
+        "status": "IMPLEMENTED_OUTCOME_BLIND",
+        "primary_window_calendar_days": 30,
+        "robustness_window_calendar_days": [90],
+        "knowledge_gate": "valid_from <= as_of",
+        "complete_source_window_required": true,
+        "amendments_in_v1_aggregation": false,
+        "numeric_features_promoted": false,
+        "numeric_challenger_reason": "One shares mismatch and one price mismatch were observed in the 299-row B3 mechanical audit; count features may proceed while shares/value aggregates remain challenger-only."
+      },
+      "b5_identity_contract": {
+        "config": "configs/external_evidence_8d_insider_identity_v1.json",
+        "status": "IMPLEMENTED_OUTCOME_BLIND",
+        "parent_contract": "configs/external_universe_coverage_contract_v1.json",
+        "scanner_history_is_primary_observability_ledger": true,
+        "identity_source": "PIT_VALIDATED_SEC_INSIDER_EVIDENCE_ROWS",
+        "identity_becomes_usable_at": "valid_from",
+        "future_identity_evidence_may_be_used": false,
+        "current_ticker_retrojection_enabled": false,
+        "exact_symbol_only": true,
+        "symbol_changes_follow_latest_known_symbol_per_cik": true,
+        "unknown_identity_status": "UNKNOWN_NO_PIT_IDENTITY",
+        "ambiguous_identity_status": "AMBIGUOUS_PIT_IDENTITY",
+        "resolved_identity_status": "VERIFIED_FAMILY_PIT_IDENTITY",
+        "b4_grid_includes_only_resolved_identity": true,
+        "date_only_asof_is_rejected": true
+      },
+      "excluded_from_discretionary_buy_sell_scope": [
+        "A_GRANT_AWARD_OR_COMPANY_ACQUISITION",
+        "D_SALE_OR_TRANSFER_BACK_TO_COMPANY",
+        "F_EXERCISE_PRICE_OR_TAX_WITHHOLDING",
+        "G_GIFT",
+        "M_DERIVATIVE_EXERCISE_OR_CONVERSION",
+        "J_OTHER_UNLESS_SEPARATELY_VALIDATED",
+        "K_SWAP_OR_HEDGE",
+        "V_VOLUNTARY_REPORTING_FLAG_DOES_NOT_DEFINE_ECONOMIC_ACTION",
+        "EQUITY_SWAP_INVOLVED",
+        "AFF10B5ONE_TRUE",
+        "TRANS_FORM_TYPE_NOT_4",
+        "P_S_ACQUIRED_DISPOSED_CONFLICT"
+      ],
+      "raw_fields": [
+        "TRANS_DATE",
+        "TRANS_FORM_TYPE",
+        "TRANS_CODE",
+        "TRANS_ACQUIRED_DISP_CD",
+        "TRANS_SHARES",
+        "TRANS_PRICEPERSHARE",
+        "SHRS_OWND_FOLWNG_TRANS",
+        "SECURITY_TITLE",
+        "DIRECT_INDIRECT_OWNERSHIP",
+        "EQUITY_SWAP_INVOLVED",
+        "AFF10B5ONE",
+        "RPTOWNERCIK",
+        "RPTOWNER_RELATIONSHIP"
+      ],
+      "feature_tiers_after_b3": {
+        "VALIDATED_DESCRIPTIVE_CORE": [
+          "purchase_count",
+          "sale_count"
+        ],
+        "VALIDATED_WITH_OWNER_COMPLETENESS_GATE": [
+          "distinct_buyer_count",
+          "distinct_seller_count"
+        ],
+        "CHALLENGER_NUMERIC": [
+          "purchase_shares",
+          "sale_shares",
+          "purchase_value_when_price_known",
+          "sale_value_when_price_known"
+        ]
+      },
+      "artifact_schemas": [
+        "external_evidence_8d_sec_insider_bulk_v1",
+        "external_evidence_8d_insider_validation_package_v1",
+        "external_evidence_8d_insider_validation_result_v1",
+        "external_evidence_8d_insider_features_v1",
+        "external_evidence_8d_insider_asof_identity_v1"
+      ],
+      "direction": "UNASSIGNED"
+    },
+    "BORROW_RATE": {
+      "status": "SOURCE_GAP_DEFERRED",
+      "requirement": "SECURITY_LEVEL_HISTORICAL_BORROW_FEE_OR_REBATE_WITH_IMMUTABLE_ASOF_TIMESTAMP_AND_ACCEPTABLE_LICENSE_ECONOMICS",
+      "prohibited_substitutions": [
+        "FAILS_TO_DELIVER_AS_BORROW_RATE",
+        "SHORT_SALE_VOLUME_AS_BORROW_RATE",
+        "CURRENT_BORROW_FEE_RETROJECTED_HISTORICALLY"
+      ],
+      "direction": "UNASSIGNED"
+    }
+  },
+  "identity_and_pit_guards": {
+    "asof_universe_join_required": true,
+    "current_ticker_may_be_used_as_historical_stable_id": false,
+    "symbol_changes_must_be_explicit": true,
+    "settlement_date_is_not_publication_time": true,
+    "publication_time_is_not_automatically_valid_from_for_later_retrievals": true,
+    "transaction_date_is_not_filing_availability_time": true,
+    "revised_history_may_silently_replace_original_vintage": false,
+    "unknown_or_uncovered_status_must_be_explicit": true
+  },
+  "research_gate": {
+    "outcome_research_enabled": false,
+    "production_external_evidence_enabled": false,
+    "phase7_integration_enabled": false,
+    "interaction_research_enabled": false
+  }
+}

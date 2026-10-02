@@ -1,0 +1,57 @@
+{
+  "schema_version": "external_evidence_8d_insider_features_v1",
+  "phase": "8D_B4_insider_feature_aggregation",
+  "status": "PRE_REGISTERED_OUTCOME_BLIND_AFTER_B3_SOURCE_SEMANTICS_PASS",
+  "required_validation_decision": "PASS_SOURCE_SEMANTICS_VALIDATION",
+  "market_outcomes_may_be_read": false,
+  "market_direction_may_be_assigned": false,
+  "phase7_integration_enabled": false,
+  "production_external_evidence_enabled": false,
+  "identity_key": "issuer_cik",
+  "asof_grid_requirements": ["issuer_cik", "as_of"],
+  "windows": {
+    "primary_calendar_days": 30,
+    "robustness_calendar_days": [90]
+  },
+  "window_semantics": "INCLUSIVE_CALENDAR_DAYS_ENDING_ON_ASOF_DATE",
+  "knowledge_gate": "valid_from <= as_of",
+  "event_gate": "transaction_date inside trailing calendar window",
+  "row_requirements": {
+    "strict_pit_eligible": true,
+    "document_type": "4",
+    "amendments_in_v1_aggregation": false,
+    "candidate_status": "P_S_HIGH_PRECISION_DISCRETIONARY_CANDIDATE",
+    "transaction_codes": ["P", "S"],
+    "ten_b5_1_true_included": false,
+    "ten_b5_1_unknown_included": false,
+    "equity_swaps_included": false
+  },
+  "feature_tiers": {
+    "VALIDATED_DESCRIPTIVE_CORE": [
+      "purchase_count",
+      "sale_count"
+    ],
+    "VALIDATED_WITH_OWNER_COMPLETENESS_GATE": [
+      "distinct_buyer_count",
+      "distinct_seller_count"
+    ],
+    "CHALLENGER_NUMERIC": [
+      "purchase_shares",
+      "sale_shares",
+      "purchase_value_when_price_known",
+      "sale_value_when_price_known"
+    ]
+  },
+  "numeric_challenger_reason": "B3 mechanical validation passed overall but reported one transaction_shares mismatch and one transaction_price mismatch among 299 annotations; numeric aggregates remain quarantined until those discrepancies are characterized.",
+  "owner_feature_policy": "Owner counts are emitted only when every included transaction has exactly one non-empty reporting_owner_cik; otherwise value is null with PARTIAL_OWNER_IDENTITY.",
+  "coverage_policy": {
+    "complete_window_required": true,
+    "quarter_coverage_derived_from_source_quarter": true,
+    "incomplete_window_status": "INSUFFICIENT_SOURCE_WINDOW",
+    "zero_events_with_complete_window": "KNOWN_ZERO",
+    "missing_or_incomplete_evidence_may_default_to_neutral": false
+  },
+  "amendment_policy": "Form 4/A remains versioned evidence but is excluded from B4 v1 aggregates to prevent silent double counting until explicit amendment reconciliation is validated.",
+  "multiplicity_policy": "30d is the primary feature window; 90d is robustness-only and may not become the selected primary window after outcome inspection without a new preregistration.",
+  "artifact_schema": "external_evidence_8d_insider_features_v1"
+}

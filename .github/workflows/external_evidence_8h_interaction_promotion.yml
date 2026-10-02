@@ -1,0 +1,164 @@
+name: Phase 8H-H Interaction Promotion Review
+
+on:
+  push:
+    branches:
+      - phase8h-cross-factor-interaction
+    paths:
+      - "configs/external_evidence_8h_interaction_promotion_review_v1.json"
+      - "src/scanner/research/external_evidence/interaction_promotion_8h.py"
+      - "tests/test_external_evidence_8h_interaction_promotion.py"
+      - ".github/workflows/external_evidence_8h_interaction_promotion.yml"
+      - "configs/external_evidence_8h_interaction_holdout_confirmation_v1.json"
+      - "src/scanner/research/external_evidence/interaction_holdout_8h.py"
+      - "tests/test_external_evidence_8h_interaction_holdout.py"
+      - "configs/external_evidence_8h_interaction_validation_evaluation_v1.json"
+      - "src/scanner/research/external_evidence/interaction_validation_8h.py"
+      - "tests/test_external_evidence_8h_interaction_validation.py"
+      - "configs/external_evidence_8h_interaction_discovery_evaluation_v1.json"
+      - "src/scanner/research/external_evidence/interaction_discovery_8h.py"
+      - "tests/test_external_evidence_8h_interaction_discovery.py"
+      - "configs/external_evidence_8h_interaction_model_construction_v1.json"
+      - "src/scanner/research/external_evidence/interaction_model_8h.py"
+      - "tests/test_external_evidence_8h_interaction_model.py"
+      - "configs/external_evidence_8h_interaction_spec_freeze_v1.json"
+      - "src/scanner/research/external_evidence/interaction_spec_8h.py"
+      - "tests/test_external_evidence_8h_interaction_spec.py"
+      - "configs/external_evidence_8h_interaction_eligibility_binding_v1.json"
+      - "src/scanner/research/external_evidence/interaction_eligibility_8h.py"
+      - "tests/test_external_evidence_8h_interaction_eligibility.py"
+      - "configs/external_evidence_8h_interaction_research_contract_v1.json"
+      - "tests/test_external_evidence_8h_interaction_research_contract.py"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8h_interaction_promotion_review_v1.json"
+      - "src/scanner/research/external_evidence/interaction_promotion_8h.py"
+      - "tests/test_external_evidence_8h_interaction_promotion.py"
+      - ".github/workflows/external_evidence_8h_interaction_promotion.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  interaction-promotion-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Guard Phase 8H-A outcome-blind research contract
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_research_contract.py
+
+      - name: Guard Phase 8H-B eligibility binding
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_eligibility.py
+
+      - name: Guard Phase 8H-C interaction spec freeze
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_spec.py
+
+      - name: Guard Phase 8H-D dataset model construction
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_model.py
+
+      - name: Guard Phase 8H-E discovery evaluation
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_discovery.py
+
+      - name: Guard Phase 8H-F validation evaluation
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_validation.py
+
+      - name: Guard Phase 8H-G holdout confirmation
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_holdout.py
+
+      - name: Verify Phase 8H-H interaction promotion review
+        run: python -m pytest -q tests/test_external_evidence_8h_interaction_promotion.py
+
+      - name: Guard research-only production boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=""
+          while IFS= read -r file; do
+            case "$file" in
+              src/scanner/research/*) ;;
+              *) bad="${bad}${file}\n" ;;
+            esac
+          done < <(grep -RIl --exclude-dir='__pycache__' --exclude-dir='*.egg-info' -E 'interaction_promotion_8h|external_evidence_8h_interaction_promotion_review_v1' src/scanner 2>/dev/null || true)
+          if [[ -n "$bad" ]]; then
+            echo "8H-H interaction promotion review referenced from production-facing source path(s):"
+            printf '%b' "$bad"
+            exit 1
+          fi
+
+      - name: Assert current repository remains waiting and 8I integration closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.external_evidence.interaction_eligibility_8h import bind_interaction_eligibility
+          from scanner.research.external_evidence.interaction_spec_8h import freeze_interaction_specs
+          from scanner.research.external_evidence.interaction_model_8h import construct_interaction_design_family
+          from scanner.research.external_evidence.interaction_discovery_8h import evaluate_interaction_discovery_family
+          from scanner.research.external_evidence.interaction_validation_8h import evaluate_interaction_validation_family
+          from scanner.research.external_evidence.interaction_holdout_8h import evaluate_interaction_holdout_family
+          from scanner.research.external_evidence.interaction_promotion_8h import promotion_review_status
+
+          root = Path('.')
+          binding = json.loads((root / 'configs/external_evidence_8h_interaction_eligibility_binding_v1.json').read_text())
+          spec_contract = json.loads((root / 'configs/external_evidence_8h_interaction_spec_freeze_v1.json').read_text())
+          model_contract = json.loads((root / 'configs/external_evidence_8h_interaction_model_construction_v1.json').read_text())
+          discovery_contract = json.loads((root / 'configs/external_evidence_8h_interaction_discovery_evaluation_v1.json').read_text())
+          validation_contract = json.loads((root / 'configs/external_evidence_8h_interaction_validation_evaluation_v1.json').read_text())
+          holdout_contract = json.loads((root / 'configs/external_evidence_8h_interaction_holdout_confirmation_v1.json').read_text())
+          promotion_contract = json.loads((root / 'configs/external_evidence_8h_interaction_promotion_review_v1.json').read_text())
+          challenger = json.loads((root / 'configs/external_evidence_8g_challenger_specs_v1.json').read_text())
+          registry = json.loads((root / 'configs/external_source_registry_v1.json').read_text())
+
+          eligibility = bind_interaction_eligibility(contract=binding, challenger_specs=challenger, source_registry=registry)
+          freeze = freeze_interaction_specs(contract=spec_contract, challenger_specs=challenger, eligibility_result=eligibility)
+          _, _, design = construct_interaction_design_family(
+              contract=model_contract, spec_contract=spec_contract, challenger_specs=challenger, freeze_result=freeze
+          )
+          discovery = evaluate_interaction_discovery_family(
+              contract=discovery_contract, model_contract=model_contract, freeze_result=freeze, design_result=design
+          )
+          validation = evaluate_interaction_validation_family(
+              contract=validation_contract,
+              discovery_contract=discovery_contract,
+              freeze_result=freeze,
+              design_result=design,
+              discovery_result=discovery,
+          )
+          holdout, consumed = evaluate_interaction_holdout_family(
+              contract=holdout_contract,
+              validation_contract=validation_contract,
+              freeze_result=freeze,
+              design_result=design,
+              discovery_result=discovery,
+              validation_result=validation,
+          )
+          assert consumed is None
+          review = promotion_review_status(contract=promotion_contract, holdout_result=holdout)
+          assert review['state'] == 'WAITING_FOR_8H_G_EMPIRICAL_COMPLETION'
+          assert review['eligible_hypotheses'] == []
+          assert review['approved_for_8i_research'] == []
+          assert review['empirically_complete'] is False
+          assert review['8i_research_handoff_authorized'] is False
+          assert review['productive_integration_enabled'] is False
+          assert review['phase8i_integration_authorized'] is False
+          assert review['orders_or_trades_authorized'] is False
+          PY
+
+# 8H-H is a manual research-promotion gate only. It cannot create candidates,
+# reinterpret failures, refit models, shrink the frozen family, integrate into
+# Phase 7/production/8I, or authorize orders. Its maximum state is
+# APPROVED_FOR_8I_RESEARCH_ONLY and 8I still requires its own separate contract.
+# Registration touch: this workflow already existed in the parent of this push.

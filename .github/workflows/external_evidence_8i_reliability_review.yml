@@ -1,0 +1,82 @@
+name: Phase 8I-E Real Evaluation Review
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - phase8i-decision-layer-extension
+    paths:
+      - "configs/external_evidence_source_identity_correction_v1.json"
+      - "configs/external_evidence_8i_reliability_extension_research_v1.json"
+      - "configs/external_evidence_8i_promotion_provenance_binding_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "artifacts/research/external_evidence_8g_holdout_consumption_v1.json"
+      - "src/scanner/research/external_evidence/reliability_review_8i.py"
+      - "scripts/run_external_evidence_8i_reliability_review.py"
+      - "tests/test_external_evidence_8i_reliability_review.py"
+      - ".github/workflows/external_evidence_8i_reliability_review.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  real-evaluation-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Guard existing Phase 8I-E research contract
+        run: pytest -q tests/test_external_evidence_8i_reliability_extension.py
+
+      - name: Validate real metadata-only review path
+        run: pytest -q tests/test_external_evidence_8i_reliability_review.py
+
+      - name: Execute real Phase 8I-E evaluation review
+        run: >-
+          python scripts/run_external_evidence_8i_reliability_review.py
+          --output artifacts/research/external_evidence_8i_evaluation_review_latest.json
+
+      - name: Prove review did not open outcomes or activate decisions
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          row = json.loads(Path("artifacts/research/external_evidence_8i_evaluation_review_latest.json").read_text())
+          assert row["evaluation_started"] is True
+          assert row["review_started"] is True
+          assert row["real_outcomes_opened"] is False
+          assert row["real_outcome_values_read_by_review"] is False
+          assert row["terminal_family_evaluation_complete"] is False
+          assert row["phase7_reliability_preserved"] is True
+          assert row["extended_reliability_enabled"] is False
+          assert row["extended_stance_enabled"] is False
+          assert row["decision_effect"] == "NO_CHANGE_TO_PHASE7_DECISION"
+          assert row["portfolio_action_change_authorized"] is False
+          assert row["orders_or_trades_authorized"] is False
+          print(json.dumps({"state": row["state"], "blockers": row["blockers"]}, sort_keys=True))
+          PY
+
+      - name: Upload real Phase 8I-E review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8i-e-real-evaluation-review-${{ github.run_id }}
+          path: artifacts/research/external_evidence_8i_evaluation_review_latest.json
+          if-no-files-found: error
+          retention-days: 90
+
+# This workflow performs the real 8I-E readiness/review pass now.
+# It is metadata-only and must never read peer_excess or other forward outcome values.
+# The one-shot terminal outcome family remains sealed until the frozen 8I-E terminal gate passes.
+# The source-identity correction is a forward governance receipt only and does not rewrite old evidence.
+# No Phase-7 mutation, reliability/stance activation, portfolio action change, or order generation is allowed.

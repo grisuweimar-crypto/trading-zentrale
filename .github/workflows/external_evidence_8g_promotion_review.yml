@@ -1,0 +1,52 @@
+name: Phase 8G-H Promotion Review
+
+on:
+  push:
+    branches:
+      - phase8g-incremental-evidence-research
+    paths:
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "configs/external_source_registry_v1.json"
+      - "src/scanner/research/external_evidence/prospective_8g.py"
+      - "src/scanner/research/external_evidence/promotion_review_8g.py"
+      - "tests/test_external_evidence_8g_prospective.py"
+      - "tests/test_external_evidence_8g_promotion_review.py"
+      - ".github/workflows/external_evidence_8g_promotion_review.yml"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8g_promotion_review_v1.json"
+      - "src/scanner/research/external_evidence/promotion_review_8g.py"
+      - "tests/test_external_evidence_8g_promotion_review.py"
+      - ".github/workflows/external_evidence_8g_promotion_review.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  promotion-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Re-verify Phase 8G-G prospective boundary
+        run: python -m pytest -q tests/test_external_evidence_8g_prospective.py
+
+      - name: Validate Phase 8G-H manual promotion governance
+        run: python -m pytest -q tests/test_external_evidence_8g_promotion_review.py
+
+# 8G-H is a manual research-promotion review only.
+# All ten Phase-8 family promotion criteria must pass.
+# Statistical confirmation alone is insufficient: source registry resolution,
+# PIT/provenance/license, survivorship/as-of-universe and evidence consumption
+# remain explicit hard gates. Approval can authorize top-level Phase 8H research
+# only; it cannot enable production, mutate Phase 7, authorize 8I integration,
+# or trigger an order/trade.

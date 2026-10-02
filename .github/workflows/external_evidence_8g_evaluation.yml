@@ -1,0 +1,76 @@
+name: Phase 8G-E Confirmatory Evaluation
+
+on:
+  push:
+    branches:
+      - phase8g-incremental-evidence-research
+    paths:
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "configs/external_evidence_8g_discovery_protocol_v1.json"
+      - "configs/external_evidence_8g_evaluation_protocol_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "artifacts/research/external_evidence_8g_holdout_consumption_v1.json"
+      - "src/scanner/research/external_evidence/discovery_fit_8g.py"
+      - "src/scanner/research/external_evidence/evaluation_8g.py"
+      - "tests/test_external_evidence_8g_evaluation.py"
+      - "tests/test_external_evidence_8g_holdout_seed.py"
+      - ".github/workflows/external_evidence_8g_evaluation.yml"
+  pull_request:
+    paths:
+      - "configs/external_evidence_8g_research_contract_v1.json"
+      - "configs/external_evidence_8g_challenger_specs_v1.json"
+      - "configs/external_evidence_8g_split_plan_v1.json"
+      - "configs/external_evidence_8g_discovery_protocol_v1.json"
+      - "configs/external_evidence_8g_evaluation_protocol_v1.json"
+      - "artifacts/research/external_evidence_8g_split_manifest_v1.json"
+      - "artifacts/research/external_evidence_8g_holdout_consumption_v1.json"
+      - "src/scanner/research/external_evidence/discovery_fit_8g.py"
+      - "src/scanner/research/external_evidence/evaluation_8g.py"
+      - "tests/test_external_evidence_8g_evaluation.py"
+      - "tests/test_external_evidence_8g_holdout_seed.py"
+      - ".github/workflows/external_evidence_8g_evaluation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  confirmatory-evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Re-verify Phase 8G-A through 8G-D
+        run: >-
+          python -m pytest -q
+          tests/test_external_evidence_8g_research_contract.py
+          tests/test_external_evidence_8g_challenger_freeze.py
+          tests/test_external_evidence_8g_binding_guard.py
+          tests/test_external_evidence_8g_model_construction.py
+          tests/test_external_evidence_8g_discovery_guard.py
+          tests/test_external_evidence_8g_discovery_fit.py
+
+      - name: Validate Phase 8G-E Validation evaluation
+        run: >-
+          python -m pytest -q
+          tests/test_external_evidence_8g_evaluation.py
+          tests/test_external_evidence_8g_holdout_seed.py
+
+# 8G-E owns Validation / Incremental Value and never refits the frozen Discovery model.
+# Holdout primitives are prepared here only so the statistical implementation is shared;
+# final candidate freezing, one-shot Holdout access and OOS completion belong to 8G-F.
+# The primary estimand is snapshot-aggregated paired squared-error improvement.
+# Primary uncertainty uses 2H circular moving market-date blocks, never iid row bootstrap.
+# Holm multiplicity includes all 12 frozen factor x horizon hypotheses; underpowered members remain p=1.
+# Regime/domain/coverage/concentration diagnostics are reported without post-hoc exclusions.
+# 8G-E does not enable cross-factor interaction, Decision-Layer integration or production.

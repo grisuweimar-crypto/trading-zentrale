@@ -1,0 +1,114 @@
+{
+  "schema_version": "external_evidence_8i_extended_stance_entry_gate_v1",
+  "phase": "8I-F",
+  "title": "Extended Stance Preregistration / Empirical Entry Gate",
+  "frozen_on": "2026-09-29",
+  "status": "BLOCKED_WAITING_FOR_8I_E_EMPIRICAL_REVIEW",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "real_decision_outcome_read_allowed": false,
+  "scope": {
+    "8i_f_definition": "EXTENDED_STANCE_PREREGISTRATION",
+    "entry_gate_only_until_8i_e_empirical_review_succeeds": true,
+    "stance_rule_family_frozen_now": false,
+    "stance_thresholds_frozen_now": false,
+    "stance_weights_frozen_now": false,
+    "portfolio_action_bridge_in_scope_now": false,
+    "portfolio_action_remains_downstream": true,
+    "phase7_universal_stance_remains_authoritative": true,
+    "purpose": "Permit 8I-F stance-rule preregistration only after a successful, manually reviewed, one-shot 8I-E prospective reliability evaluation. Until then this artifact is a fail-closed transition gate and cannot alter Phase 7."
+  },
+  "parent_contracts": {
+    "8i_e_reliability": {
+      "path": "configs/external_evidence_8i_reliability_extension_research_v1.json",
+      "git_blob_sha": "31616b5fe6ca86d5e9424e5c82abb928b1a2309b"
+    },
+    "phase7_universal_stance": {
+      "path": "configs/decision_universal_stance_v1.json",
+      "git_blob_sha": "088ed8564d35ef477887f557c2ad4972b981b6db"
+    },
+    "phase7_state_transition": {
+      "path": "configs/decision_state_transition_v1.json",
+      "git_blob_sha": "e89b96e226fcfadec91600b87a94795c24be239c"
+    },
+    "phase7_portfolio_action": {
+      "path": "configs/decision_portfolio_action_v1.json",
+      "git_blob_sha": "61e931d2c5f4f4257944f3d7b795003c444332a8"
+    },
+    "8i_a_decision_extension": {
+      "path": "configs/external_evidence_8i_decision_extension_contract_v1.json",
+      "git_blob_sha": "3db4359d4ba70dc7bc6801c4d74aa0ebb85b8388"
+    }
+  },
+  "upstream_review_status": {
+    "path": "artifacts/research/external_evidence_8i_evaluation_review_latest.json",
+    "schema_version": "external_evidence_8i_reliability_review_status_v1",
+    "mutable_audit_artifact": true,
+    "current_review_sha256": "e6d0e16febada064057a5f6384749324df3a6073a8feeb1b6047500dad48b03d",
+    "current_state": "STARTED_WAITING_FOR_PROSPECTIVE_START",
+    "current_empirical_review_complete": false,
+    "current_terminal_family_evaluation_complete": false,
+    "current_real_outcomes_opened": false
+  },
+  "entry_requirements": {
+    "8i_e_empirical_review_complete": true,
+    "8i_e_terminal_family_evaluation_complete": true,
+    "8i_e_one_shot_prospective_family_consumed": true,
+    "successful_empirical_review_receipt_required": true,
+    "required_receipt_schema": "external_evidence_8i_e_reliability_empirical_review_receipt_v1",
+    "required_receipt_state": "APPROVED_FOR_8I_F_RESEARCH_DESIGN_ONLY",
+    "manual_review_required": true,
+    "effect_size_and_uncertainty_reviewed_separately": true,
+    "holm_family_reviewed": true,
+    "failed_hypothesis_inversion_forbidden": true,
+    "receipt_may_authorize_production": false,
+    "receipt_may_authorize_phase7_mutation": false,
+    "receipt_may_authorize_portfolio_action_change": false,
+    "receipt_may_authorize_orders_or_trades": false
+  },
+  "pre_registration_guards": {
+    "no_stance_mapping_selected_before_entry_gate": true,
+    "no_numeric_vote_counting": true,
+    "no_weighted_super_score": true,
+    "no_arbitrary_external_weights": true,
+    "no_failed_hypothesis_inversion": true,
+    "no_raw_external_component_to_stance_shortcut": true,
+    "no_external_relation_to_portfolio_action_shortcut": true,
+    "external_only_cannot_create_portfolio_action": true,
+    "phase7_stance_must_remain_reconstructible": true,
+    "phase7_transition_must_remain_reconstructible": true,
+    "phase7_portfolio_action_must_remain_reconstructible": true,
+    "future_8i_f_rule_design_must_mark_8i_e_evidence_spent_for_design": true,
+    "future_8i_f_validation_requires_fresh_evidence": true
+  },
+  "current_repository_state": {
+    "state": "BLOCKED_WAITING_FOR_8I_E_EMPIRICAL_REVIEW",
+    "eligible_to_begin_stance_preregistration": false,
+    "real_8i_e_empirical_review_receipt_present": false,
+    "extended_stance_enabled": false,
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION",
+    "portfolio_action_change_authorized": false,
+    "orders_or_trades_authorized": false
+  },
+  "fail_closed_policy": {
+    "missing_or_incomplete_8i_e_review": "BLOCK_8I_F_RULE_DESIGN",
+    "missing_or_invalid_empirical_review_receipt": "BLOCK_8I_F_RULE_DESIGN",
+    "receipt_scope_exceeds_research_design_only": "REJECT_RECEIPT",
+    "on_any_gate_failure": "PHASE7_ONLY + NO_CHANGE_TO_PHASE7_DECISION",
+    "technical_8i_f_failure_may_disable_phase7": false
+  },
+  "completion_gate": {
+    "entry_gate_technical_completion_requires_contract_implementation_tests_docs_and_ci": true,
+    "entry_gate_technical_completion_is_not_8i_f_stance_preregistration_completion": true,
+    "actual_8i_f_stance_preregistration_complete": false,
+    "empirical_8i_e_gate_open_now": false,
+    "8i_g_may_start_now": false,
+    "next_state": "8I-E_WAIT_FOR_PROSPECTIVE_RELIABILITY_EVIDENCE"
+  }
+}

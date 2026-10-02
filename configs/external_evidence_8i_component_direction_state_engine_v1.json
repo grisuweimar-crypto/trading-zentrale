@@ -1,0 +1,233 @@
+{
+  "schema_version": "external_evidence_8i_component_direction_state_engine_v1",
+  "phase": "8I-D",
+  "title": "Component Direction State Engine Preregistration",
+  "frozen_on": "2026-09-28",
+  "status": "FROZEN_OUTCOME_BLIND_DIRECTION_STATE_PREREGISTRATION_ONLY",
+  "research_only": true,
+  "shadow_mode": true,
+  "productive_integration_enabled": false,
+  "phase7_mutation_enabled": false,
+  "extended_reliability_enabled": false,
+  "extended_stance_enabled": false,
+  "portfolio_action_change_enabled": false,
+  "orders_or_trades_enabled": false,
+  "real_decision_outcome_read_allowed": false,
+  "parent_contracts": {
+    "8i_b": {
+      "path": "configs/external_evidence_8i_promotion_provenance_binding_v1.json",
+      "git_blob_sha": "0bba5affe58aa837f9750ae46431dc6306f7af06",
+      "required_bound_state": "BOUND_FOR_8I_RESEARCH_ONLY"
+    },
+    "8i_c": {
+      "path": "configs/external_evidence_8i_external_aggregation_design_v1.json",
+      "git_blob_sha": "ff124c61a4c014dc17ec3cc320b13ea4f4021b38",
+      "required_adapter_state_before_8i_d": "NOT_YET_FROZEN"
+    },
+    "8g_challenger_specs": {
+      "path": "configs/external_evidence_8g_challenger_specs_v1.json",
+      "git_blob_sha": "f3ee0d142d422d800efeaef938cc395e35662254"
+    },
+    "8g_discovery_fit_implementation": {
+      "path": "src/scanner/research/external_evidence/discovery_fit_8g.py",
+      "git_blob_sha": "8c5c97240e5d858e2f32f61993b401b1ac69ec5e"
+    },
+    "8h_model_contract": {
+      "path": "configs/external_evidence_8h_interaction_model_construction_v1.json",
+      "git_blob_sha": "9b0a5129961a24cdfb39160d84118854c57ac5f6"
+    },
+    "8h_model_implementation": {
+      "path": "src/scanner/research/external_evidence/interaction_model_8h.py",
+      "git_blob_sha": "5f32e761b46ff8d68777bc7b1a51bda4c588bb70"
+    },
+    "8h_discovery_contract": {
+      "path": "configs/external_evidence_8h_interaction_discovery_evaluation_v1.json",
+      "git_blob_sha": "9b4d61072df65cede95fd5f005f856201c654b45"
+    },
+    "8h_discovery_implementation": {
+      "path": "src/scanner/research/external_evidence/interaction_discovery_8h.py",
+      "git_blob_sha": "474bb4e00da267bca3027a65260579d07b2ba6d2"
+    }
+  },
+  "scope": {
+    "goal": "Freeze the outcome-blind mapping from an exact promoted frozen model pair's incremental prediction shift to a standardized component direction state for later 8I aggregation.",
+    "8i_d_is_preregistration_and_synthetic_engine_only": true,
+    "real_bound_component_direction_generation_enabled_now": false,
+    "synthetic_contract_execution_allowed": true,
+    "aggregation_in_8i_d_allowed": false,
+    "relation_to_phase7_in_8i_d_allowed": false,
+    "reliability_recompute_in_8i_d_allowed": false,
+    "stance_recompute_in_8i_d_allowed": false,
+    "portfolio_action_recompute_in_8i_d_allowed": false
+  },
+  "direction_adapter": {
+    "direction_adapter_id": "incremental_prediction_delta_sign",
+    "direction_adapter_version": "v1",
+    "direction_adapter_sha256": "d7a3a2ddf519c8df309fea8e0c9404c263945bfa483f7fe57d69e519a813bdcd",
+    "semantics": "MODEL_PAIR_INCREMENTAL_PREDICTION_DIRECTION_NOT_CAUSAL_FACTOR_EFFECT",
+    "target_template": "peer_excess_{H}t",
+    "component_formulas": {
+      "8g_main_effect": "challenger_prediction_minus_baseline_prediction",
+      "8h_interaction": "challenger_prediction_minus_main_effects_baseline_prediction"
+    },
+    "strict_state_mapping": [
+      {"condition": "delta > 0", "observation_status": "USABLE", "direction_state": "POSITIVE"},
+      {"condition": "delta < 0", "observation_status": "USABLE", "direction_state": "NEGATIVE"},
+      {"condition": "delta == 0 exactly", "observation_status": "UNKNOWN_VALID", "direction_state": "UNKNOWN"}
+    ],
+    "zero_deadband": null,
+    "round_before_sign": false,
+    "absolute_or_relative_threshold": null,
+    "semantic_factor_sign_assignment": false,
+    "raw_factor_value_sign_used": false,
+    "coefficient_sign_used": false,
+    "p_value_or_significance_used": false,
+    "observed_outcome_used_at_runtime": false
+  },
+  "semantic_boundary": {
+    "positive_means": "The exact frozen challenger model predicts higher peer_excess than its exact paired frozen baseline for the same snapshot, symbol and horizon.",
+    "negative_means": "The exact frozen challenger model predicts lower peer_excess than its exact paired frozen baseline for the same snapshot, symbol and horizon.",
+    "unknown_zero_means": "The exact frozen model pair produces no incremental prediction displacement for that row.",
+    "positive_does_not_mean_raw_macro_value_is_good": true,
+    "negative_does_not_mean_raw_macro_value_is_bad": true,
+    "direction_is_not_causal_effect": true,
+    "direction_is_not_promotion_strength": true,
+    "direction_is_not_confidence": true,
+    "direction_is_not_trade_signal": true
+  },
+  "upstream_model_pair_semantics": {
+    "8g_main_effect": {
+      "baseline": "frozen scanner baseline model",
+      "challenger": "same frozen baseline feature family plus exactly one promoted external factor family",
+      "shared_feature_coefficients_may_differ_between_separately_fitted_models": true,
+      "therefore_delta_is_model_pair_prediction_shift_not_isolated_feature_attribution": true
+    },
+    "8h_interaction": {
+      "baseline": "frozen permitted main-effects model",
+      "challenger": "same permitted main effects plus exactly one preregistered interaction",
+      "both_underlying_main_effects_remain_present": true,
+      "shared_feature_coefficients_may_differ_between_separately_fitted_models": true,
+      "therefore_delta_is_model_pair_prediction_shift_not_isolated_interaction_attribution": true
+    }
+  },
+  "model_pair_lineage": {
+    "8i_b_component_artifact_is_not_assumed_to_be_a_model_pair_by_default": true,
+    "direction_eligible_binding_requires_component_artifact_hash_to_equal_exact_frozen_model_pair_artifact_hash": true,
+    "baseline_model_sha256_must_verify_inside_model_pair_artifact": true,
+    "challenger_model_sha256_must_verify_inside_model_pair_artifact": true,
+    "model_pair_substitution_after_binding_allowed": false,
+    "binding_valid_from_is_the_earliest_8i_d_usable_time_for_the_bound_model_pair": true,
+    "upstream_model_training_or_promotion_outcomes_are_not_reopened_by_hash_verification": true
+  },
+  "input_contract": {
+    "required_binding_schema": "external_evidence_8i_promotion_provenance_binding_result_v1",
+    "required_binding_state": "BOUND_FOR_8I_RESEARCH_ONLY",
+    "binding_sha256_must_verify": true,
+    "allowed_component_types": ["8g_main_effect", "8h_interaction"],
+    "required_prediction_identity_fields": [
+      "component_type", "component_id", "snapshot_id", "symbol", "horizon_sessions",
+      "generated_at", "feature_valid_from", "input_pit_status", "target", "prediction_status",
+      "baseline_model_sha256", "challenger_model_sha256", "model_pair_artifact_sha256", "binding_sha256"
+    ],
+    "available_prediction_requires": ["baseline_prediction", "challenger_prediction"],
+    "target_must_equal": "peer_excess_{H}t",
+    "same_snapshot_symbol_horizon_for_baseline_and_challenger_required": true,
+    "date_only_identity_allowed": false,
+    "prediction_values_must_be_finite_when_available": true,
+    "model_hashes_must_be_sha256": true,
+    "model_pair_artifact_sha256_must_equal_bound_component_artifact_hash": true,
+    "prediction_statuses": ["AVAILABLE", "UNAVAILABLE"],
+    "input_pit_statuses": ["PIT_ELIGIBLE", "PIT_INELIGIBLE_MISSING", "PIT_INELIGIBLE_STALE", "PIT_INELIGIBLE_MAPPING", "PIT_INELIGIBLE_SOURCE"],
+    "available_prediction_requires_pit_status": "PIT_ELIGIBLE",
+    "unavailable_requires_reason": true,
+    "unavailable_may_not_be_coerced_to_zero": true,
+    "direction_valid_from_rule": "snapshot_generated_at",
+    "feature_valid_from_must_not_exceed_snapshot": true,
+    "component_binding_valid_from_must_not_exceed_snapshot": true
+  },
+  "forbidden_runtime_inputs": [
+    "observed_peer_excess", "realized_return", "adverse_excursion", "path_max_drawdown",
+    "future_return", "forward_label", "loss_improvement", "p_value", "holm_adjusted_p",
+    "confidence_interval", "phase7_stance", "portfolio_action", "entry_price", "position_size"
+  ],
+  "runtime_guards": {
+    "outcome_based_sign_choice_allowed": false,
+    "outcome_based_threshold_choice_allowed": false,
+    "sign_flip_allowed": false,
+    "deadband_tuning_allowed": false,
+    "horizon_tuning_allowed": false,
+    "model_refit_allowed": false,
+    "feature_selection_allowed": false,
+    "model_pair_substitution_allowed": false,
+    "failed_hypothesis_inversion_allowed": false,
+    "raw_factor_semantic_override_allowed": false
+  },
+  "output_contract": {
+    "compatible_with_8i_c_component_input": true,
+    "output_observation_statuses": ["USABLE", "UNKNOWN_VALID", "UNAVAILABLE"],
+    "output_direction_states": ["POSITIVE", "NEGATIVE", "UNKNOWN"],
+    "unavailable_direction_state": null,
+    "required_output_fields": [
+      "binding", "snapshot_id", "symbol", "horizon_sessions", "generated_at",
+      "component_observation_status", "direction_state", "direction_adapter_id",
+      "direction_adapter_version", "direction_adapter_sha256", "direction_valid_from",
+      "prediction_delta", "baseline_model_sha256", "challenger_model_sha256",
+      "model_pair_artifact_sha256", "feature_valid_from", "input_pit_status", "reason_code"
+    ],
+    "forbidden_top_level_8i_c_decision_or_portfolio_fields_present": false,
+    "direction_output_is_annotation_only": true,
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
+  },
+  "evidence_consumption": {
+    "upstream_training_and_promotion_outcomes_are_spent_or_upstream_evidence": true,
+    "runtime_prediction_delta_is_not_independent_8i_confirmation": true,
+    "8i_d_reads_real_decision_outcomes": false,
+    "8i_d_design_may_not_claim_upstream_outcomes_as_fresh_confirmation": true,
+    "future_reliability_research_requires_separately_frozen_fresh_evidence": true
+  },
+  "current_repository_state": {
+    "state": "BLOCKED_BY_8I_B_UPSTREAM_SOURCE_IDENTITY_CONTRACT",
+    "8i_b_state": "BLOCKED_UPSTREAM_SOURCE_IDENTITY_CONTRACT",
+    "real_bound_component_ids": [],
+    "real_direction_adapter_frozen_by_contract": true,
+    "real_bound_component_direction_generation_authorized": false,
+    "external_direction_state": "INSUFFICIENT_EXTERNAL",
+    "external_evidence_state": "INSUFFICIENT_EXTERNAL",
+    "decision_effect": "NO_CHANGE_TO_PHASE7_DECISION"
+  },
+  "fail_closed": {
+    "invalid_or_unverified_binding": "REJECT_DIRECTION_GENERATION",
+    "component_identity_mismatch": "REJECT_DIRECTION_GENERATION",
+    "target_mismatch": "REJECT_DIRECTION_GENERATION",
+    "model_hash_missing_or_invalid": "REJECT_DIRECTION_GENERATION",
+    "model_pair_identity_missing_or_invalid": "REJECT_DIRECTION_GENERATION",
+    "model_pair_not_exact_bound_component_artifact": "REJECT_DIRECTION_GENERATION",
+    "nonfinite_available_prediction": "UNAVAILABLE_WITH_REASON",
+    "prediction_not_available": "UNAVAILABLE_WITH_REASON",
+    "binding_valid_from_after_snapshot": "REJECT_DIRECTION_GENERATION",
+    "feature_valid_from_after_snapshot": "REJECT_DIRECTION_GENERATION",
+    "forbidden_outcome_or_decision_input": "REJECT_DIRECTION_GENERATION",
+    "zero_incremental_prediction": "UNKNOWN_VALID",
+    "phase7_core_remains_available": true
+  },
+  "backward_compatibility": {
+    "phase7_core_immutable": true,
+    "phase7_reliability_unchanged": true,
+    "phase7_universal_stance_unchanged": true,
+    "phase7_portfolio_action_unchanged": true,
+    "phase7_swing_management_unchanged": true,
+    "no_real_bound_components": "INSUFFICIENT_EXTERNAL + NO_CHANGE_TO_PHASE7_DECISION"
+  },
+  "completion_gate": {
+    "technical_completion_requires_contract_engine_tests_docs_and_ci": true,
+    "synthetic_positive_negative_zero_tests_required": true,
+    "synthetic_unavailable_and_nonfinite_tests_required": true,
+    "model_pair_and_binding_hash_tests_required": true,
+    "outcome_input_rejection_tests_required": true,
+    "8i_c_compatibility_test_required": true,
+    "current_fail_closed_state_test_required": true,
+    "technical_completion_does_not_authorize_real_direction_generation": true,
+    "technical_completion_does_not_authorize_reliability_or_stance_change": true,
+    "next_subblock_after_manual_start": "8I-E_RELIABILITY_EXTENSION_RESEARCH"
+  }
+}
