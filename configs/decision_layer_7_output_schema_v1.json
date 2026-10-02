@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Phase 7 Decision Layer Snapshot",
+  "type": "object",
+  "required": ["schema_version", "as_of", "source_snapshot_ids", "symbols"],
+  "properties": {
+    "schema_version": {"const": "decision_layer_7_output_v1"},
+    "as_of": {"type": "string", "format": "date"},
+    "generated_at": {"type": "string"},
+    "source_snapshot_ids": {"type": "object"},
+    "phase_versions": {"type": "object"},
+    "symbols": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "evidence_coverage",
+          "evidence_bundle",
+          "conflict_confirmation",
+          "universal_stance",
+          "decision_reliability",
+          "reasons",
+          "counter_evidence",
+          "transition",
+          "provenance"
+        ],
+        "properties": {
+          "evidence_coverage": {
+            "type": "object",
+            "required": ["state", "missing_blocks"],
+            "properties": {
+              "state": {"enum": ["sufficient", "limited", "insufficient"]},
+              "missing_blocks": {"type": "array", "items": {"type": "string"}},
+              "data_quality": {"enum": ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"]}
+            }
+          },
+          "evidence_bundle": {
+            "type": "object",
+            "properties": {
+              "selection": {"type": ["object", "null"]},
+              "timing": {"type": ["object", "null"]},
+              "probability": {"type": ["object", "null"]},
+              "risk": {"type": ["object", "null"]},
+              "confidence": {"type": ["object", "null"]},
+              "adaptive_learning": {"type": ["object", "null"]},
+              "elliott_vnext": {"type": ["object", "null"]},
+              "market_context": {"type": ["object", "null"]},
+              "relative_strength": {"type": ["object", "null"]},
+              "data_quality_provenance": {"type": ["object", "null"]}
+            },
+            "additionalProperties": true
+          },
+          "conflict_confirmation": {
+            "type": "object",
+            "required": ["state", "conflict_types", "supporting_evidence", "conflicting_evidence"],
+            "properties": {
+              "state": {"enum": ["CONFIRMED", "MIXED", "CONFLICT", "STRUCTURAL_WARNING", "TIMING_WARNING", "INSUFFICIENT_EVIDENCE"]},
+              "conflict_types": {
+                "type": "array",
+                "items": {"enum": [
+                  "SELECTION_TIMING_CONFLICT",
+                  "DIRECTION_STRUCTURE_CONFLICT",
+                  "PRIMARY_ALTERNATIVE_STRUCTURE_CONFLICT",
+                  "MARKET_CONTEXT_DIVERGENCE",
+                  "RELATIVE_STRENGTH_DIVERGENCE",
+                  "RISK_CONSTRAINT_NOT_DIRECTIONAL_CONFLICT",
+                  "RELIABILITY_OR_COVERAGE_CONFLICT",
+                  "DATA_OR_VERSION_CONFLICT"
+                ]}
+              },
+              "supporting_evidence": {"type": "array", "items": {"type": "string"}},
+              "conflicting_evidence": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "universal_stance": {"enum": ["BUY", "HOLD", "SELL", "INSUFFICIENT_EVIDENCE"]},
+          "stance_detail": {
+            "type": ["string", "null"],
+            "enum": ["HOLD_CONSTRUCTIVE", "HOLD_NEUTRAL", "HOLD_UNRESOLVED", null]
+          },
+          "insufficient_evidence_reasons": {
+            "type": "array",
+            "items": {"enum": [
+              "INSUFFICIENT_DATA",
+              "INSUFFICIENT_MODEL_COVERAGE",
+              "INSUFFICIENT_CONSENSUS",
+              "INSUFFICIENT_VALIDATION",
+              "OUTSIDE_VALIDATED_DOMAIN",
+              "STALE_OR_INCOMPATIBLE_INPUT",
+              "INPUT_CONTRACT_VIOLATION"
+            ]}
+          },
+          "decision_reliability": {
+            "type": "object",
+            "required": ["level", "coverage", "data_quality", "module_agreement", "conflict_severity", "walk_forward_support", "reason_codes"],
+            "properties": {
+              "level": {"enum": ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"]},
+              "score_internal": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+              "coverage": {"enum": ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"]},
+              "data_quality": {"enum": ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"]},
+              "module_agreement": {"enum": ["HIGH", "MIXED", "LOW", "INSUFFICIENT"]},
+              "conflict_severity": {"enum": ["NONE", "LOW", "MODERATE", "HIGH", "INSUFFICIENT"]},
+              "walk_forward_support": {"enum": ["STRONG", "MODERATE", "LIMITED", "NONE", "INSUFFICIENT"]},
+              "reason_codes": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "counter_evidence": {"type": "array", "items": {"type": "string"}},
+          "transition": {
+            "type": "object",
+            "required": ["previous_stance", "current_stance", "transition", "transition_reasons", "days_in_current_stance"],
+            "properties": {
+              "previous_stance": {"type": ["string", "null"]},
+              "current_stance": {"type": "string"},
+              "transition": {"type": "string"},
+              "transition_reasons": {"type": "array", "items": {"type": "string"}},
+              "days_in_current_stance": {"type": ["integer", "null"], "minimum": 0},
+              "hysteresis_applied": {"type": "boolean"},
+              "hysteresis_mechanisms": {"type": "array", "items": {"enum": ["confirmation_window", "evidence_margin", "exception_override"]}}
+            }
+          },
+          "portfolio_overlay": {
+            "type": ["object", "null"],
+            "properties": {
+              "position_present": {"type": "boolean"},
+              "portfolio_action": {"enum": ["OPEN", "ADD", "HOLD", "PARTIAL_REDUCE", "EXIT", "NO_ACTION", "INSUFFICIENT_EVIDENCE"]},
+              "portfolio_action_reason_codes": {"type": "array", "items": {"type": "string"}},
+              "constraints": {"type": "array", "items": {"type": "string"}},
+              "swing_context": {"type": ["object", "null"]}
+            }
+          },
+          "provenance": {
+            "type": "object",
+            "required": ["as_of", "input_versions"],
+            "properties": {
+              "as_of": {"type": "string", "format": "date"},
+              "input_versions": {"type": "object"},
+              "policy_version": {"type": ["string", "null"]}
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
