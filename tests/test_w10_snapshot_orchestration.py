@@ -200,3 +200,67 @@ def test_w10_refuses_upstream_mutation_after_freeze(tmp_path: Path):
             artifact_path=later,
             now=_dt(17, 6),
         )
+
+
+def test_w10_phase6_available_binds_current_snapshot_and_records_stage3_guards(tmp_path: Path):
+    manifest = _collect_upstream(tmp_path)
+    del manifest["stages"]["phase6_elliott"]
+    source = _json(
+        tmp_path / "phase6-current.json",
+        {
+            "schema_version": "decision_elliott_6h_source_v1",
+            "source_commit": "c" * 40,
+            "available_from": "2026-10-01T17:03:30+00:00",
+            "source_capture_id": "capture-x",
+            "snapshot_id": "snapshot-x",
+            "as_of": "2026-10-01",
+            "symbol_count": 1,
+            "outputs": [{"symbol": "TEST"}],
+        },
+    )
+    resolved = resolve_phase6(manifest, artifact_path=source, now=_dt(17, 4))
+    phase6 = resolved["stages"]["phase6_elliott"]
+    assert phase6["status"] == "available"
+    assert phase6["snapshot_identity_state"] == "verified"
+    assert phase6["source_capture_id"] == "capture-x"
+    assert phase6["output_count"] == 1
+    assert phase6["symbol_count"] == 1
+    assert phase6["multi_degree_reducer_used"] is False
+    assert phase6["elliott_direction_used_as_vote"] is False
+    assert phase6["decision_effect"] == "review_only_downstream_of_7d_7e"
+
+
+def test_w10_phase6_rejects_different_scanner_snapshot(tmp_path: Path):
+    manifest = _collect_upstream(tmp_path)
+    del manifest["stages"]["phase6_elliott"]
+    source = _json(
+        tmp_path / "phase6-wrong-snapshot.json",
+        {
+            "schema_version": "decision_elliott_6h_source_v1",
+            "source_commit": "c" * 40,
+            "available_from": "2026-10-01T17:03:30+00:00",
+            "snapshot_id": "another-snapshot",
+            "as_of": "2026-10-01",
+            "outputs": [],
+        },
+    )
+    with pytest.raises(W10OrchestrationError, match="phase6_snapshot_mismatch"):
+        resolve_phase6(manifest, artifact_path=source, now=_dt(17, 4))
+
+
+def test_w10_phase6_rejects_different_market_date(tmp_path: Path):
+    manifest = _collect_upstream(tmp_path)
+    del manifest["stages"]["phase6_elliott"]
+    source = _json(
+        tmp_path / "phase6-wrong-date.json",
+        {
+            "schema_version": "decision_elliott_6h_source_v1",
+            "source_commit": "c" * 40,
+            "available_from": "2026-10-01T17:03:30+00:00",
+            "snapshot_id": "snapshot-x",
+            "as_of": "2026-09-30",
+            "outputs": [],
+        },
+    )
+    with pytest.raises(W10OrchestrationError, match="phase6_as_of_mismatch"):
+        resolve_phase6(manifest, artifact_path=source, now=_dt(17, 4))

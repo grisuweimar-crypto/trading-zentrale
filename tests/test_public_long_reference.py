@@ -99,6 +99,78 @@ def _private_minimal_long_book():
     }
 
 
+
+def _elliott_source():
+    route = {
+        "trigger": "EW_W5_TARGET_APPROACH",
+        "review_context": "profit_protection_review",
+        "reason": "public long Stage-3 regression",
+        "scenario_id": "scenario-primary",
+        "scenario_role": "primary",
+        "available_from": "2026-10-01",
+        "actionability": "review_only_not_trade_instruction",
+        "requires_external_confirmation": True,
+        "final_decision_owned_by_global_layer": True,
+        "research_only": True,
+    }
+    output = {
+        "schema_version": "elliott_vnext_output_v2",
+        "module": "6H_module_output",
+        "symbol": "TEST",
+        "as_of": "2026-10-01",
+        "timeframe": "daily",
+        "degree": "intermediate",
+        "selection_policy": "deterministic_structural_recency_not_probability_or_truth",
+        "single_true_count_claimed": False,
+        "primary_scenario": {"scenario_id": "scenario-primary", "direction": "down"},
+        "alternative_scenarios": [],
+        "pivots": [],
+        "fibonacci": {"anchor_start": {}, "anchor_end": {}, "zones": []},
+        "fibonacci_selects_wave_count": False,
+        "current_wave_stage": "wave_5_in_progress",
+        "projection_zones": [],
+        "wave_cycle_map": {
+            "current_stage": "wave_5_in_progress",
+            "next_expected_structures": [],
+            "scenario_maps": [],
+        },
+        "hard_invalidations": [],
+        "structural_fit": None,
+        "confirmation_strength": None,
+        "historical_expectancy": None,
+        "routing_triggers": ["EW_W5_TARGET_APPROACH"],
+        "swing_routing": [route],
+        "routing_summary": {
+            "primary_review_contexts": ["profit_protection_review"],
+            "conflicts_preserved_not_resolved": False,
+            "final_decision_required": True,
+        },
+        "routing_is_trade_decision": False,
+        "integration": {
+            "contract_version": "elliott_vnext_integration_contract_v1",
+            "decision_layer_required": True,
+            "decision_authority": "future_global_decision_layer_or_orchestrating_depot_watch",
+            "productive_integration_enabled": False,
+            "direct_ordering_allowed": False,
+            "review_contexts_are_not_actions": True,
+            "technical_module_6_complete": True,
+            "empirical_promotion_status": "prospective_evidence_accumulating_no_automatic_promotion",
+            "primary_scenario_id": "scenario-primary",
+        },
+        "warnings": [],
+        "research_only": True,
+        "output_id": "public-long-elliott-output",
+    }
+    return {
+        "schema_version": "decision_elliott_6h_source_v1",
+        "source_commit": "c" * 40,
+        "available_from": "2026-10-01T10:29:30+00:00",
+        "snapshot_id": CURRENT_SNAPSHOT,
+        "as_of": "2026-10-01",
+        "source_capture_id": "capture-public-long",
+        "outputs": [output],
+    }
+
 def test_public_long_reference_matches_private_minimal_long_decision_fields():
     daily = _daily()
     packets = _packets()
@@ -131,3 +203,37 @@ def test_public_long_reference_csv_is_compact_and_actionable_without_private_dat
     assert "HOLD" in text
     assert "Private Test Holding" not in text
     assert "private-book" not in text
+
+
+def test_public_long_reference_applies_w6_review_context_without_direction_vote():
+    daily = _daily()
+    packets = _packets()
+    source = _elliott_source()
+
+    reference = build_public_long_reference(
+        daily,
+        packets,
+        elliott_6h_source=source,
+    )
+    private_watch, diagnostics = build_orchestrated_depot_watch(
+        daily,
+        _private_minimal_long_book(),
+        packets,
+        elliott_6h_source=source,
+    )
+
+    public_row = reference["rows"][0]
+    private_row = private_watch["rows"][0]
+    assert public_row["decision"]["universal_stance_state"] == "positive"
+    assert public_row["decision"]["portfolio_action_state"] == "REDUCE_REVIEW"
+    assert public_row["decision"]["elliott_review_contexts"] == [
+        "profit_protection_review"
+    ]
+    assert public_row["decision"]["elliott_changed_universal_stance"] is False
+    assert public_row["decision"]["portfolio_action_state"] == private_row["decision"]["portfolio_action_state"]
+    assert reference["semantics"]["elliott_review_context_integration_enabled"] is True
+    assert reference["semantics"]["elliott_direction_used_as_vote"] is False
+    assert reference["semantics"]["elliott_changed_universal_stance"] is False
+    assert reference["diagnostics"]["elliott_6h_source_status"] == "available"
+    assert reference["diagnostics"]["elliott_6h_actionable_symbols"] == ["TEST"]
+    assert diagnostics["elliott_direction_used_as_vote"] is False

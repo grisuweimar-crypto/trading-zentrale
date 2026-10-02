@@ -41,6 +41,11 @@ def main() -> int:
     parser.add_argument("--w10-manifest", default=DEFAULT_W10)
     parser.add_argument("--daily", default=DEFAULT_DAILY)
     parser.add_argument("--output-dir", default=DEFAULT_RUNTIME_DIR)
+    parser.add_argument(
+        "--elliott-6h-source",
+        type=Path,
+        help="Optional W10-frozen decision_elliott_6h_source_v1 for public long reference.",
+    )
     args = parser.parse_args()
 
     root = args.root.resolve()
@@ -49,10 +54,14 @@ def main() -> int:
     w10_path = root / args.w10_manifest
     daily_path = root / args.daily
     output_dir = root / args.output_dir
+    elliott_source_path = args.elliott_6h_source
+    if elliott_source_path is not None and not elliott_source_path.is_absolute():
+        elliott_source_path = root / elliott_source_path
 
     current = _load(current_path)
     w10 = _load(w10_path)
     daily = _load(daily_path)
+    elliott_6h_source = _load(elliott_source_path) if elliott_source_path is not None else None
     packets, archive_metadata = load_evidence_archive(archive_path, missing_ok=False)
     manifest, shards = build_watch_runtime(
         current_packet_set=current,
@@ -61,7 +70,11 @@ def main() -> int:
     )
     write_watch_runtime(output_dir, manifest=manifest, shards=shards)
 
-    public_long = build_public_long_reference(daily, packets)
+    public_long = build_public_long_reference(
+        daily,
+        packets,
+        elliott_6h_source=elliott_6h_source,
+    )
     if str(public_long["snapshot_id"]) != str(manifest["snapshot_id"]):
         raise ValueError("public_long_reference_snapshot_mismatch")
     (output_dir / PUBLIC_LONG_JSON).write_text(
@@ -87,6 +100,7 @@ def main() -> int:
         "public_long_reference_json": str(output_dir / PUBLIC_LONG_JSON),
         "public_long_reference_csv": str(output_dir / PUBLIC_LONG_CSV),
         "public_long_reference_rows": public_long["row_count"],
+        "elliott_review_context_integration_enabled": elliott_6h_source is not None,
         "max_shard_bytes": max(sizes.values(), default=0),
         "total_shard_bytes": sum(sizes.values()),
         "private_position_data_included": False,

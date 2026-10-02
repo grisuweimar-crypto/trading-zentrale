@@ -240,6 +240,12 @@ def resolve_phase6(manifest: Mapping[str, object], *, artifact_path: Path | None
     outputs = payload.get("outputs")
     if not isinstance(outputs, list):
         raise W10OrchestrationError("phase6_outputs_must_be_list")
+    source_snapshot_id = str(payload.get("snapshot_id") or "").strip()
+    if source_snapshot_id and source_snapshot_id != str(out.get("snapshot_id") or ""):
+        raise W10OrchestrationError("phase6_snapshot_mismatch")
+    source_as_of = str(payload.get("as_of") or "").strip()
+    if source_as_of and source_as_of != str(out.get("snapshot_as_of") or ""):
+        raise W10OrchestrationError("phase6_as_of_mismatch")
     stages[stage] = {
         "status": "available",
         "available_from": _iso(available),
@@ -248,8 +254,14 @@ def resolve_phase6(manifest: Mapping[str, object], *, artifact_path: Path | None
         "source_commit": commit,
         "artifact_path": str(artifact_path),
         "artifact_sha256": _sha256(artifact_path),
-        "snapshot_identity_state": "date_bound_review_context",
+        "snapshot_identity_state": (
+            "verified" if source_snapshot_id else "date_bound_review_context"
+        ),
+        "source_capture_id": payload.get("source_capture_id"),
         "output_count": len(outputs),
+        "symbol_count": payload.get("symbol_count"),
+        "multi_degree_reducer_used": False,
+        "elliott_direction_used_as_vote": False,
         "decision_effect": "review_only_downstream_of_7d_7e",
     }
     return out

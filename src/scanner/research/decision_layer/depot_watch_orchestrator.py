@@ -28,7 +28,7 @@ from .integrated_evidence import PATH_CONTEXT_TYPE
 from .phase5_shadow import Phase5ShadowAdapterError, phase5_shadow_from_packet
 from .phase6_elliott import (
     Elliott6HAdapterError,
-    build_elliott_7f_swing_context,
+    build_elliott_7f_multidegree_swing_context,
     index_elliott_6h_source,
 )
 from .phase7_state_history import (
@@ -253,11 +253,11 @@ def build_decision_bundle_set(
         transition = build_state_transition_history(history)
 
         swing_context: dict[str, object] | None = None
-        elliott_output = elliott_index.get(symbol)
-        if elliott_output is not None:
+        elliott_outputs = elliott_index.get(symbol)
+        if elliott_outputs is not None:
             try:
-                swing_context = build_elliott_7f_swing_context(
-                    elliott_output,
+                swing_context = build_elliott_7f_multidegree_swing_context(
+                    elliott_outputs,
                     source_commit=str(elliott_source_meta["source_commit"]),
                     source_available_from=str(elliott_source_meta["available_from"]),
                 )
@@ -350,6 +350,8 @@ def build_decision_bundle_set(
         "elliott_6h_source_commit": elliott_source_meta["source_commit"],
         "elliott_6h_source_available_from": elliott_source_meta["available_from"],
         "elliott_6h_source_output_count": elliott_source_meta["output_count"],
+        "elliott_6h_source_symbol_count": elliott_source_meta.get("symbol_count", 0),
+        "elliott_6h_source_capture_id": elliott_source_meta.get("source_capture_id"),
         "elliott_6h_symbols": sorted(elliott_symbols),
         "elliott_6h_actionable_symbols": sorted(elliott_actionable_symbols),
         "elliott_changed_universal_stance": False,
