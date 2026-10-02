@@ -33,6 +33,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--runtime-dir", default=DEFAULT_RUNTIME_DIR)
+    parser.add_argument(
+        "--elliott-capture",
+        help="Optional research-only elliott_vnext_prospective_capture_v1 JSON for read-only display.",
+    )
     args = parser.parse_args()
 
     root = args.root.resolve()
@@ -40,10 +44,19 @@ def main() -> int:
     from scanner.research.decision_layer.universal_stance import compute_universal_stance
     from scanner.research.decision_layer.state_transition import build_state_transition_history
     from scanner.research.decision_layer.phase7_state_history import build_state_history_context
+    from scanner.research.decision_layer.elliott_readonly_display import build_elliott_watch_display
 
     runtime_dir = (root / args.runtime_dir).resolve()
     manifest = _load(runtime_dir / "manifest.json")
     daily = _load(root / "artifacts/research/daily_research.json")
+    elliott_capture = None
+    if args.elliott_capture:
+        elliott_path = Path(args.elliott_capture)
+        if not elliott_path.is_absolute():
+            elliott_path = root / elliott_path
+        if not elliott_path.exists():
+            raise ValueError(f"explicit Elliott capture missing: {elliott_path}")
+        elliott_capture = _load(elliott_path)
     if manifest.get("schema_version") != "decision_watch_runtime_manifest_v1":
         raise ValueError("unsupported runtime manifest")
     if manifest.get("private_position_data_included") is not False:
@@ -125,6 +138,12 @@ def main() -> int:
                 "relation_state": s["relation_state"],
                 "support_structure": s["support_structure"],
             })
+        elliott_display = build_elliott_watch_display(
+            elliott_capture,
+            symbol=symbol,
+            expected_snapshot_id=snapshot_id,
+            expected_as_of=str(daily.get("as_of") or ""),
+        )
         summary_filename = f"summary_{token}.json"
         summary_payload = {
             "schema_version": SUMMARY_SCHEMA_VERSION,
@@ -144,6 +163,7 @@ def main() -> int:
             "transition_state": transition["transition_state"],
             "state_history_state": None if state_history is None else state_history["state"],
             "state_history_path_memory": None if state_history is None else state_history["path_memory"],
+            "elliott_vnext_research": elliott_display,
             "private_position_data_included": False,
             "portfolio_action_computed": False,
             "decision_logic_changed": False,
@@ -165,6 +185,16 @@ def main() -> int:
         "symbol_files": packet_files,
         "summary_files": summary_files,
         "source_runtime_projection_sha256": str(manifest.get("runtime_projection_sha256") or ""),
+        "elliott_vnext_display": {
+            "capture_supplied": elliott_capture is not None,
+            "source_capture_id": None if elliott_capture is None else elliott_capture.get("capture_id"),
+            "source_snapshot_id": None if elliott_capture is None else elliott_capture.get("snapshot_id"),
+            "source_as_of": None if elliott_capture is None else elliott_capture.get("as_of"),
+            "research_only": True,
+            "read_only_presentation": True,
+            "w10_source_emitted": False,
+            "decision_logic_changed": False,
+        },
         "private_position_data_included": False,
         "decision_logic_changed": False,
     }
@@ -177,6 +207,9 @@ def main() -> int:
         "snapshot_id": snapshot_id,
         "symbol_count": len(packet_files),
         "packet_count": total_packets,
+        "elliott_capture_supplied": elliott_capture is not None,
+        "elliott_source_capture_id": None if elliott_capture is None else elliott_capture.get("capture_id"),
+        "elliott_source_snapshot_id": None if elliott_capture is None else elliott_capture.get("snapshot_id"),
         "private_position_data_included": False,
         "decision_logic_changed": False,
     }, sort_keys=True))
