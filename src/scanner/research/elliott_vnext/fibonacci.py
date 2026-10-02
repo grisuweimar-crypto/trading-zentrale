@@ -251,6 +251,8 @@ def _projection_zone(
     width_specs: Sequence[ZoneWidthSpec],
     current_price: float | None,
 ) -> dict[str, object]:
+    if not math.isfinite(center) or center <= 0:
+        raise FibonacciInputError("projection_center_must_be_positive")
     spec = _width_spec(degree, width_specs)
     half_width, width_basis = _half_width(center, atr, spec)
     low = max(0.0, center - half_width)
@@ -480,6 +482,9 @@ def _scenario_geometry(
             else:
                 for level in W3_LEVELS:
                     center = _extension_from(float(wave2["price"]), length, level, direction)
+                    if not math.isfinite(center) or center <= 0:
+                        warnings.append("wave3_projection_suppressed_non_positive_price")
+                        continue
                     zones.append(
                         _projection_zone(
                             scenario_id=scenario_id,
@@ -512,6 +517,9 @@ def _scenario_geometry(
             else:
                 for level in W4_LEVELS:
                     center = _retracement_from(float(wave3["price"]), length, level, direction)
+                    if not math.isfinite(center) or center <= 0:
+                        warnings.append("wave4_projection_suppressed_non_positive_price")
+                        continue
                     zones.append(
                         _projection_zone(
                             scenario_id=scenario_id,
@@ -549,6 +557,9 @@ def _scenario_geometry(
                     length = lengths[str(candidate["length_source"])]
                     level = float(candidate["level"])
                     center = _extension_from(float(wave4["price"]), length, level, direction)
+                    if not math.isfinite(center) or center <= 0:
+                        warnings.append("wave5_projection_suppressed_non_positive_price")
+                        continue
                     zones.append(
                         _projection_zone(
                             scenario_id=scenario_id,
