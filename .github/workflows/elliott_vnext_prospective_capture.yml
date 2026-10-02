@@ -5,8 +5,10 @@ on:
     branches: [main]
     paths:
       - "src/scanner/research/elliott_vnext/prospective_capture.py"
+      - "src/scanner/research/elliott_vnext/validation_replay.py"
       - "scripts/run_elliott_prospective_capture_6h.py"
       - "tests/test_elliott_vnext_prospective_capture.py"
+      - "tests/test_elliott_vnext_validation.py"
       - "docs/elliott_vnext_prospective_capture.md"
       - ".github/workflows/elliott_vnext_prospective_capture.yml"
   workflow_run:
@@ -216,6 +218,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_elliott_vnext_prospective_capture.py
+          tests/test_elliott_vnext_validation.py
           tests/test_elliott_vnext_pivots.py
           tests/test_elliott_vnext_scenarios.py
           tests/test_elliott_vnext_fibonacci.py

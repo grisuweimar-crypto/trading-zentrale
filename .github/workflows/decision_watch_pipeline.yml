@@ -202,7 +202,8 @@ jobs:
           CAPTURE_AVAILABLE_FROM=$(git show -s --format=%cI "$CAPTURE_COMMIT")
           git show "$CAPTURE_COMMIT:$CAPTURE_PATH" > "$CAPTURE_FILE"
 
-          if CAPTURE_FILE="$CAPTURE_FILE" python - <<'PY'
+          set +e
+          CAPTURE_FILE="$CAPTURE_FILE" python - <<'PY'
           import json
           import os
           from pathlib import Path
@@ -215,12 +216,23 @@ jobs:
           )
           if not same:
               raise SystemExit(1)
+          if int(capture.get('output_count') or 0) <= 0:
+              raise SystemExit(2)
           PY
-          then
-            python scripts/build_elliott_w6_source.py               --capture "$CAPTURE_FILE"               --source-commit "$CAPTURE_COMMIT"               --evidence-available-from "$CAPTURE_AVAILABLE_FROM"               --output "$SOURCE_FILE"
+          CAPTURE_STATE=$?
+          set -e
+
+          if [[ "$CAPTURE_STATE" -eq 0 ]]; then
+            python scripts/build_elliott_w6_source.py \
+              --capture "$CAPTURE_FILE" \
+              --source-commit "$CAPTURE_COMMIT" \
+              --evidence-available-from "$CAPTURE_AVAILABLE_FROM" \
+              --output "$SOURCE_FILE"
             echo "source_path=$SOURCE_FILE" >> "$GITHUB_OUTPUT"
             echo "capture_commit=$CAPTURE_COMMIT" >> "$GITHUB_OUTPUT"
             echo "capture_available_from=$CAPTURE_AVAILABLE_FROM" >> "$GITHUB_OUTPUT"
+          elif [[ "$CAPTURE_STATE" -eq 2 ]]; then
+            echo 'Matching Elliott capture contains zero 6H outputs; Phase 6 remains not_supplied.'
           else
             echo 'Prospective Elliott capture belongs to another scanner snapshot; Phase 6 remains not_supplied.'
           fi

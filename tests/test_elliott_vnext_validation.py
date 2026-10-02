@@ -333,6 +333,13 @@ def test_prefix_replay_is_invariant_to_future_rows():
     )
     assert coverage_first["errors"] == []
     assert coverage_second["errors"] == []
+    # Regression: normalized pandas Timestamps must be converted back to
+    # canonical YYYY-MM-DD strings before the 6A price validator.  Without
+    # that transport normalization every otherwise-valid session is discarded
+    # and the replay falsely emits zero Elliott states.
+    assert coverage_first["status"] == "ok"
+    assert coverage_second["status"] == "ok"
+    assert first
     assert first == second
     assert all(item["validation_replay"]["future_rows_used"] is False for item in first)
     assert all("trade_decision" not in item and "order_instruction" not in item for item in first)
