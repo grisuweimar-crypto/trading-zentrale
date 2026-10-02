@@ -5,9 +5,21 @@ on:
     branches: [main]
     paths:
       - 'scripts/build_watch_symbol_views.py'
+      - 'src/scanner/research/decision_layer/elliott_readonly_display.py'
+      - 'docs/elliott_vnext_watch_display_stage2.md'
+      - '.github/workflows/decision_watch_symbol_views.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/build_watch_symbol_views.py'
+      - 'src/scanner/research/decision_layer/elliott_readonly_display.py'
+      - 'tests/test_elliott_vnext_watch_display.py'
+      - 'docs/elliott_vnext_watch_display_stage2.md'
       - '.github/workflows/decision_watch_symbol_views.yml'
   workflow_run:
-    workflows: ['Decision Watch Runtime Publish']
+    workflows:
+      - 'Decision Watch Runtime Publish'
+      - 'Module 6 Elliott Prospective Shadow'
     types: [completed]
   workflow_dispatch:
 
@@ -20,6 +32,48 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  regression:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Prove Elliott Watch display is read-only and fail-closed
+        run: >-
+          pytest -q
+          tests/test_elliott_vnext_watch_display.py
+          tests/test_watch_runtime_transport.py
+          tests/test_decision_depot_watch_orchestration.py
+      - name: Build current symbol views without an Elliott capture
+        run: python scripts/build_watch_symbol_views.py
+      - name: Validate missing capture stays explicit and decision-free
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          index = json.loads(Path('artifacts/research/watch_runtime/symbols/index.json').read_text(encoding='utf-8'))
+          assert index['elliott_vnext_display']['capture_supplied'] is False
+          assert index['elliott_vnext_display']['w10_source_emitted'] is False
+          assert index['elliott_vnext_display']['decision_logic_changed'] is False
+          first = next(iter(index['summary_files'].values()))
+          summary = json.loads((Path('artifacts/research/watch_runtime/symbols') / first).read_text(encoding='utf-8'))
+          display = summary['elliott_vnext_research']
+          assert display['status'] == 'prospective_capture_not_supplied'
+          assert display['outputs'] == []
+          assert display['decision_effect'] == 'none'
+          assert display['changes_universal_stance'] is False
+          assert display['changes_portfolio_action'] is False
+          PY
+
   publish:
     if: >-
       github.event_name == 'push' ||
@@ -47,8 +101,29 @@ jobs:
       - name: Install project
         run: python -m pip install -e .
 
+      - name: Resolve optional current Elliott shadow capture
+        id: elliott
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          path="$RUNNER_TEMP/elliott_vnext_prospective_current_6h.json"
+          if git cat-file -e "origin/elliott-vnext-shadow-data:artifacts/research/elliott_vnext_prospective_current_6h.json" 2>/dev/null; then
+            git show "origin/elliott-vnext-shadow-data:artifacts/research/elliott_vnext_prospective_current_6h.json" > "$path"
+            echo "path=$path" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build per-symbol views from validated runtime
-        run: python scripts/build_watch_symbol_views.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ steps.elliott.outputs.path }}" ]]; then
+            python scripts/build_watch_symbol_views.py --elliott-capture "${{ steps.elliott.outputs.path }}"
+          else
+            python scripts/build_watch_symbol_views.py
+          fi
 
       - name: Validate symbol-view identity and privacy
         run: |
@@ -64,6 +139,11 @@ jobs:
           assert index['private_position_data_included'] is False
           assert index['decision_logic_changed'] is False
           assert index['source_runtime_projection_sha256'] == runtime['runtime_projection_sha256']
+          elliott_meta = index['elliott_vnext_display']
+          assert elliott_meta['research_only'] is True
+          assert elliott_meta['read_only_presentation'] is True
+          assert elliott_meta['w10_source_emitted'] is False
+          assert elliott_meta['decision_logic_changed'] is False
           for symbol, filename in index['symbol_files'].items():
               row = json.loads((Path('artifacts/research/watch_runtime/symbols') / filename).read_text(encoding='utf-8'))
               assert row['symbol'] == symbol
@@ -80,6 +160,14 @@ jobs:
               assert row['private_position_data_included'] is False
               assert row['portfolio_action_computed'] is False
               assert row['decision_logic_changed'] is False
+              display = row['elliott_vnext_research']
+              assert display['research_only'] is True
+              assert display['read_only_presentation'] is True
+              assert display['w10_source_emitted'] is False
+              assert display['changes_universal_stance'] is False
+              assert display['changes_portfolio_action'] is False
+              assert display['direct_ordering_allowed'] is False
+              assert display['decision_effect'] == 'none'
           print({'symbol_count': index['symbol_count'], 'packet_count': index['packet_count']})
           PY
 
