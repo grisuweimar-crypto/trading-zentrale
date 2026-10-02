@@ -130,9 +130,22 @@ def replay_symbol_states(
         if prefix.empty:
             continue
         evaluated += 1
+        # _price_rows_for_symbol normalizes dates to pandas Timestamp for
+        # causal prefix slicing.  The canonical price validator used by 6A
+        # intentionally accepts ISO market dates (YYYY-MM-DD), not Timestamp
+        # string representations with a midnight time component.  Convert the
+        # transport copy back to the canonical date representation before
+        # handing it to prepare_daily_ohlcv; this changes no price or Elliott
+        # rule and prevents valid sessions from being silently discarded.
+        prefix_records = prefix.copy()
+        prefix_records["date"] = (
+            pd.to_datetime(prefix_records["date"], errors="raise")
+            .dt.normalize()
+            .dt.date.astype(str)
+        )
         try:
             daily = prepare_daily_ohlcv(
-                prefix.to_dict("records"),
+                prefix_records.to_dict("records"),
                 str(symbol),
                 as_of=day,
                 price_basis=config.replay_price_basis,
