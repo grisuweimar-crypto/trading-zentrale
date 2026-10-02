@@ -10,13 +10,16 @@ on:
     paths:
       - '.github/workflows/decision_watch_runtime.yml'
       - 'scripts/build_watch_runtime_w10.py'
+      - 'scripts/build_elliott_w6_source.py'
       - 'scripts/run_depot_watch_orchestrated.py'
       - 'scripts/run_depot_watch_e2e_w11.py'
       - 'src/scanner/research/decision_layer/watch_runtime.py'
       - 'src/scanner/research/decision_layer/public_long_reference.py'
+      - 'src/scanner/research/decision_layer/phase6_elliott.py'
       - 'src/scanner/research/decision_layer/w11_end_to_end.py'
       - 'tests/test_watch_runtime_transport.py'
       - 'tests/test_public_long_reference.py'
+      - 'tests/test_w6_elliott_6h_to_7f.py'
       - 'tests/test_w11_end_to_end_acceptance.py'
 
 permissions:
@@ -48,6 +51,7 @@ jobs:
           pytest -q
           tests/test_watch_runtime_transport.py
           tests/test_public_long_reference.py
+          tests/test_w6_elliott_6h_to_7f.py
           tests/test_decision_depot_watch_orchestration.py
           tests/test_w11_end_to_end_acceptance.py
           tests/test_w12_ferrari_regression.py
@@ -83,8 +87,65 @@ jobs:
           python scripts/generate_daily_research.py --validate-only
           python scripts/run_w10_snapshot_orchestration.py validate
 
+      - name: Reconstruct the exact W10-frozen Elliott W6 source when available
+        id: elliott
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_FILE="$RUNNER_TEMP/decision_elliott_6h_source_v1.json"
+          CAPTURE_FILE="$RUNNER_TEMP/elliott_vnext_prospective_current_6h.json"
+          echo "source_path=" >> "$GITHUB_OUTPUT"
+
+          python - <<'PY' > "$RUNNER_TEMP/phase6_runtime.env"
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path('artifacts/research/decision_snapshot_w10.json').read_text(encoding='utf-8'))
+          stage = manifest['stages']['phase6_elliott']
+          print('STATUS=' + str(stage.get('status') or ''))
+          print('SOURCE_COMMIT=' + str(stage.get('source_commit') or ''))
+          print('AVAILABLE_FROM=' + str(stage.get('available_from') or ''))
+          print('SOURCE_CAPTURE_ID=' + str(stage.get('source_capture_id') or ''))
+          PY
+          source "$RUNNER_TEMP/phase6_runtime.env"
+
+          if [[ "$STATUS" == "not_supplied" ]]; then
+            echo 'W10 froze Phase 6 as not_supplied; runtime must not add Elliott later.'
+            exit 0
+          fi
+          test "$STATUS" = "available" || { echo "Unsupported W10 Phase 6 status: $STATUS"; exit 1; }
+          test -n "$SOURCE_COMMIT"
+          test -n "$AVAILABLE_FROM"
+          test -n "$SOURCE_CAPTURE_ID"
+
+          CAPTURE_PATH='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force
+          git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH"
+          git show "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" > "$CAPTURE_FILE"
+
+          CAPTURE_FILE="$CAPTURE_FILE" SOURCE_CAPTURE_ID="$SOURCE_CAPTURE_ID" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          capture = json.loads(Path(os.environ['CAPTURE_FILE']).read_text(encoding='utf-8'))
+          assert str(capture.get('capture_id') or '') == os.environ['SOURCE_CAPTURE_ID']
+          assert str(capture.get('snapshot_id') or '') == str(daily.get('snapshot_id') or '')
+          assert str(capture.get('as_of') or '') == str(daily.get('as_of') or '')
+          PY
+
+          EVIDENCE_AVAILABLE_FROM=$(git show -s --format=%cI "$SOURCE_COMMIT")
+          python scripts/build_elliott_w6_source.py             --capture "$CAPTURE_FILE"             --source-commit "$SOURCE_COMMIT"             --evidence-available-from "$EVIDENCE_AVAILABLE_FROM"             --available-from "$AVAILABLE_FROM"             --output "$SOURCE_FILE"
+          echo "source_path=$SOURCE_FILE" >> "$GITHUB_OUTPUT"
+
       - name: Build compact sharded Watch runtime from sealed W10 evidence
-        run: python scripts/build_watch_runtime_w10.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ steps.elliott.outputs.source_path }}" ]]; then
+            python scripts/build_watch_runtime_w10.py               --elliott-6h-source "${{ steps.elliott.outputs.source_path }}"
+          else
+            python scripts/build_watch_runtime_w10.py
+          fi
 
       - name: Validate runtime identity, privacy, public long reference and transport size
         run: |
@@ -114,6 +175,13 @@ jobs:
           assert public_long['position_assumption']['actual_holdings_included'] is False
           assert public_long['position_assumption']['private_position_data_included'] is False
           assert public_long['semantics']['decision_logic_changed'] is False
+          phase6 = sealed['stages']['phase6_elliott']
+          expected_elliott = phase6['status'] == 'available'
+          assert public_long['semantics']['elliott_review_context_integration_enabled'] is expected_elliott
+          assert public_long['semantics']['elliott_direction_used_as_vote'] is False
+          assert public_long['semantics']['elliott_changed_universal_stance'] is False
+          if expected_elliott:
+              assert public_long['diagnostics']['elliott_6h_source_status'] == 'available'
           assert all(row['availability'] == 'decision_available' for row in public_long['rows'])
           max_size = max(path.stat().st_size for path in shard_paths)
           assert max_size < 2_000_000, f'runtime shard too large for pragmatic transport: {max_size}'
