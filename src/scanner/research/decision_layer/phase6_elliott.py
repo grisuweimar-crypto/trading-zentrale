@@ -9,10 +9,13 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import date, datetime, timezone
+from hashlib import sha256
+import json
 from typing import Mapping, Sequence
 
 
 SOURCE_SET_SCHEMA = "decision_elliott_6h_source_v1"
+PROSPECTIVE_CAPTURE_SCHEMA = "elliott_vnext_prospective_capture_v1"
 ELLIOTT_SCHEMA = "elliott_vnext_output_v2"
 ELLIOTT_MODULE = "6H_module_output"
 ELLIOTT_CONTRACT = "elliott_vnext_integration_contract_v1"
@@ -153,18 +156,146 @@ def validate_elliott_6h_output(value: Mapping[str, object]) -> dict[str, object]
     return deepcopy(dict(value))
 
 
+
+def build_elliott_6h_source_from_prospective_capture(
+    capture: Mapping[str, object],
+    *,
+    source_commit: str,
+    available_from: str,
+    expected_snapshot_id: str,
+    expected_as_of: str,
+    evidence_available_from: str | None = None,
+) -> dict[str, object]:
+    """Adapt one prospective Stage-1 capture to the existing W6 source envelope.
+
+    This is an integration adapter only.  It does not select a wave degree,
+    re-run Elliott, alter scenarios or infer direction.  All validated 6H
+    outputs remain present so W6 can preserve cross-degree review conflicts.
+    """
+    if capture.get("schema_version") != PROSPECTIVE_CAPTURE_SCHEMA:
+        raise Elliott6HAdapterError("unsupported_elliott_prospective_capture_schema")
+    guards = capture.get("guards")
+    if not isinstance(guards, Mapping):
+        raise Elliott6HAdapterError("elliott_prospective_capture_guards_required")
+    required_false = (
+        "productive_integration_enabled",
+        "w10_source_emitted",
+        "changes_universal_stance",
+        "changes_portfolio_action",
+        "direct_ordering_allowed",
+        "future_rows_used",
+        "frozen_elliott_core_modified",
+    )
+    for key in required_false:
+        if guards.get(key) is not False:
+            raise Elliott6HAdapterError(f"elliott_prospective_capture_guard_invalid:{key}")
+    if guards.get("research_only") is not True:
+        raise Elliott6HAdapterError("elliott_prospective_capture_must_be_research_only")
+    if guards.get("missing_evidence_not_imputed") is not True:
+        raise Elliott6HAdapterError("elliott_prospective_missing_evidence_guard_invalid")
+    if guards.get("multi_degree_outputs_retained_without_reducer") is not True:
+        raise Elliott6HAdapterError("elliott_prospective_multidegree_guard_invalid")
+
+    snapshot_id = str(capture.get("snapshot_id") or "").strip()
+    capture_as_of = str(capture.get("as_of") or "").strip()
+    capture_id = str(capture.get("capture_id") or "").strip()
+    if snapshot_id != str(expected_snapshot_id or "").strip():
+        raise Elliott6HAdapterError("elliott_prospective_snapshot_mismatch")
+    if capture_as_of != str(expected_as_of or "").strip():
+        raise Elliott6HAdapterError("elliott_prospective_as_of_mismatch")
+    if not capture_id:
+        raise Elliott6HAdapterError("elliott_prospective_capture_id_required")
+
+    commit = str(source_commit or "").strip()
+    if len(commit) < 12:
+        raise Elliott6HAdapterError("elliott_6h_source_commit_required")
+    available = _timestamp(available_from, "elliott_6h_source_available_from")
+    evidence_available = (
+        _timestamp(evidence_available_from, "elliott_6h_evidence_available_from")
+        if evidence_available_from is not None
+        else None
+    )
+    if evidence_available is not None and evidence_available > available:
+        raise Elliott6HAdapterError("elliott_source_before_evidence_availability")
+
+    raw_outputs = capture.get("outputs")
+    if not isinstance(raw_outputs, list):
+        raise Elliott6HAdapterError("elliott_prospective_outputs_must_be_list")
+    outputs: list[dict[str, object]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for raw in raw_outputs:
+        if not isinstance(raw, Mapping):
+            raise Elliott6HAdapterError("elliott_prospective_output_must_be_object")
+        output = validate_elliott_6h_output(raw)
+        if str(output.get("as_of") or "") != capture_as_of:
+            raise Elliott6HAdapterError("elliott_prospective_output_as_of_mismatch")
+        key = (
+            str(output.get("symbol") or ""),
+            str(output.get("timeframe") or ""),
+            str(output.get("degree") or ""),
+        )
+        if not all(key):
+            raise Elliott6HAdapterError("elliott_prospective_output_identity_incomplete")
+        if key in seen:
+            raise Elliott6HAdapterError(
+                "duplicate_elliott_6h_symbol_timeframe_degree:" + ":".join(key)
+            )
+        seen.add(key)
+        outputs.append(output)
+
+    outputs.sort(
+        key=lambda row: (
+            str(row.get("symbol") or ""),
+            str(row.get("timeframe") or ""),
+            str(row.get("degree") or ""),
+            str(row.get("output_id") or ""),
+        )
+    )
+    source: dict[str, object] = {
+        "schema_version": SOURCE_SET_SCHEMA,
+        "source_commit": commit,
+        "available_from": available.isoformat(),
+        "source_capture_id": capture_id,
+        "snapshot_id": snapshot_id,
+        "as_of": capture_as_of,
+        "source_run_id": capture.get("run_id"),
+        "source_publication_commit": capture.get("source_publication_commit"),
+        "source_capture_available_from": capture.get("captured_at"),
+        "source_evidence_available_from": (
+            None if evidence_available is None else evidence_available.isoformat()
+        ),
+        "validation_partition": capture.get("validation_partition"),
+        "outputs": outputs,
+        "output_count": len(outputs),
+        "symbol_count": len({str(row.get("symbol") or "") for row in outputs}),
+        "integration": {
+            "stage": "stage3_w6_review_context",
+            "research_only": True,
+            "multi_degree_reducer_used": False,
+            "all_available_degrees_retained": True,
+            "elliott_direction_used_as_vote": False,
+            "changes_universal_stance": False,
+            "review_contexts_are_actions": False,
+            "direct_ordering_allowed": False,
+        },
+    }
+    return source
+
+
 def index_elliott_6h_source(
     source: Mapping[str, object] | None,
     *,
     decision_as_of: str,
-) -> tuple[dict[str, dict[str, object]], dict[str, object]]:
-    """Validate one optional W6 source envelope and index its outputs by symbol."""
+) -> tuple[dict[str, list[dict[str, object]]], dict[str, object]]:
+    """Validate one optional W6 source envelope and group all 6H outputs by symbol."""
     if source is None:
         return {}, {
             "status": "not_supplied",
             "source_commit": None,
             "available_from": None,
+            "source_capture_id": None,
             "output_count": 0,
+            "symbol_count": 0,
         }
     if source.get("schema_version") != SOURCE_SET_SCHEMA:
         raise Elliott6HAdapterError("unsupported_elliott_6h_source_schema")
@@ -180,23 +311,151 @@ def index_elliott_6h_source(
     if not isinstance(outputs, list):
         raise Elliott6HAdapterError("elliott_6h_outputs_must_be_list")
 
-    indexed: dict[str, dict[str, object]] = {}
+    expressed_as_of = str(source.get("as_of") or "").strip()
+    indexed: dict[str, list[dict[str, object]]] = {}
+    identities: set[tuple[str, str, str]] = set()
     for raw in outputs:
         if not isinstance(raw, Mapping):
             raise Elliott6HAdapterError("elliott_6h_output_must_be_object")
         output = validate_elliott_6h_output(raw)
         symbol = str(output["symbol"])
-        if symbol in indexed:
-            raise Elliott6HAdapterError(f"duplicate_elliott_6h_symbol:{symbol}")
         if _date(output["as_of"], "elliott_6h_as_of") > available.date():
             raise Elliott6HAdapterError(f"elliott_6h_output_after_source_availability:{symbol}")
-        indexed[symbol] = output
+        if expressed_as_of and str(output.get("as_of") or "") != expressed_as_of:
+            raise Elliott6HAdapterError(f"elliott_6h_source_as_of_mismatch:{symbol}")
+        identity = (
+            symbol,
+            str(output.get("timeframe") or ""),
+            str(output.get("degree") or ""),
+        )
+        if identity in identities:
+            raise Elliott6HAdapterError(
+                "duplicate_elliott_6h_symbol_timeframe_degree:" + ":".join(identity)
+            )
+        identities.add(identity)
+        indexed.setdefault(symbol, []).append(output)
+
+    for symbol in indexed:
+        indexed[symbol].sort(
+            key=lambda row: (
+                str(row.get("timeframe") or ""),
+                str(row.get("degree") or ""),
+                str(row.get("output_id") or ""),
+            )
+        )
 
     return indexed, {
         "status": "available",
         "source_commit": source_commit,
         "available_from": available.isoformat(),
-        "output_count": len(indexed),
+        "source_capture_id": source.get("source_capture_id"),
+        "output_count": len(outputs),
+        "symbol_count": len(indexed),
+    }
+
+def build_elliott_7f_multidegree_swing_context(
+    outputs: Sequence[Mapping[str, object]],
+    *,
+    source_commit: str,
+    source_available_from: str,
+) -> dict[str, object]:
+    """Aggregate existing review contexts across all available Elliott degrees.
+
+    No degree is selected, weighted or interpreted as more truthful.  The
+    existing 6D review contexts are unioned and any add/reduce disagreement is
+    deliberately preserved for the frozen 7F conflict handling.
+    """
+    if not isinstance(outputs, Sequence) or isinstance(outputs, (str, bytes, bytearray)) or not outputs:
+        raise Elliott6HAdapterError("elliott_6h_symbol_outputs_required")
+    validated = [validate_elliott_6h_output(output) for output in outputs]
+    symbols = {str(output.get("symbol") or "") for output in validated}
+    as_of_dates = {str(output.get("as_of") or "") for output in validated}
+    if len(symbols) != 1:
+        raise Elliott6HAdapterError("elliott_multidegree_symbol_mismatch")
+    if len(as_of_dates) != 1:
+        raise Elliott6HAdapterError("elliott_multidegree_as_of_mismatch")
+
+    output_ids = [str(output["output_id"]) for output in validated]
+    if len(set(output_ids)) != len(output_ids):
+        raise Elliott6HAdapterError("duplicate_elliott_6h_output_id")
+    all_routes: list[Mapping[str, object]] = []
+    timeframe_degrees: list[dict[str, object]] = []
+    for output in validated:
+        routes = output["swing_routing"]
+        assert isinstance(routes, list)
+        all_routes.extend(route for route in routes if isinstance(route, Mapping))
+        timeframe_degrees.append({
+            "output_id": str(output["output_id"]),
+            "timeframe": str(output.get("timeframe") or ""),
+            "degree": str(output.get("degree") or ""),
+            "current_wave_stage": str(output.get("current_wave_stage") or ""),
+            "primary_scenario_id": (
+                output.get("integration", {}).get("primary_scenario_id")
+                if isinstance(output.get("integration"), Mapping)
+                else None
+            ),
+        })
+
+    actionable = sorted({
+        str(route["review_context"])
+        for route in all_routes
+        if str(route.get("review_context")) in W6_REVIEW_CONTEXTS
+    })
+    hold_count = sum(
+        1 for route in all_routes if route.get("review_context") == "hold_review"
+    )
+    add_present = bool(
+        set(actionable) & {"entry_or_add_review", "reentry_or_add_review"}
+    )
+    reduce_present = bool(
+        set(actionable)
+        & {
+            "partial_reduce_review",
+            "profit_protection_review",
+            "larger_reduce_or_exit_review",
+        }
+    )
+    canonical_ids = sorted(output_ids)
+    aggregate_id = canonical_ids[0]
+    if len(canonical_ids) > 1:
+        digest = sha256(
+            json.dumps(canonical_ids, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        ).hexdigest()
+        aggregate_id = "w6-multidegree:" + digest
+
+    timeframe_degrees.sort(
+        key=lambda row: (
+            str(row.get("timeframe") or ""),
+            str(row.get("degree") or ""),
+            str(row.get("output_id") or ""),
+        )
+    )
+    return {
+        "source": SOURCE_NAME,
+        "source_output_id": aggregate_id,
+        "as_of": _timestamp(
+            source_available_from, "elliott_6h_source_available_from"
+        ).isoformat(),
+        "review_contexts": actionable,
+        "routing_is_trade_decision": False,
+        "research_only": True,
+        "w6": {
+            "source_commit": str(source_commit),
+            "elliott_output_as_of": next(iter(as_of_dates)),
+            "source_output_ids": canonical_ids,
+            "output_count": len(validated),
+            "timeframe_degrees": timeframe_degrees,
+            "route_count": len(all_routes),
+            "actionable_route_context_count": len(actionable),
+            "hold_review_routes_omitted": hold_count,
+            "add_reduce_conflict_preserved": add_present and reduce_present,
+            "multi_degree_reducer_used": False,
+            "all_available_degrees_aggregated": True,
+            "direction_from_elliott_used": False,
+            "stance_from_elliott_used": False,
+            "review_contexts_are_actions": False,
+            "changes_universal_stance": False,
+        },
     }
 
 
@@ -206,45 +465,16 @@ def build_elliott_7f_swing_context(
     source_commit: str,
     source_available_from: str,
 ) -> dict[str, object]:
-    """Transport 6H review contexts into the existing 7F input vocabulary."""
-    validated = validate_elliott_6h_output(output)
-    routes = validated["swing_routing"]
-    assert isinstance(routes, list)
-    actionable = sorted({
-        str(route["review_context"])
-        for route in routes
-        if isinstance(route, Mapping) and str(route.get("review_context")) in W6_REVIEW_CONTEXTS
-    })
-    hold_count = sum(
-        1
-        for route in routes
-        if isinstance(route, Mapping) and route.get("review_context") == "hold_review"
+    """Backward-compatible single-output wrapper around the multi-degree W6 path."""
+    context = build_elliott_7f_multidegree_swing_context(
+        [output],
+        source_commit=source_commit,
+        source_available_from=source_available_from,
     )
-    add_present = bool(set(actionable) & {"entry_or_add_review", "reentry_or_add_review"})
-    reduce_present = bool(set(actionable) & {
-        "partial_reduce_review", "profit_protection_review", "larger_reduce_or_exit_review"
-    })
-    return {
-        "source": SOURCE_NAME,
-        "source_output_id": str(validated["output_id"]),
-        "as_of": _timestamp(source_available_from, "elliott_6h_source_available_from").isoformat(),
-        "review_contexts": actionable,
-        "routing_is_trade_decision": False,
-        "research_only": True,
-        # Audit-only W6 metadata. Phase 7F ignores extra fields and consumes only
-        # the frozen keys above.
-        "w6": {
-            "source_commit": str(source_commit),
-            "elliott_output_as_of": str(validated["as_of"]),
-            "timeframe": str(validated.get("timeframe") or ""),
-            "degree": str(validated.get("degree") or ""),
-            "route_count": len(routes),
-            "actionable_route_context_count": len(actionable),
-            "hold_review_routes_omitted": hold_count,
-            "add_reduce_conflict_preserved": add_present and reduce_present,
-            "direction_from_elliott_used": False,
-            "stance_from_elliott_used": False,
-            "review_contexts_are_actions": False,
-            "changes_universal_stance": False,
-        },
-    }
+    validated = validate_elliott_6h_output(output)
+    w6 = context["w6"]
+    assert isinstance(w6, dict)
+    w6["timeframe"] = str(validated.get("timeframe") or "")
+    w6["degree"] = str(validated.get("degree") or "")
+    return context
+
