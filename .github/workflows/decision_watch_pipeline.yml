@@ -2,7 +2,7 @@ name: Decision Watch Integration Pipeline
 
 on:
   workflow_run:
-    workflows: ['Phase 2 Probability Calibration', 'Phase 5E Adaptive Shadow and Promotion']
+    workflows: ['Phase 2 Probability Calibration', 'Phase 5E Adaptive Shadow and Promotion', 'Module 6 Elliott Prospective Shadow']
     types: [completed]
   workflow_dispatch:
   pull_request:
@@ -12,16 +12,19 @@ on:
       - 'scripts/build_integrated_decision_evidence_7a.py'
       - 'scripts/run_confidence_vnext_research_4.py'
       - 'scripts/run_w10_snapshot_orchestration.py'
+      - 'scripts/build_elliott_w6_source.py'
       - 'scripts/run_depot_watch_orchestrated.py'
       - 'src/scanner/research/decision_layer/integrated_evidence.py'
       - 'src/scanner/research/decision_layer/phase4_confidence.py'
       - 'src/scanner/research/decision_layer/phase5_shadow.py'
       - 'src/scanner/research/decision_layer/depot_watch_orchestrator.py'
+      - 'src/scanner/research/decision_layer/phase6_elliott.py'
       - 'src/scanner/research/decision_layer/w10_orchestration.py'
       - 'tests/test_decision_integrated_evidence.py'
       - 'tests/test_w4_confidence_snapshot_identity.py'
       - 'tests/test_w5_phase5_shadow_integration.py'
       - 'tests/test_decision_depot_watch_orchestration.py'
+      - 'tests/test_w6_elliott_6h_to_7f.py'
       - 'tests/test_w10_snapshot_orchestration.py'
 
 permissions:
@@ -61,6 +64,7 @@ jobs:
           tests/test_decision_portfolio_action_7f.py
           tests/test_decision_reliability_explainability_7g.py
           tests/test_decision_depot_watch_7h.py
+          tests/test_w6_elliott_6h_to_7f.py
           tests/test_w10_snapshot_orchestration.py
 
       - name: Validate current isolated Phase 5E shadow report
@@ -172,8 +176,64 @@ jobs:
           --artifact "$RUNNER_TEMP/confidence_vnext_promotion_5e.json"
           --source-commit "$PHASE5_SOURCE_COMMIT"
 
+      - name: Restore matching prospective Elliott capture and build temporary W6 source
+        id: elliott
+        shell: bash
+        run: |
+          set -euo pipefail
+          CAPTURE_PATH='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          CAPTURE_FILE="$RUNNER_TEMP/elliott_vnext_prospective_current_6h.json"
+          SOURCE_FILE="$RUNNER_TEMP/decision_elliott_6h_source_v1.json"
+          echo "source_path=" >> "$GITHUB_OUTPUT"
+          echo "capture_commit=" >> "$GITHUB_OUTPUT"
+
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          if ! git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
+            echo 'No Elliott shadow branch yet; Phase 6 remains not_supplied.'
+            exit 0
+          fi
+          if ! git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" 2>/dev/null; then
+            echo 'No prospective Elliott capture yet; Phase 6 remains not_supplied.'
+            exit 0
+          fi
+
+          CAPTURE_COMMIT=$(git log -1 --format=%H origin/elliott-vnext-shadow-data -- "$CAPTURE_PATH")
+          test -n "$CAPTURE_COMMIT"
+          CAPTURE_AVAILABLE_FROM=$(git show -s --format=%cI "$CAPTURE_COMMIT")
+          git show "$CAPTURE_COMMIT:$CAPTURE_PATH" > "$CAPTURE_FILE"
+
+          if CAPTURE_FILE="$CAPTURE_FILE" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          capture = json.loads(Path(os.environ['CAPTURE_FILE']).read_text(encoding='utf-8'))
+          same = (
+              str(capture.get('snapshot_id') or '') == str(daily.get('snapshot_id') or '')
+              and str(capture.get('as_of') or '') == str(daily.get('as_of') or '')
+          )
+          if not same:
+              raise SystemExit(1)
+          PY
+          then
+            python scripts/build_elliott_w6_source.py               --capture "$CAPTURE_FILE"               --source-commit "$CAPTURE_COMMIT"               --evidence-available-from "$CAPTURE_AVAILABLE_FROM"               --output "$SOURCE_FILE"
+            echo "source_path=$SOURCE_FILE" >> "$GITHUB_OUTPUT"
+            echo "capture_commit=$CAPTURE_COMMIT" >> "$GITHUB_OUTPUT"
+            echo "capture_available_from=$CAPTURE_AVAILABLE_FROM" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Prospective Elliott capture belongs to another scanner snapshot; Phase 6 remains not_supplied.'
+          fi
+
       - name: Resolve Phase 6 boundary explicitly before final 7A
-        run: python scripts/run_w10_snapshot_orchestration.py resolve-phase6
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ steps.elliott.outputs.source_path }}" ]]; then
+            python scripts/run_w10_snapshot_orchestration.py resolve-phase6               --artifact "${{ steps.elliott.outputs.source_path }}"
+          else
+            python scripts/run_w10_snapshot_orchestration.py resolve-phase6
+          fi
 
       - name: Freeze complete W10 upstream set before final 7A
         run: python scripts/run_w10_snapshot_orchestration.py freeze
@@ -208,6 +268,16 @@ jobs:
           assert manifest['guards']['phase6_missing_is_neutral_evidence'] is False
           assert manifest['guards']['private_position_data_persisted'] is False
           assert manifest['stages']['phase6_elliott']['status'] in {'available', 'not_supplied'}
+          phase6 = manifest['stages']['phase6_elliott']
+          if phase6['status'] == 'available':
+              assert phase6['snapshot_identity_state'] == 'verified'
+              assert phase6['source_capture_id']
+              assert phase6['output_count'] >= phase6['symbol_count'] >= 1
+              assert phase6['multi_degree_reducer_used'] is False
+              assert phase6['elliott_direction_used_as_vote'] is False
+              assert phase6['decision_effect'] == 'review_only_downstream_of_7d_7e'
+          else:
+              assert phase6['decision_effect'] == 'none'
           assert packets['packet_count'] == daily['universe_size']
           assert packets['semantics']['integrated_evidence_v1'] is True
           assert packets['semantics']['phase2_phase3_phase4_outputs_consumed'] is True
