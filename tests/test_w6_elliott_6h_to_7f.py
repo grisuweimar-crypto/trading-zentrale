@@ -11,7 +11,10 @@ from scanner.research.decision_layer.depot_watch_orchestrator import (
 from scanner.research.decision_layer.input_contract import build_input_packet
 from scanner.research.decision_layer.phase6_elliott import (
     Elliott6HAdapterError,
+    build_elliott_6h_source_from_prospective_capture,
+    build_elliott_7f_multidegree_swing_context,
     build_elliott_7f_swing_context,
+    index_elliott_6h_source,
     validate_elliott_6h_output,
 )
 
@@ -115,19 +118,25 @@ def _route(context: str, *, role: str = "primary"):
     }
 
 
-def _output(*contexts: str):
+def _output(
+    *contexts: str,
+    timeframe: str = "daily",
+    degree: str = "intermediate",
+    output_id: str = "w6-output-test",
+    direction: str = "down",
+):
     routes = [_route(context, role="primary" if index == 0 else f"alternative_{index}") for index, context in enumerate(contexts)]
     return {
         "schema_version": "elliott_vnext_output_v2",
         "module": "6H_module_output",
         "symbol": "TEST",
         "as_of": "2026-09-29",
-        "timeframe": "daily",
-        "degree": "intermediate",
+        "timeframe": timeframe,
+        "degree": degree,
         "selection_policy": "deterministic_structural_recency_not_probability_or_truth",
         "single_true_count_claimed": False,
         # Scenario direction is legitimate Elliott structure but W6 must ignore it.
-        "primary_scenario": {"scenario_id": "scenario-primary", "direction": "down"},
+        "primary_scenario": {"scenario_id": "scenario-primary", "direction": direction},
         "alternative_scenarios": [],
         "pivots": [],
         "fibonacci": {"anchor_start": {}, "anchor_end": {}, "zones": []},
@@ -160,7 +169,7 @@ def _output(*contexts: str):
         },
         "warnings": [],
         "research_only": True,
-        "output_id": "w6-output-test",
+        "output_id": output_id,
     }
 
 
@@ -283,3 +292,155 @@ def test_w6_does_not_accept_6h_as_productively_promoted_or_direct_ordering():
     bad2["integration"]["direct_ordering_allowed"] = True
     with pytest.raises(Elliott6HAdapterError, match="direct_ordering_must_remain_disabled"):
         validate_elliott_6h_output(bad2)
+
+
+def test_stage3_source_adapter_preserves_all_degrees_without_reducer():
+    first = _output(
+        "entry_or_add_review",
+        timeframe="daily",
+        degree="fine",
+        output_id="fine-output",
+        direction="up",
+    )
+    second = _output(
+        "profit_protection_review",
+        timeframe="weekly",
+        degree="coarse",
+        output_id="coarse-output",
+        direction="down",
+    )
+    capture = {
+        "schema_version": "elliott_vnext_prospective_capture_v1",
+        "capture_id": "capture-stage3",
+        "snapshot_id": CURRENT_SNAPSHOT,
+        "as_of": "2026-09-29",
+        "run_id": "github-123-1",
+        "source_publication_commit": "a" * 40,
+        "captured_at": "2026-09-29T17:58:45+00:00",
+        "validation_partition": "prospective_unspent",
+        "outputs": [first, second],
+        "guards": {
+            "research_only": True,
+            "productive_integration_enabled": False,
+            "w10_source_emitted": False,
+            "changes_universal_stance": False,
+            "changes_portfolio_action": False,
+            "direct_ordering_allowed": False,
+            "future_rows_used": False,
+            "missing_evidence_not_imputed": True,
+            "frozen_elliott_core_modified": False,
+            "multi_degree_outputs_retained_without_reducer": True,
+        },
+    }
+
+    source = build_elliott_6h_source_from_prospective_capture(
+        capture,
+        source_commit=ELLIOTT_COMMIT,
+        available_from=ELLIOTT_AVAILABLE,
+        evidence_available_from="2026-09-29T17:58:45+00:00",
+        expected_snapshot_id=CURRENT_SNAPSHOT,
+        expected_as_of="2026-09-29",
+    )
+    indexed, meta = index_elliott_6h_source(source, decision_as_of=CURRENT_TIME)
+
+    assert source["integration"]["multi_degree_reducer_used"] is False
+    assert source["integration"]["all_available_degrees_retained"] is True
+    assert len(indexed["TEST"]) == 2
+    assert meta["output_count"] == 2
+    assert meta["symbol_count"] == 1
+    assert meta["source_capture_id"] == "capture-stage3"
+
+
+def test_w6_multidegree_add_reduce_conflict_is_preserved_without_direction_vote():
+    fine = _output(
+        "entry_or_add_review",
+        timeframe="daily",
+        degree="fine",
+        output_id="fine-output",
+        direction="up",
+    )
+    coarse = _output(
+        "larger_reduce_or_exit_review",
+        timeframe="weekly",
+        degree="coarse",
+        output_id="coarse-output",
+        direction="down",
+    )
+    source = {
+        "schema_version": "decision_elliott_6h_source_v1",
+        "source_commit": ELLIOTT_COMMIT,
+        "available_from": ELLIOTT_AVAILABLE,
+        "snapshot_id": CURRENT_SNAPSHOT,
+        "as_of": "2026-09-29",
+        "source_capture_id": "capture-stage3",
+        "outputs": [fine, coarse],
+    }
+
+    watch, diagnostics = build_orchestrated_depot_watch(
+        _daily(),
+        _position_book(can_add=True),
+        _packets(),
+        elliott_6h_source=source,
+    )
+    row = watch["rows"][0]
+    context = row["elliott_swing_context"]
+
+    assert row["decision"]["universal_stance_state"] == "positive"
+    assert row["decision"]["portfolio_action_state"] == "HOLD"
+    assert row["decision"]["elliott_review_contexts"] == [
+        "entry_or_add_review",
+        "larger_reduce_or_exit_review",
+    ]
+    assert context["w6"]["output_count"] == 2
+    assert context["w6"]["multi_degree_reducer_used"] is False
+    assert context["w6"]["all_available_degrees_aggregated"] is True
+    assert context["w6"]["add_reduce_conflict_preserved"] is True
+    assert context["w6"]["direction_from_elliott_used"] is False
+    assert sorted(context["w6"]["source_output_ids"]) == ["coarse-output", "fine-output"]
+    assert diagnostics["elliott_6h_source_output_count"] == 2
+    assert diagnostics["elliott_6h_source_symbol_count"] == 1
+    assert diagnostics["elliott_direction_used_as_vote"] is False
+    assert diagnostics["elliott_changed_universal_stance"] is False
+
+
+def test_w6_multidegree_context_builder_refuses_cross_symbol_mix():
+    first = _output("entry_or_add_review", output_id="first")
+    second = _output("profit_protection_review", output_id="second")
+    second["symbol"] = "OTHER"
+
+    with pytest.raises(Elliott6HAdapterError, match="multidegree_symbol_mismatch"):
+        build_elliott_7f_multidegree_swing_context(
+            [first, second],
+            source_commit=ELLIOTT_COMMIT,
+            source_available_from=ELLIOTT_AVAILABLE,
+        )
+
+
+def test_stage3_source_adapter_refuses_capture_for_different_snapshot():
+    capture = {
+        "schema_version": "elliott_vnext_prospective_capture_v1",
+        "capture_id": "capture-stage3",
+        "snapshot_id": "wrong-snapshot",
+        "as_of": "2026-09-29",
+        "outputs": [_output("profit_protection_review")],
+        "guards": {
+            "research_only": True,
+            "productive_integration_enabled": False,
+            "w10_source_emitted": False,
+            "changes_universal_stance": False,
+            "changes_portfolio_action": False,
+            "direct_ordering_allowed": False,
+            "future_rows_used": False,
+            "missing_evidence_not_imputed": True,
+            "frozen_elliott_core_modified": False,
+            "multi_degree_outputs_retained_without_reducer": True,
+        },
+    }
+    with pytest.raises(Elliott6HAdapterError, match="prospective_snapshot_mismatch"):
+        build_elliott_6h_source_from_prospective_capture(
+            capture,
+            source_commit=ELLIOTT_COMMIT,
+            available_from=ELLIOTT_AVAILABLE,
+            expected_snapshot_id=CURRENT_SNAPSHOT,
+            expected_as_of="2026-09-29",
+        )
