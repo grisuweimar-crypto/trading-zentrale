@@ -192,9 +192,31 @@ def _summary(rows: Sequence[Mapping[str, object]]) -> dict[str, object]:
     }
 
 
+
+def _elliott_source_for_symbol(
+    source: Mapping[str, object] | None,
+    symbol: str,
+) -> dict[str, object] | None:
+    if source is None:
+        return None
+    raw_outputs = source.get("outputs")
+    if not isinstance(raw_outputs, list):
+        raise ValueError("elliott_6h_source_outputs_must_be_list")
+    out = deepcopy(dict(source))
+    out["outputs"] = [
+        deepcopy(dict(row))
+        for row in raw_outputs
+        if isinstance(row, Mapping) and str(row.get("symbol") or "") == symbol
+    ]
+    out["output_count"] = len(out["outputs"])
+    out["symbol_count"] = 1 if out["outputs"] else 0
+    return out
+
 def build_public_long_reference(
     daily: Mapping[str, object],
     archive_packets: Sequence[Mapping[str, object]],
+    *,
+    elliott_6h_source: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Run the canonical Watch under a public hypothetical-long assumption.
 
@@ -226,6 +248,9 @@ def build_public_long_reference(
     w8_conflict_symbols: list[str] = []
     w8_reassessment_symbols: list[str] = []
     state_history_counts: dict[str, int] = {}
+    elliott_symbols: list[str] = []
+    elliott_actionable_symbols: list[str] = []
+    elliott_source_statuses: set[str] = set()
 
     for symbol in sorted(map(str, daily_symbols.keys())):
         single_daily, single_book = _single_symbol_inputs(
@@ -238,7 +263,9 @@ def build_public_long_reference(
             single_daily,
             single_book,
             symbol_packets,
-            elliott_6h_source=None,
+            elliott_6h_source=_elliott_source_for_symbol(
+                elliott_6h_source, symbol
+            ),
         )
         raw_rows = watch.get("rows")
         if not isinstance(raw_rows, list) or len(raw_rows) != 1:
@@ -262,6 +289,11 @@ def build_public_long_reference(
         w8_changed_action_symbols.extend(map(str, diagnostics.get("w8_changed_action_symbols") or []))
         w8_conflict_symbols.extend(map(str, diagnostics.get("w8_conflict_symbols") or []))
         w8_reassessment_symbols.extend(map(str, diagnostics.get("w8_reassessment_symbols") or []))
+        elliott_symbols.extend(map(str, diagnostics.get("elliott_6h_symbols") or []))
+        elliott_actionable_symbols.extend(
+            map(str, diagnostics.get("elliott_6h_actionable_symbols") or [])
+        )
+        elliott_source_statuses.add(str(diagnostics.get("elliott_6h_source_status") or ""))
         raw_counts = diagnostics.get("state_history_counts")
         if isinstance(raw_counts, Mapping):
             for state, count in raw_counts.items():
@@ -313,6 +345,15 @@ def build_public_long_reference(
             "w8_changed_action_symbols": sorted(set(w8_changed_action_symbols)),
             "w8_conflict_symbols": sorted(set(w8_conflict_symbols)),
             "w8_reassessment_symbols": sorted(set(w8_reassessment_symbols)),
+            "elliott_6h_source_status": (
+                next(iter(elliott_source_statuses))
+                if len(elliott_source_statuses) == 1
+                else "mixed"
+            ),
+            "elliott_6h_symbols": sorted(set(elliott_symbols)),
+            "elliott_6h_actionable_symbols": sorted(set(elliott_actionable_symbols)),
+            "elliott_direction_used_as_vote": False,
+            "elliott_changed_universal_stance": False,
             "phase8_external_evidence_activated": False,
             "scanner_scalar_fallback_used": False,
             "private_position_data_persisted": False,
@@ -325,6 +366,9 @@ def build_public_long_reference(
             "actual_holdings_included": False,
             "private_position_data_included": False,
             "decision_logic_changed": False,
+            "elliott_review_context_integration_enabled": elliott_6h_source is not None,
+            "elliott_direction_used_as_vote": False,
+            "elliott_changed_universal_stance": False,
             "reference_is_trade_instruction": False,
         },
     }
