@@ -3,22 +3,28 @@
   "schema_version": "phase5d_walkforward_evaluation_v1",
   "status": "walkforward_evaluation_active",
   "source_phase5c_schema_version": "phase5c_progressive_learning_v1",
-  "claims": 9916,
-  "mature_outcomes": 392,
-  "phase5c_versions": 1,
+  "claims": 10744,
+  "mature_outcomes": 1189,
+  "phase5c_versions": 2,
   "finalized_evaluations": 0,
   "new_finalized_evaluations": [],
   "evaluation_chain_tip": null,
-  "as_known_at": "2026-10-02T19:53:45.153020+00:00",
+  "as_known_at": "2026-10-03T18:40:42.003890+00:00",
   "horizons": {
     "5": {
-      "phase5c_versions": 1,
+      "phase5c_versions": 2,
       "finalized_evaluation_epochs": 0,
-      "finalized_status": [],
+      "finalized_status": [
+        {
+          "version_id": "phase5c-5T-bec967d8ec2046e2",
+          "successor_version_id": "phase5c-5T-73234b8d4a3af43a",
+          "status": "awaiting_or_missing_strictly_future_rows"
+        }
+      ],
       "latest_provisional": {
         "status": "awaiting_future_mature_evidence",
         "N": 0,
-        "as_known_at": "2026-10-02T19:53:45.153020+00:00"
+        "as_known_at": "2026-10-03T18:40:42.003890+00:00"
       }
     },
     "20": {
@@ -43,6 +49,7 @@
   "blockers": [
     "20T_no_phase5c_version",
     "40T_no_phase5c_version",
+    "5T_successor_without_future_evaluation_rows",
     "60T_no_phase5c_version"
   ],
   "promotion": {
