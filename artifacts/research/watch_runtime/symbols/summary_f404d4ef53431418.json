@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-02T00:18:17.389023+00:00",
+  "decision_as_of": "2026-10-03T00:03:01.792943+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": null,
+    "captured_at": "2026-10-02T19:56:34.140317+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -10,37 +10,40 @@
     "output_count": 0,
     "outputs": [],
     "read_only_presentation": true,
-    "reason": "no_prospective_elliott_capture_available_for_watch_display",
+    "reason": "prospective_elliott_capture_does_not_match_current_watch_snapshot",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": null,
+    "scanner_published_at": "2026-10-02T19:55:42+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": null,
-    "source_capture_id": null,
-    "source_publication_commit": null,
-    "source_run_id": null,
-    "source_snapshot_id": null,
-    "status": "prospective_capture_not_supplied",
+    "source_as_of": "2026-10-02",
+    "source_capture_id": "a172f2256285cc424e3286a4e762d190ec0c23d481b7deba6713a928285b5ac3",
+    "source_publication_commit": "dfab3f792ac584f76e7dd1da61c4a4ecb6c84e3d",
+    "source_run_id": "github-37056878212-1",
+    "source_snapshot_id": "8de53984-1657-405e-a741-a60d34db2fcc",
+    "status": "prospective_capture_not_current_snapshot",
     "symbol": "TEAM",
-    "validation_partition": null,
+    "validation_partition": "prospective_unspent",
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:TEAM:03f6bed3788ea96b:5T",
-      "timing:TEAM:42bcd8a34d314c09:5T",
-      "timing:TEAM:cad5eb04910821c4:20T",
-      "timing:TEAM:28846bf8f8b491cd:40T",
-      "timing:TEAM:e3f414dec0e09a39:40T",
-      "timing:TEAM:e3563708ab21aab0:60T",
-      "timing:TEAM:a0bebf08166a0860:60T",
-      "timing:TEAM:92ad9e5c355866b9:60T",
-      "timing:TEAM:2fbfff31832fc700:60T"
+      "timing:TEAM:ea08718de33a1787:5T",
+      "timing:TEAM:c42ca6c1baee697b:20T",
+      "timing:TEAM:f483a5247b57affc:20T",
+      "timing:TEAM:494a15c3341a0317:20T",
+      "timing:TEAM:15f457a0b3a6df9d:20T",
+      "timing:TEAM:4ccb45d4ee923f1a:40T",
+      "timing:TEAM:df23cc7f8d9328ee:60T",
+      "timing:TEAM:e64908cc5e4c18f0:60T",
+      "timing:TEAM:32bb40f535b6b527:60T",
+      "timing:TEAM:5472db56664c10c8:60T",
+      "timing:TEAM:fe6ff0aee1bf447a:60T",
+      "timing:TEAM:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 9
+      "timing": 12
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -49,7 +52,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "3dced257-e6a3-4ef3-b633-0ffa5f35418a",
+  "snapshot_id": "f0c8ba3b-0158-4c6c-9648-3b40b3371b3a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -74,18 +77,34 @@
       "source_snapshot_id": "3dced257-e6a3-4ef3-b633-0ffa5f35418a",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-02T19:55:00.353723+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "8de53984-1657-405e-a741-a60d34db2fcc",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-03T00:03:01.792943+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "f0c8ba3b-0158-4c6c-9648-3b40b3371b3a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": true,
+      "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
-    "last_overextension_date": "2026-10-01",
-    "last_overextension_rs3m": 1.1990516470455128,
+    "last_overextension_date": "2026-10-02",
+    "last_overextension_rs3m": 1.093807389614883,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
