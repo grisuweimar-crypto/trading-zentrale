@@ -160,7 +160,6 @@ def validate_transition_observation(
 
     leakage_ok = (
         source_as_of <= target_as_of
-        and source_available <= target_as_of
         and source_available <= target_available
     )
     _record_check(

@@ -188,3 +188,27 @@ def test_declared_reuse_must_be_unique_and_explicit() -> None:
         match="HIDDEN_EVIDENCE_REUSE:declared_input_evidence_ids_not_unique",
     ):
         validate_transition_observation(changed)
+
+
+def test_market_as_of_may_precede_publication_availability_without_false_leakage() -> None:
+    changed = _valid_observation("SCANNER", "SELECTION")
+    changed["source"]["as_of"] = "2026-10-03T00:00:00+00:00"
+    changed["source"]["available_from"] = "2026-10-03T18:41:59+00:00"
+    changed["target"]["as_of"] = "2026-10-03T00:00:00+00:00"
+    changed["target"]["available_from"] = "2026-10-04T17:27:18+00:00"
+    result = validate_transition_observation(changed)
+    assert result["status"] == "PASSED"
+    assert result["checks"]["LEAKAGE"]["passed"] is True
+
+
+def test_source_availability_after_downstream_availability_is_still_leakage() -> None:
+    changed = _valid_observation("SCANNER", "SELECTION")
+    changed["source"]["as_of"] = "2026-10-03T00:00:00+00:00"
+    changed["target"]["as_of"] = "2026-10-03T00:00:00+00:00"
+    changed["source"]["available_from"] = "2026-10-04T18:00:00+00:00"
+    changed["target"]["available_from"] = "2026-10-04T17:27:18+00:00"
+    with pytest.raises(
+        BAQM8TransitionError,
+        match="LEAKAGE:source_must_be_observable_before_target",
+    ):
+        validate_transition_observation(changed)
