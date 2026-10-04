@@ -44,12 +44,16 @@ def main() -> int:
     from scanner.research.decision_layer.universal_stance import compute_universal_stance
     from scanner.research.decision_layer.state_transition import build_state_transition_history
     from scanner.research.decision_layer.phase7_state_history import build_state_history_context
-    from scanner.research.decision_layer.elliott_readonly_display import build_elliott_watch_display
+    from scanner.research.decision_layer.elliott_readonly_display import (
+        build_prepared_elliott_watch_display,
+        prepare_elliott_watch_display_capture,
+    )
 
     runtime_dir = (root / args.runtime_dir).resolve()
     manifest = _load(runtime_dir / "manifest.json")
     daily = _load(root / "artifacts/research/daily_research.json")
     elliott_capture = None
+    prepared_elliott_capture = None
     if args.elliott_capture:
         elliott_path = Path(args.elliott_capture)
         if not elliott_path.is_absolute():
@@ -57,6 +61,9 @@ def main() -> int:
         if not elliott_path.exists():
             raise ValueError(f"explicit Elliott capture missing: {elliott_path}")
         elliott_capture = _load(elliott_path)
+        prepared_elliott_capture = prepare_elliott_watch_display_capture(
+            elliott_capture
+        )
     if manifest.get("schema_version") != "decision_watch_runtime_manifest_v1":
         raise ValueError("unsupported runtime manifest")
     if manifest.get("private_position_data_included") is not False:
@@ -138,8 +145,8 @@ def main() -> int:
                 "relation_state": s["relation_state"],
                 "support_structure": s["support_structure"],
             })
-        elliott_display = build_elliott_watch_display(
-            elliott_capture,
+        elliott_display = build_prepared_elliott_watch_display(
+            prepared_elliott_capture,
             symbol=symbol,
             expected_snapshot_id=snapshot_id,
             expected_as_of=str(daily.get("as_of") or ""),
