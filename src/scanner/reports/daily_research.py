@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -55,11 +56,22 @@ def fingerprint(path):
     return [info.st_mtime_ns, info.st_size]
 
 
+def _provenance_required() -> bool:
+    return str(os.environ.get("SCANNER_REQUIRE_PROVENANCE") or "").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+
+
 def begin_daily(root: Path, receipt_path: Path, *, run_id=None):
     receipt = {"run_id": run_id or str(uuid4()), "started_at": datetime.now(timezone.utc).isoformat(),
                "watchlist_before": fingerprint(root / WATCHLIST)}
-    receipt["scanner_pre_run_provenance"] = capture_pre_run_provenance(root)
-    if receipt["scanner_pre_run_provenance"].get("run_id") is None:
+    try:
+        receipt["scanner_pre_run_provenance"] = capture_pre_run_provenance(root)
+    except Exception:
+        if _provenance_required():
+            raise
+        receipt["scanner_pre_run_provenance"] = None
+    if isinstance(receipt["scanner_pre_run_provenance"], dict) and receipt["scanner_pre_run_provenance"].get("run_id") is None:
         receipt["scanner_pre_run_provenance"]["run_id"] = receipt["run_id"]
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write(receipt_path, (json.dumps(receipt) + "\n").encode("utf-8"))
@@ -121,19 +133,22 @@ def generate_daily(root: Path, receipt_path: Path, *, scanner_status="success", 
                         "scanner_status": scanner_status, "watchlist_rewritten": current_fingerprint != receipt["watchlist_before"]}, raw)
     metadata = build_views(root, now=now, policy=policy, daily_input=daily)
     if metadata.get("latest_run_complete"):
-        provenance_reference = finalize_scanner_input_provenance(
-            root,
-            receipt=receipt,
-            research_metadata=metadata,
-        )
-        metadata_path = root / "artifacts" / "research" / "history_metadata.json"
-        persisted = json.loads(metadata_path.read_text(encoding="utf-8"))
-        persisted["scanner_input_provenance"] = provenance_reference
-        atomic_write(
-            metadata_path,
-            (json.dumps(persisted, indent=2, ensure_ascii=False) + "\n").encode("utf-8"),
-        )
-        metadata = persisted
+        if isinstance(receipt.get("scanner_pre_run_provenance"), dict):
+            provenance_reference = finalize_scanner_input_provenance(
+                root,
+                receipt=receipt,
+                research_metadata=metadata,
+            )
+            metadata_path = root / "artifacts" / "research" / "history_metadata.json"
+            persisted = json.loads(metadata_path.read_text(encoding="utf-8"))
+            persisted["scanner_input_provenance"] = provenance_reference
+            atomic_write(
+                metadata_path,
+                (json.dumps(persisted, indent=2, ensure_ascii=False) + "\n").encode("utf-8"),
+            )
+            metadata = persisted
+        elif _provenance_required():
+            raise ValueError("scanner provenance required but pre-run capture is missing")
     validate_publication(root)
     return metadata
 
