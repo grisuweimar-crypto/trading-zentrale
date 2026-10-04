@@ -154,7 +154,9 @@ jobs:
                       return None
               return metadata
 
+          CURRENT_CAPTURE_ENGINE = 'prospective_capture_engine_v2_iso_date_replay'
           claimed_run_ids = set()
+          repairable_run_ids = set()
           archive = git_text(
               'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
           )
@@ -171,7 +173,17 @@ jobs:
                   run_id = str(row.get('run_id') or '').strip()
                   if not run_id:
                       raise SystemExit(f'missing run_id in Elliott shadow archive line {line_number}')
-                  claimed_run_ids.add(run_id)
+                  engine = str(row.get('capture_engine_version') or '').strip()
+                  output_count = int(row.get('output_count') or 0)
+                  symbols_with_outputs = int(row.get('symbols_with_outputs') or 0)
+                  if (
+                      engine == CURRENT_CAPTURE_ENGINE
+                      or output_count > 0
+                      or symbols_with_outputs > 0
+                  ):
+                      claimed_run_ids.add(run_id)
+                  else:
+                      repairable_run_ids.add(run_id)
 
 
           rejected = git_text(
@@ -223,14 +235,25 @@ jobs:
                   handle.write(f'backlog_count={len(candidates) - 1}\n')
           print(json.dumps({
               'claimed_or_rejected_runs': len(claimed_run_ids),
+              'repairable_legacy_empty_runs': len(repairable_run_ids),
               'uncaptured_publications': len(candidates),
               'selected': candidates[0] if candidates else None,
           }, indent=2))
           PY
 
-      - name: Checkout exact scanner publication
+      - name: Restore exact scanner publication inputs on repaired current code
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
-        run: git checkout --detach "${{ steps.bind.outputs.commit }}"
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in \
+            artifacts/research/history_metadata.json \
+            artifacts/research/latest_scanner.csv \
+            artifacts/research/daily_research.json \
+            artifacts/market_data/yahoo_ohlcv.csv
+          do
+            git show "${{ steps.bind.outputs.commit }}:$path" > "$path"
+          done
 
       - uses: actions/setup-python@v6
         if: github.event_name == 'pull_request' || steps.bind.outputs.process == 'true'
@@ -299,6 +322,7 @@ jobs:
           path = Path('artifacts/research/elliott_vnext_prospective_current_6h.json')
           capture = json.loads(path.read_text(encoding='utf-8'))
           assert capture['schema_version'] == 'elliott_vnext_prospective_capture_v1'
+          assert capture['capture_engine_version'] == 'prospective_capture_engine_v2_iso_date_replay'
           assert capture['source_publication_commit'] == os.environ['EXPECTED_COMMIT']
           assert capture['run_id'] == os.environ['EXPECTED_RUN_ID']
           assert capture['validation_partition'] == 'prospective_unspent'
@@ -362,6 +386,15 @@ jobs:
           rm -f \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
+          # Restore tracked scanner inputs to current main before switching
+          # branches. The capture itself was built from the exact bound
+          # publication files above, while the repaired replay code comes from
+          # current main.
+          git restore --source=origin/main -- \
+            artifacts/research/history_metadata.json \
+            artifacts/research/latest_scanner.csv \
+            artifacts/research/daily_research.json \
+            artifacts/market_data/yahoo_ohlcv.csv
           git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
           if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
             git checkout -B elliott-vnext-shadow-data origin/elliott-vnext-shadow-data
