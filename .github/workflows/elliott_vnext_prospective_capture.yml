@@ -437,7 +437,8 @@ jobs:
           # remove the working-tree copies before switching to the shadow branch.
           rm -f \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
+            artifacts/research/elliott_vnext_prospective_current_6h.json \
+            artifacts/research/elliott_vnext_prospective_observation.json
           # Restore tracked scanner inputs to current main before switching
           # branches. The capture itself was built from the exact bound
           # publication files above, while the repaired replay code comes from
