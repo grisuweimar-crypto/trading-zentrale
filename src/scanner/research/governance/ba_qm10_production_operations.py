@@ -489,3 +489,84 @@ def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
         "decision_logic_changed": manifest["decision_logic_changed"],
         "writes_performed": False,
     }
+
+
+
+def evaluate_ba_qm10_closure(root: str | Path = _ROOT) -> dict[str, Any]:
+    """Return the fail-closed BA-QM10 engineering closure receipt."""
+    root = Path(root).resolve()
+    contract = load_contract(
+        root / "configs" / "ba_qm10_production_operations_qm_v1.json"
+    )
+    operations = audit_current_operations(root)
+    capacity = audit_current_runtime_capacity(root)
+
+    if operations.get("status") != "BA_QM10_ENGINEERING_COMPLETE":
+        raise BAQM10AuditError("ba_qm10_operations_not_complete")
+    if operations.get("closure_eligible") is not True:
+        raise BAQM10AuditError("ba_qm10_closure_not_eligible")
+    if operations.get("all_required_checks_passed") is not True:
+        raise BAQM10AuditError("ba_qm10_required_checks_not_all_passed")
+    if operations.get("all_required_guards_passed") is not True:
+        raise BAQM10AuditError("ba_qm10_required_guards_not_all_passed")
+    if operations.get("open_finding_count") != 0:
+        raise BAQM10AuditError("ba_qm10_open_findings_remain")
+    if operations.get("open_static_risk_count") != 0:
+        raise BAQM10AuditError("ba_qm10_open_static_risks_remain")
+    if operations.get("runtime_matches_current_snapshot") is not True:
+        raise BAQM10AuditError("ba_qm10_runtime_not_current")
+    if operations.get("symbol_views_match_current_snapshot") is not True:
+        raise BAQM10AuditError("ba_qm10_symbol_views_not_current")
+    if operations.get("symbol_views_runtime_projection_matches") is not True:
+        raise BAQM10AuditError("ba_qm10_symbol_view_projection_mismatch")
+    if capacity.get("status") != "PASS":
+        raise BAQM10AuditError("ba_qm10_runtime_capacity_not_pass")
+    if capacity.get("max_shard_bytes", 2_000_000) >= 2_000_000:
+        raise BAQM10AuditError("ba_qm10_runtime_capacity_limit_exceeded")
+
+    evidence = _mapping(contract.get("closure_evidence"), "closure_evidence")
+    if str(evidence.get("snapshot_id") or "") != str(
+        operations.get("snapshot_id") or ""
+    ):
+        raise BAQM10AuditError("ba_qm10_closure_snapshot_mismatch")
+    if evidence.get("public_runtime_shard_count") != capacity.get("shard_count"):
+        raise BAQM10AuditError("ba_qm10_closure_shard_count_mismatch")
+    if evidence.get("public_runtime_symbol_count") != capacity.get("symbol_count"):
+        raise BAQM10AuditError("ba_qm10_closure_symbol_count_mismatch")
+    if evidence.get("public_runtime_packet_count") != capacity.get("packet_count"):
+        raise BAQM10AuditError("ba_qm10_closure_packet_count_mismatch")
+    if str(evidence.get("public_runtime_projection_sha256") or "") != str(
+        operations.get("runtime_projection_sha256") or ""
+    ):
+        raise BAQM10AuditError("ba_qm10_closure_projection_hash_mismatch")
+
+    return {
+        "schema_version": "ba_qm10_engineering_closure_receipt_v1",
+        "status": "BA_QM10_ENGINEERING_COMPLETE",
+        "scope": "QUALITY_MANAGEMENT_ONLY",
+        "snapshot_id": operations["snapshot_id"],
+        "snapshot_as_of": operations["snapshot_as_of"],
+        "required_check_count": operations["required_check_count"],
+        "all_required_checks_passed": True,
+        "all_required_guards_passed": True,
+        "open_finding_count": 0,
+        "open_static_risk_count": 0,
+        "runtime_shard_count": capacity["shard_count"],
+        "runtime_max_shard_bytes": capacity["max_shard_bytes"],
+        "runtime_hard_limit_bytes": capacity["hard_limit_bytes"],
+        "runtime_symbol_count": capacity["symbol_count"],
+        "runtime_packet_count": capacity["packet_count"],
+        "runtime_projection_sha256": operations["runtime_projection_sha256"],
+        "symbol_views_runtime_projection_matches": True,
+        "engineering_closure_performed": True,
+        "research_logic_changed": False,
+        "decision_logic_changed": False,
+        "investment_logic_changed": False,
+        "execution_enabled": False,
+        "empirical_promotion_performed": False,
+        "lag1_finding_id": contract["dependencies"]["lag1_finding_id"],
+        "lag1_capa_id": contract["dependencies"]["lag1_capa_id"],
+        "lag1_evidence_impact": "PROMOTION_BLOCKED",
+        "ba_qm10_may_release_lag1_block": False,
+        "next_mandatory_work_package": "BA-QM11 – Gesamtsystem-Audit",
+    }
