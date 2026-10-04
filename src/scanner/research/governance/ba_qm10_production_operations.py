@@ -166,7 +166,14 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
 
     scanner_on = _mapping(scanner.get("on"), "scanner.on")
     scanner_schedules = scanner_on.get("schedule")
-    if not isinstance(scanner_schedules, list) or len(scanner_schedules) != 3:
+    if not isinstance(scanner_schedules, list):
+        raise BAQM10AuditError("scanner_retry_schedule_invalid")
+    scanner_crons = tuple(
+        str(row.get("cron") or "")
+        for row in scanner_schedules
+        if isinstance(row, Mapping)
+    )
+    if scanner_crons != ("7 17 * * *", "37 18,20 * * *"):
         raise BAQM10AuditError("scanner_retry_schedule_invalid")
     scanner_concurrency = _mapping(scanner.get("concurrency"), "scanner.concurrency")
     if scanner_concurrency.get("cancel-in-progress") != "false":
@@ -216,7 +223,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         runtime_current = runtime_snapshot_id == snapshot_id
 
     static = {
-        "scanner_three_retry_slots": True,
+        "scanner_three_retry_slots": scanner_crons == ("7 17 * * *", "37 18,20 * * *"),
         "scanner_serialized": True,
         "scanner_provenance_required": "SCANNER_REQUIRE_PROVENANCE: '1'" in scanner_text,
         "scanner_records_success_marker_only_after_validation": (
