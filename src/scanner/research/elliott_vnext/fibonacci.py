@@ -250,13 +250,18 @@ def _projection_zone(
     basis: Mapping[str, object],
     width_specs: Sequence[ZoneWidthSpec],
     current_price: float | None,
-) -> dict[str, object]:
+) -> dict[str, object] | None:
     if not math.isfinite(center) or center <= 0:
         raise FibonacciInputError("projection_center_must_be_positive")
     spec = _width_spec(degree, width_specs)
     half_width, width_basis = _half_width(center, atr, spec)
-    low = max(0.0, center - half_width)
+    low = center - half_width
     high = center + half_width
+    # A price projection zone that extends to zero or below is not a valid
+    # tradable price interval.  Do not clamp it to an invented zero boundary;
+    # suppress it as missing/insufficient projection evidence instead.
+    if low <= 0 or high <= 0 or low >= high:
+        return None
     status, distance = _zone_status(low, high, direction, current_price, half_width)
     identity = {
         "scenario_id": scenario_id,
@@ -485,27 +490,29 @@ def _scenario_geometry(
                     if not math.isfinite(center) or center <= 0:
                         warnings.append("wave3_projection_suppressed_non_positive_price")
                         continue
-                    zones.append(
-                        _projection_zone(
-                            scenario_id=scenario_id,
-                            wave_role="wave_3",
-                            projection_type="wave1_extension_from_wave2",
-                            center=center,
-                            direction=direction,
-                            degree=degree,
-                            atr=atr,
-                            available_from=str(wave2["confirmed_time"]),
-                            basis={
-                                "anchor_roles": ["origin", "wave_1", "wave_2"],
-                                "length_source": "wave_1",
-                                "level": level,
-                                "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-                                "level_validated": False,
-                            },
-                            width_specs=width_specs,
-                            current_price=current_price,
-                        )
+                    zone = _projection_zone(
+                        scenario_id=scenario_id,
+                        wave_role="wave_3",
+                        projection_type="wave1_extension_from_wave2",
+                        center=center,
+                        direction=direction,
+                        degree=degree,
+                        atr=atr,
+                        available_from=str(wave2["confirmed_time"]),
+                        basis={
+                            "anchor_roles": ["origin", "wave_1", "wave_2"],
+                            "length_source": "wave_1",
+                            "level": level,
+                            "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+                            "level_validated": False,
+                        },
+                        width_specs=width_specs,
+                        current_price=current_price,
                     )
+                    if zone is None:
+                        warnings.append("wave3_projection_suppressed_non_positive_zone_bound")
+                    else:
+                        zones.append(zone)
 
     elif stage == "wave_3_complete":
         if all(role in pivots for role in ("wave_2", "wave_3")):
@@ -520,27 +527,29 @@ def _scenario_geometry(
                     if not math.isfinite(center) or center <= 0:
                         warnings.append("wave4_projection_suppressed_non_positive_price")
                         continue
-                    zones.append(
-                        _projection_zone(
-                            scenario_id=scenario_id,
-                            wave_role="wave_4",
-                            projection_type="wave3_retracement",
-                            center=center,
-                            direction="down" if direction == "up" else "up",
-                            degree=degree,
-                            atr=atr,
-                            available_from=str(wave3["confirmed_time"]),
-                            basis={
-                                "anchor_roles": ["wave_2", "wave_3"],
-                                "length_source": "wave_3",
-                                "level": level,
-                                "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_4_retracement",
-                                "level_validated": False,
-                            },
-                            width_specs=width_specs,
-                            current_price=current_price,
-                        )
+                    zone = _projection_zone(
+                        scenario_id=scenario_id,
+                        wave_role="wave_4",
+                        projection_type="wave3_retracement",
+                        center=center,
+                        direction="down" if direction == "up" else "up",
+                        degree=degree,
+                        atr=atr,
+                        available_from=str(wave3["confirmed_time"]),
+                        basis={
+                            "anchor_roles": ["wave_2", "wave_3"],
+                            "length_source": "wave_3",
+                            "level": level,
+                            "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_4_retracement",
+                            "level_validated": False,
+                        },
+                        width_specs=width_specs,
+                        current_price=current_price,
                     )
+                    if zone is None:
+                        warnings.append("wave4_projection_suppressed_non_positive_zone_bound")
+                    else:
+                        zones.append(zone)
 
     elif stage == "wave_4_complete":
         if all(role in pivots for role in ("origin", "wave_1", "wave_3", "wave_4")):
@@ -560,28 +569,30 @@ def _scenario_geometry(
                     if not math.isfinite(center) or center <= 0:
                         warnings.append("wave5_projection_suppressed_non_positive_price")
                         continue
-                    zones.append(
-                        _projection_zone(
-                            scenario_id=scenario_id,
-                            wave_role="wave_5",
-                            projection_type=str(candidate["basis_name"]),
-                            center=center,
-                            direction=direction,
-                            degree=degree,
-                            atr=atr,
-                            available_from=str(wave4["confirmed_time"]),
-                            basis={
-                                "anchor_roles": ["origin", "wave_1", "wave_3", "wave_4"],
-                                "length_source": candidate["length_source"],
-                                "level": level,
-                                "level_source": "elliottwaver_live_kompendium_verified_2026-09-25",
-                                "level_validated": candidate["validated"],
-                                "numeric_level_frozen": candidate["numeric_level_frozen"],
-                            },
-                            width_specs=width_specs,
-                            current_price=current_price,
-                        )
+                    zone = _projection_zone(
+                        scenario_id=scenario_id,
+                        wave_role="wave_5",
+                        projection_type=str(candidate["basis_name"]),
+                        center=center,
+                        direction=direction,
+                        degree=degree,
+                        atr=atr,
+                        available_from=str(wave4["confirmed_time"]),
+                        basis={
+                            "anchor_roles": ["origin", "wave_1", "wave_3", "wave_4"],
+                            "length_source": candidate["length_source"],
+                            "level": level,
+                            "level_source": "elliottwaver_live_kompendium_verified_2026-09-25",
+                            "level_validated": candidate["validated"],
+                            "numeric_level_frozen": candidate["numeric_level_frozen"],
+                        },
+                        width_specs=width_specs,
+                        current_price=current_price,
                     )
+                    if zone is None:
+                        warnings.append("wave5_projection_suppressed_non_positive_zone_bound")
+                    else:
+                        zones.append(zone)
 
     elif stage == "wave_5_complete":
         warnings.append("cycle_complete_no_historical_projection_backfill")
