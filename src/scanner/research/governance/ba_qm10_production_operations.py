@@ -169,6 +169,12 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
     symbols = _workflow(root, "decision_watch_symbol_views.yml")
 
     scanner_text = (root / ".github" / "workflows" / "run_scanner.yml").read_text(encoding="utf-8")
+    publication_guard_path = root / "scripts" / "check_publication_base.py"
+    publication_guard_text = (
+        publication_guard_path.read_text(encoding="utf-8")
+        if publication_guard_path.exists()
+        else ""
+    )
     decision_text = (root / ".github" / "workflows" / "decision_watch_pipeline.yml").read_text(encoding="utf-8")
     runtime_text = (root / ".github" / "workflows" / "decision_watch_runtime.yml").read_text(encoding="utf-8")
     symbols_text = (root / ".github" / "workflows" / "decision_watch_symbol_views.yml").read_text(encoding="utf-8")
@@ -242,7 +248,11 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
             < scanner_text.find("git add artifacts/")
         ),
         "scanner_incomplete_run_exits_failure": "Scannerlauf unvollstaendig" in scanner_text,
-        "scanner_explicit_main_advance_refusal_guard": "main advanced" in scanner_text,
+        "scanner_explicit_main_advance_refusal_guard": (
+            "python scripts/check_publication_base.py" in scanner_text
+            and "STALE_PUBLICATION_EXIT = 75" in publication_guard_text
+            and '"ls-remote", "--heads"' in publication_guard_text
+        ),
         "phase2_fallback_schedule_present": "cron: '45 22 * * *'" in phase2_text,
         "phase2_freshness_gate_present": "Decide whether calibration is stale" in phase2_text,
         "decision_same_snapshot_guard_present": "--require-snapshot-match" in decision_text,
