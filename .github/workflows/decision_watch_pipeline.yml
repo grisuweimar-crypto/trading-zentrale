@@ -1,6 +1,17 @@
 name: Decision Watch Integration Pipeline
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/decision_watch_pipeline.yml'
+      - 'scripts/build_integrated_decision_evidence_7a.py'
+      - 'scripts/run_w10_snapshot_orchestration.py'
+      - 'scripts/build_elliott_w6_source.py'
+      - 'src/scanner/research/decision_layer/current_evidence.py'
+      - 'src/scanner/research/decision_layer/evidence_archive.py'
+      - 'src/scanner/research/decision_layer/w10_orchestration.py'
+      - 'src/scanner/research/decision_layer/phase6_elliott.py'
   workflow_run:
     workflows: ['Phase 2 Probability Calibration', 'Phase 5E Adaptive Shadow and Promotion', 'Module 6 Elliott Prospective Shadow']
     types: [completed]
