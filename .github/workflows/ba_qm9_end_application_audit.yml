@@ -63,7 +63,7 @@ jobs:
           assert closure["status"] == "BA_QM9_ENGINEERING_COMPLETE"
           assert closure["required_check_count"] == 11
           assert closure["all_required_checks_passed"] is True
-          assert closure["manipulation_and_regression_tests_passed"] == 55
+          assert closure["manipulation_and_regression_tests_passed"] == 56
           assert closure["stale_runtime_silently_accepted"] is False
           assert closure["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
           assert closure["ba_qm9_may_release_lag1_block"] is False
