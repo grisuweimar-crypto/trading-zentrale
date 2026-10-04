@@ -369,7 +369,8 @@
     "empirical_promotion_performed": false,
     "open_capa_closed_by_ba_qm8": false
   },
-  "next_step": "Close real-stage provenance gaps starting with DATA->SCANNER snapshot-bound raw-source hashes, then emit canonical real transition observations through the BA-QM8 seven-class guard engine before closure.",
+  "next_step": "Publish the first prospective scanner snapshot with scanner_input_provenance, carry the exact reference through W10, verify DATA and SCANNER on that fresh sealed snapshot, then emit canonical real transition observations through the seven-class guard engine before closure.",
   "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
-  "real_stage_adapter_status": "IMPLEMENTED_WITH_OPEN_GAPS"
+  "real_stage_adapter_status": "IMPLEMENTED_WITH_OPEN_GAPS",
+  "data_scanner_provenance_status": "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
 }

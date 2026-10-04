@@ -25,7 +25,7 @@ def test_current_real_snapshot_is_audited_without_inventing_missing_provenance()
     assert stages["EXTERNAL_EVIDENCE"]["status"] == "PASS_DISABLED_BOUNDARY"
 
     assert stages["DATA"]["status"] == "PARTIAL"
-    assert "raw_source_hashes_not_snapshot_bound" in stages["DATA"]["gaps"]
+    assert "scanner_input_provenance_missing" in stages["DATA"]["gaps"]
     assert "DATA" in result["closure_blockers"]
     assert result["closure_eligible"] is False
 

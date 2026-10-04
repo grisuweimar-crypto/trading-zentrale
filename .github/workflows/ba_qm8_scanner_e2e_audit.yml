@@ -7,9 +7,16 @@ on:
       - "src/scanner/research/governance/ba_qm8_end_to_end.py"
       - "src/scanner/research/governance/ba_qm8_transition_guard.py"
       - "src/scanner/research/governance/ba_qm8_real_stage_bindings.py"
+      - "src/scanner/reports/scanner_provenance.py"
+      - "src/scanner/reports/daily_research.py"
+      - "src/scanner/reports/research_validation.py"
+      - "src/scanner/app/build_watchlist.py"
+      - "src/scanner/research/decision_layer/w10_orchestration.py"
       - "tests/test_ba_qm8_end_to_end.py"
       - "tests/test_ba_qm8_transition_guard.py"
       - "tests/test_ba_qm8_real_stage_bindings.py"
+      - "tests/test_scanner_provenance.py"
+      - "tests/test_w10_snapshot_orchestration.py"
       - "artifacts/research/daily_research.json"
       - "artifacts/research/current_decision_packets_7a.json"
       - "artifacts/research/decision_snapshot_w10.json"
@@ -22,12 +29,12 @@ on:
       - "src/scanner/research/governance/qm_i_lineage.py"
       - "configs/qm_c3_families_multiplicity_v1.json"
       - "src/scanner/research/governance/qm_c_families_multiplicity.py"
-      - "src/scanner/research/decision_layer/w10_orchestration.py"
       - "src/scanner/research/decision_layer/w11_end_to_end.py"
       - "tests/test_w11_end_to_end_acceptance.py"
       - "tests/test_w12_ferrari_regression.py"
       - "configs/external_evidence_8_contract_v1.json"
       - "artifacts/research/external_evidence_8c_completion.json"
+      - ".github/workflows/run_scanner.yml"
       - ".github/workflows/ba_qm8_scanner_e2e_audit.yml"
   workflow_dispatch:
 
@@ -44,9 +51,14 @@ jobs:
           python-version: "3.11"
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate BA-QM8 contract, transition guards, real bindings and predecessor regressions
+      - name: Run full Scanner regression suite for provenance-sensitive core changes
+        run: python -m pytest -q tests
+
+      - name: Validate BA-QM8 provenance, guards, real bindings and predecessor regressions
         run: |
           python -m pytest -q \
+            tests/test_scanner_provenance.py \
+            tests/test_w10_snapshot_orchestration.py \
             tests/test_ba_qm8_end_to_end.py \
             tests/test_ba_qm8_transition_guard.py \
             tests/test_ba_qm8_real_stage_bindings.py \
@@ -63,15 +75,18 @@ jobs:
           assert foundation["engineering_status"] == "IN_PROGRESS"
           assert foundation["transition_guard_status"] == "IMPLEMENTED_FAIL_CLOSED_ENGINE"
           assert foundation["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
+          assert foundation["data_scanner_provenance_status"] == "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
           assert foundation["evidence_impact"] == "PROMOTION_BLOCKED"
           assert foundation["effectiveness_verification_pending"] is True
           assert foundation["automatic_release_allowed"] is False
           assert foundation["closure_claimed"] is False
 
+          # The checked-in 2026-10-03 snapshot predates prospective scanner provenance.
+          # It must remain open; BA-QM8 may not retroactively certify it.
           real = audit_real_stage_bindings()
           assert real["w10_status"] == "sealed"
           assert real["stage_results"]["DATA"]["status"] == "PARTIAL"
-          assert "raw_source_hashes_not_snapshot_bound" in real["stage_results"]["DATA"]["gaps"]
+          assert "scanner_input_provenance_missing" in real["stage_results"]["DATA"]["gaps"]
           assert "DATA" in real["closure_blockers"]
           assert real["closure_eligible"] is False
           assert real["guessed_lineage_added"] is False

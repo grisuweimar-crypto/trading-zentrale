@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from scanner.reports.daily_research import validate_daily_research
+from scanner.reports.scanner_provenance import validate_bound_provenance
 from scanner.research.decision_layer.input_contract import validate_input_packet
 from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
 
@@ -151,43 +152,82 @@ def audit_real_stage_bindings(root: str | Path = _ROOT) -> dict[str, Any]:
     if not isinstance(semantics, Mapping) or not isinstance(validation, Mapping):
         raise BAQM8RealBindingError("real_binding_packet_contract_sections_missing")
 
-    historical = daily.get("historical_match_method")
-    historical = historical if isinstance(historical, Mapping) else {}
-    raw_source_paths = [
-        str(historical.get("event_source") or ""),
-        str(historical.get("session_source") or ""),
-    ]
-    raw_source_paths = [value for value in raw_source_paths if value]
-    explicit_raw_hashes = daily.get("raw_source_hashes")
-    if not isinstance(explicit_raw_hashes, Mapping):
-        explicit_raw_hashes = scanner_w10.get("raw_source_hashes")
-    raw_hash_bound = isinstance(explicit_raw_hashes, Mapping) and bool(explicit_raw_hashes)
-
     stage_results: dict[str, dict[str, Any]] = {}
+
+    daily_provenance = daily.get("scanner_input_provenance")
+    validated_provenance = None
     data_gaps: list[str] = []
-    if not raw_source_paths:
-        data_gaps.append("raw_source_paths_not_expressed")
-    if not raw_hash_bound:
-        data_gaps.append("raw_source_hashes_not_snapshot_bound")
+    if isinstance(daily_provenance, Mapping):
+        try:
+            validated_provenance = validate_bound_provenance(
+                root,
+                daily_provenance,
+                expected_snapshot_id=snapshot_id,
+            )
+        except Exception as exc:
+            raise BAQM8RealBindingError(
+                f"real_binding_scanner_provenance_invalid:{exc}"
+            ) from exc
+    else:
+        data_gaps.append("scanner_input_provenance_missing")
+
     stage_results["DATA"] = _stage(
-        status="PASS" if not data_gaps else "PARTIAL",
+        status="PASS" if validated_provenance is not None else "PARTIAL",
         evidence={
-            "historical_event_source": raw_source_paths[0] if raw_source_paths else None,
-            "historical_session_source": raw_source_paths[1] if len(raw_source_paths) > 1 else None,
-            "raw_source_hashes_snapshot_bound": raw_hash_bound,
+            "scanner_input_provenance_present": validated_provenance is not None,
+            "provenance_path": (
+                daily_provenance.get("path")
+                if isinstance(daily_provenance, Mapping)
+                else None
+            ),
+            "provenance_sha256": (
+                daily_provenance.get("sha256")
+                if isinstance(daily_provenance, Mapping)
+                else None
+            ),
+            "direct_scoring_input_sha256": (
+                daily_provenance.get("direct_scoring_input_sha256")
+                if isinstance(daily_provenance, Mapping)
+                else None
+            ),
+            "scoring_universe_sha256": (
+                daily_provenance.get("scoring_universe_sha256")
+                if isinstance(daily_provenance, Mapping)
+                else None
+            ),
+            "historical_backfill": (
+                daily_provenance.get("historical_backfill")
+                if isinstance(daily_provenance, Mapping)
+                else None
+            ),
         },
         gaps=data_gaps,
     )
 
+    scanner_gaps: list[str] = []
+    w10_provenance = scanner_w10.get("scanner_input_provenance")
+    if isinstance(daily_provenance, Mapping):
+        if not isinstance(w10_provenance, Mapping):
+            scanner_gaps.append("w10_scanner_input_provenance_missing")
+        elif dict(w10_provenance) != dict(daily_provenance):
+            raise BAQM8RealBindingError(
+                "real_binding_w10_scanner_provenance_mismatch"
+            )
     stage_results["SCANNER"] = _stage(
-        status="PASS",
+        status="PASS" if not scanner_gaps else "PARTIAL",
         evidence={
             "schema_version": daily.get("schema_version"),
             "snapshot_id": snapshot_id,
             "source_snapshot_id": daily.get("source_snapshot_id"),
             "generated_at": daily.get("generated_at"),
             "w10_snapshot_identity_state": scanner_w10.get("snapshot_identity_state"),
+            "scanner_input_provenance_bound_in_w10": (
+                isinstance(daily_provenance, Mapping)
+                and isinstance(w10_provenance, Mapping)
+                and dict(w10_provenance) == dict(daily_provenance)
+            ),
         },
+        gaps=scanner_gaps,
     )
 
     stage_results["SELECTION"] = _stage(

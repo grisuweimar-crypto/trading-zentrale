@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -17,6 +18,11 @@ from scanner.reports.research_views import (
 )
 from scanner.reports.research_validation import validate_publication
 from scanner.reports.historical_matches import HistoricalMatcher, MatchPolicy, method_metadata
+from scanner.reports.scanner_provenance import (
+    capture_pre_run_provenance,
+    finalize_scanner_input_provenance,
+    validate_bound_provenance,
+)
 
 WATCHLIST = "artifacts/watchlist/watchlist_full.csv"
 ALIASES = {
@@ -50,9 +56,23 @@ def fingerprint(path):
     return [info.st_mtime_ns, info.st_size]
 
 
+def _provenance_required() -> bool:
+    return str(os.environ.get("SCANNER_REQUIRE_PROVENANCE") or "").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+
+
 def begin_daily(root: Path, receipt_path: Path, *, run_id=None):
     receipt = {"run_id": run_id or str(uuid4()), "started_at": datetime.now(timezone.utc).isoformat(),
                "watchlist_before": fingerprint(root / WATCHLIST)}
+    try:
+        receipt["scanner_pre_run_provenance"] = capture_pre_run_provenance(root)
+    except Exception:
+        if _provenance_required():
+            raise
+        receipt["scanner_pre_run_provenance"] = None
+    if isinstance(receipt["scanner_pre_run_provenance"], dict) and receipt["scanner_pre_run_provenance"].get("run_id") is None:
+        receipt["scanner_pre_run_provenance"]["run_id"] = receipt["run_id"]
     receipt_path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write(receipt_path, (json.dumps(receipt) + "\n").encode("utf-8"))
     return receipt
@@ -112,6 +132,23 @@ def generate_daily(root: Path, receipt_path: Path, *, scanner_status="success", 
                        {"run_id": receipt["run_id"], "started_at": receipt["started_at"],
                         "scanner_status": scanner_status, "watchlist_rewritten": current_fingerprint != receipt["watchlist_before"]}, raw)
     metadata = build_views(root, now=now, policy=policy, daily_input=daily)
+    if metadata.get("latest_run_complete"):
+        if isinstance(receipt.get("scanner_pre_run_provenance"), dict):
+            provenance_reference = finalize_scanner_input_provenance(
+                root,
+                receipt=receipt,
+                research_metadata=metadata,
+            )
+            metadata_path = root / "artifacts" / "research" / "history_metadata.json"
+            persisted = json.loads(metadata_path.read_text(encoding="utf-8"))
+            persisted["scanner_input_provenance"] = provenance_reference
+            atomic_write(
+                metadata_path,
+                (json.dumps(persisted, indent=2, ensure_ascii=False) + "\n").encode("utf-8"),
+            )
+            metadata = persisted
+        elif _provenance_required():
+            raise ValueError("scanner provenance required but pre-run capture is missing")
     validate_publication(root)
     return metadata
 
@@ -258,6 +295,20 @@ def validate_daily_research(root: Path | str, payload=None):
     expected_hash = hashlib.sha256(daily_path.read_bytes()).hexdigest()
     if metadata.get("daily_research", {}).get("sha256") != expected_hash:
         raise ValueError("daily_research hash mismatch")
+    provenance_reference = metadata.get("scanner_input_provenance")
+    payload_provenance = payload.get("scanner_input_provenance")
+    if provenance_reference is not None:
+        if not isinstance(provenance_reference, dict):
+            raise ValueError("scanner_input_provenance metadata invalid")
+        if payload_provenance != provenance_reference:
+            raise ValueError("daily_research scanner_input_provenance mismatch")
+        validate_bound_provenance(
+            root,
+            provenance_reference,
+            expected_snapshot_id=str(payload.get("snapshot_id") or ""),
+        )
+    elif payload_provenance is not None:
+        raise ValueError("daily_research has unbound scanner_input_provenance")
     method = payload.get("historical_match_method", {})
     policy = MatchPolicy(method.get("min_matches"), method.get("cooldown_trading_days"))
     if method != method_metadata(policy):
@@ -341,6 +392,7 @@ def generate_daily_research(root: Path | str, *, match_policy=None):
         "universe_size": len(symbols),
         "historical_match_method": method_metadata(match_policy),
         "historical_outcome_coverage": _outcome_coverage(symbols, matcher, as_of),
+        "scanner_input_provenance": metadata.get("scanner_input_provenance"),
         "symbols": symbols,
     }
     output_path = research / "daily_research.json"

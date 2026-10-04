@@ -264,3 +264,61 @@ def test_w10_phase6_rejects_different_market_date(tmp_path: Path):
     )
     with pytest.raises(W10OrchestrationError, match="phase6_as_of_mismatch"):
         resolve_phase6(manifest, artifact_path=source, now=_dt(17, 4))
+
+
+def test_w10_carries_complete_scanner_input_provenance_into_scanner_stage() -> None:
+    daily = _daily()
+    daily["scanner_input_provenance"] = {
+        "path": "artifacts/research/scanner_input_provenance.json",
+        "sha256": "1" * 64,
+        "content_hash": "2" * 64,
+        "snapshot_id": "snapshot-x",
+        "as_of": "2026-10-01",
+        "run_id": "github-1-1",
+        "complete": True,
+        "historical_backfill": False,
+        "direct_scoring_input_sha256": "3" * 64,
+        "scoring_universe_sha256": "4" * 64,
+        "source_watchlist_full_sha256": "5" * 64,
+        "latest_scanner_sha256": "6" * 64,
+        "code_revision": "7" * 40,
+    }
+    manifest = begin_manifest(daily, now=_dt(17, 1))
+    assert (
+        manifest["stages"]["scanner_daily_research"]["scanner_input_provenance"]
+        == daily["scanner_input_provenance"]
+    )
+
+
+def test_w10_rejects_scanner_input_provenance_from_other_snapshot() -> None:
+    daily = _daily()
+    daily["scanner_input_provenance"] = {
+        "path": "artifacts/research/scanner_input_provenance.json",
+        "sha256": "1" * 64,
+        "content_hash": "2" * 64,
+        "snapshot_id": "other-snapshot",
+        "as_of": "2026-10-01",
+        "complete": True,
+        "historical_backfill": False,
+    }
+    with pytest.raises(
+        W10OrchestrationError, match="scanner_input_provenance_snapshot_mismatch"
+    ):
+        begin_manifest(daily, now=_dt(17, 1))
+
+
+def test_w10_rejects_backfilled_scanner_input_provenance() -> None:
+    daily = _daily()
+    daily["scanner_input_provenance"] = {
+        "path": "artifacts/research/scanner_input_provenance.json",
+        "sha256": "1" * 64,
+        "content_hash": "2" * 64,
+        "snapshot_id": "snapshot-x",
+        "as_of": "2026-10-01",
+        "complete": True,
+        "historical_backfill": True,
+    }
+    with pytest.raises(
+        W10OrchestrationError, match="scanner_input_provenance_backfill_forbidden"
+    ):
+        begin_manifest(daily, now=_dt(17, 1))

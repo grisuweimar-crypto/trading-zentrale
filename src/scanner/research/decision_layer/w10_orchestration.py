@@ -121,6 +121,18 @@ def begin_manifest(
         raise W10OrchestrationError("snapshot_id_required")
     if not snapshot_as_of:
         raise W10OrchestrationError("snapshot_as_of_required")
+    scanner_provenance = daily.get("scanner_input_provenance")
+    if scanner_provenance is not None:
+        if not isinstance(scanner_provenance, Mapping):
+            raise W10OrchestrationError("scanner_input_provenance_must_be_object")
+        if scanner_provenance.get("complete") is not True:
+            raise W10OrchestrationError("scanner_input_provenance_not_complete")
+        if str(scanner_provenance.get("snapshot_id") or "") != snapshot_id:
+            raise W10OrchestrationError("scanner_input_provenance_snapshot_mismatch")
+        if scanner_provenance.get("historical_backfill") is not False:
+            raise W10OrchestrationError("scanner_input_provenance_backfill_forbidden")
+        if not str(scanner_provenance.get("sha256") or "").strip():
+            raise W10OrchestrationError("scanner_input_provenance_hash_required")
     return {
         "schema_version": SCHEMA_VERSION,
         "snapshot_id": snapshot_id,
@@ -135,6 +147,11 @@ def begin_manifest(
                 "available_from": _iso(scanner_available),
                 "availability_source": "daily_research.generated_at",
                 "snapshot_identity_state": "verified",
+                "scanner_input_provenance": (
+                    deepcopy(dict(scanner_provenance))
+                    if isinstance(scanner_provenance, Mapping)
+                    else None
+                ),
             }
         },
         "guards": {
@@ -382,4 +399,19 @@ def validate_sealed_manifest(manifest: Mapping[str, object], *, expected_snapsho
         raise W10OrchestrationError("no_backdating_guard_missing")
     if guards.get("private_position_data_persisted") is not False:
         raise W10OrchestrationError("private_position_guard_invalid")
+    scanner_stage = stages.get("scanner_daily_research")
+    if not isinstance(scanner_stage, Mapping):
+        raise W10OrchestrationError("scanner_daily_research_stage_missing")
+    scanner_provenance = scanner_stage.get("scanner_input_provenance")
+    if scanner_provenance is not None:
+        if not isinstance(scanner_provenance, Mapping):
+            raise W10OrchestrationError("sealed_scanner_provenance_invalid")
+        if scanner_provenance.get("complete") is not True:
+            raise W10OrchestrationError("sealed_scanner_provenance_not_complete")
+        if str(scanner_provenance.get("snapshot_id") or "") != snapshot_id:
+            raise W10OrchestrationError("sealed_scanner_provenance_snapshot_mismatch")
+        if scanner_provenance.get("historical_backfill") is not False:
+            raise W10OrchestrationError("sealed_scanner_provenance_backfill_forbidden")
+        if not str(scanner_provenance.get("sha256") or "").strip():
+            raise W10OrchestrationError("sealed_scanner_provenance_hash_required")
     return deepcopy(dict(manifest))

@@ -23,6 +23,7 @@ Important constraints
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import hashlib
 import math
 import os
 import re
@@ -71,6 +72,8 @@ class YahooEnrichReport:
     market_regime_crypto: str | None
     market_trend200_crypto: float | None
     market_date: str
+    provider_frame_sha256: str | None
+    provider_frame_rows: int
 
     def to_text(self) -> str:
         lines = []
@@ -87,9 +90,17 @@ class YahooEnrichReport:
         lines.append(f"regime_stock:     {self.market_regime_stock} (trend200={_fmt(self.market_trend200_stock)})")
         lines.append(f"benchmark_crypto: {self.benchmark_crypto}")
         lines.append(f"regime_crypto:    {self.market_regime_crypto} (trend200={_fmt(self.market_trend200_crypto)})")
+        lines.append(f"provider_frame_sha256: {self.provider_frame_sha256 or '—'}")
+        lines.append(f"provider_frame_rows: {self.provider_frame_rows}")
         lines.append("")
         lines.append("Note: Per-symbol failures keep previous values from watchlist.csv.")
         return "\n".join(lines).strip() + "\n"
+
+
+def _frame_digest(frame: pd.DataFrame) -> str:
+    """Hash a canonical serialization of the exact yfinance result frame."""
+    raw = frame.to_csv(index=True, lineterminator="\n").encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _fmt(x: float | None) -> str:
@@ -316,6 +327,8 @@ def enrich_watchlist_with_yahoo(
             market_regime_crypto=None,
             market_trend200_crypto=None,
             market_date=market_date,
+            provider_frame_sha256=None,
+            provider_frame_rows=0,
         )
         out = df.copy()
         if "MarketDate" not in out.columns:
@@ -352,6 +365,9 @@ def enrich_watchlist_with_yahoo(
         threads=True,
         progress=False,
     )
+
+    provider_frame_sha256 = _frame_digest(dl)
+    provider_frame_rows = int(len(dl))
 
     # Benchmark features
     b_stock_close, _ = _series_from_download(dl, benchmark_stock)
@@ -409,5 +425,7 @@ def enrich_watchlist_with_yahoo(
         market_regime_crypto=crypto_reg,
         market_trend200_crypto=crypto_trend200,
         market_date=market_date,
+        provider_frame_sha256=provider_frame_sha256,
+        provider_frame_rows=provider_frame_rows,
     )
     return out, rep

@@ -134,6 +134,8 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM8AuditError("ba_qm8_transition_guard_status_invalid")
     if result.get("real_stage_adapter_status") != "IMPLEMENTED_WITH_OPEN_GAPS":
         raise BAQM8AuditError("ba_qm8_real_stage_adapter_status_invalid")
+    if result.get("data_scanner_provenance_status") != "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT":
+        raise BAQM8AuditError("ba_qm8_data_scanner_provenance_status_invalid")
     if result.get("research_only") is not True:
         raise BAQM8AuditError("ba_qm8_research_only_required")
     _require_false(result, "productive_integration_enabled", "ba_qm8")
@@ -374,6 +376,7 @@ def validate_dependencies(
         "engineering_status": "IN_PROGRESS",
         "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
         "real_stage_adapter_status": "IMPLEMENTED_WITH_OPEN_GAPS",
+        "data_scanner_provenance_status": "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT",
         "stage_count": len(EXPECTED_STAGES),
         "transition_count": len(EXPECTED_TRANSITIONS),
         "error_class_count": len(EXPECTED_ERROR_CLASSES),

@@ -14,6 +14,7 @@ from scanner.data.enrich.yahoo_taxonomy import load_mapping as load_yahoo_taxono
 from scanner.data.enrich.pillars import load_mapping as load_pillars, apply_mapping as apply_pillars, derive_from_official_taxonomy, derive_from_legacy_categories
 from scanner.app.score_step import apply_scoring
 from scanner._version import __version__, __build__
+from scanner.reports.scanner_provenance import write_runtime_provenance
 
 ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 MASTER_UNIVERSE_PATH = project_root() / "data" / "inputs" / "universe_master.csv"
@@ -392,6 +393,8 @@ def build_watchlist_outputs() -> None:
         except Exception as e:
             print(f"⚠️ Could not persist master-synced DB snapshot: {e}")
 
+    yahoo_report = None
+
     # 1b) Optional: refresh market data via Yahoo Finance
     # IMPORTANT: This only updates input columns (price/perf/risk/regime). It never touches scores.
     # By default, this is auto-enabled on GitHub Actions, but stays OFF locally.
@@ -401,6 +404,7 @@ def build_watchlist_outputs() -> None:
         if should_fetch_yahoo():
             print("🔄 Yahoo Finance: fetch enabled (refreshing market data)")
             df_y, rep = enrich_watchlist_with_yahoo(df_raw, enabled=True)
+            yahoo_report = rep
             # Persist back to watchlist.csv ONLY if the source is the artifacts DB snapshot.
             # (Never overwrite templates under data/inputs)
             try:
@@ -430,6 +434,15 @@ def build_watchlist_outputs() -> None:
     raw_path = out_dir / "watchlist_full_raw.csv"
     to_csv_safely(df_raw, raw_path, index=False)
     print("Wrote:", raw_path)
+
+    # BA-QM8 provenance only: bind the exact post-enrichment rows and the
+    # scoring-universe file before scoring. This does not modify values.
+    write_runtime_provenance(
+        project_root(),
+        selected_source=src,
+        scoring_rows_path=raw_path,
+        yahoo_report=yahoo_report,
+    )
 
     # 3) Scoring auf RAW (schreibt Score/Confidence/... in legacy-Spalten)
     df_scored_raw = apply_scoring(df_raw, universe_csv_path=str(src))
