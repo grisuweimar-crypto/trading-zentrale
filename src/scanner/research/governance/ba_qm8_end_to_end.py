@@ -130,6 +130,10 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM8AuditError("ba_qm8_foundation_status_invalid")
     if result.get("engineering_status") != "IN_PROGRESS":
         raise BAQM8AuditError("ba_qm8_must_remain_in_progress")
+    if result.get("transition_guard_status") != "IMPLEMENTED_FAIL_CLOSED_ENGINE":
+        raise BAQM8AuditError("ba_qm8_transition_guard_status_invalid")
+    if result.get("real_stage_adapter_status") != "PENDING":
+        raise BAQM8AuditError("ba_qm8_real_stage_adapter_status_invalid")
     if result.get("research_only") is not True:
         raise BAQM8AuditError("ba_qm8_research_only_required")
     _require_false(result, "productive_integration_enabled", "ba_qm8")
@@ -368,6 +372,8 @@ def validate_dependencies(
         "schema_version": "ba_qm8_scanner_e2e_audit_foundation_receipt_v1",
         "status": "PASSED_CONTRACT_FOUNDATION",
         "engineering_status": "IN_PROGRESS",
+        "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
+        "real_stage_adapter_status": "PENDING",
         "stage_count": len(EXPECTED_STAGES),
         "transition_count": len(EXPECTED_TRANSITIONS),
         "error_class_count": len(EXPECTED_ERROR_CLASSES),
