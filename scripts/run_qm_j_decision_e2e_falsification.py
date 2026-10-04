@@ -7,10 +7,12 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
+from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
 from scanner.research.governance.qm_j_decision_e2e import load_plan, run_falsification
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ARCHIVE_PATH = ROOT / DEFAULT_ARCHIVE
 
 
 def _utc(value: object) -> datetime:
@@ -100,7 +102,7 @@ def _canonical_revision_view(packets, daily, manifest):
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--daily", default=str(ROOT / "artifacts/research/daily_research.json"))
-    parser.add_argument("--archive", default=str(ROOT / "artifacts/research/decision_evidence_7a.jsonl"))
+    parser.add_argument("--archive", default=str(DEFAULT_ARCHIVE_PATH))
     parser.add_argument("--manifest", default=str(ROOT / "artifacts/research/decision_snapshot_w10.json"))
     parser.add_argument("--config", default=str(ROOT / "configs/qm_j_decision_e2e_falsification_v1.json"))
     parser.add_argument("--output", default=str(ROOT / "artifacts/research/qm/qm_j_decision_e2e_falsification.json"))
