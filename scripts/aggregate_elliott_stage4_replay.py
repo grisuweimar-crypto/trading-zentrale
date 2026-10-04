@@ -4,11 +4,13 @@ from __future__ import annotations
 """Aggregate parallel Elliott Stage-4 replay chunks into one 6G result."""
 
 import argparse
+import gc
 import gzip
 from hashlib import sha256
 import json
 from pathlib import Path
 import subprocess
+from typing import Iterator, Mapping
 
 import pandas as pd
 
@@ -37,6 +39,66 @@ def _git_head(root: Path) -> str:
         cwd=root,
         text=True,
     ).strip()
+
+
+
+
+def _load_chunk(path: Path) -> dict:
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        raise ValueError(f"stage4_chunk_payload_not_object:{path.name}")
+    return payload
+
+
+class ChunkSnapshotCollection:
+    """Re-iterable, bounded-memory view over Stage-4 replay chunks."""
+
+    def __init__(
+        self,
+        paths: list[Path],
+        *,
+        source_commit: str,
+        source_hash: str,
+        chunk_count: int,
+        snapshot_count: int,
+    ) -> None:
+        self.paths = list(paths)
+        self.source_commit = source_commit
+        self.source_hash = source_hash
+        self.chunk_count = int(chunk_count)
+        self.snapshot_count = int(snapshot_count)
+
+    def __len__(self) -> int:
+        return self.snapshot_count
+
+    def __iter__(self) -> Iterator[Mapping[str, object]]:
+        yielded = 0
+        for path in self.paths:
+            payload = _load_chunk(path)
+            if payload.get("schema_version") != "elliott_vnext_stage4_replay_chunk_v1":
+                raise ValueError(f"stage4_chunk_schema_invalid:{path.name}")
+            if payload.get("source_commit") != self.source_commit:
+                raise ValueError(f"stage4_chunk_source_commit_mismatch:{path.name}")
+            if payload.get("price_source_sha256") != self.source_hash:
+                raise ValueError(f"stage4_chunk_source_hash_mismatch:{path.name}")
+            if int(payload.get("chunk_count") or -1) != self.chunk_count:
+                raise ValueError(f"stage4_chunk_partition_mismatch:{path.name}")
+            snapshots = payload.get("snapshots")
+            if not isinstance(snapshots, list):
+                raise ValueError(f"stage4_chunk_snapshots_invalid:{path.name}")
+            for snapshot in snapshots:
+                if not isinstance(snapshot, Mapping):
+                    raise ValueError(f"stage4_snapshot_not_object:{path.name}")
+                yielded += 1
+                yield snapshot
+            del snapshots
+            del payload
+            gc.collect()
+        if yielded != self.snapshot_count:
+            raise ValueError(
+                f"stage4_snapshot_count_mismatch:{yielded}:{self.snapshot_count}"
+            )
 
 
 def _atomic_json(path: Path, payload: dict[str, object]) -> None:
@@ -72,15 +134,13 @@ def main() -> int:
 
     seen_indices: set[int] = set()
     seen_symbols: set[str] = set()
-    all_snapshots: list[dict] = []
     coverage_details: list[dict] = []
     symbols_requested = 0
     symbols_with_snapshots = 0
     snapshot_count = 0
 
     for path in chunks:
-        with gzip.open(path, "rt", encoding="utf-8") as handle:
-            payload = json.load(handle)
+        payload = _load_chunk(path)
         if payload.get("schema_version") != "elliott_vnext_stage4_replay_chunk_v1":
             raise ValueError(f"stage4_chunk_schema_invalid:{path.name}")
         if payload.get("source_commit") != source_commit:
@@ -106,13 +166,15 @@ def main() -> int:
         coverage = payload.get("coverage")
         if not isinstance(snapshots, list) or not isinstance(coverage, dict):
             raise ValueError(f"stage4_chunk_payload_invalid:{index}")
-        all_snapshots.extend(snapshots)
         details = coverage.get("details")
         if isinstance(details, list):
             coverage_details.extend(details)
         symbols_requested += int(coverage.get("symbols_requested") or 0)
         symbols_with_snapshots += int(coverage.get("symbols_with_snapshots") or 0)
         snapshot_count += int(coverage.get("snapshots") or 0)
+        del snapshots
+        del payload
+        gc.collect()
 
     if seen_indices != set(range(args.chunk_count)):
         raise ValueError("stage4_chunk_index_set_incomplete")
@@ -126,6 +188,14 @@ def main() -> int:
             f"stage4_chunk_universe_mismatch:missing={missing[:20]}:extra={extra[:20]}"
         )
 
+    snapshot_source = ChunkSnapshotCollection(
+        chunks,
+        source_commit=source_commit,
+        source_hash=source_hash,
+        chunk_count=args.chunk_count,
+        snapshot_count=snapshot_count,
+    )
+
     combined_coverage = {
         "symbols_requested": symbols_requested,
         "symbols_with_snapshots": symbols_with_snapshots,
@@ -136,7 +206,7 @@ def main() -> int:
     }
     result = build_stage4_historical_validation_from_replay(
         prices,
-        all_snapshots,
+        snapshot_source,
         combined_coverage,
         price_source_sha256=source_hash,
         source_commit=source_commit,
