@@ -5,7 +5,9 @@ on:
     paths:
       - "configs/ba_qm9_depot_watch_audit_v1.json"
       - "src/scanner/research/governance/ba_qm9_depot_watch_audit.py"
+      - "src/scanner/research/governance/ba_qm9_watch_runtime_audit.py"
       - "tests/test_ba_qm9_depot_watch_audit.py"
+      - "tests/test_ba_qm9_watch_runtime_audit.py"
       - "src/scanner/research/decision_layer/depot_watch.py"
       - "src/scanner/research/decision_layer/depot_watch_orchestrator.py"
       - "src/scanner/research/decision_layer/portfolio_action.py"
@@ -43,6 +45,7 @@ jobs:
           result = validate_foundation_file()
           assert result["status"] == "PASSED_CONTRACT_FOUNDATION"
           assert result["engineering_status"] == "IN_PROGRESS"
+          assert result["runtime_audit_status"] == "IMPLEMENTED_CANONICAL_7H"
           assert result["required_check_count"] == 11
           assert result["old_scanner_heuristic_fallback_forbidden"] is True
           assert result["depot_wall_clock_freshness_threshold_defined"] is False
