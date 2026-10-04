@@ -33,7 +33,7 @@
     "RETRY": "PARTIAL",
     "IDEMPOTENCY": "PARTIAL_NOT_YET_FULLY_PROVEN",
     "ARTIFACT_PROVENANCE": "PASS",
-    "CANONICAL_FILE_SELECTION": "F04_CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
+    "CANONICAL_FILE_SELECTION": "F04_CAPA_IMPLEMENTED_PENDING_FALSIFICATION_VERIFICATION",
     "STALE_ARTIFACT_DETECTION": "PASS_FAIL_CLOSED",
     "RACE_CONDITIONS": "FINDINGS_OPEN",
     "PARTIAL_RUNS": "PASS_FAIL_CLOSED",
@@ -208,5 +208,5 @@
     "ba_qm10_may_release_lag1_block": false
   },
   "closure_claimed": false,
-  "next_step": "Verify F01 by real runtime publication, verify F02/F03 by production trigger behavior, verify F04 by BA-QM7 falsification CI, then address scanner publication race/idempotency/recovery coverage."
+  "next_step": "Verify F01 with a real current Runtime Publish and F04 with a green BA-QM7 falsification run, then remediate F02/F03 workflow dependency races and the scanner publication race risk."
 }
