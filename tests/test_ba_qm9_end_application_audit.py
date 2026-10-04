@@ -20,6 +20,7 @@ from scanner.research.governance.ba_qm9_end_application_audit import (
     BAQM9AuditError,
     EXPECTED_CHECKS,
     audit_current_public_boundaries,
+    evaluate_ba_qm9_closure,
     load_contract,
     validate_contract,
 )
@@ -153,6 +154,9 @@ def _watch(position_book: dict | None = None) -> dict:
 
 def test_ba_qm9_contract_is_exactly_quality_management_only() -> None:
     value = load_contract()
+    assert value["status"] == "COMPLETE"
+    assert value["engineering_status"] == "COMPLETE"
+    assert value["closure_claimed"] is True
     assert value["scope"] == "QUALITY_MANAGEMENT_ONLY"
     assert tuple(value["required_checks"]) == EXPECTED_CHECKS
     assert value["product_logic_changed"] is False
@@ -354,3 +358,20 @@ def test_same_inputs_are_reproducible_and_tampering_breaks_watch_id() -> None:
     changed["summary"]["attention_required_count"] = 999
     with pytest.raises(DepotWatchError, match="watch_id_integrity_failure"):
         validate_depot_watch(changed)
+
+
+def test_ba_qm9_formal_closure_is_qm_only_and_routes_operations_to_ba_qm10() -> None:
+    result = evaluate_ba_qm9_closure()
+    assert result["status"] == "BA_QM9_ENGINEERING_COMPLETE"
+    assert result["scope"] == "QUALITY_MANAGEMENT_ONLY"
+    assert result["required_check_count"] == 11
+    assert result["all_required_checks_passed"] is True
+    assert result["manipulation_and_regression_tests_passed"] == 55
+    assert result["stale_runtime_silently_accepted"] is False
+    assert result["product_logic_changed"] is False
+    assert result["investment_logic_changed"] is False
+    assert result["execution_enabled"] is False
+    assert result["empirical_promotion_performed"] is False
+    assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+    assert result["ba_qm9_may_release_lag1_block"] is False
+    assert result["next_mandatory_work_package"] == "BA-QM10 – Produktions- und Betriebs-QM"
