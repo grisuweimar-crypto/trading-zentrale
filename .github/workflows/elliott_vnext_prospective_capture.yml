@@ -1,6 +1,12 @@
 name: Module 6 Elliott Prospective Shadow
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/elliott_vnext_prospective_capture.yml"
+      - "src/scanner/research/elliott_vnext/**"
+      - "scripts/run_elliott_prospective_capture_6h.py"
   pull_request:
     branches: [main]
     paths:
@@ -30,6 +36,7 @@ jobs:
   capture:
     if: >-
       github.event_name == 'pull_request' ||
+      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
@@ -71,6 +78,7 @@ jobs:
           SCANNER_SUBJECT = '📊 Autopilot: artifacts update [skip ci]'
           WORKFLOW_PATH = '.github/workflows/elliott_vnext_prospective_capture.yml'
           ARCHIVE_PATH = 'artifacts/research/elliott_vnext_prospective_history_6h.jsonl'
+          REJECTION_PATH = 'artifacts/research/elliott_vnext_prospective_rejections_6h.jsonl'
           REQUIRED_CHANGED = {
               'artifacts/research/history_metadata.json',
               'artifacts/research/latest_scanner.csv',
@@ -165,6 +173,25 @@ jobs:
                       raise SystemExit(f'missing run_id in Elliott shadow archive line {line_number}')
                   claimed_run_ids.add(run_id)
 
+
+          rejected = git_text(
+              'show', f'origin/elliott-vnext-shadow-data:{REJECTION_PATH}', allow_fail=True
+          )
+          if rejected:
+              for line_number, line in enumerate(rejected.splitlines(), start=1):
+                  if not line.strip():
+                      continue
+                  try:
+                      row = json.loads(line)
+                  except json.JSONDecodeError as exc:
+                      raise SystemExit(f'invalid Elliott rejection line {line_number}: {exc}')
+                  if row.get('schema_version') != 'elliott_vnext_prospective_rejection_v1':
+                      raise SystemExit(f'unsupported Elliott rejection line {line_number}')
+                  run_id = str(row.get('run_id') or '').strip()
+                  if not run_id:
+                      raise SystemExit(f'missing run_id in Elliott rejection line {line_number}')
+                  claimed_run_ids.add(run_id)
+
           candidates = []
           shas = git_text(
               'rev-list', '--reverse', 'origin/main', '--first-parent', '--',
@@ -195,7 +222,7 @@ jobs:
                   handle.write(f'published_at={published_at}\n')
                   handle.write(f'backlog_count={len(candidates) - 1}\n')
           print(json.dumps({
-              'claimed_runs': len(claimed_run_ids),
+              'claimed_or_rejected_runs': len(claimed_run_ids),
               'uncaptured_publications': len(candidates),
               'selected': candidates[0] if candidates else None,
           }, indent=2))
