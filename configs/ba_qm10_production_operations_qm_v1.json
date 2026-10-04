@@ -28,7 +28,7 @@
   "current_assessment": {
     "SCANNER_AUTORUN": "PASS_WITH_RETRY_GUARD",
     "GITHUB_ACTIONS": "PARTIAL_FINDINGS_OPEN",
-    "PUBLICATION": "FINDING_OPEN",
+    "PUBLICATION": "F01_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
     "WORKFLOW_DEPENDENCIES": "FINDINGS_OPEN",
     "RETRY": "PARTIAL",
     "IDEMPOTENCY": "PARTIAL_NOT_YET_FULLY_PROVEN",
@@ -45,7 +45,7 @@
       "finding_id": "BA-QM10-F01",
       "inherited_from": "BA-QM9-F01",
       "category": "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY",
-      "state": "OPEN_CAPA_REQUIRED",
+      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -78,7 +78,15 @@
         "decision_safety": "FAIL_CLOSED"
       },
       "root_cause_hypothesis": "Fixed 16-way hash sharding no longer guarantees the workflow's hard per-shard transport limit as retained packet history grows.",
-      "capa_direction": "Increase deterministic transport fan-out or otherwise bound shard size without changing packet semantics, then prove exact semantic equivalence and successful current publication."
+      "capa_direction": "Increase deterministic transport fan-out or otherwise bound shard size without changing packet semantics, then prove exact semantic equivalence and successful current publication.",
+      "capa": {
+        "implemented": true,
+        "implementation": "Expand deterministic Watch runtime transport from 16 to 32 hash shards while keeping the 2,000,000-byte per-shard guard unchanged.",
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "packet_semantics_changed": false,
+        "effectiveness_verification": "PENDING_CURRENT_SNAPSHOT_CAPACITY_AUDIT_AND_REAL_PUBLICATION"
+      }
     },
     {
       "finding_id": "BA-QM10-F02",
@@ -153,5 +161,5 @@
     "ba_qm10_may_release_lag1_block": false
   },
   "closure_claimed": false,
-  "next_step": "Implement executable BA-QM10 audit coverage for all 13 production dimensions, then remediate operational findings without changing research or decision semantics."
+  "next_step": "Verify BA-QM10-F01 on the current sealed snapshot, then remediate F02/F03 workflow dependency races and the scanner publication race risk."
 }
