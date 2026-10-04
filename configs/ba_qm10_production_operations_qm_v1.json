@@ -28,12 +28,12 @@
   "current_assessment": {
     "SCANNER_AUTORUN": "PASS_WITH_RETRY_GUARD",
     "GITHUB_ACTIONS": "PARTIAL_FINDINGS_OPEN",
-    "PUBLICATION": "FINDING_OPEN",
-    "WORKFLOW_DEPENDENCIES": "FINDINGS_OPEN",
+    "PUBLICATION": "F01_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+    "WORKFLOW_DEPENDENCIES": "F02_F03_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
     "RETRY": "PARTIAL",
     "IDEMPOTENCY": "PARTIAL_NOT_YET_FULLY_PROVEN",
     "ARTIFACT_PROVENANCE": "PASS",
-    "CANONICAL_FILE_SELECTION": "PASS_WITH_GUARDS",
+    "CANONICAL_FILE_SELECTION": "F04_CAPA_IMPLEMENTED_PENDING_FALSIFICATION_VERIFICATION",
     "STALE_ARTIFACT_DETECTION": "PASS_FAIL_CLOSED",
     "RACE_CONDITIONS": "FINDINGS_OPEN",
     "PARTIAL_RUNS": "PASS_FAIL_CLOSED",
@@ -45,7 +45,7 @@
       "finding_id": "BA-QM10-F01",
       "inherited_from": "BA-QM9-F01",
       "category": "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY",
-      "state": "OPEN_CAPA_REQUIRED",
+      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -78,12 +78,20 @@
         "decision_safety": "FAIL_CLOSED"
       },
       "root_cause_hypothesis": "Fixed 16-way hash sharding no longer guarantees the workflow's hard per-shard transport limit as retained packet history grows.",
-      "capa_direction": "Increase deterministic transport fan-out or otherwise bound shard size without changing packet semantics, then prove exact semantic equivalence and successful current publication."
+      "capa_direction": "Increase deterministic transport fan-out or otherwise bound shard size without changing packet semantics, then prove exact semantic equivalence and successful current publication.",
+      "capa": {
+        "implemented": true,
+        "implementation": "Expand deterministic Watch runtime transport from 16 to 32 hash shards while keeping the 2,000,000-byte per-shard guard unchanged.",
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "packet_semantics_changed": false,
+        "effectiveness_verification": "PENDING_CURRENT_SNAPSHOT_CAPACITY_AUDIT_AND_REAL_PUBLICATION"
+      }
     },
     {
       "finding_id": "BA-QM10-F02",
       "category": "WORKFLOW_DEPENDENCY_PREMATURE_FAN_IN",
-      "state": "OPEN_CAPA_REQUIRED",
+      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -104,12 +112,19 @@
         "later_recovery_observed": true
       },
       "root_cause_hypothesis": "Decision Watch Integration is triggered by completion of any one of several upstream workflows instead of first checking that the persisted required artifacts are ready for the same current snapshot.",
-      "capa_direction": "Add a fail-success readiness gate so premature triggers exit cleanly without running integration; retain strict W10 same-snapshot validation."
+      "capa_direction": "Add a fail-success readiness gate so premature triggers exit cleanly without running integration; retain strict W10 same-snapshot validation.",
+      "capa": {
+        "implemented": true,
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "investment_logic_changed": false,
+        "effectiveness_verification": "PENDING_LIVE_TRIGGER_VERIFICATION"
+      }
     },
     {
       "finding_id": "BA-QM10-F03",
       "category": "SYMBOL_VIEW_PREMATURE_TRIGGER",
-      "state": "OPEN_CAPA_REQUIRED",
+      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -133,7 +148,47 @@
         "decision_safety": "FAIL_CLOSED"
       },
       "root_cause_hypothesis": "Symbol-view publishing is triggered by Elliott shadow completion as well as runtime publication; when runtime is still stale, the build correctly fails but creates avoidable operational failures.",
-      "capa_direction": "Add a current-runtime readiness gate for Elliott-triggered refreshes or narrow the trigger while preserving the ability to refresh read-only Elliott display."
+      "capa_direction": "Add a current-runtime readiness gate for Elliott-triggered refreshes or narrow the trigger while preserving the ability to refresh read-only Elliott display.",
+      "capa": {
+        "implemented": true,
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "investment_logic_changed": false,
+        "effectiveness_verification": "PENDING_LIVE_TRIGGER_VERIFICATION"
+      }
+    },
+    {
+      "finding_id": "BA-QM10-F04",
+      "category": "CANONICAL_FILE_SELECTION",
+      "state": "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
+      "observed_at": "2026-10-04",
+      "evidence": [
+        {
+          "workflow": "BA-QM7 Decision and E2E Falsification",
+          "run_id": 37229312532,
+          "job_id": 111515423563,
+          "conclusion": "failure",
+          "failed_step": "Run frozen Decision and E2E falsification",
+          "error": "evidence_archive_missing",
+          "obsolete_default": "artifacts/research/decision_evidence_7a.jsonl",
+          "canonical_archive": "artifacts/research/decision_evidence_7a.jsonl.gz"
+        }
+      ],
+      "effect": {
+        "qm_falsification_run_blocked": true,
+        "research_or_decision_output_changed": false,
+        "false_decision_published": false,
+        "decision_safety": "FAIL_CLOSED"
+      },
+      "root_cause": "The QM-J runner retained an obsolete hard-coded archive filename after the canonical Decision evidence archive moved to the compressed .jsonl.gz path.",
+      "capa": {
+        "implemented": true,
+        "implementation": "Use current_evidence.DEFAULT_ARCHIVE in the QM-J runner and monitor the canonical .jsonl.gz archive in its workflow.",
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "falsification_logic_changed": false,
+        "effectiveness_verification": "PENDING_BA_QM7_CI_PASS"
+      }
     }
   ],
   "static_risks_to_verify": [
@@ -153,5 +208,5 @@
     "ba_qm10_may_release_lag1_block": false
   },
   "closure_claimed": false,
-  "next_step": "Implement executable BA-QM10 audit coverage for all 13 production dimensions, then remediate operational findings without changing research or decision semantics."
+  "next_step": "Verify F01 with a real current Runtime Publish and F04 with a green BA-QM7 falsification run, then remediate F02/F03 workflow dependency races and the scanner publication race risk."
 }

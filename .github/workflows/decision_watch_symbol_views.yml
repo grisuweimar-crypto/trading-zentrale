@@ -53,6 +53,9 @@ jobs:
           tests/test_elliott_vnext_watch_display.py
           tests/test_watch_runtime_transport.py
           tests/test_decision_depot_watch_orchestration.py
+      - name: Build current runtime fixture from sealed W10 for symbol-view regression
+        run: python scripts/build_watch_runtime_w10.py
+
       - name: Build current symbol views without an Elliott capture
         run: python scripts/build_watch_symbol_views.py
       - name: Validate missing capture stays explicit and decision-free
@@ -74,13 +77,59 @@ jobs:
           assert display['changes_portfolio_action'] is False
           PY
 
-  publish:
+  readiness:
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Check current Watch runtime snapshot readiness
+        id: check
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          runtime_path = Path('artifacts/research/watch_runtime/manifest.json')
+          ready = False
+          reason = 'runtime_manifest_missing'
+          if runtime_path.exists():
+              runtime = json.loads(runtime_path.read_text(encoding='utf-8'))
+              current = str(daily.get('snapshot_id') or '')
+              published = str(runtime.get('snapshot_id') or '')
+              ready = bool(current) and published == current
+              reason = 'same_snapshot_ready' if ready else f'runtime_snapshot_not_ready:{published}:{current}'
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
+              handle.write(f"ready={'true' if ready else 'false'}\n")
+              handle.write(f"reason={reason}\n")
+          print({'ready': ready, 'reason': reason})
+          PY
+      - name: Report deferred symbol-view trigger
+        if: steps.check.outputs.ready != 'true'
+        run: echo "Symbol-view publication deferred safely; ${{ steps.check.outputs.reason }}"
+
+  publish:
+    needs: readiness
+    if: >-
+      needs.readiness.outputs.ready == 'true' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

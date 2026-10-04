@@ -151,7 +151,8 @@ def test_compaction_preserves_complete_scanner_path_context():
 def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
     runtime_dir = tmp_path / "watch_runtime"
     packet = compact_packet(_timing_packet(CURRENT_SNAPSHOT, CURRENT_TIME))
-    shard_name = "shard_a.json"
+    shard_id = SHARD_IDS[0]
+    shard_name = f"shard_{shard_id}.json"
     manifest = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "snapshot_id": CURRENT_SNAPSHOT,
@@ -174,9 +175,9 @@ def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
             "snapshot_id": CURRENT_SNAPSHOT,
             "decision_as_of": CURRENT_TIME,
             "shard_id": shard_id,
-            "symbols": ["TEST"] if shard_id == "a" else [],
-            "packet_count": 1 if shard_id == "a" else 0,
-            "packets": [packet] if shard_id == "a" else [],
+            "symbols": ["TEST"] if shard_id == SHARD_IDS[0] else [],
+            "packet_count": 1 if shard_id == SHARD_IDS[0] else 0,
+            "packets": [packet] if shard_id == SHARD_IDS[0] else [],
             "private_position_data_included": False,
         }
         for shard_id in SHARD_IDS
@@ -193,3 +194,10 @@ def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
     assert metadata["loaded_shard_count"] == 1
     assert metadata["private_position_data_included"] is False
     assert json.loads((runtime_dir / "manifest.json").read_text())["symbol_count"] == 1
+
+
+def test_runtime_shard_contract_uses_32_deterministic_buckets() -> None:
+    assert len(SHARD_IDS) == 32
+    assert len(set(SHARD_IDS)) == 32
+    assert SHARD_IDS[0] == "00"
+    assert SHARD_IDS[-1] == "1f"

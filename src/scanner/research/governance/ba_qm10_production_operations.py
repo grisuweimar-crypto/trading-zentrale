@@ -12,6 +12,9 @@ from typing import Any, Mapping
 import yaml
 
 from scanner.reports.daily_research import validate_daily_research
+from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
+from scanner.research.decision_layer.evidence_archive import load_evidence_archive
+from scanner.research.decision_layer.watch_runtime import SHARD_IDS, build_watch_runtime
 from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
 from scanner.research.governance.ba_qm8_closure import evaluate_ba_qm8_closure
 from scanner.research.governance.ba_qm9_end_application_audit import (
@@ -38,7 +41,13 @@ EXPECTED_CHECKS = (
     "RECOVERY",
     "FAILED_UPDATES",
 )
-EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03")
+EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03", "BA-QM10-F04")
+EXPECTED_FINDING_STATES = {
+    "BA-QM10-F01": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+    "BA-QM10-F02": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+    "BA-QM10-F03": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+    "BA-QM10-F04": "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
+}
 
 
 class BAQM10AuditError(ValueError):
@@ -108,7 +117,8 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
     for row in findings:
         if not isinstance(row, Mapping):
             raise BAQM10AuditError("ba_qm10_finding_must_be_object")
-        if row.get("state") != "OPEN_CAPA_REQUIRED":
+        expected_state = EXPECTED_FINDING_STATES.get(str(row.get("finding_id") or ""))
+        if row.get("state") != expected_state:
             raise BAQM10AuditError(f"ba_qm10_finding_state_invalid:{row.get('finding_id')}")
         effect = _mapping(row.get("effect"), f"effect:{row.get('finding_id')}")
         if effect.get("decision_safety") != "FAIL_CLOSED":
@@ -238,11 +248,14 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         "decision_same_snapshot_guard_present": "--require-snapshot-match" in decision_text,
         "decision_stale_publication_refusal_present": "refuse stale current publication" in decision_text,
         "decision_any_single_upstream_can_trigger": len(decision_upstreams) == 3,
+        "decision_readiness_gate_present": "Check current Phase 2 snapshot readiness" in decision_text,
         "runtime_validates_sealed_w10": "Validate sealed W10 and authoritative scanner snapshot" in runtime_text,
         "runtime_stale_publication_refusal_present": "refuse stale publication" in runtime_text,
         "runtime_hard_two_mb_shard_limit_present": "max_size < 2_000_000" in runtime_text,
         "symbol_views_validate_runtime_identity": "Validate symbol-view identity and privacy" in symbols_text,
         "symbol_views_can_trigger_on_elliott_before_runtime": "Module 6 Elliott Prospective Shadow" in symbol_upstreams,
+        "symbol_view_runtime_readiness_gate_present": "Check current Watch runtime snapshot readiness" in symbols_text,
+        "qm_j_canonical_archive_default_present": "DEFAULT_ARCHIVE" in (root / "scripts" / "run_qm_j_decision_e2e_falsification.py").read_text(encoding="utf-8"),
     }
 
     findings = {row["finding_id"]: row["state"] for row in contract["findings"]}
@@ -261,7 +274,11 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         "check_status": check_status,
         "static_guards": static,
         "open_findings": findings,
-        "open_finding_count": len(findings),
+        "open_finding_count": sum(state != "CLOSED_EFFECTIVE" for state in findings.values()),
+        "implemented_capa_pending_verification_count": sum(
+            state == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+            for state in findings.values()
+        ),
         "scanner_publication_race_risk_open": not static["scanner_explicit_main_advance_refusal_guard"],
         "false_decision_observed": False,
         "all_observed_failures_fail_closed": True,
@@ -272,4 +289,62 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         "lag1_evidence_impact": "PROMOTION_BLOCKED",
         "ba_qm10_may_release_lag1_block": False,
         "closure_eligible": False,
+    }
+
+
+
+def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
+    """Build the current compact runtime in memory and measure transport capacity.
+
+    This is an operational audit only. It does not write artifacts or alter
+    Decision semantics.
+    """
+    root = Path(root).resolve()
+    current = _read_json(
+        root / "artifacts" / "research" / "current_decision_packets_7a.json"
+    )
+    w10 = _read_json(
+        root / "artifacts" / "research" / "decision_snapshot_w10.json"
+    )
+    packets, metadata = load_evidence_archive(
+        root / DEFAULT_ARCHIVE,
+        missing_ok=False,
+    )
+    manifest, shards = build_watch_runtime(
+        current_packet_set=current,
+        archive_packets=packets,
+        w10_manifest=w10,
+    )
+    sizes = {
+        shard_id: len(
+            (
+                json.dumps(
+                    shard,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                )
+                + "\n"
+            ).encode("utf-8")
+        )
+        for shard_id, shard in shards.items()
+    }
+    max_id = max(sizes, key=sizes.get)
+    max_size = sizes[max_id]
+    return {
+        "schema_version": "ba_qm10_runtime_capacity_audit_v1",
+        "status": "PASS" if max_size < 2_000_000 else "FAIL",
+        "snapshot_id": manifest["snapshot_id"],
+        "shard_count": len(shards),
+        "configured_shard_count": len(SHARD_IDS),
+        "max_shard_id": max_id,
+        "max_shard_bytes": max_size,
+        "hard_limit_bytes": 2_000_000,
+        "total_shard_bytes": sum(sizes.values()),
+        "symbol_count": manifest["symbol_count"],
+        "packet_count": manifest["packet_count"],
+        "archive_status": metadata.get("status"),
+        "private_position_data_included": False,
+        "decision_logic_changed": manifest["decision_logic_changed"],
+        "writes_performed": False,
     }
