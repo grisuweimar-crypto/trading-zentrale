@@ -110,16 +110,40 @@ def _replay_guard_review(
 
     details = coverage.get("details")
     replay_errors = 0
-    if isinstance(details, list):
-        replay_errors = sum(
-            len(item.get("errors") or [])
-            for item in details
-            if isinstance(item, Mapping)
-        )
+    coverage_violations: list[str] = []
+    requested = int(coverage.get("symbols_requested") or 0)
+    snapshot_count = int(coverage.get("snapshots") or 0)
+
+    if not isinstance(details, list):
+        coverage_violations.append("coverage_details_missing")
+    else:
+        if len(details) != requested:
+            coverage_violations.append(
+                f"coverage_details_count_mismatch:{len(details)}:{requested}"
+            )
+        for item in details:
+            if not isinstance(item, Mapping):
+                coverage_violations.append("coverage_detail_not_mapping")
+                continue
+            errors = item.get("errors") or []
+            replay_errors += len(errors)
+            if errors:
+                coverage_violations.append(
+                    f"replay_errors_present:{item.get('symbol')}:{len(errors)}"
+                )
+
+    if requested <= 0:
+        coverage_violations.append("symbols_requested_zero")
+    if snapshot_count <= 0:
+        coverage_violations.append("snapshot_count_zero")
+
+    all_violations = [*violations, *coverage_violations]
     return {
-        "valid": not violations,
-        "violation_count": len(violations),
-        "violations": violations[:100],
+        "valid": not all_violations,
+        "violation_count": len(all_violations),
+        "violations": all_violations[:100],
+        "coverage_complete": not coverage_violations,
+        "coverage_violation_count": len(coverage_violations),
         "replay_error_count": int(replay_errors),
         "replay_errors_are_missing_evidence_not_imputed": True,
     }
