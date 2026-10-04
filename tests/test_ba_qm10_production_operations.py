@@ -83,8 +83,9 @@ def test_current_open_operational_risks_are_not_hidden() -> None:
     assert guards["symbol_views_can_trigger_on_elliott_before_runtime"] is True
     assert guards["symbol_view_runtime_readiness_gate_present"] is True
     assert guards["qm_j_canonical_archive_default_present"] is True
-    assert guards["scanner_explicit_main_advance_refusal_guard"] is False
-    assert result["scanner_publication_race_risk_open"] is True
+    assert guards["scanner_explicit_main_advance_refusal_guard"] is True
+    assert result["scanner_publication_race_risk_open"] is False
+    assert result["static_risk_states"]["BA-QM10-R01"] == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
 
 
 def test_f01_is_exactly_runtime_transport_capacity_and_never_false_watch() -> None:
@@ -170,3 +171,16 @@ def test_f04_records_and_repairs_canonical_decision_archive_selection() -> None:
     assert f04["effect"]["decision_safety"] == "FAIL_CLOSED"
     assert f04["capa"]["falsification_logic_changed"] is False
 
+
+
+def test_r01_scanner_publication_race_capa_is_explicit_and_non_semantic() -> None:
+    contract = load_contract()
+    r01 = next(
+        row for row in contract["static_risks_to_verify"]
+        if row["risk_id"] == "BA-QM10-R01"
+    )
+    assert r01["state"] == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+    assert r01["capa"]["implemented"] is True
+    assert r01["capa"]["research_logic_changed"] is False
+    assert r01["capa"]["decision_logic_changed"] is False
+    assert r01["capa"]["investment_logic_changed"] is False
