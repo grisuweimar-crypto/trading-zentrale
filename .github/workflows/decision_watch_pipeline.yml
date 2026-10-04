@@ -106,8 +106,53 @@ jobs:
           print('W5 live Phase 5E shadow contract ok:', normalized['integration_mode'])
           PY
 
-  integrate:
+  readiness:
     if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Check current Phase 2 snapshot readiness
+        id: check
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          phase2_path = Path('artifacts/research/probability_calibration_2.json')
+          ready = False
+          reason = 'phase2_artifact_missing'
+          if phase2_path.exists():
+              phase2 = json.loads(phase2_path.read_text(encoding='utf-8'))
+              current = str(daily.get('snapshot_id') or '')
+              persisted = str(((phase2.get('source') or {}).get('snapshot_id')) or '')
+              ready = bool(current) and persisted == current
+              reason = 'same_snapshot_ready' if ready else f'phase2_snapshot_not_ready:{persisted}:{current}'
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
+              handle.write(f"ready={'true' if ready else 'false'}\n")
+              handle.write(f"reason={reason}\n")
+          print({'ready': ready, 'reason': reason})
+          PY
+      - name: Report deferred integration trigger
+        if: steps.check.outputs.ready != 'true'
+        run: echo "Decision integration deferred safely; ${{ steps.check.outputs.reason }}"
+
+  integrate:
+    needs: readiness
+    if: needs.readiness.outputs.ready == 'true'
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
