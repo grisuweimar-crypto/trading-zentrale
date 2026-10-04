@@ -273,8 +273,9 @@ def finalize_scanner_input_provenance(
         digest = str(yahoo.get("provider_frame_sha256") or "").strip()
         if len(digest) != 64:
             raise ScannerProvenanceError("yahoo_provider_frame_hash_required")
-        if int(yahoo.get("provider_frame_rows") or 0) <= 0:
-            raise ScannerProvenanceError("yahoo_provider_frame_rows_required")
+        rows = yahoo.get("provider_frame_rows")
+        if isinstance(rows, bool) or not isinstance(rows, int) or rows < 0:
+            raise ScannerProvenanceError("yahoo_provider_frame_rows_invalid")
     elif yahoo is not None and not isinstance(yahoo, Mapping):
         raise ScannerProvenanceError("runtime_yahoo_report_invalid")
 
