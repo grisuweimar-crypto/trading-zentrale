@@ -366,7 +366,7 @@ def test_ba_qm9_formal_closure_is_qm_only_and_routes_operations_to_ba_qm10() -> 
     assert result["scope"] == "QUALITY_MANAGEMENT_ONLY"
     assert result["required_check_count"] == 11
     assert result["all_required_checks_passed"] is True
-    assert result["manipulation_and_regression_tests_passed"] == 55
+    assert result["manipulation_and_regression_tests_passed"] == 56
     assert result["stale_runtime_silently_accepted"] is False
     assert result["product_logic_changed"] is False
     assert result["investment_logic_changed"] is False
