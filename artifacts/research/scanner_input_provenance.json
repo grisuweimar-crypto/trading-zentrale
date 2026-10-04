@@ -1,0 +1,116 @@
+{
+  "as_of": "2026-10-04",
+  "bound_at": "2026-10-04T18:20:20.130247+00:00",
+  "boundaries": {
+    "decision_semantics_changed": false,
+    "historical_provenance_inferred": false,
+    "scanner_values_changed": false,
+    "scanner_weights_changed": false
+  },
+  "content_hash": "e0285c905d8f9587048f11b0121e786a9afe86b7349ca2c57df19e2310f9462b",
+  "coverage": {
+    "direct_scoring_input_bound": true,
+    "historical_backfill": false,
+    "pre_run_state_bound": true,
+    "provider_frame_digest_bound": true,
+    "provider_payload_retained": false,
+    "scanner_output_bound": true,
+    "scoring_universe_bound": true,
+    "snapshot_identity_bound": true
+  },
+  "pre_run": {
+    "captured_at": "2026-10-04T18:19:56.031131+00:00",
+    "code_revision": "cae6067eda2239362b9339caf163b2f8da1c8e9b",
+    "historical_backfill": false,
+    "inputs": [
+      {
+        "exists": true,
+        "path": "artifacts/watchlist/watchlist.csv",
+        "required": true,
+        "role": "persistent_watchlist_state",
+        "sha256": "8951bfc46032d6af32f29fd430569b1af9d77ba6d4e132105a5fea66fc1cd4eb",
+        "size_bytes": 171288
+      },
+      {
+        "exists": true,
+        "path": "data/inputs/universe_master.csv",
+        "required": false,
+        "role": "active_universe_master",
+        "sha256": "7e3ff13933334fbef4cabe478a2b2759105d0068d129a6531582bbeb328bd181",
+        "size_bytes": 46684
+      },
+      {
+        "exists": true,
+        "path": "artifacts/mapping/yahoo_taxonomy.csv",
+        "required": false,
+        "role": "taxonomy_mapping",
+        "sha256": "e135230225fc6d692be43cd712499dd3ded11a65f18fbd3998174e448c3012df",
+        "size_bytes": 16358
+      },
+      {
+        "exists": false,
+        "path": "artifacts/mapping/pillars.csv",
+        "required": false,
+        "role": "pillar_mapping",
+        "sha256": null,
+        "size_bytes": null
+      }
+    ],
+    "run_id": "github-37223909046-1",
+    "runtime_intent": {
+      "scanner_fetch_yahoo": "1"
+    },
+    "scanner_build": "2026-02-13",
+    "scanner_version": "0.0.1-v7",
+    "schema_version": "scanner_pre_run_provenance_v1",
+    "selected_watchlist_input": "artifacts/watchlist/watchlist.csv"
+  },
+  "run_id": "github-37223909046-1",
+  "runtime": {
+    "captured_at": "2026-10-04T18:20:08.320277+00:00",
+    "code_revision": "cae6067eda2239362b9339caf163b2f8da1c8e9b",
+    "historical_backfill": false,
+    "run_id": "github-37223909046-1",
+    "scanner_build": "2026-02-13",
+    "scanner_version": "0.0.1-v7",
+    "schema_version": "scanner_runtime_provenance_v1",
+    "scoring_rows_input": {
+      "path": "artifacts/watchlist/watchlist_full_raw.csv",
+      "sha256": "e2b725abf324d62b5fe678ffc669e560445c79e851c37984444dcf6a599a7042",
+      "size_bytes": 171285
+    },
+    "selected_scoring_universe": {
+      "path": "artifacts/watchlist/watchlist.csv",
+      "sha256": "e2b725abf324d62b5fe678ffc669e560445c79e851c37984444dcf6a599a7042",
+      "size_bytes": 171285
+    },
+    "yahoo_enrichment": {
+      "benchmark_crypto": "BTC-USD",
+      "benchmark_stock": "SPY",
+      "enabled": true,
+      "market_date": "2026-10-04",
+      "market_regime_crypto": "bull",
+      "market_regime_stock": "bull",
+      "market_trend200_crypto": 0.19332192019602168,
+      "market_trend200_stock": 0.07335811876408393,
+      "provider_frame_rows": 368,
+      "provider_frame_sha256": "b0d3f3ea9e968cf3ada2a377681bf5c9953089465277bdd6fb77a5ed29a963cd",
+      "tickers_failed": 2,
+      "tickers_fetched": 220,
+      "tickers_total": 213
+    }
+  },
+  "scanner_output": {
+    "latest_scanner_path": "artifacts/research/latest_scanner.csv",
+    "latest_scanner_sha256": "e7828e78e0ff7f301efa31cd769cd439d39d8769ccc4c49d5f41dd02243d1a16",
+    "source_file": "artifacts/watchlist/watchlist_full.csv",
+    "source_sha256": "0ad5cd8000ea421a1a7d66139eee9a9cd0184696118ba20828edf6d130afcf6c"
+  },
+  "schema_version": "scanner_input_provenance_v1",
+  "snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+  "transform_identity": {
+    "code_revision": "cae6067eda2239362b9339caf163b2f8da1c8e9b",
+    "scanner_build": "2026-02-13",
+    "scanner_version": "0.0.1-v7"
+  }
+}
