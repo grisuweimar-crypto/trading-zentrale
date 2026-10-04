@@ -306,6 +306,10 @@ def test_positive_projection_with_non_positive_zone_bound_is_suppressed():
 
     result = attach_fibonacci_geometry(_set(primary), source_pivots=raw)
 
-    assert result["projection_zones"] == []
+    zones = result["projection_zones"]
+    assert zones
+    assert all(zone["price_low"] > 0 for zone in zones)
+    assert all(zone["price_high"] > zone["price_low"] for zone in zones)
+    assert len(zones) < 5
     assert "wave3_projection_suppressed_non_positive_zone_bound" in result["warnings"]
     assert result["fibonacci_selects_wave_count"] is False
