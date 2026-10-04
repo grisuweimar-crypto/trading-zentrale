@@ -263,10 +263,20 @@ def finalize_scanner_input_provenance(
 
     direct = runtime.get("scoring_rows_input")
     universe = runtime.get("selected_scoring_universe")
+    yahoo = runtime.get("yahoo_enrichment")
     if not isinstance(direct, Mapping) or not direct.get("sha256"):
         raise ScannerProvenanceError("direct_scoring_input_hash_required")
     if not isinstance(universe, Mapping) or not universe.get("sha256"):
         raise ScannerProvenanceError("scoring_universe_hash_required")
+    yahoo_digest_bound = True
+    if isinstance(yahoo, Mapping) and yahoo.get("enabled") is True:
+        digest = str(yahoo.get("provider_frame_sha256") or "").strip()
+        if len(digest) != 64:
+            raise ScannerProvenanceError("yahoo_provider_frame_hash_required")
+        if int(yahoo.get("provider_frame_rows") or 0) <= 0:
+            raise ScannerProvenanceError("yahoo_provider_frame_rows_required")
+    elif yahoo is not None and not isinstance(yahoo, Mapping):
+        raise ScannerProvenanceError("runtime_yahoo_report_invalid")
 
     pre_code = str(pre.get("code_revision") or "")
     runtime_code = str(runtime.get("code_revision") or "")
@@ -299,6 +309,7 @@ def finalize_scanner_input_provenance(
             "scoring_universe_bound": True,
             "scanner_output_bound": True,
             "snapshot_identity_bound": True,
+            "provider_frame_digest_bound": yahoo_digest_bound,
             "provider_payload_retained": False,
             "historical_backfill": False,
         },
@@ -326,6 +337,11 @@ def finalize_scanner_input_provenance(
         "historical_backfill": False,
         "direct_scoring_input_sha256": direct["sha256"],
         "scoring_universe_sha256": universe["sha256"],
+        "yahoo_provider_frame_sha256": (
+            yahoo.get("provider_frame_sha256")
+            if isinstance(yahoo, Mapping)
+            else None
+        ),
         "source_watchlist_full_sha256": source["sha256"],
         "latest_scanner_sha256": latest["sha256"],
         "code_revision": code_revision,
@@ -367,6 +383,7 @@ def validate_bound_provenance(
         "scoring_universe_bound",
         "scanner_output_bound",
         "snapshot_identity_bound",
+        "provider_frame_digest_bound",
     ):
         if coverage.get(key) is not True:
             raise ScannerProvenanceError(f"scanner_provenance_coverage_missing:{key}")
