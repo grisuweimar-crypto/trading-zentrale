@@ -92,6 +92,8 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM9AuditError("ba_qm9_status_invalid")
     if result.get("runtime_audit_status") != "IMPLEMENTED_CANONICAL_7H":
         raise BAQM9AuditError("ba_qm9_runtime_audit_status_invalid")
+    if result.get("orchestrated_watch_integrity_status") != "FINAL_WATCH_RESEALED_AFTER_READ_ONLY_ENRICHMENT":
+        raise BAQM9AuditError("ba_qm9_orchestrated_watch_integrity_status_invalid")
     if result.get("input_path") != EXPECTED_PATH:
         raise BAQM9AuditError("ba_qm9_input_path_invalid")
     if result.get("required_checks") != EXPECTED_CHECKS:
@@ -266,6 +268,7 @@ def validate_foundation_file(
         "status": "PASSED_CONTRACT_FOUNDATION",
         "engineering_status": "IN_PROGRESS",
         "runtime_audit_status": "IMPLEMENTED_CANONICAL_7H",
+        "orchestrated_watch_integrity_status": "FINAL_WATCH_RESEALED_AFTER_READ_ONLY_ENRICHMENT",
         "parallel_preparation_allowed": True,
         "required_check_count": len(EXPECTED_CHECKS),
         "required_checks": list(EXPECTED_CHECKS),
