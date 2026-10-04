@@ -356,6 +356,12 @@ jobs:
           set -euo pipefail
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
+          # The capture files are intentionally untracked in the bound scanner
+          # publication. They have already been copied to RUNNER_TEMP above;
+          # remove the working-tree copies before switching to the shadow branch.
+          rm -f \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
+            artifacts/research/elliott_vnext_prospective_current_6h.json
           git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
           if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
             git checkout -B elliott-vnext-shadow-data origin/elliott-vnext-shadow-data
