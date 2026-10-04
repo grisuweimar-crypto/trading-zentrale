@@ -313,59 +313,8 @@ jobs:
           assert guards['missing_evidence_not_imputed'] is True
           assert guards['frozen_elliott_core_modified'] is False
           assert guards['multi_degree_outputs_retained_without_reducer'] is True
-          def forbidden_paths(value, path='          print(json.dumps({
-              'snapshot_id': capture['snapshot_id'],
-              'run_id': capture['run_id'],
-              'output_count': capture['output_count'],
-              'symbols_with_outputs': capture['symbols_with_outputs'],
-              'validation_partition': capture['validation_partition'],
-          }, indent=2))
-          PY
 
-      - name: Preserve shadow publication payload
-        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
-        run: |
-          mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
-          cp artifacts/research/elliott_vnext_prospective_history_6h.jsonl "$RUNNER_TEMP/elliott-shadow-payload/"
-          cp artifacts/research/elliott_vnext_prospective_current_6h.json "$RUNNER_TEMP/elliott-shadow-payload/"
-
-      - name: Publish isolated Elliott shadow data branch
-        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action Bot"
-          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
-          if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
-            git checkout -B elliott-vnext-shadow-data origin/elliott-vnext-shadow-data
-          else
-            git checkout -B elliott-vnext-shadow-data origin/main
-          fi
-          mkdir -p artifacts/research
-          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl" artifacts/research/
-          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json" artifacts/research/
-          git add \
-            artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
-          if ! git diff --cached --quiet; then
-            git commit -m '🧪 Elliott vNext prospective shadow [skip ci]'
-            git push origin HEAD:refs/heads/elliott-vnext-shadow-data
-          fi
-
-      - name: Continue prospective queue when backlog remains
-        if: >-
-          github.event_name != 'pull_request' &&
-          steps.bind.outputs.process == 'true' &&
-          steps.bind.outputs.backlog_count != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run elliott_vnext_prospective_capture.yml --ref main
-
-      - name: Report no uncaptured scanner publication
-        if: github.event_name != 'pull_request' && steps.bind.outputs.process != 'true'
-        run: echo "No eligible uncaptured Scanner_vNext publication found."
-):
+          def forbidden_paths(value, path='$'):
               found = []
               if isinstance(value, dict):
                   for key, item in value.items():
