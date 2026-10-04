@@ -4,6 +4,12 @@ import copy
 
 import pytest
 
+from scanner.research.decision_layer.current_evidence import (
+    CURRENT_PACKET_SET_SCHEMA_VERSION,
+    CurrentDecisionEvidenceError,
+    merge_packet_set_into_archive,
+)
+from scanner.research.decision_layer.input_contract import build_input_packet
 from scanner.research.governance.ba_qm10_production_operations import (
     BAQM10AuditError,
     EXPECTED_CHECKS,
@@ -184,3 +190,62 @@ def test_r01_scanner_publication_race_capa_is_explicit_and_non_semantic() -> Non
     assert r01["capa"]["research_logic_changed"] is False
     assert r01["capa"]["decision_logic_changed"] is False
     assert r01["capa"]["investment_logic_changed"] is False
+
+
+def _qm10_idempotency_packet(score: float = 42.0) -> dict:
+    return build_input_packet(
+        symbol="QM10TEST",
+        as_of="2026-10-04T18:00:00+00:00",
+        source_snapshot_id="qm10-snapshot",
+        evidence=[
+            {
+                "family": "selection",
+                "claim_id": "selection:QM10TEST:qm10-snapshot",
+                "as_of": "2026-10-04T18:00:00+00:00",
+                "available_from": "2026-10-04T18:00:00+00:00",
+                "source_version": "qm10-test",
+                "coverage_state": "available",
+                "maturity_state": "not_applicable",
+                "pit_state": "verified",
+                "integration_mode": "production_existing",
+                "payload": {"score": score},
+            }
+        ],
+    )
+
+
+def test_decision_archive_retry_is_idempotent_and_changed_identity_fails_closed(tmp_path) -> None:
+    archive = tmp_path / "decision_evidence_7a.jsonl.gz"
+    packet = _qm10_idempotency_packet()
+    packet_set = {
+        "schema_version": CURRENT_PACKET_SET_SCHEMA_VERSION,
+        "snapshot_id": "qm10-snapshot",
+        "packets": [packet],
+    }
+
+    first = merge_packet_set_into_archive(archive, packet_set)
+    assert first["current_packets_added"] == 1
+    assert first["current_packets_already_present"] == 0
+
+    second = merge_packet_set_into_archive(archive, packet_set)
+    assert second["current_packets_added"] == 0
+    assert second["current_packets_already_present"] == 1
+    assert second["packet_count"] == first["packet_count"] == 1
+
+    changed = {
+        **packet_set,
+        "packets": [_qm10_idempotency_packet(score=99.0)],
+    }
+    with pytest.raises(
+        CurrentDecisionEvidenceError,
+        match="archive_identity_collision_with_changed_packet",
+    ):
+        merge_packet_set_into_archive(archive, changed)
+
+
+def test_ba_qm10_retry_recovery_assessment_is_no_longer_unproven() -> None:
+    contract = load_contract()
+    assessment = contract["current_assessment"]
+    assert assessment["RETRY"] == "PASS_RETRY_REMAINS_ELIGIBLE_AFTER_UNPUBLISHED_FAILURE"
+    assert assessment["IDEMPOTENCY"] == "PASS_ARCHIVE_IDENTITY_DEDUP_AND_COLLISION_FAIL_CLOSED"
+    assert assessment["RECOVERY"] == "PASS_FAIL_CLOSED_RETRY_AND_OBSERVED_RECOVERY"
