@@ -1,0 +1,157 @@
+{
+  "schema_version": "ba_qm10_production_operations_qm_v1",
+  "business_area": "BA-QM10",
+  "name": "Produktions- und Betriebs-QM",
+  "status": "IN_PROGRESS",
+  "scope": "QUALITY_MANAGEMENT_ONLY",
+  "research_logic_changed": false,
+  "decision_logic_changed": false,
+  "investment_logic_changed": false,
+  "execution_enabled": false,
+  "empirical_promotion_performed": false,
+  "required_checks": [
+    "SCANNER_AUTORUN",
+    "GITHUB_ACTIONS",
+    "PUBLICATION",
+    "WORKFLOW_DEPENDENCIES",
+    "RETRY",
+    "IDEMPOTENCY",
+    "ARTIFACT_PROVENANCE",
+    "CANONICAL_FILE_SELECTION",
+    "STALE_ARTIFACT_DETECTION",
+    "RACE_CONDITIONS",
+    "PARTIAL_RUNS",
+    "RECOVERY",
+    "FAILED_UPDATES"
+  ],
+  "objective": "A correct research system must not emit false decisions because of a faulty production process.",
+  "current_assessment": {
+    "SCANNER_AUTORUN": "PASS_WITH_RETRY_GUARD",
+    "GITHUB_ACTIONS": "PARTIAL_FINDINGS_OPEN",
+    "PUBLICATION": "FINDING_OPEN",
+    "WORKFLOW_DEPENDENCIES": "FINDINGS_OPEN",
+    "RETRY": "PARTIAL",
+    "IDEMPOTENCY": "PARTIAL_NOT_YET_FULLY_PROVEN",
+    "ARTIFACT_PROVENANCE": "PASS",
+    "CANONICAL_FILE_SELECTION": "PASS_WITH_GUARDS",
+    "STALE_ARTIFACT_DETECTION": "PASS_FAIL_CLOSED",
+    "RACE_CONDITIONS": "FINDINGS_OPEN",
+    "PARTIAL_RUNS": "PASS_FAIL_CLOSED",
+    "RECOVERY": "PARTIAL",
+    "FAILED_UPDATES": "PARTIAL_FINDINGS_OPEN"
+  },
+  "findings": [
+    {
+      "finding_id": "BA-QM10-F01",
+      "inherited_from": "BA-QM9-F01",
+      "category": "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY",
+      "state": "OPEN_CAPA_REQUIRED",
+      "observed_at": "2026-10-04",
+      "evidence": [
+        {
+          "workflow": "Decision Watch Runtime Publish",
+          "run_id": 37227068235,
+          "job_id": 111508812408,
+          "conclusion": "failure",
+          "failed_step": "Validate runtime identity, privacy, public long reference and transport size",
+          "snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+          "max_shard_bytes": 2178135,
+          "hard_limit_bytes": 2000000,
+          "error": "runtime shard too large for pragmatic transport: 2178135"
+        },
+        {
+          "workflow": "Decision Watch Runtime Publish",
+          "run_id": 37227436044,
+          "job_id": 111509969273,
+          "conclusion": "failure",
+          "failed_step": "Validate runtime identity, privacy, public long reference and transport size",
+          "snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+          "max_shard_bytes": 2178135,
+          "hard_limit_bytes": 2000000,
+          "error": "runtime shard too large for pragmatic transport: 2178135"
+        }
+      ],
+      "effect": {
+        "current_runtime_publication_blocked": true,
+        "stale_runtime_remained_public": true,
+        "false_watch_accepted": false,
+        "decision_safety": "FAIL_CLOSED"
+      },
+      "root_cause_hypothesis": "Fixed 16-way hash sharding no longer guarantees the workflow's hard per-shard transport limit as retained packet history grows.",
+      "capa_direction": "Increase deterministic transport fan-out or otherwise bound shard size without changing packet semantics, then prove exact semantic equivalence and successful current publication."
+    },
+    {
+      "finding_id": "BA-QM10-F02",
+      "category": "WORKFLOW_DEPENDENCY_PREMATURE_FAN_IN",
+      "state": "OPEN_CAPA_REQUIRED",
+      "observed_at": "2026-10-04",
+      "evidence": [
+        {
+          "workflow": "Decision Watch Integration Pipeline",
+          "run_id": 37224257622,
+          "job_id": 111500533258,
+          "conclusion": "failure",
+          "failed_step": "Initialize W10 same-snapshot lineage and bind persisted Phase 2",
+          "current_snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+          "persisted_phase2_snapshot_id": "e0181fa8-04f2-432a-adf2-9fc33668bf05",
+          "error": "snapshot_mismatch:phase2_probability:e0181fa8-04f2-432a-adf2-9fc33668bf05:36cf527e-ca26-489f-aa55-9c7de3b4355b"
+        }
+      ],
+      "effect": {
+        "premature_workflow_started": true,
+        "false_decision_published": false,
+        "decision_safety": "FAIL_CLOSED",
+        "later_recovery_observed": true
+      },
+      "root_cause_hypothesis": "Decision Watch Integration is triggered by completion of any one of several upstream workflows instead of first checking that the persisted required artifacts are ready for the same current snapshot.",
+      "capa_direction": "Add a fail-success readiness gate so premature triggers exit cleanly without running integration; retain strict W10 same-snapshot validation."
+    },
+    {
+      "finding_id": "BA-QM10-F03",
+      "category": "SYMBOL_VIEW_PREMATURE_TRIGGER",
+      "state": "OPEN_CAPA_REQUIRED",
+      "observed_at": "2026-10-04",
+      "evidence": [
+        {
+          "workflow": "Decision Watch Symbol Views",
+          "run_id": 37226779236,
+          "job_id": 111507938920,
+          "conclusion": "failure",
+          "error": "daily/runtime snapshot mismatch"
+        },
+        {
+          "workflow": "Decision Watch Symbol Views",
+          "run_id": 37227171783,
+          "job_id": 111509128103,
+          "conclusion": "failure",
+          "error": "daily/runtime snapshot mismatch"
+        }
+      ],
+      "effect": {
+        "premature_symbol_view_build_started": true,
+        "stale_symbol_views_published": false,
+        "decision_safety": "FAIL_CLOSED"
+      },
+      "root_cause_hypothesis": "Symbol-view publishing is triggered by Elliott shadow completion as well as runtime publication; when runtime is still stale, the build correctly fails but creates avoidable operational failures.",
+      "capa_direction": "Add a current-runtime readiness gate for Elliott-triggered refreshes or narrow the trigger while preserving the ability to refresh read-only Elliott display."
+    }
+  ],
+  "static_risks_to_verify": [
+    {
+      "risk_id": "BA-QM10-R01",
+      "category": "SCANNER_PUBLICATION_MAIN_ADVANCE",
+      "description": "Scanner publication uses a direct git push after a long build and does not currently have the explicit main-advanced refusal guard used by Decision Watch publication.",
+      "safety_expectation": "A rejected push must not publish the autorun marker remotely; a later retry must remain eligible."
+    }
+  ],
+  "dependencies": {
+    "ba_qm8_complete": true,
+    "ba_qm9_complete": true,
+    "lag1_finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+    "lag1_capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+    "lag1_evidence_impact": "PROMOTION_BLOCKED",
+    "ba_qm10_may_release_lag1_block": false
+  },
+  "closure_claimed": false,
+  "next_step": "Implement executable BA-QM10 audit coverage for all 13 production dimensions, then remediate operational findings without changing research or decision semantics."
+}
