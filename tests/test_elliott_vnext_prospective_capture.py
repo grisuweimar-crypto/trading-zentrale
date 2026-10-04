@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 
 import pandas as pd
 import pytest
@@ -113,6 +114,7 @@ def test_capture_runs_exact_asof_and_keeps_all_degrees(monkeypatch):
         ("AAA", ["2026-10-01"], True, "adjusted"),
         ("BBB", ["2026-10-01"], True, "adjusted"),
     ]
+    assert result["capture_engine_version"] == "prospective_capture_engine_v2_iso_date_replay"
     assert result["validation_partition"] == "prospective_unspent"
     assert result["output_count"] == 2
     assert result["symbols_with_outputs"] == 1
@@ -200,3 +202,49 @@ def test_capture_cannot_predate_scanner_publication(monkeypatch):
             daily_source_sha256="daily-hash",
             captured_at="2026-10-01T20:00:00+00:00",
         )
+
+
+def test_legacy_empty_capture_can_be_superseded_once_after_replay_fix(tmp_path, monkeypatch):
+    repaired, _calls = _build(monkeypatch, _daily("AAA"), _prices("AAA"))
+    path = tmp_path / "history.jsonl"
+
+    legacy = deepcopy(repaired)
+    legacy.pop("capture_engine_version", None)
+    legacy["capture_id"] = "legacy-empty-capture"
+    legacy["outputs"] = []
+    legacy["output_count"] = 0
+    legacy["symbols_with_outputs"] = 0
+    legacy["coverage"] = {
+        "symbols_requested": 1,
+        "symbols_with_outputs": 0,
+        "symbols_without_outputs": 1,
+        "output_count": 0,
+        "details": [],
+        "missing_evidence_not_imputed": True,
+    }
+    path.write_text(json.dumps(legacy) + "\n", encoding="utf-8")
+
+    appended, stored = archive_capture(path, repaired)
+
+    assert appended is True
+    assert stored["capture_engine_version"] == "prospective_capture_engine_v2_iso_date_replay"
+    assert stored["output_count"] == 2
+    assert stored["repair"]["legacy_records_preserved"] is True
+    assert stored["repair"]["supersedes_capture_ids"] == ["legacy-empty-capture"]
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) == 2
+    assert rows[0]["capture_id"] == "legacy-empty-capture"
+    assert rows[1]["capture_id"] == repaired["capture_id"]
+
+
+def test_repaired_capture_does_not_supersede_nonempty_legacy_record(tmp_path, monkeypatch):
+    repaired, _calls = _build(monkeypatch, _daily("AAA"), _prices("AAA"))
+    path = tmp_path / "history.jsonl"
+
+    legacy = deepcopy(repaired)
+    legacy.pop("capture_engine_version", None)
+    legacy["capture_id"] = "legacy-nonempty-capture"
+    path.write_text(json.dumps(legacy) + "\n", encoding="utf-8")
+
+    with pytest.raises(ProspectiveCaptureError, match="prospective_capture_identity_conflict"):
+        archive_capture(path, repaired)
