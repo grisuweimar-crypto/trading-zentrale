@@ -170,20 +170,3 @@ def test_f04_records_and_repairs_canonical_decision_archive_selection() -> None:
     assert f04["effect"]["decision_safety"] == "FAIL_CLOSED"
     assert f04["capa"]["falsification_logic_changed"] is False
 
-
-def test_f04_records_stale_archive_path_and_canonical_capa() -> None:
-    contract = load_contract()
-    f04 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F04")
-    assert f04["state"] == "CAPA_IMPLEMENTED_PENDING_FALSIFICATION_VERIFICATION"
-    assert f04["category"] == "CANONICAL_FILE_SELECTION_STALE_PATH"
-    evidence = f04["evidence"][0]
-    assert evidence["stale_path"].endswith("decision_evidence_7a.jsonl")
-    assert evidence["canonical_path"].endswith("decision_evidence_7a.jsonl.gz")
-    assert evidence["error"] == "evidence_archive_missing"
-    assert f04["effect"]["falsification_runner_blocked"] is True
-    assert f04["effect"]["false_decision_published"] is False
-    assert f04["effect"]["decision_safety"] == "FAIL_CLOSED"
-    assert f04["capa"]["implemented"] is True
-    assert f04["capa"]["research_logic_changed"] is False
-    assert f04["capa"]["decision_logic_changed"] is False
-    assert f04["capa"]["falsification_logic_changed"] is False
