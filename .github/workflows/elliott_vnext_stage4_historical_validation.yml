@@ -18,6 +18,8 @@ on:
     branches: [main]
     paths:
       - "src/scanner/research/elliott_vnext/stage4_historical.py"
+      - "src/scanner/research/elliott_vnext/validation.py"
+      - "src/scanner/research/elliott_vnext/validation_replay.py"
       - "scripts/run_elliott_stage4_historical_validation.py"
       - "scripts/run_elliott_stage4_replay_chunk.py"
       - "scripts/aggregate_elliott_stage4_replay.py"
@@ -207,17 +209,46 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ARTIFACT="artifacts/research/elliott_vnext_stage4_historical_validation.json"
+          SAFE_COPY="$RUNNER_TEMP/elliott_vnext_stage4_historical_validation.json"
+          cp "$ARTIFACT" "$SAFE_COPY"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add artifacts/research/elliott_vnext_stage4_historical_validation.json
-          if git diff --cached --quiet; then
-            echo "Stage 4 artifact unchanged."
-            exit 0
-          fi
-          git commit -m "Elliott Stage 4: publish historical validation [skip ci]"
-          git fetch origin main
-          if [ "$(git rev-parse origin/main)" != "${GITHUB_SHA}" ]; then
-            echo "main advanced during Stage 4 run; refusing stale publication" >&2
-            exit 1
-          fi
-          git push origin HEAD:main
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            BASE="$(git rev-parse origin/main)"
+
+            if [ "$BASE" != "${GITHUB_SHA}" ]; then
+              if ! git diff --quiet "${GITHUB_SHA}..${BASE}" -- \
+                artifacts/market_data/yahoo_ohlcv.csv \
+                src/scanner/research/elliott_vnext \
+                scripts/run_elliott_stage4_historical_validation.py \
+                scripts/run_elliott_stage4_replay_chunk.py \
+                scripts/aggregate_elliott_stage4_replay.py
+              then
+                echo "Stage 4 inputs or Elliott validation logic changed during the run; refusing stale publication" >&2
+                exit 1
+              fi
+            fi
+
+            git reset --hard "$BASE"
+            mkdir -p "$(dirname "$ARTIFACT")"
+            cp "$SAFE_COPY" "$ARTIFACT"
+            git add "$ARTIFACT"
+
+            if git diff --cached --quiet; then
+              echo "Stage 4 artifact unchanged."
+              exit 0
+            fi
+
+            git commit -m "Elliott Stage 4: publish historical validation [skip ci]"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "main advanced during publication; retrying on the new main head" >&2
+          done
+
+          echo "Stage 4 publication race could not be resolved after 3 attempts" >&2
+          exit 1
