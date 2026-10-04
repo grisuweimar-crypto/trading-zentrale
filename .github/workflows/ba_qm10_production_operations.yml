@@ -1,0 +1,65 @@
+name: BA-QM10 Production Operations QM
+
+on:
+  pull_request:
+    paths:
+      - "configs/ba_qm10_production_operations_qm_v1.json"
+      - "src/scanner/research/governance/ba_qm10_production_operations.py"
+      - "tests/test_ba_qm10_production_operations.py"
+      - ".github/workflows/ba_qm10_production_operations.yml"
+      - ".github/workflows/run_scanner.yml"
+      - ".github/workflows/probability_calibration_2.yml"
+      - ".github/workflows/decision_watch_pipeline.yml"
+      - ".github/workflows/decision_watch_runtime.yml"
+      - ".github/workflows/decision_watch_symbol_views.yml"
+      - "scripts/autorun_state.py"
+      - "src/scanner/research/decision_layer/watch_runtime.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  ba-qm10-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Run BA-QM10 operations audit and operational regressions
+        run: |
+          python -m pytest -q             tests/test_ba_qm10_production_operations.py             tests/test_autorun_state.py             tests/test_watch_runtime_transport.py             tests/test_w10_snapshot_orchestration.py             tests/test_w10_scanner_publication_identity.py             tests/test_ba_qm8_end_to_end.py             tests/test_ba_qm9_end_application_audit.py
+
+      - name: Emit current BA-QM10 operations receipt
+        run: |
+          python - <<'PY'
+          from scanner.research.governance.ba_qm10_production_operations import (
+              EXPECTED_CHECKS,
+              EXPECTED_FINDINGS,
+              audit_current_operations,
+              load_contract,
+          )
+
+          contract = load_contract()
+          assert contract["status"] == "IN_PROGRESS"
+          assert contract["scope"] == "QUALITY_MANAGEMENT_ONLY"
+          assert tuple(contract["required_checks"]) == EXPECTED_CHECKS
+          assert tuple(row["finding_id"] for row in contract["findings"]) == EXPECTED_FINDINGS
+
+          result = audit_current_operations()
+          assert result["status"] == "OPEN_FINDINGS_CAPA_REQUIRED"
+          assert result["required_check_count"] == 13
+          assert result["open_finding_count"] == 3
+          assert result["false_decision_observed"] is False
+          assert result["all_observed_failures_fail_closed"] is True
+          assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+          assert result["ba_qm10_may_release_lag1_block"] is False
+          assert result["closure_eligible"] is False
+          print(result)
+          PY
