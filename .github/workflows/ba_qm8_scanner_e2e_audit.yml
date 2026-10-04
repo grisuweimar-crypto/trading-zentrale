@@ -89,38 +89,43 @@ jobs:
 
           foundation = validate_foundation_file()
           assert foundation["status"] == "PASSED_CONTRACT_FOUNDATION"
-          assert foundation["engineering_status"] == "IN_PROGRESS"
+          assert foundation["engineering_status"] == "COMPLETE"
           assert foundation["transition_guard_status"] == "IMPLEMENTED_FAIL_CLOSED_ENGINE"
-          assert foundation["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
-          assert foundation["data_scanner_provenance_status"] == "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
-          assert foundation["real_transition_observation_status"] == "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
-          assert foundation["closure_gate_status"] == "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10"
+          assert foundation["real_stage_adapter_status"] == "COMPLETE_PROSPECTIVE_VERIFIED"
+          assert foundation["data_scanner_provenance_status"] == "PROSPECTIVE_SNAPSHOT_VERIFIED"
+          assert foundation["real_transition_observation_status"] == "ALL_10_TRANSITIONS_VERIFIED"
+          assert foundation["closure_gate_status"] == "PASSED_10_OF_10"
           assert foundation["evidence_impact"] == "PROMOTION_BLOCKED"
           assert foundation["effectiveness_verification_pending"] is True
           assert foundation["automatic_release_allowed"] is False
-          assert foundation["closure_claimed"] is False
+          assert foundation["closure_claimed"] is True
+          assert foundation["closure_snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+          assert foundation["closure_snapshot_as_of"] == "2026-10-04"
+          assert foundation["next_mandatory_work_package"] == "BA-QM9 – Wertpapierdepot-Watch Audit"
 
-          # The checked-in 2026-10-03 snapshot predates prospective scanner provenance.
-          # It must remain open; BA-QM8 may not retroactively certify it.
           real = audit_real_stage_bindings()
           assert real["w10_status"] == "sealed"
-          assert real["stage_results"]["DATA"]["status"] == "PARTIAL"
-          assert "scanner_input_provenance_missing" in real["stage_results"]["DATA"]["gaps"]
-          assert "DATA" in real["closure_blockers"]
-          assert real["closure_eligible"] is False
+          assert real["snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+          assert real["stage_results"]["DATA"]["status"] == "PASS"
+          assert real["stage_results"]["SCANNER"]["status"] == "PASS"
+          assert real["closure_blockers"] == []
+          assert real["closure_eligible"] is True
           assert real["guessed_lineage_added"] is False
           assert real["missing_treated_as_neutral"] is False
           transitions = audit_real_transitions()
-          assert transitions["status"] == "REAL_TRANSITIONS_PARTIAL_DATA_PROVENANCE_BLOCKED"
-          assert transitions["transition_pass_count"] == 9
-          assert transitions["transition_blocked_count"] == 1
-          assert transitions["closure_eligible"] is False
+          assert transitions["status"] == "REAL_TRANSITIONS_PASS"
+          assert transitions["transition_pass_count"] == 10
+          assert transitions["transition_blocked_count"] == 0
+          assert transitions["closure_eligible"] is True
           assert transitions["historical_lineage_backfilled"] is False
           assert transitions["missing_treated_as_neutral"] is False
           closure = evaluate_ba_qm8_closure()
-          assert closure["status"] == "PENDING_PROSPECTIVE_SNAPSHOT"
-          assert closure["engineering_closure_eligible"] is False
-          assert closure["engineering_closure_performed"] is False
+          assert closure["status"] == "BA_QM8_ENGINEERING_COMPLETE"
+          assert closure["snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+          assert closure["engineering_closure_eligible"] is True
+          assert closure["engineering_closure_performed"] is True
+          assert closure["transition_pass_count"] == 10
+          assert closure["transition_blocked_count"] == 0
           assert closure["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
           assert closure["ba_qm8_may_release_lag1_block"] is False
           print(foundation)
