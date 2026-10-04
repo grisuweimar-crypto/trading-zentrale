@@ -28,7 +28,7 @@ MANIFEST_SCHEMA_VERSION = "decision_watch_runtime_manifest_v1"
 SHARD_SCHEMA_VERSION = "decision_watch_runtime_shard_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 DEFAULT_RUNTIME_MANIFEST = f"{DEFAULT_RUNTIME_DIR}/manifest.json"
-SHARD_IDS = tuple("0123456789abcdef")
+SHARD_IDS = tuple(f"{index:02x}" for index in range(32))
 
 
 class WatchRuntimeError(ValueError):
@@ -179,7 +179,8 @@ def _latest_revision_packets(
 
 
 def _shard_for_symbol(symbol: str) -> str:
-    return sha256(symbol.encode("utf-8")).hexdigest()[0]
+    bucket = int.from_bytes(sha256(symbol.encode("utf-8")).digest()[:2], "big") % len(SHARD_IDS)
+    return SHARD_IDS[bucket]
 
 
 def build_watch_runtime(
@@ -188,7 +189,7 @@ def build_watch_runtime(
     archive_packets: Sequence[Mapping[str, object]],
     w10_manifest: Mapping[str, object],
 ) -> tuple[dict[str, object], dict[str, dict[str, object]]]:
-    """Build manifest + 16 compact shards from sealed public W10 evidence."""
+    """Build manifest + deterministic compact shards from sealed public W10 evidence."""
     sealed = validate_sealed_manifest(w10_manifest)
     snapshot_id = str(sealed["snapshot_id"])
     if str(current_packet_set.get("snapshot_id") or "") != snapshot_id:
