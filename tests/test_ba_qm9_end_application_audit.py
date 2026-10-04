@@ -34,7 +34,7 @@ def _daily() -> dict:
         "schema_version": "daily_research_v1",
         "snapshot_id": SNAPSHOT,
         "source_snapshot_id": SNAPSHOT,
-        "as_of": "2026-10-04",
+        "as_of": DECISION_TIME,
         "generated_at": DECISION_TIME,
         "universe_size": 1,
         "symbols": {
