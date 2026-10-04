@@ -7,17 +7,22 @@ on:
       - ".github/workflows/elliott_vnext_prospective_capture.yml"
       - "src/scanner/research/elliott_vnext/**"
       - "scripts/run_elliott_prospective_capture_6h.py"
+      - "scripts/run_elliott_prospective_observation.py"
   pull_request:
     branches: [main]
     paths:
       - "src/scanner/research/elliott_vnext/prospective_capture.py"
+      - "src/scanner/research/elliott_vnext/prospective_observation.py"
       - "src/scanner/research/elliott_vnext/validation_replay.py"
       - "src/scanner/research/elliott_vnext/fibonacci.py"
       - "scripts/run_elliott_prospective_capture_6h.py"
+      - "scripts/run_elliott_prospective_observation.py"
       - "tests/test_elliott_vnext_prospective_capture.py"
+      - "tests/test_elliott_vnext_prospective_observation.py"
       - "tests/test_elliott_vnext_validation.py"
       - "tests/test_elliott_vnext_fibonacci.py"
       - "docs/elliott_vnext_prospective_capture.md"
+      - "docs/elliott_vnext_stage4_prospective_observation.md"
       - ".github/workflows/elliott_vnext_prospective_capture.yml"
   workflow_run:
     workflows: ["Scanner_vNext Autopilot"]
@@ -270,6 +275,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_elliott_vnext_prospective_capture.py
+          tests/test_elliott_vnext_prospective_observation.py
           tests/test_elliott_vnext_validation.py
           tests/test_elliott_vnext_pivots.py
           tests/test_elliott_vnext_scenarios.py
@@ -281,7 +287,9 @@ jobs:
 
       - name: Runner smoke test
         if: github.event_name == 'pull_request'
-        run: python scripts/run_elliott_prospective_capture_6h.py --help
+        run: |
+          python scripts/run_elliott_prospective_capture_6h.py --help
+          python scripts/run_elliott_prospective_observation.py --help
 
       - name: Restore isolated Elliott shadow history
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
@@ -290,7 +298,8 @@ jobs:
           set -euo pipefail
           for path in \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
+            artifacts/research/elliott_vnext_prospective_current_6h.json \
+            artifacts/research/elliott_vnext_prospective_observation.json
           do
             if git cat-file -e "origin/elliott-vnext-shadow-data:$path" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
@@ -366,12 +375,55 @@ jobs:
           }, indent=2))
           PY
 
+      - name: Build Stage 4 prospective observation report
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        run: python scripts/run_elliott_prospective_observation.py
+
+      - name: Validate Stage 4 research-only observation boundary
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path('artifacts/research/elliott_vnext_prospective_observation.json')
+          report = json.loads(path.read_text(encoding='utf-8'))
+          assert report['schema_version'] == 'elliott_vnext_prospective_observation_v1'
+          assert report['phase'] == 'STAGE_4_PROSPECTIVE_OBSERVATION'
+          assert report['status'] in {
+              'INSUFFICIENT_PROSPECTIVE_HISTORY',
+              'INSUFFICIENT_COMPARABLE_OUTPUTS',
+              'OBSERVATION_ACTIVE',
+          }
+          guards = report['guards']
+          assert guards['research_only'] is True
+          assert guards['prospective_inputs_only'] is True
+          assert guards['market_outcomes_used'] is False
+          assert guards['retroactive_reclassification_performed'] is False
+          assert guards['elliott_core_modified'] is False
+          assert guards['degree_reducer_used'] is False
+          assert guards['scenario_selected_by_performance'] is False
+          assert guards['review_context_created'] is False
+          assert guards['changes_universal_stance'] is False
+          assert guards['changes_portfolio_action'] is False
+          assert guards['direct_ordering_allowed'] is False
+          assert guards['productive_promotion_performed'] is False
+          assert guards['empirical_conclusion_allowed'] is False
+          print(json.dumps({
+              'status': report['status'],
+              'effective_capture_count': report['effective_capture_count'],
+              'comparable_dimension_count': report['comparable_dimension_count'],
+              'latest_capture_comparison_count': report['latest_capture_comparison_count'],
+          }, indent=2))
+          PY
+
       - name: Preserve shadow publication payload
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
         run: |
           mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
           cp artifacts/research/elliott_vnext_prospective_history_6h.jsonl "$RUNNER_TEMP/elliott-shadow-payload/"
           cp artifacts/research/elliott_vnext_prospective_current_6h.json "$RUNNER_TEMP/elliott-shadow-payload/"
+          cp artifacts/research/elliott_vnext_prospective_observation.json "$RUNNER_TEMP/elliott-shadow-payload/"
 
       - name: Publish isolated Elliott shadow data branch
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
@@ -404,9 +456,11 @@ jobs:
           mkdir -p artifacts/research
           cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl" artifacts/research/
           cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json" artifacts/research/
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_observation.json" artifacts/research/
           git add \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
+            artifacts/research/elliott_vnext_prospective_current_6h.json \
+            artifacts/research/elliott_vnext_prospective_observation.json
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Elliott vNext prospective shadow [skip ci]'
             git push origin HEAD:refs/heads/elliott-vnext-shadow-data
