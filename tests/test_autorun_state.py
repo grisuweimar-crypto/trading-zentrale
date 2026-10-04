@@ -71,10 +71,18 @@ class AutorunStateTests(unittest.TestCase):
         steps = build["steps"]
         marker = next(i for i, step in enumerate(steps) if "autorun_state.py --record" in step.get("run", ""))
         validation = next(i for i, step in enumerate(steps) if "--validate-only" in step.get("run", ""))
+        base_guard = next(i for i, step in enumerate(steps) if "stale publication refused" in step.get("run", ""))
         publication = next(i for i, step in enumerate(steps) if "git add artifacts/" in step.get("run", ""))
-        self.assertLess(validation, marker)
+        self.assertLess(validation, base_guard)
+        self.assertLess(base_guard, marker)
         self.assertLess(marker, publication)
+        self.assertEqual(steps[base_guard]["if"], "steps.research.outputs.complete == 'true'")
         self.assertEqual(steps[marker]["if"], "steps.research.outputs.complete == 'true'")
+        guard_script = steps[base_guard]["run"]
+        self.assertIn('git fetch origin "$BRANCH" --force', guard_script)
+        self.assertIn('git rev-parse HEAD', guard_script)
+        self.assertIn('git rev-parse "origin/$BRANCH"', guard_script)
+        self.assertIn('exit 75', guard_script)
 
 
 if __name__ == "__main__":
