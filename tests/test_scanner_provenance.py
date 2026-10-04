@@ -89,6 +89,8 @@ def test_prospective_provenance_binds_pre_run_runtime_and_snapshot(
             "tickers_total": 1,
             "tickers_fetched": 1,
             "tickers_failed": 0,
+            "provider_frame_sha256": "9" * 64,
+            "provider_frame_rows": 250,
         },
     )
     assert runtime["run_id"] == "github-123-2"
@@ -116,6 +118,7 @@ def test_prospective_provenance_binds_pre_run_runtime_and_snapshot(
     assert final["coverage"]["direct_scoring_input_bound"] is True
     assert final["coverage"]["scoring_universe_bound"] is True
     assert final["coverage"]["scanner_output_bound"] is True
+    assert final["coverage"]["provider_frame_digest_bound"] is True
     assert final["coverage"]["historical_backfill"] is False
     assert final["boundaries"]["historical_provenance_inferred"] is False
 
@@ -203,3 +206,30 @@ def test_pre_run_provenance_records_optional_absence_instead_of_guessing(
     assert optional["taxonomy_mapping"]["exists"] is False
     assert optional["pillar_mapping"]["exists"] is False
     assert result["historical_backfill"] is False
+
+
+def test_active_yahoo_enrichment_requires_provider_frame_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _root(tmp_path)
+    monkeypatch.setenv("GITHUB_RUN_ID", "30")
+    monkeypatch.setenv("GITHUB_SHA", "e" * 40)
+    pre = capture_pre_run_provenance(root)
+    _write(root / "artifacts/watchlist/watchlist_full_raw.csv", "Ticker\nAAA\n")
+    write_runtime_provenance(
+        root,
+        selected_source=root / "artifacts/watchlist/watchlist.csv",
+        scoring_rows_path=root / "artifacts/watchlist/watchlist_full_raw.csv",
+        yahoo_report={"enabled": True, "provider_frame_rows": 10},
+    )
+    with pytest.raises(
+        ScannerProvenanceError, match="yahoo_provider_frame_hash_required"
+    ):
+        finalize_scanner_input_provenance(
+            root,
+            receipt={
+                "run_id": "github-30-1",
+                "scanner_pre_run_provenance": pre,
+            },
+            research_metadata=_metadata(),
+        )
