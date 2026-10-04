@@ -188,6 +188,8 @@ jobs:
           assert report['replay']['chunk_count'] == 20
           assert report['replay']['symbols_requested'] == report['source']['price_symbol_count']
           assert report['replay']['guard_review']['valid'] is True
+          assert report['replay']['guard_review']['coverage_complete'] is True
+          assert report['replay']['guard_review']['replay_error_count'] == 0
           assert report['replay']['failures_are_missing_evidence_not_imputed'] is True
           assert report['boundaries']['legacy_data_can_support_promotion'] is False
           assert report['boundaries']['future_rows_used_for_replay'] is False
