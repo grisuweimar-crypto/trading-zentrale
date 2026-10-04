@@ -13,6 +13,8 @@ on:
       - ".github/workflows/decision_watch_runtime.yml"
       - ".github/workflows/decision_watch_symbol_views.yml"
       - "scripts/autorun_state.py"
+      - "scripts/check_publication_base.py"
+      - "tests/test_publication_base_guard.py"
       - "src/scanner/research/decision_layer/watch_runtime.py"
   workflow_dispatch:
 
@@ -34,7 +36,7 @@ jobs:
 
       - name: Run BA-QM10 operations audit and operational regressions
         run: |
-          python -m pytest -q             tests/test_ba_qm10_production_operations.py             tests/test_autorun_state.py             tests/test_watch_runtime_transport.py             tests/test_w10_snapshot_orchestration.py             tests/test_w10_scanner_publication_identity.py             tests/test_ba_qm8_end_to_end.py             tests/test_ba_qm9_end_application_audit.py
+          python -m pytest -q             tests/test_ba_qm10_production_operations.py             tests/test_autorun_state.py             tests/test_publication_base_guard.py             tests/test_watch_runtime_transport.py             tests/test_w10_snapshot_orchestration.py             tests/test_w10_scanner_publication_identity.py             tests/test_ba_qm8_end_to_end.py             tests/test_ba_qm9_end_application_audit.py
 
       - name: Emit current BA-QM10 operations receipt
         run: |
