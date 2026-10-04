@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 
 from scanner.reports.daily_research import validate_daily_research
+from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
 from scanner.research.decision_layer.w10_orchestration import (
     W10OrchestrationError,
     begin_manifest,
@@ -91,7 +92,7 @@ def main() -> int:
     )
     seal.add_argument(
         "--archive",
-        default="artifacts/research/decision_evidence_7a.jsonl",
+        default=DEFAULT_ARCHIVE,
     )
 
     sub.add_parser("validate")
