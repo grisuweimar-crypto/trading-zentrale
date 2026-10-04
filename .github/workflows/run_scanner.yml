@@ -164,6 +164,10 @@ jobs:
       - name: Research-Kohaerenz vor Veroeffentlichung pruefen
         run: python scripts/generate_research_views.py --validate-only
 
+      - name: Publication base unveraendert pruefen
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/check_publication_base.py
+
       - name: Erfolgreichen Abendscan vormerken
         if: steps.research.outputs.complete == 'true'
         # Marker und Ergebnisse werden gemeinsam publiziert; ein fehlgeschlagener

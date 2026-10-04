@@ -71,10 +71,17 @@ class AutorunStateTests(unittest.TestCase):
         steps = build["steps"]
         marker = next(i for i, step in enumerate(steps) if "autorun_state.py --record" in step.get("run", ""))
         validation = next(i for i, step in enumerate(steps) if "--validate-only" in step.get("run", ""))
+        base_guard = next(i for i, step in enumerate(steps) if "check_publication_base.py" in step.get("run", ""))
         publication = next(i for i, step in enumerate(steps) if "git add artifacts/" in step.get("run", ""))
-        self.assertLess(validation, marker)
+        self.assertLess(validation, base_guard)
+        self.assertLess(base_guard, marker)
         self.assertLess(marker, publication)
+        self.assertEqual(steps[base_guard]["if"], "steps.research.outputs.complete == 'true'")
         self.assertEqual(steps[marker]["if"], "steps.research.outputs.complete == 'true'")
+        self.assertEqual(
+            steps[base_guard]["run"],
+            "python scripts/check_publication_base.py",
+        )
 
 
 if __name__ == "__main__":

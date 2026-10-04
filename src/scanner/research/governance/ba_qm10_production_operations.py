@@ -169,6 +169,12 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
     symbols = _workflow(root, "decision_watch_symbol_views.yml")
 
     scanner_text = (root / ".github" / "workflows" / "run_scanner.yml").read_text(encoding="utf-8")
+    publication_guard_path = root / "scripts" / "check_publication_base.py"
+    publication_guard_text = (
+        publication_guard_path.read_text(encoding="utf-8")
+        if publication_guard_path.exists()
+        else ""
+    )
     decision_text = (root / ".github" / "workflows" / "decision_watch_pipeline.yml").read_text(encoding="utf-8")
     runtime_text = (root / ".github" / "workflows" / "decision_watch_runtime.yml").read_text(encoding="utf-8")
     symbols_text = (root / ".github" / "workflows" / "decision_watch_symbol_views.yml").read_text(encoding="utf-8")
@@ -242,7 +248,11 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
             < scanner_text.find("git add artifacts/")
         ),
         "scanner_incomplete_run_exits_failure": "Scannerlauf unvollstaendig" in scanner_text,
-        "scanner_explicit_main_advance_refusal_guard": "main advanced" in scanner_text,
+        "scanner_explicit_main_advance_refusal_guard": (
+            "python scripts/check_publication_base.py" in scanner_text
+            and "STALE_PUBLICATION_EXIT = 75" in publication_guard_text
+            and '"ls-remote", "--heads"' in publication_guard_text
+        ),
         "phase2_fallback_schedule_present": "cron: '45 22 * * *'" in phase2_text,
         "phase2_freshness_gate_present": "Decide whether calibration is stale" in phase2_text,
         "decision_same_snapshot_guard_present": "--require-snapshot-match" in decision_text,
@@ -259,6 +269,11 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
     }
 
     findings = {row["finding_id"]: row["state"] for row in contract["findings"]}
+    risks = {
+        row["risk_id"]: row.get("state")
+        for row in contract.get("static_risks_to_verify", [])
+        if isinstance(row, Mapping)
+    }
     check_status = dict(contract["current_assessment"])
 
     return {
@@ -280,6 +295,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
             for state in findings.values()
         ),
         "scanner_publication_race_risk_open": not static["scanner_explicit_main_advance_refusal_guard"],
+        "static_risk_states": risks,
         "false_decision_observed": False,
         "all_observed_failures_fail_closed": True,
         "research_logic_changed": False,
