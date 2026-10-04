@@ -43,6 +43,7 @@ jobs:
               EXPECTED_CHECKS,
               EXPECTED_FINDINGS,
               audit_current_operations,
+              audit_current_runtime_capacity,
               load_contract,
           )
 
@@ -56,10 +57,19 @@ jobs:
           assert result["status"] == "OPEN_FINDINGS_CAPA_REQUIRED"
           assert result["required_check_count"] == 13
           assert result["open_finding_count"] == 3
+          assert result["implemented_capa_pending_verification_count"] == 1
           assert result["false_decision_observed"] is False
           assert result["all_observed_failures_fail_closed"] is True
           assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
           assert result["ba_qm10_may_release_lag1_block"] is False
           assert result["closure_eligible"] is False
+          capacity = audit_current_runtime_capacity()
+          assert capacity["status"] == "PASS"
+          assert capacity["configured_shard_count"] == 32
+          assert capacity["shard_count"] == 32
+          assert capacity["max_shard_bytes"] < capacity["hard_limit_bytes"] == 2_000_000
+          assert capacity["decision_logic_changed"] is False
+          assert capacity["writes_performed"] is False
           print(result)
+          print(capacity)
           PY
