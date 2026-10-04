@@ -233,3 +233,41 @@ def test_active_yahoo_enrichment_requires_provider_frame_digest(
             },
             research_metadata=_metadata(),
         )
+
+
+def test_empty_yahoo_frame_is_a_valid_bound_fallback_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _root(tmp_path)
+    monkeypatch.setenv("GITHUB_RUN_ID", "31")
+    monkeypatch.setenv("GITHUB_SHA", "f" * 40)
+    pre = capture_pre_run_provenance(root)
+    _write(root / "artifacts/watchlist/watchlist_full_raw.csv", "Ticker\nAAA\n")
+    write_runtime_provenance(
+        root,
+        selected_source=root / "artifacts/watchlist/watchlist.csv",
+        scoring_rows_path=root / "artifacts/watchlist/watchlist_full_raw.csv",
+        yahoo_report={
+            "enabled": True,
+            "provider_frame_sha256": "8" * 64,
+            "provider_frame_rows": 0,
+            "tickers_total": 1,
+            "tickers_fetched": 0,
+            "tickers_failed": 1,
+        },
+    )
+    reference = finalize_scanner_input_provenance(
+        root,
+        receipt={
+            "run_id": "github-31-1",
+            "scanner_pre_run_provenance": pre,
+        },
+        research_metadata=_metadata(),
+    )
+    final = validate_bound_provenance(
+        root,
+        reference,
+        expected_snapshot_id="snapshot-001",
+    )
+    assert final["coverage"]["provider_frame_digest_bound"] is True
+    assert final["runtime"]["yahoo_enrichment"]["provider_frame_rows"] == 0
