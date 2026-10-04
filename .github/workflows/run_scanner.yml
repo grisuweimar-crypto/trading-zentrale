@@ -166,20 +166,7 @@ jobs:
 
       - name: Publication base unveraendert pruefen
         if: steps.research.outputs.complete == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          BRANCH="${GITHUB_REF_NAME}"
-          git fetch origin "$BRANCH" --force
-          LOCAL_BASE=$(git rev-parse HEAD)
-          REMOTE_BASE=$(git rev-parse "origin/$BRANCH")
-          if [[ "$LOCAL_BASE" != "$REMOTE_BASE" ]]; then
-            echo "::warning::main advanced or publication branch advanced during scanner build; stale publication refused"
-            echo "local_base=$LOCAL_BASE"
-            echo "remote_base=$REMOTE_BASE"
-            exit 75
-          fi
-          echo "Publication base unchanged: $LOCAL_BASE"
+        run: python scripts/check_publication_base.py
 
       - name: Erfolgreichen Abendscan vormerken
         if: steps.research.outputs.complete == 'true'
