@@ -51,6 +51,9 @@ jobs:
           python-version: "3.11"
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
+      - name: Run full Scanner regression suite for provenance-sensitive core changes
+        run: python -m pytest -q tests
+
       - name: Validate BA-QM8 provenance, guards, real bindings and predecessor regressions
         run: |
           python -m pytest -q \
