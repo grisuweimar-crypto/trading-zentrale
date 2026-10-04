@@ -289,3 +289,27 @@ def test_downtrend_non_positive_w3_projection_is_suppressed_not_emitted():
     assert "wave3_projection_suppressed_non_positive_price" in result["warnings"]
     assert result["fibonacci_selects_wave_count"] is False
     assert result["single_true_count_claimed"] is False
+
+
+def test_positive_projection_with_non_positive_zone_bound_is_suppressed():
+    pivots = [
+        _sp("origin", "2026-04-01", "2026-04-03", 10.0, "low"),
+        _sp("wave_1", "2026-04-08", "2026-04-10", 20.0, "high"),
+        _sp("wave_2", "2026-04-15", "2026-04-17", 12.0, "low"),
+    ]
+    raw = [
+        _raw("2026-04-01", "2026-04-03", 10.0, "low", atr=2.0),
+        _raw("2026-04-08", "2026-04-10", 20.0, "high", atr=2.0),
+        _raw("2026-04-15", "2026-04-17", 12.0, "low", atr=100.0),
+    ]
+    primary = _scenario("wave_2_complete", pivots)
+
+    result = attach_fibonacci_geometry(_set(primary), source_pivots=raw)
+
+    zones = result["projection_zones"]
+    assert zones
+    assert all(zone["price_low"] > 0 for zone in zones)
+    assert all(zone["price_high"] > zone["price_low"] for zone in zones)
+    assert len(zones) < 5
+    assert "wave3_projection_suppressed_non_positive_zone_bound" in result["warnings"]
+    assert result["fibonacci_selects_wave_count"] is False
