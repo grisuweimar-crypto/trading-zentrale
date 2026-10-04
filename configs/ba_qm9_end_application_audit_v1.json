@@ -2,8 +2,8 @@
   "schema_version": "ba_qm9_end_application_audit_v1",
   "business_area": "BA-QM9",
   "name": "Wertpapierdepot-Watch Audit",
-  "status": "CLOSURE_CANDIDATE",
-  "engineering_status": "IN_PROGRESS",
+  "status": "COMPLETE",
+  "engineering_status": "COMPLETE",
   "scope": "QUALITY_MANAGEMENT_ONLY",
   "product_logic_changed": false,
   "investment_logic_changed": false,
@@ -112,6 +112,29 @@
     "lag1_evidence_impact": "PROMOTION_BLOCKED",
     "ba_qm9_may_release_lag1_block": false
   },
-  "closure_claimed": false,
-  "next_step": "Run the complete BA-QM9 manipulation and current-state audit. If all eleven QM dimensions pass fail-closed and no product logic is changed, close BA-QM9 and hand off operational findings to BA-QM10."
+  "closure_claimed": true,
+  "next_step": "Begin BA-QM10 as production and operations quality management. Investigate BA-QM9-F01 as an operational stale-runtime/workflow-dependency finding without weakening the BA-QM9 fail-closed Watch contract.",
+  "closure_snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+  "closure_snapshot_as_of": "2026-10-04",
+  "closure_required_check_count": 11,
+  "closure_required_checks_passed": true,
+  "closure_manipulation_and_regression_tests_passed": 55,
+  "closure_product_logic_changed": false,
+  "closure_investment_logic_changed": false,
+  "closure_execution_enabled": false,
+  "closure_empirical_promotion_performed": false,
+  "open_operational_findings": [
+    {
+      "finding_id": "BA-QM9-F01",
+      "category": "STALE_RUNTIME_TRANSPORT",
+      "state": "FAIL_CLOSED_ROUTED_TO_BA_QM10",
+      "current_snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+      "observed_runtime_snapshot_id": "e0181fa8-04f2-432a-adf2-9fc33668bf05",
+      "rejection_reason": "runtime_snapshot_mismatch",
+      "decision_safety_effect": "NO_FALSE_WATCH_RUNTIME_ACCEPTED",
+      "blocks_ba_qm9_engineering_closure": false,
+      "next_owner": "BA-QM10 – Produktions- und Betriebs-QM"
+    }
+  ],
+  "next_mandatory_work_package": "BA-QM10 – Produktions- und Betriebs-QM"
 }
