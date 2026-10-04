@@ -90,6 +90,8 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM9AuditError("ba_qm9_business_area_invalid")
     if result.get("status") != "IN_PROGRESS_PARALLEL_PREPARATION":
         raise BAQM9AuditError("ba_qm9_status_invalid")
+    if result.get("runtime_audit_status") != "IMPLEMENTED_CANONICAL_7H":
+        raise BAQM9AuditError("ba_qm9_runtime_audit_status_invalid")
     if result.get("input_path") != EXPECTED_PATH:
         raise BAQM9AuditError("ba_qm9_input_path_invalid")
     if result.get("required_checks") != EXPECTED_CHECKS:
@@ -263,6 +265,7 @@ def validate_foundation_file(
         "schema_version": "ba_qm9_depot_watch_audit_foundation_receipt_v1",
         "status": "PASSED_CONTRACT_FOUNDATION",
         "engineering_status": "IN_PROGRESS",
+        "runtime_audit_status": "IMPLEMENTED_CANONICAL_7H",
         "parallel_preparation_allowed": True,
         "required_check_count": len(EXPECTED_CHECKS),
         "required_checks": list(EXPECTED_CHECKS),
