@@ -17,6 +17,7 @@ from scanner.research.governance.ba_qm10_production_operations import (
     EXPECTED_FINDING_STATES,
     audit_current_operations,
     audit_current_runtime_capacity,
+    evaluate_ba_qm10_closure,
     load_contract,
     validate_contract,
 )
@@ -24,7 +25,8 @@ from scanner.research.governance.ba_qm10_production_operations import (
 
 def test_ba_qm10_contract_is_pure_qm_and_covers_all_masterplan_dimensions() -> None:
     contract = load_contract()
-    assert contract["status"] == "IN_PROGRESS"
+    assert contract["status"] == "COMPLETE"
+    assert contract["engineering_status"] == "COMPLETE"
     assert contract["scope"] == "QUALITY_MANAGEMENT_ONLY"
     assert tuple(contract["required_checks"]) == EXPECTED_CHECKS
     assert len(EXPECTED_CHECKS) == 13
@@ -33,20 +35,27 @@ def test_ba_qm10_contract_is_pure_qm_and_covers_all_masterplan_dimensions() -> N
     assert contract["investment_logic_changed"] is False
     assert contract["execution_enabled"] is False
     assert contract["empirical_promotion_performed"] is False
-    assert contract["closure_claimed"] is False
+    assert contract["closure_claimed"] is True
     assert tuple(row["finding_id"] for row in contract["findings"]) == EXPECTED_FINDINGS
     assert {row["finding_id"]: row["state"] for row in contract["findings"]} == EXPECTED_FINDING_STATES
 
 
-def test_ba_qm10_current_operations_audit_exposes_real_findings_fail_closed() -> None:
+def test_ba_qm10_current_operations_audit_is_complete_and_same_snapshot() -> None:
     result = audit_current_operations()
-    assert result["status"] == "OPEN_FINDINGS_CAPA_REQUIRED"
+    assert result["status"] == "BA_QM10_ENGINEERING_COMPLETE"
     assert result["scope"] == "QUALITY_MANAGEMENT_ONLY"
     assert result["required_check_count"] == 13
     assert tuple(result["check_status"].keys()) == EXPECTED_CHECKS
-    assert result["open_finding_count"] == 4
-    assert result["implemented_capa_pending_verification_count"] == 3
-    assert set(result["open_findings"]) == set(EXPECTED_FINDINGS)
+    assert result["all_required_checks_passed"] is True
+    assert result["all_required_guards_passed"] is True
+    assert result["open_finding_count"] == 0
+    assert result["implemented_capa_pending_verification_count"] == 0
+    assert set(result["finding_states"]) == set(EXPECTED_FINDINGS)
+    assert set(result["finding_states"].values()) == {"CLOSED_EFFECTIVE"}
+    assert result["open_static_risk_count"] == 0
+    assert result["runtime_matches_current_snapshot"] is True
+    assert result["symbol_views_match_current_snapshot"] is True
+    assert result["symbol_views_runtime_projection_matches"] is True
     assert result["false_decision_observed"] is False
     assert result["all_observed_failures_fail_closed"] is True
     assert result["research_logic_changed"] is False
@@ -55,7 +64,7 @@ def test_ba_qm10_current_operations_audit_exposes_real_findings_fail_closed() ->
     assert result["execution_enabled"] is False
     assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert result["ba_qm10_may_release_lag1_block"] is False
-    assert result["closure_eligible"] is False
+    assert result["closure_eligible"] is True
 
 
 def test_scanner_autorun_has_retry_serialization_provenance_and_partial_run_guards() -> None:
@@ -91,7 +100,7 @@ def test_current_open_operational_risks_are_not_hidden() -> None:
     assert guards["qm_j_canonical_archive_default_present"] is True
     assert guards["scanner_explicit_main_advance_refusal_guard"] is True
     assert result["scanner_publication_race_risk_open"] is False
-    assert result["static_risk_states"]["BA-QM10-R01"] == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+    assert result["static_risk_states"]["BA-QM10-R01"] == "CLOSED_EFFECTIVE"
 
 
 def test_f01_is_exactly_runtime_transport_capacity_and_never_false_watch() -> None:
@@ -99,7 +108,9 @@ def test_f01_is_exactly_runtime_transport_capacity_and_never_false_watch() -> No
     f01 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F01")
     assert f01["inherited_from"] == "BA-QM9-F01"
     assert f01["category"] == "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY"
-    assert f01["state"] == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+    assert f01["state"] == "CLOSED_EFFECTIVE"
+    assert f01["effectiveness"]["verification_status"] == "EFFECTIVE"
+    assert f01["effectiveness"]["evidence"]["live_runtime_publish_run_id"] == 37236982364
     assert f01["capa"]["implemented"] is True
     assert f01["capa"]["decision_logic_changed"] is False
     assert f01["capa"]["packet_semantics_changed"] is False
@@ -123,6 +134,10 @@ def test_f02_records_premature_fanin_but_same_snapshot_guard_prevented_publicati
     assert f02["effect"]["false_decision_published"] is False
     assert f02["effect"]["later_recovery_observed"] is True
     assert f02["effect"]["decision_safety"] == "FAIL_CLOSED"
+    assert f02["state"] == "CLOSED_EFFECTIVE"
+    assert f02["effectiveness"]["verification_status"] == "EFFECTIVE"
+    assert f02["effectiveness"]["evidence"]["stale_phase2_case_tested"] is True
+    assert f02["effectiveness"]["evidence"]["current_phase2_case_tested"] is True
 
 
 def test_f03_records_symbol_view_premature_triggers_as_fail_closed() -> None:
@@ -133,6 +148,9 @@ def test_f03_records_symbol_view_premature_triggers_as_fail_closed() -> None:
     assert f03["effect"]["premature_symbol_view_build_started"] is True
     assert f03["effect"]["stale_symbol_views_published"] is False
     assert f03["effect"]["decision_safety"] == "FAIL_CLOSED"
+    assert f03["state"] == "CLOSED_EFFECTIVE"
+    assert f03["effectiveness"]["verification_status"] == "EFFECTIVE"
+    assert f03["effectiveness"]["evidence"]["deferred_publish_skipped"] is True
 
 
 def test_contract_cannot_silently_close_findings() -> None:
@@ -168,7 +186,9 @@ def test_f04_records_and_repairs_canonical_decision_archive_selection() -> None:
     contract = load_contract()
     f04 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F04")
     assert f04["category"] == "CANONICAL_FILE_SELECTION"
-    assert f04["state"] == "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION"
+    assert f04["state"] == "CLOSED_EFFECTIVE"
+    assert f04["effectiveness"]["verification_status"] == "EFFECTIVE"
+    assert f04["effectiveness"]["evidence"]["frozen_falsification_success_run_id"] == 37230918562
     evidence = f04["evidence"][0]
     assert evidence["error"] == "evidence_archive_missing"
     assert evidence["obsolete_default"].endswith("decision_evidence_7a.jsonl")
@@ -185,7 +205,10 @@ def test_r01_scanner_publication_race_capa_is_explicit_and_non_semantic() -> Non
         row for row in contract["static_risks_to_verify"]
         if row["risk_id"] == "BA-QM10-R01"
     )
-    assert r01["state"] == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+    assert r01["state"] == "CLOSED_EFFECTIVE"
+    assert r01["effectiveness"]["verification_status"] == "EFFECTIVE"
+    assert r01["effectiveness"]["evidence"]["remote_advance_case_rejected"] is True
+    assert r01["effectiveness"]["evidence"]["retry_remained_eligible"] is True
     assert r01["capa"]["implemented"] is True
     assert r01["capa"]["research_logic_changed"] is False
     assert r01["capa"]["decision_logic_changed"] is False
@@ -246,6 +269,32 @@ def test_decision_archive_retry_is_idempotent_and_changed_identity_fails_closed(
 def test_ba_qm10_retry_recovery_assessment_is_no_longer_unproven() -> None:
     contract = load_contract()
     assessment = contract["current_assessment"]
-    assert assessment["RETRY"] == "PASS_RETRY_REMAINS_ELIGIBLE_AFTER_UNPUBLISHED_FAILURE"
-    assert assessment["IDEMPOTENCY"] == "PASS_ARCHIVE_IDENTITY_DEDUP_AND_COLLISION_FAIL_CLOSED"
-    assert assessment["RECOVERY"] == "PASS_FAIL_CLOSED_RETRY_AND_OBSERVED_RECOVERY"
+    assert assessment["RETRY"] == "PASS"
+    assert assessment["IDEMPOTENCY"] == "PASS"
+    assert assessment["RECOVERY"] == "PASS"
+
+
+
+def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -> None:
+    result = evaluate_ba_qm10_closure()
+    assert result["status"] == "BA_QM10_ENGINEERING_COMPLETE"
+    assert result["scope"] == "QUALITY_MANAGEMENT_ONLY"
+    assert result["required_check_count"] == 13
+    assert result["all_required_checks_passed"] is True
+    assert result["all_required_guards_passed"] is True
+    assert result["open_finding_count"] == 0
+    assert result["open_static_risk_count"] == 0
+    assert result["runtime_shard_count"] == 32
+    assert result["runtime_max_shard_bytes"] < result["runtime_hard_limit_bytes"] == 2_000_000
+    assert result["runtime_symbol_count"] == 213
+    assert result["runtime_packet_count"] == 1491
+    assert result["symbol_views_runtime_projection_matches"] is True
+    assert result["engineering_closure_performed"] is True
+    assert result["research_logic_changed"] is False
+    assert result["decision_logic_changed"] is False
+    assert result["investment_logic_changed"] is False
+    assert result["execution_enabled"] is False
+    assert result["empirical_promotion_performed"] is False
+    assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+    assert result["ba_qm10_may_release_lag1_block"] is False
+    assert result["next_mandatory_work_package"] == "BA-QM11 – Gesamtsystem-Audit"
