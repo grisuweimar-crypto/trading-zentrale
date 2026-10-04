@@ -171,13 +171,34 @@ jobs:
           print({'symbol_count': index['symbol_count'], 'packet_count': index['packet_count']})
           PY
 
-      - name: Refuse stale publication if main advanced
+      - name: Rebase generated views when unrelated main commits advanced
+        shell: bash
         run: |
+          set -euo pipefail
           git fetch origin main --force
-          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" || {
-            echo 'main advanced while symbol views were being built; refuse stale publication'
+          if [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]]; then
+            exit 0
+          fi
+
+          runtime_path='artifacts/research/watch_runtime/manifest.json'
+          local_runtime_sha=$(sha256sum "$runtime_path" | awk '{print $1}')
+          remote_runtime_sha=$(
+            git show "origin/main:$runtime_path" | sha256sum | awk '{print $1}'
+          )
+          if [[ "$local_runtime_sha" != "$remote_runtime_sha" ]]; then
+            echo 'Watch runtime changed while symbol views were being built; refuse stale publication'
             exit 1
-          }
+          fi
+
+          payload="$RUNNER_TEMP/watch-symbol-views"
+          rm -rf "$payload"
+          mkdir -p "$payload"
+          cp -a artifacts/research/watch_runtime/symbols/. "$payload/"
+          git reset --hard origin/main
+          mkdir -p artifacts/research/watch_runtime/symbols
+          rm -rf artifacts/research/watch_runtime/symbols/*
+          cp -a "$payload"/. artifacts/research/watch_runtime/symbols/
+          echo 'main advanced only outside the bound Watch runtime; rebased generated symbol views safely'
 
       - name: Persist public symbol views only
         run: |
