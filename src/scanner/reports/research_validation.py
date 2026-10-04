@@ -105,4 +105,15 @@ def validate_publication(root: Path, *, allow_legacy_price_schema=False):
     output = root / OUTPUT
     metadata = json.loads((output / "history_metadata.json").read_text(encoding="utf-8"))
     blobs = {n: (output / (n + ".csv")).read_bytes() if (output / (n + ".csv")).exists() else None for n in NAMES}
-    return validate_bundle(metadata, blobs, allow_legacy_price_schema=allow_legacy_price_schema)
+    result = validate_bundle(metadata, blobs, allow_legacy_price_schema=allow_legacy_price_schema)
+    provenance = metadata.get("scanner_input_provenance")
+    if provenance is not None:
+        from scanner.reports.scanner_provenance import validate_bound_provenance
+        if not isinstance(provenance, dict):
+            raise ValueError("research_integrity: scanner_input_provenance invalid")
+        validate_bound_provenance(
+            root,
+            provenance,
+            expected_snapshot_id=str(metadata.get("snapshot_id") or ""),
+        )
+    return result
