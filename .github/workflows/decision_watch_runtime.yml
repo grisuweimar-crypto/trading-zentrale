@@ -56,12 +56,58 @@ jobs:
           tests/test_w11_end_to_end_acceptance.py
           tests/test_w12_ferrari_regression.py
 
-  publish:
+  readiness:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+      reason: ${{ steps.check.outputs.reason }}
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Check current W10 runtime readiness
+        id: check
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          w10_path = Path('artifacts/research/decision_snapshot_w10.json')
+          ready = False
+          reason = 'w10_manifest_missing'
+          if w10_path.exists():
+              w10 = json.loads(w10_path.read_text(encoding='utf-8'))
+              current = str(daily.get('snapshot_id') or '')
+              sealed = str(w10.get('snapshot_id') or '')
+              status = str(w10.get('status') or '')
+              ready = bool(current) and sealed == current and status == 'sealed'
+              reason = 'same_snapshot_sealed_ready' if ready else f'w10_not_ready:{sealed}:{status}:{current}'
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
+              handle.write(f"ready={'true' if ready else 'false'}\n")
+              handle.write(f"reason={reason}\n")
+          print({'ready': ready, 'reason': reason})
+          PY
+      - name: Report deferred runtime trigger
+        if: steps.check.outputs.ready != 'true'
+        run: echo "Runtime publication deferred safely; ${{ steps.check.outputs.reason }}"
+
+  publish:
+    needs: readiness
+    if: >-
+      needs.readiness.outputs.ready == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
