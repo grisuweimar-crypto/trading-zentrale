@@ -126,20 +126,38 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM8AuditError("ba_qm8_contract_schema_invalid")
     if result.get("business_area") != "BA-QM8":
         raise BAQM8AuditError("ba_qm8_business_area_invalid")
-    if result.get("status") != "CONTRACT_FOUNDATION_ACTIVE":
-        raise BAQM8AuditError("ba_qm8_foundation_status_invalid")
-    if result.get("engineering_status") != "IN_PROGRESS":
-        raise BAQM8AuditError("ba_qm8_must_remain_in_progress")
+    if result.get("status") != "COMPLETE":
+        raise BAQM8AuditError("ba_qm8_closure_status_invalid")
+    if result.get("engineering_status") != "COMPLETE":
+        raise BAQM8AuditError("ba_qm8_engineering_status_invalid")
     if result.get("transition_guard_status") != "IMPLEMENTED_FAIL_CLOSED_ENGINE":
         raise BAQM8AuditError("ba_qm8_transition_guard_status_invalid")
-    if result.get("real_stage_adapter_status") != "IMPLEMENTED_WITH_OPEN_GAPS":
+    if result.get("real_stage_adapter_status") != "COMPLETE_PROSPECTIVE_VERIFIED":
         raise BAQM8AuditError("ba_qm8_real_stage_adapter_status_invalid")
-    if result.get("data_scanner_provenance_status") != "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT":
+    if result.get("data_scanner_provenance_status") != "PROSPECTIVE_SNAPSHOT_VERIFIED":
         raise BAQM8AuditError("ba_qm8_data_scanner_provenance_status_invalid")
-    if result.get("real_transition_observation_status") != "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED":
+    if result.get("real_transition_observation_status") != "ALL_10_TRANSITIONS_VERIFIED":
         raise BAQM8AuditError("ba_qm8_real_transition_observation_status_invalid")
-    if result.get("closure_gate_status") != "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10":
+    if result.get("closure_gate_status") != "PASSED_10_OF_10":
         raise BAQM8AuditError("ba_qm8_closure_gate_status_invalid")
+    if result.get("closure_claimed") is not True:
+        raise BAQM8AuditError("ba_qm8_closure_claim_required")
+    if not str(result.get("closure_snapshot_id") or "").strip():
+        raise BAQM8AuditError("ba_qm8_closure_snapshot_id_required")
+    if not str(result.get("closure_snapshot_as_of") or "").strip():
+        raise BAQM8AuditError("ba_qm8_closure_snapshot_as_of_required")
+    if result.get("closure_transition_pass_count") != 10:
+        raise BAQM8AuditError("ba_qm8_closure_transition_pass_count_invalid")
+    if result.get("closure_transition_blocked_count") != 0:
+        raise BAQM8AuditError("ba_qm8_closure_transition_blocked_count_invalid")
+    if result.get("closure_error_class_count") != len(EXPECTED_ERROR_CLASSES):
+        raise BAQM8AuditError("ba_qm8_closure_error_class_count_invalid")
+    if result.get("closure_empirical_validation_claimed") is not False:
+        raise BAQM8AuditError("ba_qm8_closure_empirical_validation_forbidden")
+    if result.get("closure_empirical_promotion_performed") is not False:
+        raise BAQM8AuditError("ba_qm8_closure_empirical_promotion_forbidden")
+    if result.get("next_mandatory_work_package") != "BA-QM9 – Wertpapierdepot-Watch Audit":
+        raise BAQM8AuditError("ba_qm8_next_work_package_invalid")
     if result.get("research_only") is not True:
         raise BAQM8AuditError("ba_qm8_research_only_required")
     _require_false(result, "productive_integration_enabled", "ba_qm8")
@@ -377,12 +395,12 @@ def validate_dependencies(
     return {
         "schema_version": "ba_qm8_scanner_e2e_audit_foundation_receipt_v1",
         "status": "PASSED_CONTRACT_FOUNDATION",
-        "engineering_status": "IN_PROGRESS",
+        "engineering_status": "COMPLETE",
         "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
-        "real_stage_adapter_status": "IMPLEMENTED_WITH_OPEN_GAPS",
-        "data_scanner_provenance_status": "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT",
-        "real_transition_observation_status": "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED",
-        "closure_gate_status": "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10",
+        "real_stage_adapter_status": "COMPLETE_PROSPECTIVE_VERIFIED",
+        "data_scanner_provenance_status": "PROSPECTIVE_SNAPSHOT_VERIFIED",
+        "real_transition_observation_status": "ALL_10_TRANSITIONS_VERIFIED",
+        "closure_gate_status": "PASSED_10_OF_10",
         "stage_count": len(EXPECTED_STAGES),
         "transition_count": len(EXPECTED_TRANSITIONS),
         "error_class_count": len(EXPECTED_ERROR_CLASSES),
@@ -395,7 +413,12 @@ def validate_dependencies(
         "effectiveness_verification_pending": True,
         "automatic_release_allowed": False,
         "empirical_promotion_performed": False,
-        "closure_claimed": False,
+        "closure_claimed": True,
+        "closure_snapshot_id": validated["closure_snapshot_id"],
+        "closure_snapshot_as_of": validated["closure_snapshot_as_of"],
+        "closure_transition_pass_count": validated["closure_transition_pass_count"],
+        "closure_transition_blocked_count": validated["closure_transition_blocked_count"],
+        "next_mandatory_work_package": validated["next_mandatory_work_package"],
         "next_step": validated["next_step"],
     }
 
