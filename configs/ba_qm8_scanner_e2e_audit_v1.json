@@ -1,0 +1,229 @@
+{
+  "schema_version": "ba_qm8_scanner_e2e_audit_v1",
+  "business_area": "BA-QM8",
+  "name": "End-to-End Scanner Audit",
+  "status": "CONTRACT_FOUNDATION_ACTIVE",
+  "engineering_status": "IN_PROGRESS",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "investment_logic_changed": false,
+  "purpose": "Fail-closed contract audit across the complete Scanner-vNext information path without adding or changing productive investment logic.",
+  "stage_chain": [
+    {
+      "stage_id": "DATA",
+      "semantic_role": "point_in_time_raw_input_and_identity",
+      "required_identity_fields": ["source_id", "version_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "SCANNER",
+      "semantic_role": "scanner_snapshot_and_feature_state",
+      "required_identity_fields": ["source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "SELECTION",
+      "semantic_role": "phase1_selection_evidence",
+      "required_identity_fields": ["claim_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "TIMING",
+      "semantic_role": "phase1b_timing_evidence",
+      "required_identity_fields": ["claim_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "PROBABILITY",
+      "semantic_role": "phase2_probability_evidence",
+      "required_identity_fields": ["claim_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "RISK",
+      "semantic_role": "phase3_risk_evidence",
+      "required_identity_fields": ["claim_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "CONFIDENCE",
+      "semantic_role": "phase4_confidence_evidence",
+      "required_identity_fields": ["claim_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "LEARNING",
+      "semantic_role": "phase5_learning_and_governance_state",
+      "required_identity_fields": ["version_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "ELLIOTT",
+      "semantic_role": "phase6_research_review_context",
+      "required_identity_fields": ["source_output_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED_NO_DIRECTIONAL_SUBSTITUTION"
+    },
+    {
+      "stage_id": "DECISION_LAYER",
+      "semantic_role": "phase7_universal_stance_hysteresis_portfolio_action",
+      "required_identity_fields": ["decision_id", "source_snapshot_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED"
+    },
+    {
+      "stage_id": "EXTERNAL_EVIDENCE",
+      "semantic_role": "phase8_post_decision_research_sidecar",
+      "required_identity_fields": ["evidence_id", "version_id"],
+      "required_time_fields": ["as_of", "available_from"],
+      "lineage_required": true,
+      "missing_policy": "FAIL_CLOSED_NOT_NEUTRAL"
+    }
+  ],
+  "transition_contract": {
+    "required_error_classes": [
+      "LEAKAGE",
+      "RETROJECTION",
+      "DOUBLE_COUNTING",
+      "SEMANTIC_DRIFT",
+      "MISSING_AS_NEUTRAL",
+      "UNCONTROLLED_MULTIPLICITY",
+      "HIDDEN_EVIDENCE_REUSE"
+    ],
+    "transitions": [
+      {
+        "from": "DATA",
+        "to": "SCANNER",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "SCANNER",
+        "to": "SELECTION",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "SELECTION",
+        "to": "TIMING",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "TIMING",
+        "to": "PROBABILITY",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "PROBABILITY",
+        "to": "RISK",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "RISK",
+        "to": "CONFIDENCE",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "CONFIDENCE",
+        "to": "LEARNING",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "LEARNING",
+        "to": "ELLIOTT",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "ELLIOTT",
+        "to": "DECISION_LAYER",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      },
+      {
+        "from": "DECISION_LAYER",
+        "to": "EXTERNAL_EVIDENCE",
+        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+      }
+    ]
+  },
+  "lineage_contract": {
+    "qm_i_schema": "qm_i_evidence_lineage_v1",
+    "stable_upstream_ids_must_be_reused": true,
+    "missing_lineage_is_independence": false,
+    "historical_lineage_backfilled_by_guessing": false,
+    "direct_reference_is_independent_confirmation": false,
+    "common_ancestry_requires_review": true,
+    "all_stages_require_lineage": true,
+    "external_evidence_is_separate_root_family": true
+  },
+  "external_evidence_contract": {
+    "schema_version": "external_evidence_8_contract_v1",
+    "position": "POST_DECISION_RESEARCH_SIDECAR",
+    "retrojection_forbidden": true,
+    "may_rewrite_historical_scanner_state": false,
+    "may_rewrite_historical_decision_state": false,
+    "may_rewrite_selection": false,
+    "may_rewrite_timing": false,
+    "may_rewrite_probability": false,
+    "may_rewrite_risk": false,
+    "may_rewrite_confidence": false,
+    "may_rewrite_elliott": false,
+    "may_replace_portfolio_action": false,
+    "may_generate_order": false
+  },
+  "governance_guard": {
+    "ba_qm7_closure_required": true,
+    "finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+    "capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+    "evidence_impact": "PROMOTION_BLOCKED",
+    "effectiveness_verification": "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE",
+    "green_ba_qm8_may_release_promotion_block": false,
+    "green_w11_may_release_promotion_block": false,
+    "green_watch_may_release_promotion_block": false,
+    "automatic_promotion_allowed": false
+  },
+  "regression_dependencies": [
+    "BA-QM7/QM-J",
+    "QM-H",
+    "QM-I",
+    "W11",
+    "W12/Decision Watch",
+    "External Evidence"
+  ],
+  "boundaries": {
+    "scanner_logic_changed": false,
+    "scanner_weights_changed": false,
+    "selection_signal_changed": false,
+    "timing_signal_changed": false,
+    "probability_semantics_changed": false,
+    "risk_semantics_changed": false,
+    "confidence_semantics_changed": false,
+    "learning_semantics_changed": false,
+    "elliott_semantics_changed": false,
+    "decision_semantics_changed": false,
+    "portfolio_action_changed": false,
+    "external_evidence_promoted": false,
+    "orders_generated": false,
+    "execution_enabled": false,
+    "productive_integration_enabled": false,
+    "empirical_promotion_performed": false,
+    "open_capa_closed_by_ba_qm8": false
+  },
+  "next_step": "Implement fail-closed runtime guards and manipulation tests for all seven BA-QM8 error classes before any BA-QM8 closure."
+}
