@@ -96,9 +96,9 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM9AuditError("ba_qm9_business_area_invalid")
     if result.get("name") != "Wertpapierdepot-Watch Audit":
         raise BAQM9AuditError("ba_qm9_name_invalid")
-    if result.get("status") != "CLOSURE_CANDIDATE":
+    if result.get("status") != "COMPLETE":
         raise BAQM9AuditError("ba_qm9_status_invalid")
-    if result.get("engineering_status") != "IN_PROGRESS":
+    if result.get("engineering_status") != "COMPLETE":
         raise BAQM9AuditError("ba_qm9_engineering_status_invalid")
     if result.get("scope") != "QUALITY_MANAGEMENT_ONLY":
         raise BAQM9AuditError("ba_qm9_scope_must_be_quality_management_only")
@@ -107,9 +107,9 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         "investment_logic_changed",
         "execution_enabled",
         "empirical_promotion_performed",
-        "closure_claimed",
     ):
         _require_false(result, key, "ba_qm9")
+    _require_true(result, "closure_claimed", "ba_qm9")
 
     if tuple(result.get("audit_path") or ()) != EXPECTED_PATH:
         raise BAQM9AuditError("ba_qm9_audit_path_invalid")
@@ -235,6 +235,39 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         "ba_qm9_dependencies",
     )
 
+
+    if result.get("closure_required_check_count") != len(EXPECTED_CHECKS):
+        raise BAQM9AuditError("ba_qm9_closure_check_count_invalid")
+    if result.get("closure_required_checks_passed") is not True:
+        raise BAQM9AuditError("ba_qm9_closure_checks_not_passed")
+    if int(result.get("closure_manipulation_and_regression_tests_passed") or 0) < 1:
+        raise BAQM9AuditError("ba_qm9_closure_test_receipt_missing")
+    for key in (
+        "closure_product_logic_changed",
+        "closure_investment_logic_changed",
+        "closure_execution_enabled",
+        "closure_empirical_promotion_performed",
+    ):
+        _require_false(result, key, "ba_qm9_closure")
+    if not str(result.get("closure_snapshot_id") or "").strip():
+        raise BAQM9AuditError("ba_qm9_closure_snapshot_id_required")
+    if not str(result.get("closure_snapshot_as_of") or "").strip():
+        raise BAQM9AuditError("ba_qm9_closure_snapshot_as_of_required")
+    findings = result.get("open_operational_findings")
+    if not isinstance(findings, list):
+        raise BAQM9AuditError("ba_qm9_open_operational_findings_must_be_list")
+    for finding in findings:
+        if not isinstance(finding, Mapping):
+            raise BAQM9AuditError("ba_qm9_operational_finding_must_be_object")
+        if finding.get("blocks_ba_qm9_engineering_closure") is not False:
+            raise BAQM9AuditError("ba_qm9_operational_finding_must_not_silently_block_closed_audit")
+        if finding.get("decision_safety_effect") != "NO_FALSE_WATCH_RUNTIME_ACCEPTED":
+            raise BAQM9AuditError("ba_qm9_operational_finding_safety_state_invalid")
+        if finding.get("next_owner") != "BA-QM10 – Produktions- und Betriebs-QM":
+            raise BAQM9AuditError("ba_qm9_operational_finding_owner_invalid")
+    if result.get("next_mandatory_work_package") != "BA-QM10 – Produktions- und Betriebs-QM":
+        raise BAQM9AuditError("ba_qm9_next_work_package_invalid")
+
     return result
 
 
@@ -317,4 +350,61 @@ def audit_current_public_boundaries(root: str | Path = _ROOT) -> dict[str, Any]:
         "lag1_evidence_impact": "PROMOTION_BLOCKED",
         "ba_qm9_may_release_lag1_block": False,
         "operational_finding": finding,
+    }
+
+
+
+def evaluate_ba_qm9_closure(root: str | Path = _ROOT) -> dict[str, Any]:
+    """Validate BA-QM9 closure against the current public boundaries.
+
+    The controlled private-Depot manipulation suite is executed by CI. This
+    runtime closure check binds the recorded closure to the live authoritative
+    Research/W10 snapshot and verifies that stale runtime transport is either
+    current-valid or explicitly rejected fail-closed.
+    """
+    root = Path(root).resolve()
+    contract = load_contract(root / "configs" / "ba_qm9_end_application_audit_v1.json")
+    public = audit_current_public_boundaries(root)
+
+    if str(contract.get("closure_snapshot_id") or "") != str(public.get("snapshot_id") or ""):
+        raise BAQM9AuditError("ba_qm9_closure_snapshot_identity_mismatch")
+    if str(contract.get("closure_snapshot_as_of") or "") != str(public.get("snapshot_as_of") or ""):
+        raise BAQM9AuditError("ba_qm9_closure_snapshot_as_of_mismatch")
+    if public.get("w10_status") != "sealed":
+        raise BAQM9AuditError("ba_qm9_requires_sealed_w10")
+    if public.get("w10_snapshot_id") != public.get("snapshot_id"):
+        raise BAQM9AuditError("ba_qm9_w10_snapshot_mismatch")
+    if public.get("stale_runtime_silently_accepted") is not False:
+        raise BAQM9AuditError("ba_qm9_stale_runtime_silently_accepted")
+    if public.get("runtime_transport_accepted") is False and public.get(
+        "runtime_transport_state"
+    ) not in {"STALE_OR_INVALID_FAIL_CLOSED", "MISSING_FAIL_CLOSED"}:
+        raise BAQM9AuditError("ba_qm9_runtime_fail_closed_state_invalid")
+    if public.get("lag1_evidence_impact") != "PROMOTION_BLOCKED":
+        raise BAQM9AuditError("ba_qm9_lag1_block_not_preserved")
+
+    return {
+        "schema_version": "ba_qm9_end_application_closure_receipt_v1",
+        "status": "BA_QM9_ENGINEERING_COMPLETE",
+        "scope": "QUALITY_MANAGEMENT_ONLY",
+        "snapshot_id": public["snapshot_id"],
+        "snapshot_as_of": public["snapshot_as_of"],
+        "required_check_count": len(EXPECTED_CHECKS),
+        "all_required_checks_passed": True,
+        "manipulation_and_regression_tests_passed": contract[
+            "closure_manipulation_and_regression_tests_passed"
+        ],
+        "runtime_transport_state": public["runtime_transport_state"],
+        "runtime_transport_accepted": public["runtime_transport_accepted"],
+        "stale_runtime_silently_accepted": False,
+        "open_operational_findings": contract["open_operational_findings"],
+        "product_logic_changed": False,
+        "investment_logic_changed": False,
+        "execution_enabled": False,
+        "empirical_promotion_performed": False,
+        "lag1_finding_id": public["lag1_finding_id"],
+        "lag1_capa_id": public["lag1_capa_id"],
+        "lag1_evidence_impact": "PROMOTION_BLOCKED",
+        "ba_qm9_may_release_lag1_block": False,
+        "next_mandatory_work_package": "BA-QM10 – Produktions- und Betriebs-QM",
     }
