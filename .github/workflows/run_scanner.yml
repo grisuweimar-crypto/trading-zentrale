@@ -57,6 +57,10 @@ jobs:
         run: python -m pytest tests -v
 
       - name: Daily-Lauf vorbereiten
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+          SCANNER_FETCH_YAHOO: '1'
+          SCANNER_REQUIRE_PROVENANCE: '1'
         run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/scanner-run.json"
 
       - name: Scanner ausführen (run_daily)
@@ -72,6 +76,8 @@ jobs:
 
       - name: Aktuellen Scan validieren und Research-Views erzeugen
         id: research
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
         run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status "${{ steps.scan.outcome }}"
 
       - name: Marktpreise fuer das vollstaendige aktuelle Universum aktualisieren
