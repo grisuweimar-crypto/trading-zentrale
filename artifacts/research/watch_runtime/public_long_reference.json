@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-04T17:27:18.188766+00:00",
+  "decision_as_of": "2026-10-04T21:38:33.261481+00:00",
   "diagnostics": {
     "bundle_count": 213,
-    "decision_as_of": "2026-10-04T17:27:18.188766+00:00",
+    "decision_as_of": "2026-10-04T21:38:33.261481+00:00",
     "elliott_6h_actionable_symbols": [
       "1211.HK",
       "3750.HK",
@@ -66,13 +66,11 @@
       "ABT",
       "ACB.TO",
       "AEM",
-      "AG.TO",
       "BAYN.DE",
       "BTO.TO",
       "CME",
       "COIN",
       "CRYPTO:ADA",
-      "CRYPTO:ETH",
       "DB1.DE",
       "DSV.TO",
       "EDR.TO",
@@ -86,7 +84,6 @@
       "INCY",
       "JNJ",
       "MA",
-      "MELI",
       "META",
       "MRNA",
       "MSFT",
@@ -111,7 +108,7 @@
     "phase8_external_evidence_activated": false,
     "private_position_data_persisted": false,
     "scanner_scalar_fallback_used": false,
-    "snapshot_id": "e0181fa8-04f2-432a-adf2-9fc33668bf05",
+    "snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
     "state_history_counts": {
       "never_overextended": 67,
       "overextended": 13,
@@ -119,47 +116,39 @@
       "post_overextension_correction": 116
     },
     "w8_changed_action_symbols": [
-      "AEM",
       "DSV.TO",
-      "ILMN",
-      "META",
-      "MSFT",
-      "NEM.AX",
       "NOW",
       "PLTR",
-      "TEAM"
+      "SAP.DE",
+      "WPM.TO"
     ],
     "w8_conflict_symbols": [
-      "MNSO",
-      "OCGN",
+      "KLAR",
+      "SNOW",
       "ZETA"
     ],
     "w8_reassessment_symbols": [
-      "2899.HK",
       "6861.T",
-      "ABT",
+      "AAPL",
       "ADBE",
-      "AGI.TO",
-      "ALV.DE",
       "AMZN",
       "CME",
+      "CPB",
       "DB1.DE",
-      "DVLT",
       "EQX.TO",
+      "FME.DE",
+      "FRES.L",
       "GOOGL",
-      "HL",
-      "KO",
-      "LGO",
-      "MA",
-      "NOVO-B.CO",
+      "JNJ",
       "NRDS",
-      "OGN",
+      "PEP",
+      "PFE",
       "PM",
       "PYPL",
       "SYK",
       "TTAN",
+      "V",
       "XOM",
-      "XYZ",
       "YCA.L"
     ]
   },
@@ -179,7 +168,7 @@
   "row_count": 213,
   "rows": [
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 1841000.0,
@@ -193,11 +182,11 @@
         "rank_percentile": 0.6666666666666666,
         "rs3m": -0.3383168530815638,
         "score": 18.27,
-        "trend200": 0.2985629421635805
+        "trend200": 0.2985629401599377
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -215,9 +204,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "negative_confirmed_existing_long",
-        "portfolio_action_state": "EXIT_REVIEW",
-        "reliability_assessment": "provisional_same_family_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "negative",
         "state_history_changed_portfolio_action": false,
@@ -228,15 +217,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "negative",
-        "universal_stance_state": "negative",
-        "w8_action_policy_case": "f4_confirmed_negative_exit_review",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "000660.KS"
     },
     {
@@ -432,8 +421,8 @@
         "cycle": 0.0,
         "name": "BYD Company Limited",
         "r_code": "R3",
-        "rank": 111.0,
-        "rank_percentile": 0.5211267605633803,
+        "rank": 112.0,
+        "rank_percentile": 0.5258215962441315,
         "rs3m": -0.14512060150606898,
         "score": 21.52,
         "trend200": -0.2046838784437114
@@ -449,7 +438,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:76792d77d52d1eb8e35c58492e0081dcfbbe32d69e6b3f79ae723cc0015ca768",
+        "elliott_source_output_id": "w6-multidegree:c484b5063e437291956fc29b4e6768072cde3f0efff8893a2db1949933afe040",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -502,8 +491,8 @@
         "cycle": 100.0,
         "name": "XIAOMI CORP. CL.B",
         "r_code": "R3",
-        "rank": 73.0,
-        "rank_percentile": 0.3427230046948357,
+        "rank": 74.0,
+        "rank_percentile": 0.3474178403755869,
         "rs3m": 0.014254910080241157,
         "score": 24.74,
         "trend200": -0.21809226877930854
@@ -570,7 +559,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -588,9 +577,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -601,19 +590,19 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "2899.HK"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 476.79998779296875,
@@ -640,14 +629,14 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:a1c4c5f773f8335338abacafe726b57f6ae6745ad304a4b9e8df8d39099306c9",
-        "evidence_gap_count": 14,
+        "elliott_source_output_id": "w6-multidegree:bb76dae8737100ff3313f7756c2091be810c0724f5ab9acd1fc0660dd94732f3",
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "negative",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -659,9 +648,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -672,15 +661,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
-        "universal_stance_direction": "negative",
-        "universal_stance_state": "negative",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "3750.HK"
     },
     {
@@ -698,7 +687,7 @@
         "rank_percentile": 0.17370892018779344,
         "rs3m": -0.13773675381020423,
         "score": 28.29,
-        "trend200": -0.04151596107762123
+        "trend200": -0.04151596065153862
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -810,7 +799,7 @@
       "availability": "decision_available",
       "current": {
         "close": 80270.0,
-        "confidence": 67.8,
+        "confidence": 67.7,
         "confidence_label": "MED",
         "currency": "JPY",
         "cycle": 38.5,
@@ -819,8 +808,8 @@
         "rank": 138.0,
         "rank_percentile": 0.647887323943662,
         "rs3m": -0.011026449895049417,
-        "score": 18.77,
-        "trend200": 0.16614494384860024
+        "score": 18.75,
+        "trend200": 0.1661449428559345
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -881,7 +870,7 @@
         "rank_percentile": 0.49295774647887325,
         "rs3m": -0.20273846278514518,
         "score": 22.54,
-        "trend200": 0.25380909630039716
+        "trend200": 0.25380909503164295
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -946,7 +935,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -964,9 +953,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -976,12 +965,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -1066,7 +1055,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -1084,9 +1073,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "negative_confirmed_existing_long",
-        "portfolio_action_state": "EXIT_REVIEW",
-        "reliability_assessment": "provisional_unopposed_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "negative",
         "state_history_changed_portfolio_action": false,
@@ -1097,15 +1086,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "negative",
-        "universal_stance_state": "negative",
-        "w8_action_policy_case": "f4_confirmed_negative_exit_review",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "9988.HK"
     },
     {
@@ -1174,7 +1163,7 @@
       "availability": "decision_available",
       "current": {
         "close": 333.69000244140625,
-        "confidence": 83.2,
+        "confidence": 83.1,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 84.3,
@@ -1183,12 +1172,12 @@
         "rank": 10.0,
         "rank_percentile": 0.046948356807511735,
         "rs3m": 0.0431733111676984,
-        "score": 35.16,
-        "trend200": 0.15544041910417206
+        "score": 35.11,
+        "trend200": 0.15544041299936429
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -1206,9 +1195,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -1219,13 +1208,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "AAPL"
@@ -1302,80 +1291,19 @@
         "cycle": 80.8,
         "name": "Abbott Laboratories",
         "r_code": "R3",
-        "rank": 86.0,
-        "rank_percentile": 0.40375586854460094,
+        "rank": 84.0,
+        "rank_percentile": 0.39436619718309857,
         "rs3m": -0.007309163523605111,
         "score": 23.91,
-        "trend200": -0.05472390890575818
-      },
-      "decision": {
-        "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
-        "path_review_is_trade_decision": false,
-        "path_review_state": "profit_protection_review",
-        "path_review_suppressed_by_w8": false,
-        "path_sequence_state": "post_overextension_decay",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
-        "phase5_shadow_changes_portfolio_action": false,
-        "phase5_shadow_eligible_review_horizons": [],
-        "phase5_shadow_insufficient_evidence_horizons": [
-          5,
-          20,
-          40,
-          60
-        ],
-        "phase5_shadow_integration_mode": "shadow_only",
-        "phase5_shadow_production_change_performed": false,
-        "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
-        "required_confirmation_count": 2,
-        "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": false,
-        "state_history_changed_universal_stance": false,
-        "state_history_sequence": [
-          "overextended",
-          "post_overextension_correction"
-        ],
-        "state_history_state": "post_overextension_correction",
-        "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
-        "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
-      },
-      "presentation_group": "hold_or_no_action",
-      "symbol": "ABT"
-    },
-    {
-      "attention_required": false,
-      "availability": "decision_available",
-      "current": {
-        "close": 57.40999984741211,
-        "confidence": 82.3,
-        "confidence_label": "HIGH",
-        "currency": "CAD",
-        "cycle": 31.3,
-        "name": "BARRICK MINING",
-        "r_code": "R4",
-        "rank": 11.0,
-        "rank_percentile": 0.051643192488262914,
-        "rs3m": 0.03611318741390357,
-        "score": 34.66,
-        "trend200": -0.023493608971449587
+        "trend200": -0.05472390820655593
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
-        "path_review_state": "none",
+        "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
-        "path_sequence_state": "no_recent_overextension_context",
+        "path_sequence_state": "post_overextension_decay",
         "pending_confirmation_count": 0,
         "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
@@ -1411,6 +1339,67 @@
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
+      "symbol": "ABT"
+    },
+    {
+      "attention_required": true,
+      "availability": "decision_available",
+      "current": {
+        "close": 57.40999984741211,
+        "confidence": 82.2,
+        "confidence_label": "HIGH",
+        "currency": "CAD",
+        "cycle": 31.3,
+        "name": "BARRICK MINING",
+        "r_code": "R4",
+        "rank": 11.0,
+        "rank_percentile": 0.051643192488262914,
+        "rs3m": 0.026366436576127805,
+        "score": 34.61,
+        "trend200": -0.023437909803155077
+      },
+      "decision": {
+        "coverage_admission_state": "admissible_with_gaps",
+        "evidence_gap_count": 14,
+        "path_review_is_trade_decision": false,
+        "path_review_state": "none",
+        "path_review_suppressed_by_w8": false,
+        "path_sequence_state": "no_recent_overextension_context",
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
+        "phase5_shadow_changes_portfolio_action": false,
+        "phase5_shadow_eligible_review_horizons": [],
+        "phase5_shadow_insufficient_evidence_horizons": [
+          5,
+          20,
+          40,
+          60
+        ],
+        "phase5_shadow_integration_mode": "shadow_only",
+        "phase5_shadow_production_change_performed": false,
+        "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
+        "required_confirmation_count": 2,
+        "stable_directional_anchor": "positive",
+        "state_history_changed_portfolio_action": false,
+        "state_history_changed_universal_stance": false,
+        "state_history_sequence": [
+          "overextended",
+          "post_overextension_correction"
+        ],
+        "state_history_state": "post_overextension_correction",
+        "state_history_w8_action_policy_evaluated": true,
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_conflict": false,
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": false
+      },
+      "presentation_group": "waiting_confirmation",
       "symbol": "ABX.TO"
     },
     {
@@ -1432,13 +1421,13 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "overextension_with_fading_dynamics",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -1450,9 +1439,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -1463,15 +1452,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "ACB.TO"
     },
     {
@@ -1479,16 +1468,16 @@
       "availability": "decision_available",
       "current": {
         "close": 237.69000244140625,
-        "confidence": 69.2,
+        "confidence": 69.1,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 0.0,
         "name": "Adobe Inc.",
         "r_code": "R3",
-        "rank": 83.0,
-        "rank_percentile": 0.38967136150234744,
+        "rank": 84.0,
+        "rank_percentile": 0.39436619718309857,
         "rs3m": 0.0410132729990933,
-        "score": 23.94,
+        "score": 23.91,
         "trend200": -0.08535774925519113
       },
       "decision": {
@@ -1502,7 +1491,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:503360d1a55f6fa1eb746428a885f04dfdd78295ee5f0468a7769ee36062b96d",
+        "elliott_source_output_id": "w6-multidegree:66e7a7e2ccb26e18804ab089f545fbc314a639911d3102b05c319f2ccafa105f",
         "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "monitor",
@@ -1556,8 +1545,8 @@
         "cycle": 0.0,
         "name": "adidas AG",
         "r_code": "R2",
-        "rank": 119.0,
-        "rank_percentile": 0.5586854460093896,
+        "rank": 120.0,
+        "rank_percentile": 0.5633802816901409,
         "rs3m": -0.26525434190442965,
         "score": 20.59,
         "trend200": -0.06688866732761234
@@ -1573,7 +1562,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:3a4bc283b15d7f06cdb4842de6b50102d2b6723641549dc0768332b13c9fdf8b",
+        "elliott_source_output_id": "w6-multidegree:9f4eaffd8b2f276047cdc0296c76ac7d03376b680831ca65a071cd92add57932",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -1629,8 +1618,8 @@
         "rank": 2.0,
         "rank_percentile": 0.009389671361502348,
         "rs3m": 0.19273948606225755,
-        "score": 42.25,
-        "trend200": -0.024710203440145184
+        "score": 42.27,
+        "trend200": -0.024710202650009006
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1639,8 +1628,8 @@
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "overextension_with_fading_dynamics",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -1652,12 +1641,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
-        "portfolio_action_state": "REDUCE_REVIEW",
-        "reliability_assessment": "provisional_unopposed_support",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": true,
+        "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -1665,19 +1654,19 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f2_profit_protection_before_correction",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "waiting_confirmation",
       "symbol": "AEM"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 25.18000030517578,
@@ -1691,15 +1680,15 @@
         "rank_percentile": 0.08450704225352113,
         "rs3m": -0.0025831864039356223,
         "score": 32.84,
-        "trend200": -0.09843237811415417
+        "trend200": -0.0984323734963849
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
-        "path_review_state": "profit_protection_review",
+        "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
-        "path_sequence_state": "post_overextension_decay",
+        "path_sequence_state": "no_recent_overextension_context",
         "pending_confirmation_count": 0,
         "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
@@ -1752,11 +1741,11 @@
         "rank_percentile": 0.20187793427230047,
         "rs3m": 0.005337772796917273,
         "score": 27.81,
-        "trend200": -0.14114087703601785
+        "trend200": -0.14114087521119978
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -1774,9 +1763,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_unopposed_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -1787,13 +1776,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "AGI.TO"
@@ -1813,7 +1802,7 @@
         "rank_percentile": 0.9107981220657277,
         "rs3m": -0.21850511057941147,
         "score": 11.4,
-        "trend200": -0.3229308819509946
+        "trend200": -0.32293088094779543
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1873,12 +1862,12 @@
         "rank": 27.0,
         "rank_percentile": 0.1267605633802817,
         "rs3m": -0.04749573015353725,
-        "score": 29.52,
+        "score": 29.55,
         "trend200": 0.06939435041794484
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -1896,9 +1885,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -1909,13 +1898,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "ALV.DE"
@@ -1925,7 +1914,7 @@
       "availability": "decision_available",
       "current": {
         "close": 540.0399780273438,
-        "confidence": 66.7,
+        "confidence": 66.8,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 0.0,
@@ -1934,7 +1923,7 @@
         "rank": 93.0,
         "rank_percentile": 0.43661971830985913,
         "rs3m": -0.05692175628425866,
-        "score": 23.55,
+        "score": 23.58,
         "trend200": 0.26485538719730206
       },
       "decision": {
@@ -1996,7 +1985,7 @@
         "rank_percentile": 0.7464788732394366,
         "rs3m": -0.1728148560899876,
         "score": 16.52,
-        "trend200": -0.019218698084606745
+        "trend200": -0.019218699722182264
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -2299,7 +2288,7 @@
         "rank": 9.0,
         "rank_percentile": 0.04225352112676056,
         "rs3m": 0.03819193152670142,
-        "score": 35.28,
+        "score": 35.26,
         "trend200": 0.21276209226510545
       },
       "decision": {
@@ -2541,7 +2530,7 @@
         "rank": 172.0,
         "rank_percentile": 0.8075117370892019,
         "rs3m": -0.16546085821568057,
-        "score": 14.4,
+        "score": 14.38,
         "trend200": -0.3002556965609027
       },
       "decision": {
@@ -2615,7 +2604,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:288fdd92fc450d7b2fdb94f749d03130d875351efabf3c0b03434a2175eca956",
+        "elliott_source_output_id": "w6-multidegree:eb55b8134c9756409fd1cb92f21214d0cba5649a3310eccaca0fd77ec43a223e",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -2668,10 +2657,10 @@
         "cycle": 0.0,
         "name": "BASF SE",
         "r_code": "R4",
-        "rank": 45.0,
-        "rank_percentile": 0.2112676056338028,
+        "rank": 46.0,
+        "rank_percentile": 0.215962441314554,
         "rs3m": 0.022385356550272517,
-        "score": 27.45,
+        "score": 27.42,
         "trend200": 0.023634330295971395
       },
       "decision": {
@@ -2685,7 +2674,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:b4233d8fad7be7beebb805d575f4e882067a583d87de925edbc286842e41c5b9",
+        "elliott_source_output_id": "w6-multidegree:30d6f1f5c122d117eeee3c7bc5a42ca0c0676653b8549c63c06f4b0f79dd60ce",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -2802,7 +2791,7 @@
         "rank": 180.0,
         "rank_percentile": 0.8450704225352113,
         "rs3m": -0.27963289387803947,
-        "score": 12.94,
+        "score": 12.93,
         "trend200": -0.2962792215543546
       },
       "decision": {
@@ -2858,11 +2847,11 @@
         "currency": "USD",
         "cycle": 28.1,
         "name": "BLACKROCK INC",
-        "r_code": "R5",
-        "rank": 22.0,
-        "rank_percentile": 0.10328638497652583,
+        "r_code": "R4",
+        "rank": 23.0,
+        "rank_percentile": 0.107981220657277,
         "rs3m": 0.023232491574957326,
-        "score": 31.04,
+        "score": 31.01,
         "trend200": 0.008282327331182282
       },
       "decision": {
@@ -2922,8 +2911,8 @@
         "rank": 28.0,
         "rank_percentile": 0.13145539906103287,
         "rs3m": 0.264202006432978,
-        "score": 29.32,
-        "trend200": 0.12671986092222198
+        "score": 29.33,
+        "trend200": 0.12671986173914984
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3058,7 +3047,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:2f235a3204b852cbfd6b7e69944c50924d8b45015d891a572de7fed8c6988067",
+        "elliott_source_output_id": "w6-multidegree:07e1f8d6cb68fe320d89d564990483c97f62521e57621d8144bf6a17f629cf6f",
         "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -3115,8 +3104,8 @@
         "rank": 90.0,
         "rank_percentile": 0.4225352112676056,
         "rs3m": -0.018629079390421355,
-        "score": 23.63,
-        "trend200": 0.16753647583281173
+        "score": 23.64,
+        "trend200": 0.16753647423208173
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3228,7 +3217,7 @@
       "availability": "decision_available",
       "current": {
         "close": 62.9900016784668,
-        "confidence": 67.1,
+        "confidence": 67.0,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 16.9,
@@ -3237,7 +3226,7 @@
         "rank": 151.0,
         "rank_percentile": 0.7089201877934272,
         "rs3m": -0.0792237570561809,
-        "score": 17.4,
+        "score": 17.38,
         "trend200": 0.19323200800029228
       },
       "decision": {
@@ -3359,12 +3348,12 @@
         "rank": 171.0,
         "rank_percentile": 0.8028169014084507,
         "rs3m": -0.1641776286735831,
-        "score": 14.46,
-        "trend200": -0.12697630339991228
+        "score": 14.43,
+        "trend200": -0.12697630265897208
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -3382,9 +3371,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -3395,13 +3384,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "CPB"
@@ -3434,7 +3423,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:b3601c5c85aa8a44c343e7fafa882596cf1ecf1c7f87d9152b5e07623e01477d",
+        "elliott_source_output_id": "w6-multidegree:10b78b1aef0746d49ad85c2a9436e6f767831d5bb501a46ca20928ca0ad38898",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -3481,7 +3470,7 @@
       "availability": "decision_available",
       "current": {
         "close": 89.62000274658203,
-        "confidence": 58.3,
+        "confidence": 58.2,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 0.0,
@@ -3490,7 +3479,7 @@
         "rank": 122.0,
         "rank_percentile": 0.5727699530516432,
         "rs3m": 0.04102241597922207,
-        "score": 20.45,
+        "score": 20.42,
         "trend200": -0.028814497360577396
       },
       "decision": {
@@ -3504,7 +3493,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:d04b1231460399bb84b8aa0647e865f780209b1d5a15f48e180af7c7ac0ed122",
+        "elliott_source_output_id": "w6-multidegree:9e863a7b6feb6afaa0efc55abd68ca516ea61a6b232c4c9c784a6e730539686e",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -3550,18 +3539,18 @@
       "attention_required": true,
       "availability": "decision_available",
       "current": {
-        "close": 0.24562999606132507,
-        "confidence": 54.3,
+        "close": 0.2479500025510788,
+        "confidence": 54.0,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 0.0,
         "name": "Cardano",
         "r_code": "R2",
-        "rank": 128.0,
-        "rank_percentile": 0.6009389671361502,
-        "rs3m": -0.04043811548778753,
-        "score": 19.64,
-        "trend200": 0.15228973567454784
+        "rank": 130.0,
+        "rank_percentile": 0.6103286384976526,
+        "rs3m": -0.06361101203051689,
+        "score": 19.38,
+        "trend200": 0.1639284824286762
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3611,8 +3600,8 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 84915.9375,
-        "confidence": 68.6,
+        "close": 85317.5078125,
+        "confidence": 68.7,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 0.0,
@@ -3621,8 +3610,8 @@
         "rank": 62.0,
         "rank_percentile": 0.29107981220657275,
         "rs3m": 0.0,
-        "score": 25.98,
-        "trend200": 0.18886252501863776
+        "score": 26.01,
+        "trend200": 0.19332192019602168
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3671,18 +3660,18 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 0.08292999863624573,
-        "confidence": 59.5,
+        "close": 0.08482000231742859,
+        "confidence": 60.2,
         "confidence_label": "MED",
         "currency": "EUR",
         "cycle": 0.0,
         "name": "DOGECOIN (KRYPTO)",
-        "r_code": "R2",
-        "rank": 120.0,
-        "rank_percentile": 0.5633802816901409,
-        "rs3m": 0.016851887932230802,
-        "score": 20.54,
-        "trend200": 0.09302126080419626
+        "r_code": "R3",
+        "rank": 117.0,
+        "rank_percentile": 0.5492957746478874,
+        "rs3m": 0.04703919700928538,
+        "score": 20.93,
+        "trend200": 0.11783458003963543
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3728,29 +3717,29 @@
       "symbol": "CRYPTO:DOGE"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 2684.429931640625,
-        "confidence": 75.7,
+        "close": 2701.169921875,
+        "confidence": 76.0,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 0.0,
         "name": "Ethereum",
         "r_code": "R3",
-        "rank": 74.0,
-        "rank_percentile": 0.3474178403755869,
-        "rs3m": 0.08833732023411445,
-        "score": 24.72,
-        "trend200": 0.2687558227201132
+        "rank": 73.0,
+        "rank_percentile": 0.3427230046948357,
+        "rs3m": 0.10919382446937753,
+        "score": 24.93,
+        "trend200": 0.2751600407253263
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
         "evidence_gap_count": 11,
         "path_review_is_trade_decision": false,
-        "path_review_state": "profit_protection_review",
+        "path_review_state": "monitor",
         "path_review_suppressed_by_w8": false,
-        "path_sequence_state": "post_overextension_decay",
+        "path_sequence_state": "post_overextension_memory",
         "pending_confirmation_count": 0,
         "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
@@ -3792,8 +3781,8 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 106.69999694824219,
-        "confidence": 77.3,
+        "close": 107.94999694824219,
+        "confidence": 77.4,
         "confidence_label": "HIGH",
         "currency": "EUR",
         "cycle": 0.0,
@@ -3801,9 +3790,9 @@
         "r_code": "R3",
         "rank": 66.0,
         "rank_percentile": 0.30985915492957744,
-        "rs3m": 0.3393726568350557,
-        "score": 25.37,
-        "trend200": 0.437561550427505
+        "rs3m": 0.3462501207590809,
+        "score": 25.39,
+        "trend200": 0.4515703914104072
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3852,7 +3841,7 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 1.3281999826431274,
+        "close": 1.3339999914169312,
         "confidence": 67.4,
         "confidence_label": "MED",
         "currency": "EUR",
@@ -3861,9 +3850,9 @@
         "r_code": "R1",
         "rank": 173.0,
         "rank_percentile": 0.812206572769953,
-        "rs3m": 0.0760249831994817,
-        "score": 14.22,
-        "trend200": 0.2007529900664391
+        "rs3m": 0.0840276761510621,
+        "score": 14.29,
+        "trend200": 0.20572776747407473
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3980,15 +3969,15 @@
         "cycle": 80.8,
         "name": "CHEVRON CORP",
         "r_code": "R3",
-        "rank": 58.0,
-        "rank_percentile": 0.27230046948356806,
+        "rank": 57.0,
+        "rank_percentile": 0.2676056338028169,
         "rs3m": 0.16628597089212582,
-        "score": 26.51,
-        "trend200": 0.12251790764472736
+        "score": 26.53,
+        "trend200": 0.12251790299361165
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "monitor",
         "path_review_suppressed_by_w8": false,
@@ -4006,9 +3995,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f1_overextended_but_strong_hold",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -4018,12 +4007,12 @@
         ],
         "state_history_state": "overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f1_overextended_but_strong_hold",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -4178,7 +4167,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:e59c2cebaa8716b32fcd7163a827010de17e58e916ad52f01fc4dd4f7b9631ff",
+        "elliott_source_output_id": "w6-multidegree:e1d526df2f5bd7bf215d8c9ce16a4128000a2d6b18c8b37c073c33a91ec4b621",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -4360,7 +4349,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -4378,9 +4367,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -4391,13 +4380,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "DVLT"
@@ -4538,8 +4527,8 @@
         "rank": 75.0,
         "rank_percentile": 0.352112676056338,
         "rs3m": -0.026187422388525672,
-        "score": 24.64,
-        "trend200": -0.05427706545509481
+        "score": 24.66,
+        "trend200": -0.054277066249560746
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -4599,7 +4588,7 @@
         "rank_percentile": 0.4694835680751174,
         "rs3m": 0.058636257372007394,
         "score": 23.24,
-        "trend200": -0.12596050970908446
+        "trend200": -0.12596051247050488
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -4659,8 +4648,8 @@
         "rank": 44.0,
         "rank_percentile": 0.20657276995305165,
         "rs3m": 0.07300471005220688,
-        "score": 27.75,
-        "trend200": 0.1252222133837635
+        "score": 27.72,
+        "trend200": 0.1252222147127542
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -4778,11 +4767,11 @@
         "cycle": 37.1,
         "name": "FREEPORT-MCMORAN",
         "r_code": "R3",
-        "rank": 57.0,
-        "rank_percentile": 0.2676056338028169,
+        "rank": 58.0,
+        "rank_percentile": 0.27230046948356806,
         "rs3m": 0.18528710662001813,
         "score": 26.52,
-        "trend200": 0.13555284489950647
+        "trend200": 0.13555284353388286
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -4855,7 +4844,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:614ef21aba7c0d096d429b9d1094f268bc6e5a8ae3c84d4ad4bf0d8560bd69c0",
+        "elliott_source_output_id": "w6-multidegree:b0260b200eb751dd839b36ba1a33f5360429541c7dca85121e491cc8877b3c7e",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
@@ -4926,7 +4915,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:086a3ea8c2cef75c5c552db2377a5b7848edaa50c74cb0d276fbdbaa15c45650",
+        "elliott_source_output_id": "w6-multidegree:128873c834094df9fd81717e4bc87822bcc4fd5b9f6b010504db6f280d44b328",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -5048,7 +5037,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -5066,9 +5055,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -5079,13 +5068,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "FME.DE"
@@ -5104,12 +5093,12 @@
         "rank": 4.0,
         "rank_percentile": 0.018779342723004695,
         "rs3m": -0.08158026738887847,
-        "score": 36.31,
-        "trend200": -0.17379590689816837
+        "score": 36.3,
+        "trend200": -0.17379590782539533
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -5127,9 +5116,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -5140,19 +5129,19 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "FRES.L"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 174.61000061035156,
@@ -5165,18 +5154,18 @@
         "rank": 79.0,
         "rank_percentile": 0.37089201877934275,
         "rs3m": -0.26511058445376434,
-        "score": 24.33,
+        "score": 24.32,
         "trend200": -0.22130019077093666
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -5188,9 +5177,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -5201,19 +5190,19 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "FSLR"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 309.55999755859375,
@@ -5223,11 +5212,11 @@
         "cycle": 0.0,
         "name": "GE Aerospace",
         "r_code": "R3",
-        "rank": 90.0,
-        "rank_percentile": 0.4225352112676056,
+        "rank": 89.0,
+        "rank_percentile": 0.41784037558685444,
         "rs3m": -0.18835189419631015,
-        "score": 23.63,
-        "trend200": -0.04290868805546799
+        "score": 23.65,
+        "trend200": -0.042908689410043555
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -5240,14 +5229,14 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:8b86a82b1c0a9e4f72be39bb12e01a72a22fa0bd25cb03bc2645f2c82c35c8b6",
-        "evidence_gap_count": 13,
+        "elliott_source_output_id": "w6-multidegree:bc7c86dc4d84b612e13acf29d94a072573c7ccbc2d058a94397c78dc6408a13c",
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "positive",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -5259,9 +5248,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": null,
         "state_history_changed_portfolio_action": false,
@@ -5271,15 +5260,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "bootstrap_pending",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "GE"
     },
     {
@@ -5408,7 +5397,7 @@
       "availability": "decision_available",
       "current": {
         "close": 1.4900000095367432,
-        "confidence": 40.4,
+        "confidence": 40.3,
         "confidence_label": "LOW",
         "currency": "CAD",
         "cycle": 50.0,
@@ -5417,7 +5406,7 @@
         "rank": 203.0,
         "rank_percentile": 0.9530516431924883,
         "rs3m": 0.044960301157219495,
-        "score": 8.99,
+        "score": 8.96,
         "trend200": -0.1775339743309441
       },
       "decision": {
@@ -5543,7 +5532,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -5561,9 +5550,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -5573,12 +5562,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -5595,15 +5584,15 @@
         "cycle": 12.4,
         "name": "HECLA MNG",
         "r_code": "R4",
-        "rank": 46.0,
-        "rank_percentile": 0.215962441314554,
+        "rank": 45.0,
+        "rank_percentile": 0.2112676056338028,
         "rs3m": 0.07372432740663859,
         "score": 27.44,
         "trend200": -0.10309313914684548
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -5621,9 +5610,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -5634,13 +5623,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "HL"
@@ -5659,7 +5648,7 @@
         "rank": 39.0,
         "rank_percentile": 0.18309859154929578,
         "rs3m": 0.09668583218169458,
-        "score": 28.21,
+        "score": 28.18,
         "trend200": -0.04389585370915772
       },
       "decision": {
@@ -5781,7 +5770,7 @@
         "rank": 124.0,
         "rank_percentile": 0.5821596244131455,
         "rs3m": -0.11927794993414442,
-        "score": 20.04,
+        "score": 20.02,
         "trend200": 0.16379092232307357
       },
       "decision": {
@@ -5847,7 +5836,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -5865,12 +5854,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
-        "portfolio_action_state": "REDUCE_REVIEW",
-        "reliability_assessment": "provisional_same_family_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": true,
+        "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -5878,15 +5867,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f2_profit_protection_before_correction",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "ILMN"
     },
     {
@@ -5894,7 +5883,7 @@
       "availability": "decision_available",
       "current": {
         "close": 115.30000305175781,
-        "confidence": 77.1,
+        "confidence": 77.2,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 14.5,
@@ -5903,7 +5892,7 @@
         "rank": 14.0,
         "rank_percentile": 0.06572769953051644,
         "rs3m": -0.05518078313983643,
-        "score": 34.31,
+        "score": 34.34,
         "trend200": 0.07902680775405013
       },
       "decision": {
@@ -5961,15 +5950,15 @@
         "cycle": 29.1,
         "name": "INGREDION INC",
         "r_code": "R4",
-        "rank": 23.0,
-        "rank_percentile": 0.107981220657277,
+        "rank": 22.0,
+        "rank_percentile": 0.10328638497652583,
         "rs3m": -0.05630412338749147,
-        "score": 31.02,
-        "trend200": -0.09488264113503975
+        "score": 31.05,
+        "trend200": -0.09488264179068706
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -5987,9 +5976,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -5999,12 +5988,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -6038,7 +6027,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:313c0c550c65585f5c07cef1f320cf0efd65834ced7014b25ba6fcee82891276",
+        "elliott_source_output_id": "w6-multidegree:add4cbd302a1259ff7b89356525f947d13e079bd1821450632926baa8c38778c",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -6094,7 +6083,7 @@
         "rank": 136.0,
         "rank_percentile": 0.6384976525821596,
         "rs3m": 0.01696535974752411,
-        "score": 18.89,
+        "score": 18.86,
         "trend200": -0.08368810566119123
       },
       "decision": {
@@ -6159,7 +6148,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -6177,9 +6166,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -6189,12 +6178,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -6205,16 +6194,16 @@
       "availability": "decision_available",
       "current": {
         "close": 25.780000686645508,
-        "confidence": 58.3,
+        "confidence": 58.4,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 39.2,
         "name": "JD.COM ADR",
         "r_code": "R3",
-        "rank": 113.0,
-        "rank_percentile": 0.5305164319248826,
+        "rank": 110.0,
+        "rank_percentile": 0.5164319248826291,
         "rs3m": -0.05868810252638801,
-        "score": 21.5,
+        "score": 21.53,
         "trend200": -0.09572567912975005
       },
       "decision": {
@@ -6275,12 +6264,12 @@
         "rank": 5.0,
         "rank_percentile": 0.023474178403755867,
         "rs3m": -0.06910775503032451,
-        "score": 36.21,
-        "trend200": 0.06801252786047773
+        "score": 36.23,
+        "trend200": 0.06801252480137254
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -6298,9 +6287,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -6311,13 +6300,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "JNJ"
@@ -6397,8 +6386,8 @@
         "rank": 107.0,
         "rank_percentile": 0.5023474178403756,
         "rs3m": -0.07506092168112588,
-        "score": 22.34,
-        "trend200": 0.16553351277399542
+        "score": 22.36,
+        "trend200": 0.16553351502830038
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6472,8 +6461,8 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:3c4c751c26f069423a0b73ba341e793e4444a00cf31cee8e12a7396793264b8e",
-        "evidence_gap_count": 13,
+        "elliott_source_output_id": "w6-multidegree:76c4c7cec39a2cf1810196aa0337e4b7edcb8bc095647c769c980b85213d4bec",
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -6493,7 +6482,7 @@
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
         "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "blocked_conflict",
         "required_confirmation_count": 2,
         "stable_directional_anchor": null,
         "state_history_changed_portfolio_action": false,
@@ -6503,12 +6492,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
+        "transition_status": "blocked_conflict",
         "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
-        "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "universal_stance_state": "conflicted",
+        "w8_action_policy_case": "directional_conflict_hold_warning",
+        "w8_action_policy_conflict": true,
+        "w8_action_policy_warning_code": "directional_conflict_requires_review",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -6533,7 +6522,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -6551,9 +6540,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -6564,13 +6553,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "KO"
@@ -6655,7 +6644,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -6673,9 +6662,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -6686,13 +6675,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "LGO"
@@ -6712,11 +6701,11 @@
         "rank_percentile": 0.28169014084507044,
         "rs3m": -0.1381058928176565,
         "score": 26.21,
-        "trend200": -0.008283682172983808
+        "trend200": -0.008283682485969446
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -6734,9 +6723,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -6746,12 +6735,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -6772,7 +6761,7 @@
         "rank_percentile": 0.3615023474178404,
         "rs3m": 0.03474167867305411,
         "score": 24.43,
-        "trend200": 0.265378950422718
+        "trend200": 0.2653789546413361
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6898,7 +6887,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -6916,9 +6905,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -6929,13 +6918,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "MA"
@@ -7015,7 +7004,7 @@
         "rank": 163.0,
         "rank_percentile": 0.7652582159624414,
         "rs3m": -0.2683720621586234,
-        "score": 15.4,
+        "score": 15.38,
         "trend200": -0.22790047872961228
       },
       "decision": {
@@ -7122,7 +7111,7 @@
       "symbol": "MCD"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 1696.56005859375,
@@ -7142,9 +7131,9 @@
         "coverage_admission_state": "admissible_with_gaps",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
-        "path_review_state": "profit_protection_review",
+        "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
-        "path_sequence_state": "post_overextension_decay",
+        "path_sequence_state": "no_recent_overextension_context",
         "pending_confirmation_count": 0,
         "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
@@ -7196,12 +7185,12 @@
         "rank": 17.0,
         "rank_percentile": 0.07981220657276995,
         "rs3m": 0.15180229177766247,
-        "score": 33.4,
+        "score": 33.36,
         "trend200": 0.1604954435992536
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -7219,12 +7208,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
-        "portfolio_action_state": "REDUCE_REVIEW",
-        "reliability_assessment": "provisional_same_family_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": true,
+        "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -7232,15 +7221,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f2_profit_protection_before_correction",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "META"
     },
     {
@@ -7304,7 +7293,7 @@
       "symbol": "MGMA.V"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 8.829999923706055,
@@ -7327,8 +7316,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "positive",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -7340,9 +7329,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_conflict",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": null,
         "state_history_changed_portfolio_action": false,
@@ -7352,15 +7341,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_conflict",
-        "universal_stance_direction": null,
-        "universal_stance_state": "conflicted",
-        "w8_action_policy_case": "directional_conflict_hold_warning",
-        "w8_action_policy_conflict": true,
-        "w8_action_policy_warning_code": "directional_conflict_requires_review",
+        "transition_status": "bootstrap_pending",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_conflict": false,
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "MNSO"
     },
     {
@@ -7451,7 +7440,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:507c6d2463bc18b61eec02e190e6b9b8ac14bec28bf7526bc6ad63d329346c7a",
+        "elliott_source_output_id": "w6-multidegree:cb997e0377de985da46dcc5e272260b2d4662dba65e4e45d0154bbb0a7608edd",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
@@ -7499,7 +7488,7 @@
       "availability": "decision_available",
       "current": {
         "close": 517.530029296875,
-        "confidence": 92.5,
+        "confidence": 92.6,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 43.2,
@@ -7508,12 +7497,12 @@
         "rank": 7.0,
         "rank_percentile": 0.03286384976525822,
         "rs3m": 0.30157881579391255,
-        "score": 35.54,
-        "trend200": 0.1994974030662282
+        "score": 35.56,
+        "trend200": 0.19949740433886465
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -7531,12 +7520,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
-        "portfolio_action_state": "REDUCE_REVIEW",
-        "reliability_assessment": "provisional_same_family_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": true,
+        "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -7544,15 +7533,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f2_profit_protection_before_correction",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "MSFT"
     },
     {
@@ -7569,8 +7558,8 @@
         "rank": 8.0,
         "rank_percentile": 0.03755868544600939,
         "rs3m": 0.11358855476438601,
-        "score": 35.33,
-        "trend200": 0.5772480830322237
+        "score": 35.34,
+        "trend200": 0.5772480828556501
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -7627,10 +7616,10 @@
         "cycle": 0.0,
         "name": "NEBIUS GROUP N.V.",
         "r_code": "R3",
-        "rank": 85.0,
-        "rank_percentile": 0.39906103286384975,
+        "rank": 86.0,
+        "rank_percentile": 0.40375586854460094,
         "rs3m": 0.21208181844671525,
-        "score": 23.92,
+        "score": 23.9,
         "trend200": 0.4475417222135971
       },
       "decision": {
@@ -7644,7 +7633,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:5cd52b1d69e6d0edb5ff92b1c28c1cadedeec9a523692fd61d68c6390bddf825",
+        "elliott_source_output_id": "w6-multidegree:cb20376fbc03d74a4c104a32fe1fc3fe3645f79da7a601d5ee8c6ab48ad555e5",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "monitor",
@@ -7761,7 +7750,7 @@
         "rank": 80.0,
         "rank_percentile": 0.3755868544600939,
         "rs3m": -0.15692511364478146,
-        "score": 24.22,
+        "score": 24.21,
         "trend200": -0.10988321757746766
       },
       "decision": {
@@ -7822,12 +7811,12 @@
         "rank": 15.0,
         "rank_percentile": 0.07042253521126761,
         "rs3m": 0.17271318536533609,
-        "score": 34.28,
+        "score": 34.29,
         "trend200": 0.04766114190979964
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -7845,12 +7834,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
-        "portfolio_action_state": "REDUCE_REVIEW",
-        "reliability_assessment": "provisional_same_family_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": true,
+        "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -7858,15 +7847,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f2_profit_protection_before_correction",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "NEM.AX"
     },
     {
@@ -8018,7 +8007,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:2f34773e1f179810a34b18a14a6373f32333fbf6638c36f55f5ea77d382da575",
+        "elliott_source_output_id": "w6-multidegree:fdfb63372570f2b9a3b76803898b7c2b77c4471cdf5f1b22b29f23c73d6311a8",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -8139,7 +8128,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -8157,9 +8146,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -8170,13 +8159,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "NOVO-B.CO"
@@ -8195,7 +8184,7 @@
         "rank": 81.0,
         "rank_percentile": 0.38028169014084506,
         "rs3m": 0.1816970257332844,
-        "score": 24.19,
+        "score": 24.17,
         "trend200": 0.1608158816601566
       },
       "decision": {
@@ -8377,7 +8366,7 @@
         "rank": 3.0,
         "rank_percentile": 0.014084507042253521,
         "rs3m": 0.1574293309860222,
-        "score": 39.79,
+        "score": 39.81,
         "trend200": 0.16753699831552482
       },
       "decision": {
@@ -8434,11 +8423,71 @@
         "cycle": 100.0,
         "name": "NXP SEMICONDUCTORS NV",
         "r_code": "R3",
-        "rank": 89.0,
-        "rank_percentile": 0.41784037558685444,
-        "rs3m": -0.09506935108723102,
-        "score": 23.64,
-        "trend200": -0.04660078068707929
+        "rank": 91.0,
+        "rank_percentile": 0.4272300469483568,
+        "rs3m": -0.09506928810994542,
+        "score": 23.63,
+        "trend200": -0.046600789166536205
+      },
+      "decision": {
+        "coverage_admission_state": "admissible_with_gaps",
+        "evidence_gap_count": 14,
+        "path_review_is_trade_decision": false,
+        "path_review_state": "none",
+        "path_review_suppressed_by_w8": false,
+        "path_sequence_state": "no_recent_overextension_context",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
+        "phase5_shadow_changes_portfolio_action": false,
+        "phase5_shadow_eligible_review_horizons": [],
+        "phase5_shadow_insufficient_evidence_horizons": [
+          5,
+          20,
+          40,
+          60
+        ],
+        "phase5_shadow_integration_mode": "shadow_only",
+        "phase5_shadow_production_change_performed": false,
+        "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_unopposed_support",
+        "required_confirmation_count": 2,
+        "stable_directional_anchor": "positive",
+        "state_history_changed_portfolio_action": false,
+        "state_history_changed_universal_stance": false,
+        "state_history_sequence": [
+          "never_overextended"
+        ],
+        "state_history_state": "never_overextended",
+        "state_history_w8_action_policy_evaluated": true,
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "w8_action_policy_conflict": false,
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": false
+      },
+      "presentation_group": "hold_or_no_action",
+      "symbol": "NXP"
+    },
+    {
+      "attention_required": false,
+      "availability": "decision_available",
+      "current": {
+        "close": 1.0199999809265137,
+        "confidence": 34.3,
+        "confidence_label": "LOW",
+        "currency": "USD",
+        "cycle": 0.0,
+        "name": "Ocugen, Inc.",
+        "r_code": "R1",
+        "rank": 187.0,
+        "rank_percentile": 0.8779342723004695,
+        "rs3m": -0.35188558256528946,
+        "score": 12.03,
+        "trend200": -0.3174563994835884
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8481,28 +8530,28 @@
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
-      "symbol": "NXP"
+      "symbol": "OCGN"
     },
     {
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 1.0199999809265137,
-        "confidence": 34.3,
-        "confidence_label": "LOW",
+        "close": 13.720000267028809,
+        "confidence": 58.7,
+        "confidence_label": "MED",
         "currency": "USD",
         "cycle": 0.0,
-        "name": "Ocugen, Inc.",
-        "r_code": "R1",
-        "rank": 187.0,
-        "rank_percentile": 0.8779342723004695,
-        "rs3m": -0.35188558256528946,
-        "score": 12.03,
-        "trend200": -0.3174563994835884
+        "name": "ORGANON + CO.",
+        "r_code": "R2",
+        "rank": 135.0,
+        "rank_percentile": 0.6338028169014085,
+        "rs3m": -0.014858945831765169,
+        "score": 18.9,
+        "trend200": 0.2626177683280402
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -8522,67 +8571,7 @@
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
         "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_conflict",
-        "required_confirmation_count": 2,
-        "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": false,
-        "state_history_changed_universal_stance": false,
-        "state_history_sequence": [
-          "never_overextended"
-        ],
-        "state_history_state": "never_overextended",
-        "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_conflict",
-        "universal_stance_direction": null,
-        "universal_stance_state": "conflicted",
-        "w8_action_policy_case": "directional_conflict_hold_warning",
-        "w8_action_policy_conflict": true,
-        "w8_action_policy_warning_code": "directional_conflict_requires_review",
-        "w8_reassessment_required": false
-      },
-      "presentation_group": "hold_or_no_action",
-      "symbol": "OCGN"
-    },
-    {
-      "attention_required": false,
-      "availability": "decision_available",
-      "current": {
-        "close": 13.720000267028809,
-        "confidence": 58.7,
-        "confidence_label": "MED",
-        "currency": "USD",
-        "cycle": 0.0,
-        "name": "ORGANON + CO.",
-        "r_code": "R2",
-        "rank": 135.0,
-        "rank_percentile": 0.6338028169014085,
-        "rs3m": -0.014858945831765169,
-        "score": 18.9,
-        "trend200": 0.2626177672199128
-      },
-      "decision": {
-        "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
-        "path_review_is_trade_decision": false,
-        "path_review_state": "none",
-        "path_review_suppressed_by_w8": false,
-        "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
-        "phase5_shadow_changes_portfolio_action": false,
-        "phase5_shadow_eligible_review_horizons": [],
-        "phase5_shadow_insufficient_evidence_horizons": [
-          5,
-          20,
-          40,
-          60
-        ],
-        "phase5_shadow_integration_mode": "shadow_only",
-        "phase5_shadow_production_change_performed": false,
-        "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_unopposed_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -8593,13 +8582,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "OGN"
@@ -8679,7 +8668,7 @@
         "rank": 92.0,
         "rank_percentile": 0.431924882629108,
         "rs3m": -0.02344587251866659,
-        "score": 23.58,
+        "score": 23.59,
         "trend200": -0.12273592279510048
       },
       "decision": {
@@ -8731,17 +8720,17 @@
       "availability": "decision_available",
       "current": {
         "close": 58.08000183105469,
-        "confidence": 76.9,
+        "confidence": 77.0,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 75.7,
         "name": "OCCIDENTAL PET.",
         "r_code": "R2",
-        "rank": 130.0,
-        "rank_percentile": 0.6103286384976526,
+        "rank": 129.0,
+        "rank_percentile": 0.6056338028169014,
         "rs3m": 0.09711035109519561,
-        "score": 19.51,
-        "trend200": 0.0837160449080081
+        "score": 19.55,
+        "trend200": 0.08371604297957536
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8801,8 +8790,8 @@
         "rank": 61.0,
         "rank_percentile": 0.2863849765258216,
         "rs3m": -0.008771556812472436,
-        "score": 26.04,
-        "trend200": -0.10681093988534063
+        "score": 26.03,
+        "trend200": -0.10681094129102886
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8862,7 +8851,7 @@
         "rank": 109.0,
         "rank_percentile": 0.5117370892018779,
         "rs3m": 0.09429471471369588,
-        "score": 22.23,
+        "score": 22.2,
         "trend200": 0.03484312877581064
       },
       "decision": {
@@ -8923,12 +8912,12 @@
         "rank": 56.0,
         "rank_percentile": 0.26291079812206575,
         "rs3m": -0.15428270291448254,
-        "score": 26.56,
-        "trend200": -0.1291233901061868
+        "score": 26.57,
+        "trend200": -0.12912339837959774
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -8946,9 +8935,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -8959,13 +8948,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "PEP"
@@ -8984,12 +8973,12 @@
         "rank": 49.0,
         "rank_percentile": 0.2300469483568075,
         "rs3m": 0.1432839767009777,
-        "score": 27.25,
-        "trend200": 0.07731532616792403
+        "score": 27.27,
+        "trend200": 0.07731532338091074
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -9007,9 +8996,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -9020,19 +9009,19 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "PFE"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 144.91000366210938,
@@ -9046,17 +9035,17 @@
         "rank_percentile": 0.18779342723004694,
         "rs3m": -0.07612934790794812,
         "score": 28.05,
-        "trend200": -0.008884944236634884
+        "trend200": -0.008884947856879322
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "positive",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -9068,9 +9057,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "negative",
         "state_history_changed_portfolio_action": false,
@@ -9080,15 +9069,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "PG"
     },
     {
@@ -9096,7 +9085,7 @@
       "availability": "decision_available",
       "current": {
         "close": 17.979999542236328,
-        "confidence": 49.6,
+        "confidence": 49.7,
         "confidence_label": "LOW",
         "currency": "USD",
         "cycle": 0.5,
@@ -9105,7 +9094,7 @@
         "rank": 177.0,
         "rank_percentile": 0.8309859154929577,
         "rs3m": -0.05151482870221502,
-        "score": 13.48,
+        "score": 13.5,
         "trend200": 0.06153882298135427
       },
       "decision": {
@@ -9153,7 +9142,7 @@
       "symbol": "PGY"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 57.59000015258789,
@@ -9166,18 +9155,18 @@
         "rank": 55.0,
         "rank_percentile": 0.25821596244131456,
         "rs3m": 0.09182175020086358,
-        "score": 26.68,
+        "score": 26.65,
         "trend200": -0.05946257369569807
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -9189,9 +9178,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": null,
         "state_history_changed_portfolio_action": false,
@@ -9202,15 +9191,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "bootstrap_pending",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "PKX"
     },
     {
@@ -9349,8 +9338,8 @@
         "rank": 51.0,
         "rank_percentile": 0.23943661971830985,
         "rs3m": -0.02508246241922807,
-        "score": 27.21,
-        "trend200": 0.07142686410687404
+        "score": 27.22,
+        "trend200": 0.07142686363967021
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9471,8 +9460,8 @@
         "rank": 95.0,
         "rank_percentile": 0.4460093896713615,
         "rs3m": 0.12759781127193337,
-        "score": 23.49,
-        "trend200": 0.05576933081421931
+        "score": 23.51,
+        "trend200": 0.05576933000890705
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9496,7 +9485,7 @@
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
         "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "provisional_unopposed_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -9837,12 +9826,12 @@
         "rank": 26.0,
         "rank_percentile": 0.12206572769953052,
         "rs3m": -0.17105429472328149,
-        "score": 29.77,
+        "score": 29.78,
         "trend200": -0.2829571321239285
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -9860,9 +9849,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -9872,12 +9861,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -9897,7 +9886,7 @@
         "rank": 152.0,
         "rank_percentile": 0.7136150234741784,
         "rs3m": -0.10867758017868323,
-        "score": 17.18,
+        "score": 17.16,
         "trend200": -0.11022734462046191
       },
       "decision": {
@@ -9944,7 +9933,7 @@
       "symbol": "RI.PA"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 49.099998474121094,
@@ -9954,21 +9943,21 @@
         "cycle": 100.0,
         "name": "RELIANCE INDS",
         "r_code": "R2",
-        "rank": 129.0,
-        "rank_percentile": 0.6056338028169014,
+        "rank": 128.0,
+        "rank_percentile": 0.6009389671361502,
         "rs3m": -0.139097910490815,
         "score": 19.63,
         "trend200": -0.1523519203525241
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -9980,9 +9969,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -9992,15 +9981,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "RIGD.IL"
     },
     {
@@ -10078,8 +10067,8 @@
         "rank": 25.0,
         "rank_percentile": 0.11737089201877934,
         "rs3m": -0.05993078281526054,
-        "score": 30.35,
-        "trend200": 0.07723290022799323
+        "score": 30.38,
+        "trend200": 0.07723290217657564
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -10140,11 +10129,11 @@
         "rank_percentile": 0.6901408450704225,
         "rs3m": -0.33709060268344593,
         "score": 17.56,
-        "trend200": -0.38813397821642326
+        "trend200": -0.3881339801105168
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -10162,9 +10151,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -10174,12 +10163,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -10196,10 +10185,10 @@
         "cycle": 0.0,
         "name": "ROLLS-ROYCE HOLDINGS PLC",
         "r_code": "R4",
-        "rank": 49.0,
-        "rank_percentile": 0.2300469483568075,
+        "rank": 50.0,
+        "rank_percentile": 0.2347417840375587,
         "rs3m": -0.04476379580269807,
-        "score": 27.25,
+        "score": 27.26,
         "trend200": 0.11553411469264607
       },
       "decision": {
@@ -10264,7 +10253,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -10282,12 +10271,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
+        "portfolio_action_state": "REDUCE_REVIEW",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": false,
+        "state_history_changed_portfolio_action": true,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -10295,15 +10284,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f2_profit_protection_before_correction",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "review_now",
       "symbol": "SAP.DE"
     },
     {
@@ -10395,7 +10384,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:11acd66e02024a6c0d35e25c4a22563e8de4a78a4f8ae346cacc48fb95d1f6b0",
+        "elliott_source_output_id": "w6-multidegree:42da7a2fd683d8a9a8b6262f1c9f5e89d626bae1647620440fc940d99a598a36",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "monitor",
@@ -10451,7 +10440,7 @@
         "rank": 82.0,
         "rank_percentile": 0.38497652582159625,
         "rs3m": -0.05439294787222959,
-        "score": 24.07,
+        "score": 24.1,
         "trend200": 0.062126612058323705
       },
       "decision": {
@@ -10695,7 +10684,7 @@
         "rank_percentile": 0.5070422535211268,
         "rs3m": -0.15624893013317886,
         "score": 22.28,
-        "trend200": -0.15366286776816285
+        "trend200": -0.1536628699784086
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -10751,15 +10740,15 @@
         "cycle": 100.0,
         "name": "SMITH & NEPHEW PLC",
         "r_code": "R3",
-        "rank": 111.0,
-        "rank_percentile": 0.5211267605633803,
+        "rank": 112.0,
+        "rank_percentile": 0.5258215962441315,
         "rs3m": -0.15479220802890925,
         "score": 21.52,
         "trend200": -0.14636377185282967
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -10777,9 +10766,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -10789,12 +10778,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -10819,7 +10808,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -10839,7 +10828,7 @@
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
         "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "blocked_conflict",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -10850,12 +10839,12 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
+        "transition_status": "blocked_conflict",
         "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
-        "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "universal_stance_state": "conflicted",
+        "w8_action_policy_case": "directional_conflict_hold_warning",
+        "w8_action_policy_conflict": true,
+        "w8_action_policy_warning_code": "directional_conflict_requires_review",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -10872,11 +10861,11 @@
         "cycle": 100.0,
         "name": "SOLVAY S.A. A",
         "r_code": "R2",
-        "rank": 137.0,
-        "rank_percentile": 0.6431924882629108,
+        "rank": 136.0,
+        "rank_percentile": 0.6384976525821596,
         "rs3m": -0.09138211854510936,
-        "score": 18.85,
-        "trend200": -0.037788657092727496
+        "score": 18.86,
+        "trend200": -0.03778865494440631
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -10932,8 +10921,8 @@
         "cycle": 0.0,
         "name": "SPACE EXPLORATION TECHNOLOGIES CORP.",
         "r_code": "R2",
-        "rank": 118.0,
-        "rank_percentile": 0.5539906103286385,
+        "rank": 119.0,
+        "rank_percentile": 0.5586854460093896,
         "rs3m": 0.03160546792156205,
         "score": 20.82,
         "trend200": null
@@ -10949,7 +10938,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:0c0b68267b0ad1660e253311440bcda4d51d4e10cd25c7f21c69f81ca4946c0d",
+        "elliott_source_output_id": "w6-multidegree:dea17617493ed539b73ae942de8acd7811522fefc44847a715f98c0e49139a5b",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -11053,7 +11042,7 @@
       "symbol": "SPOT"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 4.400000095367432,
@@ -11071,13 +11060,13 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -11089,9 +11078,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -11101,15 +11090,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "STLA"
     },
     {
@@ -11126,7 +11115,7 @@
         "rank": 35.0,
         "rank_percentile": 0.1643192488262911,
         "rs3m": 0.09871144507574137,
-        "score": 28.58,
+        "score": 28.55,
         "trend200": 0.1419495203526695
       },
       "decision": {
@@ -11188,7 +11177,7 @@
         "rank_percentile": 0.5352112676056338,
         "rs3m": -0.19394596046827794,
         "score": 21.46,
-        "trend200": -0.16075778698621468
+        "trend200": -0.16075778503523164
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -11365,15 +11354,15 @@
         "cycle": 0.0,
         "name": "ATLASSIAN CORP.",
         "r_code": "R3",
-        "rank": 84.0,
-        "rank_percentile": 0.39436619718309857,
+        "rank": 83.0,
+        "rank_percentile": 0.38967136150234744,
         "rs3m": 1.093807389614883,
         "score": 23.93,
         "trend200": 0.6722563504294383
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
@@ -11391,12 +11380,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
-        "portfolio_action_state": "REDUCE_REVIEW",
-        "reliability_assessment": "provisional_same_family_support",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": true,
+        "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -11404,15 +11393,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f2_profit_protection_before_correction",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "TEAM"
     },
     {
@@ -11426,8 +11415,8 @@
         "cycle": 31.3,
         "name": "Tempus AI",
         "r_code": "R2",
-        "rank": 139.0,
-        "rank_percentile": 0.6525821596244131,
+        "rank": 138.0,
+        "rank_percentile": 0.647887323943662,
         "rs3m": 0.2433681671919672,
         "score": 18.75,
         "trend200": 0.35754337338046605
@@ -11550,7 +11539,7 @@
         "rank": 115.0,
         "rank_percentile": 0.539906103286385,
         "rs3m": -0.1339737515345487,
-        "score": 21.33,
+        "score": 21.31,
         "trend200": -0.2980319818750121
       },
       "decision": {
@@ -11597,7 +11586,7 @@
       "symbol": "TME"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 91.0999984741211,
@@ -11615,13 +11604,13 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -11633,9 +11622,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -11645,15 +11634,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "TOM.OL"
     },
     {
@@ -11731,7 +11720,7 @@
         "rank_percentile": 0.06103286384976526,
         "rs3m": 0.06274294343035103,
         "score": 34.39,
-        "trend200": 0.2733726841810342
+        "trend200": 0.27337268464024067
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -11805,7 +11794,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:b55afbb0f9b779ca98385f0fe5382e111ffa5f801f3155fc0dbe27ce5def60ac",
+        "elliott_source_output_id": "w6-multidegree:7358c7a0c0f859aeb838b1d186919cd4737ae829c83b7998fad9fba6dab1d54b",
         "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -11867,7 +11856,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -11885,9 +11874,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -11897,19 +11886,19 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "TTD"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 2.994999885559082,
@@ -11927,13 +11916,13 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "monitor",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "active_overextension",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -11945,9 +11934,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
-        "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -11957,15 +11946,15 @@
         ],
         "state_history_state": "overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
+        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "TTK.DE"
     },
     {
@@ -12048,7 +12037,7 @@
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -12066,9 +12055,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -12078,12 +12067,12 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
         "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
@@ -12225,8 +12214,8 @@
         "rank": 125.0,
         "rank_percentile": 0.5868544600938967,
         "rs3m": -0.15799780943666275,
-        "score": 19.88,
-        "trend200": 0.05486771601064144
+        "score": 19.9,
+        "trend200": 0.05486771874995133
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12360,7 +12349,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:03a8370e150a4404130b3809e4275cd97197409aa64d6fb91c92593a429a9cb2",
+        "elliott_source_output_id": "w6-multidegree:7709db4dd254e36ee52e78b2dba687499238e2d2065f4dec6af3d5d9d7f34525",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -12417,11 +12406,11 @@
         "rank_percentile": 0.14553990610328638,
         "rs3m": -0.005962807644013468,
         "score": 28.91,
-        "trend200": 0.07176342191493301
+        "trend200": 0.0717634194850243
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -12439,9 +12428,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "blocked_insufficient",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -12452,13 +12441,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
-        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
-        "w8_reassessment_required": false
+        "w8_action_policy_warning_code": null,
+        "w8_reassessment_required": true
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "V"
@@ -12720,8 +12709,8 @@
         "rank": 76.0,
         "rank_percentile": 0.3568075117370892,
         "rs3m": -0.1661819034955071,
-        "score": 24.54,
-        "trend200": -0.08355649347796534
+        "score": 24.55,
+        "trend200": -0.08355649441819868
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12780,8 +12769,8 @@
         "rank": 1.0,
         "rank_percentile": 0.004694835680751174,
         "rs3m": 0.1601432775267888,
-        "score": 42.97,
-        "trend200": 0.05710935068102363
+        "score": 42.98,
+        "trend200": 0.057109346294474284
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12790,8 +12779,8 @@
         "path_review_state": "profit_protection_review",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "overextension_with_fading_dynamics",
-        "pending_confirmation_count": 1,
-        "pending_direction": "negative",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -12803,12 +12792,12 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "w8_f2_overextension_momentum_loss_profit_protection",
+        "portfolio_action_state": "REDUCE_REVIEW",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
-        "state_history_changed_portfolio_action": false,
+        "state_history_changed_portfolio_action": true,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
           "overextended",
@@ -12816,15 +12805,15 @@
         ],
         "state_history_state": "overextension_with_momentum_loss",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
-        "universal_stance_direction": "negative",
-        "universal_stance_state": "negative",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
+        "w8_action_policy_case": "f2_profit_protection_before_correction",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "review_now",
       "symbol": "WPM.TO"
     },
     {
@@ -12855,7 +12844,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:407413efe7ecae0e762b84bb3c15cac49c69a68a3083c5d3e1fd316aa98cf116",
+        "elliott_source_output_id": "w6-multidegree:4056837a1dbd8c8d0d6a265d2f467efaedea2c9601f9dfc2dd30f78925f8c1b5",
         "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -12911,8 +12900,8 @@
         "rank": 48.0,
         "rank_percentile": 0.22535211267605634,
         "rs3m": 0.13313651542711047,
-        "score": 27.28,
-        "trend200": 0.11081452980111273
+        "score": 27.29,
+        "trend200": 0.11081453439301736
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12936,7 +12925,7 @@
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
         "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_unopposed_support",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -12947,7 +12936,7 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "bootstrap_confirmed",
+        "transition_status": "stable_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
         "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
@@ -12986,7 +12975,7 @@
           "reentry_or_add_review"
         ],
         "elliott_review_contexts_are_actions": false,
-        "elliott_source_output_id": "w6-multidegree:80d279d13fbce5f06b92b0d51303c4841a711428c44f46695b0c6d8f74815ae8",
+        "elliott_source_output_id": "w6-multidegree:82065742dfbb4dfb1ea456dad2c955aed164a85b60e27a414d210e0ffc22d51e",
         "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
@@ -13098,16 +13087,16 @@
         "currency": "USD",
         "cycle": 35.8,
         "name": "BLOCK INC. A",
-        "r_code": "R3",
-        "rank": 117.0,
-        "rank_percentile": 0.5492957746478874,
+        "r_code": "R2",
+        "rank": 118.0,
+        "rank_percentile": 0.5539906103286385,
         "rs3m": -0.07353069400140766,
         "score": 20.89,
         "trend200": 0.05981098094925752
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -13125,9 +13114,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_reason_code": "blocking_raw_state_position_unchanged",
         "portfolio_action_state": "HOLD",
-        "reliability_assessment": "provisional_same_family_support",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -13138,13 +13127,13 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
-        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
+        "w8_action_policy_case": "insufficient_evidence_hold_without_inference",
         "w8_action_policy_conflict": false,
-        "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": true
+        "w8_action_policy_warning_code": "insufficient_evidence_no_action_inference",
+        "w8_reassessment_required": false
       },
       "presentation_group": "hold_or_no_action",
       "symbol": "XYZ"
@@ -13282,8 +13271,8 @@
         "cycle": 24.7,
         "name": "ZETA GLOBAL",
         "r_code": "R2",
-        "rank": 120.0,
-        "rank_percentile": 0.5633802816901409,
+        "rank": 121.0,
+        "rank_percentile": 0.568075117370892,
         "rs3m": 0.4601125927466436,
         "score": 20.54,
         "trend200": 0.5343958145181131
@@ -13345,31 +13334,31 @@
     "private_position_data_included": false,
     "reference_is_trade_instruction": false
   },
-  "snapshot_id": "e0181fa8-04f2-432a-adf2-9fc33668bf05",
+  "snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
   "watch_summary": {
     "action_counts": {
-      "EXIT_REVIEW": 3,
-      "HOLD": 189,
-      "REDUCE_REVIEW": 9,
-      "WAIT_CONFIRMATION": 12
+      "EXIT_REVIEW": 1,
+      "HOLD": 187,
+      "REDUCE_REVIEW": 5,
+      "WAIT_CONFIRMATION": 20
     },
-    "attention_required_count": 59,
+    "attention_required_count": 62,
     "availability_counts": {
       "decision_available": 213
     },
     "decision_available_count": 213,
     "position_count": 213,
     "presentation_group_counts": {
-      "hold_or_no_action": 189,
-      "review_now": 12,
-      "waiting_confirmation": 12
+      "hold_or_no_action": 187,
+      "review_now": 6,
+      "waiting_confirmation": 20
     },
     "reliability_counts": {
       "blocked_conflict": 3,
-      "blocked_insufficient": 151,
-      "pending_confirmation": 12,
-      "provisional_same_family_support": 41,
-      "provisional_unopposed_support": 6
+      "blocked_insufficient": 153,
+      "pending_confirmation": 20,
+      "provisional_same_family_support": 34,
+      "provisional_unopposed_support": 3
     },
     "unavailable_count": 0,
     "unused_bundle_symbols": []
