@@ -43,10 +43,10 @@ EXPECTED_CHECKS = (
 )
 EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03", "BA-QM10-F04")
 EXPECTED_FINDING_STATES = {
-    "BA-QM10-F01": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F02": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F03": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F04": "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
+    "BA-QM10-F01": "CLOSED_EFFECTIVE",
+    "BA-QM10-F02": "CLOSED_EFFECTIVE",
+    "BA-QM10-F03": "CLOSED_EFFECTIVE",
+    "BA-QM10-F04": "CLOSED_EFFECTIVE",
 }
 
 
@@ -87,8 +87,10 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM10AuditError("ba_qm10_business_area_invalid")
     if value.get("name") != "Produktions- und Betriebs-QM":
         raise BAQM10AuditError("ba_qm10_name_invalid")
-    if value.get("status") != "IN_PROGRESS":
+    if value.get("status") != "COMPLETE":
         raise BAQM10AuditError("ba_qm10_status_invalid")
+    if value.get("engineering_status") != "COMPLETE":
+        raise BAQM10AuditError("ba_qm10_engineering_status_invalid")
     if value.get("scope") != "QUALITY_MANAGEMENT_ONLY":
         raise BAQM10AuditError("ba_qm10_scope_invalid")
     for key in (
@@ -97,16 +99,19 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         "investment_logic_changed",
         "execution_enabled",
         "empirical_promotion_performed",
-        "closure_claimed",
     ):
         if value.get(key) is not False:
             raise BAQM10AuditError(f"ba_qm10_must_be_false:{key}")
+    if value.get("closure_claimed") is not True:
+        raise BAQM10AuditError("ba_qm10_closure_must_be_claimed")
     if tuple(value.get("required_checks") or ()) != EXPECTED_CHECKS:
         raise BAQM10AuditError("ba_qm10_required_checks_invalid")
 
     assessment = _mapping(value.get("current_assessment"), "current_assessment")
     if tuple(assessment.keys()) != EXPECTED_CHECKS:
         raise BAQM10AuditError("ba_qm10_assessment_coverage_invalid")
+    if any(assessment.get(key) != "PASS" for key in EXPECTED_CHECKS):
+        raise BAQM10AuditError("ba_qm10_assessment_not_all_pass")
 
     findings = value.get("findings")
     if not isinstance(findings, list):
