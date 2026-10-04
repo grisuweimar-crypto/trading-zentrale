@@ -369,9 +369,10 @@
     "empirical_promotion_performed": false,
     "open_capa_closed_by_ba_qm8": false
   },
-  "next_step": "Verify the first prospective scanner snapshot with scanner_input_provenance, execute DATA->SCANNER through the same seven-class guard, rerun the complete real transition audit, then consider BA-QM8 closure if all 10 transitions pass and predecessor regressions remain green.",
+  "next_step": "Obtain the first prospective scanner snapshot with scanner_input_provenance. The closure gate may become eligible only if real stage bindings pass and all 10 real transitions pass all seven BA-QM8 guards. Lag-1 CAPA remains independently PROMOTION_BLOCKED.",
   "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
   "real_stage_adapter_status": "IMPLEMENTED_WITH_OPEN_GAPS",
   "data_scanner_provenance_status": "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT",
-  "real_transition_observation_status": "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
+  "real_transition_observation_status": "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED",
+  "closure_gate_status": "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10"
 }
