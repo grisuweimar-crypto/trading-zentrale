@@ -1,0 +1,117 @@
+{
+  "schema_version": "ba_qm9_end_application_audit_v1",
+  "business_area": "BA-QM9",
+  "name": "Wertpapierdepot-Watch Audit",
+  "status": "CLOSURE_CANDIDATE",
+  "engineering_status": "IN_PROGRESS",
+  "scope": "QUALITY_MANAGEMENT_ONLY",
+  "product_logic_changed": false,
+  "investment_logic_changed": false,
+  "execution_enabled": false,
+  "empirical_promotion_performed": false,
+  "audit_path": [
+    "RESEARCH_SNAPSHOT",
+    "DECISION_BUNDLE",
+    "DEPOT_SNAPSHOT",
+    "WERTPAPIERDEPOT_WATCH"
+  ],
+  "required_checks": [
+    "IDENTITY",
+    "TIME",
+    "COMPLETENESS",
+    "POSITION_STATE",
+    "ADD_CAPACITY",
+    "ACTION_SEMANTICS",
+    "MISSING_EVIDENCE",
+    "STALE_DATA",
+    "FAIL_CLOSED",
+    "EXPLANATION",
+    "REPRODUCIBILITY"
+  ],
+  "masterplan_guard": {
+    "missing_decision_state_may_use_old_scanner_heuristic": false
+  },
+  "check_contract": {
+    "IDENTITY": {
+      "same_research_snapshot_required": true,
+      "exact_symbol_identity_required": true,
+      "fuzzy_symbol_substitution_forbidden": true,
+      "decision_position_context_identity_required": true
+    },
+    "TIME": {
+      "future_position_snapshot_forbidden": true,
+      "decision_as_of_must_match_authoritative_snapshot": true,
+      "later_evidence_backdating_forbidden": true
+    },
+    "COMPLETENESS": {
+      "one_watch_row_per_position_required": true,
+      "duplicate_position_symbols_forbidden": true,
+      "watch_status_must_match_available_rows": true,
+      "missing_bundle_must_remain_visible": true
+    },
+    "POSITION_STATE": {
+      "supplied_depot_snapshot_is_authoritative": true,
+      "model_portfolio_substitution_forbidden": true,
+      "legacy_holdings_substitution_forbidden": true,
+      "position_state_may_not_rewrite_universal_stance": true
+    },
+    "ADD_CAPACITY": {
+      "capacity_only_from_position_snapshot": true,
+      "contradictory_capacity_rejected": true,
+      "unknown_capacity_remains_unknown": true
+    },
+    "ACTION_SEMANTICS": {
+      "watch_presents_existing_decision": true,
+      "watch_may_not_recompute_universal_stance": true,
+      "watch_may_not_recompute_transition": true,
+      "watch_may_not_change_portfolio_action": true,
+      "review_state_is_not_order": true,
+      "execution_forbidden": true
+    },
+    "MISSING_EVIDENCE": {
+      "missing_decision_bundle_produces_unavailable_row": true,
+      "unavailable_row_exposes_no_decision": true,
+      "scanner_scalar_fallback_forbidden": true,
+      "missing_may_not_be_neutralized": true
+    },
+    "STALE_DATA": {
+      "snapshot_mismatch_rejected": true,
+      "as_of_mismatch_rejected": true,
+      "stale_runtime_transport_rejected": true,
+      "undefined_wall_clock_age_may_not_be_claimed_fresh": true,
+      "arbitrary_wall_clock_threshold_invented": false
+    },
+    "FAIL_CLOSED": {
+      "invalid_decision_bundle_becomes_unavailable": true,
+      "ambiguous_duplicate_positions_fail_hard": true,
+      "position_context_mismatch_becomes_unavailable": true,
+      "forbidden_execution_fields_fail_hard": true
+    },
+    "EXPLANATION": {
+      "explanation_id_preserved": true,
+      "missing_or_limited_evidence_preserved": true,
+      "decision_change_triggers_preserved": true,
+      "reliability_not_interpreted_as_success_probability": true
+    },
+    "REPRODUCIBILITY": {
+      "canonical_watch_id_required": true,
+      "same_inputs_same_watch_id_required": true,
+      "post_build_tampering_detected": true,
+      "w10_snapshot_identity_required": true
+    }
+  },
+  "current_finding_policy": {
+    "stale_runtime_transport_is_ba_qm9_safety_test": true,
+    "stale_runtime_transport_operational_cause_routes_to_ba_qm10": true,
+    "stale_runtime_may_not_generate_watch": true
+  },
+  "dependencies": {
+    "ba_qm8_engineering_complete_required": true,
+    "lag1_finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+    "lag1_capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+    "lag1_evidence_impact": "PROMOTION_BLOCKED",
+    "ba_qm9_may_release_lag1_block": false
+  },
+  "closure_claimed": false,
+  "next_step": "Run the complete BA-QM9 manipulation and current-state audit. If all eleven QM dimensions pass fail-closed and no product logic is changed, close BA-QM9 and hand off operational findings to BA-QM10."
+}
