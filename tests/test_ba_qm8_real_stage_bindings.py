@@ -5,7 +5,7 @@ from scanner.research.governance.ba_qm8_real_stage_bindings import (
 )
 
 
-def test_current_real_snapshot_is_audited_without_inventing_missing_provenance() -> None:
+def test_current_real_prospective_snapshot_is_fully_bound_without_invented_provenance() -> None:
     result = audit_real_stage_bindings()
 
     assert result["w10_status"] == "sealed"
@@ -24,10 +24,14 @@ def test_current_real_snapshot_is_audited_without_inventing_missing_provenance()
     assert stages["DECISION_LAYER"]["status"] == "PASS_PRIVACY_BOUNDARY"
     assert stages["EXTERNAL_EVIDENCE"]["status"] == "PASS_DISABLED_BOUNDARY"
 
-    assert stages["DATA"]["status"] == "PARTIAL"
-    assert "scanner_input_provenance_missing" in stages["DATA"]["gaps"]
-    assert "DATA" in result["closure_blockers"]
-    assert result["closure_eligible"] is False
+    assert stages["DATA"]["status"] == "PASS"
+    assert stages["DATA"]["gaps"] == []
+    assert stages["DATA"]["evidence"]["scanner_input_provenance_present"] is True
+    assert stages["DATA"]["evidence"]["historical_backfill"] is False
+    assert stages["SCANNER"]["evidence"]["scanner_input_provenance_bound_in_w10"] is True
+    assert result["closure_blockers"] == []
+    assert result["closure_eligible"] is True
+    assert result["status"] == "REAL_STAGE_BINDINGS_PASS"
 
     assert result["missing_treated_as_neutral"] is False
     assert result["guessed_lineage_added"] is False
