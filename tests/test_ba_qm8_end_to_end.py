@@ -42,6 +42,7 @@ def test_ba_qm8_contract_foundation_binds_full_chain_without_claiming_closure() 
     assert receipt["transition_guard_status"] == "IMPLEMENTED_FAIL_CLOSED_ENGINE"
     assert receipt["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
     assert receipt["data_scanner_provenance_status"] == "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
+    assert receipt["real_transition_observation_status"] == "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
     assert receipt["stage_count"] == 11
     assert receipt["transition_count"] == 10
     assert receipt["error_class_count"] == 7
@@ -188,5 +189,15 @@ def test_contract_rejects_claiming_first_prospective_scanner_provenance_before_p
     changed["data_scanner_provenance_status"] = "PROSPECTIVE_SNAPSHOT_VERIFIED"
     with pytest.raises(
         BAQM8AuditError, match="ba_qm8_data_scanner_provenance_status_invalid"
+    ):
+        validate_contract(changed)
+
+
+def test_contract_rejects_claiming_all_real_transitions_before_fresh_data_provenance() -> None:
+    value = load_contract()
+    changed = copy.deepcopy(value)
+    changed["real_transition_observation_status"] = "ALL_10_TRANSITIONS_VERIFIED"
+    with pytest.raises(
+        BAQM8AuditError, match="ba_qm8_real_transition_observation_status_invalid"
     ):
         validate_contract(changed)
