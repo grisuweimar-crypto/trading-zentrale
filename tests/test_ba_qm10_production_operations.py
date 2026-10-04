@@ -8,7 +8,9 @@ from scanner.research.governance.ba_qm10_production_operations import (
     BAQM10AuditError,
     EXPECTED_CHECKS,
     EXPECTED_FINDINGS,
+    EXPECTED_FINDING_STATES,
     audit_current_operations,
+    audit_current_runtime_capacity,
     load_contract,
     validate_contract,
 )
@@ -27,6 +29,7 @@ def test_ba_qm10_contract_is_pure_qm_and_covers_all_masterplan_dimensions() -> N
     assert contract["empirical_promotion_performed"] is False
     assert contract["closure_claimed"] is False
     assert tuple(row["finding_id"] for row in contract["findings"]) == EXPECTED_FINDINGS
+    assert {row["finding_id"]: row["state"] for row in contract["findings"]} == EXPECTED_FINDING_STATES
 
 
 def test_ba_qm10_current_operations_audit_exposes_real_findings_fail_closed() -> None:
@@ -36,6 +39,7 @@ def test_ba_qm10_current_operations_audit_exposes_real_findings_fail_closed() ->
     assert result["required_check_count"] == 13
     assert tuple(result["check_status"].keys()) == EXPECTED_CHECKS
     assert result["open_finding_count"] == 3
+    assert result["implemented_capa_pending_verification_count"] == 1
     assert set(result["open_findings"]) == set(EXPECTED_FINDINGS)
     assert result["false_decision_observed"] is False
     assert result["all_observed_failures_fail_closed"] is True
@@ -85,6 +89,10 @@ def test_f01_is_exactly_runtime_transport_capacity_and_never_false_watch() -> No
     f01 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F01")
     assert f01["inherited_from"] == "BA-QM9-F01"
     assert f01["category"] == "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY"
+    assert f01["state"] == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+    assert f01["capa"]["implemented"] is True
+    assert f01["capa"]["decision_logic_changed"] is False
+    assert f01["capa"]["packet_semantics_changed"] is False
     assert len(f01["evidence"]) == 2
     assert {row["max_shard_bytes"] for row in f01["evidence"]} == {2178135}
     assert {row["hard_limit_bytes"] for row in f01["evidence"]} == {2000000}
@@ -131,3 +139,16 @@ def test_contract_cannot_claim_ba_qm10_releases_lag1() -> None:
     changed["dependencies"]["ba_qm10_may_release_lag1_block"] = True
     with pytest.raises(BAQM10AuditError, match="ba_qm10_lag1_release_forbidden"):
         validate_contract(changed)
+
+
+def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
+    result = audit_current_runtime_capacity()
+    assert result["status"] == "PASS"
+    assert result["configured_shard_count"] == 32
+    assert result["shard_count"] == 32
+    assert result["max_shard_bytes"] < result["hard_limit_bytes"] == 2_000_000
+    assert result["symbol_count"] > 0
+    assert result["packet_count"] >= result["symbol_count"]
+    assert result["private_position_data_included"] is False
+    assert result["decision_logic_changed"] is False
+    assert result["writes_performed"] is False
