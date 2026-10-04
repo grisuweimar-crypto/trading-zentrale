@@ -89,3 +89,34 @@ def test_archive_never_turns_research_packet_into_action():
     packet["portfolio_action"] = "ADD"
     with pytest.raises(Exception, match="forbidden_decision_or_portfolio_fields"):
         validate_archive_packets([packet])
+
+
+def test_gzip_archive_round_trip_is_deterministic(tmp_path):
+    path = tmp_path / "archive.jsonl.gz"
+    first = append_prospective_packet(path, _selection_packet())
+    raw_first = path.read_bytes()
+    packets, loaded = load_evidence_archive(path)
+
+    assert first["packet_count"] == 1
+    assert first["archive_compressed"] is True
+    assert loaded["archive_compressed"] is True
+    assert loaded["legacy_fallback_used"] is False
+    assert packets[0]["source_snapshot_id"] == "snap-1"
+
+    # Rewriting the same normalized content must produce identical gzip bytes.
+    from scanner.research.decision_layer.evidence_archive import write_normalized_archive
+    write_normalized_archive(path, packets)
+    assert path.read_bytes() == raw_first
+
+
+def test_gzip_path_migrates_from_legacy_jsonl_when_missing(tmp_path):
+    legacy = tmp_path / "archive.jsonl"
+    append_prospective_packet(legacy, _selection_packet())
+    target = tmp_path / "archive.jsonl.gz"
+
+    packets, loaded = load_evidence_archive(target)
+
+    assert loaded["legacy_fallback_used"] is True
+    assert loaded["archive_source_path"] == str(legacy)
+    assert loaded["archive_compressed"] is False
+    assert packets[0]["source_snapshot_id"] == "snap-1"

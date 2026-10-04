@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
+import gzip
 import json
 from typing import Mapping, Sequence
 
@@ -111,6 +112,22 @@ def validate_archive_packets(
     return normalized, metadata
 
 
+def _archive_text(path: Path) -> tuple[str, Path]:
+    source = path
+    if not source.exists() and source.suffix == ".gz":
+        legacy = source.with_suffix("")
+        if legacy.exists():
+            source = legacy
+    if not source.exists():
+        raise FileNotFoundError(source)
+    if source.suffix == ".gz":
+        try:
+            return gzip.decompress(source.read_bytes()).decode("utf-8"), source
+        except (OSError, UnicodeDecodeError) as exc:
+            raise EvidenceArchiveError("evidence_archive_gzip_invalid") from exc
+    return source.read_text(encoding="utf-8"), source
+
+
 def load_evidence_archive(
     path: str | Path,
     *,
@@ -119,7 +136,9 @@ def load_evidence_archive(
 ) -> tuple[list[dict[str, object]], dict[str, object]]:
     """Read JSONL archive. Missing archive is an explicit zero-coverage state."""
     path = Path(path)
-    if not path.exists():
+    try:
+        text, source_path = _archive_text(path)
+    except FileNotFoundError:
         if not missing_ok:
             raise EvidenceArchiveError("evidence_archive_missing")
         return [], {
@@ -143,7 +162,7 @@ def load_evidence_archive(
         }
 
     packets: list[Mapping[str, object]] = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for number, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
             continue
         try:
@@ -155,6 +174,9 @@ def load_evidence_archive(
         packets.append(value)
     normalized, metadata = validate_archive_packets(packets, prospective_start=prospective_start)
     metadata["status"] = "available" if normalized else "empty_archive"
+    metadata["archive_source_path"] = str(source_path)
+    metadata["archive_compressed"] = source_path.suffix == ".gz"
+    metadata["legacy_fallback_used"] = source_path != path
     return normalized, metadata
 
 
@@ -169,7 +191,15 @@ def write_normalized_archive(
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     lines = [json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=True) for packet in normalized]
-    target.write_text(("\n".join(lines) + "\n") if lines else "", encoding="utf-8")
+    raw = (("\n".join(lines) + "\n") if lines else "").encode("utf-8")
+    if target.suffix == ".gz":
+        target.write_bytes(gzip.compress(raw, compresslevel=9, mtime=0))
+        metadata["archive_compressed"] = True
+    else:
+        target.write_bytes(raw)
+        metadata["archive_compressed"] = False
+    metadata["archive_source_path"] = str(target)
+    metadata["legacy_fallback_used"] = False
     return metadata
 
 

@@ -44,7 +44,7 @@ DEFAULT_LATEST = "artifacts/research/latest_scanner.csv"
 DEFAULT_HISTORY = "artifacts/research/history_analysis.csv"
 DEFAULT_TIMING_CATALOG = "artifacts/research/timing_patterns_1b_frozen.json"
 DEFAULT_PROBABILITY_CALIBRATION = "artifacts/research/probability_calibration_2.json"
-DEFAULT_ARCHIVE = "artifacts/research/decision_evidence_7a.jsonl"
+DEFAULT_ARCHIVE = "artifacts/research/decision_evidence_7a.jsonl.gz"
 DEFAULT_OUTPUT = "artifacts/research/current_decision_packets_7a.json"
 
 
