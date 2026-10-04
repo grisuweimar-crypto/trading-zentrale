@@ -4,22 +4,18 @@ import scanner.research.governance.ba_qm8_closure as closure_module
 from scanner.research.governance.ba_qm8_closure import evaluate_ba_qm8_closure
 
 
-def test_ba_qm8_closure_gate_stays_pending_on_historical_snapshot() -> None:
+def test_ba_qm8_closure_gate_completes_on_real_prospective_snapshot() -> None:
     result = evaluate_ba_qm8_closure()
 
-    assert result["status"] == "PENDING_PROSPECTIVE_SNAPSHOT"
-    assert result["stage_bindings_complete"] is False
-    assert result["real_transitions_complete"] is False
-    assert result["transition_pass_count"] == 9
-    assert result["transition_blocked_count"] == 1
-    assert result["engineering_closure_eligible"] is False
-    assert result["engineering_closure_performed"] is False
-
-    assert "stage:DATA" in result["closure_blockers"]
-    assert (
-        "transition:DATA->SCANNER:scanner_input_provenance_missing"
-        in result["closure_blockers"]
-    )
+    assert result["status"] == "BA_QM8_ENGINEERING_COMPLETE"
+    assert result["snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+    assert result["stage_bindings_complete"] is True
+    assert result["real_transitions_complete"] is True
+    assert result["transition_pass_count"] == 10
+    assert result["transition_blocked_count"] == 0
+    assert result["closure_blockers"] == []
+    assert result["engineering_closure_eligible"] is True
+    assert result["engineering_closure_performed"] is True
 
     assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert (
@@ -39,8 +35,12 @@ def test_ten_of_ten_makes_engineering_closure_eligible_but_never_releases_lag1(
         closure_module,
         "validate_foundation_file",
         lambda: {
-            "engineering_status": "IN_PROGRESS",
-            "closure_claimed": False,
+            "engineering_status": "COMPLETE",
+            "closure_claimed": True,
+            "closure_snapshot_id": "prospective-snapshot",
+            "closure_snapshot_as_of": "2026-10-04",
+            "closure_transition_pass_count": 10,
+            "closure_transition_blocked_count": 0,
             "evidence_impact": "PROMOTION_BLOCKED",
             "automatic_release_allowed": False,
         },
@@ -78,6 +78,7 @@ def test_ten_of_ten_makes_engineering_closure_eligible_but_never_releases_lag1(
         lambda root: {
             "status": "REAL_STAGE_BINDINGS_PASS",
             "snapshot_id": "prospective-snapshot",
+            "snapshot_as_of": "2026-10-04",
             "closure_eligible": True,
             "closure_blockers": [],
         },
@@ -96,9 +97,9 @@ def test_ten_of_ten_makes_engineering_closure_eligible_but_never_releases_lag1(
     )
 
     result = evaluate_ba_qm8_closure(".")
-    assert result["status"] == "ELIGIBLE_FOR_BA_QM8_ENGINEERING_CLOSURE"
+    assert result["status"] == "BA_QM8_ENGINEERING_COMPLETE"
     assert result["engineering_closure_eligible"] is True
-    assert result["engineering_closure_performed"] is False
+    assert result["engineering_closure_performed"] is True
     assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert result["ba_qm8_may_release_lag1_block"] is False
     assert result["automatic_release_allowed"] is False

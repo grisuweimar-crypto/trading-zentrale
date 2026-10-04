@@ -35,10 +35,13 @@ def evaluate_ba_qm8_closure(root: str | Path = _ROOT) -> dict[str, Any]:
     stages = audit_real_stage_bindings(root)
     transitions = audit_real_transitions(root)
 
-    if foundation.get("engineering_status") != "IN_PROGRESS":
+    if foundation.get("engineering_status") not in {"IN_PROGRESS", "COMPLETE"}:
         raise BAQM8ClosureError("ba_qm8_foundation_lifecycle_invalid")
-    if foundation.get("closure_claimed") is not False:
+    closure_claimed = foundation.get("closure_claimed")
+    if foundation.get("engineering_status") == "IN_PROGRESS" and closure_claimed is not False:
         raise BAQM8ClosureError("ba_qm8_foundation_must_not_preclaim_closure")
+    if foundation.get("engineering_status") == "COMPLETE" and closure_claimed is not True:
+        raise BAQM8ClosureError("ba_qm8_complete_foundation_must_claim_closure")
     if foundation.get("evidence_impact") != "PROMOTION_BLOCKED":
         raise BAQM8ClosureError("ba_qm8_lag1_promotion_block_missing")
     if foundation.get("automatic_release_allowed") is not False:
@@ -83,6 +86,18 @@ def evaluate_ba_qm8_closure(root: str | Path = _ROOT) -> dict[str, Any]:
     )
 
     eligible = stage_complete and transition_complete
+
+    if foundation.get("engineering_status") == "COMPLETE":
+        if not eligible:
+            raise BAQM8ClosureError("ba_qm8_complete_without_eligible_real_audit")
+        if str(foundation.get("closure_snapshot_id") or "") != str(stages.get("snapshot_id") or ""):
+            raise BAQM8ClosureError("ba_qm8_closure_snapshot_identity_mismatch")
+        if str(foundation.get("closure_snapshot_as_of") or "") != str(stages.get("snapshot_as_of") or ""):
+            raise BAQM8ClosureError("ba_qm8_closure_snapshot_as_of_mismatch")
+        if foundation.get("closure_transition_pass_count") != 10:
+            raise BAQM8ClosureError("ba_qm8_closure_transition_pass_count_invalid")
+        if foundation.get("closure_transition_blocked_count") != 0:
+            raise BAQM8ClosureError("ba_qm8_closure_transition_blocked_count_invalid")
     blockers: list[str] = []
     if not stage_complete:
         blockers.extend(
@@ -100,12 +115,18 @@ def evaluate_ba_qm8_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         else:
             blockers.append("transition:real_transition_audit_incomplete")
 
+    performed = foundation.get("engineering_status") == "COMPLETE" and eligible
+
     return {
         "schema_version": SCHEMA_VERSION,
         "status": (
-            "ELIGIBLE_FOR_BA_QM8_ENGINEERING_CLOSURE"
-            if eligible
-            else "PENDING_PROSPECTIVE_SNAPSHOT"
+            "BA_QM8_ENGINEERING_COMPLETE"
+            if performed
+            else (
+                "ELIGIBLE_FOR_BA_QM8_ENGINEERING_CLOSURE"
+                if eligible
+                else "PENDING_PROSPECTIVE_SNAPSHOT"
+            )
         ),
         "snapshot_id": stages.get("snapshot_id"),
         "stage_bindings_complete": stage_complete,
@@ -114,7 +135,7 @@ def evaluate_ba_qm8_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         "transition_blocked_count": transitions.get("transition_blocked_count"),
         "closure_blockers": blockers,
         "engineering_closure_eligible": eligible,
-        "engineering_closure_performed": False,
+        "engineering_closure_performed": performed,
         "empirical_validation_claimed": False,
         "empirical_promotion_performed": False,
         "lag1_finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",

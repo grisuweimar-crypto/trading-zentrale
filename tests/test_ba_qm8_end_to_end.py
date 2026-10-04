@@ -35,15 +35,15 @@ def _dependencies() -> dict:
     }
 
 
-def test_ba_qm8_contract_foundation_binds_full_chain_without_claiming_closure() -> None:
+def test_ba_qm8_contract_foundation_records_completed_prospective_chain() -> None:
     receipt = validate_foundation_file()
     assert receipt["status"] == "PASSED_CONTRACT_FOUNDATION"
-    assert receipt["engineering_status"] == "IN_PROGRESS"
+    assert receipt["engineering_status"] == "COMPLETE"
     assert receipt["transition_guard_status"] == "IMPLEMENTED_FAIL_CLOSED_ENGINE"
-    assert receipt["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
-    assert receipt["data_scanner_provenance_status"] == "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
-    assert receipt["real_transition_observation_status"] == "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
-    assert receipt["closure_gate_status"] == "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10"
+    assert receipt["real_stage_adapter_status"] == "COMPLETE_PROSPECTIVE_VERIFIED"
+    assert receipt["data_scanner_provenance_status"] == "PROSPECTIVE_SNAPSHOT_VERIFIED"
+    assert receipt["real_transition_observation_status"] == "ALL_10_TRANSITIONS_VERIFIED"
+    assert receipt["closure_gate_status"] == "PASSED_10_OF_10"
     assert receipt["stage_count"] == 11
     assert receipt["transition_count"] == 10
     assert receipt["error_class_count"] == 7
@@ -54,7 +54,12 @@ def test_ba_qm8_contract_foundation_binds_full_chain_without_claiming_closure() 
     assert receipt["effectiveness_verification_pending"] is True
     assert receipt["automatic_release_allowed"] is False
     assert receipt["empirical_promotion_performed"] is False
-    assert receipt["closure_claimed"] is False
+    assert receipt["closure_claimed"] is True
+    assert receipt["closure_snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+    assert receipt["closure_snapshot_as_of"] == "2026-10-04"
+    assert receipt["closure_transition_pass_count"] == 10
+    assert receipt["closure_transition_blocked_count"] == 0
+    assert receipt["next_mandatory_work_package"] == "BA-QM9 – Wertpapierdepot-Watch Audit"
 
 
 def test_contract_rejects_missing_or_reordered_stage() -> None:
@@ -174,30 +179,30 @@ def test_dependency_binding_rejects_missing_qm_i_independence_guard() -> None:
         validate_dependencies(contract, **dependencies)
 
 
-def test_contract_rejects_claiming_real_stage_adapter_fully_closed_while_gaps_exist() -> None:
+def test_contract_rejects_regressing_real_stage_adapter_after_closure() -> None:
     value = load_contract()
     changed = copy.deepcopy(value)
-    changed["real_stage_adapter_status"] = "COMPLETE"
+    changed["real_stage_adapter_status"] = "IMPLEMENTED_WITH_OPEN_GAPS"
     with pytest.raises(
         BAQM8AuditError, match="ba_qm8_real_stage_adapter_status_invalid"
     ):
         validate_contract(changed)
 
 
-def test_contract_rejects_claiming_first_prospective_scanner_provenance_before_publication() -> None:
+def test_contract_rejects_regressing_prospective_scanner_provenance_after_closure() -> None:
     value = load_contract()
     changed = copy.deepcopy(value)
-    changed["data_scanner_provenance_status"] = "PROSPECTIVE_SNAPSHOT_VERIFIED"
+    changed["data_scanner_provenance_status"] = "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
     with pytest.raises(
         BAQM8AuditError, match="ba_qm8_data_scanner_provenance_status_invalid"
     ):
         validate_contract(changed)
 
 
-def test_contract_rejects_claiming_all_real_transitions_before_fresh_data_provenance() -> None:
+def test_contract_rejects_regressing_real_transitions_after_closure() -> None:
     value = load_contract()
     changed = copy.deepcopy(value)
-    changed["real_transition_observation_status"] = "ALL_10_TRANSITIONS_VERIFIED"
+    changed["real_transition_observation_status"] = "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
     with pytest.raises(
         BAQM8AuditError, match="ba_qm8_real_transition_observation_status_invalid"
     ):
