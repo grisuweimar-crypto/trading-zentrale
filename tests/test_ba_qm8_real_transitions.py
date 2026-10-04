@@ -6,29 +6,22 @@ from scanner.research.governance.ba_qm8_real_transitions import (
 )
 
 
-def test_current_real_snapshot_executes_nine_of_ten_transitions_fail_closed() -> None:
+def test_current_real_snapshot_executes_all_ten_transitions_fail_closed() -> None:
     result = audit_real_transitions()
 
-    assert result["status"] == "REAL_TRANSITIONS_PARTIAL_DATA_PROVENANCE_BLOCKED"
-    assert result["transition_pass_count"] == 9
-    assert result["transition_blocked_count"] == 1
-    assert result["closure_eligible"] is False
+    assert result["status"] == "REAL_TRANSITIONS_PASS"
+    assert result["transition_pass_count"] == 10
+    assert result["transition_blocked_count"] == 0
+    assert result["closure_eligible"] is True
     assert result["historical_lineage_backfilled"] is False
     assert result["missing_treated_as_neutral"] is False
     assert result["all_executed_transitions_cover_all_seven_classes"] is True
 
-    blocked = result["blocked_transitions"]
-    assert blocked == [
-        {
-            "from_stage": "DATA",
-            "to_stage": "SCANNER",
-            "reason": "scanner_input_provenance_missing",
-            "historical_backfill_attempted": False,
-        }
-    ]
+    assert result["blocked_transitions"] == []
 
     pairs = [(r["from_stage"], r["to_stage"]) for r in result["receipts"]]
     assert pairs == [
+        ("DATA", "SCANNER"),
         ("SCANNER", "SELECTION"),
         ("SELECTION", "TIMING"),
         ("TIMING", "PROBABILITY"),
