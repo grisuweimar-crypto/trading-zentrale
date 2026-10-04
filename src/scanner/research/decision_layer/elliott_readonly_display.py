@@ -66,8 +66,7 @@ def _route_summary(value: object) -> list[dict[str, object]]:
     return rows
 
 
-def _compact_output(raw: Mapping[str, object]) -> dict[str, object]:
-    output = validate_module_output(raw)
+def _compact_validated_output(output: Mapping[str, object]) -> dict[str, object]:
     alternatives = output.get("alternative_scenarios")
     alternatives = alternatives if isinstance(alternatives, list) else []
     integration = output.get("integration")
@@ -100,6 +99,10 @@ def _compact_output(raw: Mapping[str, object]) -> dict[str, object]:
         "validation": deepcopy(output.get("validation", {})),
         "warnings": deepcopy(output.get("warnings", [])),
     }
+
+
+def _compact_output(raw: Mapping[str, object]) -> dict[str, object]:
+    return _compact_validated_output(validate_module_output(raw))
 
 
 def validate_prospective_capture_for_display(
@@ -164,6 +167,84 @@ def validate_prospective_capture_for_display(
     return result
 
 
+def prepare_elliott_watch_display_capture(
+    value: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate and compact one prospective capture exactly once."""
+    source = validate_prospective_capture_for_display(value)
+    raw_outputs = source.get("outputs")
+    assert isinstance(raw_outputs, list)
+    outputs_by_symbol: dict[str, list[dict[str, object]]] = {}
+    for output in raw_outputs:
+        assert isinstance(output, Mapping)
+        symbol = str(output.get("symbol") or "")
+        outputs_by_symbol.setdefault(symbol, []).append(
+            _compact_validated_output(output)
+        )
+    for symbol in outputs_by_symbol:
+        outputs_by_symbol[symbol].sort(
+            key=lambda row: (
+                str(row.get("timeframe") or ""),
+                str(row.get("degree") or ""),
+            )
+        )
+    return {
+        "source": source,
+        "outputs_by_symbol": outputs_by_symbol,
+    }
+
+
+def build_prepared_elliott_watch_display(
+    prepared: Mapping[str, object] | None,
+    *,
+    symbol: str,
+    expected_snapshot_id: str,
+    expected_as_of: str,
+) -> dict[str, object]:
+    """Build one display block from a capture validated once for the whole Watch."""
+    symbol = str(symbol or "").strip()
+    if not symbol:
+        raise ElliottWatchDisplayError("elliott_display_symbol_required")
+    if prepared is None:
+        return _base(
+            symbol=symbol,
+            status=MISSING_STATUS,
+            reason="no_prospective_elliott_capture_available_for_watch_display",
+            source=None,
+        )
+    source = prepared.get("source")
+    outputs_by_symbol = prepared.get("outputs_by_symbol")
+    if not isinstance(source, Mapping) or not isinstance(outputs_by_symbol, Mapping):
+        raise ElliottWatchDisplayError("elliott_prepared_capture_invalid")
+    if (
+        str(source.get("snapshot_id") or "") != str(expected_snapshot_id or "")
+        or str(source.get("as_of") or "") != str(expected_as_of or "")
+    ):
+        return _base(
+            symbol=symbol,
+            status=STALE_STATUS,
+            reason="prospective_elliott_capture_does_not_match_current_watch_snapshot",
+            source=source,
+        )
+    outputs = deepcopy(list(outputs_by_symbol.get(symbol, [])))
+    if not outputs:
+        return _base(
+            symbol=symbol,
+            status=NO_SYMBOL_STATUS,
+            reason="current_capture_contains_no_6h_output_for_symbol",
+            source=source,
+        )
+    result = _base(
+        symbol=symbol,
+        status=AVAILABLE_STATUS,
+        reason="current_prospective_6h_outputs_available_read_only",
+        source=source,
+    )
+    result["outputs"] = outputs
+    result["output_count"] = len(outputs)
+    return result
+
+
 def _base(
     *,
     symbol: str,
@@ -204,52 +285,16 @@ def build_elliott_watch_display(
     expected_snapshot_id: str,
     expected_as_of: str,
 ) -> dict[str, object]:
-    """Build one read-only display block without touching Decision semantics."""
-    symbol = str(symbol or "").strip()
-    if not symbol:
-        raise ElliottWatchDisplayError("elliott_display_symbol_required")
-    if capture is None:
-        return _base(
-            symbol=symbol,
-            status=MISSING_STATUS,
-            reason="no_prospective_elliott_capture_available_for_watch_display",
-            source=None,
-        )
-
-    source = validate_prospective_capture_for_display(capture)
-    if (
-        str(source.get("snapshot_id") or "") != str(expected_snapshot_id or "")
-        or str(source.get("as_of") or "") != str(expected_as_of or "")
-    ):
-        return _base(
-            symbol=symbol,
-            status=STALE_STATUS,
-            reason="prospective_elliott_capture_does_not_match_current_watch_snapshot",
-            source=source,
-        )
-
-    raw_outputs = source["outputs"]
-    assert isinstance(raw_outputs, list)
-    outputs = [
-        _compact_output(output)
-        for output in raw_outputs
-        if str(output.get("symbol") or "") == symbol
-    ]
-    outputs.sort(key=lambda row: (str(row.get("timeframe") or ""), str(row.get("degree") or "")))
-    if not outputs:
-        return _base(
-            symbol=symbol,
-            status=NO_SYMBOL_STATUS,
-            reason="current_capture_contains_no_6h_output_for_symbol",
-            source=source,
-        )
-
-    result = _base(
-        symbol=symbol,
-        status=AVAILABLE_STATUS,
-        reason="current_prospective_6h_outputs_available_read_only",
-        source=source,
+    """Backward-compatible one-off wrapper for read-only display callers."""
+    prepared = (
+        None
+        if capture is None
+        else prepare_elliott_watch_display_capture(capture)
     )
-    result["outputs"] = outputs
-    result["output_count"] = len(outputs)
-    return result
+    return build_prepared_elliott_watch_display(
+        prepared,
+        symbol=symbol,
+        expected_snapshot_id=expected_snapshot_id,
+        expected_as_of=expected_as_of,
+    )
+
