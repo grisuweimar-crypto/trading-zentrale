@@ -130,6 +130,46 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
             raise BAQM10AuditError(f"ba_qm10_finding_not_fail_closed:{row.get('finding_id')}")
         if row.get("finding_id") == "BA-QM10-F01" and effect.get("false_watch_accepted") is not False:
             raise BAQM10AuditError("ba_qm10_f01_false_watch_guard_invalid")
+        effectiveness = _mapping(
+            row.get("effectiveness"),
+            f"effectiveness:{row.get('finding_id')}",
+        )
+        if effectiveness.get("verification_status") != "EFFECTIVE":
+            raise BAQM10AuditError(
+                f"ba_qm10_finding_effectiveness_invalid:{row.get('finding_id')}"
+            )
+        _mapping(
+            effectiveness.get("evidence"),
+            f"effectiveness_evidence:{row.get('finding_id')}",
+        )
+        if effectiveness.get("decision_logic_changed") is not False:
+            raise BAQM10AuditError(
+                f"ba_qm10_finding_effectiveness_changed_decision:{row.get('finding_id')}"
+            )
+
+    risks = value.get("static_risks_to_verify")
+    if not isinstance(risks, list) or len(risks) != 1:
+        raise BAQM10AuditError("ba_qm10_static_risk_registry_invalid")
+    risk = _mapping(risks[0], "static_risk")
+    if risk.get("risk_id") != "BA-QM10-R01":
+        raise BAQM10AuditError("ba_qm10_static_risk_id_invalid")
+    if risk.get("state") != "CLOSED_EFFECTIVE":
+        raise BAQM10AuditError("ba_qm10_static_risk_not_closed_effective")
+    risk_effectiveness = _mapping(risk.get("effectiveness"), "static_risk_effectiveness")
+    if risk_effectiveness.get("verification_status") != "EFFECTIVE":
+        raise BAQM10AuditError("ba_qm10_static_risk_effectiveness_invalid")
+    if risk_effectiveness.get("decision_logic_changed") is not False:
+        raise BAQM10AuditError("ba_qm10_static_risk_changed_decision")
+
+    closure_evidence = _mapping(value.get("closure_evidence"), "closure_evidence")
+    if not str(closure_evidence.get("snapshot_id") or "").strip():
+        raise BAQM10AuditError("ba_qm10_closure_snapshot_id_required")
+    if closure_evidence.get("ba_qm10_ci_passed_tests") != 76:
+        raise BAQM10AuditError("ba_qm10_closure_ci_test_count_invalid")
+    if closure_evidence.get("public_runtime_shard_count") != 32:
+        raise BAQM10AuditError("ba_qm10_closure_runtime_shard_count_invalid")
+    if value.get("next_mandatory_work_package") != "BA-QM11 – Gesamtsystem-Audit":
+        raise BAQM10AuditError("ba_qm10_next_work_package_invalid")
 
     deps = _mapping(value.get("dependencies"), "dependencies")
     if deps.get("ba_qm8_complete") is not True or deps.get("ba_qm9_complete") is not True:
