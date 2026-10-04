@@ -1,6 +1,10 @@
 name: Scanner_vNext Autopilot
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/ba_qm8_force_scan_once.txt"
   schedule:
     # Primaertermin plus Nachholtermine bei verspaeteten/ausgefallenen GitHub-Starts.
     - cron: '7 17 * * *'
