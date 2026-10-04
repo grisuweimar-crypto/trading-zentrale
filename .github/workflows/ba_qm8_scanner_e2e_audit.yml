@@ -8,6 +8,7 @@ on:
       - "src/scanner/research/governance/ba_qm8_transition_guard.py"
       - "src/scanner/research/governance/ba_qm8_real_stage_bindings.py"
       - "src/scanner/research/governance/ba_qm8_real_transitions.py"
+      - "src/scanner/research/governance/ba_qm8_closure.py"
       - "src/scanner/reports/scanner_provenance.py"
       - "src/scanner/reports/daily_research.py"
       - "src/scanner/reports/research_validation.py"
@@ -17,6 +18,7 @@ on:
       - "tests/test_ba_qm8_transition_guard.py"
       - "tests/test_ba_qm8_real_stage_bindings.py"
       - "tests/test_ba_qm8_real_transitions.py"
+      - "tests/test_ba_qm8_closure.py"
       - "tests/test_scanner_provenance.py"
       - "tests/test_w10_snapshot_orchestration.py"
       - "artifacts/research/daily_research.json"
@@ -65,6 +67,7 @@ jobs:
             tests/test_ba_qm8_transition_guard.py \
             tests/test_ba_qm8_real_stage_bindings.py \
             tests/test_ba_qm8_real_transitions.py \
+            tests/test_ba_qm8_closure.py \
             tests/test_qm_j_closure.py \
             tests/test_qm_j_selection_freshness_gate.py \
             tests/test_w11_end_to_end_acceptance.py \
@@ -73,6 +76,7 @@ jobs:
           from scanner.research.governance.ba_qm8_end_to_end import validate_foundation_file
           from scanner.research.governance.ba_qm8_real_stage_bindings import audit_real_stage_bindings
           from scanner.research.governance.ba_qm8_real_transitions import audit_real_transitions
+          from scanner.research.governance.ba_qm8_closure import evaluate_ba_qm8_closure
 
           foundation = validate_foundation_file()
           assert foundation["status"] == "PASSED_CONTRACT_FOUNDATION"
@@ -81,6 +85,7 @@ jobs:
           assert foundation["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
           assert foundation["data_scanner_provenance_status"] == "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
           assert foundation["real_transition_observation_status"] == "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
+          assert foundation["closure_gate_status"] == "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10"
           assert foundation["evidence_impact"] == "PROMOTION_BLOCKED"
           assert foundation["effectiveness_verification_pending"] is True
           assert foundation["automatic_release_allowed"] is False
@@ -103,7 +108,14 @@ jobs:
           assert transitions["closure_eligible"] is False
           assert transitions["historical_lineage_backfilled"] is False
           assert transitions["missing_treated_as_neutral"] is False
+          closure = evaluate_ba_qm8_closure()
+          assert closure["status"] == "PENDING_PROSPECTIVE_SNAPSHOT"
+          assert closure["engineering_closure_eligible"] is False
+          assert closure["engineering_closure_performed"] is False
+          assert closure["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+          assert closure["ba_qm8_may_release_lag1_block"] is False
           print(foundation)
           print(real)
           print(transitions)
+          print(closure)
           PY
