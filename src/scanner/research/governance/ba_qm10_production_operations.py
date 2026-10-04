@@ -259,6 +259,11 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
     }
 
     findings = {row["finding_id"]: row["state"] for row in contract["findings"]}
+    risks = {
+        row["risk_id"]: row.get("state")
+        for row in contract.get("static_risks_to_verify", [])
+        if isinstance(row, Mapping)
+    }
     check_status = dict(contract["current_assessment"])
 
     return {
@@ -280,6 +285,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
             for state in findings.values()
         ),
         "scanner_publication_race_risk_open": not static["scanner_explicit_main_advance_refusal_guard"],
+        "static_risk_states": risks,
         "false_decision_observed": False,
         "all_observed_failures_fail_closed": True,
         "research_logic_changed": False,
