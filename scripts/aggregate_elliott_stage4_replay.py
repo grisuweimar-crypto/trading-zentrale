@@ -211,7 +211,7 @@ def main() -> int:
         price_source_sha256=source_hash,
         source_commit=source_commit,
         replay_chunk_count=args.chunk_count,
-        config=ValidationConfig(bootstrap_reps=args.bootstrap_reps),
+        config=ValidationConfig(bootstrap_reps=args.bootstrap_reps, replay_price_basis="raw"),
     )
     _atomic_json(output_path, result)
 
