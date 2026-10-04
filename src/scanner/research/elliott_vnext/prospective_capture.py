@@ -22,6 +22,7 @@ from .validation_replay import replay_symbol_states
 
 
 SCHEMA_VERSION = "elliott_vnext_prospective_capture_v1"
+CAPTURE_ENGINE_VERSION = "prospective_capture_engine_v2_iso_date_replay"
 MODULE = "6H_prospective_shadow_capture"
 
 
@@ -160,6 +161,7 @@ def build_prospective_capture(
     }
     identity = {
         "schema_version": SCHEMA_VERSION,
+        "capture_engine_version": CAPTURE_ENGINE_VERSION,
         "snapshot_id": snapshot_id,
         "as_of": as_of,
         "run_id": run,
@@ -177,6 +179,7 @@ def build_prospective_capture(
     capture_id = _canonical_hash(identity)
     return {
         "schema_version": SCHEMA_VERSION,
+        "capture_engine_version": CAPTURE_ENGINE_VERSION,
         "module": MODULE,
         "capture_id": capture_id,
         "snapshot_id": snapshot_id,
@@ -233,29 +236,63 @@ def archive_capture(
     path: Path,
     capture: Mapping[str, object],
 ) -> tuple[bool, dict[str, object]]:
-    """Append once; same snapshot/run with a different capture fails closed."""
+    """Append once; allow one explicit repair of a pre-v2 empty capture.
+
+    The first live Stage-1 run exposed an operational date-transport bug that
+    could archive a structurally valid but completely empty capture.  Those
+    records remain in history for auditability, but a capture produced by the
+    repaired engine may supersede such a legacy all-zero record for the same
+    scanner snapshot/run.  Any other identity conflict still fails closed.
+    """
     if capture.get("schema_version") != SCHEMA_VERSION:
         raise ProspectiveCaptureError("unsupported_capture_schema")
     capture_id = str(capture.get("capture_id") or "")
     snapshot_id = str(capture.get("snapshot_id") or "")
     run_id = str(capture.get("run_id") or "")
+    engine = str(capture.get("capture_engine_version") or "")
     if not capture_id or not snapshot_id or not run_id:
         raise ProspectiveCaptureError("capture_identity_incomplete")
+    if engine != CAPTURE_ENGINE_VERSION:
+        raise ProspectiveCaptureError("unsupported_capture_engine_version")
 
     rows = _load_archive(path)
+    superseded: list[str] = []
     for existing in rows:
         same_snapshot = str(existing.get("snapshot_id") or "") == snapshot_id
         same_run = str(existing.get("run_id") or "") == run_id
         if not (same_snapshot or same_run):
             continue
-        if str(existing.get("capture_id") or "") != capture_id:
-            raise ProspectiveCaptureError("prospective_capture_identity_conflict")
-        return False, existing
+        if str(existing.get("capture_id") or "") == capture_id:
+            return False, existing
+
+        existing_engine = str(existing.get("capture_engine_version") or "")
+        existing_output_count = int(existing.get("output_count") or 0)
+        existing_symbols = int(existing.get("symbols_with_outputs") or 0)
+        repairable_legacy_empty = (
+            existing_engine != CAPTURE_ENGINE_VERSION
+            and existing_output_count == 0
+            and existing_symbols == 0
+        )
+        if repairable_legacy_empty:
+            old_id = str(existing.get("capture_id") or "")
+            if old_id:
+                superseded.append(old_id)
+            continue
+        raise ProspectiveCaptureError("prospective_capture_identity_conflict")
+
+    stored = dict(capture)
+    if superseded:
+        stored["repair"] = {
+            "reason": "supersede_pre_v2_empty_capture_after_iso_date_replay_fix",
+            "supersedes_capture_ids": sorted(set(superseded)),
+            "legacy_records_preserved": True,
+        }
 
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(
-            json.dumps(capture, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            json.dumps(stored, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
             + "\n"
         )
-    return True, dict(capture)
+    return True, stored
+
