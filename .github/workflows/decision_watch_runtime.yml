@@ -152,7 +152,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          from scanner.research.decision_layer.watch_runtime import validate_runtime_manifest
+          from scanner.research.decision_layer.watch_runtime import SHARD_IDS, validate_runtime_manifest
           from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
 
           root = Path('.')
@@ -163,7 +163,7 @@ jobs:
           sealed = validate_sealed_manifest(w10)
           validated = validate_runtime_manifest(runtime, w10_manifest=sealed, expected_snapshot_id=sealed['snapshot_id'])
           shard_paths = sorted(runtime_dir.glob('shard_*.json'))
-          assert len(shard_paths) == 16
+          assert len(shard_paths) == len(SHARD_IDS)
           assert validated['private_position_data_included'] is False
           assert validated['decision_logic_changed'] is False
           assert validated['symbol_count'] > 0
