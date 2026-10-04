@@ -115,6 +115,21 @@ Current claim inventory:
 | Risk | 426 |
 | Confidence | 1,041 |
 
+### Package 4 – Prospective 10/10 verification gate
+
+Implemented:
+
+- BA-QM8 runs automatically after a successful main-branch Decision Watch seal;
+- overlapping prospective audits are consolidated so only the latest sealed state is evaluated;
+- the workflow now distinguishes two valid runtime states instead of hard-coding the historical one:
+  - pre-provenance snapshot: DATA remains `PARTIAL`, 9/10 transitions pass, closure remains pending;
+  - provenance-bound prospective snapshot: DATA is `PASS`, all 10/10 transitions pass, engineering closure becomes eligible;
+- neither branch may release the independent Lag-1 `PROMOTION_BLOCKED` state;
+- prospective 10/10 eligibility still does not itself perform BA-QM8 engineering closure or claim empirical validation/promotion.
+
+This package is the handoff from engineering preparation to the first real
+prospective end-to-end verification.
+
 ## Current real-stage result
 
 | Stage | Status | Current audit result |
