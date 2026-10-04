@@ -43,6 +43,7 @@ def test_ba_qm8_contract_foundation_binds_full_chain_without_claiming_closure() 
     assert receipt["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
     assert receipt["data_scanner_provenance_status"] == "IMPLEMENTED_AWAITING_FIRST_PROSPECTIVE_SNAPSHOT"
     assert receipt["real_transition_observation_status"] == "IMPLEMENTED_CURRENT_SNAPSHOT_9_OF_10_DATA_BLOCKED"
+    assert receipt["closure_gate_status"] == "IMPLEMENTED_PENDING_PROSPECTIVE_10_OF_10"
     assert receipt["stage_count"] == 11
     assert receipt["transition_count"] == 10
     assert receipt["error_class_count"] == 7
