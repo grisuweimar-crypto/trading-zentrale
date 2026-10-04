@@ -27,6 +27,12 @@ The full real history is replayed causally through:
 
 Only data available at each historical `as_of` may influence that state.
 
+For the structural replay itself, Stage 4 uses the observed raw OHLC bars. This
+avoids discarding otherwise valid structural history merely because
+`adj_close` is partially unavailable. Adjusted prices remain mandatory for
+forward-performance outcomes; there is still no Raw-Close fallback for returns,
+MFE/MAE or projection-hit performance.
+
 ## Real source
 
 Primary source:
