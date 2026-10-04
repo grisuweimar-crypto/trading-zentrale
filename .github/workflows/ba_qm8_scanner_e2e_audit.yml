@@ -1,0 +1,57 @@
+name: BA-QM8 End-to-End Scanner Audit
+
+on:
+  pull_request:
+    paths:
+      - "configs/ba_qm8_scanner_e2e_audit_v1.json"
+      - "src/scanner/research/governance/ba_qm8_end_to_end.py"
+      - "tests/test_ba_qm8_end_to_end.py"
+      - "configs/ba_qm7_qm_j_closure_v1.json"
+      - "src/scanner/research/governance/qm_j_closure.py"
+      - "configs/qm_j_phase1a_selection_freshness_gate_v1.json"
+      - "src/scanner/research/governance/qm_j_selection_freshness_gate.py"
+      - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
+      - "configs/qm_i_evidence_lineage_v1.json"
+      - "src/scanner/research/governance/qm_i_lineage.py"
+      - "src/scanner/research/decision_layer/w10_orchestration.py"
+      - "src/scanner/research/decision_layer/w11_end_to_end.py"
+      - "tests/test_w11_end_to_end_acceptance.py"
+      - "tests/test_w12_ferrari_regression.py"
+      - "configs/external_evidence_8_contract_v1.json"
+      - "artifacts/research/external_evidence_8c_completion.json"
+      - ".github/workflows/ba_qm8_scanner_e2e_audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ba-qm8-contract-foundation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Validate BA-QM8 contract foundation and predecessor guards
+        run: |
+          python -m pytest -q             tests/test_ba_qm8_end_to_end.py             tests/test_qm_j_closure.py             tests/test_qm_j_selection_freshness_gate.py             tests/test_w11_end_to_end_acceptance.py             tests/test_w12_ferrari_regression.py
+          python - <<'PY'
+          from scanner.research.governance.ba_qm8_end_to_end import validate_foundation_file
+
+          result = validate_foundation_file()
+          assert result["status"] == "PASSED_CONTRACT_FOUNDATION"
+          assert result["engineering_status"] == "IN_PROGRESS"
+          assert result["stage_count"] == 11
+          assert result["transition_count"] == 10
+          assert result["error_class_count"] == 7
+          assert result["all_transitions_cover_all_error_classes"] is True
+          assert result["evidence_impact"] == "PROMOTION_BLOCKED"
+          assert result["effectiveness_verification_pending"] is True
+          assert result["automatic_release_allowed"] is False
+          assert result["empirical_promotion_performed"] is False
+          assert result["closure_claimed"] is False
+          print(result)
+          PY
