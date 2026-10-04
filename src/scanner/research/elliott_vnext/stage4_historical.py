@@ -125,16 +125,12 @@ def _replay_guard_review(
     }
 
 
-def build_stage4_historical_validation(
+def _prepare_stage4_inputs(
     prices: pd.DataFrame | Iterable[Mapping[str, Any]],
     *,
-    symbols: Sequence[str] | None = None,
     price_source_sha256: str,
     source_commit: str,
-    config: ValidationConfig = ValidationConfig(),
-) -> dict[str, Any]:
-    """Run the full frozen 6A->6D replay and 6G historical validation."""
-
+) -> tuple[pd.DataFrame, str, str]:
     frame = prices.copy() if isinstance(prices, pd.DataFrame) else pd.DataFrame(list(prices))
     if frame.empty:
         raise Stage4HistoricalValidationError("price_history_empty")
@@ -144,20 +140,33 @@ def build_stage4_historical_validation(
         raise Stage4HistoricalValidationError(
             "price_history_columns_missing:" + ",".join(missing)
         )
-
     commit = str(source_commit or "").strip().lower()
     if len(commit) != 40 or any(ch not in "0123456789abcdef" for ch in commit):
         raise Stage4HistoricalValidationError("source_commit_must_be_git_sha")
     source_hash = str(price_source_sha256 or "").strip().lower()
     if len(source_hash) != 64 or any(ch not in "0123456789abcdef" for ch in source_hash):
         raise Stage4HistoricalValidationError("price_source_sha256_required")
+    return frame, commit, source_hash
 
-    routed, replay_coverage = replay_universe_states(
-        frame,
-        symbols=symbols,
-        config=config,
-        keep_unchanged=False,
+
+def build_stage4_historical_validation_from_replay(
+    prices: pd.DataFrame | Iterable[Mapping[str, Any]],
+    routed_snapshots: Sequence[Mapping[str, Any]],
+    replay_coverage: Mapping[str, Any],
+    *,
+    price_source_sha256: str,
+    source_commit: str,
+    replay_chunk_count: int = 1,
+    config: ValidationConfig = ValidationConfig(),
+) -> dict[str, Any]:
+    """Build the single Stage-4 / 6G result from already completed PIT replay."""
+
+    frame, commit, source_hash = _prepare_stage4_inputs(
+        prices,
+        price_source_sha256=price_source_sha256,
+        source_commit=source_commit,
     )
+    routed = [dict(item) for item in routed_snapshots]
     guards = _replay_guard_review(routed, replay_coverage)
     if not guards["valid"]:
         raise Stage4HistoricalValidationError(
@@ -180,10 +189,15 @@ def build_stage4_historical_validation(
 
     source_dates = pd.to_datetime(frame["date"], errors="coerce").dropna()
     source_symbols = sorted(frame["symbol"].dropna().astype(str).unique().tolist())
+    requested = int(replay_coverage.get("symbols_requested") or 0)
+    if requested != len(source_symbols):
+        raise Stage4HistoricalValidationError(
+            f"replay_universe_incomplete:{requested}:{len(source_symbols)}"
+        )
+
     structure_rows = report.get("structure_validation")
     if not isinstance(structure_rows, list):
         raise Stage4HistoricalValidationError("structure_validation_missing")
-
     evidence_policy = report.get("evidence_policy")
     if not isinstance(evidence_policy, Mapping):
         raise Stage4HistoricalValidationError("evidence_policy_missing")
@@ -204,7 +218,9 @@ def build_stage4_historical_validation(
             "rules_frozen_through": config.rules_frozen_through,
         },
         "replay": {
-            "symbols_requested": int(replay_coverage.get("symbols_requested") or 0),
+            "execution_mode": "parallel_chunks" if int(replay_chunk_count) > 1 else "single_process",
+            "chunk_count": int(replay_chunk_count),
+            "symbols_requested": requested,
             "symbols_with_snapshots": int(replay_coverage.get("symbols_with_snapshots") or 0),
             "snapshot_count": int(replay_coverage.get("snapshots") or 0),
             "failures_are_missing_evidence_not_imputed": (
@@ -248,3 +264,49 @@ def build_stage4_historical_validation(
     }
     result["stage4_result_hash"] = _canonical_hash(result)
     return result
+
+
+def build_stage4_historical_validation(
+    prices: pd.DataFrame | Iterable[Mapping[str, Any]],
+    *,
+    symbols: Sequence[str] | None = None,
+    price_source_sha256: str,
+    source_commit: str,
+    config: ValidationConfig = ValidationConfig(),
+) -> dict[str, Any]:
+    """Run the full frozen 6A->6D replay and 6G historical validation."""
+
+    frame, commit, source_hash = _prepare_stage4_inputs(
+        prices,
+        price_source_sha256=price_source_sha256,
+        source_commit=source_commit,
+    )
+    routed, replay_coverage = replay_universe_states(
+        frame,
+        symbols=symbols,
+        config=config,
+        keep_unchanged=False,
+    )
+    # Explicit symbol subsets are integration-test/debug paths.  The canonical
+    # full Stage-4 artifact always uses the complete source universe.
+    if symbols is not None:
+        selected = sorted({str(symbol) for symbol in symbols})
+        selected_frame = frame.loc[frame["symbol"].astype(str).isin(selected)].copy()
+        return build_stage4_historical_validation_from_replay(
+            selected_frame,
+            routed,
+            replay_coverage,
+            price_source_sha256=source_hash,
+            source_commit=commit,
+            replay_chunk_count=1,
+            config=config,
+        )
+    return build_stage4_historical_validation_from_replay(
+        frame,
+        routed,
+        replay_coverage,
+        price_source_sha256=source_hash,
+        source_commit=commit,
+        replay_chunk_count=1,
+        config=config,
+    )
