@@ -86,7 +86,7 @@ def _structure_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 
 def _replay_guard_review(
-    snapshots: Sequence[Mapping[str, Any]],
+    snapshots: Iterable[Mapping[str, Any]],
     coverage: Mapping[str, Any],
 ) -> dict[str, Any]:
     violations: list[str] = []
@@ -110,16 +110,40 @@ def _replay_guard_review(
 
     details = coverage.get("details")
     replay_errors = 0
-    if isinstance(details, list):
-        replay_errors = sum(
-            len(item.get("errors") or [])
-            for item in details
-            if isinstance(item, Mapping)
-        )
+    coverage_violations: list[str] = []
+    requested = int(coverage.get("symbols_requested") or 0)
+    snapshot_count = int(coverage.get("snapshots") or 0)
+
+    if not isinstance(details, list):
+        coverage_violations.append("coverage_details_missing")
+    else:
+        if len(details) != requested:
+            coverage_violations.append(
+                f"coverage_details_count_mismatch:{len(details)}:{requested}"
+            )
+        for item in details:
+            if not isinstance(item, Mapping):
+                coverage_violations.append("coverage_detail_not_mapping")
+                continue
+            errors = item.get("errors") or []
+            replay_errors += len(errors)
+            if errors:
+                coverage_violations.append(
+                    f"replay_errors_present:{item.get('symbol')}:{len(errors)}"
+                )
+
+    if requested <= 0:
+        coverage_violations.append("symbols_requested_zero")
+    if snapshot_count <= 0:
+        coverage_violations.append("snapshot_count_zero")
+
+    all_violations = [*violations, *coverage_violations]
     return {
-        "valid": not violations,
-        "violation_count": len(violations),
-        "violations": violations[:100],
+        "valid": not all_violations,
+        "violation_count": len(all_violations),
+        "violations": all_violations[:100],
+        "coverage_complete": not coverage_violations,
+        "coverage_violation_count": len(coverage_violations),
         "replay_error_count": int(replay_errors),
         "replay_errors_are_missing_evidence_not_imputed": True,
     }
@@ -151,7 +175,7 @@ def _prepare_stage4_inputs(
 
 def build_stage4_historical_validation_from_replay(
     prices: pd.DataFrame | Iterable[Mapping[str, Any]],
-    routed_snapshots: Sequence[Mapping[str, Any]],
+    routed_snapshots: Sequence[Mapping[str, Any]] | Iterable[Mapping[str, Any]],
     replay_coverage: Mapping[str, Any],
     *,
     price_source_sha256: str,
@@ -166,7 +190,19 @@ def build_stage4_historical_validation_from_replay(
         price_source_sha256=price_source_sha256,
         source_commit=source_commit,
     )
-    routed = [dict(item) for item in routed_snapshots]
+    # Full Stage-4 replay artifacts are multi-gigabyte when expanded.  Keep
+    # reusable/sized snapshot collections lazy so aggregation can replay the
+    # frozen 6G passes without materialising every routed snapshot at once.
+    # One-shot iterators are still materialised because 6G intentionally makes
+    # several independent passes over the same causal snapshots.
+    iterator = iter(routed_snapshots)
+    if iterator is routed_snapshots or not hasattr(routed_snapshots, "__len__"):
+        routed: Sequence[Mapping[str, Any]] | Iterable[Mapping[str, Any]] = [
+            dict(item) for item in iterator
+        ]
+    else:
+        routed = routed_snapshots
+
     guards = _replay_guard_review(routed, replay_coverage)
     if not guards["valid"]:
         raise Stage4HistoricalValidationError(

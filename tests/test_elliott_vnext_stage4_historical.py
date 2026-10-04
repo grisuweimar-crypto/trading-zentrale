@@ -207,3 +207,83 @@ def test_stage4_requires_adjusted_ohlcv_columns() -> None:
             source_commit="a" * 40,
             config=ValidationConfig(bootstrap_reps=0),
         )
+
+
+def test_stage4_keeps_reiterable_sized_snapshot_source_lazy(monkeypatch) -> None:
+    class SnapshotSource:
+        def __init__(self) -> None:
+            self.iterations = 0
+
+        def __len__(self) -> int:
+            return 1
+
+        def __iter__(self):
+            self.iterations += 1
+            yield deepcopy(_snapshot())
+
+    source = SnapshotSource()
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [{"symbol": "AAA", "errors": []}],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    seen = {}
+
+    def fake_report(routed, *args, **kwargs):
+        seen["same_object"] = routed is source
+        return deepcopy(_report())
+
+    monkeypatch.setattr(stage4, "build_validation_report", fake_report)
+
+    result = stage4.build_stage4_historical_validation_from_replay(
+        _prices(),
+        source,
+        replay_coverage,
+        price_source_sha256="b" * 64,
+        source_commit="a" * 40,
+        replay_chunk_count=20,
+        config=ValidationConfig(bootstrap_reps=0),
+    )
+
+    assert seen["same_object"] is True
+    assert source.iterations >= 1
+    assert result["technical_stage_status"] == "COMPLETE"
+    assert result["replay"]["execution_mode"] == "parallel_chunks"
+
+
+def test_stage4_fails_closed_on_replay_errors(monkeypatch) -> None:
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [
+            {
+                "symbol": "AAA",
+                "errors": [{"as_of": "2026-04-16", "error": "adjusted_close_required_for_all_sessions"}],
+            }
+        ],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    monkeypatch.setattr(
+        stage4,
+        "build_validation_report",
+        lambda *args, **kwargs: deepcopy(_report()),
+    )
+
+    with pytest.raises(
+        stage4.Stage4HistoricalValidationError,
+        match="historical_replay_guard_violation",
+    ):
+        stage4.build_stage4_historical_validation_from_replay(
+            _prices(),
+            [deepcopy(_snapshot())],
+            replay_coverage,
+            price_source_sha256="b" * 64,
+            source_commit="a" * 40,
+            replay_chunk_count=20,
+            config=ValidationConfig(bootstrap_reps=0),
+        )

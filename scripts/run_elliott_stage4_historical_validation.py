@@ -69,7 +69,7 @@ def main() -> int:
         raise FileNotFoundError(f"stage4_price_source_missing:{prices_path}")
 
     prices = pd.read_csv(prices_path, low_memory=False)
-    config = ValidationConfig(bootstrap_reps=args.bootstrap_reps)
+    config = ValidationConfig(bootstrap_reps=args.bootstrap_reps, replay_price_basis="raw")
     result = build_stage4_historical_validation(
         prices,
         symbols=args.symbols,
