@@ -39,6 +39,8 @@ def test_ba_qm8_contract_foundation_binds_full_chain_without_claiming_closure() 
     receipt = validate_foundation_file()
     assert receipt["status"] == "PASSED_CONTRACT_FOUNDATION"
     assert receipt["engineering_status"] == "IN_PROGRESS"
+    assert receipt["transition_guard_status"] == "IMPLEMENTED_FAIL_CLOSED_ENGINE"
+    assert receipt["real_stage_adapter_status"] == "PENDING"
     assert receipt["stage_count"] == 11
     assert receipt["transition_count"] == 10
     assert receipt["error_class_count"] == 7
@@ -167,3 +169,13 @@ def test_dependency_binding_rejects_missing_qm_i_independence_guard() -> None:
         match="ba_qm8_qm_i_must_be_true:missing_lineage_is_not_independence",
     ):
         validate_dependencies(contract, **dependencies)
+
+
+def test_contract_rejects_claiming_real_stage_adapter_before_it_exists() -> None:
+    value = load_contract()
+    changed = copy.deepcopy(value)
+    changed["real_stage_adapter_status"] = "IMPLEMENTED"
+    with pytest.raises(
+        BAQM8AuditError, match="ba_qm8_real_stage_adapter_status_invalid"
+    ):
+        validate_contract(changed)

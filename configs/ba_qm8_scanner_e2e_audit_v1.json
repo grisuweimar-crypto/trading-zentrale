@@ -13,88 +13,152 @@
     {
       "stage_id": "DATA",
       "semantic_role": "point_in_time_raw_input_and_identity",
-      "required_identity_fields": ["source_id", "version_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "source_id",
+        "version_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "SCANNER",
       "semantic_role": "scanner_snapshot_and_feature_state",
-      "required_identity_fields": ["source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "SELECTION",
       "semantic_role": "phase1_selection_evidence",
-      "required_identity_fields": ["claim_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "claim_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "TIMING",
       "semantic_role": "phase1b_timing_evidence",
-      "required_identity_fields": ["claim_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "claim_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "PROBABILITY",
       "semantic_role": "phase2_probability_evidence",
-      "required_identity_fields": ["claim_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "claim_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "RISK",
       "semantic_role": "phase3_risk_evidence",
-      "required_identity_fields": ["claim_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "claim_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "CONFIDENCE",
       "semantic_role": "phase4_confidence_evidence",
-      "required_identity_fields": ["claim_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "claim_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "LEARNING",
       "semantic_role": "phase5_learning_and_governance_state",
-      "required_identity_fields": ["version_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "version_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "ELLIOTT",
       "semantic_role": "phase6_research_review_context",
-      "required_identity_fields": ["source_output_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "source_output_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED_NO_DIRECTIONAL_SUBSTITUTION"
     },
     {
       "stage_id": "DECISION_LAYER",
       "semantic_role": "phase7_universal_stance_hysteresis_portfolio_action",
-      "required_identity_fields": ["decision_id", "source_snapshot_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "decision_id",
+        "source_snapshot_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED"
     },
     {
       "stage_id": "EXTERNAL_EVIDENCE",
       "semantic_role": "phase8_post_decision_research_sidecar",
-      "required_identity_fields": ["evidence_id", "version_id"],
-      "required_time_fields": ["as_of", "available_from"],
+      "required_identity_fields": [
+        "evidence_id",
+        "version_id"
+      ],
+      "required_time_fields": [
+        "as_of",
+        "available_from"
+      ],
       "lineage_required": true,
       "missing_policy": "FAIL_CLOSED_NOT_NEUTRAL"
     }
@@ -113,52 +177,132 @@
       {
         "from": "DATA",
         "to": "SCANNER",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "SCANNER",
         "to": "SELECTION",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "SELECTION",
         "to": "TIMING",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "TIMING",
         "to": "PROBABILITY",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "PROBABILITY",
         "to": "RISK",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "RISK",
         "to": "CONFIDENCE",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "CONFIDENCE",
         "to": "LEARNING",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "LEARNING",
         "to": "ELLIOTT",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "ELLIOTT",
         "to": "DECISION_LAYER",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       },
       {
         "from": "DECISION_LAYER",
         "to": "EXTERNAL_EVIDENCE",
-        "checks": ["LEAKAGE", "RETROJECTION", "DOUBLE_COUNTING", "SEMANTIC_DRIFT", "MISSING_AS_NEUTRAL", "UNCONTROLLED_MULTIPLICITY", "HIDDEN_EVIDENCE_REUSE"]
+        "checks": [
+          "LEAKAGE",
+          "RETROJECTION",
+          "DOUBLE_COUNTING",
+          "SEMANTIC_DRIFT",
+          "MISSING_AS_NEUTRAL",
+          "UNCONTROLLED_MULTIPLICITY",
+          "HIDDEN_EVIDENCE_REUSE"
+        ]
       }
     ]
   },
@@ -225,5 +369,7 @@
     "empirical_promotion_performed": false,
     "open_capa_closed_by_ba_qm8": false
   },
-  "next_step": "Implement fail-closed runtime guards and manipulation tests for all seven BA-QM8 error classes before any BA-QM8 closure."
+  "next_step": "Bind canonical BA-QM8 transition observations to real W10/W11/Decision-Watch/QM-I/QM-C/External-Evidence artifacts and execute the guards on a real sealed snapshot before closure.",
+  "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
+  "real_stage_adapter_status": "PENDING"
 }
