@@ -278,10 +278,35 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
     runtime_manifest_path = root / "artifacts" / "research" / "watch_runtime" / "manifest.json"
     runtime_snapshot_id = None
     runtime_current = False
+    runtime_projection_sha256 = None
     if runtime_manifest_path.exists():
         runtime_manifest = _read_json(runtime_manifest_path)
         runtime_snapshot_id = str(runtime_manifest.get("snapshot_id") or "")
         runtime_current = runtime_snapshot_id == snapshot_id
+        runtime_projection_sha256 = str(
+            runtime_manifest.get("runtime_projection_sha256") or ""
+        ) or None
+
+    symbol_index_path = (
+        root
+        / "artifacts"
+        / "research"
+        / "watch_runtime"
+        / "symbols"
+        / "index.json"
+    )
+    symbol_views_snapshot_id = None
+    symbol_views_current = False
+    symbol_views_runtime_projection_matches = False
+    if symbol_index_path.exists():
+        symbol_index = _read_json(symbol_index_path)
+        symbol_views_snapshot_id = str(symbol_index.get("snapshot_id") or "")
+        symbol_views_current = symbol_views_snapshot_id == snapshot_id
+        symbol_views_runtime_projection_matches = (
+            bool(runtime_projection_sha256)
+            and str(symbol_index.get("source_runtime_projection_sha256") or "")
+            == runtime_projection_sha256
+        )
 
     static = {
         "scanner_three_retry_slots": scanner_crons == ("7 17 * * *", "37 18,20 * * *"),
@@ -320,27 +345,82 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         if isinstance(row, Mapping)
     }
     check_status = dict(contract["current_assessment"])
+    open_finding_count = sum(
+        state != "CLOSED_EFFECTIVE" for state in findings.values()
+    )
+    open_risk_count = sum(
+        state != "CLOSED_EFFECTIVE" for state in risks.values()
+    )
+    required_static_guards = (
+        "scanner_three_retry_slots",
+        "scanner_serialized",
+        "scanner_provenance_required",
+        "scanner_records_success_marker_only_after_validation",
+        "scanner_incomplete_run_exits_failure",
+        "scanner_explicit_main_advance_refusal_guard",
+        "phase2_fallback_schedule_present",
+        "phase2_freshness_gate_present",
+        "decision_same_snapshot_guard_present",
+        "decision_stale_publication_refusal_present",
+        "decision_readiness_gate_present",
+        "runtime_validates_sealed_w10",
+        "runtime_stale_publication_refusal_present",
+        "runtime_hard_two_mb_shard_limit_present",
+        "symbol_views_validate_runtime_identity",
+        "symbol_view_runtime_readiness_gate_present",
+        "qm_j_canonical_archive_default_present",
+    )
+    all_required_guards_passed = all(
+        static.get(key) is True for key in required_static_guards
+    )
+    all_required_checks_passed = all(
+        check_status.get(key) == "PASS" for key in EXPECTED_CHECKS
+    )
+    closure_eligible = (
+        all_required_checks_passed
+        and all_required_guards_passed
+        and open_finding_count == 0
+        and open_risk_count == 0
+        and runtime_current
+        and symbol_views_current
+        and symbol_views_runtime_projection_matches
+        and w10.get("status") == "sealed"
+    )
 
     return {
         "schema_version": "ba_qm10_current_operations_audit_v1",
-        "status": "OPEN_FINDINGS_CAPA_REQUIRED",
+        "status": (
+            "BA_QM10_ENGINEERING_COMPLETE"
+            if closure_eligible
+            else "CLOSURE_EVIDENCE_MISMATCH"
+        ),
         "scope": "QUALITY_MANAGEMENT_ONLY",
         "snapshot_id": snapshot_id,
         "snapshot_as_of": daily.get("as_of"),
         "w10_status": w10.get("status"),
         "runtime_snapshot_id": runtime_snapshot_id,
         "runtime_matches_current_snapshot": runtime_current,
+        "runtime_projection_sha256": runtime_projection_sha256,
+        "symbol_views_snapshot_id": symbol_views_snapshot_id,
+        "symbol_views_match_current_snapshot": symbol_views_current,
+        "symbol_views_runtime_projection_matches": (
+            symbol_views_runtime_projection_matches
+        ),
         "required_check_count": len(EXPECTED_CHECKS),
         "check_status": check_status,
+        "all_required_checks_passed": all_required_checks_passed,
         "static_guards": static,
-        "open_findings": findings,
-        "open_finding_count": sum(state != "CLOSED_EFFECTIVE" for state in findings.values()),
+        "all_required_guards_passed": all_required_guards_passed,
+        "finding_states": findings,
+        "open_finding_count": open_finding_count,
         "implemented_capa_pending_verification_count": sum(
-            state == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
-            for state in findings.values()
+            "PENDING" in str(state) for state in findings.values()
         ),
-        "scanner_publication_race_risk_open": not static["scanner_explicit_main_advance_refusal_guard"],
+        "scanner_publication_race_risk_open": (
+            risks.get("BA-QM10-R01") != "CLOSED_EFFECTIVE"
+        ),
         "static_risk_states": risks,
+        "open_static_risk_count": open_risk_count,
         "false_decision_observed": False,
         "all_observed_failures_fail_closed": True,
         "research_logic_changed": False,
@@ -349,7 +429,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         "execution_enabled": False,
         "lag1_evidence_impact": "PROMOTION_BLOCKED",
         "ba_qm10_may_release_lag1_block": False,
-        "closure_eligible": False,
+        "closure_eligible": closure_eligible,
     }
 
 
