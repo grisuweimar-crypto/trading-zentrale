@@ -38,8 +38,8 @@ def test_ba_qm10_current_operations_audit_exposes_real_findings_fail_closed() ->
     assert result["scope"] == "QUALITY_MANAGEMENT_ONLY"
     assert result["required_check_count"] == 13
     assert tuple(result["check_status"].keys()) == EXPECTED_CHECKS
-    assert result["open_finding_count"] == 3
-    assert result["implemented_capa_pending_verification_count"] == 1
+    assert result["open_finding_count"] == 4
+    assert result["implemented_capa_pending_verification_count"] == 3
     assert set(result["open_findings"]) == set(EXPECTED_FINDINGS)
     assert result["false_decision_observed"] is False
     assert result["all_observed_failures_fail_closed"] is True
@@ -78,8 +78,11 @@ def test_current_open_operational_risks_are_not_hidden() -> None:
     result = audit_current_operations()
     guards = result["static_guards"]
     assert guards["decision_any_single_upstream_can_trigger"] is True
+    assert guards["decision_readiness_gate_present"] is True
     assert guards["runtime_hard_two_mb_shard_limit_present"] is True
     assert guards["symbol_views_can_trigger_on_elliott_before_runtime"] is True
+    assert guards["symbol_view_runtime_readiness_gate_present"] is True
+    assert guards["qm_j_canonical_archive_default_present"] is True
     assert guards["scanner_explicit_main_advance_refusal_guard"] is False
     assert result["scanner_publication_race_risk_open"] is True
 
@@ -152,3 +155,17 @@ def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     assert result["private_position_data_included"] is False
     assert result["decision_logic_changed"] is False
     assert result["writes_performed"] is False
+
+
+def test_f04_records_and_repairs_canonical_decision_archive_selection() -> None:
+    contract = load_contract()
+    f04 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F04")
+    assert f04["category"] == "CANONICAL_FILE_SELECTION"
+    assert f04["state"] == "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION"
+    evidence = f04["evidence"][0]
+    assert evidence["error"] == "evidence_archive_missing"
+    assert evidence["obsolete_default"].endswith("decision_evidence_7a.jsonl")
+    assert evidence["canonical_archive"].endswith("decision_evidence_7a.jsonl.gz")
+    assert f04["effect"]["false_decision_published"] is False
+    assert f04["effect"]["decision_safety"] == "FAIL_CLOSED"
+    assert f04["capa"]["falsification_logic_changed"] is False
