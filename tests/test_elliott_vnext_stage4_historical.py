@@ -252,3 +252,38 @@ def test_stage4_keeps_reiterable_sized_snapshot_source_lazy(monkeypatch) -> None
     assert source.iterations >= 1
     assert result["technical_stage_status"] == "COMPLETE"
     assert result["replay"]["execution_mode"] == "parallel_chunks"
+
+
+def test_stage4_fails_closed_on_replay_errors(monkeypatch) -> None:
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [
+            {
+                "symbol": "AAA",
+                "errors": [{"as_of": "2026-04-16", "error": "adjusted_close_required_for_all_sessions"}],
+            }
+        ],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    monkeypatch.setattr(
+        stage4,
+        "build_validation_report",
+        lambda *args, **kwargs: deepcopy(_report()),
+    )
+
+    with pytest.raises(
+        stage4.Stage4HistoricalValidationError,
+        match="historical_replay_guard_violation",
+    ):
+        stage4.build_stage4_historical_validation_from_replay(
+            _prices(),
+            [deepcopy(_snapshot())],
+            replay_coverage,
+            price_source_sha256="b" * 64,
+            source_commit="a" * 40,
+            replay_chunk_count=20,
+            config=ValidationConfig(bootstrap_reps=0),
+        )
