@@ -6,6 +6,7 @@ from scanner.research.decision_layer.current_evidence import (
     build_current_packet_set_from_frames,
     merge_packet_set_into_archive,
 )
+from scanner.research.decision_layer.depot_watch import validate_depot_watch
 from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
 from scanner.research.decision_layer.input_contract import build_input_packet
@@ -192,6 +193,7 @@ def test_orchestrator_uses_real_distinct_snapshot_history_for_hysteresis():
     assert diagnostics["bundle_count"] == 1
     assert diagnostics["phase8_external_evidence_activated"] is False
     assert diagnostics["scanner_scalar_fallback_used"] is False
+    assert validate_depot_watch(watch) == watch
 
 
 def test_orchestrator_does_not_fake_second_hysteresis_observation():
@@ -211,3 +213,14 @@ def test_missing_current_packet_remains_unavailable_not_scanner_fallback():
     assert row["daily_scanner_context"]["score"] == 30.0
     assert diagnostics["missing_current_packet_symbols"] == ["TEST"]
     assert diagnostics["scanner_scalar_fallback_used"] is False
+
+
+def test_fully_orchestrated_watch_id_covers_post_7h_read_only_attachments():
+    packets = [
+        _timing_packet("TEST", "snapshot-old", "2026-09-28T18:00:00+00:00"),
+        _timing_packet("TEST", CURRENT_SNAPSHOT, CURRENT_TIME),
+    ]
+    watch, _ = build_orchestrated_depot_watch(_daily(), _position_book(), packets)
+    validated = validate_depot_watch(watch)
+    assert validated["watch_id"] == watch["watch_id"]
+    assert validated["rows"] == watch["rows"]
