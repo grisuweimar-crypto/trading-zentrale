@@ -131,36 +131,62 @@ Current claim inventory:
 | Decision Layer | PASS_PRIVACY_BOUNDARY | 7A hash verified; private 7D–7H runtime remains non-persisted by design |
 | External Evidence | PASS_DISABLED_BOUNDARY | no Phase-7 integration, no portfolio-action replacement, no order generation |
 
-## Open BA-QM8 finding
+## Open BA-QM8 finding — refined after pipeline trace
 
-The current real-stage receipt is:
+The original real audit correctly found that DATA -> SCANNER provenance was
+missing, but the first diagnostic wording was too broad. A full pipeline trace
+shows that `history_recent.csv` and `price_backfill.csv` are downstream
+research/outcome inputs. They are **not** the direct inputs that create the
+scanner score snapshot.
 
-`REAL_STAGE_BINDINGS_PARTIAL_GAPS_OPEN`
+The direct scanner path is:
 
-The current closure blocker is:
+```text
+persistent watchlist state
+  -> optional universe_master sync
+  -> Yahoo enrichment (previous values retained on individual fetch failures)
+  -> exact post-enrichment scoring rows
+  -> scoring engine
+  -> watchlist_full.csv
+  -> latest_scanner.csv
+```
 
-`DATA -> SCANNER: raw_source_hashes_not_snapshot_bound`
+Therefore the current 2026-10-03 snapshot remains open for the more precise
+reason:
 
-The current `daily_research` artifact identifies its historical source paths as:
+`DATA -> SCANNER: scanner_input_provenance_missing`
 
-- `artifacts/research/history_recent.csv`
-- `artifacts/research/price_backfill.csv`
+No attempt is made to retroactively reconstruct that missing provenance.
 
-but the real audit does not find their content hashes sealed into the scanner
-snapshot / W10 provenance. BA-QM8 therefore does **not** infer or backfill this
-lineage and does **not** treat the gap as neutral.
+### Prospective fix implemented
 
-This finding must first be scoped against the actual inputs that create the
-scanner snapshot. Hashing only the two research-history files would be
-insufficient if additional upstream scanner inputs participate in
-`latest_scanner.csv`.
+The next scanner run will prospectively create
+`artifacts/research/scanner_input_provenance.json` and bind:
+
+- the persistent watchlist state before the run;
+- the optional active universe-master state;
+- cached taxonomy/pillar mappings when present;
+- the exact post-enrichment table passed into scoring;
+- the exact universe file used for percentile scaling;
+- Yahoo enrichment outcome metadata;
+- code revision plus scanner version/build;
+- the resulting `watchlist_full.csv` hash;
+- the resulting `latest_scanner.csv` hash;
+- the new scanner `snapshot_id`.
+
+The reference is carried into `daily_research` and then into W10. Production
+Autopilot uses a fail-closed `SCANNER_REQUIRE_PROVENANCE=1` gate.
+
+Historical snapshots are not backfilled. The first DATA/SCANNER PASS can only be
+established by a new prospective scanner run after this implementation is on
+`main`.
 
 ## Existing contracts reused, not rebuilt
 
 BA-QM8 deliberately reuses existing controls:
 
 - **W10** – same-snapshot orchestration, availability timestamps, upstream freeze,
-  no-backdating.
+  no-backdating, and prospective scanner-provenance carry.
 - **W11** – real-snapshot 7A–7H acceptance, PIT, missing-evidence, duplicate-claim,
   super-score and Phase-8 boundary guards.
 - **W12 / Decision Watch** – Ferrari F1–F4 regression behavior and review-only
@@ -177,14 +203,15 @@ BA-QM8 is **not complete** and no closure is claimed.
 
 Next:
 
-1. identify the complete upstream input set that creates the scanner snapshot;
-2. define snapshot-bound raw-source identities / hashes for `Data -> Scanner`;
-3. add those provenance bindings without changing scanner scores or logic;
-4. feed the resulting real stage identities into the seven-class transition
-   guard engine;
-5. rerun BA-QM7/QM-J, QM-H, QM-I, W11, W12/Decision Watch and External Evidence
+1. merge and regression-test the prospective Data -> Scanner provenance package;
+2. execute a fresh scanner run;
+3. verify the new provenance manifest against the fresh scanner snapshot;
+4. rebuild/seal W10 and verify that the exact provenance reference survives into
+   the Decision chain;
+5. feed real stage identities into the seven-class transition guard engine;
+6. rerun BA-QM7/QM-J, QM-H, QM-I, W11, W12/Decision Watch and External Evidence
    regressions;
-6. only after all real transition gaps are resolved may BA-QM8 closure be
+7. only after all real transition gaps are resolved may BA-QM8 closure be
    considered.
 
 The open Lag-1 CAPA remains independent of BA-QM8 closure and remains
