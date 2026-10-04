@@ -53,6 +53,9 @@ jobs:
           tests/test_elliott_vnext_watch_display.py
           tests/test_watch_runtime_transport.py
           tests/test_decision_depot_watch_orchestration.py
+      - name: Build current runtime fixture from sealed W10 for symbol-view regression
+        run: python scripts/build_watch_runtime_w10.py
+
       - name: Build current symbol views without an Elliott capture
         run: python scripts/build_watch_symbol_views.py
       - name: Validate missing capture stays explicit and decision-free
