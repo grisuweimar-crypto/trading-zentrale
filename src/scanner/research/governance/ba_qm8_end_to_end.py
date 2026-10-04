@@ -132,7 +132,7 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM8AuditError("ba_qm8_must_remain_in_progress")
     if result.get("transition_guard_status") != "IMPLEMENTED_FAIL_CLOSED_ENGINE":
         raise BAQM8AuditError("ba_qm8_transition_guard_status_invalid")
-    if result.get("real_stage_adapter_status") != "PENDING":
+    if result.get("real_stage_adapter_status") != "IMPLEMENTED_WITH_OPEN_GAPS":
         raise BAQM8AuditError("ba_qm8_real_stage_adapter_status_invalid")
     if result.get("research_only") is not True:
         raise BAQM8AuditError("ba_qm8_research_only_required")
@@ -373,7 +373,7 @@ def validate_dependencies(
         "status": "PASSED_CONTRACT_FOUNDATION",
         "engineering_status": "IN_PROGRESS",
         "transition_guard_status": "IMPLEMENTED_FAIL_CLOSED_ENGINE",
-        "real_stage_adapter_status": "PENDING",
+        "real_stage_adapter_status": "IMPLEMENTED_WITH_OPEN_GAPS",
         "stage_count": len(EXPECTED_STAGES),
         "transition_count": len(EXPECTED_TRANSITIONS),
         "error_class_count": len(EXPECTED_ERROR_CLASSES),
