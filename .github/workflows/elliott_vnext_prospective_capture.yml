@@ -313,12 +313,26 @@ jobs:
           assert guards['missing_evidence_not_imputed'] is True
           assert guards['frozen_elliott_core_modified'] is False
           assert guards['multi_degree_outputs_retained_without_reducer'] is True
+
+          def forbidden_paths(value, path='$'):
+              found = []
+              if isinstance(value, dict):
+                  for key, item in value.items():
+                      child = f'{path}.{key}'
+                      if key in {'trade_decision', 'order_instruction'}:
+                          found.append(child)
+                      found.extend(forbidden_paths(item, child))
+              elif isinstance(value, list):
+                  for index, item in enumerate(value):
+                      found.extend(forbidden_paths(item, f'{path}[{index}]'))
+              return found
+
           for output in capture['outputs']:
               assert output['research_only'] is True
               assert output['integration']['productive_integration_enabled'] is False
               assert output['integration']['direct_ordering_allowed'] is False
-              assert 'trade_decision' not in json.dumps(output, sort_keys=True)
-              assert 'order_instruction' not in json.dumps(output, sort_keys=True)
+              forbidden = forbidden_paths(output)
+              assert forbidden == [], forbidden
           print(json.dumps({
               'snapshot_id': capture['snapshot_id'],
               'run_id': capture['run_id'],
