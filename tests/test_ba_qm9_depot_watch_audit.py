@@ -18,6 +18,7 @@ def test_ba_qm9_foundation_covers_all_masterplan_checks_and_blocks_closure_on_ba
     assert receipt["status"] == "PASSED_CONTRACT_FOUNDATION"
     assert receipt["engineering_status"] == "IN_PROGRESS"
     assert receipt["runtime_audit_status"] == "IMPLEMENTED_CANONICAL_7H"
+    assert receipt["orchestrated_watch_integrity_status"] == "FINAL_WATCH_RESEALED_AFTER_READ_ONLY_ENRICHMENT"
     assert receipt["parallel_preparation_allowed"] is True
     assert receipt["required_check_count"] == 11
     assert receipt["required_checks"] == EXPECTED_CHECKS
