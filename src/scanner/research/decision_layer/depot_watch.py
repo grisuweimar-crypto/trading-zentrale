@@ -587,8 +587,15 @@ def build_depot_watch(
             "promotion_eligible": False,
         },
     }
-    output["watch_id"] = _canonical_hash(output)
-    return validate_depot_watch(output)
+    return seal_depot_watch(output)
+
+
+def seal_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
+    """Recompute the canonical Watch identity after allowed read-only enrichment."""
+    out = deepcopy(dict(value))
+    out.pop("watch_id", None)
+    out["watch_id"] = _canonical_hash(out)
+    return validate_depot_watch(out)
 
 
 def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
