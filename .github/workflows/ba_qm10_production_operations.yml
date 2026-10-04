@@ -56,8 +56,8 @@ jobs:
           result = audit_current_operations()
           assert result["status"] == "OPEN_FINDINGS_CAPA_REQUIRED"
           assert result["required_check_count"] == 13
-          assert result["open_finding_count"] == 3
-          assert result["implemented_capa_pending_verification_count"] == 1
+          assert result["open_finding_count"] == 4
+          assert result["implemented_capa_pending_verification_count"] == 3
           assert result["false_decision_observed"] is False
           assert result["all_observed_failures_fail_closed"] is True
           assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
