@@ -40,13 +40,21 @@ on:
       - "artifacts/research/external_evidence_8c_completion.json"
       - ".github/workflows/run_scanner.yml"
       - ".github/workflows/ba_qm8_scanner_e2e_audit.yml"
+  workflow_run:
+    workflows: ['Decision Watch Integration Pipeline']
+    types: [completed]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ba-qm8-pr-{0}', github.event.pull_request.number) || 'ba-qm8-main-prospective-audit' }}
+  cancel-in-progress: true
+
 jobs:
   ba-qm8-audit:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
