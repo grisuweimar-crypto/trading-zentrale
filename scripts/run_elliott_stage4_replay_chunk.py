@@ -63,7 +63,7 @@ def main() -> int:
     if not selected:
         raise ValueError("empty_stage4_chunk")
 
-    config = ValidationConfig(bootstrap_reps=0)
+    config = ValidationConfig(bootstrap_reps=0, replay_price_basis="raw")
     routed, coverage = replay_universe_states(
         frame,
         symbols=selected,
