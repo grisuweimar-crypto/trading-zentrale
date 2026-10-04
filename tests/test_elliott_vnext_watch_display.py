@@ -11,6 +11,8 @@ from scanner.research.decision_layer.elliott_readonly_display import (
     NO_SYMBOL_STATUS,
     STALE_STATUS,
     build_elliott_watch_display,
+    build_prepared_elliott_watch_display,
+    prepare_elliott_watch_display_capture,
 )
 
 
@@ -253,3 +255,31 @@ def test_invalid_decision_effect_guard_fails_closed():
             expected_snapshot_id="snapshot-2026-10-02",
             expected_as_of="2026-10-02",
         )
+
+
+def test_prepared_capture_matches_one_off_display_without_revalidation_semantics_change():
+    capture = _capture(
+        _output(timeframe="daily", degree="fine"),
+        _output(timeframe="weekly", degree="coarse", stage="wave_4_complete"),
+        _output(symbol="BBB", timeframe="daily", degree="fine"),
+    )
+    prepared = prepare_elliott_watch_display_capture(capture)
+
+    prepared_display = build_prepared_elliott_watch_display(
+        prepared,
+        symbol="AAA",
+        expected_snapshot_id="snapshot-2026-10-02",
+        expected_as_of="2026-10-02",
+    )
+    one_off_display = build_elliott_watch_display(
+        capture,
+        symbol="AAA",
+        expected_snapshot_id="snapshot-2026-10-02",
+        expected_as_of="2026-10-02",
+    )
+
+    assert prepared_display == one_off_display
+    assert prepared_display["output_count"] == 2
+    assert prepared_display["decision_effect"] == "none"
+    assert prepared_display["changes_universal_stance"] is False
+    assert prepared_display["changes_portfolio_action"] is False
