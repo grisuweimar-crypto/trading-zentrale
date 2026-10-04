@@ -60,7 +60,6 @@ jobs:
         env:
           SCANNER_REQUIRE_PROVENANCE: '1'
           SCANNER_FETCH_YAHOO: '1'
-          SCANNER_REQUIRE_PROVENANCE: '1'
         run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/scanner-run.json"
 
       - name: Scanner ausführen (run_daily)
@@ -71,6 +70,7 @@ jobs:
           TELEGRAM_ENABLED: '0'
           # Ensure Yahoo market data refresh happens on every scheduled run.
           SCANNER_FETCH_YAHOO: '1'
+          SCANNER_REQUIRE_PROVENANCE: '1'
         run: |
           python -m scanner.app.run_daily
 
