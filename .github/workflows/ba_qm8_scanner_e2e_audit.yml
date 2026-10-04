@@ -6,8 +6,13 @@ on:
       - "configs/ba_qm8_scanner_e2e_audit_v1.json"
       - "src/scanner/research/governance/ba_qm8_end_to_end.py"
       - "src/scanner/research/governance/ba_qm8_transition_guard.py"
+      - "src/scanner/research/governance/ba_qm8_real_stage_bindings.py"
       - "tests/test_ba_qm8_end_to_end.py"
       - "tests/test_ba_qm8_transition_guard.py"
+      - "tests/test_ba_qm8_real_stage_bindings.py"
+      - "artifacts/research/daily_research.json"
+      - "artifacts/research/current_decision_packets_7a.json"
+      - "artifacts/research/decision_snapshot_w10.json"
       - "configs/ba_qm7_qm_j_closure_v1.json"
       - "src/scanner/research/governance/qm_j_closure.py"
       - "configs/qm_j_phase1a_selection_freshness_gate_v1.json"
@@ -39,29 +44,38 @@ jobs:
           python-version: "3.11"
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Validate BA-QM8 contract, transition guards and predecessor regressions
+      - name: Validate BA-QM8 contract, transition guards, real bindings and predecessor regressions
         run: |
           python -m pytest -q \
             tests/test_ba_qm8_end_to_end.py \
             tests/test_ba_qm8_transition_guard.py \
+            tests/test_ba_qm8_real_stage_bindings.py \
             tests/test_qm_j_closure.py \
             tests/test_qm_j_selection_freshness_gate.py \
             tests/test_w11_end_to_end_acceptance.py \
             tests/test_w12_ferrari_regression.py
           python - <<'PY'
           from scanner.research.governance.ba_qm8_end_to_end import validate_foundation_file
+          from scanner.research.governance.ba_qm8_real_stage_bindings import audit_real_stage_bindings
 
-          result = validate_foundation_file()
-          assert result["status"] == "PASSED_CONTRACT_FOUNDATION"
-          assert result["engineering_status"] == "IN_PROGRESS"
-          assert result["stage_count"] == 11
-          assert result["transition_count"] == 10
-          assert result["error_class_count"] == 7
-          assert result["all_transitions_cover_all_error_classes"] is True
-          assert result["evidence_impact"] == "PROMOTION_BLOCKED"
-          assert result["effectiveness_verification_pending"] is True
-          assert result["automatic_release_allowed"] is False
-          assert result["empirical_promotion_performed"] is False
-          assert result["closure_claimed"] is False
-          print(result)
+          foundation = validate_foundation_file()
+          assert foundation["status"] == "PASSED_CONTRACT_FOUNDATION"
+          assert foundation["engineering_status"] == "IN_PROGRESS"
+          assert foundation["transition_guard_status"] == "IMPLEMENTED_FAIL_CLOSED_ENGINE"
+          assert foundation["real_stage_adapter_status"] == "IMPLEMENTED_WITH_OPEN_GAPS"
+          assert foundation["evidence_impact"] == "PROMOTION_BLOCKED"
+          assert foundation["effectiveness_verification_pending"] is True
+          assert foundation["automatic_release_allowed"] is False
+          assert foundation["closure_claimed"] is False
+
+          real = audit_real_stage_bindings()
+          assert real["w10_status"] == "sealed"
+          assert real["stage_results"]["DATA"]["status"] == "PARTIAL"
+          assert "raw_source_hashes_not_snapshot_bound" in real["stage_results"]["DATA"]["gaps"]
+          assert "DATA" in real["closure_blockers"]
+          assert real["closure_eligible"] is False
+          assert real["guessed_lineage_added"] is False
+          assert real["missing_treated_as_neutral"] is False
+          print(foundation)
+          print(real)
           PY
