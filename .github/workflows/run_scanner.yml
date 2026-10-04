@@ -164,6 +164,23 @@ jobs:
       - name: Research-Kohaerenz vor Veroeffentlichung pruefen
         run: python scripts/generate_research_views.py --validate-only
 
+      - name: Publication base unveraendert pruefen
+        if: steps.research.outputs.complete == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF_NAME}"
+          git fetch origin "$BRANCH" --force
+          LOCAL_BASE=$(git rev-parse HEAD)
+          REMOTE_BASE=$(git rev-parse "origin/$BRANCH")
+          if [[ "$LOCAL_BASE" != "$REMOTE_BASE" ]]; then
+            echo "::warning::main advanced or publication branch advanced during scanner build; stale publication refused"
+            echo "local_base=$LOCAL_BASE"
+            echo "remote_base=$REMOTE_BASE"
+            exit 75
+          fi
+          echo "Publication base unchanged: $LOCAL_BASE"
+
       - name: Erfolgreichen Abendscan vormerken
         if: steps.research.outputs.complete == 'true'
         # Marker und Ergebnisse werden gemeinsam publiziert; ein fehlgeschlagener
