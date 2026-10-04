@@ -100,29 +100,58 @@ jobs:
           assert foundation["automatic_release_allowed"] is False
           assert foundation["closure_claimed"] is False
 
-          # The checked-in 2026-10-03 snapshot predates prospective scanner provenance.
-          # It must remain open; BA-QM8 may not retroactively certify it.
+          # Stage 4 must accept both legitimate audit states:
+          # - historical/pre-provenance snapshots remain fail-closed at 9/10;
+          # - the first prospective provenance-bound snapshot must pass 10/10.
           real = audit_real_stage_bindings()
-          assert real["w10_status"] == "sealed"
-          assert real["stage_results"]["DATA"]["status"] == "PARTIAL"
-          assert "scanner_input_provenance_missing" in real["stage_results"]["DATA"]["gaps"]
-          assert "DATA" in real["closure_blockers"]
-          assert real["closure_eligible"] is False
+          transitions = audit_real_transitions()
+          closure = evaluate_ba_qm8_closure()
+
+          data_status = real["stage_results"]["DATA"]["status"]
+          if data_status == "PARTIAL":
+              assert real["w10_status"] == "sealed"
+              assert "scanner_input_provenance_missing" in real["stage_results"]["DATA"]["gaps"]
+              assert "DATA" in real["closure_blockers"]
+              assert real["closure_eligible"] is False
+
+              assert transitions["status"] == "REAL_TRANSITIONS_PARTIAL_DATA_PROVENANCE_BLOCKED"
+              assert transitions["transition_pass_count"] == 9
+              assert transitions["transition_blocked_count"] == 1
+              assert transitions["closure_eligible"] is False
+
+              assert closure["status"] == "PENDING_PROSPECTIVE_SNAPSHOT"
+              assert closure["engineering_closure_eligible"] is False
+              assert closure["engineering_closure_performed"] is False
+          elif data_status == "PASS":
+              assert real["status"] == "REAL_STAGE_BINDINGS_PASS"
+              assert real["w10_status"] == "sealed"
+              assert real["closure_blockers"] == []
+              assert real["closure_eligible"] is True
+
+              assert transitions["status"] == "REAL_TRANSITIONS_PASS"
+              assert transitions["transition_pass_count"] == 10
+              assert transitions["transition_blocked_count"] == 0
+              assert transitions["closure_eligible"] is True
+              assert transitions["all_executed_transitions_cover_all_seven_classes"] is True
+
+              assert closure["status"] == "ELIGIBLE_FOR_BA_QM8_ENGINEERING_CLOSURE"
+              assert closure["engineering_closure_eligible"] is True
+              assert closure["engineering_closure_performed"] is False
+          else:
+              raise AssertionError(f"unexpected DATA stage status: {data_status!r}")
+
+          # In both states, audit safety and the independent Lag-1 governance block
+          # must remain unchanged.
           assert real["guessed_lineage_added"] is False
           assert real["missing_treated_as_neutral"] is False
-          transitions = audit_real_transitions()
-          assert transitions["status"] == "REAL_TRANSITIONS_PARTIAL_DATA_PROVENANCE_BLOCKED"
-          assert transitions["transition_pass_count"] == 9
-          assert transitions["transition_blocked_count"] == 1
-          assert transitions["closure_eligible"] is False
           assert transitions["historical_lineage_backfilled"] is False
           assert transitions["missing_treated_as_neutral"] is False
-          closure = evaluate_ba_qm8_closure()
-          assert closure["status"] == "PENDING_PROSPECTIVE_SNAPSHOT"
-          assert closure["engineering_closure_eligible"] is False
-          assert closure["engineering_closure_performed"] is False
           assert closure["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
           assert closure["ba_qm8_may_release_lag1_block"] is False
+          assert closure["automatic_release_allowed"] is False
+          assert closure["empirical_validation_claimed"] is False
+          assert closure["empirical_promotion_performed"] is False
+
           print(foundation)
           print(real)
           print(transitions)
