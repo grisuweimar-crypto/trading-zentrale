@@ -41,11 +41,12 @@ EXPECTED_CHECKS = (
     "RECOVERY",
     "FAILED_UPDATES",
 )
-EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03")
+EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03", "BA-QM10-F04")
 EXPECTED_FINDING_STATES = {
     "BA-QM10-F01": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F02": "OPEN_CAPA_REQUIRED",
-    "BA-QM10-F03": "OPEN_CAPA_REQUIRED",
+    "BA-QM10-F02": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+    "BA-QM10-F03": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+    "BA-QM10-F04": "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
 }
 
 
@@ -247,11 +248,14 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         "decision_same_snapshot_guard_present": "--require-snapshot-match" in decision_text,
         "decision_stale_publication_refusal_present": "refuse stale current publication" in decision_text,
         "decision_any_single_upstream_can_trigger": len(decision_upstreams) == 3,
+        "decision_readiness_gate_present": "Check current Phase 2 snapshot readiness" in decision_text,
         "runtime_validates_sealed_w10": "Validate sealed W10 and authoritative scanner snapshot" in runtime_text,
         "runtime_stale_publication_refusal_present": "refuse stale publication" in runtime_text,
         "runtime_hard_two_mb_shard_limit_present": "max_size < 2_000_000" in runtime_text,
         "symbol_views_validate_runtime_identity": "Validate symbol-view identity and privacy" in symbols_text,
         "symbol_views_can_trigger_on_elliott_before_runtime": "Module 6 Elliott Prospective Shadow" in symbol_upstreams,
+        "symbol_view_runtime_readiness_gate_present": "Check current Watch runtime snapshot readiness" in symbols_text,
+        "qm_j_canonical_archive_default_present": "DEFAULT_ARCHIVE" in (root / "scripts" / "run_qm_j_decision_e2e_falsification.py").read_text(encoding="utf-8"),
     }
 
     findings = {row["finding_id"]: row["state"] for row in contract["findings"]}
