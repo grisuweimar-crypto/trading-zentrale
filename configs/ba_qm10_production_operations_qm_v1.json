@@ -35,7 +35,7 @@
     "ARTIFACT_PROVENANCE": "PASS",
     "CANONICAL_FILE_SELECTION": "F04_CAPA_IMPLEMENTED_PENDING_FALSIFICATION_VERIFICATION",
     "STALE_ARTIFACT_DETECTION": "PASS_FAIL_CLOSED",
-    "RACE_CONDITIONS": "FINDINGS_OPEN",
+    "RACE_CONDITIONS": "R01_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
     "PARTIAL_RUNS": "PASS_FAIL_CLOSED",
     "RECOVERY": "PARTIAL",
     "FAILED_UPDATES": "PARTIAL_FINDINGS_OPEN"
@@ -196,7 +196,16 @@
       "risk_id": "BA-QM10-R01",
       "category": "SCANNER_PUBLICATION_MAIN_ADVANCE",
       "description": "Scanner publication uses a direct git push after a long build and does not currently have the explicit main-advanced refusal guard used by Decision Watch publication.",
-      "safety_expectation": "A rejected push must not publish the autorun marker remotely; a later retry must remain eligible."
+      "safety_expectation": "A rejected push must not publish the autorun marker remotely; a later retry must remain eligible.",
+      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+      "capa": {
+        "implemented": true,
+        "implementation": "Before recording the successful autorun marker or committing artifacts, fetch the publication branch and refuse publication if remote HEAD advanced beyond the scanner build base.",
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "investment_logic_changed": false,
+        "effectiveness_verification": "PENDING_LIVE_MAIN_ADVANCE_OR_CONTROLLED_WORKFLOW_VERIFICATION"
+      }
     }
   ],
   "dependencies": {
@@ -208,5 +217,5 @@
     "ba_qm10_may_release_lag1_block": false
   },
   "closure_claimed": false,
-  "next_step": "Verify F01 with a real current Runtime Publish and F04 with a green BA-QM7 falsification run, then remediate F02/F03 workflow dependency races and the scanner publication race risk."
+  "next_step": "Complete live effectiveness verification for F01-F04 and R01, then prove retry/idempotency/recovery behavior before BA-QM10 closure."
 }
