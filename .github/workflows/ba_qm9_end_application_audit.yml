@@ -1,0 +1,59 @@
+name: BA-QM9 Wertpapierdepot-Watch Audit
+
+on:
+  pull_request:
+    paths:
+      - "configs/ba_qm9_end_application_audit_v1.json"
+      - "src/scanner/research/governance/ba_qm9_end_application_audit.py"
+      - "tests/test_ba_qm9_end_application_audit.py"
+      - ".github/workflows/ba_qm9_end_application_audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ba-qm9-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Run BA-QM9 manipulation audit and existing end-application regressions
+        run: |
+          python -m pytest -q             tests/test_ba_qm9_end_application_audit.py             tests/test_decision_depot_watch_7h.py             tests/test_decision_depot_watch_orchestration.py             tests/test_decision_depot_watch_prospective_gate.py             tests/test_watch_runtime_transport.py             tests/test_w11_end_to_end_acceptance.py             tests/test_w12_ferrari_regression.py
+
+      - name: Audit current public Research/Decision/runtime boundaries
+        run: |
+          python - <<'PY'
+          from scanner.research.governance.ba_qm9_end_application_audit import (
+              EXPECTED_CHECKS,
+              audit_current_public_boundaries,
+              load_contract,
+          )
+
+          contract = load_contract()
+          assert contract["scope"] == "QUALITY_MANAGEMENT_ONLY"
+          assert tuple(contract["required_checks"]) == EXPECTED_CHECKS
+          assert contract["product_logic_changed"] is False
+          assert contract["investment_logic_changed"] is False
+          assert contract["masterplan_guard"]["missing_decision_state_may_use_old_scanner_heuristic"] is False
+
+          result = audit_current_public_boundaries()
+          assert result["status"] == "PASSED_PUBLIC_BOUNDARY_AUDIT"
+          assert result["w10_status"] == "sealed"
+          assert result["w10_snapshot_id"] == result["snapshot_id"]
+          assert result["private_depot_data_loaded"] is False
+          assert result["stale_runtime_silently_accepted"] is False
+          assert result["product_logic_changed"] is False
+          assert result["investment_logic_changed"] is False
+          assert result["execution_enabled"] is False
+          assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+          assert result["ba_qm9_may_release_lag1_block"] is False
+          print(result)
+          PY
