@@ -17,7 +17,7 @@ from scanner.research.decision_layer.promotion_validation import (
 
 
 START = "2026-09-26"
-LAYERS = ["7D", "7E", "7F", "7G", "7H"]
+LAYERS = ["7D", "7E", "7F", "W8", "7G", "7H"]
 
 
 def _archive(packets=0):
@@ -244,3 +244,50 @@ def test_metrics_ready_is_review_eligibility_not_promotion():
     assert validated["promotion"]["promotion_review_eligible"] is True
     assert validated["promotion"]["productive_promotion_approved"] is False
     assert validated["execution_allowed"] is False
+
+
+def test_w8_shadow_trace_rejects_pre_policy_prospective_rows():
+    with pytest.raises(PromotionValidationError, match="pre_w8_prospective_shadow_trace_forbidden"):
+        validate_shadow_trace_summary(
+            {
+                "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+                "trace_rows": 10,
+                "symbols": 2,
+                "captured_layers": LAYERS,
+                "layer_metrics_ready": {layer: True for layer in LAYERS},
+                "contains_raw_position_values": False,
+                "public_repository_persistence": False,
+                "as_of_min": "2026-09-26",
+                "as_of_max": "2026-10-02",
+                "w8_trace_rows": 2,
+                "w8_as_of_min": "2026-10-01",
+                "w8_as_of_max": "2026-10-02"
+            },
+            prospective_start=START,
+            reviewed_as_of=date(2026, 10, 5),
+            w8_prospective_start="2026-10-02",
+        )
+
+
+def test_w8_shadow_trace_accepts_post_change_prospective_rows():
+    result = validate_shadow_trace_summary(
+        {
+            "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+            "trace_rows": 10,
+            "symbols": 2,
+            "captured_layers": LAYERS,
+            "layer_metrics_ready": {layer: True for layer in LAYERS},
+            "contains_raw_position_values": False,
+            "public_repository_persistence": False,
+            "as_of_min": "2026-09-26",
+            "as_of_max": "2026-10-05",
+            "w8_trace_rows": 4,
+            "w8_as_of_min": "2026-10-02",
+            "w8_as_of_max": "2026-10-05"
+        },
+        prospective_start=START,
+        reviewed_as_of=date(2026, 10, 5),
+        w8_prospective_start="2026-10-02",
+    )
+    assert result["w8_trace_rows"] == 4
+    assert result["w8_as_of_min"] == "2026-10-02"
