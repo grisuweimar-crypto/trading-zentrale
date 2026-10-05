@@ -3895,6 +3895,8 @@ function applyHeatFilter(rows) {
         const universeN = Array.isArray(DATA) ? DATA.length : ((rows || []).length);
         const header = `<div class="hdMeta">Snapshot: ${esc(prev || '–')} → ${esc(latest || '–')} · Universe: ${universeN} · 1D-Basis: ${withN}</div>`;
 
+        const newSymbols = Array.isArray(d.new_symbols) ? d.new_symbols : [];
+        const droppedSymbols = Array.isArray(d.dropped_symbols) ? d.dropped_symbols : [];
         const controls = `<div class="breadthRow" style="margin-top:6px;">
           ${chip(`Snapshots ${snaps}`, 'blue')}
           ${chip('1D', 'blue')}
@@ -3902,6 +3904,8 @@ function applyHeatFilter(rows) {
           ${chip(mLabel, p1m ? 'blue' : 'warn')}
           ${chip(`Top ${pos.length}`, pos.length ? 'good' : 'blue')}
           ${chip(`Weak ${neg.length}`, neg.length ? 'bad' : 'blue')}
+          ${chip(`Neu ${newSymbols.length}`, newSymbols.length ? 'warn' : 'blue')}
+          ${chip(`Entfallen ${droppedSymbols.length}`, droppedSymbols.length ? 'warn' : 'blue')}
         </div>`;
 
         function itemRow(x) {
@@ -3948,8 +3952,29 @@ function applyHeatFilter(rows) {
             }).join('') + '</div>'
           : '';
 
-        const explain = '<div class="muted small" style="margin-top:8px;">Interner Scanner-Verlauf aus lokalen Tages-Snapshots. Rank und Score bleiben getrennt; neue/entfallene Titel erzeugen ohne Vergleichsbasis keine Status-Events. Keine Kursperformance.</div>';
-        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${eventsHtml}${explain}</div>`;
+        const universeChanges = [];
+        if (newSymbols.length) {
+          universeChanges.push(
+            '<div class="hdEvent"><span class="hdEventSym">Neu</span><span class="hdEventType">' +
+            newSymbols.slice(0, 10).map(esc).join(', ') +
+            (newSymbols.length > 10 ? ' …' : '') +
+            '</span></div>'
+          );
+        }
+        if (droppedSymbols.length) {
+          universeChanges.push(
+            '<div class="hdEvent"><span class="hdEventSym">Entfallen</span><span class="hdEventType">' +
+            droppedSymbols.slice(0, 10).map(esc).join(', ') +
+            (droppedSymbols.length > 10 ? ' …' : '') +
+            '</span></div>'
+          );
+        }
+        const universeHtml = universeChanges.length
+          ? '<div class="hdEvents"><div class="hdColTitle">Universe-Änderungen</div>' + universeChanges.join('') + '</div>'
+          : '';
+
+        const explain = '<div class="muted small" style="margin-top:8px;">Interner Scanner-Verlauf aus lokalen Tages-Snapshots. Rank und Score bleiben getrennt; neue/entfallene Titel haben ohne echte Vorbasis bewusst kein Delta und erzeugen keine Status-Events. Keine Kursperformance.</div>';
+        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${eventsHtml}${universeHtml}${explain}</div>`;
       } catch (e) {
         elHistory.textContent = '';
       }
