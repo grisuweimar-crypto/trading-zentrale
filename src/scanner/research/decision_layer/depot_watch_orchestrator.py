@@ -260,6 +260,7 @@ def build_decision_bundle_set(
                     elliott_outputs,
                     source_commit=str(elliott_source_meta["source_commit"]),
                     source_available_from=str(elliott_source_meta["available_from"]),
+                    source_provenance=elliott_source_meta,
                 )
             except Elliott6HAdapterError as exc:
                 raise DepotWatchOrchestrationError(str(exc)) from exc
