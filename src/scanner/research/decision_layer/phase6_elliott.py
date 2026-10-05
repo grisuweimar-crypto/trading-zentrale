@@ -411,6 +411,37 @@ def build_elliott_7f_multidegree_swing_context(
         routes = output["swing_routing"]
         assert isinstance(routes, list)
         all_routes.extend(route for route in routes if isinstance(route, Mapping))
+        feature_payloads = {
+            "elliott_structure": {
+                "pivots": output.get("pivots"),
+                "primary_scenario": output.get("primary_scenario"),
+                "alternative_scenarios": output.get("alternative_scenarios"),
+                "current_wave_stage": output.get("current_wave_stage"),
+                "hard_invalidations": output.get("hard_invalidations"),
+            },
+            "fibonacci_geometry": {
+                "fibonacci": output.get("fibonacci"),
+                "fibonacci_geometry": output.get("fibonacci_geometry"),
+                "projection_zones": output.get("projection_zones"),
+            },
+            "swing_routing": {
+                "routing_triggers": output.get("routing_triggers"),
+                "swing_routing": output.get("swing_routing"),
+                "routing_summary": output.get("routing_summary"),
+            },
+        }
+        lineage_features = {
+            name: sha256(
+                json.dumps(
+                    payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=True,
+                    default=str,
+                ).encode("utf-8")
+            ).hexdigest()
+            for name, payload in feature_payloads.items()
+        }
         timeframe_degrees.append({
             "output_id": str(output["output_id"]),
             "timeframe": str(output.get("timeframe") or ""),
@@ -421,6 +452,7 @@ def build_elliott_7f_multidegree_swing_context(
                 if isinstance(output.get("integration"), Mapping)
                 else None
             ),
+            "lineage_features": lineage_features,
         })
 
     actionable = sorted({
