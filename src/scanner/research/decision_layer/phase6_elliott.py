@@ -265,6 +265,16 @@ def build_elliott_6h_source_from_prospective_capture(
             None if evidence_available is None else evidence_available.isoformat()
         ),
         "validation_partition": capture.get("validation_partition"),
+        "source_hashes": (
+            deepcopy(dict(capture.get("source_hashes")))
+            if isinstance(capture.get("source_hashes"), Mapping)
+            else None
+        ),
+        "validation_source": (
+            deepcopy(dict(capture.get("validation_source")))
+            if isinstance(capture.get("validation_source"), Mapping)
+            else None
+        ),
         "outputs": outputs,
         "output_count": len(outputs),
         "symbol_count": len({str(row.get("symbol") or "") for row in outputs}),
@@ -349,6 +359,22 @@ def index_elliott_6h_source(
         "source_commit": source_commit,
         "available_from": available.isoformat(),
         "source_capture_id": source.get("source_capture_id"),
+        "snapshot_id": source.get("snapshot_id"),
+        "source_run_id": source.get("source_run_id"),
+        "source_publication_commit": source.get("source_publication_commit"),
+        "source_capture_available_from": source.get("source_capture_available_from"),
+        "source_evidence_available_from": source.get("source_evidence_available_from"),
+        "validation_partition": source.get("validation_partition"),
+        "source_hashes": (
+            deepcopy(dict(source.get("source_hashes")))
+            if isinstance(source.get("source_hashes"), Mapping)
+            else None
+        ),
+        "validation_source": (
+            deepcopy(dict(source.get("validation_source")))
+            if isinstance(source.get("validation_source"), Mapping)
+            else None
+        ),
         "output_count": len(outputs),
         "symbol_count": len(indexed),
     }
@@ -358,6 +384,7 @@ def build_elliott_7f_multidegree_swing_context(
     *,
     source_commit: str,
     source_available_from: str,
+    source_provenance: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Aggregate existing review contexts across all available Elliott degrees.
 
@@ -384,6 +411,44 @@ def build_elliott_7f_multidegree_swing_context(
         routes = output["swing_routing"]
         assert isinstance(routes, list)
         all_routes.extend(route for route in routes if isinstance(route, Mapping))
+        feature_payloads = {
+            "elliott_structure": {
+                "pivots": output.get("pivots"),
+                "primary_scenario": output.get("primary_scenario"),
+                "alternative_scenarios": output.get("alternative_scenarios"),
+                "current_wave_stage": output.get("current_wave_stage"),
+                "hard_invalidations": output.get("hard_invalidations"),
+            },
+            "fibonacci_geometry": {
+                "fibonacci": output.get("fibonacci"),
+                "fibonacci_geometry": output.get("fibonacci_geometry"),
+                "projection_zones": output.get("projection_zones"),
+            },
+            "swing_routing": {
+                "routing_triggers": output.get("routing_triggers"),
+                "swing_routing": output.get("swing_routing"),
+                "routing_summary": output.get("routing_summary"),
+            },
+            "uncertainty_state": {
+                "alternative_scenarios": output.get("alternative_scenarios"),
+                "structural_fit": output.get("structural_fit"),
+                "confirmation_strength": output.get("confirmation_strength"),
+                "historical_expectancy": output.get("historical_expectancy"),
+                "warnings": output.get("warnings"),
+            },
+        }
+        lineage_features = {
+            name: sha256(
+                json.dumps(
+                    payload,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=True,
+                    default=str,
+                ).encode("utf-8")
+            ).hexdigest()
+            for name, payload in feature_payloads.items()
+        }
         timeframe_degrees.append({
             "output_id": str(output["output_id"]),
             "timeframe": str(output.get("timeframe") or ""),
@@ -394,6 +459,7 @@ def build_elliott_7f_multidegree_swing_context(
                 if isinstance(output.get("integration"), Mapping)
                 else None
             ),
+            "lineage_features": lineage_features,
         })
 
     actionable = sorted({
@@ -455,6 +521,11 @@ def build_elliott_7f_multidegree_swing_context(
             "stance_from_elliott_used": False,
             "review_contexts_are_actions": False,
             "changes_universal_stance": False,
+            "source_provenance": (
+                deepcopy(dict(source_provenance))
+                if isinstance(source_provenance, Mapping)
+                else None
+            ),
         },
     }
 

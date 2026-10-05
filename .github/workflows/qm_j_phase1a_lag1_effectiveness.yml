@@ -1,0 +1,64 @@
+name: QM-J Phase1A Lag1 CAPA Effectiveness
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm_j_phase1a_lag1_effectiveness_v1.json"
+      - "configs/qm_j_phase1a_lag1_effectiveness_freeze_v1.json"
+      - "src/scanner/research/governance/qm_j_phase1a_lag1_effectiveness.py"
+      - "scripts/run_qm_j_phase1a_lag1_effectiveness.py"
+      - "tests/test_qm_j_phase1a_lag1_effectiveness.py"
+      - ".github/workflows/qm_j_phase1a_lag1_effectiveness.yml"
+  push:
+    branches: [main]
+    paths:
+      - "configs/qm_j_phase1a_lag1_effectiveness_v1.json"
+      - "configs/qm_j_phase1a_lag1_effectiveness_freeze_v1.json"
+      - "src/scanner/research/governance/qm_j_phase1a_lag1_effectiveness.py"
+      - "artifacts/research/history_analysis.csv"
+      - "artifacts/research/price_backfill.csv"
+  schedule:
+    - cron: "55 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qm-j-lag1-effectiveness-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
+
+jobs:
+  effectiveness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run frozen effectiveness-contract tests
+        run: python -m pytest -q tests/test_qm_j_phase1a_lag1_effectiveness.py
+      - name: Evaluate current prospective-unspent partition
+        run: >-
+          python scripts/run_qm_j_phase1a_lag1_effectiveness.py
+          --output /tmp/qm_j_lag1_effectiveness.json
+      - name: Enforce no automatic CAPA closure or promotion release
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("/tmp/qm_j_lag1_effectiveness.json").read_text())
+          assert result["status"] in {
+              "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE",
+              "CAPA_EFFECTIVENESS_EVIDENCE_SUPPORTS_REVIEW",
+              "CAPA_EFFECTIVENESS_NOT_ESTABLISHED",
+          }
+          assert result["effectiveness_verified"] is False
+          assert result["automatic_release_allowed"] is False
+          assert result["promotion_released"] is False
+          assert result["historical_spent_evidence_used_for_effectiveness"] is False
+          print(json.dumps(result, sort_keys=True))
+          PY

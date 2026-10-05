@@ -202,6 +202,16 @@ def build_decision_bundle_set(
         snapshot_id=snapshot_id,
         daily=validated_daily,
     )
+
+    # _decision_time_for_snapshot validates every archive packet before this
+    # index is built.  Keep that fail-closed full-archive validation, but avoid
+    # rescanning the complete archive for every position below.  The previous
+    # implementation was O(position_count * archive_packet_count) and became
+    # pathological for the real append-only 7A archive.
+    archive_by_symbol: dict[str, list[Mapping[str, object]]] = {}
+    for raw in archive_packets:
+        archive_by_symbol.setdefault(str(raw.get("symbol") or ""), []).append(raw)
+
     decision_daily = decision_bound_daily_snapshot(validated_daily, decision_as_of)
     positions = validate_position_book(
         position_book, decision_as_of=decision_daily["as_of"]
@@ -232,8 +242,9 @@ def build_decision_bundle_set(
 
     for position in positions["positions"]:
         symbol = str(position["symbol"])
+        symbol_packets = archive_by_symbol.get(symbol, [])
         packet = _current_packet_for_symbol(
-            archive_packets,
+            symbol_packets,
             symbol=symbol,
             snapshot_id=snapshot_id,
             decision_as_of=decision_as_of,
@@ -245,7 +256,7 @@ def build_decision_bundle_set(
         if not isinstance(daily_symbol, Mapping):
             raise DepotWatchOrchestrationError(f"daily_symbol_missing:{symbol}")
         history = _stance_history(
-            archive_packets,
+            symbol_packets,
             symbol=symbol,
             current_packet=packet,
         )
@@ -260,6 +271,7 @@ def build_decision_bundle_set(
                     elliott_outputs,
                     source_commit=str(elliott_source_meta["source_commit"]),
                     source_available_from=str(elliott_source_meta["available_from"]),
+                    source_provenance=elliott_source_meta,
                 )
             except Elliott6HAdapterError as exc:
                 raise DepotWatchOrchestrationError(str(exc)) from exc
@@ -562,13 +574,18 @@ def _attach_elliott_swing_context(
     return watch
 
 
-def build_orchestrated_depot_watch(
+def build_orchestrated_depot_watch_artifacts(
     daily: Mapping[str, object],
     position_book: Mapping[str, object],
     archive_packets: Sequence[Mapping[str, object]],
     elliott_6h_source: Mapping[str, object] | None = None,
-) -> tuple[dict[str, object], dict[str, object]]:
-    """Build the existing 7H Watch from the canonical archived Decision chain."""
+) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
+    """Build the private 7H Watch and return its already-validated bundle set.
+
+    The extra return value exists only for private downstream research capture
+    such as W8 shadow tracing.  No bundle or position payload is persisted by
+    this function.
+    """
     bundle_set, diagnostics = build_decision_bundle_set(
         daily,
         position_book,
@@ -581,4 +598,20 @@ def build_orchestrated_depot_watch(
     watch = _attach_path_reviews(watch, bundle_set)
     watch = _attach_phase5_shadow(watch, bundle_set)
     watch = _attach_elliott_swing_context(watch, bundle_set)
+    return watch, diagnostics, bundle_set
+
+
+def build_orchestrated_depot_watch(
+    daily: Mapping[str, object],
+    position_book: Mapping[str, object],
+    archive_packets: Sequence[Mapping[str, object]],
+    elliott_6h_source: Mapping[str, object] | None = None,
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Build the existing 7H Watch from the canonical archived Decision chain."""
+    watch, diagnostics, _ = build_orchestrated_depot_watch_artifacts(
+        daily,
+        position_book,
+        archive_packets,
+        elliott_6h_source=elliott_6h_source,
+    )
     return watch, diagnostics

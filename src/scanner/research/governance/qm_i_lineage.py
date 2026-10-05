@@ -594,43 +594,353 @@ class LineageRegistry:
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([decision_id, decision_version_id, action_id, version_id, "INFORMS"])[:24], "from_node_id": decision_id, "from_version_id": decision_version_id, "to_node_id": action_id, "to_version_id": version_id, "relation": "INFORMS", "material_for_ancestry": True}, actor_id, actor_role)
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([position_id, position_version, action_id, version_id, "USES_POSITION"])[:24], "from_node_id": position_id, "from_version_id": position_version, "to_node_id": action_id, "to_version_id": version_id, "relation": "USES_POSITION", "material_for_ancestry": True}, actor_id, actor_role)
 
-        # BA-QM11 CAPA: W6 Elliott review context is a material immediate
-        # parent whenever 7F consumed it.  The context node is intentionally
-        # marked lineage-incomplete until the upstream Elliott provenance graph
-        # is bound into QM-I; missing upstream lineage therefore stays visible
-        # instead of masquerading as independence.
+        # BA-QM11/W6 closure: Elliott review context is a material immediate
+        # parent whenever 7F consumed it.  New prospective 6H captures carry
+        # exact source hashes and output identities, allowing QM-I to bind the
+        # review context to raw market/daily inputs.  Older/manual W6 sources
+        # without those fields remain explicitly lineage-incomplete; no
+        # historical provenance is guessed.
         swing = validated.get("swing_management")
         if isinstance(swing, Mapping) and swing.get("source") is not None:
             context_id = _text(
                 swing.get("source_output_id"),
                 "swing_management.source_output_id",
             )
-            context_version = _text(
+            source_name = _text(
                 swing.get("source"),
                 "swing_management.source",
             )
+            w6_meta = swing.get("w6")
+            source_provenance = (
+                w6_meta.get("source_provenance")
+                if isinstance(w6_meta, Mapping)
+                else None
+            )
+            source_hashes = (
+                source_provenance.get("source_hashes")
+                if isinstance(source_provenance, Mapping)
+                else None
+            )
+            market_hash = (
+                str(source_hashes.get("market_ohlcv_sha256") or "").lower()
+                if isinstance(source_hashes, Mapping)
+                else ""
+            )
+            daily_hash = (
+                str(source_hashes.get("daily_research_sha256") or "").lower()
+                if isinstance(source_hashes, Mapping)
+                else ""
+            )
+            source_capture_id = (
+                str(source_provenance.get("source_capture_id") or "").strip()
+                if isinstance(source_provenance, Mapping)
+                else ""
+            )
+            snapshot_id = (
+                str(source_provenance.get("snapshot_id") or "").strip()
+                if isinstance(source_provenance, Mapping)
+                else ""
+            )
+            output_ids = (
+                [str(value).strip() for value in w6_meta.get("source_output_ids") or []]
+                if isinstance(w6_meta, Mapping)
+                else []
+            )
+            sha256_hex = lambda value: (
+                len(value) == 64
+                and all(char in "0123456789abcdef" for char in value)
+            )
+            timeframe_rows = {
+                str(row.get("output_id") or ""): dict(row)
+                for row in (w6_meta.get("timeframe_degrees") or [])
+                if isinstance(row, Mapping)
+            } if isinstance(w6_meta, Mapping) else {}
+            required_feature_names = (
+                "elliott_structure",
+                "fibonacci_geometry",
+                "swing_routing",
+                "uncertainty_state",
+            )
+            feature_lineage_complete = bool(output_ids)
+            for output_id in output_ids:
+                row = timeframe_rows.get(output_id, {})
+                feature_hashes = row.get("lineage_features")
+                if not isinstance(feature_hashes, Mapping):
+                    feature_lineage_complete = False
+                    break
+                if any(
+                    not sha256_hex(str(feature_hashes.get(name) or "").lower())
+                    for name in required_feature_names
+                ):
+                    feature_lineage_complete = False
+                    break
+            provenance_complete = bool(
+                source_capture_id
+                and snapshot_id
+                and sha256_hex(market_hash)
+                and sha256_hex(daily_hash)
+                and output_ids
+                and all(sha256_hex(value.lower()) for value in output_ids)
+                and feature_lineage_complete
+            )
+            context_version = (
+                f"{source_name}:capture:{source_capture_id}"
+                if provenance_complete
+                else source_name
+            )
             context_material = {
                 "symbol": validated.get("symbol"),
-                "source": swing.get("source"),
+                "source": source_name,
                 "source_output_id": context_id,
                 "review_contexts": list(swing.get("review_contexts") or []),
                 "context_conflict": swing.get("context_conflict"),
             }
+
+            if provenance_complete:
+                source_as_of = str(validated["as_of"])
+                market_node_id = f"elliott:market_ohlcv:{market_hash}"
+                daily_node_id = f"elliott:daily_research:{snapshot_id}"
+                self._ensure_node({
+                    "node_id": market_node_id,
+                    "version_id": market_hash,
+                    "node_type": "RAW_SOURCE",
+                    "content_hash": market_hash,
+                    "lineage_complete": True,
+                    "as_of": source_as_of,
+                    "metadata": {
+                        "phase": "6A-6H",
+                        "source": "artifacts/market_data/yahoo_ohlcv.csv",
+                        "source_capture_id": source_capture_id,
+                        "research_only": True,
+                    },
+                }, actor_id, actor_role)
+                self._ensure_node({
+                    "node_id": daily_node_id,
+                    "version_id": daily_hash,
+                    "node_type": "RAW_SOURCE",
+                    "content_hash": daily_hash,
+                    "lineage_complete": True,
+                    "as_of": source_as_of,
+                    "metadata": {
+                        "phase": "6H prospective capture",
+                        "source": "daily_research",
+                        "snapshot_id": snapshot_id,
+                        "source_capture_id": source_capture_id,
+                        "research_only": True,
+                    },
+                }, actor_id, actor_role)
+
+                validation_source = (
+                    source_provenance.get("validation_source")
+                    if isinstance(source_provenance, Mapping)
+                    else None
+                )
+                validation_ref: tuple[str, str] | None = None
+                if isinstance(validation_source, Mapping):
+                    stage4_hash = str(validation_source.get("stage4_result_hash") or "").lower()
+                    validation_price_hash = str(validation_source.get("price_source_sha256") or "").lower()
+                    validation_commit = str(validation_source.get("source_commit") or "").strip()
+                    validation_adapter = str(validation_source.get("adapter") or "").strip()
+                    if sha256_hex(stage4_hash) and sha256_hex(validation_price_hash) and validation_adapter:
+                        validation_raw_id = f"elliott:validation_price_history:{validation_price_hash}"
+                        validation_id = f"elliott:stage4_validation:{stage4_hash}"
+                        self._ensure_node({
+                            "node_id": validation_raw_id,
+                            "version_id": validation_price_hash,
+                            "node_type": "RAW_SOURCE",
+                            "content_hash": validation_price_hash,
+                            "lineage_complete": True,
+                            "as_of": source_as_of,
+                            "metadata": {
+                                "phase": "Stage4/6G validation",
+                                "source": "historical Elliott validation price history",
+                                "source_commit": validation_commit or None,
+                                "research_only": True,
+                            },
+                        }, actor_id, actor_role)
+                        self._ensure_node({
+                            "node_id": validation_id,
+                            "version_id": validation_adapter,
+                            "node_type": "CALIBRATION",
+                            "content_hash": stage4_hash,
+                            "lineage_complete": True,
+                            "as_of": source_as_of,
+                            "metadata": {
+                                "phase": "Stage4->6G",
+                                "adapter": validation_adapter,
+                                "source_commit": validation_commit or None,
+                                "research_only": True,
+                                "automatic_promotion_allowed": False,
+                            },
+                        }, actor_id, actor_role)
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                validation_raw_id,
+                                validation_price_hash,
+                                validation_id,
+                                validation_adapter,
+                                "PRODUCES",
+                            ])[:24],
+                            "from_node_id": validation_raw_id,
+                            "from_version_id": validation_price_hash,
+                            "to_node_id": validation_id,
+                            "to_version_id": validation_adapter,
+                            "relation": "PRODUCES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+                        validation_ref = (validation_id, validation_adapter)
+
+                for output_id in output_ids:
+                    output_id = output_id.lower()
+                    output_node_id = f"elliott:6h:{output_id}"
+                    row = timeframe_rows.get(output_id, {})
+                    lineage_features = row.get("lineage_features")
+                    assert isinstance(lineage_features, Mapping)
+                    feature_refs: list[tuple[str, str]] = []
+                    for feature_name in required_feature_names:
+                        feature_hash = str(lineage_features[feature_name]).lower()
+                        feature_id = f"elliott:{output_id}:{feature_name}"
+                        self._ensure_node({
+                            "node_id": feature_id,
+                            "version_id": feature_hash,
+                            "node_type": "FEATURE",
+                            "content_hash": feature_hash,
+                            "lineage_complete": True,
+                            "as_of": source_as_of,
+                            "metadata": {
+                                "phase": "6A-6D",
+                                "module": "elliott_vnext",
+                                "feature_name": feature_name,
+                                "timeframe": row.get("timeframe"),
+                                "degree": row.get("degree"),
+                                "source_capture_id": source_capture_id,
+                                "research_only": True,
+                            },
+                        }, actor_id, actor_role)
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                market_node_id,
+                                market_hash,
+                                feature_id,
+                                feature_hash,
+                                "PRODUCES",
+                            ])[:24],
+                            "from_node_id": market_node_id,
+                            "from_version_id": market_hash,
+                            "to_node_id": feature_id,
+                            "to_version_id": feature_hash,
+                            "relation": "PRODUCES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+                        feature_refs.append((feature_id, feature_hash))
+
+                    self._ensure_node({
+                        "node_id": output_node_id,
+                        "version_id": "elliott_vnext_output_v2",
+                        "node_type": "INDICATOR",
+                        "content_hash": output_id,
+                        "lineage_complete": True,
+                        "as_of": source_as_of,
+                        "metadata": {
+                            "phase": "6H",
+                            "module": "elliott_vnext",
+                            "timeframe": row.get("timeframe"),
+                            "degree": row.get("degree"),
+                            "source_capture_id": source_capture_id,
+                            "validation_source": (
+                                dict(source_provenance.get("validation_source"))
+                                if isinstance(source_provenance.get("validation_source"), Mapping)
+                                else None
+                            ),
+                            "research_only": True,
+                        },
+                    }, actor_id, actor_role)
+                    for feature_id, feature_hash in feature_refs:
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                feature_id,
+                                feature_hash,
+                                output_node_id,
+                                "elliott_vnext_output_v2",
+                                "PRODUCES",
+                            ])[:24],
+                            "from_node_id": feature_id,
+                            "from_version_id": feature_hash,
+                            "to_node_id": output_node_id,
+                            "to_version_id": "elliott_vnext_output_v2",
+                            "relation": "PRODUCES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+                    self._ensure_edge({
+                        "edge_id": "qm-i:" + content_hash([
+                            daily_node_id,
+                            daily_hash,
+                            output_node_id,
+                            "elliott_vnext_output_v2",
+                            "INFORMS",
+                        ])[:24],
+                        "from_node_id": daily_node_id,
+                        "from_version_id": daily_hash,
+                        "to_node_id": output_node_id,
+                        "to_version_id": "elliott_vnext_output_v2",
+                        "relation": "INFORMS",
+                        "material_for_ancestry": True,
+                    }, actor_id, actor_role)
+                    if validation_ref is not None:
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                validation_ref[0],
+                                validation_ref[1],
+                                output_node_id,
+                                "elliott_vnext_output_v2",
+                                "CALIBRATES",
+                            ])[:24],
+                            "from_node_id": validation_ref[0],
+                            "from_version_id": validation_ref[1],
+                            "to_node_id": output_node_id,
+                            "to_version_id": "elliott_vnext_output_v2",
+                            "relation": "CALIBRATES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+
             self._ensure_node({
                 "node_id": context_id,
                 "version_id": context_version,
                 "node_type": "DECISION_CONTEXT",
                 "content_hash": content_hash(context_material),
-                "lineage_complete": False,
+                "lineage_complete": provenance_complete,
                 "as_of": str(validated["as_of"]),
                 "metadata": {
                     "phase": "W6",
-                    "source": swing.get("source"),
+                    "source": source_name,
                     "context_type": "elliott_review_context",
                     "research_only": True,
-                    "upstream_elliott_binding_complete": False,
+                    "upstream_elliott_binding_complete": provenance_complete,
+                    "source_capture_id": source_capture_id or None,
+                    "snapshot_id": snapshot_id or None,
                 },
             }, actor_id, actor_role)
+
+            if provenance_complete:
+                for output_id in output_ids:
+                    output_id = output_id.lower()
+                    output_node_id = f"elliott:6h:{output_id}"
+                    self._ensure_edge({
+                        "edge_id": "qm-i:" + content_hash([
+                            output_node_id,
+                            "elliott_vnext_output_v2",
+                            context_id,
+                            context_version,
+                            "INFORMS_W6_CONTEXT",
+                        ])[:24],
+                        "from_node_id": output_node_id,
+                        "from_version_id": "elliott_vnext_output_v2",
+                        "to_node_id": context_id,
+                        "to_version_id": context_version,
+                        "relation": "INFORMS",
+                        "material_for_ancestry": True,
+                    }, actor_id, actor_role)
+
             self._ensure_edge({
                 "edge_id": "qm-i:" + content_hash([
                     context_id,
