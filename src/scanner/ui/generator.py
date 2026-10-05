@@ -3393,8 +3393,13 @@ function applyHeatFilter(rows) {
       const f = [];
       if (quick.hideAvoid) f.push('hideAvoid');
       if (quick.onlyOK) f.push('onlyOK');
+      if (quick.onlyAvoid) f.push('onlyAvoid');
+      if (quick.onlyNA) f.push('onlyNA');
+      if (quick.onlyERR) f.push('onlyERR');
       if (quick.trendOK) f.push('trendOK');
+      if (quick.onlyTrendFail) f.push('trendFail');
       if (quick.liqOK) f.push('liqOK');
+      if (quick.onlyLiqFail) f.push('liqFail');
       if (quick.onlyHistoryBasis) f.push('1D-Basis');
       if (quick.onlyStock) f.push('stock');
       if (quick.onlyCrypto) f.push('crypto');
