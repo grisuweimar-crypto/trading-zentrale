@@ -594,6 +594,60 @@ class LineageRegistry:
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([decision_id, decision_version_id, action_id, version_id, "INFORMS"])[:24], "from_node_id": decision_id, "from_version_id": decision_version_id, "to_node_id": action_id, "to_version_id": version_id, "relation": "INFORMS", "material_for_ancestry": True}, actor_id, actor_role)
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([position_id, position_version, action_id, version_id, "USES_POSITION"])[:24], "from_node_id": position_id, "from_version_id": position_version, "to_node_id": action_id, "to_version_id": version_id, "relation": "USES_POSITION", "material_for_ancestry": True}, actor_id, actor_role)
 
+        # BA-QM11 CAPA: W6 Elliott review context is a material immediate
+        # parent whenever 7F consumed it.  The context node is intentionally
+        # marked lineage-incomplete until the upstream Elliott provenance graph
+        # is bound into QM-I; missing upstream lineage therefore stays visible
+        # instead of masquerading as independence.
+        swing = validated.get("swing_management")
+        if isinstance(swing, Mapping) and swing.get("source") is not None:
+            context_id = _text(
+                swing.get("source_output_id"),
+                "swing_management.source_output_id",
+            )
+            context_version = _text(
+                swing.get("source"),
+                "swing_management.source",
+            )
+            context_material = {
+                "symbol": validated.get("symbol"),
+                "source": swing.get("source"),
+                "source_output_id": context_id,
+                "review_contexts": list(swing.get("review_contexts") or []),
+                "context_conflict": swing.get("context_conflict"),
+                "adjustment": swing.get("adjustment"),
+            }
+            self._ensure_node({
+                "node_id": context_id,
+                "version_id": context_version,
+                "node_type": "DECISION_CONTEXT",
+                "content_hash": content_hash(context_material),
+                "lineage_complete": False,
+                "as_of": str(validated["as_of"]),
+                "metadata": {
+                    "phase": "W6",
+                    "source": swing.get("source"),
+                    "context_type": "elliott_review_context",
+                    "research_only": True,
+                    "upstream_elliott_binding_complete": False,
+                },
+            }, actor_id, actor_role)
+            self._ensure_edge({
+                "edge_id": "qm-i:" + content_hash([
+                    context_id,
+                    context_version,
+                    action_id,
+                    version_id,
+                    "INFORMS_W6_ACTION",
+                ])[:24],
+                "from_node_id": context_id,
+                "from_version_id": context_version,
+                "to_node_id": action_id,
+                "to_version_id": version_id,
+                "relation": "INFORMS",
+                "material_for_ancestry": True,
+            }, actor_id, actor_role)
+
         # BA-QM11 CAPA: W7/W8 path-state is a material parent whenever it is
         # attached to the final portfolio-action artifact.  Before this guard,
         # QM-I could register a W8-routed action using only 7D + position
