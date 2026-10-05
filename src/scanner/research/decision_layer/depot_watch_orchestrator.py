@@ -563,13 +563,18 @@ def _attach_elliott_swing_context(
     return watch
 
 
-def build_orchestrated_depot_watch(
+def build_orchestrated_depot_watch_artifacts(
     daily: Mapping[str, object],
     position_book: Mapping[str, object],
     archive_packets: Sequence[Mapping[str, object]],
     elliott_6h_source: Mapping[str, object] | None = None,
-) -> tuple[dict[str, object], dict[str, object]]:
-    """Build the existing 7H Watch from the canonical archived Decision chain."""
+) -> tuple[dict[str, object], dict[str, object], dict[str, object]]:
+    """Build the private 7H Watch and return its already-validated bundle set.
+
+    The extra return value exists only for private downstream research capture
+    such as W8 shadow tracing.  No bundle or position payload is persisted by
+    this function.
+    """
     bundle_set, diagnostics = build_decision_bundle_set(
         daily,
         position_book,
@@ -582,4 +587,20 @@ def build_orchestrated_depot_watch(
     watch = _attach_path_reviews(watch, bundle_set)
     watch = _attach_phase5_shadow(watch, bundle_set)
     watch = _attach_elliott_swing_context(watch, bundle_set)
+    return watch, diagnostics, bundle_set
+
+
+def build_orchestrated_depot_watch(
+    daily: Mapping[str, object],
+    position_book: Mapping[str, object],
+    archive_packets: Sequence[Mapping[str, object]],
+    elliott_6h_source: Mapping[str, object] | None = None,
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Build the existing 7H Watch from the canonical archived Decision chain."""
+    watch, diagnostics, _ = build_orchestrated_depot_watch_artifacts(
+        daily,
+        position_book,
+        archive_packets,
+        elliott_6h_source=elliott_6h_source,
+    )
     return watch, diagnostics
