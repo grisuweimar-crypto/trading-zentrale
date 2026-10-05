@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-"""History Delta (Score/Rank changes between latest two snapshots).
+"""History Delta: umbrella for the scanner-internal timeline.
 
-This module is explainability-only.
-It reads existing CSV outputs and produces delta reports into artifacts/.
-It must never influence scoring.
+History Delta has three deliberately separate layers:
+- Rank Delta: relative position change inside a comparable scanner universe.
+- Score Delta: absolute change of the scanner score.
+- Events: discrete status/rank-threshold changes with a real prior basis.
+
+The canonical source is the local daily snapshot history. These metrics are
+scanner-internal explainability facts, not price performance, and must never
+influence scoring.
 
 Inputs
 ------
@@ -503,13 +508,27 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "schema_version": SCHEMA_VERSION,
             "latest_date": None,
             "prev_date": None,
-            "stats": {"total": 0, "new": 0, "dropped": 0, "changed": 0},
+            "stats": {
+                "total": 0,
+                "new": 0,
+                "dropped": 0,
+                "changed": 0,
+                "event_count": 0,
+                "comparison_basis_count": 0,
+            },
             "by_symbol": {},
             "movers_up": [],
             "movers_down": [],
             "new_symbols": [],
             "dropped_symbols": [],
             "events": [],
+            "history_schema_version": HISTORY_SCHEMA_VERSION,
+            "semantics": {
+                "internal_scanner_history_only": True,
+                "price_performance_metric": False,
+                "events_require_comparable_previous_snapshot": True,
+                "new_or_dropped_assets_do_not_create_status_events": True,
+            },
         }
         return empty, js
 
@@ -526,12 +545,27 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "schema_version": SCHEMA_VERSION,
             "latest_date": latest,
             "prev_date": None,
-            "stats": {"total": int(work["symbol"].nunique()), "new": 0, "dropped": 0, "changed": 0},
+            "stats": {
+                "total": int(work["symbol"].nunique()),
+                "new": 0,
+                "dropped": 0,
+                "changed": 0,
+                "event_count": 0,
+                "comparison_basis_count": 0,
+            },
             "by_symbol": {},
             "movers_up": [],
             "movers_down": [],
             "new_symbols": [],
             "dropped_symbols": [],
+            "events": [],
+            "history_schema_version": HISTORY_SCHEMA_VERSION,
+            "semantics": {
+                "internal_scanner_history_only": True,
+                "price_performance_metric": False,
+                "events_require_comparable_previous_snapshot": True,
+                "new_or_dropped_assets_do_not_create_status_events": True,
+            },
         }
         return empty, js
 
