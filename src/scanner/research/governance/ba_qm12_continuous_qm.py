@@ -253,10 +253,7 @@ def _masterplan_residual_monitor(
     ba_qm7_open = ba_qm7.get("empirical_validation_status") != "ESTABLISHED"
 
     decision = _read(root / "configs" / "decision_validation_promotion_v1.json")
-    decision_open = (
-        decision.get("productive_integration_enabled") is not True
-        or decision.get("execution_allowed") is not True
-    )
+    decision_open = decision.get("productive_integration_enabled") is not True
 
     external = _read(root / "configs" / "external_evidence_8_contract_v1.json")
     external_quarantined = external.get("status") != "productive_promoted"
