@@ -6,7 +6,10 @@ on:
     paths:
       - ".github/ba_qm8_force_scan_once.txt"
   schedule:
-    # Primaertermin plus Nachholtermine bei verspaeteten/ausgefallenen GitHub-Starts.
+    # Frueher Primaertermin fuer die 17:15-Watch plus Nachholtermine bei
+    # verspaeteten/ausgefallenen GitHub-Starts.
+    - cron: '7 16 * * *'
+      timezone: Europe/Berlin
     - cron: '7 17 * * *'
       timezone: Europe/Berlin
     - cron: '37 18,20 * * *'
@@ -33,7 +36,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
-      - name: Bereits publizierten Abendscan pruefen
+      - name: Bereits publizierten gueltigen Tageslauf pruefen
         id: check
         run: python scripts/autorun_state.py
 
@@ -168,7 +171,7 @@ jobs:
         if: steps.research.outputs.complete == 'true'
         run: python scripts/check_publication_base.py
 
-      - name: Erfolgreichen Abendscan vormerken
+      - name: Erfolgreichen gueltigen Tageslauf vormerken
         if: steps.research.outputs.complete == 'true'
         # Marker und Ergebnisse werden gemeinsam publiziert; ein fehlgeschlagener
         # Push oder unvollstaendiger Scan darf keinen Nachholtermin unterdruecken.
