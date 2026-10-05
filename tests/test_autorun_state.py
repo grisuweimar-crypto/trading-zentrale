@@ -29,22 +29,22 @@ class AutorunStateTests(unittest.TestCase):
             (self.root / STATE).write_text(content, encoding="utf-8")
             self.assertTrue(should_run(self.root, "schedule", self.now))
 
-    def test_morning_previous_day_future_or_naive_marker_allows_retry(self):
-        for timestamp in ("2026-09-18T10:38:00+00:00", "2026-09-17T18:00:00+00:00",
+    def test_before_window_previous_day_future_or_naive_marker_allows_retry(self):
+        for timestamp in ("2026-09-18T14:06:00+02:00", "2026-09-17T18:00:00+00:00",
                           "2026-09-18T20:00:00+00:00", "2026-09-18T17:30:00"):
             self.record(timestamp)
             self.assertTrue(should_run(self.root, "schedule", self.now))
 
-    def test_evening_publication_skips_retry_but_manual_run_is_allowed(self):
-        self.record("2026-09-18T15:07:00+00:00")
+    def test_valid_publication_from_1607_skips_retry_but_manual_run_is_allowed(self):
+        self.record("2026-09-18T14:07:00+00:00")
         self.assertFalse(should_run(self.root, "schedule", self.now))
         self.assertTrue(should_run(self.root, "workflow_dispatch", self.now))
 
     def test_winter_uses_berlin_time(self):
         now = datetime.fromisoformat("2026-12-18T18:37:00+01:00")
-        self.record("2026-12-18T15:30:00+00:00")
+        self.record("2026-12-18T15:06:00+00:00")
         self.assertTrue(should_run(self.root, "schedule", now))
-        self.record("2026-12-18T16:07:00+00:00")
+        self.record("2026-12-18T15:07:00+00:00")
         self.assertFalse(should_run(self.root, "schedule", now))
 
     def test_cli_record_and_github_output(self):
@@ -62,6 +62,11 @@ class AutorunStateTests(unittest.TestCase):
     def test_workflow_serializes_checks_and_publishes_marker_only_after_validation(self):
         project = Path(__file__).resolve().parents[1]
         workflow = yaml.load((project / ".github/workflows/run_scanner.yml").read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+        schedules = workflow["on"]["schedule"]
+        self.assertEqual(schedules[0]["cron"], "7 16 * * *")
+        self.assertEqual(schedules[0]["timezone"], "Europe/Berlin")
+        self.assertEqual(schedules[1]["cron"], "7 17 * * *")
+        self.assertEqual(schedules[1]["timezone"], "Europe/Berlin")
         self.assertEqual(workflow["concurrency"]["cancel-in-progress"], "false")
         build = workflow["jobs"]["build"]
         self.assertEqual(build["needs"], "autorun")
