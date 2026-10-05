@@ -4,6 +4,7 @@ import copy
 
 import pytest
 
+import scanner.research.governance.ba_qm10_production_operations as qm10
 from scanner.research.decision_layer.current_evidence import (
     CURRENT_PACKET_SET_SCHEMA_VERSION,
     CurrentDecisionEvidenceError,
@@ -286,9 +287,13 @@ def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -
     assert result["open_static_risk_count"] == 0
     assert result["runtime_shard_count"] == 32
     assert result["runtime_max_shard_bytes"] < result["runtime_hard_limit_bytes"] == 2_000_000
-    assert result["runtime_symbol_count"] == 213
-    assert result["runtime_packet_count"] == 1491
+    assert result["runtime_symbol_count"] > 0
+    assert result["runtime_packet_count"] >= result["runtime_symbol_count"]
     assert result["symbol_views_runtime_projection_matches"] is True
+    assert result["current_runtime_evaluated_separately"] is True
+    historical = result["historical_closure_evidence"]
+    assert historical["historical_record_not_live_runtime_identity"] is True
+    assert historical["runtime_projection_sha256"]
     assert result["engineering_closure_performed"] is True
     assert result["research_logic_changed"] is False
     assert result["decision_logic_changed"] is False
@@ -298,3 +303,47 @@ def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -
     assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert result["ba_qm10_may_release_lag1_block"] is False
     assert result["next_mandatory_work_package"] == "BA-QM11 – Gesamtsystem-Audit"
+
+
+
+def test_historical_ba_qm10_closure_survives_new_valid_live_snapshot(monkeypatch) -> None:
+    monkeypatch.setattr(
+        qm10,
+        "audit_current_operations",
+        lambda root: {
+            "status": "BA_QM10_ENGINEERING_COMPLETE",
+            "closure_eligible": True,
+            "all_required_checks_passed": True,
+            "all_required_guards_passed": True,
+            "open_finding_count": 0,
+            "open_static_risk_count": 0,
+            "runtime_matches_current_snapshot": True,
+            "symbol_views_match_current_snapshot": True,
+            "symbol_views_runtime_projection_matches": True,
+            "snapshot_id": "future-live-snapshot",
+            "snapshot_as_of": "2026-10-05",
+            "required_check_count": 13,
+            "runtime_projection_sha256": "f" * 64,
+        },
+    )
+    monkeypatch.setattr(
+        qm10,
+        "audit_current_runtime_capacity",
+        lambda root: {
+            "status": "PASS",
+            "shard_count": 32,
+            "max_shard_bytes": 1_500_000,
+            "hard_limit_bytes": 2_000_000,
+            "symbol_count": 214,
+            "packet_count": 1500,
+        },
+    )
+
+    result = qm10.evaluate_ba_qm10_closure()
+    assert result["snapshot_id"] == "future-live-snapshot"
+    assert result["runtime_projection_sha256"] == "f" * 64
+    assert result["current_runtime_evaluated_separately"] is True
+    historical = result["historical_closure_evidence"]
+    assert historical["snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+    assert historical["runtime_projection_sha256"] != result["runtime_projection_sha256"]
+    assert result["status"] == "BA_QM10_ENGINEERING_COMPLETE"
