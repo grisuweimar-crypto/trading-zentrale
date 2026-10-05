@@ -12,6 +12,9 @@ from typing import Any, Mapping
 
 from scanner.research.governance.ba_qm10_production_operations import audit_current_operations
 from scanner.research.governance.qm_h_capa import CapaLedger
+from scanner.research.governance.qm_j_phase1a_lag1_effectiveness import (
+    load_plan as load_lag1_effectiveness_plan,
+)
 
 ROOT = Path(__file__).resolve().parents[4]
 CONTRACT_PATH = ROOT / "configs" / "ba_qm12_continuous_qm_v1.json"
@@ -221,6 +224,10 @@ def _masterplan_residual_monitor(
     qmj: Mapping[str, Any],
     w8: Mapping[str, Any],
 ) -> dict[str, Any]:
+    lag1_plan = load_lag1_effectiveness_plan(
+        root / "configs" / "qm_j_phase1a_lag1_effectiveness_v1.json",
+        root / "configs" / "qm_j_phase1a_lag1_effectiveness_freeze_v1.json",
+    )
     phase7 = _mapping(qmi.get("phase7_integration"), "qmi.phase7_integration")
     w6_complete = all(
         phase7.get(field) is True
@@ -278,6 +285,10 @@ def _masterplan_residual_monitor(
             "evidence_impact": capa.get("evidence_impact"),
             "finding_id": capa.get("finding_id"),
             "capa_id": capa.get("capa_id"),
+            "prospective_plan_validated": True,
+            "eligible_observation_from": lag1_plan.eligible_observation_from,
+            "primary_horizon_sessions": lag1_plan.horizon_sessions,
+            "automatic_release_allowed": False,
         },
         "W8_EMPIRICAL_UTILITY": {
             "status": "RESEARCH_REQUIRED" if w8_open else "ESTABLISHED",
