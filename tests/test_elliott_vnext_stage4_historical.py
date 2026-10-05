@@ -287,3 +287,93 @@ def test_stage4_fails_closed_on_replay_errors(monkeypatch) -> None:
             replay_chunk_count=20,
             config=ValidationConfig(bootstrap_reps=0),
         )
+
+
+def test_stage4_component_builder_preserves_no_promotion_boundaries() -> None:
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [{"symbol": "AAA", "errors": []}],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    guard = {
+        "valid": True,
+        "violation_count": 0,
+        "violations": [],
+        "coverage_complete": True,
+        "coverage_violation_count": 0,
+        "replay_error_count": 0,
+        "replay_errors_are_missing_evidence_not_imputed": True,
+        "snapshot_guard_verified_per_chunk": True,
+    }
+    structure = [
+        {
+            "partition": "legacy_development_descriptive_only",
+            "wave_stage": "wave_2_complete",
+            "degree": "minor",
+            "scenario_role": "primary",
+            "structure_resolution": "progressed",
+            "structural_fit": 1.0,
+        }
+    ]
+
+    result = stage4.build_stage4_historical_validation_from_components(
+        _prices(),
+        structure_validation=structure,
+        projection_outcomes=[],
+        route_outcomes=[],
+        replay_coverage=replay_coverage,
+        replay_guard_review=guard,
+        projection_claim_count=0,
+        route_claim_count=0,
+        price_source_sha256="b" * 64,
+        source_commit="a" * 40,
+        replay_chunk_count=20,
+        source_workflow_run_id=123,
+        config=ValidationConfig(bootstrap_reps=0, replay_price_basis="raw"),
+    )
+
+    assert result["technical_stage_status"] == "COMPLETE"
+    assert result["empirical_promotion_status"] == "NOT_PROMOTED"
+    assert result["replay"]["aggregation_mode"] == "distilled_validation_components"
+    assert result["replay"]["source_workflow_run_id"] == 123
+    assert result["replay"]["guard_review"]["replay_error_count"] == 0
+    assert result["boundaries"]["raw_close_fallback_for_performance"] is False
+    assert result["boundaries"]["automatic_promotion_allowed"] is False
+
+
+def test_stage4_component_builder_rejects_incomplete_guard() -> None:
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [{"symbol": "AAA", "errors": []}],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    guard = {
+        "valid": False,
+        "coverage_complete": False,
+        "replay_error_count": 1,
+    }
+
+    with pytest.raises(
+        stage4.Stage4HistoricalValidationError,
+        match="component_replay_guard_invalid",
+    ):
+        stage4.build_stage4_historical_validation_from_components(
+            _prices(),
+            structure_validation=[],
+            projection_outcomes=[],
+            route_outcomes=[],
+            replay_coverage=replay_coverage,
+            replay_guard_review=guard,
+            projection_claim_count=0,
+            route_claim_count=0,
+            price_source_sha256="b" * 64,
+            source_commit="a" * 40,
+            replay_chunk_count=20,
+            config=ValidationConfig(bootstrap_reps=0, replay_price_basis="raw"),
+        )
