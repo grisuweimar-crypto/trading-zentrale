@@ -5,11 +5,12 @@ from __future__ import annotations
 Explainability-only. It merges:
 - briefing.json (top picks + reasons)
 - history_delta.json (scanner-internal rank/score changes)
-- reality_check.json (top issues)
+- reality_check.json (internal-vs-official segment comparison)
 - segment_monitor.json (segment changes)
 
 History Delta shows the internal progression of the scanner based on local daily snapshots.
-It is NOT market performance or price performance - it's scanner-internal ranking changes.
+It is NOT market performance or price performance. Reality Check is a segment
+validation layer, not a symbol-level data-quality verdict.
 
 Outputs
 -------
@@ -57,14 +58,6 @@ def build_briefing_realities_text() -> tuple[str, dict[str, Any]]:
                 if isinstance(it, dict) and isinstance(it.get("symbol"), str):
                     d_by_sym[it["symbol"]] = it
 
-    # reality issues: symbol -> problems
-    r_by_sym: dict[str, dict[str, Any]] = {}
-    arr = reality.get("top_issues")
-    if isinstance(arr, list):
-        for it in arr:
-            if isinstance(it, dict) and isinstance(it.get("symbol"), str):
-                r_by_sym[it["symbol"]] = it
-
     # segment changes: symbol -> list
     s_by_sym: dict[str, list[dict[str, Any]]] = {}
     arr = segment.get("changes")
@@ -83,13 +76,27 @@ def build_briefing_realities_text() -> tuple[str, dict[str, Any]]:
     if reality.get("date"):
         stats = reality.get("stats") or {}
         if isinstance(stats, dict):
-            lines.append(f"Reality Check: ok={stats.get('ok')} warn={stats.get('warn')} error={stats.get('error')}")
+            if any(key in stats for key in ("aligned", "scanner_stronger", "scanner_weaker", "contra_market", "unclear")):
+                lines.append(
+                    "Reality Check: "
+                    f"gleich={stats.get('aligned', 0)} "
+                    f"Scanner+={stats.get('scanner_stronger', 0)} "
+                    f"Scanner-={stats.get('scanner_weaker', 0)} "
+                    f"kontra={stats.get('contra_market', 0)} "
+                    f"unklar={stats.get('unclear', 0)}"
+                )
+            else:
+                # Legacy compatibility for already persisted v1 reports.
+                lines.append(
+                    f"Reality Check: ok={stats.get('ok')} "
+                    f"warn={stats.get('warn')} error={stats.get('error')}"
+                )
     lines.append("")
 
     if not top:
         lines.append("Noch kein Briefing verfügbar. (scripts/generate_briefing.py ausführen)")
     else:
-        lines.append("Top-Picks (aus Briefing) mit Reality/Delta:")
+        lines.append("Top-Picks (aus Briefing) mit History/Segment-Kontext:")
         for it in top[:6]:
             if not isinstance(it, dict):
                 continue
@@ -113,12 +120,6 @@ def build_briefing_realities_text() -> tuple[str, dict[str, Any]]:
                         extra.append(f"ΔScore {sd}")
                 if extra:
                     lines.append(f"  • History: " + " / ".join(extra))
-
-            r = r_by_sym.get(sym)
-            if r:
-                problems = str(r.get("problems", "") or "")
-                if problems:
-                    lines.append(f"  • Reality: {problems}")
 
             sc = s_by_sym.get(sym)
             if sc:
