@@ -1487,7 +1487,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
               <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
               <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
-              <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
+              <th data-k="score" class="right" title="Gesamtscore (höher = besser) · R0–R5 daneben = interner Workflow-Code, kein Handelssignal">Score</th>
               <th data-k="dscore_1d" class="hide-sm right" title="dScore 1D = Veränderung des Scanner-Scores vs. letzter lokaler Tages-Snapshot; keine Kursrendite">dScore 1D</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
@@ -2347,7 +2347,7 @@ function applyPillarFilter(rows) {
       if (p !== null && p >= 75 && liq) return {code: 'R4', cls: 'good', label: 'Strong Consider · hohe Priorität'};
       if (p !== null && p >= 45) return {code: 'R3', cls: 'blue', label: 'Consider · genauer prüfen'};
       if (p !== null && p >= 20) return {code: 'R2', cls: 'warn', label: 'Watch · beobachten'};
-      return {code: 'R1', cls: 'bad', label: 'Low Priority · aktuell unattraktiv'};
+      return {code: 'R1', cls: 'bad', label: 'Sell / Exit · aktuell unattraktiv'};
     }
 
     function scoreCell(r) {
