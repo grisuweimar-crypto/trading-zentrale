@@ -4024,12 +4024,22 @@ function applyHeatFilter(rows) {
           '</tr>';
         }).join('');
 
+        const rules = (r && r.rules) || {};
+        const tol = asNum(rules.alignment_tolerance_dscore);
+        const minN = Number(rules.min_pair_valid || 0);
+        const minCov = asNum(rules.min_pair_coverage);
+        const ruleText = 'Regel: Gegenläufige Vorzeichen = Kontra Markt; |Differenz| ≤ ' +
+          (tol === null ? '–' : tol.toFixed(2)) +
+          ' = gleichgerichtet; sonst relative Stärke. Belastbare Aussage erst ab n≥' +
+          (minN || '–') + ' und Coverage≥' +
+          (minCov === null ? '–' : (minCov * 100).toFixed(0) + '%') + '.';
+
         return summary +
           '<table class="realityTable">' +
             '<thead><tr><th>Intern</th><th>Offiziell</th><th>Scanner dScore</th><th>Offiziell dScore</th><th>Einordnung</th><th>Basis</th></tr></thead>' +
             '<tbody>' + body + '</tbody>' +
           '</table>' +
-          '<div class="muted small" style="margin-top:6px;">Reality Check = Einordnung derselben Scanner-Bewegung über zwei Segment-Sichten. Keine Wahrheit, kein Kursbenchmark.</div>';
+          '<div class="muted small" style="margin-top:6px;">Reality Check = Einordnung derselben Scanner-Bewegung über zwei Segment-Sichten. Keine Wahrheit, kein Kursbenchmark. ' + esc(ruleText) + '</div>';
       } catch (e) { return ''; }
     }
 
