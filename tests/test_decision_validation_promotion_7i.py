@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +11,7 @@ from scanner.research.decision_layer.promotion_validation import (
     SCHEMA_VERSION,
     TRACE_SUMMARY_SCHEMA_VERSION,
     _canonical_hash,
+    _post_freeze_w8_contract,
     _review_state,
     validate_promotion_report,
     validate_shadow_trace_summary,
@@ -19,6 +21,7 @@ from scanner.research.decision_layer.promotion_validation import (
 START = "2026-09-26"
 LAYERS = ["7D", "7E", "7F", "7G", "7H"]
 LAYERS_W8 = ["7D", "7E", "7F", "W8", "7G", "7H"]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _archive(packets=0):
@@ -315,3 +318,18 @@ def test_w8_trace_is_forbidden_before_policy_introduction():
             reviewed_as_of=date(2026, 9, 30),
             w8_prospective_start=None,
         )
+
+
+def test_post_freeze_w8_overlay_is_not_retrojected_before_introduction():
+    contract, digest = _post_freeze_w8_contract(ROOT, date(2026, 9, 30))
+    assert contract is None
+    assert digest is None
+
+
+def test_post_freeze_w8_overlay_activates_on_introduction_date():
+    contract, digest = _post_freeze_w8_contract(ROOT, date(2026, 10, 1))
+    assert contract is not None
+    assert contract["introduced_on"] == "2026-10-01"
+    assert contract["governance"]["prospective_unspent_from"] == "2026-10-02"
+    assert contract["validation"]["empirically_validated"] is False
+    assert isinstance(digest, str) and len(digest) == 64
