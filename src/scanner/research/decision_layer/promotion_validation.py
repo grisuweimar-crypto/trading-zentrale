@@ -41,7 +41,7 @@ READINESS_STATES = frozenset({
     "metrics_ready_for_promotion_review",
 })
 REQUIRED_PHASES = ("7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H")
-DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
+DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "W8", "7G", "7H"})
 FORBIDDEN_TRUE_FIELDS = frozenset({
     "productive_integration_enabled",
     "execution_allowed",
@@ -115,6 +115,52 @@ def _source_contracts(
             raise PromotionValidationError(f"source_contract_productive_at_freeze:{phase}")
         contracts[phase] = contract
         hashes[phase] = _canonical_hash(contract)
+
+    # BA-QM11: W8 was introduced after the original 7I freeze and is an
+    # outcome-driven research change.  It therefore needs its own explicit
+    # post-change prospective boundary instead of inheriting the 2026-09-25
+    # freeze by implication.
+    w8_spec = protocol.get("post_freeze_action_policy")
+    if not isinstance(w8_spec, Mapping):
+        raise PromotionValidationError("w8_post_freeze_policy_spec_missing")
+    w8_path = root / str(w8_spec.get("path") or "")
+    w8 = _load_json(w8_path)
+    if w8.get("schema_version") != str(w8_spec.get("schema_version") or ""):
+        raise PromotionValidationError("w8_policy_schema_mismatch")
+    if w8.get("layer") != "W8":
+        raise PromotionValidationError("w8_policy_layer_mismatch")
+    if w8.get("policy_id") != w8_spec.get("policy_id"):
+        raise PromotionValidationError("w8_policy_id_mismatch")
+    if w8.get("research_only") is not True:
+        raise PromotionValidationError("w8_policy_not_research_only")
+    if w8.get("productive_integration_enabled") is not False:
+        raise PromotionValidationError("w8_policy_productive_integration_forbidden")
+    if w8.get("execution_allowed") is not False:
+        raise PromotionValidationError("w8_policy_execution_forbidden")
+    if w8.get("change_classification") != "OUTCOME_DRIVEN_RESEARCH_CHANGE":
+        raise PromotionValidationError("w8_outcome_driven_classification_required")
+    governance = w8.get("governance")
+    validation = w8.get("validation")
+    if not isinstance(governance, Mapping) or not isinstance(validation, Mapping):
+        raise PromotionValidationError("w8_governance_validation_missing")
+    if governance.get("source_case_is_spent_for_independent_confirmation") is not True:
+        raise PromotionValidationError("w8_source_case_must_be_spent")
+    if governance.get("source_case_may_not_validate_policy") is not True:
+        raise PromotionValidationError("w8_source_case_validation_forbidden_guard_missing")
+    if validation.get("empirically_validated") is not False:
+        raise PromotionValidationError("w8_must_remain_empirically_unvalidated")
+    if validation.get("promotion_eligible") is not False:
+        raise PromotionValidationError("w8_must_not_be_promotion_eligible")
+    w8_start = str(governance.get("prospective_unspent_from") or "")
+    w8_spent = str(governance.get("evidence_spent_through") or "")
+    if _day(w8_start) <= _day(w8_spent):
+        raise PromotionValidationError("w8_prospective_start_must_follow_spent_cutoff")
+    if w8_start != str(w8_spec.get("prospective_unspent_from") or ""):
+        raise PromotionValidationError("w8_prospective_start_mismatch")
+    if w8.get("introduced_on") != w8_spec.get("introduced_on"):
+        raise PromotionValidationError("w8_introduction_date_mismatch")
+    contracts["W8"] = w8
+    hashes["W8"] = _canonical_hash(w8)
 
     start = str(protocol.get("prospective_unspent_from") or "")
     spent = str(protocol.get("legacy_replay_spent_through") or "")
@@ -366,6 +412,7 @@ def validate_shadow_trace_summary(
     *,
     prospective_start: str,
     reviewed_as_of: date,
+    w8_prospective_start: str | None = None,
 ) -> dict[str, object]:
     if summary is None:
         return {
@@ -377,6 +424,9 @@ def validate_shadow_trace_summary(
             "layer_metrics_ready": {},
             "contains_raw_position_values": False,
             "public_repository_persistence": False,
+            "w8_trace_rows": 0,
+            "w8_as_of_min": None,
+            "w8_as_of_max": None,
             "future_trace_rows_ignored": 0,
         }
     if summary.get("schema_version") != TRACE_SUMMARY_SCHEMA_VERSION:
@@ -414,6 +464,26 @@ def validate_shadow_trace_summary(
             raise PromotionValidationError("pre_prospective_shadow_trace_forbidden")
         if _day(as_of_max) > reviewed_as_of:
             raise PromotionValidationError("future_shadow_trace_forbidden")
+
+    w8_rows = int(summary.get("w8_trace_rows", 0))
+    w8_as_of_min = summary.get("w8_as_of_min")
+    w8_as_of_max = summary.get("w8_as_of_max")
+    if w8_rows < 0:
+        raise PromotionValidationError("invalid_w8_shadow_trace_count")
+    if "W8" in {str(layer) for layer in layers}:
+        if w8_rows <= 0:
+            raise PromotionValidationError("w8_shadow_trace_rows_required")
+        if not w8_as_of_min or not w8_as_of_max:
+            raise PromotionValidationError("w8_shadow_trace_dates_required")
+        effective_w8_start = w8_prospective_start or prospective_start
+        if _day(w8_as_of_min) < _day(effective_w8_start):
+            raise PromotionValidationError("pre_w8_prospective_shadow_trace_forbidden")
+        if _day(w8_as_of_max) > reviewed_as_of:
+            raise PromotionValidationError("future_w8_shadow_trace_forbidden")
+        if metrics.get("W8") is True and w8_rows == 0:
+            raise PromotionValidationError("w8_metrics_ready_without_trace_forbidden")
+    elif metrics.get("W8") is True or w8_rows:
+        raise PromotionValidationError("w8_trace_requires_captured_w8_layer")
     return {
         "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
         "status": "available" if rows else "empty",
@@ -427,6 +497,9 @@ def validate_shadow_trace_summary(
         "public_repository_persistence": False,
         "as_of_min": str(as_of_min) if as_of_min else None,
         "as_of_max": str(as_of_max) if as_of_max else None,
+        "w8_trace_rows": w8_rows,
+        "w8_as_of_min": str(w8_as_of_min) if w8_as_of_min else None,
+        "w8_as_of_max": str(w8_as_of_max) if w8_as_of_max else None,
         "future_trace_rows_ignored": 0,
     }
 
@@ -497,10 +570,13 @@ def build_promotion_report(
     prospective_start = str(protocol.get("prospective_unspent_from") or "")
     dataset = _dataset_summary(root, contracts["7B"], contracts["7C"], review_day)
     archive = _archive_summary(root, review_day, prospective_start)
+    w8_governance = contracts["W8"].get("governance")
+    assert isinstance(w8_governance, Mapping)
     trace = validate_shadow_trace_summary(
         trace_summary,
         prospective_start=prospective_start,
         reviewed_as_of=review_day,
+        w8_prospective_start=str(w8_governance.get("prospective_unspent_from") or ""),
     )
     state = _review_state(review_day, prospective_start, archive, dataset, trace)
 
@@ -518,7 +594,7 @@ def build_promotion_report(
     elif state == "collecting_prospective_comparison_support":
         blockers.append("pre_registered_7c_comparisons_lack_frozen_minimum_support")
     elif state == "awaiting_downstream_shadow_trace":
-        blockers.append("private_downstream_7d_7h_shadow_trace_missing_or_incomplete")
+        blockers.append("private_downstream_7d_w8_7h_shadow_trace_missing_or_incomplete")
 
     metrics_ready = state == "metrics_ready_for_promotion_review"
     report: dict[str, object] = {
@@ -560,6 +636,7 @@ def build_promotion_report(
             ),
             "7E": "candidate_rule_not_empirically_validated",
             "7F": "portfolio_action_rule_not_empirically_validated",
+            "W8": "outcome_driven_action_policy_requires_post_2026_10_01_prospective_validation",
             "7G": "reliability_structure_not_empirically_validated",
             "7H": "integration_research_only_until_upstream_promotion_review",
         },
