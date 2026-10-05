@@ -1,0 +1,78 @@
+{
+  "schema_version": "elliott_vnext_stage5_incremental_v1",
+  "stage": "STAGE_5_INCREMENTAL_CROSS_SYSTEM",
+  "status": "research_only_not_promoted",
+  "source_stage4_artifact": "artifacts/research/elliott_vnext_stage4_historical_validation.json",
+  "source_stage4_replay_workflow_run_id": 37231656936,
+  "source_stage4_replay_commit": "97ccabbe541e449e317d48c3c1f6d6b8823054c6",
+  "rules_frozen_through": "2026-09-25",
+  "scanner_history": "artifacts/research/history_analysis.csv",
+  "price_history": "artifacts/market_data/yahoo_ohlcv.csv",
+  "event_time_transition_window_sessions": [-20, 0],
+  "descriptive_lead_lag_window_sessions": [-20, 20],
+  "forward_horizons_sessions": [5, 10, 20, 40, 60],
+  "incremental_baseline": [
+    "same_partition",
+    "same_horizon",
+    "same_review_orientation",
+    "same_wave_stage",
+    "same_degree",
+    "same_elliott_direction",
+    "without_same_prespecified_scanner_transition"
+  ],
+  "scanner_transitions": [
+    "score_turn_up",
+    "score_turn_down",
+    "opportunity_turn_up",
+    "opportunity_turn_down",
+    "risk_turn_up",
+    "risk_turn_down",
+    "rs3m_turn_up",
+    "rs3m_turn_down",
+    "trend200_turn_up",
+    "trend200_turn_down",
+    "cycle_turn_up",
+    "cycle_turn_down",
+    "trend200_cross_up",
+    "trend200_cross_down",
+    "cycle_cross_up_25",
+    "cycle_cross_down_25",
+    "cycle_cross_up_50",
+    "cycle_cross_down_50",
+    "cycle_cross_up_75",
+    "cycle_cross_down_75",
+    "r_upgrade",
+    "r_downgrade"
+  ],
+  "model_relation_labels": [
+    "confirmation_candidate",
+    "redundancy_candidate",
+    "elliott_rescue_candidate",
+    "scanner_rescue_candidate",
+    "conflict"
+  ],
+  "model_relation_rule": "evaluate_only_from_explicit_historical_asof_frozen_directional_model_claims",
+  "missing_model_claims": "missing_not_imputed_not_disagreement",
+  "uncertainty": {
+    "method": "circular_moving_observation_date_blocks",
+    "effective_block_length": "2_x_horizon",
+    "bootstrap_reps": 1000,
+    "min_support_regions": 2
+  },
+  "partitions": {
+    "legacy_development_descriptive_only": "descriptive_debug_effect_size_only_not_promotion",
+    "prospective_unspent": "may_accumulate_evidence_but_no_automatic_promotion"
+  },
+  "forbidden": [
+    "post_event_scanner_rows_in_event_time_incremental_test",
+    "retroject_present_day_model_claims",
+    "reoptimize_scanner_thresholds",
+    "recount_elliott_with_future_information",
+    "treat_overlapping_forward_windows_as_iid",
+    "automatic_promotion",
+    "change_universal_stance",
+    "change_portfolio_action",
+    "emit_trade_decision",
+    "emit_order_instruction"
+  ]
+}

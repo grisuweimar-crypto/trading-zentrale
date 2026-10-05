@@ -1,0 +1,251 @@
+name: Elliott Stage 5 Incremental Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/scanner/research/elliott_vnext/stage5_incremental.py"
+      - "src/scanner/research/elliott_vnext/cross_system.py"
+      - "src/scanner/research/elliott_vnext/validation.py"
+      - "scripts/run_elliott_stage5_chunk.py"
+      - "scripts/aggregate_elliott_stage5.py"
+      - "tests/test_elliott_vnext_stage5_incremental.py"
+      - "configs/elliott_vnext_stage5_incremental_v1.json"
+      - "docs/elliott_vnext_stage5_incremental.md"
+      - ".github/workflows/elliott_vnext_stage5_incremental.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/scanner/research/elliott_vnext/stage5_incremental.py"
+      - "src/scanner/research/elliott_vnext/cross_system.py"
+      - "src/scanner/research/elliott_vnext/validation.py"
+      - "scripts/run_elliott_stage5_chunk.py"
+      - "scripts/aggregate_elliott_stage5.py"
+      - "tests/test_elliott_vnext_stage5_incremental.py"
+      - "configs/elliott_vnext_stage5_incremental_v1.json"
+      - "docs/elliott_vnext_stage5_incremental.md"
+      - ".github/workflows/elliott_vnext_stage5_incremental.yml"
+      - "artifacts/research/history_analysis.csv"
+      - "artifacts/market_data/yahoo_ohlcv.csv"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+env:
+  SOURCE_STAGE4_RUN_ID: "37231656936"
+  SOURCE_STAGE4_COMMIT: "97ccabbe541e449e317d48c3c1f6d6b8823054c6"
+  STAGE5_CHUNK_COUNT: "20"
+
+concurrency:
+  group: elliott-stage5-incremental
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and tests
+        run: python -m pip install -e ".[test]"
+
+      - name: Verify frozen Stage 4 source exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "${SOURCE_STAGE4_COMMIT}^{commit}"
+
+      - name: Run Stage 5 and frozen 6E/6G regressions
+        run: >-
+          python -m pytest -q
+          tests/test_elliott_vnext_stage5_incremental.py
+          tests/test_elliott_vnext_cross_system.py
+          tests/test_elliott_vnext_validation.py
+          tests/test_elliott_vnext_validation_contract.py
+
+      - name: Runner smoke tests
+        run: |
+          python scripts/run_elliott_stage5_chunk.py --help
+          python scripts/aggregate_elliott_stage5.py --help
+
+  chunks:
+    if: github.event_name != 'pull_request'
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        chunk: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Download completed Stage 4 replay chunk
+        uses: actions/download-artifact@v4
+        with:
+          name: elliott-stage4-chunk-${{ matrix.chunk }}
+          path: ${{ runner.temp }}/stage4_chunk
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_STAGE4_RUN_ID }}
+
+      - name: Build Stage 5 chunk
+        run: >-
+          python scripts/run_elliott_stage5_chunk.py
+          --input "$RUNNER_TEMP/stage4_chunk/stage4-chunk-${{ matrix.chunk }}.json.gz"
+          --output "$RUNNER_TEMP/stage5-chunk-${{ matrix.chunk }}.json.gz"
+          --source-commit ${{ env.SOURCE_STAGE4_COMMIT }}
+          --source-workflow-run-id ${{ env.SOURCE_STAGE4_RUN_ID }}
+
+      - name: Upload Stage 5 chunk
+        uses: actions/upload-artifact@v4
+        with:
+          name: elliott-stage5-chunk-${{ matrix.chunk }}
+          path: ${{ runner.temp }}/stage5-chunk-${{ matrix.chunk }}.json.gz
+          if-no-files-found: error
+          retention-days: 3
+
+  aggregate:
+    if: github.event_name != 'pull_request'
+    needs: chunks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Download Stage 5 chunks
+        uses: actions/download-artifact@v4
+        with:
+          pattern: elliott-stage5-chunk-*
+          path: ${{ runner.temp }}/stage5_chunks
+          merge-multiple: true
+
+      - name: Aggregate Stage 5
+        run: >-
+          python scripts/aggregate_elliott_stage5.py
+          --chunks-dir "$RUNNER_TEMP/stage5_chunks"
+          --chunk-count ${{ env.STAGE5_CHUNK_COUNT }}
+          --source-commit ${{ env.SOURCE_STAGE4_COMMIT }}
+          --source-workflow-run-id ${{ env.SOURCE_STAGE4_RUN_ID }}
+          --bootstrap-reps 1000
+
+      - name: Validate canonical Stage 5 artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("artifacts/research/elliott_vnext_stage5_incremental.json")
+          report = json.loads(path.read_text(encoding="utf-8"))
+
+          assert report["schema_version"] == "elliott_vnext_stage5_incremental_v1"
+          assert report["stage"] == "STAGE_5_INCREMENTAL_CROSS_SYSTEM"
+          assert report["technical_stage_status"] == "COMPLETE"
+          assert report["empirical_promotion_status"] == "NOT_PROMOTED"
+          assert report["source"]["source_commit"] == "97ccabbe541e449e317d48c3c1f6d6b8823054c6"
+          assert report["source"]["source_workflow_run_id"] == 37231656936
+          assert report["source"]["chunk_count"] == 20
+          assert report["source"]["symbol_count"] == 211
+          assert report["coverage"]["elliott_events"] > 0
+          assert report["coverage"]["route_claims"] > 0
+          assert report["coverage"]["route_outcome_rows"] > 0
+          assert report["coverage"]["mature_route_outcomes"] > 0
+          assert report["coverage"]["transition_incremental_rows"] > 0
+          assert report["boundaries"]["present_day_model_claims_retrojected"] is False
+          assert report["boundaries"]["post_event_scanner_rows_used_for_incremental_test"] is False
+          assert report["boundaries"]["scanner_thresholds_reoptimized"] is False
+          assert report["boundaries"]["elliott_recounted"] is False
+          assert report["boundaries"]["legacy_data_can_support_promotion"] is False
+          assert report["boundaries"]["automatic_promotion_allowed"] is False
+          assert report["boundaries"]["changes_universal_stance"] is False
+          assert report["boundaries"]["changes_portfolio_action"] is False
+          assert report["boundaries"]["trade_decision"] is None
+          assert report["boundaries"]["order_instruction"] is None
+          assert report["boundaries"]["research_only"] is True
+          assert report["interpretation"]["overlapping_forward_windows_are_iid"] is False
+          assert report["model_relation_validation"]["claims_retrojected"] is False
+
+          print(json.dumps({
+              "technical_stage_status": report["technical_stage_status"],
+              "empirical_promotion_status": report["empirical_promotion_status"],
+              "source": report["source"],
+              "coverage": report["coverage"],
+              "lead_lag_summary_rows": len(report["lead_lag_summary"]),
+              "transition_incremental_rows": len(report["transition_incremental_validation"]),
+              "model_relation_status": report["model_relation_validation"]["status"],
+          }, indent=2, sort_keys=True))
+          PY
+
+      - name: Publish Stage 5 artifact to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT="artifacts/research/elliott_vnext_stage5_incremental.json"
+          SAFE_COPY="$RUNNER_TEMP/elliott_vnext_stage5_incremental.json"
+          cp "$ARTIFACT" "$SAFE_COPY"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            BASE="$(git rev-parse origin/main)"
+
+            if [ "$BASE" != "${GITHUB_SHA}" ]; then
+              if ! git diff --quiet "${GITHUB_SHA}..${BASE}" --                 artifacts/research/history_analysis.csv                 artifacts/market_data/yahoo_ohlcv.csv                 src/scanner/research/elliott_vnext/cross_system.py                 src/scanner/research/elliott_vnext/validation.py                 src/scanner/research/elliott_vnext/stage5_incremental.py                 scripts/run_elliott_stage5_chunk.py                 scripts/aggregate_elliott_stage5.py                 configs/elliott_vnext_stage5_incremental_v1.json
+              then
+                echo "Stage 5 inputs or validation logic changed during run; refusing stale publication" >&2
+                exit 1
+              fi
+            fi
+
+            git reset --hard "$BASE"
+            mkdir -p "$(dirname "$ARTIFACT")"
+            cp "$SAFE_COPY" "$ARTIFACT"
+            git add "$ARTIFACT"
+
+            if git diff --cached --quiet; then
+              echo "Stage 5 artifact unchanged."
+              exit 0
+            fi
+
+            git commit -m "Elliott Stage 5: publish incremental validation [skip ci]"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "main advanced during Stage 5 publication; retrying" >&2
+          done
+
+          echo "Stage 5 publication race unresolved after 3 attempts" >&2
+          exit 1
