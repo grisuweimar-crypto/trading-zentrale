@@ -429,6 +429,13 @@ def build_elliott_7f_multidegree_swing_context(
                 "swing_routing": output.get("swing_routing"),
                 "routing_summary": output.get("routing_summary"),
             },
+            "uncertainty_state": {
+                "alternative_scenarios": output.get("alternative_scenarios"),
+                "structural_fit": output.get("structural_fit"),
+                "confirmation_strength": output.get("confirmation_strength"),
+                "historical_expectancy": output.get("historical_expectancy"),
+                "warnings": output.get("warnings"),
+            },
         }
         lineage_features = {
             name: sha256(
