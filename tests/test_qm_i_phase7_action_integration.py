@@ -227,3 +227,85 @@ def test_w8_state_history_claim_is_material_portfolio_action_parent(tmp_path):
         right_version_id="v1",
     )
     assert ancestry["classification"] == "DIRECT_DEPENDENCY"
+
+
+def test_w6_elliott_review_context_is_material_portfolio_action_parent(tmp_path):
+    packet = build_input_packet(
+        symbol="TEST",
+        as_of="2026-10-04T17:00:00Z",
+        source_snapshot_id="snapshot-w6-current",
+        evidence=[
+            {
+                "family": "selection",
+                "claim_id": "SEL-W6-CURRENT",
+                "as_of": "2026-10-04T17:00:00Z",
+                "available_from": "2026-10-04T17:00:00Z",
+                "source_version": "selection-v1-current",
+                "coverage_state": "available",
+                "maturity_state": "robust",
+                "pit_state": "verified",
+                "integration_mode": "research_only",
+                "payload": {"direction": "positive"},
+            }
+        ],
+    )
+    stance = compute_universal_stance(packet)
+    transition = build_state_transition_history([stance])
+    action = compute_portfolio_action(
+        transition,
+        {
+            "schema_version": "decision_position_snapshot_v1",
+            "symbol": "TEST",
+            "source_snapshot_id": "position-w6",
+            "as_of": "2026-10-04T16:00:00Z",
+            "position_state": "long",
+            "quantity": 10,
+            "market_value": 1000,
+            "currency": "EUR",
+            "average_entry_price": 90.0,
+            "current_price": 100.0,
+            "transaction_cost_bps": 10.0,
+            "can_add": False,
+            "remaining_adds": 0,
+        },
+        swing_context={
+            "source": "elliott_vnext_6h",
+            "source_output_id": "elliott-w6-output-001",
+            "as_of": "2026-10-04T16:30:00Z",
+            "review_contexts": ["profit_protection_review"],
+            "routing_is_trade_decision": False,
+            "research_only": True,
+        },
+    )
+    assert action["portfolio_action"]["state"] == "REDUCE_REVIEW"
+    assert action["swing_management"]["adjustment"] == "positive_stance_swing_reduction_review"
+
+    registry = LineageRegistry(tmp_path / "lineage.jsonl")
+    registry.register_phase7_packet(packet, actor_id="tester", actor_role="researcher")
+    registry.register_phase7_stance(
+        stance,
+        decision_id="DECISION-W6-001",
+        version_id="v1",
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    registry.register_phase7_portfolio_action(
+        action,
+        action_id="PORTFOLIO-ACTION-W6-001",
+        version_id="v1",
+        decision_id="DECISION-W6-001",
+        decision_version_id="v1",
+        actor_id="tester",
+        actor_role="researcher",
+    )
+
+    context = registry.get_node("elliott-w6-output-001", "elliott_vnext_6h")
+    assert context["node_type"] == "DECISION_CONTEXT"
+    assert context["lineage_complete"] is False
+    ancestry = registry.analyze_ancestry(
+        left_node_id="elliott-w6-output-001",
+        left_version_id="elliott_vnext_6h",
+        right_node_id="PORTFOLIO-ACTION-W6-001",
+        right_version_id="v1",
+    )
+    assert ancestry["classification"] == "DIRECT_DEPENDENCY"
