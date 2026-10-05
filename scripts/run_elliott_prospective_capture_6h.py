@@ -15,11 +15,15 @@ from scanner.research.elliott_vnext.prospective_capture import (
     archive_capture,
     build_prospective_capture,
 )
+from scanner.research.elliott_vnext.stage4_historical import (
+    adapt_stage4_validation_for_6h,
+)
 
 
 DEFAULT_PRICES = "artifacts/market_data/yahoo_ohlcv.csv"
 DEFAULT_CURRENT = "artifacts/research/elliott_vnext_prospective_current_6h.json"
 DEFAULT_ARCHIVE = "artifacts/research/elliott_vnext_prospective_history_6h.jsonl"
+DEFAULT_STAGE4_VALIDATION = "artifacts/research/elliott_vnext_stage4_historical_validation.json"
 
 
 def _sha(path: Path) -> str:
@@ -47,6 +51,7 @@ def main() -> int:
     parser.add_argument("--prices", default=DEFAULT_PRICES)
     parser.add_argument("--current", default=DEFAULT_CURRENT)
     parser.add_argument("--archive", default=DEFAULT_ARCHIVE)
+    parser.add_argument("--validation", default=DEFAULT_STAGE4_VALIDATION)
     parser.add_argument("--publication-commit", required=True)
     parser.add_argument("--publication-available-from", required=True)
     parser.add_argument("--expected-run-id")
@@ -58,6 +63,7 @@ def main() -> int:
     prices_path = _resolve(root, args.prices)
     current_path = _resolve(root, args.current)
     archive_path = _resolve(root, args.archive)
+    validation_path = _resolve(root, args.validation)
 
     daily = validate_daily_research(root)
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
@@ -73,6 +79,13 @@ def main() -> int:
         )
     if not prices_path.exists():
         raise FileNotFoundError(f"elliott_price_history_missing:{prices_path}")
+    if not validation_path.exists():
+        raise FileNotFoundError(
+            f"elliott_stage4_validation_missing:{validation_path}"
+        )
+
+    stage4_validation = json.loads(validation_path.read_text(encoding="utf-8"))
+    validation_report = adapt_stage4_validation_for_6h(stage4_validation)
 
     with prices_path.open("r", encoding="utf-8", newline="") as handle:
         price_rows = list(csv.DictReader(handle))
@@ -86,6 +99,7 @@ def main() -> int:
         price_source_sha256=_sha(prices_path),
         daily_source_sha256=_sha(daily_path),
         captured_at=datetime.now(timezone.utc).isoformat(),
+        validation_report=validation_report,
     )
     appended, stored_capture = archive_capture(archive_path, capture)
     _atomic_json(current_path, stored_capture)
@@ -104,6 +118,10 @@ def main() -> int:
                 "current": str(current_path),
                 "archive": str(archive_path),
                 "w10_source_emitted": False,
+                "validation_report_supplied": stored_capture["guards"].get(
+                    "validation_report_supplied"
+                ),
+                "validation_source": stored_capture.get("validation_source"),
             },
             indent=2,
             sort_keys=True,
