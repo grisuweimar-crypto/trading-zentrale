@@ -157,6 +157,12 @@ def _source_field_strict_ready(source: Mapping[str, Any], field: str, contract: 
     )
 
 
+def _source_is_global_scope(source: Mapping[str, Any]) -> bool:
+    """Return True only when the source explicitly claims global security coverage."""
+    geography = {_clean(value).upper() for value in (source.get("geography") or [])}
+    return source.get("global_scope") is True or "GLOBAL" in geography
+
+
 def assess_listing_metadata_sources(
     contract: Mapping[str, Any] | None = None,
     *,
@@ -169,6 +175,7 @@ def assess_listing_metadata_sources(
     fields = list(payload["sources"][0]["capabilities"].keys())
     capability_counts: dict[str, Counter[str]] = {field: Counter() for field in fields}
     strict_ready_by_field: dict[str, list[str]] = defaultdict(list)
+    global_strict_ready_by_field: dict[str, list[str]] = defaultdict(list)
     source_rows: list[dict[str, Any]] = []
 
     for source in sources:
@@ -180,6 +187,8 @@ def assess_listing_metadata_sources(
             if _source_field_strict_ready(source, field, payload):
                 strict_ready_fields.append(field)
                 strict_ready_by_field[field].append(source_id)
+                if _source_is_global_scope(source):
+                    global_strict_ready_by_field[field].append(source_id)
         source_rows.append(
             {
                 "source_id": source_id,
@@ -191,6 +200,8 @@ def assess_listing_metadata_sources(
                 "license_status": source["license_status"],
                 "promotion_eligible": source["promotion_eligible"],
                 "promotion_blockers": list(source["promotion_blockers"]),
+                "geography": list(source.get("geography") or []),
+                "global_scope": _source_is_global_scope(source),
                 "strict_ready_fields": sorted(strict_ready_fields),
                 "capabilities": dict(source["capabilities"]),
             }
@@ -198,7 +209,7 @@ def assess_listing_metadata_sources(
 
     required_for_strict_listing = ["venue_assignment", "listing_start", "listing_end"]
     blocked_required_fields = [
-        field for field in required_for_strict_listing if not strict_ready_by_field.get(field)
+        field for field in required_for_strict_listing if not global_strict_ready_by_field.get(field)
     ]
 
     prospective_sources = sorted(
@@ -228,6 +239,15 @@ def assess_listing_metadata_sources(
         "strict_ready_sources_by_field": {
             field: sorted(strict_ready_by_field.get(field, [])) for field in sorted(fields)
         },
+        "global_strict_ready_sources_by_field": {
+            field: sorted(global_strict_ready_by_field.get(field, [])) for field in sorted(fields)
+        },
+        "regional_strict_ready_source_ids": sorted(
+            source["source_id"]
+            for source in sources
+            if not _source_is_global_scope(source)
+            and any(_source_field_strict_ready(source, field, payload) for field in fields)
+        ),
         "required_for_strict_listing": required_for_strict_listing,
         "blocked_required_fields": blocked_required_fields,
         "strict_listing_ledger_ready": not blocked_required_fields,
