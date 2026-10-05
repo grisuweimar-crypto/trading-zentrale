@@ -9,7 +9,9 @@ import sys
 
 from scanner.reports.daily_research import validate_daily_research
 from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
-from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
+from scanner.research.decision_layer.depot_watch_orchestrator import (
+    build_orchestrated_depot_watch_artifacts,
+)
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
 from scanner.research.decision_layer.phase6_elliott import (
     build_elliott_6h_source_from_prospective_capture,
@@ -19,6 +21,12 @@ from scanner.research.decision_layer.watch_runtime import (
     load_runtime_packets_for_symbols,
 )
 from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
+from scanner.research.decision_layer.w8_shadow_trace import (
+    append_private_trace,
+    extract_w8_trace_rows,
+    load_private_trace,
+    summarize_w8_trace,
+)
 
 
 DEFAULT_W10_MANIFEST = "artifacts/research/decision_snapshot_w10.json"
@@ -95,6 +103,15 @@ def main() -> int:
         type=Path,
         help="Optional private diagnostics path. Diagnostics contain no position rows.",
     )
+    parser.add_argument(
+        "--w8-shadow-trace",
+        type=Path,
+        help=(
+            "Optional private JSONL path outside the repository. When supplied, "
+            "append the privacy-safe W8 shadow rows produced by this exact private "
+            "Depot-Watch run. Raw quantities, prices and P/L are never written."
+        ),
+    )
     args = parser.parse_args()
 
     daily = validate_daily_research(args.root)
@@ -163,12 +180,23 @@ def main() -> int:
         )
         transport_metadata = {**transport_metadata, "transport": "compact_watch_runtime"}
 
-    watch, diagnostics = build_orchestrated_depot_watch(
+    watch, diagnostics, bundle_set = build_orchestrated_depot_watch_artifacts(
         daily,
         positions,
         packets,
         elliott_6h_source=elliott_6h_source,
     )
+
+    w8_shadow = None
+    if args.w8_shadow_trace is not None:
+        trace_rows = extract_w8_trace_rows(bundle_set)
+        capture_receipt = append_private_trace(args.w8_shadow_trace, trace_rows)
+        trace_summary = summarize_w8_trace(load_private_trace(args.w8_shadow_trace))
+        w8_shadow = {
+            "capture": capture_receipt,
+            "summary": trace_summary,
+        }
+
     diagnostics = {
         **diagnostics,
         "evidence_transport": transport_metadata.get("transport"),
@@ -182,6 +210,8 @@ def main() -> int:
         "w10_no_backdating_guard": True,
         "w10_phase6_status": phase6_status,
         "elliott_w6_source_applied": elliott_6h_source is not None,
+        "w8_private_shadow_capture_requested": args.w8_shadow_trace is not None,
+        "w8_private_shadow_capture": w8_shadow,
     }
 
     text = json.dumps(watch, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
