@@ -169,3 +169,26 @@ python scripts/run_decision_promotion_7i.py \
 ```
 
 No real portfolio file is committed by this workflow.
+
+
+## BA-QM11 addendum — W8 post-freeze action policy
+
+The original 7I protocol was frozen on 2026-09-25. The W8 depot action policy
+(`w8_complete_7f_action_matrix_v1`) was introduced on 2026-10-01 after the
+Ferrari/RACE F1-F4 case had been inspected. BA-QM11 therefore classifies W8 as
+an `OUTCOME_DRIVEN_RESEARCH_CHANGE`.
+
+This does not invalidate the earlier 7A-7H engineering work and does not change
+the W8 review rules. It changes only the evidence boundary:
+
+- Ferrari/RACE F1-F4 is regression evidence, not independent validation.
+- W8 evidence through 2026-10-01 is spent for independent confirmation.
+- W8 empirical review requires prospective-unspent private shadow traces from
+  2026-10-02 onward.
+- W8 must be present as a separately captured downstream layer before the
+  Decision Layer can become ready for promotion review.
+- W8 remains research-only, non-executing and not promotion-eligible until that
+  prospective requirement is met.
+
+The canonical governance contract is
+`configs/decision_depot_action_policy_v1.json`.
