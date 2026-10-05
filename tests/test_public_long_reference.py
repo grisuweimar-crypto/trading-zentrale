@@ -7,6 +7,10 @@ from scanner.research.decision_layer.public_long_reference import (
     build_public_long_reference,
     public_long_reference_csv,
 )
+from scanner.research.decision_layer.public_flat_reference import (
+    build_public_flat_reference,
+    public_flat_reference_csv,
+)
 
 
 CURRENT_SNAPSHOT = "snapshot-current"
@@ -237,3 +241,25 @@ def test_public_long_reference_applies_w6_review_context_without_direction_vote(
     assert reference["diagnostics"]["elliott_6h_source_status"] == "available"
     assert reference["diagnostics"]["elliott_6h_actionable_symbols"] == ["TEST"]
     assert diagnostics["elliott_direction_used_as_vote"] is False
+
+
+def test_public_flat_reference_uses_flat_position_and_surfaces_entry_review():
+    reference = build_public_flat_reference(_daily(), _packets())
+    assert reference["snapshot_id"] == CURRENT_SNAPSHOT
+    assert reference["position_assumption"]["position_state"] == "flat"
+    assert reference["position_assumption"]["actual_holdings_included"] is False
+    row = reference["rows"][0]
+    assert row["availability"] == "decision_available"
+    assert row["decision"]["universal_stance_state"] == "positive"
+    assert row["decision"]["portfolio_action_state"] == "ENTER_REVIEW"
+    assert row["presentation_group"] == "review_now"
+    assert row["attention_required"] is True
+
+
+def test_public_flat_reference_csv_contains_entry_review_without_private_data():
+    reference = build_public_flat_reference(_daily(), _packets())
+    text = public_flat_reference_csv(reference)
+    assert text.startswith("symbol,name,score,r_code,close,currency,")
+    assert "ENTER_REVIEW" in text
+    assert "Private Test Holding" not in text
+    assert "private-book" not in text
