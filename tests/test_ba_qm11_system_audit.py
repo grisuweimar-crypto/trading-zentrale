@@ -21,7 +21,11 @@ def test_ba_qm11_current_system_closes_all_nine_dimensions():
     assert result["dimensions_passed"] == 9
     assert result["finding_count"] == 2
     assert result["findings_closed_effective"] == 2
-    assert result["w8_live_changed_action_count"] == 5
+    assert result["current_bundle_count"] > 0
+    assert 0 <= result["w8_live_changed_action_count"] <= result["current_bundle_count"]
+    assert result["historical_closure_evidence"]["historical_record_not_live_runtime_identity"] is True
+    assert result["historical_closure_evidence"]["bundle_count"] == 213
+    assert result["historical_closure_evidence"]["w8_changed_action_count"] == 5
     assert result["w8_empirical_promotion_eligible"] is False
     assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert result["ba_qm11_may_release_lag1_block"] is False
