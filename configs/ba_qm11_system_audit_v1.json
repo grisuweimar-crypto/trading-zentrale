@@ -28,7 +28,9 @@
     "INFORMATION_FLOW": {
       "status": "PASS",
       "assessment": "Material post-7D Action parents are explicit after BA-QM11-F01 CAPA; W6 upstream lineage remains explicitly incomplete rather than being treated as independent.",
-      "finding_refs": ["BA-QM11-F01"]
+      "finding_refs": [
+        "BA-QM11-F01"
+      ]
     },
     "DECISION_LOGIC": {
       "status": "PASS",
@@ -50,7 +52,9 @@
     "LEARNING": {
       "status": "PASS",
       "assessment": "Outcome-driven W8 learning is now explicitly separated from independent validation and requires post-change prospective evidence.",
-      "finding_refs": ["BA-QM11-F02"]
+      "finding_refs": [
+        "BA-QM11-F02"
+      ]
     },
     "OPERATIONALIZATION": {
       "status": "PASS",
@@ -71,7 +75,13 @@
       "evidence": {
         "w6_regression_proves_action_effect": true,
         "w8_live_changed_action_count": 5,
-        "w8_live_changed_symbols": ["DSV.TO", "NOW", "PLTR", "SAP.DE", "WPM.TO"],
+        "w8_live_changed_symbols": [
+          "DSV.TO",
+          "NOW",
+          "PLTR",
+          "SAP.DE",
+          "WPM.TO"
+        ],
         "false_execution_observed": false
       },
       "capa": {
@@ -82,7 +92,9 @@
         "decision_logic_changed": false
       },
       "evidence_impact": "EVIDENCE_REVIEW_REQUIRED",
-      "evidence_disposition": "No empirical promotion had occurred. Existing actions are not declared false. Future ancestry/independence review must use the corrected graph; incomplete W6 upstream lineage may not be interpreted as independence."
+      "evidence_disposition": "No empirical promotion had occurred. Existing actions are not declared false. Future ancestry/independence review must use the corrected graph; incomplete W6 upstream lineage may not be interpreted as independence.",
+      "qm_h_finding_id": "QM-H-BA-QM11-F01",
+      "qm_h_capa_id": "QM-H-CAPA-BA-QM11-F01"
     },
     {
       "finding_id": "BA-QM11-F02",
@@ -100,7 +112,9 @@
         "decision_logic_changed": false
       },
       "evidence_impact": "PROMOTION_BLOCKED",
-      "evidence_disposition": "W8 remains research-only and empirically unvalidated. Ferrari/RACE is regression evidence only; W8 promotion review requires post-2026-10-01 prospective-unspent shadow evidence."
+      "evidence_disposition": "W8 remains research-only and empirically unvalidated. Ferrari/RACE is regression evidence only; W8 promotion review requires post-2026-10-01 prospective-unspent shadow evidence.",
+      "qm_h_finding_id": "QM-H-BA-QM11-F02",
+      "qm_h_capa_id": "QM-H-CAPA-BA-QM11-F02"
     }
   ],
   "live_system_evidence": {
@@ -144,7 +158,8 @@
     "regression_protection_added": true,
     "remaining_risks_documented": true,
     "lag1_block_preserved": true,
-    "next_work_package": "BA-QM12 – Konsolidierung & produktiver QM-Betrieb"
+    "next_work_package": "BA-QM12 – Konsolidierung & produktiver QM-Betrieb",
+    "qm_h_findings_and_capas_registered": true
   },
   "next_mandatory_work_package": "BA-QM12 – Konsolidierung & produktiver QM-Betrieb"
 }
