@@ -190,16 +190,16 @@ def test_reality_check_uses_transparent_segment_categories() -> None:
 
     segment_monitor = {
         "internal_segments": [
-            {"segment": "P1", "average_dscore_1d": 0.50, "n_valid": 5, "sample_state": "thin"},
-            {"segment": "P2", "average_dscore_1d": 0.80, "n_valid": 5, "sample_state": "thin"},
-            {"segment": "P3", "average_dscore_1d": 0.10, "n_valid": 5, "sample_state": "thin"},
-            {"segment": "P4", "average_dscore_1d": -0.40, "n_valid": 5, "sample_state": "thin"},
+            {"segment": "P1", "average_dscore_1d": 0.50, "n_valid": 5, "sample_state": "stable"},
+            {"segment": "P2", "average_dscore_1d": 0.80, "n_valid": 5, "sample_state": "stable"},
+            {"segment": "P3", "average_dscore_1d": 0.10, "n_valid": 5, "sample_state": "stable"},
+            {"segment": "P4", "average_dscore_1d": -0.40, "n_valid": 5, "sample_state": "stable"},
         ],
         "official_segments": [
-            {"segment": "C1", "average_dscore_1d": 0.45, "n_valid": 5, "sample_state": "thin"},
-            {"segment": "C2", "average_dscore_1d": 0.20, "n_valid": 5, "sample_state": "thin"},
-            {"segment": "C3", "average_dscore_1d": 0.40, "n_valid": 5, "sample_state": "thin"},
-            {"segment": "C4", "average_dscore_1d": 0.30, "n_valid": 5, "sample_state": "thin"},
+            {"segment": "C1", "average_dscore_1d": 0.45, "n_valid": 5, "sample_state": "stable"},
+            {"segment": "C2", "average_dscore_1d": 0.20, "n_valid": 5, "sample_state": "stable"},
+            {"segment": "C3", "average_dscore_1d": 0.40, "n_valid": 5, "sample_state": "stable"},
+            {"segment": "C4", "average_dscore_1d": 0.30, "n_valid": 5, "sample_state": "stable"},
         ],
     }
 
