@@ -1,0 +1,233 @@
+name: Elliott Stage 4 Recovery Components
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/scanner/research/elliott_vnext/stage4_historical.py"
+      - "scripts/distill_elliott_stage4_replay_chunk.py"
+      - "scripts/aggregate_elliott_stage4_validation_components.py"
+      - "tests/test_elliott_vnext_stage4_historical.py"
+      - ".github/workflows/elliott_stage4_recovery_components.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/scanner/research/elliott_vnext/stage4_historical.py"
+      - "scripts/distill_elliott_stage4_replay_chunk.py"
+      - "scripts/aggregate_elliott_stage4_validation_components.py"
+      - "tests/test_elliott_vnext_stage4_historical.py"
+      - ".github/workflows/elliott_stage4_recovery_components.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+env:
+  SOURCE_RUN_ID: "37231656936"
+  SOURCE_COMMIT: "97ccabbe541e449e317d48c3c1f6d6b8823054c6"
+  STAGE4_CHUNK_COUNT: "20"
+
+concurrency:
+  group: elliott-stage4-recovery-components
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Verify replay source inputs are unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "${SOURCE_COMMIT}^{commit}"
+          git diff --exit-code "${SOURCE_COMMIT}..HEAD" --             artifacts/market_data/yahoo_ohlcv.csv             src/scanner/research/elliott_vnext/pivots.py             src/scanner/research/elliott_vnext/scenarios.py             src/scanner/research/elliott_vnext/fibonacci.py             src/scanner/research/elliott_vnext/swing_routing.py             src/scanner/research/elliott_vnext/validation.py             src/scanner/research/elliott_vnext/validation_replay.py
+
+      - name: Run Stage 4 component regressions
+        run: >-
+          python -m pytest -q
+          tests/test_elliott_vnext_stage4_historical.py
+          tests/test_elliott_vnext_validation.py
+          tests/test_elliott_vnext_validation_contract.py
+          tests/test_elliott_vnext_fibonacci.py
+
+      - name: Runner smoke tests
+        run: |
+          python scripts/distill_elliott_stage4_replay_chunk.py --help
+          python scripts/aggregate_elliott_stage4_validation_components.py --help
+
+  distill:
+    if: github.event_name != 'pull_request'
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        chunk: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Download completed replay chunk from Stage 4 run 9
+        uses: actions/download-artifact@v4
+        with:
+          name: elliott-stage4-chunk-${{ matrix.chunk }}
+          path: ${{ runner.temp }}/source_chunk
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.SOURCE_RUN_ID }}
+
+      - name: Distill compact validation component
+        run: >-
+          python scripts/distill_elliott_stage4_replay_chunk.py
+          --input "$RUNNER_TEMP/source_chunk/stage4-chunk-${{ matrix.chunk }}.json.gz"
+          --output "$RUNNER_TEMP/stage4-validation-chunk-${{ matrix.chunk }}.json.gz"
+
+      - name: Upload compact validation component
+        uses: actions/upload-artifact@v4
+        with:
+          name: elliott-stage4-validation-component-${{ matrix.chunk }}
+          path: ${{ runner.temp }}/stage4-validation-chunk-${{ matrix.chunk }}.json.gz
+          if-no-files-found: error
+          retention-days: 2
+
+  aggregate:
+    if: github.event_name != 'pull_request'
+    needs: distill
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install -e .
+
+      - name: Download compact Stage 4 validation components
+        uses: actions/download-artifact@v4
+        with:
+          pattern: elliott-stage4-validation-component-*
+          path: ${{ runner.temp }}/stage4_components
+          merge-multiple: true
+
+      - name: Aggregate canonical Stage 4 result
+        run: >-
+          python scripts/aggregate_elliott_stage4_validation_components.py
+          --components-dir "$RUNNER_TEMP/stage4_components"
+          --chunk-count ${{ env.STAGE4_CHUNK_COUNT }}
+          --source-commit ${{ env.SOURCE_COMMIT }}
+          --source-workflow-run-id ${{ env.SOURCE_RUN_ID }}
+          --bootstrap-reps 1000
+
+      - name: Validate full Stage 4 closure artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("artifacts/research/elliott_vnext_stage4_historical_validation.json")
+              .read_text(encoding="utf-8")
+          )
+          assert report["schema_version"] == "elliott_vnext_stage4_historical_validation_v1"
+          assert report["stage"] == "STAGE_4_HISTORICAL_VALIDATION"
+          assert report["technical_stage_status"] == "COMPLETE"
+          assert report["empirical_promotion_status"] == "NOT_PROMOTED"
+          assert report["source"]["source_commit"] == "97ccabbe541e449e317d48c3c1f6d6b8823054c6"
+          assert report["replay"]["execution_mode"] == "parallel_chunks"
+          assert report["replay"]["aggregation_mode"] == "distilled_validation_components"
+          assert report["replay"]["chunk_count"] == 20
+          assert report["replay"]["source_workflow_run_id"] == 37231656936
+          assert report["replay"]["symbols_requested"] == report["source"]["price_symbol_count"]
+          assert report["replay"]["guard_review"]["valid"] is True
+          assert report["replay"]["guard_review"]["coverage_complete"] is True
+          assert report["replay"]["guard_review"]["replay_error_count"] == 0
+          assert report["boundaries"]["legacy_data_can_support_promotion"] is False
+          assert report["boundaries"]["future_rows_used_for_replay"] is False
+          assert report["boundaries"]["performance_used_to_build_elliott_state"] is False
+          assert report["boundaries"]["raw_close_fallback_for_performance"] is False
+          assert report["boundaries"]["automatic_promotion_allowed"] is False
+          assert report["boundaries"]["research_only"] is True
+          print(json.dumps({
+              "technical_stage_status": report["technical_stage_status"],
+              "source": report["source"],
+              "replay": report["replay"],
+              "coverage": report["coverage"],
+              "structure_resolution_counts": report["structure_summary"]["resolution_counts"],
+              "projection_summary_rows": len(report["projection_summary"]),
+              "route_summary_rows": len(report["route_summary"]),
+          }, indent=2))
+          PY
+
+      - name: Publish Stage 4 historical result to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARTIFACT="artifacts/research/elliott_vnext_stage4_historical_validation.json"
+          SAFE_COPY="$RUNNER_TEMP/elliott_vnext_stage4_historical_validation.json"
+          cp "$ARTIFACT" "$SAFE_COPY"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            BASE="$(git rev-parse origin/main)"
+
+            if [ "$BASE" != "${GITHUB_SHA}" ]; then
+              if ! git diff --quiet "${GITHUB_SHA}..${BASE}" --                 artifacts/market_data/yahoo_ohlcv.csv                 src/scanner/research/elliott_vnext                 scripts/distill_elliott_stage4_replay_chunk.py                 scripts/aggregate_elliott_stage4_validation_components.py
+              then
+                echo "Stage 4 inputs or validation logic changed during recovery; refusing stale publication" >&2
+                exit 1
+              fi
+            fi
+
+            git reset --hard "$BASE"
+            mkdir -p "$(dirname "$ARTIFACT")"
+            cp "$SAFE_COPY" "$ARTIFACT"
+            git add "$ARTIFACT"
+
+            if git diff --cached --quiet; then
+              echo "Stage 4 artifact unchanged."
+              exit 0
+            fi
+
+            git commit -m "Elliott Stage 4: publish historical validation [skip ci]"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "main advanced during publication; retrying" >&2
+          done
+
+          echo "Stage 4 publication race could not be resolved after 3 attempts" >&2
+          exit 1
