@@ -29,7 +29,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: decision-watch-symbol-views-main
+  group: ${{ github.event_name == 'pull_request' && format('decision-watch-symbol-views-pr-{0}', github.event.pull_request.number) || 'decision-watch-symbol-views-main' }}
   cancel-in-progress: true
 
 jobs:
