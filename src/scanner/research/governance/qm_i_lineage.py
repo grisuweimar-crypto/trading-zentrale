@@ -731,6 +731,7 @@ class LineageRegistry:
 
                 for output_id in output_ids:
                     output_id = output_id.lower()
+                    output_node_id = f"elliott:6h:{output_id}"
                     row = timeframe_rows.get(output_id, {})
                     lineage_features = row.get("lineage_features")
                     assert isinstance(lineage_features, Mapping)
@@ -773,7 +774,7 @@ class LineageRegistry:
                         feature_refs.append((feature_id, feature_hash))
 
                     self._ensure_node({
-                        "node_id": output_id,
+                        "node_id": output_node_id,
                         "version_id": "elliott_vnext_output_v2",
                         "node_type": "INDICATOR",
                         "content_hash": output_id,
@@ -798,13 +799,13 @@ class LineageRegistry:
                             "edge_id": "qm-i:" + content_hash([
                                 feature_id,
                                 feature_hash,
-                                output_id,
+                                output_node_id,
                                 "elliott_vnext_output_v2",
                                 "PRODUCES",
                             ])[:24],
                             "from_node_id": feature_id,
                             "from_version_id": feature_hash,
-                            "to_node_id": output_id,
+                            "to_node_id": output_node_id,
                             "to_version_id": "elliott_vnext_output_v2",
                             "relation": "PRODUCES",
                             "material_for_ancestry": True,
@@ -813,13 +814,13 @@ class LineageRegistry:
                         "edge_id": "qm-i:" + content_hash([
                             daily_node_id,
                             daily_hash,
-                            output_id,
+                            output_node_id,
                             "elliott_vnext_output_v2",
                             "INFORMS",
                         ])[:24],
                         "from_node_id": daily_node_id,
                         "from_version_id": daily_hash,
-                        "to_node_id": output_id,
+                        "to_node_id": output_node_id,
                         "to_version_id": "elliott_vnext_output_v2",
                         "relation": "INFORMS",
                         "material_for_ancestry": True,
@@ -846,15 +847,16 @@ class LineageRegistry:
             if provenance_complete:
                 for output_id in output_ids:
                     output_id = output_id.lower()
+                    output_node_id = f"elliott:6h:{output_id}"
                     self._ensure_edge({
                         "edge_id": "qm-i:" + content_hash([
-                            output_id,
+                            output_node_id,
                             "elliott_vnext_output_v2",
                             context_id,
                             context_version,
                             "INFORMS_W6_CONTEXT",
                         ])[:24],
-                        "from_node_id": output_id,
+                        "from_node_id": output_node_id,
                         "from_version_id": "elliott_vnext_output_v2",
                         "to_node_id": context_id,
                         "to_version_id": context_version,
