@@ -111,6 +111,8 @@ def _category(
     official_value = _movement(official)
     internal_valid = int(internal.get("n_valid") or 0) if isinstance(internal, Mapping) else 0
     official_valid = int(official.get("n_valid") or 0) if isinstance(official, Mapping) else 0
+    internal_state = str(internal.get("sample_state") or "") if isinstance(internal, Mapping) else ""
+    official_state = str(official.get("sample_state") or "") if isinstance(official, Mapping) else ""
 
     if (
         internal_value is None
@@ -119,6 +121,8 @@ def _category(
         or pair_coverage < MIN_PAIR_COVERAGE
         or internal_valid < MIN_PAIR_VALID
         or official_valid < MIN_PAIR_VALID
+        or internal_state != "stable"
+        or official_state != "stable"
     ):
         return "unclear", "Zu dünne oder unvollständige Vergleichsbasis."
 
