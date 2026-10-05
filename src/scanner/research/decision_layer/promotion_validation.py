@@ -41,8 +41,8 @@ READINESS_STATES = frozenset({
     "metrics_ready_for_promotion_review",
 })
 REQUIRED_PHASES = ("7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H")
-BASE_ALL_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
-ALL_ALL_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "W8", "7G", "7H"})
+BASE_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
+ALL_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "W8", "7G", "7H"})
 W8_POLICY_PATH = Path("configs/decision_depot_action_policy_v1.json")
 FORBIDDEN_TRUE_FIELDS = frozenset({
     "productive_integration_enabled",
