@@ -125,9 +125,12 @@ def build_prospective_capture(
         for routed in snapshots:
             if str(routed.get("as_of") or "") != as_of:
                 raise ProspectiveCaptureError(f"replay_as_of_mismatch:{symbol}")
-            output = validate_module_output(
-                build_module_output(routed, validation_report=validation_report)
+            built = (
+                build_module_output(routed)
+                if validation_report is None
+                else build_module_output(routed, validation_report=validation_report)
             )
+            output = validate_module_output(built)
             if str(output.get("symbol") or "") != symbol:
                 raise ProspectiveCaptureError(f"output_symbol_mismatch:{symbol}")
             if str(output.get("as_of") or "") != as_of:
@@ -220,8 +223,6 @@ def build_prospective_capture(
             "missing_evidence_not_imputed": True,
             "frozen_elliott_core_modified": False,
             "multi_degree_outputs_retained_without_reducer": True,
-            "validation_report_supplied": validation_report is not None,
-            "validation_changes_trade_or_order_semantics": False,
         },
     }
 
