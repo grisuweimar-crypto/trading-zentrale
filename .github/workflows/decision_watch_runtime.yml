@@ -15,6 +15,7 @@ on:
       - 'scripts/run_depot_watch_e2e_w11.py'
       - 'src/scanner/research/decision_layer/watch_runtime.py'
       - 'src/scanner/research/decision_layer/public_long_reference.py'
+      - 'src/scanner/research/decision_layer/public_flat_reference.py'
       - 'src/scanner/research/decision_layer/phase6_elliott.py'
       - 'src/scanner/research/decision_layer/w11_end_to_end.py'
       - 'tests/test_watch_runtime_transport.py'
@@ -46,7 +47,7 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e '.[test]'
-      - name: Prove compact transport and public long reference preserve Decision semantics
+      - name: Prove compact transport and public position references preserve Decision semantics
         run: >-
           pytest -q
           tests/test_watch_runtime_transport.py
@@ -193,7 +194,7 @@ jobs:
             python scripts/build_watch_runtime_w10.py
           fi
 
-      - name: Validate runtime identity, privacy, public long reference and transport size
+      - name: Validate runtime identity, privacy, public position references and transport size
         run: |
           python - <<'PY'
           import json
@@ -205,6 +206,7 @@ jobs:
           runtime_dir = root / 'artifacts/research/watch_runtime'
           runtime = json.loads((runtime_dir / 'manifest.json').read_text(encoding='utf-8'))
           public_long = json.loads((runtime_dir / 'public_long_reference.json').read_text(encoding='utf-8'))
+          public_flat = json.loads((runtime_dir / 'public_flat_reference.json').read_text(encoding='utf-8'))
           w10 = json.loads((root / 'artifacts/research/decision_snapshot_w10.json').read_text(encoding='utf-8'))
           sealed = validate_sealed_manifest(w10)
           validated = validate_runtime_manifest(runtime, w10_manifest=sealed, expected_snapshot_id=sealed['snapshot_id'])
@@ -221,25 +223,42 @@ jobs:
           assert public_long['position_assumption']['actual_holdings_included'] is False
           assert public_long['position_assumption']['private_position_data_included'] is False
           assert public_long['semantics']['decision_logic_changed'] is False
+          assert public_flat['schema_version'] == 'decision_watch_public_flat_reference_v1'
+          assert public_flat['snapshot_id'] == sealed['snapshot_id']
+          assert public_flat['row_count'] == validated['symbol_count']
+          assert public_flat['position_assumption']['position_state'] == 'flat'
+          assert public_flat['position_assumption']['hypothetical'] is True
+          assert public_flat['position_assumption']['actual_holdings_included'] is False
+          assert public_flat['position_assumption']['private_position_data_included'] is False
+          assert public_flat['semantics']['decision_logic_changed'] is False
           phase6 = sealed['stages']['phase6_elliott']
           expected_elliott = phase6['status'] == 'available'
           assert public_long['semantics']['elliott_review_context_integration_enabled'] is expected_elliott
           assert public_long['semantics']['elliott_direction_used_as_vote'] is False
           assert public_long['semantics']['elliott_changed_universal_stance'] is False
+          assert public_flat['semantics']['elliott_review_context_integration_enabled'] is expected_elliott
+          assert public_flat['semantics']['elliott_direction_used_as_vote'] is False
+          assert public_flat['semantics']['elliott_changed_universal_stance'] is False
           if expected_elliott:
               assert public_long['diagnostics']['elliott_6h_source_status'] == 'available'
+              assert public_flat['diagnostics']['elliott_6h_source_status'] == 'available'
           assert all(row['availability'] == 'decision_available' for row in public_long['rows'])
+          assert all(row['availability'] == 'decision_available' for row in public_flat['rows'])
           max_size = max(path.stat().st_size for path in shard_paths)
           assert max_size < 2_000_000, f'runtime shard too large for pragmatic transport: {max_size}'
           public_long_csv = runtime_dir / 'public_long_reference.csv'
+          public_flat_csv = runtime_dir / 'public_flat_reference.csv'
           assert public_long_csv.exists() and public_long_csv.stat().st_size < 1_000_000
+          assert public_flat_csv.exists() and public_flat_csv.stat().st_size < 1_000_000
           print(json.dumps({
               'snapshot_id': validated['snapshot_id'],
               'symbol_count': validated['symbol_count'],
               'packet_count': validated['packet_count'],
               'public_long_reference_rows': public_long['row_count'],
+              'public_flat_reference_rows': public_flat['row_count'],
               'max_shard_bytes': max_size,
               'public_long_csv_bytes': public_long_csv.stat().st_size,
+              'public_flat_csv_bytes': public_flat_csv.stat().st_size,
               'private_position_data_included': False,
           }, sort_keys=True))
           PY
