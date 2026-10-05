@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -11,6 +12,9 @@ from scanner.research.elliott_vnext.prospective_capture import (
     ProspectiveCaptureError,
     archive_capture,
     build_prospective_capture,
+)
+from scanner.research.elliott_vnext.stage4_historical import (
+    adapt_stage4_validation_for_6h,
 )
 
 
@@ -295,3 +299,78 @@ def test_capture_passes_supplied_6g_validation_into_6h(monkeypatch):
     assert result["guards"]["changes_universal_stance"] is False
     assert result["guards"]["changes_portfolio_action"] is False
     assert result["guards"]["direct_ordering_allowed"] is False
+
+
+
+def test_last_published_scanner_snapshot_replays_with_live_6g_expectancy() -> None:
+    """Diagnostic regression against the current real scanner snapshot on main."""
+
+    root = Path(__file__).resolve().parents[1]
+    daily = json.loads(
+        (root / "artifacts/research/daily_research.json").read_text(encoding="utf-8")
+    )
+    metadata = json.loads(
+        (root / "artifacts/research/history_metadata.json").read_text(encoding="utf-8")
+    )
+    w10 = json.loads(
+        (root / "artifacts/research/decision_snapshot_w10.json").read_text(encoding="utf-8")
+    )
+    stage4 = json.loads(
+        (root / "artifacts/research/elliott_vnext_stage4_historical_validation.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    prices = pd.read_csv(root / "artifacts/market_data/yahoo_ohlcv.csv")
+
+    assert metadata["latest_run_complete"] is True
+    assert metadata["validation"]["status"] == "ok"
+    assert daily["snapshot_id"] == metadata["snapshot_id"]
+    assert w10["snapshot_id"] == daily["snapshot_id"]
+    assert w10["status"] == "sealed"
+
+    validation_report = adapt_stage4_validation_for_6h(stage4)
+    scanner_published_at = str(metadata["generated_at"])
+    capture = build_prospective_capture(
+        prices,
+        daily,
+        source_publication_commit="a" * 40,
+        scanner_published_at=scanner_published_at,
+        run_id="github-999999999-1",
+        price_source_sha256="diagnostic-real-snapshot",
+        daily_source_sha256="diagnostic-real-snapshot",
+        captured_at="2026-10-05T12:00:00+00:00",
+        validation_report=validation_report,
+    )
+
+    prior_phase6 = w10["stages"]["phase6_elliott"]
+    assert prior_phase6["status"] == "available"
+    assert capture["snapshot_id"] == daily["snapshot_id"]
+    assert capture["as_of"] == daily["as_of"]
+    assert capture["output_count"] == prior_phase6["output_count"]
+    assert capture["symbols_with_outputs"] == prior_phase6["symbol_count"]
+    assert capture["validation_source"]["adapter"] == (
+        "stage4_compact_aggregate_to_frozen_6g_v1"
+    )
+    assert capture["validation_source"]["stage4_result_hash"]
+
+    for output in capture["outputs"]:
+        expectancy = output["historical_expectancy"]
+        assert isinstance(expectancy, dict)
+        assert expectancy["research_only"] is True
+        assert expectancy["automatic_promotion_allowed"] is False
+        assert expectancy["legacy_data_can_support_promotion"] is False
+        assert "historical_expectancy_not_supplied" not in output["warnings"]
+
+        assert output["research_only"] is True
+        assert output["routing_is_trade_decision"] is False
+        assert output["integration"]["productive_integration_enabled"] is False
+        assert output["integration"]["direct_ordering_allowed"] is False
+
+        serialized = json.dumps(output, sort_keys=True)
+        assert '"trade_decision"' not in serialized
+        assert '"order_instruction"' not in serialized
+
+    assert capture["guards"]["future_rows_used"] is False
+    assert capture["guards"]["changes_universal_stance"] is False
+    assert capture["guards"]["changes_portfolio_action"] is False
+    assert capture["guards"]["direct_ordering_allowed"] is False
