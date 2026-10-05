@@ -1,0 +1,149 @@
+name: Diagnostic Elliott 6G Live Wiring Smoke
+
+on:
+  push:
+    branches:
+      - diagnostic-stage6-last-snapshot-smoke
+    paths:
+      - '.github/workflows/elliott_stage6_last_snapshot_smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout diagnostic branch
+        uses: actions/checkout@v6
+        with:
+          ref: diagnostic-stage6-last-snapshot-smoke
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install -e '.[test]'
+
+      - name: Restore archived Elliott capture for the current scanner snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force
+          CAPTURE_PATH='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          git show "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" > "$RUNNER_TEMP/old_capture.json"
+          OLD_CAPTURE="$RUNNER_TEMP/old_capture.json" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          capture = json.loads(Path(os.environ['OLD_CAPTURE']).read_text(encoding='utf-8'))
+          daily = json.loads(Path('artifacts/research/daily_research.json').read_text(encoding='utf-8'))
+          assert capture['snapshot_id'] == daily['snapshot_id']
+          assert capture['as_of'] == daily['as_of']
+          assert int(capture.get('output_count') or 0) > 0
+          source_commit = str(capture['source_publication_commit'])
+          assert len(source_commit) == 40
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as handle:
+              handle.write(f"SOURCE_PUBLICATION_COMMIT={source_commit}\\n")
+          print({
+              'snapshot_id': capture['snapshot_id'],
+              'as_of': capture['as_of'],
+              'output_count': capture['output_count'],
+              'source_publication_commit': source_commit,
+          })
+          PY
+
+      - name: Rebuild the same snapshot with current 6G-to-6H wiring
+        run: |
+          python scripts/run_elliott_prospective_capture_6h.py \
+            --output "$RUNNER_TEMP/rebuilt_capture.json" \
+            --archive "$RUNNER_TEMP/rebuilt_history.jsonl" \
+            --publication-commit "$SOURCE_PUBLICATION_COMMIT" \
+            --run-id "diagnostic-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+
+      - name: Prove the fix only enriches 6H with frozen 6G evidence
+        shell: bash
+        env:
+          OLD_CAPTURE: ${{ runner.temp }}/old_capture.json
+          NEW_CAPTURE: ${{ runner.temp }}/rebuilt_capture.json
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          old = json.loads(Path(os.environ['OLD_CAPTURE']).read_text(encoding='utf-8'))
+          new = json.loads(Path(os.environ['NEW_CAPTURE']).read_text(encoding='utf-8'))
+
+          assert new['snapshot_id'] == old['snapshot_id']
+          assert new['as_of'] == old['as_of']
+          assert new['output_count'] == old['output_count']
+          assert new['symbols_with_outputs'] == old['symbols_with_outputs']
+
+          source = new.get('validation_source')
+          assert isinstance(source, dict)
+          assert source.get('adapter') == 'stage4_compact_aggregate_to_frozen_6g_v1'
+          assert source.get('stage4_result_hash')
+
+          def key(row):
+              return (row['symbol'], row['timeframe'], row['degree'])
+
+          old_rows = {key(row): row for row in old['outputs']}
+          new_rows = {key(row): row for row in new['outputs']}
+          assert set(new_rows) == set(old_rows)
+
+          invariant_fields = (
+              'primary_scenario',
+              'alternative_scenarios',
+              'pivots',
+              'fibonacci',
+              'fibonacci_geometry',
+              'current_wave_stage',
+              'projection_zones',
+              'wave_cycle_map',
+              'hard_invalidations',
+              'rule_violations',
+              'routing_triggers',
+              'swing_routing',
+              'routing_summary',
+          )
+
+          for identity in sorted(old_rows):
+              before = old_rows[identity]
+              after = new_rows[identity]
+              for field in invariant_fields:
+                  assert after.get(field) == before.get(field), (identity, field)
+
+              expectancy = after.get('historical_expectancy')
+              assert isinstance(expectancy, dict), identity
+              assert expectancy.get('research_only') is True
+              assert expectancy.get('automatic_promotion_allowed') is False
+              assert expectancy.get('legacy_data_can_support_promotion') is False
+              assert 'historical_expectancy_not_supplied' not in after.get('warnings', [])
+
+              integration = after.get('integration') or {}
+              assert integration.get('productive_integration_enabled') is False
+              assert integration.get('direct_ordering_allowed') is False
+              assert after.get('routing_is_trade_decision') is False
+              assert after.get('research_only') is True
+
+              serialized = json.dumps(after, sort_keys=True)
+              assert '"trade_decision"' not in serialized
+              assert '"order_instruction"' not in serialized
+
+          print({
+              'snapshot_id': new['snapshot_id'],
+              'as_of': new['as_of'],
+              'output_count': new['output_count'],
+              'symbols_with_outputs': new['symbols_with_outputs'],
+              'validation_adapter': source['adapter'],
+              'structural_and_routing_outputs_unchanged': True,
+              'historical_expectancy_now_supplied': True,
+              'trade_or_order_semantics_added': False,
+          })
+          PY
