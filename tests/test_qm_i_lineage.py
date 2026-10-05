@@ -177,6 +177,7 @@ def _portfolio_action_with_w6(*, complete_provenance: bool):
             "elliott_structure": "e" * 64,
             "fibonacci_geometry": "f" * 64,
             "swing_routing": "1" * 64,
+            "uncertainty_state": "2" * 64,
         }
         source_provenance = {
             "source_capture_id": "capture-2026-10-05",
@@ -188,6 +189,8 @@ def _portfolio_action_with_w6(*, complete_provenance: bool):
             "validation_source": {
                 "adapter": "stage4_compact_aggregate_to_frozen_6g_v1",
                 "stage4_result_hash": "c" * 64,
+                "source_commit": "3" * 40,
+                "price_source_sha256": "4" * 64,
             },
         }
     return {
@@ -312,6 +315,7 @@ def test_w6_complete_prospective_provenance_reaches_raw_data_through_features(tm
         "elliott_structure": "e" * 64,
         "fibonacci_geometry": "f" * 64,
         "swing_routing": "1" * 64,
+        "uncertainty_state": "2" * 64,
     }.items():
         feature = registry.get_node(
             f"elliott:{output_id}:{feature_name}",
@@ -319,6 +323,21 @@ def test_w6_complete_prospective_provenance_reaches_raw_data_through_features(tm
         )
         assert feature["node_type"] == "FEATURE"
         assert feature["lineage_complete"] is True
+
+    validation = registry.get_node(
+        "elliott:stage4_validation:" + ("c" * 64),
+        "stage4_compact_aggregate_to_frozen_6g_v1",
+    )
+    assert validation["node_type"] == "CALIBRATION"
+    assert validation["lineage_complete"] is True
+
+    validation_ancestry = registry.analyze_ancestry(
+        left_node_id="elliott:validation_price_history:" + ("4" * 64),
+        left_version_id="4" * 64,
+        right_node_id="ACTION-W6",
+        right_version_id="v1",
+    )
+    assert validation_ancestry["classification"] == "DIRECT_DEPENDENCY"
 
     ancestry = registry.analyze_ancestry(
         left_node_id=market_id,
@@ -348,7 +367,7 @@ def test_w6_missing_exact_provenance_remains_lineage_incomplete(tmp_path):
     context = registry.get_node("d" * 64, "elliott_vnext_6h")
     assert context["lineage_complete"] is False
     assert context["metadata"]["upstream_elliott_binding_complete"] is False
-    with pytest.raises(LineageError, match="lineage_node_not_found"):
+    with pytest.raises(LineageError, match="lineage_node_not_registered"):
         registry.get_node(
             "elliott:market_ohlcv:" + ("a" * 64),
             "a" * 64,
