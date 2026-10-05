@@ -336,12 +336,22 @@ def _optional_bool(value: Any) -> bool | None:
     return None
 
 
+def _optional_float(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if pd.isna(parsed) else parsed
+
+
 def _rank_by_score(df: pd.DataFrame) -> pd.Series:
-    """Dense rank: 1 is best (highest score). NaN ranks last."""
-    s = pd.to_numeric(df["score"], errors="coerce")
-    # rank highest first; NaN -> bottom
-    # Use method='min' so ties share best rank number
-    return (-s).rank(method="min", na_option="bottom").astype("Int64")
+    """Dense rank: 1 is best; a missing score has no rank."""
+    scores = pd.to_numeric(df["score"], errors="coerce")
+    ranks = pd.Series(pd.NA, index=df.index, dtype="Int64")
+    valid = scores.notna()
+    if valid.any():
+        ranks.loc[valid] = (-scores.loc[valid]).rank(method="min").astype("Int64")
+    return ranks
 
 
 def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: str, top_n: int = 12) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -380,8 +390,8 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
         elif p is not None:
             name = str(p.get("name", "") or "")
 
-        score_prev = float(p["score"]) if p is not None and pd.notna(p["score"]) else None
-        score_now = float(n["score"]) if n is not None and pd.notna(n["score"]) else None
+        score_prev = _optional_float(p.get("score")) if p is not None else None
+        score_now = _optional_float(n.get("score")) if n is not None else None
         rank_prev = int(p["rank"]) if p is not None and pd.notna(p["rank"]) else None
         rank_now = int(n["rank"]) if n is not None and pd.notna(n["rank"]) else None
         rank_prev_common = None
