@@ -36,17 +36,57 @@
     "market_tradability": "explicit market status such as active, suspended or ceased trading; not inferred from listing alone",
     "project_investability": "project-specific eligibility after identity, venue/listing state, tradability and project restrictions are evaluated"
   },
-  "capability_status_values": ["PIT_SAFE", "EVENT_DATE_NO_PUBLICATION_VINTAGE", "PROSPECTIVE_ONLY", "CURRENT_ONLY", "REFERENCE_ONLY", "NOT_SUPPORTED", "UNKNOWN"],
-  "pit_status_values": ["SAFE", "PARTIAL", "UNSAFE", "UNKNOWN"],
-  "coverage_status_values": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"],
-  "access_status_values": ["OPEN", "PAID_RESTRICTED", "LIMITED", "UNKNOWN"],
-  "license_status_values": ["USABLE", "REVIEW_REQUIRED", "RESTRICTED", "UNKNOWN"],
-  "source_class_values": ["OFFICIAL_EXCHANGE", "REGULATOR", "IDENTIFIER_SERVICE", "MARKET_REFERENCE_AUTHORITY", "COMMERCIAL_VENDOR"],
+  "capability_status_values": [
+    "PIT_SAFE",
+    "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+    "PROSPECTIVE_ONLY",
+    "CURRENT_ONLY",
+    "REFERENCE_ONLY",
+    "NOT_SUPPORTED",
+    "UNKNOWN"
+  ],
+  "pit_status_values": [
+    "SAFE",
+    "PARTIAL",
+    "UNSAFE",
+    "UNKNOWN"
+  ],
+  "coverage_status_values": [
+    "HIGH",
+    "MEDIUM",
+    "LOW",
+    "UNKNOWN"
+  ],
+  "access_status_values": [
+    "OPEN",
+    "PAID_RESTRICTED",
+    "LIMITED",
+    "UNKNOWN"
+  ],
+  "license_status_values": [
+    "USABLE",
+    "REVIEW_REQUIRED",
+    "RESTRICTED",
+    "UNKNOWN"
+  ],
+  "source_class_values": [
+    "OFFICIAL_EXCHANGE",
+    "REGULATOR",
+    "IDENTIFIER_SERVICE",
+    "MARKET_REFERENCE_AUTHORITY",
+    "COMMERCIAL_VENDOR"
+  ],
   "strict_promotion_rule": {
     "required_capability_status": "PIT_SAFE",
     "required_pit_status": "SAFE",
-    "allowed_access_status": ["OPEN", "LIMITED", "PAID_RESTRICTED"],
-    "allowed_license_status": ["USABLE"],
+    "allowed_access_status": [
+      "OPEN",
+      "LIMITED",
+      "PAID_RESTRICTED"
+    ],
+    "allowed_license_status": [
+      "USABLE"
+    ],
     "requires_explicit_publication_or_availability_semantics": true,
     "requires_stable_identity_match": true,
     "requires_effective_timestamp": true,
@@ -59,8 +99,12 @@
       "source_id": "nasdaq_daily_list",
       "source_class": "OFFICIAL_EXCHANGE",
       "provider": "Nasdaq",
-      "geography": ["US"],
-      "instrument_types": ["equity"],
+      "geography": [
+        "US"
+      ],
+      "instrument_types": [
+        "equity"
+      ],
       "coverage_status": "MEDIUM",
       "pit_status": "SAFE",
       "access_status": "PAID_RESTRICTED",
@@ -68,16 +112,31 @@
       "history_start": "1999-01-01",
       "documentation_url": "https://classic.nasdaqtrader.com/Trader.aspx?id=DailyListPD",
       "publication_semantics": "Nasdaq documents advance/current Daily List notifications for new listings, delistings, symbol/name changes and other issue events, with historical corporate-action data dating back to 1999. Effective dates are part of the event product; access is subscription-controlled.",
-      "capabilities": {"venue_master": "NOT_SUPPORTED", "venue_assignment": "PIT_SAFE", "listing_start": "PIT_SAFE", "listing_end": "PIT_SAFE", "symbol_change": "PIT_SAFE", "market_tradability": "UNKNOWN", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "NOT_SUPPORTED",
+        "venue_assignment": "PIT_SAFE",
+        "listing_start": "PIT_SAFE",
+        "listing_end": "PIT_SAFE",
+        "symbol_change": "PIT_SAFE",
+        "market_tradability": "UNKNOWN",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["LICENSE_OR_ACCESS_NOT_CLEARED", "NASDAQ_ONLY_NOT_GLOBAL"]
+      "promotion_blockers": [
+        "LICENSE_OR_ACCESS_NOT_CLEARED",
+        "NASDAQ_ONLY_NOT_GLOBAL"
+      ]
     },
     {
       "source_id": "nasdaq_symbol_directory",
       "source_class": "OFFICIAL_EXCHANGE",
       "provider": "Nasdaq",
-      "geography": ["US"],
-      "instrument_types": ["equity"],
+      "geography": [
+        "US"
+      ],
+      "instrument_types": [
+        "equity"
+      ],
       "coverage_status": "MEDIUM",
       "pit_status": "SAFE",
       "access_status": "OPEN",
@@ -85,16 +144,33 @@
       "history_start": null,
       "documentation_url": "https://www.nasdaqtrader.com/Trader.aspx?id=SymbolDirDefs",
       "publication_semantics": "Public symbol-directory files are updated throughout each day and contain file-creation timestamps. The documentation establishes current snapshots, but not a public historical archive suitable for retrospective as-of reconstruction.",
-      "capabilities": {"venue_master": "NOT_SUPPORTED", "venue_assignment": "PROSPECTIVE_ONLY", "listing_start": "NOT_SUPPORTED", "listing_end": "NOT_SUPPORTED", "symbol_change": "PROSPECTIVE_ONLY", "market_tradability": "PROSPECTIVE_ONLY", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "NOT_SUPPORTED",
+        "venue_assignment": "PROSPECTIVE_ONLY",
+        "listing_start": "NOT_SUPPORTED",
+        "listing_end": "NOT_SUPPORTED",
+        "symbol_change": "PROSPECTIVE_ONLY",
+        "market_tradability": "PROSPECTIVE_ONLY",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["RETROSPECTIVE_HISTORY_NOT_PUBLICLY_ESTABLISHED", "LICENSE_REVIEW_REQUIRED", "US_ONLY"]
+      "promotion_blockers": [
+        "RETROSPECTIVE_HISTORY_NOT_PUBLICLY_ESTABLISHED",
+        "LICENSE_REVIEW_REQUIRED",
+        "US_ONLY"
+      ]
     },
     {
       "source_id": "sec_company_tickers_exchange",
       "source_class": "REGULATOR",
       "provider": "U.S. SEC EDGAR",
-      "geography": ["US", "SEC_FILERS"],
-      "instrument_types": ["equity"],
+      "geography": [
+        "US",
+        "SEC_FILERS"
+      ],
+      "instrument_types": [
+        "equity"
+      ],
       "coverage_status": "MEDIUM",
       "pit_status": "UNSAFE",
       "access_status": "OPEN",
@@ -102,16 +178,33 @@
       "history_start": null,
       "documentation_url": "https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data",
       "publication_semantics": "SEC periodically updates ticker/CIK/exchange association files and explicitly states that accuracy or scope is not guaranteed. The documented files are current associations rather than a historical listing-event ledger.",
-      "capabilities": {"venue_master": "NOT_SUPPORTED", "venue_assignment": "CURRENT_ONLY", "listing_start": "NOT_SUPPORTED", "listing_end": "NOT_SUPPORTED", "symbol_change": "NOT_SUPPORTED", "market_tradability": "NOT_SUPPORTED", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "NOT_SUPPORTED",
+        "venue_assignment": "CURRENT_ONLY",
+        "listing_start": "NOT_SUPPORTED",
+        "listing_end": "NOT_SUPPORTED",
+        "symbol_change": "NOT_SUPPORTED",
+        "market_tradability": "NOT_SUPPORTED",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["CURRENT_ONLY", "NO_HISTORICAL_PUBLICATION_VINTAGE", "SEC_DISCLAIMS_SCOPE_ACCURACY"]
+      "promotion_blockers": [
+        "CURRENT_ONLY",
+        "NO_HISTORICAL_PUBLICATION_VINTAGE",
+        "SEC_DISCLAIMS_SCOPE_ACCURACY"
+      ]
     },
     {
       "source_id": "openfigi_mapping",
       "source_class": "IDENTIFIER_SERVICE",
       "provider": "OpenFIGI",
-      "geography": ["GLOBAL"],
-      "instrument_types": ["equity", "other_mapped_instruments"],
+      "geography": [
+        "GLOBAL"
+      ],
+      "instrument_types": [
+        "equity",
+        "other_mapped_instruments"
+      ],
       "coverage_status": "HIGH",
       "pit_status": "UNSAFE",
       "access_status": "OPEN",
@@ -119,16 +212,32 @@
       "history_start": null,
       "documentation_url": "https://www.openfigi.com/api/documentation",
       "publication_semantics": "The mapping API exposes current identifier mappings and current exchCode/MIC filters. The documented request model has no historical as-of/vintage parameter for reconstructing earlier listing assignments.",
-      "capabilities": {"venue_master": "CURRENT_ONLY", "venue_assignment": "CURRENT_ONLY", "listing_start": "NOT_SUPPORTED", "listing_end": "NOT_SUPPORTED", "symbol_change": "NOT_SUPPORTED", "market_tradability": "NOT_SUPPORTED", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "CURRENT_ONLY",
+        "venue_assignment": "CURRENT_ONLY",
+        "listing_start": "NOT_SUPPORTED",
+        "listing_end": "NOT_SUPPORTED",
+        "symbol_change": "NOT_SUPPORTED",
+        "market_tradability": "NOT_SUPPORTED",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["CURRENT_ONLY", "NO_HISTORICAL_ASOF_PARAMETER", "LICENSE_REVIEW_REQUIRED"]
+      "promotion_blockers": [
+        "CURRENT_ONLY",
+        "NO_HISTORICAL_ASOF_PARAMETER",
+        "LICENSE_REVIEW_REQUIRED"
+      ]
     },
     {
       "source_id": "iso10383_mic",
       "source_class": "MARKET_REFERENCE_AUTHORITY",
       "provider": "ISO 10383 Registration Authority / SWIFT",
-      "geography": ["GLOBAL"],
-      "instrument_types": ["market_venue"],
+      "geography": [
+        "GLOBAL"
+      ],
+      "instrument_types": [
+        "market_venue"
+      ],
       "coverage_status": "HIGH",
       "pit_status": "SAFE",
       "access_status": "OPEN",
@@ -136,16 +245,33 @@
       "history_start": null,
       "documentation_url": "https://www.iso20022.org/market-identifier-codes",
       "publication_semantics": "The MIC dataset identifies market venues and is published on a documented monthly schedule with separate modification implementation dates. It does not map individual securities to venues.",
-      "capabilities": {"venue_master": "PIT_SAFE", "venue_assignment": "NOT_SUPPORTED", "listing_start": "NOT_SUPPORTED", "listing_end": "NOT_SUPPORTED", "symbol_change": "NOT_SUPPORTED", "market_tradability": "NOT_SUPPORTED", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "PIT_SAFE",
+        "venue_assignment": "NOT_SUPPORTED",
+        "listing_start": "NOT_SUPPORTED",
+        "listing_end": "NOT_SUPPORTED",
+        "symbol_change": "NOT_SUPPORTED",
+        "market_tradability": "NOT_SUPPORTED",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["NO_SECURITY_TO_VENUE_ASSIGNMENT", "LICENSE_REVIEW_REQUIRED"]
+      "promotion_blockers": [
+        "NO_SECURITY_TO_VENUE_ASSIGNMENT",
+        "LICENSE_REVIEW_REQUIRED"
+      ]
     },
     {
       "source_id": "eodhd_exchange_symbol_delisted",
       "source_class": "COMMERCIAL_VENDOR",
       "provider": "EOD Historical Data (EODHD)",
-      "geography": ["GLOBAL_BY_SUPPORTED_EXCHANGE"],
-      "instrument_types": ["equity", "etf", "fund"],
+      "geography": [
+        "GLOBAL_BY_SUPPORTED_EXCHANGE"
+      ],
+      "instrument_types": [
+        "equity",
+        "etf",
+        "fund"
+      ],
       "coverage_status": "HIGH",
       "pit_status": "PARTIAL",
       "access_status": "LIMITED",
@@ -153,16 +279,32 @@
       "history_start": null,
       "documentation_url": "https://eodhd.com/financial-apis/exchanges-api-list-of-tickers-and-trading-hours",
       "publication_semantics": "Exchange symbol lists expose current active or delisted inventories per supported exchange. A separate US-only symbol-change endpoint has effective dates. The documentation does not establish historical snapshot/vintage timestamps for past active-state reconstruction.",
-      "capabilities": {"venue_master": "CURRENT_ONLY", "venue_assignment": "EVENT_DATE_NO_PUBLICATION_VINTAGE", "listing_start": "NOT_SUPPORTED", "listing_end": "EVENT_DATE_NO_PUBLICATION_VINTAGE", "symbol_change": "EVENT_DATE_NO_PUBLICATION_VINTAGE", "market_tradability": "CURRENT_ONLY", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "CURRENT_ONLY",
+        "venue_assignment": "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+        "listing_start": "NOT_SUPPORTED",
+        "listing_end": "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+        "symbol_change": "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+        "market_tradability": "CURRENT_ONLY",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["NO_HISTORICAL_SNAPSHOT_VINTAGE_FOR_EXCHANGE_LISTS", "ACCESS_LICENSE_REVIEW_REQUIRED", "SYMBOL_CHANGE_HISTORY_US_ONLY"]
+      "promotion_blockers": [
+        "NO_HISTORICAL_SNAPSHOT_VINTAGE_FOR_EXCHANGE_LISTS",
+        "ACCESS_LICENSE_REVIEW_REQUIRED",
+        "SYMBOL_CHANGE_HISTORY_US_ONLY"
+      ]
     },
     {
       "source_id": "fmp_delisted_companies",
       "source_class": "COMMERCIAL_VENDOR",
       "provider": "Financial Modeling Prep",
-      "geography": ["PROVIDER_COVERAGE"],
-      "instrument_types": ["equity"],
+      "geography": [
+        "PROVIDER_COVERAGE"
+      ],
+      "instrument_types": [
+        "equity"
+      ],
       "coverage_status": "UNKNOWN",
       "pit_status": "PARTIAL",
       "access_status": "LIMITED",
@@ -170,9 +312,56 @@
       "history_start": null,
       "documentation_url": "https://site.financialmodelingprep.com/developer/docs/stable/delisted-companies",
       "publication_semantics": "The delisted-companies endpoint returns symbol, exchange, IPO date and delisted date for current query results. Documentation does not establish immutable historical publication vintages or an as-of query parameter for when those records became knowable.",
-      "capabilities": {"venue_master": "NOT_SUPPORTED", "venue_assignment": "EVENT_DATE_NO_PUBLICATION_VINTAGE", "listing_start": "EVENT_DATE_NO_PUBLICATION_VINTAGE", "listing_end": "EVENT_DATE_NO_PUBLICATION_VINTAGE", "symbol_change": "NOT_SUPPORTED", "market_tradability": "CURRENT_ONLY", "project_investability": "NOT_SUPPORTED"},
+      "capabilities": {
+        "venue_master": "NOT_SUPPORTED",
+        "venue_assignment": "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+        "listing_start": "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+        "listing_end": "EVENT_DATE_NO_PUBLICATION_VINTAGE",
+        "symbol_change": "NOT_SUPPORTED",
+        "market_tradability": "CURRENT_ONLY",
+        "project_investability": "NOT_SUPPORTED"
+      },
       "promotion_eligible": false,
-      "promotion_blockers": ["NO_PUBLICATION_VINTAGE", "NO_ASOF_QUERY", "ACCESS_LICENSE_REVIEW_REQUIRED"]
+      "promotion_blockers": [
+        "NO_PUBLICATION_VINTAGE",
+        "NO_ASOF_QUERY",
+        "ACCESS_LICENSE_REVIEW_REQUIRED"
+      ]
+    },
+    {
+      "source_id": "esma_firds",
+      "source_class": "REGULATOR",
+      "provider": "European Securities and Markets Authority (ESMA)",
+      "geography": [
+        "EEA_MIFIR_SCOPE"
+      ],
+      "instrument_types": [
+        "equity",
+        "debt",
+        "derivative",
+        "other_mifir_reportable_instruments"
+      ],
+      "coverage_status": "HIGH",
+      "pit_status": "SAFE",
+      "access_status": "OPEN",
+      "license_status": "USABLE",
+      "history_start": "2018-01-03",
+      "documentation_url": "https://www.esma.europa.eu/document/firds-instructions-access-and-download-full-and-delta-reference-data-files",
+      "publication_semantics": "ESMA FIRDS publishes machine-readable Full files weekly and Delta/Cancellations files daily. Records are keyed by ISIN and trading-venue MIC and include date of admission/date of first trade and termination date. Delta and Invalid records preserve additions, modifications, terminations, cancellations and superseded versions. Publication/file dates and ESMA reception timestamps provide an explicit availability chronology suitable for PIT reconstruction within FIRDS scope.",
+      "capabilities": {
+        "venue_master": "NOT_SUPPORTED",
+        "venue_assignment": "PIT_SAFE",
+        "listing_start": "PIT_SAFE",
+        "listing_end": "PIT_SAFE",
+        "symbol_change": "NOT_SUPPORTED",
+        "market_tradability": "NOT_SUPPORTED",
+        "project_investability": "NOT_SUPPORTED"
+      },
+      "promotion_eligible": true,
+      "promotion_scope": "EEA_MIFIR_SCOPE_ONLY",
+      "global_scope": false,
+      "attribution_required": true,
+      "promotion_blockers": []
     }
   ],
   "assessment": {
@@ -180,10 +369,17 @@
     "globally_promotion_ready_source_count": 0,
     "strict_listing_ledger_status": "BLOCKED_SOURCE_GAP",
     "prospective_collection_possible": true,
-    "best_semantic_source": "nasdaq_daily_list",
+    "best_semantic_source": "esma_firds",
     "best_open_prospective_us_source": "nasdaq_symbol_directory",
     "venue_reference_source": "iso10383_mic",
-    "vendor_challengers": ["eodhd_exchange_symbol_delisted", "fmp_delisted_companies"],
-    "next_step": "build source adapter interfaces and a prospective snapshot ledger while keeping retrospective strict promotion blocked until source access/PIT requirements are satisfied"
+    "vendor_challengers": [
+      "eodhd_exchange_symbol_delisted",
+      "fmp_delisted_companies"
+    ],
+    "next_step": "use ESMA FIRDS as strict PIT listing evidence inside its EEA/MiFIR scope, add a parser/collector and source-scoped ledger, and keep global strict promotion blocked until equivalent PIT-safe coverage exists for the remaining universe",
+    "assessment_date": "2026-10-05",
+    "regional_strict_listing_sources": [
+      "esma_firds"
+    ]
   }
 }
