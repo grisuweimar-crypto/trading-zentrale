@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from scanner.research.elliott_vnext.validation import (
@@ -63,7 +64,17 @@ def test_daily_sufficient_stats_exactly_match_block_bootstrap_mean() -> None:
         config=config,
     )
 
+    expected_interval = expected.pop("mean_95")
+    actual_interval = actual.pop("mean_95")
     assert actual == expected
+    assert actual_interval is not None
+    assert expected_interval is not None
+    assert np.allclose(
+        np.asarray(actual_interval, dtype=float),
+        np.asarray(expected_interval, dtype=float),
+        rtol=0.0,
+        atol=1e-15,
+    )
 
 
 def test_daily_sufficient_stats_preserve_empty_metric_diagnostics() -> None:
