@@ -30,7 +30,7 @@ class AutorunStateTests(unittest.TestCase):
             self.assertTrue(should_run(self.root, "schedule", self.now))
 
     def test_before_window_previous_day_future_or_naive_marker_allows_retry(self):
-        for timestamp in ("2026-09-18T14:06:00+02:00", "2026-09-17T18:00:00+00:00",
+        for timestamp in ("2026-09-18T16:06:00+02:00", "2026-09-17T18:00:00+00:00",
                           "2026-09-18T20:00:00+00:00", "2026-09-18T17:30:00"):
             self.record(timestamp)
             self.assertTrue(should_run(self.root, "schedule", self.now))
