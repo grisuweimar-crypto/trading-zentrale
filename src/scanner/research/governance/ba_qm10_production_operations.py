@@ -43,10 +43,10 @@ EXPECTED_CHECKS = (
 )
 EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03", "BA-QM10-F04")
 EXPECTED_FINDING_STATES = {
-    "BA-QM10-F01": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F02": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F03": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "BA-QM10-F04": "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
+    "BA-QM10-F01": "CLOSED_EFFECTIVE",
+    "BA-QM10-F02": "CLOSED_EFFECTIVE",
+    "BA-QM10-F03": "CLOSED_EFFECTIVE",
+    "BA-QM10-F04": "CLOSED_EFFECTIVE",
 }
 
 
@@ -87,8 +87,10 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM10AuditError("ba_qm10_business_area_invalid")
     if value.get("name") != "Produktions- und Betriebs-QM":
         raise BAQM10AuditError("ba_qm10_name_invalid")
-    if value.get("status") != "IN_PROGRESS":
+    if value.get("status") != "COMPLETE":
         raise BAQM10AuditError("ba_qm10_status_invalid")
+    if value.get("engineering_status") != "COMPLETE":
+        raise BAQM10AuditError("ba_qm10_engineering_status_invalid")
     if value.get("scope") != "QUALITY_MANAGEMENT_ONLY":
         raise BAQM10AuditError("ba_qm10_scope_invalid")
     for key in (
@@ -97,16 +99,19 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         "investment_logic_changed",
         "execution_enabled",
         "empirical_promotion_performed",
-        "closure_claimed",
     ):
         if value.get(key) is not False:
             raise BAQM10AuditError(f"ba_qm10_must_be_false:{key}")
+    if value.get("closure_claimed") is not True:
+        raise BAQM10AuditError("ba_qm10_closure_must_be_claimed")
     if tuple(value.get("required_checks") or ()) != EXPECTED_CHECKS:
         raise BAQM10AuditError("ba_qm10_required_checks_invalid")
 
     assessment = _mapping(value.get("current_assessment"), "current_assessment")
     if tuple(assessment.keys()) != EXPECTED_CHECKS:
         raise BAQM10AuditError("ba_qm10_assessment_coverage_invalid")
+    if any(assessment.get(key) != "PASS" for key in EXPECTED_CHECKS):
+        raise BAQM10AuditError("ba_qm10_assessment_not_all_pass")
 
     findings = value.get("findings")
     if not isinstance(findings, list):
@@ -125,6 +130,46 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
             raise BAQM10AuditError(f"ba_qm10_finding_not_fail_closed:{row.get('finding_id')}")
         if row.get("finding_id") == "BA-QM10-F01" and effect.get("false_watch_accepted") is not False:
             raise BAQM10AuditError("ba_qm10_f01_false_watch_guard_invalid")
+        effectiveness = _mapping(
+            row.get("effectiveness"),
+            f"effectiveness:{row.get('finding_id')}",
+        )
+        if effectiveness.get("verification_status") != "EFFECTIVE":
+            raise BAQM10AuditError(
+                f"ba_qm10_finding_effectiveness_invalid:{row.get('finding_id')}"
+            )
+        _mapping(
+            effectiveness.get("evidence"),
+            f"effectiveness_evidence:{row.get('finding_id')}",
+        )
+        if effectiveness.get("decision_logic_changed") is not False:
+            raise BAQM10AuditError(
+                f"ba_qm10_finding_effectiveness_changed_decision:{row.get('finding_id')}"
+            )
+
+    risks = value.get("static_risks_to_verify")
+    if not isinstance(risks, list) or len(risks) != 1:
+        raise BAQM10AuditError("ba_qm10_static_risk_registry_invalid")
+    risk = _mapping(risks[0], "static_risk")
+    if risk.get("risk_id") != "BA-QM10-R01":
+        raise BAQM10AuditError("ba_qm10_static_risk_id_invalid")
+    if risk.get("state") != "CLOSED_EFFECTIVE":
+        raise BAQM10AuditError("ba_qm10_static_risk_not_closed_effective")
+    risk_effectiveness = _mapping(risk.get("effectiveness"), "static_risk_effectiveness")
+    if risk_effectiveness.get("verification_status") != "EFFECTIVE":
+        raise BAQM10AuditError("ba_qm10_static_risk_effectiveness_invalid")
+    if risk_effectiveness.get("decision_logic_changed") is not False:
+        raise BAQM10AuditError("ba_qm10_static_risk_changed_decision")
+
+    closure_evidence = _mapping(value.get("closure_evidence"), "closure_evidence")
+    if not str(closure_evidence.get("snapshot_id") or "").strip():
+        raise BAQM10AuditError("ba_qm10_closure_snapshot_id_required")
+    if closure_evidence.get("ba_qm10_ci_passed_tests") != 76:
+        raise BAQM10AuditError("ba_qm10_closure_ci_test_count_invalid")
+    if closure_evidence.get("public_runtime_shard_count") != 32:
+        raise BAQM10AuditError("ba_qm10_closure_runtime_shard_count_invalid")
+    if value.get("next_mandatory_work_package") != "BA-QM11 – Gesamtsystem-Audit":
+        raise BAQM10AuditError("ba_qm10_next_work_package_invalid")
 
     deps = _mapping(value.get("dependencies"), "dependencies")
     if deps.get("ba_qm8_complete") is not True or deps.get("ba_qm9_complete") is not True:
@@ -233,10 +278,35 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
     runtime_manifest_path = root / "artifacts" / "research" / "watch_runtime" / "manifest.json"
     runtime_snapshot_id = None
     runtime_current = False
+    runtime_projection_sha256 = None
     if runtime_manifest_path.exists():
         runtime_manifest = _read_json(runtime_manifest_path)
         runtime_snapshot_id = str(runtime_manifest.get("snapshot_id") or "")
         runtime_current = runtime_snapshot_id == snapshot_id
+        runtime_projection_sha256 = str(
+            runtime_manifest.get("runtime_projection_sha256") or ""
+        ) or None
+
+    symbol_index_path = (
+        root
+        / "artifacts"
+        / "research"
+        / "watch_runtime"
+        / "symbols"
+        / "index.json"
+    )
+    symbol_views_snapshot_id = None
+    symbol_views_current = False
+    symbol_views_runtime_projection_matches = False
+    if symbol_index_path.exists():
+        symbol_index = _read_json(symbol_index_path)
+        symbol_views_snapshot_id = str(symbol_index.get("snapshot_id") or "")
+        symbol_views_current = symbol_views_snapshot_id == snapshot_id
+        symbol_views_runtime_projection_matches = (
+            bool(runtime_projection_sha256)
+            and str(symbol_index.get("source_runtime_projection_sha256") or "")
+            == runtime_projection_sha256
+        )
 
     static = {
         "scanner_three_retry_slots": scanner_crons == ("7 17 * * *", "37 18,20 * * *"),
@@ -275,27 +345,82 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         if isinstance(row, Mapping)
     }
     check_status = dict(contract["current_assessment"])
+    open_finding_count = sum(
+        state != "CLOSED_EFFECTIVE" for state in findings.values()
+    )
+    open_risk_count = sum(
+        state != "CLOSED_EFFECTIVE" for state in risks.values()
+    )
+    required_static_guards = (
+        "scanner_three_retry_slots",
+        "scanner_serialized",
+        "scanner_provenance_required",
+        "scanner_records_success_marker_only_after_validation",
+        "scanner_incomplete_run_exits_failure",
+        "scanner_explicit_main_advance_refusal_guard",
+        "phase2_fallback_schedule_present",
+        "phase2_freshness_gate_present",
+        "decision_same_snapshot_guard_present",
+        "decision_stale_publication_refusal_present",
+        "decision_readiness_gate_present",
+        "runtime_validates_sealed_w10",
+        "runtime_stale_publication_refusal_present",
+        "runtime_hard_two_mb_shard_limit_present",
+        "symbol_views_validate_runtime_identity",
+        "symbol_view_runtime_readiness_gate_present",
+        "qm_j_canonical_archive_default_present",
+    )
+    all_required_guards_passed = all(
+        static.get(key) is True for key in required_static_guards
+    )
+    all_required_checks_passed = all(
+        check_status.get(key) == "PASS" for key in EXPECTED_CHECKS
+    )
+    closure_eligible = (
+        all_required_checks_passed
+        and all_required_guards_passed
+        and open_finding_count == 0
+        and open_risk_count == 0
+        and runtime_current
+        and symbol_views_current
+        and symbol_views_runtime_projection_matches
+        and w10.get("status") == "sealed"
+    )
 
     return {
         "schema_version": "ba_qm10_current_operations_audit_v1",
-        "status": "OPEN_FINDINGS_CAPA_REQUIRED",
+        "status": (
+            "BA_QM10_ENGINEERING_COMPLETE"
+            if closure_eligible
+            else "CLOSURE_EVIDENCE_MISMATCH"
+        ),
         "scope": "QUALITY_MANAGEMENT_ONLY",
         "snapshot_id": snapshot_id,
         "snapshot_as_of": daily.get("as_of"),
         "w10_status": w10.get("status"),
         "runtime_snapshot_id": runtime_snapshot_id,
         "runtime_matches_current_snapshot": runtime_current,
+        "runtime_projection_sha256": runtime_projection_sha256,
+        "symbol_views_snapshot_id": symbol_views_snapshot_id,
+        "symbol_views_match_current_snapshot": symbol_views_current,
+        "symbol_views_runtime_projection_matches": (
+            symbol_views_runtime_projection_matches
+        ),
         "required_check_count": len(EXPECTED_CHECKS),
         "check_status": check_status,
+        "all_required_checks_passed": all_required_checks_passed,
         "static_guards": static,
-        "open_findings": findings,
-        "open_finding_count": sum(state != "CLOSED_EFFECTIVE" for state in findings.values()),
+        "all_required_guards_passed": all_required_guards_passed,
+        "finding_states": findings,
+        "open_finding_count": open_finding_count,
         "implemented_capa_pending_verification_count": sum(
-            state == "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
-            for state in findings.values()
+            "PENDING" in str(state) for state in findings.values()
         ),
-        "scanner_publication_race_risk_open": not static["scanner_explicit_main_advance_refusal_guard"],
+        "scanner_publication_race_risk_open": (
+            risks.get("BA-QM10-R01") != "CLOSED_EFFECTIVE"
+        ),
         "static_risk_states": risks,
+        "open_static_risk_count": open_risk_count,
         "false_decision_observed": False,
         "all_observed_failures_fail_closed": True,
         "research_logic_changed": False,
@@ -304,7 +429,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         "execution_enabled": False,
         "lag1_evidence_impact": "PROMOTION_BLOCKED",
         "ba_qm10_may_release_lag1_block": False,
-        "closure_eligible": False,
+        "closure_eligible": closure_eligible,
     }
 
 
@@ -363,4 +488,85 @@ def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
         "private_position_data_included": False,
         "decision_logic_changed": manifest["decision_logic_changed"],
         "writes_performed": False,
+    }
+
+
+
+def evaluate_ba_qm10_closure(root: str | Path = _ROOT) -> dict[str, Any]:
+    """Return the fail-closed BA-QM10 engineering closure receipt."""
+    root = Path(root).resolve()
+    contract = load_contract(
+        root / "configs" / "ba_qm10_production_operations_qm_v1.json"
+    )
+    operations = audit_current_operations(root)
+    capacity = audit_current_runtime_capacity(root)
+
+    if operations.get("status") != "BA_QM10_ENGINEERING_COMPLETE":
+        raise BAQM10AuditError("ba_qm10_operations_not_complete")
+    if operations.get("closure_eligible") is not True:
+        raise BAQM10AuditError("ba_qm10_closure_not_eligible")
+    if operations.get("all_required_checks_passed") is not True:
+        raise BAQM10AuditError("ba_qm10_required_checks_not_all_passed")
+    if operations.get("all_required_guards_passed") is not True:
+        raise BAQM10AuditError("ba_qm10_required_guards_not_all_passed")
+    if operations.get("open_finding_count") != 0:
+        raise BAQM10AuditError("ba_qm10_open_findings_remain")
+    if operations.get("open_static_risk_count") != 0:
+        raise BAQM10AuditError("ba_qm10_open_static_risks_remain")
+    if operations.get("runtime_matches_current_snapshot") is not True:
+        raise BAQM10AuditError("ba_qm10_runtime_not_current")
+    if operations.get("symbol_views_match_current_snapshot") is not True:
+        raise BAQM10AuditError("ba_qm10_symbol_views_not_current")
+    if operations.get("symbol_views_runtime_projection_matches") is not True:
+        raise BAQM10AuditError("ba_qm10_symbol_view_projection_mismatch")
+    if capacity.get("status") != "PASS":
+        raise BAQM10AuditError("ba_qm10_runtime_capacity_not_pass")
+    if capacity.get("max_shard_bytes", 2_000_000) >= 2_000_000:
+        raise BAQM10AuditError("ba_qm10_runtime_capacity_limit_exceeded")
+
+    evidence = _mapping(contract.get("closure_evidence"), "closure_evidence")
+    if str(evidence.get("snapshot_id") or "") != str(
+        operations.get("snapshot_id") or ""
+    ):
+        raise BAQM10AuditError("ba_qm10_closure_snapshot_mismatch")
+    if evidence.get("public_runtime_shard_count") != capacity.get("shard_count"):
+        raise BAQM10AuditError("ba_qm10_closure_shard_count_mismatch")
+    if evidence.get("public_runtime_symbol_count") != capacity.get("symbol_count"):
+        raise BAQM10AuditError("ba_qm10_closure_symbol_count_mismatch")
+    if evidence.get("public_runtime_packet_count") != capacity.get("packet_count"):
+        raise BAQM10AuditError("ba_qm10_closure_packet_count_mismatch")
+    if str(evidence.get("public_runtime_projection_sha256") or "") != str(
+        operations.get("runtime_projection_sha256") or ""
+    ):
+        raise BAQM10AuditError("ba_qm10_closure_projection_hash_mismatch")
+
+    return {
+        "schema_version": "ba_qm10_engineering_closure_receipt_v1",
+        "status": "BA_QM10_ENGINEERING_COMPLETE",
+        "scope": "QUALITY_MANAGEMENT_ONLY",
+        "snapshot_id": operations["snapshot_id"],
+        "snapshot_as_of": operations["snapshot_as_of"],
+        "required_check_count": operations["required_check_count"],
+        "all_required_checks_passed": True,
+        "all_required_guards_passed": True,
+        "open_finding_count": 0,
+        "open_static_risk_count": 0,
+        "runtime_shard_count": capacity["shard_count"],
+        "runtime_max_shard_bytes": capacity["max_shard_bytes"],
+        "runtime_hard_limit_bytes": capacity["hard_limit_bytes"],
+        "runtime_symbol_count": capacity["symbol_count"],
+        "runtime_packet_count": capacity["packet_count"],
+        "runtime_projection_sha256": operations["runtime_projection_sha256"],
+        "symbol_views_runtime_projection_matches": True,
+        "engineering_closure_performed": True,
+        "research_logic_changed": False,
+        "decision_logic_changed": False,
+        "investment_logic_changed": False,
+        "execution_enabled": False,
+        "empirical_promotion_performed": False,
+        "lag1_finding_id": contract["dependencies"]["lag1_finding_id"],
+        "lag1_capa_id": contract["dependencies"]["lag1_capa_id"],
+        "lag1_evidence_impact": "PROMOTION_BLOCKED",
+        "ba_qm10_may_release_lag1_block": False,
+        "next_mandatory_work_package": "BA-QM11 – Gesamtsystem-Audit",
     }
