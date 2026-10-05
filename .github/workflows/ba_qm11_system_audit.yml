@@ -1,0 +1,51 @@
+name: BA-QM11 System Audit
+
+on:
+  pull_request:
+    paths:
+      - "configs/ba_qm11_system_audit_v1.json"
+      - "configs/qm_i_evidence_lineage_v1.json"
+      - "configs/decision_depot_action_policy_v1.json"
+      - "configs/decision_validation_promotion_v1.json"
+      - "src/scanner/research/governance/ba_qm11_system_audit.py"
+      - "src/scanner/research/governance/qm_i_lineage.py"
+      - "src/scanner/research/decision_layer/promotion_validation.py"
+      - "tests/test_ba_qm11_system_audit.py"
+      - "tests/test_qm_i_phase7_action_integration.py"
+      - "tests/test_decision_validation_promotion_7i.py"
+      - ".github/workflows/ba_qm11_system_audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ba-qm11:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run BA-QM11 and affected system regressions
+        run: |
+          pytest -q             tests/test_ba_qm11_system_audit.py             tests/test_qm_i_phase7_action_integration.py             tests/test_decision_validation_promotion_7i.py             tests/test_ba_qm8_end_to_end.py             tests/test_ba_qm9_end_application_audit.py             tests/test_ba_qm10_production_operations.py
+      - name: Emit BA-QM11 closure receipt
+        run: |
+          python - <<'PY'
+          from scanner.research.governance.ba_qm11_system_audit import audit_current_system
+          result = audit_current_system()
+          assert result["status"] == "BA_QM11_ENGINEERING_COMPLETE"
+          assert result["result"] == "PASS"
+          assert result["dimensions_passed"] == 9
+          assert result["findings_closed_effective"] == 2
+          assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+          assert result["ba_qm11_may_release_lag1_block"] is False
+          assert result["w8_empirical_promotion_eligible"] is False
+          assert result["next_mandatory_work_package"] == "BA-QM12 – Konsolidierung & produktiver QM-Betrieb"
+          print(result)
+          PY
