@@ -1,4 +1,7 @@
-"""Generate Reality Check report (data integrity / mapping sanity).
+"""Generate Reality Check report (internal vs official segment movement).
+
+This is a validation/explainability layer, not a truth metric and not a
+price-performance benchmark.
 
 Outputs:
   - artifacts/reports/reality_check.json
