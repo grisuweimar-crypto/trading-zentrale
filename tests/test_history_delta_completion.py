@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from scanner.reports.daily_research import ALIASES, DailyInput
 from scanner.reports.history_delta import (
     HISTORY_SCHEMA_VERSION,
     build_snapshot_from_watchlist,
@@ -9,6 +10,28 @@ from scanner.reports.history_delta import (
 )
 from scanner.reports.reality_check import build_reality_check
 from scanner.reports.segment_monitor import compute_segment_monitor
+
+
+def test_productive_daily_bridge_preserves_history_status_contract() -> None:
+    assert "trend_ok" in ALIASES
+    assert "liquidity_ok" in ALIASES
+    assert "score_status" in ALIASES
+
+    raw = (
+        "score,trend_ok,liquidity_ok,score_status\n"
+        "42,true,false,OK\n"
+    ).encode("utf-8")
+    daily = DailyInput(
+        source="fixture.csv",
+        source_sha256=None,
+        columns=[],
+        rows=[],
+        errors=[],
+        context={},
+        watchlist_raw=raw,
+    )
+    enriched = daily.enrich([{"r_code": ""}])
+    assert enriched[0]["history_schema_version"] == HISTORY_SCHEMA_VERSION
 
 
 def test_history_snapshot_carries_status_and_schema_fields() -> None:
