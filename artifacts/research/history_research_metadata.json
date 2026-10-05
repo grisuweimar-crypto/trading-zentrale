@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-09-16T19:20:46.531565+00:00",
+  "generated_at": "2026-10-05T07:31:46.048843+00:00",
   "source_file": "artifacts/snapshots/score_history.csv",
-  "source_sha256": "17372ae28864fb71de47e774f558ddf0216bc509b0ff35d5ca574d51c91973cb",
-  "source_size_bytes": 7374861,
+  "source_sha256": "0f217d43e995f7faa31f63e0c003f732749811b0cc6a5b83cb9ba98749d98085",
+  "source_size_bytes": 9781205,
   "source_oldest_date": "2026-02-10",
-  "source_newest_date": "2026-09-16",
-  "source_row_count": 33825,
-  "research_row_count": 33825,
-  "unique_symbols": 284,
+  "source_newest_date": "2026-10-04",
+  "source_row_count": 38604,
+  "research_row_count": 38604,
+  "unique_symbols": 300,
   "covered_period": {
     "start": "2026-02-10",
-    "end": "2026-09-16"
+    "end": "2026-10-04"
   },
-  "latest_completed_month": "2026-08",
+  "latest_completed_month": "2026-09",
   "columns": [
     "date",
     "symbol",
@@ -49,21 +49,23 @@
     "scoring_version",
     "rank",
     "universe_size",
-    "rank_percentile"
+    "rank_percentile",
+    "observation_type",
+    "data_source",
+    "as_of",
+    "generated_at",
+    "snapshot_id",
+    "schema_version"
   ],
   "missing_expected_columns": [],
-  "research_size_bytes": 7374861,
+  "research_size_bytes": 9781205,
   "deduplication": "none; all source observations and their order are retained",
-  "duplicate_date_symbol_rows": 155,
+  "duplicate_date_symbol_rows": 1188,
   "validation": {
-    "status": "blocked",
-    "errors": [
-      "Previous month 2026-08 is incomplete; missing daily observations: 2026-08-06"
-    ],
+    "status": "passed",
+    "errors": [],
     "policy": "Every calendar day in previous month; newest date at most 3 days old. Date coverage is not a guarantee of per-symbol completeness.",
-    "previous_month_missing_dates": [
-      "2026-08-06"
-    ],
+    "previous_month_missing_dates": [],
     "source_missing_dates": [
       "2026-02-12",
       "2026-02-13",
@@ -89,8 +91,52 @@
       "2026-08-06"
     ]
   },
-  "monthly_exports": [],
-  "skipped_incomplete_months": {},
+  "monthly_exports": [
+    "2026-04",
+    "2026-05",
+    "2026-06",
+    "2026-07",
+    "2026-09"
+  ],
+  "skipped_incomplete_months": {
+    "2026-02": [
+      "2026-02-01",
+      "2026-02-02",
+      "2026-02-03",
+      "2026-02-04",
+      "2026-02-05",
+      "2026-02-06",
+      "2026-02-07",
+      "2026-02-08",
+      "2026-02-09",
+      "2026-02-12",
+      "2026-02-13",
+      "2026-02-14",
+      "2026-02-15",
+      "2026-02-16",
+      "2026-02-17",
+      "2026-02-18",
+      "2026-02-19",
+      "2026-02-20",
+      "2026-02-21",
+      "2026-02-22",
+      "2026-02-23",
+      "2026-02-24",
+      "2026-02-25",
+      "2026-02-26",
+      "2026-02-27",
+      "2026-02-28"
+    ],
+    "2026-03": [
+      "2026-03-02",
+      "2026-03-03",
+      "2026-03-04",
+      "2026-03-05"
+    ],
+    "2026-08": [
+      "2026-08-06"
+    ]
+  },
   "rank_data": {
     "fields": [
       "rank",
@@ -99,7 +145,7 @@
     ],
     "first_observed_date": "2026-09-16",
     "first_observed_run_id": "",
-    "observed_row_count": 197
+    "observed_row_count": 4976
   },
   "scoring_versions": [
     "v1"
