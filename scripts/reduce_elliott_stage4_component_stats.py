@@ -62,6 +62,17 @@ def _daily_metric_rows(
     return result
 
 
+def _group_rows(rows: Iterable[Mapping[str, Any]], fields: tuple[str, ...]) -> list[dict[str, Any]]:
+    keys = {
+        tuple(_norm(row.get(field)) for field in fields)
+        for row in rows
+    }
+    result: list[dict[str, Any]] = []
+    for key in sorted(keys, key=lambda item: tuple("" if value is None else str(value) for value in item)):
+        result.append({field: key[idx] for idx, field in enumerate(fields)})
+    return result
+
+
 def _structure_stats(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
     resolution = Counter()
     grouped = Counter()
@@ -172,6 +183,8 @@ def main() -> int:
             if row.get("partition") == "prospective_unspent"
             and row.get("outcome_available") is True
         ),
+        "projection_groups": _group_rows(projection, projection_group),
+        "route_groups": _group_rows(routes, route_group),
         "projection_daily": _daily_metric_rows(
             projection,
             group_fields=projection_group,
