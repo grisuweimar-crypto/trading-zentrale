@@ -11,6 +11,10 @@ on:
       - "configs/qm_h_capa_v1.json"
       - "configs/qm_i_evidence_lineage_v1.json"
       - "configs/ba_qm7_qm_j_closure_v1.json"
+      - "configs/qm_j_phase1a_lag1_effectiveness_v1.json"
+      - "configs/qm_j_phase1a_lag1_effectiveness_freeze_v1.json"
+      - "src/scanner/research/governance/qm_j_phase1a_lag1_effectiveness.py"
+      - "tests/test_qm_j_phase1a_lag1_effectiveness.py"
       - "configs/ba_qm10_production_operations_qm_v1.json"
       - "configs/ba_qm11_system_audit_v1.json"
       - "configs/ba_qm2_handoff_v2.json"
@@ -63,6 +67,7 @@ jobs:
           tests/test_qm_h_capa.py
           tests/test_qm_i_lineage.py
           tests/test_qm_j_negative_controls.py
+          tests/test_qm_j_phase1a_lag1_effectiveness.py
           tests/test_ba_qm10_production_operations.py
           tests/test_ba_qm11_system_audit.py
       - name: Emit current Continuous-QM receipt
@@ -81,5 +86,6 @@ jobs:
           assert receipt["full_masterplan_completion_claim_allowed"] is False
           assert receipt["masterplan_residual_monitor"]["blocking_residual_count"] == 6
           assert receipt["masterplan_residual_monitor"]["residuals"]["W6_ELLIOTT_LINEAGE"]["blocking_masterplan_completion"] is False
+          assert receipt["masterplan_residual_monitor"]["residuals"]["PHASE1A_LAG1_CAPA"]["prospective_plan_validated"] is True
           print(json.dumps(receipt, sort_keys=True))
           PY
