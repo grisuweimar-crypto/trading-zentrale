@@ -650,6 +650,29 @@ class LineageRegistry:
                 len(value) == 64
                 and all(char in "0123456789abcdef" for char in value)
             )
+            timeframe_rows = {
+                str(row.get("output_id") or ""): dict(row)
+                for row in (w6_meta.get("timeframe_degrees") or [])
+                if isinstance(row, Mapping)
+            } if isinstance(w6_meta, Mapping) else {}
+            required_feature_names = (
+                "elliott_structure",
+                "fibonacci_geometry",
+                "swing_routing",
+            )
+            feature_lineage_complete = bool(output_ids)
+            for output_id in output_ids:
+                row = timeframe_rows.get(output_id, {})
+                feature_hashes = row.get("lineage_features")
+                if not isinstance(feature_hashes, Mapping):
+                    feature_lineage_complete = False
+                    break
+                if any(
+                    not sha256_hex(str(feature_hashes.get(name) or "").lower())
+                    for name in required_feature_names
+                ):
+                    feature_lineage_complete = False
+                    break
             provenance_complete = bool(
                 source_capture_id
                 and snapshot_id
@@ -657,6 +680,7 @@ class LineageRegistry:
                 and sha256_hex(daily_hash)
                 and output_ids
                 and all(sha256_hex(value.lower()) for value in output_ids)
+                and feature_lineage_complete
             )
             context_version = (
                 f"{source_name}:capture:{source_capture_id}"
@@ -705,14 +729,49 @@ class LineageRegistry:
                     },
                 }, actor_id, actor_role)
 
-                timeframe_rows = {
-                    str(row.get("output_id") or ""): dict(row)
-                    for row in (w6_meta.get("timeframe_degrees") or [])
-                    if isinstance(row, Mapping)
-                } if isinstance(w6_meta, Mapping) else {}
                 for output_id in output_ids:
                     output_id = output_id.lower()
                     row = timeframe_rows.get(output_id, {})
+                    lineage_features = row.get("lineage_features")
+                    assert isinstance(lineage_features, Mapping)
+                    feature_refs: list[tuple[str, str]] = []
+                    for feature_name in required_feature_names:
+                        feature_hash = str(lineage_features[feature_name]).lower()
+                        feature_id = f"elliott:{output_id}:{feature_name}"
+                        self._ensure_node({
+                            "node_id": feature_id,
+                            "version_id": feature_hash,
+                            "node_type": "FEATURE",
+                            "content_hash": feature_hash,
+                            "lineage_complete": True,
+                            "as_of": source_as_of,
+                            "metadata": {
+                                "phase": "6A-6D",
+                                "module": "elliott_vnext",
+                                "feature_name": feature_name,
+                                "timeframe": row.get("timeframe"),
+                                "degree": row.get("degree"),
+                                "source_capture_id": source_capture_id,
+                                "research_only": True,
+                            },
+                        }, actor_id, actor_role)
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                market_node_id,
+                                market_hash,
+                                feature_id,
+                                feature_hash,
+                                "PRODUCES",
+                            ])[:24],
+                            "from_node_id": market_node_id,
+                            "from_version_id": market_hash,
+                            "to_node_id": feature_id,
+                            "to_version_id": feature_hash,
+                            "relation": "PRODUCES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+                        feature_refs.append((feature_id, feature_hash))
+
                     self._ensure_node({
                         "node_id": output_id,
                         "version_id": "elliott_vnext_output_v2",
@@ -734,26 +793,37 @@ class LineageRegistry:
                             "research_only": True,
                         },
                     }, actor_id, actor_role)
-                    for raw_node_id, raw_version, marker in (
-                        (market_node_id, market_hash, "MARKET_OHLCV"),
-                        (daily_node_id, daily_hash, "DAILY_RESEARCH"),
-                    ):
+                    for feature_id, feature_hash in feature_refs:
                         self._ensure_edge({
                             "edge_id": "qm-i:" + content_hash([
-                                raw_node_id,
-                                raw_version,
+                                feature_id,
+                                feature_hash,
                                 output_id,
                                 "elliott_vnext_output_v2",
-                                marker,
                                 "PRODUCES",
                             ])[:24],
-                            "from_node_id": raw_node_id,
-                            "from_version_id": raw_version,
+                            "from_node_id": feature_id,
+                            "from_version_id": feature_hash,
                             "to_node_id": output_id,
                             "to_version_id": "elliott_vnext_output_v2",
                             "relation": "PRODUCES",
                             "material_for_ancestry": True,
                         }, actor_id, actor_role)
+                    self._ensure_edge({
+                        "edge_id": "qm-i:" + content_hash([
+                            daily_node_id,
+                            daily_hash,
+                            output_id,
+                            "elliott_vnext_output_v2",
+                            "INFORMS",
+                        ])[:24],
+                        "from_node_id": daily_node_id,
+                        "from_version_id": daily_hash,
+                        "to_node_id": output_id,
+                        "to_version_id": "elliott_vnext_output_v2",
+                        "relation": "INFORMS",
+                        "material_for_ancestry": True,
+                    }, actor_id, actor_role)
 
             self._ensure_node({
                 "node_id": context_id,
