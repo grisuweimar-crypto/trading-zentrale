@@ -615,7 +615,6 @@ class LineageRegistry:
                 "source_output_id": context_id,
                 "review_contexts": list(swing.get("review_contexts") or []),
                 "context_conflict": swing.get("context_conflict"),
-                "adjustment": swing.get("adjustment"),
             }
             self._ensure_node({
                 "node_id": context_id,
