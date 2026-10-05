@@ -470,7 +470,7 @@ def validate_shadow_trace_summary(
     w8_as_of_max = summary.get("w8_as_of_max")
     if w8_rows < 0:
         raise PromotionValidationError("invalid_w8_shadow_trace_count")
-    if "W8" in {str(layer) for layer in layers}:
+    if "W8" in {str(layer) for layer in layers} and w8_prospective_start is not None:
         if w8_rows <= 0:
             raise PromotionValidationError("w8_shadow_trace_rows_required")
         if not w8_as_of_min or not w8_as_of_max:
@@ -482,7 +482,7 @@ def validate_shadow_trace_summary(
             raise PromotionValidationError("future_w8_shadow_trace_forbidden")
         if metrics.get("W8") is True and w8_rows == 0:
             raise PromotionValidationError("w8_metrics_ready_without_trace_forbidden")
-    elif metrics.get("W8") is True or w8_rows:
+    elif w8_prospective_start is not None and (metrics.get("W8") is True or w8_rows):
         raise PromotionValidationError("w8_trace_requires_captured_w8_layer")
     return {
         "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
