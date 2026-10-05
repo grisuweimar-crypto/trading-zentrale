@@ -52,12 +52,37 @@ def _trace(rows=0, layers=None, metrics_ready=False):
 
 def _valid_report(state="pre_prospective_start"):
     metrics_ready = state == "metrics_ready_for_promotion_review"
+    reviewed_as_of = "2027-03-20" if metrics_ready else "2026-09-25"
+    active_w8 = metrics_ready
+    trace = {
+        "trace_rows": 100 if metrics_ready else 0,
+        "captured_layers": LAYERS_W8 if metrics_ready else [],
+        "layer_metrics_ready": (
+            {layer: True for layer in LAYERS_W8} if metrics_ready else {}
+        ),
+        "w8_trace_rows": 20 if metrics_ready else 0,
+        "w8_as_of_min": "2026-10-02" if metrics_ready else None,
+        "w8_as_of_max": "2027-03-20" if metrics_ready else None,
+    }
     value = {
         "schema_version": SCHEMA_VERSION,
         "phase": "7I",
         "research_only": True,
         "productive_integration_enabled": False,
         "execution_allowed": False,
+        "reviewed_as_of": reviewed_as_of,
+        "post_freeze_governance": {
+            "W8": {
+                "active_at_review_date": active_w8,
+                "introduced_on": "2026-10-01",
+                "prospective_unspent_from": "2026-10-02" if active_w8 else None,
+                "contract_hash": "a" * 64 if active_w8 else None,
+                "source_case_counts_as_independent_validation": False,
+            }
+        },
+        "prospective_evidence": {
+            "downstream_shadow_trace": trace,
+        },
         "readiness": {
             "state": state,
             "promotion_review_metrics_ready": metrics_ready,
@@ -333,3 +358,19 @@ def test_post_freeze_w8_overlay_activates_on_introduction_date():
     assert contract["governance"]["prospective_unspent_from"] == "2026-10-02"
     assert contract["validation"]["empirically_validated"] is False
     assert isinstance(digest, str) and len(digest) == 64
+
+
+def test_validator_rejects_metrics_ready_without_w8_trace_after_w8_introduction():
+    report = _valid_report("metrics_ready_for_promotion_review")
+    report["prospective_evidence"]["downstream_shadow_trace"]["captured_layers"] = LAYERS
+    report["prospective_evidence"]["downstream_shadow_trace"]["layer_metrics_ready"] = {
+        layer: True for layer in LAYERS
+    }
+    report["prospective_evidence"]["downstream_shadow_trace"]["w8_trace_rows"] = 0
+    report["prospective_evidence"]["downstream_shadow_trace"]["w8_as_of_min"] = None
+    report["prospective_evidence"]["downstream_shadow_trace"]["w8_as_of_max"] = None
+    report["report_id"] = _canonical_hash(
+        {key: value for key, value in report.items() if key != "report_id"}
+    )
+    with pytest.raises(PromotionValidationError, match="metrics_ready_requires_w8_prospective_trace"):
+        validate_promotion_report(report)
