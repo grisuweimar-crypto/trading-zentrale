@@ -247,6 +247,7 @@ def test_missing_score_has_no_fake_rank_delta_or_event() -> None:
     row = payload["by_symbol"]["AAA"]
     assert row["score_delta"] is None
     assert row["rank_delta"] is None
+    assert payload["stats"]["comparison_basis_count"] == 0
     event_types = {event["type"] for event in row["events"]}
     assert "entered_top_10" not in event_types
     assert "left_top_10" not in event_types
