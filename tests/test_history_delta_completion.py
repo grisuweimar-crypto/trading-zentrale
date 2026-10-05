@@ -185,6 +185,41 @@ def test_history_events_require_real_previous_basis() -> None:
     assert by_symbol["NEW"]["events"] == []
 
 
+def test_universe_addition_does_not_create_fake_rank_threshold_event() -> None:
+    rows = []
+    for rank in range(1, 11):
+        score = 100 - rank
+        for date in ("2026-10-04", "2026-10-05"):
+            rows.append(
+                {
+                    "date": date,
+                    "symbol": f"S{rank:02d}",
+                    "name": f"S{rank:02d}",
+                    "score": score,
+                }
+            )
+
+    # A new top scorer changes full-snapshot ranks, but must not change the
+    # stable common-universe rank of the existing titles.
+    rows.append(
+        {
+            "date": "2026-10-05",
+            "symbol": "NEW",
+            "name": "New",
+            "score": 1000,
+        }
+    )
+
+    _, payload = compute_history_delta(pd.DataFrame(rows))
+    s10 = payload["by_symbol"]["S10"]
+    assert s10["rank_prev"] == 10
+    assert s10["rank_now"] == 11
+    assert s10["rank_prev_common"] == 10
+    assert s10["rank_now_common"] == 10
+    assert s10["rank_delta"] == 0
+    assert s10["events"] == []
+
+
 def test_missing_score_has_no_fake_rank_delta_or_event() -> None:
     history = pd.DataFrame(
         [
