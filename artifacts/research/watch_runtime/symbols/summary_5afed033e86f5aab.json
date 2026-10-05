@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-05T22:01:05.405788+00:00",
+  "decision_as_of": "2026-10-05T23:09:14.630365+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -30,14 +30,16 @@
       {
         "negative_claim_ids": [
           "timing:CPB:6b9ad841e92f8191:60T",
-          "timing:CPB:8383be481c5c6052:60T"
+          "timing:CPB:5df2a86791ff5f88:60T",
+          "timing:CPB:8383be481c5c6052:60T",
+          "timing:CPB:1691f75766881bca:60T"
         ],
         "positive_claim_ids": [
           "timing:CPB:d18193c29692a1cb:5T",
-          "timing:CPB:63001daa7f481bc1:5T",
           "timing:CPB:a4278e33701f9d98:20T",
           "timing:CPB:1aa807ae1a9556c5:20T",
-          "timing:CPB:2d034c21b8215d13:40T"
+          "timing:CPB:2d034c21b8215d13:40T",
+          "timing:CPB:32bb40f535b6b527:60T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -46,15 +48,17 @@
     "direction": null,
     "known_directional_claim_ids": [
       "timing:CPB:d18193c29692a1cb:5T",
-      "timing:CPB:63001daa7f481bc1:5T",
       "timing:CPB:a4278e33701f9d98:20T",
       "timing:CPB:1aa807ae1a9556c5:20T",
       "timing:CPB:2d034c21b8215d13:40T",
+      "timing:CPB:32bb40f535b6b527:60T",
       "timing:CPB:6b9ad841e92f8191:60T",
-      "timing:CPB:8383be481c5c6052:60T"
+      "timing:CPB:5df2a86791ff5f88:60T",
+      "timing:CPB:8383be481c5c6052:60T",
+      "timing:CPB:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 7
+      "timing": 9
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -63,7 +67,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+  "snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -134,6 +138,14 @@
       "direction": null,
       "relation_state": "conflict_present",
       "source_snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-05T23:09:14.630365+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
     }

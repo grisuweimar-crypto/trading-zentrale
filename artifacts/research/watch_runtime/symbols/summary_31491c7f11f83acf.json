@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-05T22:01:05.405788+00:00",
+  "decision_as_of": "2026-10-05T23:09:14.630365+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -38,11 +38,12 @@
       "timing:OXY:9cb11f4adfc9eb9c:40T",
       "timing:OXY:3e260f25164f48ce:40T",
       "timing:OXY:5472db56664c10c8:60T",
+      "timing:OXY:6289a7880870e93e:60T",
       "timing:OXY:fe6ff0aee1bf447a:60T",
       "timing:OXY:92ad9e5c355866b9:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 11
+      "timing": 12
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -51,7 +52,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+  "snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -124,12 +125,20 @@
       "source_snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-05T23:09:14.630365+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
+      "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": false,
       "trend200_falling_5t": false
@@ -139,8 +148,8 @@
     "overextension_active": false,
     "recent_overextension": true,
     "sessions_since_last_overextension": 4,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "post_overextension_memory"
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "post_overextension_decay"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "OXY",
