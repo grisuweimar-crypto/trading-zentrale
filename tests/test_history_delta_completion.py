@@ -152,7 +152,13 @@ def test_missing_score_has_no_fake_rank_delta_or_event() -> None:
     row = payload["by_symbol"]["AAA"]
     assert row["score_delta"] is None
     assert row["rank_delta"] is None
-    assert row["events"] == []
+    event_types = {event["type"] for event in row["events"]}
+    assert "entered_top_10" not in event_types
+    assert "left_top_10" not in event_types
+    assert "entered_top_25" not in event_types
+    assert "left_top_25" not in event_types
+    # Independent status comparisons remain valid even when the score is missing.
+    assert event_types == {"trend_ok_changed", "score_status_changed"}
 
 
 def test_segment_monitor_reports_dscore_breadth_and_coverage() -> None:
