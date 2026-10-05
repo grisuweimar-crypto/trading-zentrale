@@ -289,6 +289,11 @@ def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -
     assert result["runtime_symbol_count"] == 213
     assert result["runtime_packet_count"] == 1491
     assert result["symbol_views_runtime_projection_matches"] is True
+    assert result["current_runtime_evaluated_separately"] is True
+    historical = result["historical_closure_evidence"]
+    assert historical["historical_record_not_live_runtime_identity"] is True
+    assert historical["runtime_projection_sha256"]
+    assert historical["runtime_projection_sha256"] != result["runtime_projection_sha256"]
     assert result["engineering_closure_performed"] is True
     assert result["research_logic_changed"] is False
     assert result["decision_logic_changed"] is False
