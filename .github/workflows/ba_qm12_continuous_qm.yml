@@ -13,6 +13,10 @@ on:
       - "configs/ba_qm7_qm_j_closure_v1.json"
       - "configs/ba_qm10_production_operations_qm_v1.json"
       - "configs/ba_qm11_system_audit_v1.json"
+      - "configs/ba_qm2_handoff_v2.json"
+      - "configs/ba_qm6_qm_g_closure_v1.json"
+      - "configs/decision_validation_promotion_v1.json"
+      - "configs/external_evidence_8_contract_v1.json"
       - "configs/decision_depot_action_policy_v1.json"
       - "artifacts/research/history_metadata.json"
       - "artifacts/research/probability_calibration_2.json"
@@ -73,5 +77,9 @@ jobs:
           assert receipt["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
           assert receipt["ba_qm12_may_release_lag1_block"] is False
           assert receipt["w8_promotion_eligible"] is False
+          assert receipt["masterplan_end_state_complete"] is False
+          assert receipt["full_masterplan_completion_claim_allowed"] is False
+          assert receipt["masterplan_residual_monitor"]["blocking_residual_count"] == 6
+          assert receipt["masterplan_residual_monitor"]["residuals"]["W6_ELLIOTT_LINEAGE"]["blocking_masterplan_completion"] is False
           print(json.dumps(receipt, sort_keys=True))
           PY
