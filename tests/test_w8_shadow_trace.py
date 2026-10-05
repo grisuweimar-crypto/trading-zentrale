@@ -74,11 +74,11 @@ def _transition(as_of: str) -> dict:
     }
 
 
-def _position() -> dict:
+def _position(as_of: str = "2026-10-05T17:59:00+00:00") -> dict:
     return {
         "schema_version": "decision_position_snapshot_v1",
         "symbol": SYMBOL,
-        "as_of": "2026-10-05T17:59:00+00:00",
+        "as_of": as_of,
         "source_snapshot_id": "private-broker-snapshot",
         "position_state": "long",
         "quantity": 17,
@@ -122,7 +122,8 @@ def _state(as_of: str) -> dict:
 def _action(as_of: str = "2026-10-05T18:00:00+00:00") -> dict:
     transition = _transition(as_of)
     context = _state(as_of)
-    base = compute_portfolio_action(transition, _position())
+    position_as_of = as_of[:10] + "T17:59:00+00:00"
+    base = compute_portfolio_action(transition, _position(position_as_of))
     attached = attach_state_history_to_7f(base, context)
     return apply_depot_action_policy(attached, context)
 
