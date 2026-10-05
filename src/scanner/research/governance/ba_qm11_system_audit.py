@@ -163,18 +163,15 @@ def audit_current_system(root: Path = ROOT) -> dict[str, Any]:
         raise BaQm11AuditError("w8_validation_state_unsafe")
 
     promotion = _read(root / "configs" / "decision_validation_promotion_v1.json")
-    w8_spec = promotion.get("post_freeze_action_policy")
-    if not isinstance(w8_spec, Mapping):
-        raise BaQm11AuditError("7i_w8_policy_missing")
-    if w8_spec.get("change_classification") != "OUTCOME_DRIVEN_RESEARCH_CHANGE":
-        raise BaQm11AuditError("7i_w8_classification_missing")
-    if w8_spec.get("source_case_is_spent_for_independent_confirmation") is not True:
-        raise BaQm11AuditError("7i_w8_spent_guard_missing")
-    if w8_spec.get("prospective_unspent_from") != "2026-10-02":
-        raise BaQm11AuditError("7i_w8_prospective_boundary_invalid")
-    required_layers = set((promotion.get("shadow_trace_summary") or {}).get("required_captured_layers") or [])
-    if "W8" not in required_layers:
-        raise BaQm11AuditError("7i_w8_trace_layer_missing")
+    if promotion.get("frozen_on") != "2026-09-25":
+        raise BaQm11AuditError("7i_original_freeze_date_changed")
+    if "post_freeze_action_policy" in promotion:
+        raise BaQm11AuditError("7i_frozen_contract_retroactively_mutated")
+    frozen_required_layers = set(
+        (promotion.get("shadow_trace_summary") or {}).get("required_captured_layers") or []
+    )
+    if frozen_required_layers != {"7D", "7E", "7F", "7G", "7H"}:
+        raise BaQm11AuditError("7i_frozen_trace_layers_changed")
 
     runtime = _read(root / "artifacts" / "research" / "watch_runtime" / "public_long_reference.json")
     diagnostics = runtime.get("diagnostics")
