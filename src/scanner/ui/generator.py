@@ -180,6 +180,25 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
         s = "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v)
         return html.escape(s)
 
+    def fmt_num(v: Any, digits: int, suffix: str = "") -> str:
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return ""
+        if pd.isna(n):
+            return ""
+        return f"{n:.{digits}f}{suffix}"
+
+    def fmt_price(v: Any) -> str:
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return ""
+        if pd.isna(n):
+            return ""
+        digits = 6 if abs(n) < 1 else 2
+        return f"{n:.{digits}f}".rstrip("0").rstrip(".")
+
     rows: list[str] = []
     for _, r in work.iterrows():
         price = r.get("price")
@@ -190,11 +209,11 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
             "<tr>"
             f'<td class="mono">{esc(r.get("ticker"))}</td>'
             f'<td>{esc(r.get("name"))}</td>'
-            f'<td class="mono right">{esc(price)}</td>'
-            f'<td class="mono right">{esc(r.get("score"))}</td>'
+            f'<td class="mono right">{esc(fmt_price(price))}</td>'
+            f'<td class="mono right">{esc(fmt_num(r.get("score"), 2))}</td>'
             '<td class="mono right hide-sm"></td>'
-            f'<td class="mono right hide-sm">{esc(r.get("confidence"))}</td>'
-            f'<td class="mono right hide-sm">{esc(r.get("cycle"))}</td>'
+            f'<td class="mono right hide-sm">{esc(fmt_num(r.get("confidence"), 1))}</td>'
+            f'<td class="mono right hide-sm">{esc(fmt_num(r.get("cycle"), 0, "%"))}</td>'
             f'<td class="mono">{esc(r.get("trend_ok"))}</td>'
             f'<td class="mono">{esc(r.get("liquidity_ok"))}</td>'
             f'<td class="mono">{esc(r.get("score_status"))}</td>'
@@ -529,7 +548,13 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     @media (max-width: 860px) {
       .disclaimer { flex-direction: column; align-items: flex-start; }
     }
-  .filters { display:flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 14px 14px 14px; }
+  .filters { display:flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 14px 8px 14px; }
+    .activeFilters { display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding: 0 14px 14px 14px; min-height: 24px; }
+    .activeFilters .label { color: var(--muted); font-size: 11px; font-family: var(--mono); margin-right:2px; }
+    .activeFilterChip { display:inline-flex; align-items:center; padding:3px 7px; border-radius:999px; border:1px solid rgba(96,165,250,.25); background:rgba(96,165,250,.07); color:#bfdbfe; font-size:11px; font-family:var(--mono); }
+    .segmentTable tr.sampleThin td { background: rgba(251,191,36,.035); color: rgba(226,232,240,.82); }
+    .segmentTable tr.sampleUnavailable td { opacity:.58; }
+    .realityTable tr.sampleUnclear td { background: rgba(251,191,36,.035); color: rgba(226,232,240,.76); }
     .fbtn { background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 12px; }
     .fbtn:hover { border-color: rgba(96,165,250,.45); }
     .fbtn.active { border-color: rgba(96,165,250,.60); box-shadow: 0 0 0 2px rgba(96,165,250,.14) inset; }
@@ -1227,6 +1252,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         <button type="button" class="fbtn" data-action="toggle" data-key="onlyOK" title="Nur score_status = OK anzeigen">Nur OK</button>
         <button type="button" class="fbtn" data-action="toggle" data-key="trendOK" title="Nur trend_ok = true anzeigen">Trend OK</button>
         <button type="button" class="fbtn" data-action="toggle" data-key="liqOK" title="Nur liquidity_ok = true anzeigen">Liq OK</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="onlyHistoryBasis" title="Nur Werte mit belastbarer dScore-1D-Vergleichsbasis anzeigen">1D-Basis</button>
         <span class="fsep"></span>
         <button type="button" class="iBtn"
           data-action="help"
@@ -1236,6 +1262,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <li><strong>Nur OK:</strong> Zeigt nur Zeilen mit <span class='mono'>score_status = OK</span>.</li>
             <li><strong>Trend OK:</strong> Zeigt nur Zeilen mit <span class='mono'>trend_ok = true</span>.</li>
             <li><strong>Liq OK:</strong> Zeigt nur Zeilen mit <span class='mono'>liquidity_ok = true</span>.</li>
+            <li><strong>1D-Basis:</strong> Zeigt nur Werte mit echtem Score-Delta zum vorherigen lokalen Snapshot.</li>
             <li><em>Hinweis:</em> Diese Filter beeinflussen nur die angezeigte Liste (Universe), nicht das Scoring.</li>
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
@@ -1244,6 +1271,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         <button type="button" class="fbtn" data-action="resetSort" title="Nur Sort-Override lÃ¶schen (Preset-Sort bleibt)">Sortierung zurÃ¼ck</button>
         <button type="button" class="fbtn" data-action="resetAll" title="Alles zurÃ¼cksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
       </div>
+      <div class="activeFilters" id="activeFilters" aria-live="polite"></div>
       </div>
 
       <div class="matrixPanel" id="matrixPanel">
@@ -1561,6 +1589,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         onlyTrendFail: false,
         liqOK: false,
         onlyLiqFail: false,
+        onlyHistoryBasis: false,
         onlyStock: false,
         onlyCrypto: false,
       },
@@ -1585,6 +1614,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     const elPreset = document.getElementById('preset');
     const elSearch = document.getElementById('search');
     const elCount = document.getElementById('count');
+    const elActiveFilters = document.getElementById('activeFilters');
     const elSortHint = document.getElementById('sortHint');
     const elKpis = document.getElementById('kpis');
     const elPillars = document.getElementById('pillars');
@@ -1696,6 +1726,7 @@ let heatFilter = { cat: null, sb: null, mode: null };
       onlyTrendFail: false,
       liqOK: false,
       onlyLiqFail: false,
+      onlyHistoryBasis: false,
       onlyStock: false,
       onlyCrypto: false,
     };
@@ -2305,24 +2336,25 @@ function applyPillarFilter(rows) {
 
     function recFor(r) {
       const st = normStr(r.score_status);
-      if (st === 'NA' || st === 'ERROR') return {code: 'R?', cls: 'bad'};
-      if (st && st.startsWith('AVOID')) return {code: 'R0', cls: 'warn'};
+      if (st === 'NA' || st === 'ERROR') return {code: 'R?', cls: 'bad', label: 'Keine belastbare Einstufung'};
+      if (st && st.startsWith('AVOID')) return {code: 'R0', cls: 'warn', label: 'Avoid · interner Workflow-Code'};
 
       const p = asNum(r.score_pctl);
       const tr = asBool(r.trend_ok) === true;
       const liq = asBool(r.liquidity_ok) === true;
 
-      if (p !== null && p >= 90 && tr && liq) return {code: 'R5', cls: 'good'};
-      if (p !== null && p >= 75 && liq) return {code: 'R4', cls: 'good'};
-      if (p !== null && p >= 45) return {code: 'R3', cls: 'blue'};
-      if (p !== null && p >= 20) return {code: 'R2', cls: 'warn'};
-      return {code: 'R1', cls: 'bad'};
+      if (p !== null && p >= 90 && tr && liq) return {code: 'R5', cls: 'good', label: 'Top Pick · zuerst prüfen'};
+      if (p !== null && p >= 75 && liq) return {code: 'R4', cls: 'good', label: 'Strong Consider · hohe Priorität'};
+      if (p !== null && p >= 45) return {code: 'R3', cls: 'blue', label: 'Consider · genauer prüfen'};
+      if (p !== null && p >= 20) return {code: 'R2', cls: 'warn', label: 'Watch · beobachten'};
+      return {code: 'R1', cls: 'bad', label: 'Low Priority · aktuell unattraktiv'};
     }
 
     function scoreCell(r) {
       const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
-      const sig = rec ? `<span class="sig ${rec.cls}" title="SignalCode">${esc(rec.code)}</span>` : '';
+      const title = rec ? rec.code + ' · ' + rec.label + ' · kein Handelssignal' : '';
+      const sig = rec ? `<span class="sig ${rec.cls}" title="${esc(title)}">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
     }
 
@@ -2599,6 +2631,9 @@ function applyQuickFilters(rows) {
 
         if (uiState.quick.liqOK && asBool(r.liquidity_ok) !== true) return false;
         if (uiState.quick.onlyLiqFail && asBool(r.liquidity_ok) !== false) return false;
+
+        // History focus: only assets with a real previous-score comparison basis.
+        if (uiState.quick.onlyHistoryBasis && asNum(r.dscore_1d) === null) return false;
 
         // class filters
         const isCrypto = asBool(r.is_crypto) === true;
@@ -3270,14 +3305,21 @@ function applyHeatFilter(rows) {
 
       const status = normStr(r.score_status);
       const why = [];
-      if (status === 'OK') why.push('Score>0 & keine harten Filter verletzt.');
-      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend  Score=0 (bewusstes Avoid).');
-      if (status === 'AVOID') why.push('Score==0  Avoid (non-crypto).');
-      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten  NA.');
-      if (status === 'ERROR') why.push('Scoring hat einen Fehler gemeldet (ScoreError).');
-      if (asBool(r.trend_ok) === false) why.push('Trend-Filter: trend_ok=false.');
-      if (asBool(r.liquidity_ok) === false) why.push('Liquidity-Filter: liquidity_ok=false.');
-      if (why.length === 0) why.push('Noch kein detaillierter Factor-Breakdown (kommt in Phase B3).');
+      const rec = recFor(r);
+      const scoreValue = asNum(r.score);
+      const scorePctl = asNum(r.score_pctl);
+      const dscore = asNum(r.dscore_1d);
+      const conf = asNum(r.confidence);
+      if (rec) why.push(`${rec.code}: ${rec.label}.`);
+      if (scoreValue !== null) {
+        why.push(`Score ${scoreValue.toFixed(2)}${scorePctl !== null ? ' · Perzentil ' + scorePctl.toFixed(1) : ''}.`);
+      }
+      if (dscore !== null) why.push(`Score-Veränderung 1D: ${dscore >= 0 ? '+' : ''}${dscore.toFixed(2)}.`);
+      if (conf !== null) why.push(`Confidence: ${conf.toFixed(1)}.`);
+      why.push(`Trend: ${asBool(r.trend_ok) === true ? 'OK' : 'nicht OK'} · Liquidität: ${asBool(r.liquidity_ok) === true ? 'OK' : 'nicht OK'}.`);
+      if (status === 'NA') why.push('Vergleich/Scoring nicht belastbar: Status NA.');
+      if (status === 'ERROR') why.push('Scoring hat einen Fehlerstatus gemeldet.');
+      if (status && status.startsWith('AVOID')) why.push(`Status ${status}: bewusst aus der Priorisierung genommen.`);
 
       drawerBody.innerHTML = `
         <div class="kv">
@@ -3296,12 +3338,23 @@ function applyHeatFilter(rows) {
       document.body.style.overflow = 'hidden';
     }
 
+    function renderActiveFilters(filterNames) {
+      if (!elActiveFilters) return;
+      const items = [`Preset: ${presetLabel(activePreset)}`];
+      const q = elSearch ? normStr(elSearch.value) : '';
+      if (q) items.push(`Suche: ${q}`);
+      for (const name of (filterNames || [])) items.push(name);
+      elActiveFilters.innerHTML = '<span class="label">Aktiv</span>' +
+        items.map(x => '<span class="activeFilterChip">' + esc(x) + '</span>').join('');
+    }
+
     function refresh() {
       const base = DATA;
       const {rows: presetRows, preset} = applyPreset(base, activePreset);
 
       const q = elSearch.value;
       let rowsSQ = applySearch(presetRows, q);
+      rowsSQ = attachDScore(rowsSQ);
       rowsSQ = applyQuickFilters(rowsSQ);
 
       // cluster counts reflect the current universe (after Preset+Search+Quick)
@@ -3342,6 +3395,7 @@ function applyHeatFilter(rows) {
       if (quick.onlyOK) f.push('onlyOK');
       if (quick.trendOK) f.push('trendOK');
       if (quick.liqOK) f.push('liqOK');
+      if (quick.onlyHistoryBasis) f.push('1D-Basis');
       if (quick.onlyStock) f.push('stock');
       if (quick.onlyCrypto) f.push('crypto');
       if (matrix && matrix.sb !== null && matrix.rb !== null) f.push(`matrix:${matrix.sb}x${matrix.rb}`);
@@ -3354,7 +3408,8 @@ function applyHeatFilter(rows) {
       const _pps = Array.isArray(pillarPick) ? pillarPick : ((pillarPick || '') ? [String(pillarPick)] : []);
       if (_pps.length) f.push(`pillar:${_pps.join('|')}`);
 
-      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  Â·  filters: ${f.join(',')}` : '');
+      elCount.textContent = `${rows.length} / ${base.length}`;
+      renderActiveFilters(f);
       if (btnMatrixClear) btnMatrixClear.disabled = !(matrix && matrix.sb !== null && matrix.rb !== null);
 
       const override = userSort ? ` | override: ${userSort.k}:${userSort.dir}` : '';
@@ -4014,7 +4069,8 @@ function applyHeatFilter(rows) {
         const body = rows.slice(0, 14).map(row => {
           const verdict = normStr(row.verdict);
           const basis = `n=${esc(row.n_valid ?? 0)}/${esc(row.n ?? 0)} · Cov ${esc(((asNum(row.coverage) ?? 0) * 100).toFixed(0))}%`;
-          return '<tr>' +
+          const rowClass = verdict === 'unclear' ? 'sampleUnclear' : '';
+          return '<tr class="' + rowClass + '">' +
             '<td>' + esc(row.intern || '–') + '</td>' +
             '<td>' + esc(row.offiziell || '–') + '</td>' +
             '<td class="right">' + esc(fmtD(row.scanner)) + '</td>' +
@@ -4034,7 +4090,11 @@ function applyHeatFilter(rows) {
           (minN || '–') + ' und Coverage≥' +
           (minCov === null ? '–' : (minCov * 100).toFixed(0) + '%') + '.';
 
-        return summary +
+        const basisMeta = '<div class="muted small" style="margin-bottom:6px;">Datenbasis: History ' +
+          esc(r.history_latest_date || '–') + ' · Segmente ' + esc(r.segment_latest_date || '–') +
+          ' · Vergleiche ' + esc(st.total || rows.length) + '.</div>';
+
+        return basisMeta + summary +
           '<table class="realityTable">' +
             '<thead><tr><th>Intern</th><th>Offiziell</th><th>Scanner dScore</th><th>Offiziell dScore</th><th>Einordnung</th><th>Basis</th></tr></thead>' +
             '<tbody>' + body + '</tbody>' +
@@ -4144,14 +4204,18 @@ function applyHeatFilter(rows) {
             if (av !== null && bv !== null && av !== bv) return bv - av;
             return Number(b.n_valid || 0) - Number(a.n_valid || 0);
           }).slice(0, 12);
-          const html = groups.map(g => '<tr>' +
+          const html = groups.map(g => {
+            const state = normStr(g.sample_state);
+            const rowClass = state === 'thin' ? 'sampleThin' : (state === 'unavailable' ? 'sampleUnavailable' : '');
+            return '<tr class="' + rowClass + '">' +
             '<td title="' + esc(g.segment || '') + '">' + esc(g.segment || '–') + '</td>' +
             '<td class="right">' + esc(fmtAvg(g.average_dscore_1d)) + '</td>' +
             '<td class="right">' + esc(fmtPct(g.positive_share)) + '</td>' +
             '<td class="right">' + stableBadge(g.sample_state) + '</td>' +
             '<td class="right">' + esc(fmtPct(g.coverage)) + '</td>' +
             '<td class="right">' + esc(g.n_valid ?? 0) + '/' + esc(g.n_total ?? 0) + '</td>' +
-          '</tr>').join('');
+          '</tr>';
+          }).join('');
           return '<table class="segmentTable">' +
             '<thead><tr><th colspan="6">' + esc(title) + '</th></tr>' +
             '<tr><th>Segment</th><th class="right">Ø dScore</th><th class="right">Pos%</th><th class="right">Sample</th><th class="right">Cov%</th><th class="right">N</th></tr></thead>' +
