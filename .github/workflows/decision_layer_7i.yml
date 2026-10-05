@@ -7,6 +7,8 @@ on:
       - "configs/decision_*"
       - "src/scanner/research/decision_layer/**"
       - "tests/test_decision_validation_promotion_7i.py"
+      - "tests/test_w8_shadow_trace.py"
+      - "scripts/capture_w8_private_shadow_trace.py"
       - "scripts/run_decision_promotion_7i.py"
       - "docs/decision_layer_7i.md"
       - ".github/workflows/decision_layer_7i.yml"
@@ -27,10 +29,12 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
-      - name: Run Phase 7I regression tests
-        run: pytest -q tests/test_decision_validation_promotion_7i.py
-      - name: Smoke-test 7I CLI
-        run: python scripts/run_decision_promotion_7i.py --help
+      - name: Run Phase 7I and W8 shadow-trace regression tests
+        run: pytest -q tests/test_decision_validation_promotion_7i.py tests/test_w8_shadow_trace.py
+      - name: Smoke-test 7I and private W8 capture CLIs
+        run: |
+          python scripts/run_decision_promotion_7i.py --help
+          python scripts/capture_w8_private_shadow_trace.py --help
       - name: Build 7I report at the frozen pre-prospective cutoff
         run: >-
           python scripts/run_decision_promotion_7i.py
