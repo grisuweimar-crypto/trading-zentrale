@@ -44,6 +44,8 @@ REQUIRED_PHASES = ("7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H")
 BASE_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
 ALL_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "W8", "7G", "7H"})
 W8_POLICY_PATH = Path("configs/decision_depot_action_policy_v1.json")
+W8_INTRODUCED_ON = "2026-10-01"
+W8_PROSPECTIVE_START = "2026-10-02"
 FORBIDDEN_TRUE_FIELDS = frozenset({
     "productive_integration_enabled",
     "execution_allowed",
@@ -205,6 +207,9 @@ def _post_freeze_w8_contract(
     The frozen 7I contract remains unchanged.  W8 is a separate post-freeze
     governance overlay introduced on 2026-10-01.
     """
+    if reviewed_as_of < _day(W8_INTRODUCED_ON):
+        return None, None
+
     path = root / W8_POLICY_PATH
     w8 = _load_json(path)
     if w8.get("schema_version") != "decision_depot_action_policy_v1":
@@ -223,6 +228,8 @@ def _post_freeze_w8_contract(
         raise PromotionValidationError("w8_outcome_driven_classification_required")
 
     introduced_on = _day(w8.get("introduced_on"))
+    if w8.get("introduced_on") != W8_INTRODUCED_ON:
+        raise PromotionValidationError("w8_introduction_date_mismatch")
     governance = w8.get("governance")
     validation = w8.get("validation")
     if not isinstance(governance, Mapping) or not isinstance(validation, Mapping):
@@ -242,9 +249,9 @@ def _post_freeze_w8_contract(
         raise PromotionValidationError("w8_prospective_start_must_follow_spent_cutoff")
     if _day(w8_start) <= introduced_on:
         raise PromotionValidationError("w8_prospective_start_must_follow_introduction")
+    if w8_start != W8_PROSPECTIVE_START:
+        raise PromotionValidationError("w8_prospective_start_mismatch")
 
-    if reviewed_as_of < introduced_on:
-        return None, None
     return w8, _canonical_hash(w8)
 
 
@@ -647,7 +654,7 @@ def build_promotion_report(
         "post_freeze_governance": {
             "W8": {
                 "active_at_review_date": w8_contract is not None,
-                "introduced_on": "2026-10-01",
+                "introduced_on": W8_INTRODUCED_ON,
                 "prospective_unspent_from": w8_start,
                 "contract_hash": w8_contract_hash,
                 "source_case_counts_as_independent_validation": False,
@@ -723,12 +730,57 @@ def validate_promotion_report(report: Mapping[str, object]) -> dict[str, object]
     if report.get("execution_allowed") is not False:
         raise PromotionValidationError("7i_report_execution_forbidden")
 
+    reviewed_as_of = _day(report.get("reviewed_as_of"))
+    post_freeze = report.get("post_freeze_governance")
+    if not isinstance(post_freeze, Mapping):
+        raise PromotionValidationError("post_freeze_governance_missing")
+    w8_guard = post_freeze.get("W8")
+    if not isinstance(w8_guard, Mapping):
+        raise PromotionValidationError("w8_post_freeze_guard_missing")
+    expected_w8_active = reviewed_as_of >= _day(W8_INTRODUCED_ON)
+    if w8_guard.get("active_at_review_date") is not expected_w8_active:
+        raise PromotionValidationError("w8_active_state_review_date_mismatch")
+    if w8_guard.get("introduced_on") != W8_INTRODUCED_ON:
+        raise PromotionValidationError("w8_report_introduction_date_mismatch")
+    if w8_guard.get("source_case_counts_as_independent_validation") is not False:
+        raise PromotionValidationError("w8_source_case_independent_validation_forbidden")
+    if expected_w8_active:
+        if w8_guard.get("prospective_unspent_from") != W8_PROSPECTIVE_START:
+            raise PromotionValidationError("w8_report_prospective_start_mismatch")
+        digest = str(w8_guard.get("contract_hash") or "")
+        if len(digest) != 64:
+            raise PromotionValidationError("w8_report_contract_hash_required")
+    else:
+        if w8_guard.get("prospective_unspent_from") is not None:
+            raise PromotionValidationError("pre_w8_report_cannot_expose_prospective_start")
+        if w8_guard.get("contract_hash") is not None:
+            raise PromotionValidationError("pre_w8_report_cannot_bind_future_contract")
+
     readiness = report.get("readiness")
     if not isinstance(readiness, Mapping):
         raise PromotionValidationError("7i_readiness_missing")
     state = str(readiness.get("state") or "")
     if state not in READINESS_STATES:
         raise PromotionValidationError("invalid_7i_readiness_state")
+
+    prospective = report.get("prospective_evidence")
+    if not isinstance(prospective, Mapping):
+        raise PromotionValidationError("7i_prospective_evidence_missing")
+    downstream = prospective.get("downstream_shadow_trace")
+    if not isinstance(downstream, Mapping):
+        raise PromotionValidationError("7i_downstream_shadow_trace_missing")
+    captured = {str(layer) for layer in downstream.get("captured_layers", [])}
+    metrics = downstream.get("layer_metrics_ready")
+    metrics = metrics if isinstance(metrics, Mapping) else {}
+    w8_rows = int(downstream.get("w8_trace_rows", 0) or 0)
+    if not expected_w8_active and ("W8" in captured or w8_rows):
+        raise PromotionValidationError("pre_w8_report_contains_future_w8_trace")
+    if state == "metrics_ready_for_promotion_review" and expected_w8_active:
+        if "W8" not in captured or metrics.get("W8") is not True or w8_rows <= 0:
+            raise PromotionValidationError("metrics_ready_requires_w8_prospective_trace")
+        w8_min = downstream.get("w8_as_of_min")
+        if not w8_min or _day(w8_min) < _day(W8_PROSPECTIVE_START):
+            raise PromotionValidationError("metrics_ready_uses_pre_w8_prospective_trace")
 
     promotion = report.get("promotion")
     if not isinstance(promotion, Mapping):
