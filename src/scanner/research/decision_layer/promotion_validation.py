@@ -651,15 +651,6 @@ def build_promotion_report(
         "legacy_replay_spent_through": str(protocol.get("legacy_replay_spent_through")),
         "protocol_id": _canonical_hash(protocol),
         "source_contract_hashes": contract_hashes,
-        "post_freeze_governance": {
-            "W8": {
-                "active_at_review_date": w8_contract is not None,
-                "introduced_on": W8_INTRODUCED_ON,
-                "prospective_unspent_from": w8_start,
-                "contract_hash": w8_contract_hash,
-                "source_case_counts_as_independent_validation": False,
-            }
-        },
         "technical_readiness": {
             "contract_consistency_gate_passed": True,
             "shadow_collection_eligible": True,
@@ -688,11 +679,6 @@ def build_promotion_report(
             ),
             "7E": "candidate_rule_not_empirically_validated",
             "7F": "portfolio_action_rule_not_empirically_validated",
-            "W8": (
-                "outcome_driven_action_policy_requires_post_2026_10_01_prospective_validation"
-                if w8_contract is not None
-                else "not_yet_introduced_at_review_date"
-            ),
             "7G": "reliability_structure_not_empirically_validated",
             "7H": "integration_research_only_until_upstream_promotion_review",
         },
@@ -714,6 +700,22 @@ def build_promotion_report(
             "target_weight_can_be_enabled_by_7i": False,
         },
     }
+    if w8_contract is not None:
+        report["post_freeze_governance"] = {
+            "W8": {
+                "active_at_review_date": True,
+                "introduced_on": W8_INTRODUCED_ON,
+                "prospective_unspent_from": w8_start,
+                "contract_hash": w8_contract_hash,
+                "source_case_counts_as_independent_validation": False,
+            }
+        }
+        layer_status = report.get("layer_status")
+        assert isinstance(layer_status, dict)
+        layer_status["W8"] = (
+            "outcome_driven_action_policy_requires_post_2026_10_01_prospective_validation"
+        )
+
     unsigned = deepcopy(report)
     report["report_id"] = _canonical_hash(unsigned)
     validate_promotion_report(report)
@@ -732,29 +734,27 @@ def validate_promotion_report(report: Mapping[str, object]) -> dict[str, object]
 
     reviewed_as_of = _day(report.get("reviewed_as_of"))
     post_freeze = report.get("post_freeze_governance")
-    if not isinstance(post_freeze, Mapping):
-        raise PromotionValidationError("post_freeze_governance_missing")
-    w8_guard = post_freeze.get("W8")
-    if not isinstance(w8_guard, Mapping):
-        raise PromotionValidationError("w8_post_freeze_guard_missing")
     expected_w8_active = reviewed_as_of >= _day(W8_INTRODUCED_ON)
-    if w8_guard.get("active_at_review_date") is not expected_w8_active:
-        raise PromotionValidationError("w8_active_state_review_date_mismatch")
-    if w8_guard.get("introduced_on") != W8_INTRODUCED_ON:
-        raise PromotionValidationError("w8_report_introduction_date_mismatch")
-    if w8_guard.get("source_case_counts_as_independent_validation") is not False:
-        raise PromotionValidationError("w8_source_case_independent_validation_forbidden")
-    if expected_w8_active:
+    if not expected_w8_active:
+        if post_freeze is not None:
+            raise PromotionValidationError("pre_w8_report_cannot_expose_future_governance")
+    else:
+        if not isinstance(post_freeze, Mapping):
+            raise PromotionValidationError("post_freeze_governance_missing")
+        w8_guard = post_freeze.get("W8")
+        if not isinstance(w8_guard, Mapping):
+            raise PromotionValidationError("w8_post_freeze_guard_missing")
+        if w8_guard.get("active_at_review_date") is not True:
+            raise PromotionValidationError("w8_active_state_review_date_mismatch")
+        if w8_guard.get("introduced_on") != W8_INTRODUCED_ON:
+            raise PromotionValidationError("w8_report_introduction_date_mismatch")
+        if w8_guard.get("source_case_counts_as_independent_validation") is not False:
+            raise PromotionValidationError("w8_source_case_independent_validation_forbidden")
         if w8_guard.get("prospective_unspent_from") != W8_PROSPECTIVE_START:
             raise PromotionValidationError("w8_report_prospective_start_mismatch")
         digest = str(w8_guard.get("contract_hash") or "")
         if len(digest) != 64:
             raise PromotionValidationError("w8_report_contract_hash_required")
-    else:
-        if w8_guard.get("prospective_unspent_from") is not None:
-            raise PromotionValidationError("pre_w8_report_cannot_expose_prospective_start")
-        if w8_guard.get("contract_hash") is not None:
-            raise PromotionValidationError("pre_w8_report_cannot_bind_future_contract")
 
     readiness = report.get("readiness")
     if not isinstance(readiness, Mapping):
