@@ -17,15 +17,42 @@
     "required_result": "PASS"
   },
   "continuous_controls": {
-    "QM_A_GOVERNANCE": {"required": true, "authority": "configs/qm_a_research_governance_v1.json"},
-    "QM_H_CAPA": {"required": true, "authority": "configs/qm_h_capa_v1.json"},
-    "QM_I_LINEAGE": {"required": true, "authority": "configs/qm_i_evidence_lineage_v1.json"},
-    "NEGATIVE_CONTROLS": {"required": true, "authority": "configs/ba_qm7_qm_j_closure_v1.json"},
-    "REGRESSION_TESTS": {"required": true, "authority": ".github/workflows/ba_qm12_continuous_qm.yml"},
-    "COVERAGE_MONITORING": {"required": true, "authority": "artifacts/research/history_metadata.json"},
-    "DRIFT_MONITORING": {"required": true, "authority": "BA-QM12 current-snapshot monitor"},
-    "CALIBRATION_MONITORING": {"required": true, "authority": "artifacts/research/probability_calibration_2.json"},
-    "PRODUCTION_HEALTH": {"required": true, "authority": "BA-QM10 current operations audit"}
+    "QM_A_GOVERNANCE": {
+      "required": true,
+      "authority": "configs/qm_a_research_governance_v1.json"
+    },
+    "QM_H_CAPA": {
+      "required": true,
+      "authority": "configs/qm_h_capa_v1.json"
+    },
+    "QM_I_LINEAGE": {
+      "required": true,
+      "authority": "configs/qm_i_evidence_lineage_v1.json"
+    },
+    "NEGATIVE_CONTROLS": {
+      "required": true,
+      "authority": "configs/ba_qm7_qm_j_closure_v1.json"
+    },
+    "REGRESSION_TESTS": {
+      "required": true,
+      "authority": ".github/workflows/ba_qm12_continuous_qm.yml"
+    },
+    "COVERAGE_MONITORING": {
+      "required": true,
+      "authority": "artifacts/research/history_metadata.json"
+    },
+    "DRIFT_MONITORING": {
+      "required": true,
+      "authority": "BA-QM12 current-snapshot monitor"
+    },
+    "CALIBRATION_MONITORING": {
+      "required": true,
+      "authority": "artifacts/research/probability_calibration_2.json"
+    },
+    "PRODUCTION_HEALTH": {
+      "required": true,
+      "authority": "BA-QM10 current operations audit"
+    }
   },
   "future_module_lifecycle": [
     "DESIGN",
@@ -75,6 +102,39 @@
     "future_module_lifecycle_enforced_by_contract": true,
     "current_snapshot_monitoring_present": true,
     "independent_promotion_blocks_preserved": true,
-    "continuous_qm_remains_active_after_ba_qm12_engineering_completion": true
+    "continuous_qm_remains_active_after_ba_qm12_engineering_completion": true,
+    "masterplan_residual_registry_present": true,
+    "full_masterplan_completion_claim_requires_zero_blocking_residuals": true
+  },
+  "masterplan_completion_gate": {
+    "status": "ACTIVE",
+    "full_completion_claim_requires_zero_blocking_residuals": true,
+    "engineering_completion_is_full_masterplan_completion": false,
+    "tracked_residuals": {
+      "W6_ELLIOTT_LINEAGE": {
+        "authority": "configs/qm_i_evidence_lineage_v1.json"
+      },
+      "PHASE1A_LAG1_CAPA": {
+        "authority": "configs/ba_qm7_qm_j_closure_v1.json"
+      },
+      "W8_EMPIRICAL_UTILITY": {
+        "authority": "configs/decision_depot_action_policy_v1.json"
+      },
+      "BA_QM2_EXTERNAL_HISTORICAL_INTEGRITY": {
+        "authority": "configs/ba_qm2_handoff_v2.json"
+      },
+      "BA_QM6_EMPIRICAL_VALIDATION": {
+        "authority": "configs/ba_qm6_qm_g_closure_v1.json"
+      },
+      "BA_QM7_EMPIRICAL_VALIDATION": {
+        "authority": "configs/ba_qm7_qm_j_closure_v1.json"
+      },
+      "DECISION_LAYER_EMPIRICAL_PROMOTION": {
+        "authority": "configs/decision_validation_promotion_v1.json"
+      },
+      "PHASE8_EXTERNAL_EVIDENCE": {
+        "authority": "configs/external_evidence_8_contract_v1.json"
+      }
+    }
   }
 }
