@@ -216,3 +216,46 @@ def test_reality_check_uses_transparent_segment_categories() -> None:
     assert verdicts[("P4", "C4")] == "contra_market"
     assert payload["semantics"]["absolute_truth_claimed"] is False
     assert payload["semantics"]["mixed_super_metric_created"] is False
+
+
+def test_reality_check_thin_sample_is_unclear() -> None:
+    rows = [
+        {
+            "asset_id": f"A{i}",
+            "pillar_primary": "P1",
+            "cluster_official": "C1",
+            "sector": "C1",
+        }
+        for i in range(2)
+    ]
+    history = {
+        "by_symbol": {
+            f"A{i}": {"status": "ok", "score_delta": 0.5}
+            for i in range(2)
+        }
+    }
+    segment_monitor = {
+        "internal_segments": [
+            {
+                "segment": "P1",
+                "average_dscore_1d": 0.8,
+                "n_valid": 2,
+                "sample_state": "thin",
+            }
+        ],
+        "official_segments": [
+            {
+                "segment": "C1",
+                "average_dscore_1d": 0.1,
+                "n_valid": 2,
+                "sample_state": "thin",
+            }
+        ],
+    }
+
+    _, payload = build_reality_check(
+        pd.DataFrame(rows),
+        history_delta=history,
+        segment_monitor=segment_monitor,
+    )
+    assert payload["comparisons"][0]["verdict"] == "unclear"
