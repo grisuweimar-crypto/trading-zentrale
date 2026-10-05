@@ -1,8 +1,11 @@
-"""Generate Segment Monitor report (pillar/cluster/bucket distributions + changes).
+"""Generate Segment Monitor report (internal/official movement + coverage).
 
 Outputs:
   - artifacts/reports/segment_monitor.json
   - artifacts/reports/segment_monitor.csv
+
+Uses canonical 1D score deltas from artifacts/reports/history_delta.json.
+Keeps internal pillars and official groupings separate; no super-score.
 
 Snapshot store:
   - artifacts/snapshots/segment_history.csv (upsert by date+symbol)
