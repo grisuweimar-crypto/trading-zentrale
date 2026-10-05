@@ -110,6 +110,7 @@ def validate_contract(payload: Mapping[str, Any]) -> dict[str, Any]:
         "regression_protection_added",
         "remaining_risks_documented",
         "lag1_block_preserved",
+        "qm_h_findings_and_capas_registered",
     )
     if any(done.get(field) is not True for field in required_done):
         raise BaQm11AuditError("ba_qm11_definition_of_done_incomplete")
@@ -197,6 +198,21 @@ def audit_current_system(root: Path = ROOT) -> dict[str, Any]:
     if lag1.get("status") != "IMPLEMENTED" or lag1.get("evidence_impact") != "PROMOTION_BLOCKED":
         raise BaQm11AuditError("lag1_block_state_changed")
 
+    finding_1 = ledger.get_finding("QM-H-BA-QM11-F01")
+    if (
+        finding_1.get("status") != "CLOSED"
+        or finding_1.get("evidence_impact") != "EVIDENCE_REVIEW_REQUIRED"
+        or finding_1.get("capa_id") != "QM-H-CAPA-BA-QM11-F01"
+    ):
+        raise BaQm11AuditError("ba_qm11_f01_qm_h_state_invalid")
+    finding_2 = ledger.get_finding("QM-H-BA-QM11-F02")
+    if (
+        finding_2.get("status") != "CLOSED"
+        or finding_2.get("evidence_impact") != "PROMOTION_BLOCKED"
+        or finding_2.get("capa_id") != "QM-H-CAPA-BA-QM11-F02"
+    ):
+        raise BaQm11AuditError("ba_qm11_f02_qm_h_state_invalid")
+
     return {
         "schema_version": "ba_qm11_system_audit_receipt_v1",
         "status": "BA_QM11_ENGINEERING_COMPLETE",
@@ -205,6 +221,7 @@ def audit_current_system(root: Path = ROOT) -> dict[str, Any]:
         "dimensions_passed": len(EXPECTED_DIMENSIONS),
         "finding_count": len(contract["findings"]),
         "findings_closed_effective": len(contract["findings"]),
+        "qm_h_findings_closed": 2,
         "w8_live_changed_action_count": len(changed),
         "w8_empirical_promotion_eligible": False,
         "lag1_evidence_impact": lag1["evidence_impact"],
