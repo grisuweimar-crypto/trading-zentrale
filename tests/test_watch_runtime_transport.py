@@ -196,8 +196,8 @@ def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
     assert json.loads((runtime_dir / "manifest.json").read_text())["symbol_count"] == 1
 
 
-def test_runtime_shard_contract_uses_32_deterministic_buckets() -> None:
-    assert len(SHARD_IDS) == 32
-    assert len(set(SHARD_IDS)) == 32
+def test_runtime_shard_contract_uses_64_deterministic_buckets() -> None:
+    assert len(SHARD_IDS) == 64
+    assert len(set(SHARD_IDS)) == 64
     assert SHARD_IDS[0] == "00"
-    assert SHARD_IDS[-1] == "1f"
+    assert SHARD_IDS[-1] == "3f"

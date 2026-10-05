@@ -28,7 +28,7 @@ MANIFEST_SCHEMA_VERSION = "decision_watch_runtime_manifest_v1"
 SHARD_SCHEMA_VERSION = "decision_watch_runtime_shard_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 DEFAULT_RUNTIME_MANIFEST = f"{DEFAULT_RUNTIME_DIR}/manifest.json"
-SHARD_IDS = tuple(f"{index:02x}" for index in range(32))
+SHARD_IDS = tuple(f"{index:02x}" for index in range(64))
 
 
 class WatchRuntimeError(ValueError):
