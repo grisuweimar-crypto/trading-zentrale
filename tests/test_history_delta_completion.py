@@ -125,6 +125,36 @@ def test_history_events_require_real_previous_basis() -> None:
     assert by_symbol["NEW"]["events"] == []
 
 
+def test_missing_score_has_no_fake_rank_delta_or_event() -> None:
+    history = pd.DataFrame(
+        [
+            {
+                "date": "2026-10-04",
+                "symbol": "AAA",
+                "name": "Alpha",
+                "score": "10",
+                "trend_ok": "True",
+                "liquidity_ok": "True",
+                "score_status": "OK",
+            },
+            {
+                "date": "2026-10-05",
+                "symbol": "AAA",
+                "name": "Alpha",
+                "score": "",
+                "trend_ok": "False",
+                "liquidity_ok": "True",
+                "score_status": "AVOID",
+            },
+        ]
+    )
+    _, payload = compute_history_delta(history)
+    row = payload["by_symbol"]["AAA"]
+    assert row["score_delta"] is None
+    assert row["rank_delta"] is None
+    assert row["events"] == []
+
+
 def test_segment_monitor_reports_dscore_breadth_and_coverage() -> None:
     current = pd.DataFrame(
         [
