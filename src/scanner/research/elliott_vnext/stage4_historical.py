@@ -473,6 +473,111 @@ def build_stage4_historical_validation_from_components(
     return result
 
 
+def adapt_stage4_validation_for_6h(
+    stage4_report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Expose the completed Stage-4 aggregate through the frozen 6G contract.
+
+    Stage 4 is a compact wrapper around the already-computed 6G summaries.
+    This adapter performs no replay and no re-estimation.  It only validates
+    the Stage-4 research/no-promotion boundaries and maps the stored summaries
+    back into the existing elliott_vnext_validation_v1 shape consumed by 6H.
+    """
+
+    if stage4_report.get("schema_version") != SCHEMA_VERSION:
+        raise Stage4HistoricalValidationError("stage4_adapter_schema_invalid")
+    if stage4_report.get("stage") != STAGE:
+        raise Stage4HistoricalValidationError("stage4_adapter_stage_invalid")
+    if stage4_report.get("technical_stage_status") != "COMPLETE":
+        raise Stage4HistoricalValidationError("stage4_adapter_not_complete")
+    if stage4_report.get("empirical_promotion_status") != "NOT_PROMOTED":
+        raise Stage4HistoricalValidationError("stage4_adapter_promotion_state_invalid")
+
+    source = stage4_report.get("source")
+    evidence_policy = stage4_report.get("evidence_policy")
+    coverage = stage4_report.get("coverage")
+    boundaries = stage4_report.get("boundaries")
+    projection_summary = stage4_report.get("projection_summary")
+    route_summary = stage4_report.get("route_summary")
+    if not isinstance(source, Mapping):
+        raise Stage4HistoricalValidationError("stage4_adapter_source_missing")
+    if not isinstance(evidence_policy, Mapping):
+        raise Stage4HistoricalValidationError("stage4_adapter_evidence_policy_missing")
+    if not isinstance(coverage, Mapping):
+        raise Stage4HistoricalValidationError("stage4_adapter_coverage_missing")
+    if not isinstance(boundaries, Mapping):
+        raise Stage4HistoricalValidationError("stage4_adapter_boundaries_missing")
+    if not isinstance(projection_summary, list) or not isinstance(route_summary, list):
+        raise Stage4HistoricalValidationError("stage4_adapter_summaries_missing")
+
+    required_false = (
+        "future_rows_used_for_replay",
+        "performance_used_to_build_elliott_state",
+        "raw_close_fallback_for_performance",
+        "same_session_projection_hit_allowed",
+        "round_trip_pnl_invented",
+        "numeric_w5_level_promoted",
+        "degree_reducer_used",
+        "elliott_core_modified",
+        "changes_universal_stance",
+        "changes_portfolio_action",
+        "direct_ordering_allowed",
+        "automatic_promotion_allowed",
+    )
+    for field in required_false:
+        if boundaries.get(field) is not False:
+            raise Stage4HistoricalValidationError(
+                f"stage4_adapter_boundary_invalid:{field}"
+            )
+    if boundaries.get("research_only") is not True:
+        raise Stage4HistoricalValidationError("stage4_adapter_must_remain_research_only")
+    if evidence_policy.get("legacy_data_can_support_promotion") is not False:
+        raise Stage4HistoricalValidationError("stage4_adapter_legacy_promotion_forbidden")
+
+    rules_frozen_through = str(source.get("rules_frozen_through") or "").strip()
+    if not rules_frozen_through:
+        raise Stage4HistoricalValidationError("stage4_adapter_rules_freeze_missing")
+    promotion_status = str(stage4_report.get("promotion_status_from_6g") or "").strip()
+    if promotion_status not in {
+        "awaiting_unspent_prospective_evidence",
+        "prospective_evidence_accumulating_no_automatic_promotion",
+    }:
+        raise Stage4HistoricalValidationError("stage4_adapter_6g_status_invalid")
+
+    return {
+        "schema_version": "elliott_vnext_validation_v1",
+        "module": "6G_historical_validation",
+        "rules_frozen_through": rules_frozen_through,
+        "horizons_sessions": [5, 10, 20, 40, 60],
+        "evidence_policy": dict(evidence_policy),
+        "coverage": dict(coverage),
+        "structure_validation": [],
+        "structure_summary": stage4_report.get("structure_summary"),
+        "projection_summary": [dict(row) for row in projection_summary],
+        "route_summary": [dict(row) for row in route_summary],
+        "cross_system_validation": [],
+        "market_context_validation": {
+            "status": "not_supplied_missing_context_stays_missing",
+            "alpha_rows": [],
+            "scanner_peer_fallback_used": False,
+        },
+        "promotion_status": promotion_status,
+        "automatic_promotion_allowed": False,
+        "technical_completion_is_empirical_validation": False,
+        "round_trip_pnl_evaluated": False,
+        "numeric_w5_levels_promoted": False,
+        "trade_decision": None,
+        "order_instruction": None,
+        "research_only": True,
+        "source": {
+            "adapter": "stage4_compact_aggregate_to_frozen_6g_v1",
+            "stage4_result_hash": stage4_report.get("stage4_result_hash"),
+            "source_commit": source.get("source_commit"),
+            "price_source_sha256": source.get("price_source_sha256"),
+        },
+    }
+
+
 def build_stage4_historical_validation(
     prices: pd.DataFrame | Iterable[Mapping[str, Any]],
     *,

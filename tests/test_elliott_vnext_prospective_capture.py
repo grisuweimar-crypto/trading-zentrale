@@ -248,3 +248,50 @@ def test_repaired_capture_does_not_supersede_nonempty_legacy_record(tmp_path, mo
 
     with pytest.raises(ProspectiveCaptureError, match="prospective_capture_identity_conflict"):
         archive_capture(path, repaired)
+
+
+
+def test_capture_passes_supplied_6g_validation_into_6h(monkeypatch):
+    seen = {}
+
+    def fake_replay(frame, symbol, *, config, as_of_dates, keep_unchanged):
+        return [_routed(symbol, "daily", "fine")], {
+            "symbol": symbol,
+            "status": "ok",
+            "evaluated_dates": 1,
+            "snapshots": 1,
+            "future_rows_used": False,
+        }
+
+    def fake_output(routed, *, validation_report=None):
+        seen["validation_report"] = validation_report
+        return _output(routed)
+
+    validation_report = {
+        "schema_version": "elliott_vnext_validation_v1",
+        "source": {
+            "stage4_result_hash": "d" * 64,
+            "source_commit": "e" * 40,
+        },
+    }
+    monkeypatch.setattr(capture_module, "replay_symbol_states", fake_replay)
+    monkeypatch.setattr(capture_module, "build_module_output", fake_output)
+    monkeypatch.setattr(capture_module, "validate_module_output", lambda value: value)
+
+    result = build_prospective_capture(
+        _prices("AAA"),
+        _daily("AAA"),
+        source_publication_commit="a" * 40,
+        scanner_published_at="2026-10-01T20:00:00+00:00",
+        run_id="github-123-6",
+        price_source_sha256="price-hash",
+        daily_source_sha256="daily-hash",
+        captured_at="2026-10-01T20:05:00+00:00",
+        validation_report=validation_report,
+    )
+
+    assert seen["validation_report"] is validation_report
+    assert result["validation_source"] == validation_report["source"]
+    assert result["guards"]["changes_universal_stance"] is False
+    assert result["guards"]["changes_portfolio_action"] is False
+    assert result["guards"]["direct_ordering_allowed"] is False

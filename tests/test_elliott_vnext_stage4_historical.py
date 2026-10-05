@@ -377,3 +377,84 @@ def test_stage4_component_builder_rejects_incomplete_guard() -> None:
             replay_chunk_count=20,
             config=ValidationConfig(bootstrap_reps=0, replay_price_basis="raw"),
         )
+
+
+
+def test_stage4_compact_report_adapts_to_frozen_6g_contract(monkeypatch) -> None:
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [{"symbol": "AAA", "errors": []}],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    monkeypatch.setattr(
+        stage4,
+        "replay_universe_states",
+        lambda *args, **kwargs: ([deepcopy(_snapshot())], deepcopy(replay_coverage)),
+    )
+    report = _report()
+    report["rules_frozen_through"] = "2026-09-25"
+    monkeypatch.setattr(
+        stage4,
+        "build_validation_report",
+        lambda *args, **kwargs: deepcopy(report),
+    )
+
+    compact = stage4.build_stage4_historical_validation(
+        _prices(),
+        price_source_sha256="b" * 64,
+        source_commit="a" * 40,
+        config=ValidationConfig(bootstrap_reps=0),
+    )
+    adapted = stage4.adapt_stage4_validation_for_6h(compact)
+
+    assert adapted["schema_version"] == "elliott_vnext_validation_v1"
+    assert adapted["module"] == "6G_historical_validation"
+    assert adapted["rules_frozen_through"] == "2026-09-25"
+    assert adapted["projection_summary"] == compact["projection_summary"]
+    assert adapted["route_summary"] == compact["route_summary"]
+    assert adapted["promotion_status"] == compact["promotion_status_from_6g"]
+    assert adapted["automatic_promotion_allowed"] is False
+    assert adapted["technical_completion_is_empirical_validation"] is False
+    assert adapted["trade_decision"] is None
+    assert adapted["order_instruction"] is None
+    assert adapted["research_only"] is True
+    assert adapted["source"]["stage4_result_hash"] == compact["stage4_result_hash"]
+
+
+def test_stage4_to_6g_adapter_fails_closed_on_boundary_change(monkeypatch) -> None:
+    replay_coverage = {
+        "symbols_requested": 1,
+        "symbols_with_snapshots": 1,
+        "snapshots": 1,
+        "details": [{"symbol": "AAA", "errors": []}],
+        "failures_are_missing_evidence_not_imputed": True,
+        "research_only": True,
+    }
+    monkeypatch.setattr(
+        stage4,
+        "replay_universe_states",
+        lambda *args, **kwargs: ([deepcopy(_snapshot())], deepcopy(replay_coverage)),
+    )
+    report = _report()
+    report["rules_frozen_through"] = "2026-09-25"
+    monkeypatch.setattr(
+        stage4,
+        "build_validation_report",
+        lambda *args, **kwargs: deepcopy(report),
+    )
+    compact = stage4.build_stage4_historical_validation(
+        _prices(),
+        price_source_sha256="b" * 64,
+        source_commit="a" * 40,
+        config=ValidationConfig(bootstrap_reps=0),
+    )
+    compact["boundaries"]["changes_portfolio_action"] = True
+
+    with pytest.raises(
+        stage4.Stage4HistoricalValidationError,
+        match="stage4_adapter_boundary_invalid:changes_portfolio_action",
+    ):
+        stage4.adapt_stage4_validation_for_6h(compact)

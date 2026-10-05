@@ -86,6 +86,7 @@ def build_prospective_capture(
     price_source_sha256: str,
     daily_source_sha256: str,
     captured_at: str | None = None,
+    validation_report: Mapping[str, object] | None = None,
     config: ValidationConfig = ValidationConfig(),
 ) -> dict[str, object]:
     """Build one current-snapshot capture using only the frozen Module-6 chain."""
@@ -124,7 +125,12 @@ def build_prospective_capture(
         for routed in snapshots:
             if str(routed.get("as_of") or "") != as_of:
                 raise ProspectiveCaptureError(f"replay_as_of_mismatch:{symbol}")
-            output = validate_module_output(build_module_output(routed))
+            built = (
+                build_module_output(routed)
+                if validation_report is None
+                else build_module_output(routed, validation_report=validation_report)
+            )
+            output = validate_module_output(built)
             if str(output.get("symbol") or "") != symbol:
                 raise ProspectiveCaptureError(f"output_symbol_mismatch:{symbol}")
             if str(output.get("as_of") or "") != as_of:
@@ -172,6 +178,11 @@ def build_prospective_capture(
         "replay_price_basis": config.replay_price_basis,
         "price_source_sha256": str(price_source_sha256 or ""),
         "daily_source_sha256": str(daily_source_sha256 or ""),
+        "validation_source": (
+            dict(validation_report.get("source") or {})
+            if isinstance(validation_report, Mapping)
+            else None
+        ),
         "output_ids": [str(row.get("output_id") or "") for row in outputs],
         "output_keys": [list(key) for key in sorted(output_keys)],
         "coverage": coverage,
@@ -200,6 +211,7 @@ def build_prospective_capture(
             "market_ohlcv_sha256": str(price_source_sha256 or ""),
             "daily_research_sha256": str(daily_source_sha256 or ""),
         },
+        "validation_source": identity["validation_source"],
         "guards": {
             "research_only": True,
             "productive_integration_enabled": False,

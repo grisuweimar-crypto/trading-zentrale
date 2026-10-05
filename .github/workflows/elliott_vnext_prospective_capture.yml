@@ -7,12 +7,14 @@ on:
       - ".github/workflows/elliott_vnext_prospective_capture.yml"
       - "src/scanner/research/elliott_vnext/**"
       - "scripts/run_elliott_prospective_capture_6h.py"
+      - "artifacts/research/elliott_vnext_stage4_historical_validation.json"
   pull_request:
     branches: [main]
     paths:
       - "src/scanner/research/elliott_vnext/prospective_capture.py"
       - "src/scanner/research/elliott_vnext/validation_replay.py"
       - "src/scanner/research/elliott_vnext/fibonacci.py"
+      - "src/scanner/research/elliott_vnext/stage4_historical.py"
       - "scripts/run_elliott_prospective_capture_6h.py"
       - "tests/test_elliott_vnext_prospective_capture.py"
       - "tests/test_elliott_vnext_validation.py"
@@ -270,6 +272,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_elliott_vnext_prospective_capture.py
+          tests/test_elliott_vnext_stage4_historical.py
           tests/test_elliott_vnext_validation.py
           tests/test_elliott_vnext_pivots.py
           tests/test_elliott_vnext_scenarios.py
@@ -337,6 +340,14 @@ jobs:
           assert guards['missing_evidence_not_imputed'] is True
           assert guards['frozen_elliott_core_modified'] is False
           assert guards['multi_degree_outputs_retained_without_reducer'] is True
+          validation_source = capture.get('validation_source')
+          assert isinstance(validation_source, dict)
+          assert validation_source.get('adapter') == 'stage4_compact_aggregate_to_frozen_6g_v1'
+          assert validation_source.get('stage4_result_hash')
+          for output in capture['outputs']:
+              assert output['historical_expectancy'] is not None
+              assert output['validation']['automatic_promotion_allowed'] is False
+              assert 'historical_expectancy_not_supplied' not in output['warnings']
 
           def forbidden_paths(value, path='$'):
               found = []
