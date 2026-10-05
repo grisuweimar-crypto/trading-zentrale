@@ -276,6 +276,11 @@ def test_reality_check_uses_transparent_segment_categories() -> None:
     assert verdicts[("P2", "C2")] == "scanner_stronger"
     assert verdicts[("P3", "C3")] == "scanner_weaker"
     assert verdicts[("P4", "C4")] == "contra_market"
+    assert payload["rules"] == {
+        "alignment_tolerance_dscore": 0.10,
+        "min_pair_valid": 5,
+        "min_pair_coverage": 0.50,
+    }
     assert payload["semantics"]["absolute_truth_claimed"] is False
     assert payload["semantics"]["mixed_super_metric_created"] is False
 
