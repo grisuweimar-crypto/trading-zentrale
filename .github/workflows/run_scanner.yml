@@ -65,8 +65,7 @@ jobs:
         # Governance-/QM-Suiten laufen in ihren eigenen Workflows und duerfen
         # einen ansonsten gueltigen Tageslauf nicht blockieren.
         run: |
-          python -m pytest \
-            tests/test_history_delta_completion.py \
+          python -m pytest tests/test_history_delta_completion.py \
             tests/test_daily_research.py \
             tests/test_history_query_and_daily_research.py \
             tests/test_history_research.py \
