@@ -70,6 +70,11 @@ def test_ui_polish_exposes_history_basis_filters_and_explainability() -> None:
     assert "sampleThin" in html
     assert "sampleUnclear" in html
     assert "Datenbasis: History" in html
+    assert "if (quick.onlyAvoid) f.push('onlyAvoid')" in html
+    assert "if (quick.onlyNA) f.push('onlyNA')" in html
+    assert "if (quick.onlyERR) f.push('onlyERR')" in html
+    assert "if (quick.onlyTrendFail) f.push('trendFail')" in html
+    assert "if (quick.onlyLiqFail) f.push('liqFail')" in html
 
 
 def test_productive_daily_bridge_preserves_history_status_contract() -> None:
