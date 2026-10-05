@@ -169,7 +169,7 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
     JS will replace this immediately on successful load.
     """
     if df.empty:
-        return '<tr><td colspan="10" class="muted">Keine Daten.</td></tr>'
+        return '<tr><td colspan="11" class="muted">Keine Daten.</td></tr>'
 
     work = df.copy()
     if "score" in work.columns:
@@ -192,6 +192,7 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
             f'<td>{esc(r.get("name"))}</td>'
             f'<td class="mono right">{esc(price)}</td>'
             f'<td class="mono right">{esc(r.get("score"))}</td>'
+            '<td class="mono right hide-sm"></td>'
             f'<td class="mono right hide-sm">{esc(r.get("confidence"))}</td>'
             f'<td class="mono right hide-sm">{esc(r.get("cycle"))}</td>'
             f'<td class="mono">{esc(r.get("trend_ok"))}</td>'
