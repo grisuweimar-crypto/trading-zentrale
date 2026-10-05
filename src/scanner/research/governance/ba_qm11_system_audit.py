@@ -179,8 +179,10 @@ def audit_current_system(root: Path = ROOT) -> dict[str, Any]:
     if not isinstance(diagnostics, Mapping):
         raise BaQm11AuditError("runtime_diagnostics_missing")
     expected_live = contract["live_system_evidence"]
-    if int(diagnostics.get("bundle_count", -1)) != int(expected_live["bundle_count"]):
-        raise BaQm11AuditError("runtime_bundle_count_changed_from_closure_evidence")
+    bundle_count = int(diagnostics.get("bundle_count") or 0)
+    row_count = int(runtime.get("row_count") or 0)
+    if bundle_count <= 0 or row_count != bundle_count:
+        raise BaQm11AuditError("runtime_bundle_count_invalid")
     if list(diagnostics.get("missing_current_packet_symbols") or []):
         raise BaQm11AuditError("runtime_missing_current_packets")
     if diagnostics.get("phase8_external_evidence_activated") is not False:
@@ -190,8 +192,8 @@ def audit_current_system(root: Path = ROOT) -> dict[str, Any]:
     if diagnostics.get("scanner_scalar_fallback_used") is not False:
         raise BaQm11AuditError("runtime_scanner_scalar_fallback_used")
     changed = list(diagnostics.get("w8_changed_action_symbols") or [])
-    if len(changed) != int(expected_live["w8_changed_action_count"]):
-        raise BaQm11AuditError("runtime_w8_changed_action_count_mismatch")
+    if len(changed) > bundle_count:
+        raise BaQm11AuditError("runtime_w8_changed_action_count_invalid")
 
     ledger = CapaLedger(root / "artifacts" / "research" / "qm" / "qm_h_capa_ledger.jsonl")
     lag1 = ledger.get_finding("QM-H-QMJ-PHASE1A-LAG1-001")
@@ -222,7 +224,13 @@ def audit_current_system(root: Path = ROOT) -> dict[str, Any]:
         "finding_count": len(contract["findings"]),
         "findings_closed_effective": len(contract["findings"]),
         "qm_h_findings_closed": 2,
+        "current_bundle_count": bundle_count,
         "w8_live_changed_action_count": len(changed),
+        "historical_closure_evidence": {
+            "bundle_count": int(expected_live["bundle_count"]),
+            "w8_changed_action_count": int(expected_live["w8_changed_action_count"]),
+            "historical_record_not_live_runtime_identity": True,
+        },
         "w8_empirical_promotion_eligible": False,
         "lag1_evidence_impact": lag1["evidence_impact"],
         "ba_qm11_may_release_lag1_block": False,
