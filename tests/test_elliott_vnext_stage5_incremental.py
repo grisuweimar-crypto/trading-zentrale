@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 
 from scanner.research.elliott_vnext.cross_system import TRANSITION_COLUMNS
@@ -163,3 +167,89 @@ def test_model_relation_validation_uses_only_explicit_claims() -> None:
     assert result["claim_count"] == 1
     assert result["relation_counts"]["confirmation_candidate"] == 1
     assert result["claims_retrojected"] is False
+
+
+def _load_aggregate_script():
+    path = Path(__file__).resolve().parents[1] / "scripts" / "aggregate_elliott_stage5.py"
+    spec = importlib.util.spec_from_file_location("aggregate_elliott_stage5", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_stage5_daily_difference_matches_raw_block_bootstrap() -> None:
+    from scanner.research.elliott_vnext.validation import (
+        ValidationConfig,
+        block_bootstrap_difference,
+    )
+
+    module = _load_aggregate_script()
+    dates = pd.date_range("2026-04-01", periods=35, freq="B")
+    v_rows = []
+    b_rows = []
+    for i, day in enumerate(dates):
+        for copy in range(1 + (i % 2)):
+            v_rows.append({
+                "event_date": day,
+                "metric": 0.02 + i * 0.001 + copy * 0.0005,
+            })
+        for copy in range(1 + (i % 3)):
+            b_rows.append({
+                "event_date": day,
+                "metric": -0.01 + i * 0.0005 + copy * 0.0002,
+            })
+
+    values = pd.DataFrame(v_rows)
+    baseline = pd.DataFrame(b_rows)
+    config = ValidationConfig(bootstrap_reps=200, random_seed=20260925)
+    seed_key = (
+        "stage5_transition_signed_return",
+        "score_turn_up",
+        "legacy_development_descriptive_only",
+        "supportive_review",
+        "wave_2_complete",
+        "intermediate",
+        "up",
+    )
+    expected = block_bootstrap_difference(
+        values,
+        baseline,
+        metric="metric",
+        date_col="event_date",
+        horizon=5,
+        config=config,
+        seed_key=seed_key,
+    )
+
+    def daily(frame):
+        result = {}
+        for day, group in frame.groupby("event_date", sort=True):
+            result[pd.Timestamp(day).date().isoformat()] = (
+                float(group["metric"].sum()),
+                int(len(group)),
+            )
+        return result
+
+    actual = module.bootstrap_difference_daily(
+        daily(values),
+        daily(baseline),
+        metric="metric",
+        horizon=5,
+        bootstrap_reps=200,
+        random_seed=20260925,
+        seed_key=seed_key,
+    )
+
+    assert actual["N"] == expected["N"]
+    assert actual["baseline_N"] == expected["baseline_N"]
+    assert actual["block_length"] == expected["block_length"]
+    assert actual["support_regions"] == expected["support_regions"]
+    assert actual["robust_interval_available"] == expected["robust_interval_available"]
+    assert np.isclose(actual["difference"], expected["difference"], rtol=0.0, atol=1e-15)
+    assert np.allclose(
+        np.asarray(actual["difference_95"], dtype=float),
+        np.asarray(expected["difference_95"], dtype=float),
+        rtol=0.0,
+        atol=1e-15,
+    )
