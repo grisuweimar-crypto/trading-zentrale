@@ -1,0 +1,63 @@
+{
+  "schema_version": "qm_b_firds_historical_listing_v1",
+  "module": "QM-B",
+  "name": "ESMA FIRDS Historical Listing Evidence",
+  "status": "research_validation",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "source_id": "esma_firds",
+  "source_scope": "EEA_MIFIR_SCOPE_ONLY",
+  "global_scope": false,
+  "official_file_index": {
+    "provider": "European Securities and Markets Authority (ESMA)",
+    "base_url": "https://registers.esma.europa.eu/solr/esma_registers_firds_files/",
+    "required_metadata_fields": [
+      "publication_date",
+      "file_type",
+      "download_link",
+      "checksum"
+    ]
+  },
+  "supported_file_types": [
+    "FULINS",
+    "DLTINS",
+    "INVINS"
+  ],
+  "publication_rules": {
+    "official_register_publication_date_required": true,
+    "filename_date_is_not_availability_evidence": true,
+    "event_effective_date_is_not_availability_evidence": true,
+    "project_retrieval_time_is_not_used_to_backdate_evidence": true,
+    "conservative_available_from": "NEXT_CALENDAR_DAY_00_00_UTC",
+    "reason": "ESMA documents generation by 09:00 CET, but the project uses the next UTC day as a deliberately later, timezone-agnostic PIT boundary."
+  },
+  "provenance_rules": {
+    "official_download_link_required": true,
+    "official_checksum_preserved": true,
+    "raw_payload_sha256_required": true,
+    "parser_id_required": "esma_firds_reference_v1",
+    "parser_version_required": "1",
+    "publication_descriptor_hash_required": true
+  },
+  "listing_semantics": {
+    "FULINS_FULL_RECORD": "LISTED",
+    "DLTINS_NEW_RECORD": "LISTED",
+    "DLTINS_MODIFIED_RECORD": "LISTED",
+    "DLTINS_TERMINATED_RECORD": "DELISTED",
+    "DLTINS_CANCELLED_RECORD": "UNKNOWN",
+    "INVINS_REFERENCE_RECORD": "UNKNOWN"
+  },
+  "hard_guards": {
+    "historical_retrojection_before_official_publication_boundary_allowed": false,
+    "listing_implies_market_tradability": false,
+    "listing_implies_execution_channel": false,
+    "listing_implies_project_investability": false,
+    "regional_evidence_may_close_global_listing_blocker": false,
+    "missing_record_is_negative_listing_evidence": false
+  },
+  "promotion": {
+    "regional_listing_evidence_eligible": true,
+    "global_listing_promotion_performed": false,
+    "ba_qm2_global_blocker_released": false
+  }
+}
