@@ -10,6 +10,32 @@ from scanner.reports.history_delta import (
 )
 from scanner.reports.reality_check import build_reality_check
 from scanner.reports.segment_monitor import compute_segment_monitor
+from scanner.ui.generator import _render_fallback_tbody
+
+
+def test_fallback_table_keeps_dscore_column_alignment() -> None:
+    empty_html = _render_fallback_tbody(pd.DataFrame())
+    assert 'colspan="11"' in empty_html
+
+    html = _render_fallback_tbody(
+        pd.DataFrame(
+            [
+                {
+                    "ticker": "AAA",
+                    "name": "Alpha",
+                    "price": 10.0,
+                    "score": 42.0,
+                    "confidence": 70.0,
+                    "cycle": 50.0,
+                    "trend_ok": True,
+                    "liquidity_ok": True,
+                    "score_status": "OK",
+                    "is_crypto": False,
+                }
+            ]
+        )
+    )
+    assert html.count("<td") == 11
 
 
 def test_productive_daily_bridge_preserves_history_status_contract() -> None:
