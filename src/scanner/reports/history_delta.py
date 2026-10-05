@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-"""History Delta (Score/Rank changes between latest two snapshots).
+"""History Delta: umbrella for the scanner-internal timeline.
 
-This module is explainability-only.
-It reads existing CSV outputs and produces delta reports into artifacts/.
-It must never influence scoring.
+History Delta has three deliberately separate layers:
+- Rank Delta: relative position change inside a comparable scanner universe.
+- Score Delta: absolute change of the scanner score.
+- Events: discrete status/rank-threshold changes with a real prior basis.
+
+The canonical source is the local daily snapshot history. These metrics are
+scanner-internal explainability facts, not price performance, and must never
+influence scoring.
 
 Inputs
 ------
@@ -22,8 +27,10 @@ We *upsert* today's snapshot (by date+symbol) into score_history.csv to keep the
 pipeline deterministic per day (reruns don't duplicate rows).
 
 Each snapshot row also carries the already computed ``cycle`` (0-100), the
-derived ``r_code`` (R0-R5) and a fixed ``scoring_version``. Rows written before
-these columns existed keep them empty.
+derived ``r_code`` (R0-R5), a fixed ``scoring_version``, the lightweight
+``history_schema_version`` and the status fields needed for deterministic event
+comparison. Rows written before these columns existed keep them empty; missing
+legacy values are never backfilled or inferred.
 """
 
 from dataclasses import dataclass
@@ -40,13 +47,13 @@ from scanner.reports.briefing import (
     _bool_series,
     _first_col,
     _norm_str,
-    _num_series,
     _percentile_rank,
     _rec_code,
 )
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+HISTORY_SCHEMA_VERSION = "history_snapshot_v2"
 
 # Bumped whenever the scoring/recommendation system changes, so historical rows
 # stay comparable only within the same version.
@@ -58,9 +65,13 @@ SNAPSHOT_EXTRA_COLUMNS = (
     "cycle",
     "r_code",
     "scoring_version",
+    "history_schema_version",
     "rank",
     "universe_size",
     "rank_percentile",
+    "trend_ok",
+    "liquidity_ok",
+    "score_status",
 )
 
 
@@ -89,10 +100,21 @@ def _first_nonempty(*vals: Any) -> Any:
     return None
 
 
+def _history_num_series(df: pd.DataFrame, col: str | None) -> pd.Series:
+    """Numeric helper that keeps missing source fields genuinely missing.
+
+    Use float NaN rather than pd.NA with numpy float64 so the helper remains
+    compatible with pandas 3.x while preserving the no-fallback semantics.
+    """
+    if not col or col not in df.columns:
+        return pd.Series(float("nan"), index=df.index, dtype="float64")
+    return pd.to_numeric(df[col], errors="coerce")
+
+
 def _cycle_series(df_full: pd.DataFrame) -> pd.Series:
     """Already computed cycle value (0-100) from the watchlist."""
     col = _first_col(df_full, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])
-    return _num_series(df_full, col)
+    return _history_num_series(df_full, col)
 
 
 def _r_code_series(df_full: pd.DataFrame) -> pd.Series:
@@ -106,7 +128,7 @@ def _r_code_series(df_full: pd.DataFrame) -> pd.Series:
     c_trend = _first_col(df_full, ["trend_ok", "TrendOK", "Trend Ok", "Trend"])
     c_liq = _first_col(df_full, ["liquidity_ok", "LiquidityOK", "LiqOK", "Liq"])
 
-    scores = _num_series(df_full, c_score)
+    scores = _history_num_series(df_full, c_score)
     score_sorted = sorted(float(x) for x in scores.dropna().tolist())
     trend = _bool_series(df_full, c_trend)
     liq = _bool_series(df_full, c_liq)
@@ -179,6 +201,11 @@ def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None
     pillar_primary = _col("pillar_primary")
     cluster_official = _col("cluster_official")
     bucket_type = _col("bucket_type")
+    score_status = _col("score_status")
+    trend_col = _first_col(df_full, ["trend_ok", "TrendOK", "Trend Ok", "Trend"])
+    liquidity_col = _first_col(df_full, ["liquidity_ok", "LiquidityOK", "LiqOK", "Liq"])
+    trend_ok = _bool_series(df_full, trend_col)
+    liquidity_ok = _bool_series(df_full, liquidity_col)
     rank, universe_size, rank_percentile = _rank_metadata(df_full)
 
     # Normalize symbol key: prefer asset_id, then symbol, then ticker
@@ -206,9 +233,13 @@ def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None
             "cycle": _cycle_series(df_full),
             "r_code": _r_code_series(df_full),
             "scoring_version": SCORING_VERSION,
+            "history_schema_version": HISTORY_SCHEMA_VERSION,
             "rank": rank,
             "universe_size": universe_size,
             "rank_percentile": rank_percentile,
+            "trend_ok": trend_ok,
+            "liquidity_ok": liquidity_ok,
+            "score_status": score_status.astype(str).replace({"nan": ""}),
         }
     )
 
@@ -289,12 +320,50 @@ def write_recent_score_history(score_history_path: Path, recent_path: Path) -> p
     return recent
 
 
+def _clean_optional_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+    text = str(value).strip()
+    if not text or text.lower() in {"nan", "<na>", "none"}:
+        return None
+    return text
+
+
+def _optional_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    text = _clean_optional_text(value)
+    if text is None:
+        return None
+    lowered = text.lower()
+    if lowered in {"true", "1", "yes", "y", "ja"}:
+        return True
+    if lowered in {"false", "0", "no", "n", "nein"}:
+        return False
+    return None
+
+
+def _optional_float(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if pd.isna(parsed) else parsed
+
+
 def _rank_by_score(df: pd.DataFrame) -> pd.Series:
-    """Dense rank: 1 is best (highest score). NaN ranks last."""
-    s = pd.to_numeric(df["score"], errors="coerce")
-    # rank highest first; NaN -> bottom
-    # Use method='min' so ties share best rank number
-    return (-s).rank(method="min", na_option="bottom").astype("Int64")
+    """Dense rank: 1 is best; a missing score has no rank."""
+    scores = pd.to_numeric(df["score"], errors="coerce")
+    ranks = pd.Series(pd.NA, index=df.index, dtype="Int64")
+    valid = scores.notna()
+    if valid.any():
+        ranks.loc[valid] = (-scores.loc[valid]).rank(method="min").astype("Int64")
+    return ranks
 
 
 def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: str, top_n: int = 12) -> tuple[pd.DataFrame, dict[str, Any]]:
@@ -333,8 +402,8 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
         elif p is not None:
             name = str(p.get("name", "") or "")
 
-        score_prev = float(p["score"]) if p is not None and pd.notna(p["score"]) else None
-        score_now = float(n["score"]) if n is not None and pd.notna(n["score"]) else None
+        score_prev = _optional_float(p.get("score")) if p is not None else None
+        score_now = _optional_float(n.get("score")) if n is not None else None
         rank_prev = int(p["rank"]) if p is not None and pd.notna(p["rank"]) else None
         rank_now = int(n["rank"]) if n is not None and pd.notna(n["rank"]) else None
         rank_prev_common = None
@@ -360,6 +429,46 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
             # positive means moved UP within stable common universe
             rank_delta = rank_prev_common - rank_now_common
 
+        events: list[dict[str, Any]] = []
+        if status == "ok":
+            # Rank-threshold events use the stable common universe, exactly like
+            # rank_delta. Universe additions/removals must not manufacture a
+            # Top-10/Top-25 crossing for an otherwise unchanged asset.
+            if rank_prev_common is not None and rank_now_common is not None:
+                if rank_prev_common > 10 and rank_now_common <= 10:
+                    events.append(
+                        {"type": "entered_top_10", "from": rank_prev_common, "to": rank_now_common}
+                    )
+                if rank_prev_common <= 10 and rank_now_common > 10:
+                    events.append(
+                        {"type": "left_top_10", "from": rank_prev_common, "to": rank_now_common}
+                    )
+                if rank_prev_common > 25 and rank_now_common <= 25:
+                    events.append(
+                        {"type": "entered_top_25", "from": rank_prev_common, "to": rank_now_common}
+                    )
+                if rank_prev_common <= 25 and rank_now_common > 25:
+                    events.append(
+                        {"type": "left_top_25", "from": rank_prev_common, "to": rank_now_common}
+                    )
+
+            for field, event_type, parser in (
+                ("trend_ok", "trend_ok_changed", _optional_bool),
+                ("liquidity_ok", "liquidity_ok_changed", _optional_bool),
+                ("score_status", "score_status_changed", _clean_optional_text),
+            ):
+                prev_value = parser(p.get(field)) if p is not None else None
+                now_value = parser(n.get(field)) if n is not None else None
+                if prev_value is not None and now_value is not None and prev_value != now_value:
+                    events.append(
+                        {
+                            "type": event_type,
+                            "field": field,
+                            "from": prev_value,
+                            "to": now_value,
+                        }
+                    )
+
         rows.append(
             {
                 "symbol": sym,
@@ -373,16 +482,25 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
                 "rank_now_common": rank_now_common,
                 "rank_delta": rank_delta,
                 "status": status,
+                "events": events,
             }
         )
 
     delta = pd.DataFrame(rows)
     both = delta[delta["status"] == "ok"].copy()
-    both["rank_delta_num"] = pd.to_numeric(both["rank_delta"], errors="coerce").fillna(0)
-    both["score_delta_num"] = pd.to_numeric(both["score_delta"], errors="coerce").fillna(0)
+    comparable = both[
+        pd.to_numeric(both["score_prev"], errors="coerce").notna()
+        & pd.to_numeric(both["score_now"], errors="coerce").notna()
+    ].copy()
+    comparable["rank_delta_num"] = pd.to_numeric(
+        comparable["rank_delta"], errors="coerce"
+    ).fillna(0)
+    comparable["score_delta_num"] = pd.to_numeric(
+        comparable["score_delta"], errors="coerce"
+    ).fillna(0)
 
-    up_pool = both[both["rank_delta_num"] > 0].copy()
-    down_pool = both[both["rank_delta_num"] < 0].copy()
+    up_pool = comparable[comparable["rank_delta_num"] > 0].copy()
+    down_pool = comparable[comparable["rank_delta_num"] < 0].copy()
 
     movers_up = up_pool.sort_values(["rank_delta_num", "score_delta_num"], ascending=[False, False]).head(top_n)
     movers_down = down_pool.sort_values(["rank_delta_num", "score_delta_num"], ascending=[True, True]).head(top_n)
@@ -402,12 +520,24 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
             )
         return out
 
+    all_events: list[dict[str, Any]] = []
+    for row in rows:
+        for event in row.get("events", []):
+            all_events.append(
+                {
+                    "symbol": row["symbol"],
+                    "name": row.get("name", ""),
+                    **dict(event),
+                }
+            )
+
     payload = {
         "prev_date": prev_date,
         "latest_date": latest_date,
-        "with": int(len(both)),
+        "with": int(len(comparable)),
         "movers_up": _pack(movers_up),
         "movers_down": _pack(movers_down),
+        "events": all_events,
     }
     return delta, payload
 
@@ -419,12 +549,29 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "schema_version": SCHEMA_VERSION,
             "latest_date": None,
             "prev_date": None,
-            "stats": {"total": 0, "new": 0, "dropped": 0, "changed": 0},
+            "stats": {
+                "total": 0,
+                "new": 0,
+                "dropped": 0,
+                "changed": 0,
+                "event_count": 0,
+                "comparison_basis_count": 0,
+            },
             "by_symbol": {},
             "movers_up": [],
             "movers_down": [],
             "new_symbols": [],
             "dropped_symbols": [],
+            "events": [],
+            "history_schema_version": HISTORY_SCHEMA_VERSION,
+            "semantics": {
+                "internal_scanner_history_only": True,
+                "price_performance_metric": False,
+                "events_require_comparable_previous_snapshot": True,
+                "rank_threshold_events_use_common_universe": True,
+                "comparison_basis_requires_scores_on_both_snapshots": True,
+                "new_or_dropped_assets_do_not_create_status_events": True,
+            },
         }
         return empty, js
 
@@ -441,12 +588,29 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "schema_version": SCHEMA_VERSION,
             "latest_date": latest,
             "prev_date": None,
-            "stats": {"total": int(work["symbol"].nunique()), "new": 0, "dropped": 0, "changed": 0},
+            "stats": {
+                "total": int(work["symbol"].nunique()),
+                "new": 0,
+                "dropped": 0,
+                "changed": 0,
+                "event_count": 0,
+                "comparison_basis_count": 0,
+            },
             "by_symbol": {},
             "movers_up": [],
             "movers_down": [],
             "new_symbols": [],
             "dropped_symbols": [],
+            "events": [],
+            "history_schema_version": HISTORY_SCHEMA_VERSION,
+            "semantics": {
+                "internal_scanner_history_only": True,
+                "price_performance_metric": False,
+                "events_require_comparable_previous_snapshot": True,
+                "rank_threshold_events_use_common_universe": True,
+                "comparison_basis_requires_scores_on_both_snapshots": True,
+                "new_or_dropped_assets_do_not_create_status_events": True,
+            },
         }
         return empty, js
 
@@ -485,6 +649,8 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             except Exception:
                 return None
 
+        raw_events = rr.get("events")
+        events = [dict(item) for item in raw_events] if isinstance(raw_events, list) else []
         by_symbol[sym] = {
             "status": str(rr.get("status", "")).strip(),
             "score_prev": _as_float(rr.get("score_prev")),
@@ -492,7 +658,10 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "score_delta": _as_float(rr.get("score_delta")),
             "rank_prev": _as_int(rr.get("rank_prev")),
             "rank_now": _as_int(rr.get("rank_now")),
+            "rank_prev_common": _as_int(rr.get("rank_prev_common")),
+            "rank_now_common": _as_int(rr.get("rank_now_common")),
             "rank_delta": _as_int(rr.get("rank_delta")),
+            "events": events,
         }
 
     def _pick_prev_by_min_days(days: int) -> str | None:
@@ -526,6 +695,8 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "new": int((delta["status"] == "new").sum()),
             "dropped": int((delta["status"] == "dropped").sum()),
             "changed": int(((delta["status"] == "ok") & (pd.to_numeric(delta["rank_delta"], errors="coerce").fillna(0) != 0)).sum()),
+            "event_count": int(len(pair_1d.get("events", []))),
+            "comparison_basis_count": int(pair_1d.get("with", 0)),
         },
         "by_symbol": by_symbol,
         "movers_up": pair_1d["movers_up"],
@@ -537,6 +708,14 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
         },
         "new_symbols": new_syms[:30],
         "dropped_symbols": dropped_syms[:30],
+        "events": pair_1d.get("events", [])[:100],
+        "history_schema_version": HISTORY_SCHEMA_VERSION,
+        "semantics": {
+            "internal_scanner_history_only": True,
+            "price_performance_metric": False,
+            "events_require_comparable_previous_snapshot": True,
+            "new_or_dropped_assets_do_not_create_status_events": True,
+        },
     }
 
     # Sort delta for CSV: best ranks first, then changes

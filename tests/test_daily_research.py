@@ -13,6 +13,7 @@ from unittest.mock import patch
 import yaml
 
 from scanner.reports.daily_research import WATCHLIST, begin_daily, generate_daily
+from scanner.reports.history_delta import HISTORY_SCHEMA_VERSION
 from scanner.reports.research_validation import NAMES, validate_publication
 from scanner.reports.research_views import OUTPUT, SOURCE, ValidationPolicy, encode_csv, parse_csv
 
@@ -65,6 +66,10 @@ class DailyResearchTests(unittest.TestCase):
         self.assertEqual(latest[0]["risk"], "28.123456789012345")
         self.assertEqual(latest[0]["confidence_label"], "MED")
         self.assertTrue(latest[0]["r_code"].startswith("R"))
+        self.assertEqual(latest[0]["trend_ok"], "True")
+        self.assertEqual(latest[0]["liquidity_ok"], "True")
+        self.assertEqual(latest[0]["score_status"], "OK")
+        self.assertEqual(latest[0]["history_schema_version"], HISTORY_SCHEMA_VERSION)
         self.assertEqual({r["snapshot_id"] for r in latest + self.read("history_recent")}, {meta["snapshot_id"]})
         self.assertEqual(self.read("history_analysis")[0]["rank"], "1")
         self.assertEqual(len(parse_csv((self.root / SOURCE).read_bytes())[1]), 3)

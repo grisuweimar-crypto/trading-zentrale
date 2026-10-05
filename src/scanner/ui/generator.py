@@ -169,7 +169,7 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
     JS will replace this immediately on successful load.
     """
     if df.empty:
-        return '<tr><td colspan="10" class="muted">Keine Daten.</td></tr>'
+        return '<tr><td colspan="11" class="muted">Keine Daten.</td></tr>'
 
     work = df.copy()
     if "score" in work.columns:
@@ -179,6 +179,25 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
     def esc(v: Any) -> str:
         s = "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v)
         return html.escape(s)
+
+    def fmt_num(v: Any, digits: int, suffix: str = "") -> str:
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return ""
+        if pd.isna(n):
+            return ""
+        return f"{n:.{digits}f}{suffix}"
+
+    def fmt_price(v: Any) -> str:
+        try:
+            n = float(v)
+        except (TypeError, ValueError):
+            return ""
+        if pd.isna(n):
+            return ""
+        digits = 6 if abs(n) < 1 else 2
+        return f"{n:.{digits}f}".rstrip("0").rstrip(".")
 
     rows: list[str] = []
     for _, r in work.iterrows():
@@ -190,10 +209,11 @@ def _render_fallback_tbody(df: pd.DataFrame, limit: int = 250) -> str:
             "<tr>"
             f'<td class="mono">{esc(r.get("ticker"))}</td>'
             f'<td>{esc(r.get("name"))}</td>'
-            f'<td class="mono right">{esc(price)}</td>'
-            f'<td class="mono right">{esc(r.get("score"))}</td>'
-            f'<td class="mono right hide-sm">{esc(r.get("confidence"))}</td>'
-            f'<td class="mono right hide-sm">{esc(r.get("cycle"))}</td>'
+            f'<td class="mono right">{esc(fmt_price(price))}</td>'
+            f'<td class="mono right">{esc(fmt_num(r.get("score"), 2))}</td>'
+            '<td class="mono right hide-sm"></td>'
+            f'<td class="mono right hide-sm">{esc(fmt_num(r.get("confidence"), 1))}</td>'
+            f'<td class="mono right hide-sm">{esc(fmt_num(r.get("cycle"), 0, "%"))}</td>'
             f'<td class="mono">{esc(r.get("trend_ok"))}</td>'
             f'<td class="mono">{esc(r.get("liquidity_ok"))}</td>'
             f'<td class="mono">{esc(r.get("score_status"))}</td>'
@@ -528,7 +548,13 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     @media (max-width: 860px) {
       .disclaimer { flex-direction: column; align-items: flex-start; }
     }
-  .filters { display:flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 14px 14px 14px; }
+  .filters { display:flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 0 14px 8px 14px; }
+    .activeFilters { display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding: 0 14px 14px 14px; min-height: 24px; }
+    .activeFilters .label { color: var(--muted); font-size: 11px; font-family: var(--mono); margin-right:2px; }
+    .activeFilterChip { display:inline-flex; align-items:center; padding:3px 7px; border-radius:999px; border:1px solid rgba(96,165,250,.25); background:rgba(96,165,250,.07); color:#bfdbfe; font-size:11px; font-family:var(--mono); }
+    .segmentTable tr.sampleThin td { background: rgba(251,191,36,.035); color: rgba(226,232,240,.82); }
+    .segmentTable tr.sampleUnavailable td { opacity:.58; }
+    .realityTable tr.sampleUnclear td { background: rgba(251,191,36,.035); color: rgba(226,232,240,.76); }
     .fbtn { background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 12px; }
     .fbtn:hover { border-color: rgba(96,165,250,.45); }
     .fbtn.active { border-color: rgba(96,165,250,.60); box-shadow: 0 0 0 2px rgba(96,165,250,.14) inset; }
@@ -1100,6 +1126,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .hdGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .hdColTitle { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
 .hdList { display:flex; flex-direction:column; gap: 6px; }
+.hdEvents { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(148,163,184,.12); display:flex; flex-direction:column; gap:6px; }
+.hdEvent { display:grid; grid-template-columns: 90px minmax(0,1fr); gap:8px; font-family:var(--mono); font-size:11px; }
+.hdEventType { color:#cbd5e1; }
+.hdEventSym { font-weight:700; }
 
 .hdItem { display:grid; grid-template-columns: 72px 1fr 74px; gap: 8px; align-items:center; }
 .hdSym { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1222,6 +1252,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         <button type="button" class="fbtn" data-action="toggle" data-key="onlyOK" title="Nur score_status = OK anzeigen">Nur OK</button>
         <button type="button" class="fbtn" data-action="toggle" data-key="trendOK" title="Nur trend_ok = true anzeigen">Trend OK</button>
         <button type="button" class="fbtn" data-action="toggle" data-key="liqOK" title="Nur liquidity_ok = true anzeigen">Liq OK</button>
+        <button type="button" class="fbtn" data-action="toggle" data-key="onlyHistoryBasis" title="Nur Werte mit belastbarer dScore-1D-Vergleichsbasis anzeigen">1D-Basis</button>
         <span class="fsep"></span>
         <button type="button" class="iBtn"
           data-action="help"
@@ -1231,6 +1262,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <li><strong>Nur OK:</strong> Zeigt nur Zeilen mit <span class='mono'>score_status = OK</span>.</li>
             <li><strong>Trend OK:</strong> Zeigt nur Zeilen mit <span class='mono'>trend_ok = true</span>.</li>
             <li><strong>Liq OK:</strong> Zeigt nur Zeilen mit <span class='mono'>liquidity_ok = true</span>.</li>
+            <li><strong>1D-Basis:</strong> Zeigt nur Werte mit echtem Score-Delta zum vorherigen lokalen Snapshot.</li>
             <li><em>Hinweis:</em> Diese Filter beeinflussen nur die angezeigte Liste (Universe), nicht das Scoring.</li>
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
@@ -1239,6 +1271,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         <button type="button" class="fbtn" data-action="resetSort" title="Nur Sort-Override lÃ¶schen (Preset-Sort bleibt)">Sortierung zurÃ¼ck</button>
         <button type="button" class="fbtn" data-action="resetAll" title="Alles zurÃ¼cksetzen (Preset, Suche, Filter, Sort & Persistenz)">Reset</button>
       </div>
+      <div class="activeFilters" id="activeFilters" aria-live="polite"></div>
       </div>
 
       <div class="matrixPanel" id="matrixPanel">
@@ -1299,11 +1332,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <div class="cardTitle">Briefing & Reality Check</div>
             <div class="cardActions">
               <button type="button" class="btn btnToggle" data-toggle="briefingReality">Ausblenden</button>
-              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report)</li><li><strong>Badges:</strong> Score, Percentil, Bucket, Confidence, Trend, LiquiditÃ¤t</li><li><strong>Reality:</strong> Daten-Mapping Check (intern vs. Yahoo/Markt)</li><li><strong>Warn/Error:</strong> Zeigen DatenqualitÃ¤tsprobleme</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report).</li><li><strong>Reality Check:</strong> spiegelt interne Segmentbewegung gegen offizielle Gruppierungen.</li><li><strong>Kategorien:</strong> gleichgerichtet, Scanner stärker, Scanner schwächer, kontra Markt oder unklar.</li><li><strong>Wichtig:</strong> Einordnung, keine Wahrheit und keine Kursperformance-Prognose.</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
             </div>
           </div>
           <div class="cardBody" data-body="briefingReality">
-            <div class="muted small">Briefing: Privat/experimentell Â· Reality Check: Daten-/Mapping-QualitÃ¤t</div>
+            <div class="muted small">Briefing: Privat/experimentell · Reality Check: Segment-Spiegelung, keine Wahrheitsmetrik.</div>
             <div class="briefingRealityContent">
               <div class="briefingRealitySplit">
                 <div class="briefingRealitySection">
@@ -1343,11 +1376,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div class="cardTitle">Segment Monitor</div>
           <div class="cardActions">
             <button type="button" class="btn btnToggle" data-toggle="segment">Ausblenden</button>
-            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Segment:</strong> SÃ¤ule/Cluster/Bucket Kombination</li><li><strong>Changed:</strong> Anzahl verÃ¤nderter Segmente vs. letzter Snapshot</li><li><strong>Snapshot:</strong> Vergleichszeitpunkt</li><li><strong>Shifts:</strong> Zeigen wo sich Cluster neu bilden oder auflÃ¶sen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Intern:</strong> Scanner-eigene Säulen/Segmente.</li><li><strong>Offiziell:</strong> offizielle Cluster bzw. Sektor-Fallback.</li><li><strong>Ø dScore:</strong> mittlere 1D-Veränderung des Scanner-Scores.</li><li><strong>Pos% / Coverage / Stable:</strong> Breite und Belastbarkeit der Stichprobe.</li><li><strong>Wichtig:</strong> getrennt von History Delta, kein Super-Score.</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
           </div>
         </div>
         <div class="cardBody" data-body="segment">
-          <div class="muted small">SÃ¤ulen/Cluster/Bucket Â· inkl. nderungen vs. letzter Snapshot.</div>
+          <div class="muted small">Interne und offizielle Segmentbewegung auf Basis belastbarer dScore-1D-Vergleiche.</div>
           <div id="segmentText" class="reportText"></div>
         </div>
       </div>
@@ -1420,14 +1453,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           data-action="help"
           data-help-title="History Delta"
           data-help-html="<ul>
-            <li><strong>Was:</strong> nderungen vs. letzter Snapshot (passiv, kein Einfluss auf Scoring).</li>
-            <li><strong>S:</strong> Score-Delta aus <span class='mono'>history_delta.json</span>.</li>
-            <li><strong>R:</strong> Rank-Delta (falls vorhanden).</li>
-            <li><strong>Filter:</strong> Respektiert das aktuelle Universe (Preset/Suche/Quick/Cluster/SÃ¤ule).</li>
+            <li><strong>Was:</strong> interner Scanner-Verlauf aus lokalen Tages-Snapshots.</li>
+            <li><strong>Rank 1D:</strong> relative Positionsveränderung im gemeinsamen Vergleichsuniversum.</li>
+            <li><strong>Score 1D:</strong> absolute Veränderung des Scanner-Scores.</li>
+            <li><strong>Events:</strong> operative Statuswechsel nur bei belastbarer Vorhistorie.</li>
+            <li><strong>Nicht:</strong> keine Kursperformance und kein Einfluss auf Scoring.</li>
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
       </div>
-      <div class="muted small">Delta-nderungen vs. letzter Snapshot (nicht Kurs-1D).</div>
+      <div class="muted small">Interner Scanner-Verlauf · lokale Tages-Snapshots · keine Kursperformance.</div>
       <div id="historyText" class="reportText"></div>
     </div>
   </div>
@@ -1453,8 +1487,8 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <th data-k="ticker" title="Anzeige-Symbol (oben) + ISIN (unten) und ggf. Quote-WÃ¤hrung">Symbol/ISIN</th>
               <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
               <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
-              <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
-              <th data-k="dscore_1d" class="hide-sm right" title="Delta des Scanner-Scores vs. letzter Snapshot (History Delta), nicht Kurs-1D">ΔScore Snapshot</th>
+              <th data-k="score" class="right" title="Gesamtscore (höher = besser) · R0–R5 daneben = interner Workflow-Code, kein Handelssignal">Score</th>
+              <th data-k="dscore_1d" class="hide-sm right" title="dScore 1D = Veränderung des Scanner-Scores vs. letzter lokaler Tages-Snapshot; keine Kursrendite">dScore 1D</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
@@ -1555,6 +1589,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
         onlyTrendFail: false,
         liqOK: false,
         onlyLiqFail: false,
+        onlyHistoryBasis: false,
         onlyStock: false,
         onlyCrypto: false,
       },
@@ -1579,6 +1614,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     const elPreset = document.getElementById('preset');
     const elSearch = document.getElementById('search');
     const elCount = document.getElementById('count');
+    const elActiveFilters = document.getElementById('activeFilters');
     const elSortHint = document.getElementById('sortHint');
     const elKpis = document.getElementById('kpis');
     const elPillars = document.getElementById('pillars');
@@ -1690,6 +1726,7 @@ let heatFilter = { cat: null, sb: null, mode: null };
       onlyTrendFail: false,
       liqOK: false,
       onlyLiqFail: false,
+      onlyHistoryBasis: false,
       onlyStock: false,
       onlyCrypto: false,
     };
@@ -2299,24 +2336,25 @@ function applyPillarFilter(rows) {
 
     function recFor(r) {
       const st = normStr(r.score_status);
-      if (st === 'NA' || st === 'ERROR') return {code: 'R?', cls: 'bad'};
-      if (st && st.startsWith('AVOID')) return {code: 'R0', cls: 'warn'};
+      if (st === 'NA' || st === 'ERROR') return {code: 'R?', cls: 'bad', label: 'Keine belastbare Einstufung'};
+      if (st && st.startsWith('AVOID')) return {code: 'R0', cls: 'warn', label: 'Avoid · interner Workflow-Code'};
 
       const p = asNum(r.score_pctl);
       const tr = asBool(r.trend_ok) === true;
       const liq = asBool(r.liquidity_ok) === true;
 
-      if (p !== null && p >= 90 && tr && liq) return {code: 'R5', cls: 'good'};
-      if (p !== null && p >= 75 && liq) return {code: 'R4', cls: 'good'};
-      if (p !== null && p >= 45) return {code: 'R3', cls: 'blue'};
-      if (p !== null && p >= 20) return {code: 'R2', cls: 'warn'};
-      return {code: 'R1', cls: 'bad'};
+      if (p !== null && p >= 90 && tr && liq) return {code: 'R5', cls: 'good', label: 'Top Pick · zuerst prüfen'};
+      if (p !== null && p >= 75 && liq) return {code: 'R4', cls: 'good', label: 'Strong Consider · hohe Priorität'};
+      if (p !== null && p >= 45) return {code: 'R3', cls: 'blue', label: 'Consider · genauer prüfen'};
+      if (p !== null && p >= 20) return {code: 'R2', cls: 'warn', label: 'Watch · beobachten'};
+      return {code: 'R1', cls: 'bad', label: 'Sell / Exit · aktuell unattraktiv'};
     }
 
     function scoreCell(r) {
       const s = Math.max(0, Math.min(100, asNum(r.score) ?? 0));
       const rec = recFor(r);
-      const sig = rec ? `<span class="sig ${rec.cls}" title="SignalCode">${esc(rec.code)}</span>` : '';
+      const title = rec ? rec.code + ' · ' + rec.label + ' · kein Handelssignal' : '';
+      const sig = rec ? `<span class="sig ${rec.cls}" title="${esc(title)}">${esc(rec.code)}</span>` : '';
       return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
     }
 
@@ -2390,6 +2428,12 @@ function applyPillarFilter(rows) {
         for (const s of specs) {
           const ka = a[s.k];
           const kb = b[s.k];
+          const missingA = ka === null || ka === undefined || ka === '';
+          const missingB = kb === null || kb === undefined || kb === '';
+          if (missingA || missingB) {
+            if (missingA && missingB) continue;
+            return missingA ? 1 : -1;
+          }
 
           // number first
           const na = asNum(ka);
@@ -2587,6 +2631,9 @@ function applyQuickFilters(rows) {
 
         if (uiState.quick.liqOK && asBool(r.liquidity_ok) !== true) return false;
         if (uiState.quick.onlyLiqFail && asBool(r.liquidity_ok) !== false) return false;
+
+        // History focus: only assets with a real previous-score comparison basis.
+        if (uiState.quick.onlyHistoryBasis && asNum(r.dscore_1d) === null) return false;
 
         // class filters
         const isCrypto = asBool(r.is_crypto) === true;
@@ -3258,14 +3305,21 @@ function applyHeatFilter(rows) {
 
       const status = normStr(r.score_status);
       const why = [];
-      if (status === 'OK') why.push('Score>0 & keine harten Filter verletzt.');
-      if (status === 'AVOID_CRYPTO_BEAR') why.push('Crypto im Bear-Trend  Score=0 (bewusstes Avoid).');
-      if (status === 'AVOID') why.push('Score==0  Avoid (non-crypto).');
-      if (status === 'NA') why.push('Zu wenig / nicht konsistente Daten  NA.');
-      if (status === 'ERROR') why.push('Scoring hat einen Fehler gemeldet (ScoreError).');
-      if (asBool(r.trend_ok) === false) why.push('Trend-Filter: trend_ok=false.');
-      if (asBool(r.liquidity_ok) === false) why.push('Liquidity-Filter: liquidity_ok=false.');
-      if (why.length === 0) why.push('Noch kein detaillierter Factor-Breakdown (kommt in Phase B3).');
+      const rec = recFor(r);
+      const scoreValue = asNum(r.score);
+      const scorePctl = asNum(r.score_pctl);
+      const dscore = asNum(r.dscore_1d);
+      const conf = asNum(r.confidence);
+      if (rec) why.push(`${rec.code}: ${rec.label}.`);
+      if (scoreValue !== null) {
+        why.push(`Score ${scoreValue.toFixed(2)}${scorePctl !== null ? ' · Perzentil ' + scorePctl.toFixed(1) : ''}.`);
+      }
+      if (dscore !== null) why.push(`Score-Veränderung 1D: ${dscore >= 0 ? '+' : ''}${dscore.toFixed(2)}.`);
+      if (conf !== null) why.push(`Confidence: ${conf.toFixed(1)}.`);
+      why.push(`Trend: ${asBool(r.trend_ok) === true ? 'OK' : 'nicht OK'} · Liquidität: ${asBool(r.liquidity_ok) === true ? 'OK' : 'nicht OK'}.`);
+      if (status === 'NA') why.push('Vergleich/Scoring nicht belastbar: Status NA.');
+      if (status === 'ERROR') why.push('Scoring hat einen Fehlerstatus gemeldet.');
+      if (status && status.startsWith('AVOID')) why.push(`Status ${status}: bewusst aus der Priorisierung genommen.`);
 
       drawerBody.innerHTML = `
         <div class="kv">
@@ -3284,12 +3338,23 @@ function applyHeatFilter(rows) {
       document.body.style.overflow = 'hidden';
     }
 
+    function renderActiveFilters(filterNames) {
+      if (!elActiveFilters) return;
+      const items = [`Preset: ${presetLabel(activePreset)}`];
+      const q = elSearch ? normStr(elSearch.value) : '';
+      if (q) items.push(`Suche: ${q}`);
+      for (const name of (filterNames || [])) items.push(name);
+      elActiveFilters.innerHTML = '<span class="label">Aktiv</span>' +
+        items.map(x => '<span class="activeFilterChip">' + esc(x) + '</span>').join('');
+    }
+
     function refresh() {
       const base = DATA;
       const {rows: presetRows, preset} = applyPreset(base, activePreset);
 
       const q = elSearch.value;
       let rowsSQ = applySearch(presetRows, q);
+      rowsSQ = attachDScore(rowsSQ);
       rowsSQ = applyQuickFilters(rowsSQ);
 
       // cluster counts reflect the current universe (after Preset+Search+Quick)
@@ -3328,8 +3393,14 @@ function applyHeatFilter(rows) {
       const f = [];
       if (quick.hideAvoid) f.push('hideAvoid');
       if (quick.onlyOK) f.push('onlyOK');
+      if (quick.onlyAvoid) f.push('onlyAvoid');
+      if (quick.onlyNA) f.push('onlyNA');
+      if (quick.onlyERR) f.push('onlyERR');
       if (quick.trendOK) f.push('trendOK');
+      if (quick.onlyTrendFail) f.push('trendFail');
       if (quick.liqOK) f.push('liqOK');
+      if (quick.onlyLiqFail) f.push('liqFail');
+      if (quick.onlyHistoryBasis) f.push('1D-Basis');
       if (quick.onlyStock) f.push('stock');
       if (quick.onlyCrypto) f.push('crypto');
       if (matrix && matrix.sb !== null && matrix.rb !== null) f.push(`matrix:${matrix.sb}x${matrix.rb}`);
@@ -3342,7 +3413,8 @@ function applyHeatFilter(rows) {
       const _pps = Array.isArray(pillarPick) ? pillarPick : ((pillarPick || '') ? [String(pillarPick)] : []);
       if (_pps.length) f.push(`pillar:${_pps.join('|')}`);
 
-      elCount.textContent = `${rows.length} / ${base.length}` + (f.length ? `  Â·  filters: ${f.join(',')}` : '');
+      elCount.textContent = `${rows.length} / ${base.length}`;
+      renderActiveFilters(f);
       if (btnMatrixClear) btnMatrixClear.disabled = !(matrix && matrix.sb !== null && matrix.rb !== null);
 
       const override = userSort ? ` | override: ${userSort.k}:${userSort.dir}` : '';
@@ -3840,7 +3912,6 @@ function applyHeatFilter(rows) {
         const prev   = normStr(d.prev_date   || d.prev   || d.prevDate || '');
         const snaps  = (latest && prev) ? 2 : 1;
 
-        // Build global lookup from full DATA for label/link enrichment.
         const byKey = new Map();
         for (const r of (Array.isArray(DATA) ? DATA : [])) {
           const k = historyKey(r);
@@ -3854,92 +3925,117 @@ function applyHeatFilter(rows) {
           const sd = asNum(rec.score_delta ?? rec.scoreDelta ?? rec.delta ?? rec.dscore_1d ?? rec.dscore);
           const rd = asNum(rec.rank_delta  ?? rec.rankDelta  ?? rec.dr    ?? rec.rank_change);
           if (sd === null && rd === null) return null;
-
           const sym = row ? pickDisplaySymbol(row) : normStr(rec.symbol || rec.name || '');
           const yh  = row ? (pickYahooSymbol(row) || sym) : normStr(rec.symbol || '');
           const href = yahooHref(yh);
-
           const segFull = row
             ? (normStr(clusterLabel(row)) || (asBool(row.is_crypto) === true ? 'Krypto' : ''))
             : '';
-          const segShort = segFull
-            ? (segFull.split(' ').slice(0, 2).join(' ').slice(0, 10) + (segFull.length > 10 ? '' : ''))
-            : '';
-
+          const segShort = segFull ? segFull.slice(0, 12) : '';
           return { sym, href, sd, rd, segFull, segShort };
         }
 
         function fmtDelta(n, digits) {
-          if (n === null || n === undefined || !Number.isFinite(n)) return 'n/a';
+          if (n === null || n === undefined || !Number.isFinite(n)) return '–';
           const sign = n > 0 ? '+' : '';
           return sign + n.toFixed(digits);
         }
 
         const pos = (Array.isArray(d.movers_up) ? d.movers_up : [])
-          .map(fromMover)
-          .filter(x => !!x && x.rd !== null && Number(x.rd) > 0)
-          .slice(0, 12);
+          .map(fromMover).filter(x => !!x && x.rd !== null && Number(x.rd) > 0).slice(0, 12);
         const neg = (Array.isArray(d.movers_down) ? d.movers_down : [])
-          .map(fromMover)
-          .filter(x => !!x && x.rd !== null && Number(x.rd) < 0)
-          .slice(0, 12);
+          .map(fromMover).filter(x => !!x && x.rd !== null && Number(x.rd) < 0).slice(0, 12);
 
         const p1w = (d.periods && typeof d.periods === 'object') ? d.periods['1w'] : null;
         const p1m = (d.periods && typeof d.periods === 'object') ? d.periods['1m'] : null;
-        const wUp = p1w && Array.isArray(p1w.movers_up) ? p1w.movers_up.length : 0;
-        const wDn = p1w && Array.isArray(p1w.movers_down) ? p1w.movers_down.length : 0;
-        const mUp = p1m && Array.isArray(p1m.movers_up) ? p1m.movers_up.length : 0;
-        const mDn = p1m && Array.isArray(p1m.movers_down) ? p1m.movers_down.length : 0;
-        const wLabel = p1w ? `1W +${wUp}/-${wDn}` : '1W n/a';
-        const mLabel = p1m ? `1M +${mUp}/-${mDn}` : '1M n/a';
+        const wLabel = p1w ? '1W vorhanden' : '1W –';
+        const mLabel = p1m ? '1M vorhanden' : '1M –';
 
         const bySymbol = (d && typeof d.by_symbol === 'object' && d.by_symbol) ? d.by_symbol : {};
-        const withN = Object.values(bySymbol).filter(v => v && v.status === 'ok').length;
+        const withN = Number((d.stats && d.stats.comparison_basis_count) || Object.values(bySymbol).filter(v => v && v.status === 'ok').length || 0);
         const universeN = Array.isArray(DATA) ? DATA.length : ((rows || []).length);
-        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} · Universe: ${universeN} · with: ${withN}</div>`;
+        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '–')} → ${esc(latest || '–')} · Universe: ${universeN} · 1D-Basis: ${withN}</div>`;
 
-        // Deine schÃ¶nen 4 Pills bleiben, plus Top/Weak ZÃ¤hler als Bonus
+        const newSymbols = Array.isArray(d.new_symbols) ? d.new_symbols : [];
+        const droppedSymbols = Array.isArray(d.dropped_symbols) ? d.dropped_symbols : [];
         const controls = `<div class="breadthRow" style="margin-top:6px;">
           ${chip(`Snapshots ${snaps}`, 'blue')}
-          ${chip(`1D`, 'blue')}
+          ${chip('1D', 'blue')}
           ${chip(wLabel, p1w ? 'blue' : 'warn')}
           ${chip(mLabel, p1m ? 'blue' : 'warn')}
           ${chip(`Top ${pos.length}`, pos.length ? 'good' : 'blue')}
           ${chip(`Weak ${neg.length}`, neg.length ? 'bad' : 'blue')}
+          ${chip(`Neu ${newSymbols.length}`, newSymbols.length ? 'warn' : 'blue')}
+          ${chip(`Entfallen ${droppedSymbols.length}`, droppedSymbols.length ? 'warn' : 'blue')}
         </div>`;
 
         function itemRow(x) {
           const symHtml = x.href
-            ? `<a class="yf hdSym" href="${x.href}" target="_blank" rel="noopener">${esc(x.sym)}</a>` 
+            ? `<a class="yf hdSym" href="${x.href}" target="_blank" rel="noopener">${esc(x.sym)}</a>`
             : `<span class="hdSym">${esc(x.sym)}</span>`;
-
           const sd = (x.sd === null || x.sd === undefined) ? null : Number(x.sd);
           const rd = (x.rd === null || x.rd === undefined) ? null : Number(x.rd);
-
           const sdCls = (sd === null) ? 'flat' : (sd > 0 ? 'pos' : (sd < 0 ? 'neg' : 'flat'));
           const rdCls = (rd === null) ? 'flat' : (rd > 0 ? 'pos' : (rd < 0 ? 'neg' : 'flat'));
-
-          const line1 = `<span class="hdLine ${sdCls}">S ${esc(fmtDelta(sd, 2))}</span>`;
-          const line2 = `<span class="hdLine ${rdCls}">R ${esc(fmtDelta(rd, 0))}</span>`;
-
+          const scoreLine = `<span class="hdLine ${sdCls}">Score 1D ${esc(fmtDelta(sd, 2))}</span>`;
+          const rankLine = `<span class="hdLine ${rdCls}">Rank 1D ${esc(fmtDelta(rd, 0))}</span>`;
           const seg = `<span class="hdSeg" title="${esc(x.segFull || '')}">${esc(x.segShort || '')}</span>`;
-
-          return `<div class="hdItem">${symHtml}<div class="hdVals">${line1}${line2}</div>${seg}</div>`;
+          return `<div class="hdItem">${symHtml}<div class="hdVals">${rankLine}${scoreLine}</div>${seg}</div>`;
         }
 
-        const topHtml  = pos.length ? pos.map(itemRow).join('') : `<div class="muted small"></div>`;
-        const weakHtml = neg.length ? neg.map(itemRow).join('') : `<div class="muted small"></div>`;
-
+        const topHtml  = pos.length ? pos.map(itemRow).join('') : '<div class="muted small">–</div>';
+        const weakHtml = neg.length ? neg.map(itemRow).join('') : '<div class="muted small">–</div>';
         const grid = `<div class="hdGrid">
-          <div><div class="hdColTitle">Top </div><div class="hdList">${topHtml}</div></div>
-          <div><div class="hdColTitle">Weak </div><div class="hdList">${weakHtml}</div></div>
+          <div><div class="hdColTitle">Top</div><div class="hdList">${topHtml}</div></div>
+          <div><div class="hdColTitle">Weak</div><div class="hdList">${weakHtml}</div></div>
         </div>`;
 
-        const explain = `<div class="muted small" style="margin-top:8px;">
-          Top/Weak basiert primär auf <b>Rank-Delta</b> in der <b>gemeinsamen Schnittmenge</b> beider Snapshots (stabil trotz New/Dropped). Score-Delta ist Zusatzinfo.
-        </div>`;
+        const visibleKeys = new Set((rows || []).map(historyKey).filter(Boolean));
+        const rawEvents = Array.isArray(d.events) ? d.events : [];
+        const events = rawEvents.filter(ev => !visibleKeys.size || visibleKeys.has(normStr(ev.symbol))).slice(0, 10);
+        const labels = {
+          entered_top_10: 'in Top 10',
+          left_top_10: 'aus Top 10',
+          entered_top_25: 'in Top 25',
+          left_top_25: 'aus Top 25',
+          trend_ok_changed: 'Trendstatus geändert',
+          liquidity_ok_changed: 'Liquidität geändert',
+          score_status_changed: 'Score-Status geändert',
+        };
+        const eventsHtml = events.length
+          ? '<div class="hdEvents"><div class="hdColTitle">Events</div>' + events.map(ev => {
+              const row = byKey.get(normStr(ev.symbol));
+              const sym = row ? pickDisplaySymbol(row) : normStr(ev.symbol);
+              const label = labels[normStr(ev.type)] || normStr(ev.type);
+              let detail = '';
+              if (ev.from !== undefined && ev.to !== undefined) detail = ` · ${esc(ev.from)} → ${esc(ev.to)}`;
+              return `<div class="hdEvent"><span class="hdEventSym">${esc(sym)}</span><span class="hdEventType">${esc(label)}${detail}</span></div>`;
+            }).join('') + '</div>'
+          : '';
 
-        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${explain}</div>`;
+        const universeChanges = [];
+        if (newSymbols.length) {
+          universeChanges.push(
+            '<div class="hdEvent"><span class="hdEventSym">Neu</span><span class="hdEventType">' +
+            newSymbols.slice(0, 10).map(esc).join(', ') +
+            (newSymbols.length > 10 ? ' …' : '') +
+            '</span></div>'
+          );
+        }
+        if (droppedSymbols.length) {
+          universeChanges.push(
+            '<div class="hdEvent"><span class="hdEventSym">Entfallen</span><span class="hdEventType">' +
+            droppedSymbols.slice(0, 10).map(esc).join(', ') +
+            (droppedSymbols.length > 10 ? ' …' : '') +
+            '</span></div>'
+          );
+        }
+        const universeHtml = universeChanges.length
+          ? '<div class="hdEvents"><div class="hdColTitle">Universe-Änderungen</div>' + universeChanges.join('') + '</div>'
+          : '';
+
+        const explain = '<div class="muted small" style="margin-top:8px;">Interner Scanner-Verlauf aus lokalen Tages-Snapshots. Rank und Score bleiben getrennt; neue/entfallene Titel haben ohne echte Vorbasis bewusst kein Delta und erzeugen keine Status-Events. Keine Kursperformance.</div>';
+        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${eventsHtml}${universeHtml}${explain}</div>`;
       } catch (e) {
         elHistory.textContent = '';
       }
@@ -3947,91 +4043,71 @@ function applyHeatFilter(rows) {
 
     function renderReality(r) {
       try {
-        const hasStats = !!(r && r.stats && Object.keys(r.stats).length);
-        const hasIssues = Array.isArray(r && r.top_issues) && r.top_issues.length > 0;
-        const issuesCount = hasIssues ? r.top_issues.length : 0;
-
-        if (!r || (!hasStats && !hasIssues)) {
-          return '<div class="realityMissing">Reality Check Report fehlt / nicht generiert</div>';
+        const rows = Array.isArray(r && r.comparisons)
+          ? r.comparisons
+          : (Array.isArray(r && r.top_issues) ? r.top_issues : []);
+        const st = (r && r.stats) || {};
+        if (!r || !rows.length) {
+          return '<div class="realityMissing">Noch keine belastbare Segment-Vergleichsbasis vorhanden.</div>';
         }
 
-        const st = r.stats || {};
         const summary = '<div class="realitySummary">' +
-          '<div class="summaryChip ok">ok: ' + esc(st.ok || 0) + '</div>' +
-          '<div class="summaryChip warn">warn: ' + esc(st.warn || 0) + '</div>' +
-          '<div class="summaryChip error">error: ' + esc(st.error || 0) + '</div>' +
+          '<div class="summaryChip ok">gleich: ' + esc(st.aligned || 0) + '</div>' +
+          '<div class="summaryChip ok">Scanner+: ' + esc(st.scanner_stronger || 0) + '</div>' +
+          '<div class="summaryChip warn">Scanner−: ' + esc(st.scanner_weaker || 0) + '</div>' +
+          '<div class="summaryChip error">kontra: ' + esc(st.contra_market || 0) + '</div>' +
+          '<div class="summaryChip warn">unklar: ' + esc(st.unclear || 0) + '</div>' +
         '</div>';
 
-        if (hasIssues) {
-          const tableHtml = '<table class="realityTable">' +
-            '<thead>' +
-              '<tr>' +
-                '<th>Intern</th>' +
-                '<th>Offiziell</th>' +
-                '<th>Bewertung</th>' +
-                '<th>Markttrend</th>' +
-                '<th>Signal</th>' +
-                '<th>Hinweis</th>' +
-              '</tr>' +
-            '</thead>' +
-            '<tbody>' +
-            r.top_issues.slice(0, 12).map(issue => {
-              const intern = esc(issue.intern || issue.internal || issue.pillar_primary || issue.scanner_pillar || '—');
-              const official = esc(issue.offiziell || issue.official || issue.official_sector || issue.official_industry || '—');
-              const scanner = esc(issue.scanner || issue.cluster || issue.scanner_cluster || issue.pillar_primary || '—');
-              const market = esc(issue.market || issue.yahoo_sector || issue.yahoo_industry || issue.market_sector || '—');
-
-              let signalClass = 'neutral';
-              let signalText = 'OK';
-              const severity = (issue.severity || '').toLowerCase();
-              const verdict = (issue.verdict || '').toLowerCase();
-              const signal = (issue.signal || '').toLowerCase();
-
-              if (severity === 'error' || verdict === 'contra' || signal === 'contra') {
-                signalClass = 'contra';
-                signalText = issue.signal || 'Kontra';
-              } else if (severity === 'warn' || verdict === 'warn' || signal === 'warn') {
-                signalClass = 'neutral';
-                signalText = issue.signal || 'Warn';
-              } else {
-                signalClass = 'positive';
-                signalText = issue.signal || 'OK';
-              }
-
-              let signalCell = '<span class="signalBadge ' + signalClass + '">' + signalText + '</span>';
-              if (Array.isArray(issue.problems) && issue.problems.length > 0) {
-                signalCell = '<span class="signalBadge ' + signalClass + '" title="' + esc(issue.problems.join('; ')) + '">' + signalText + '</span>';
-              }
-              const hint = esc(issue.hint || issue.problems_text || '');
-
-              return '<tr>' +
-                '<td>' + intern + '</td>' +
-                '<td>' + official + '</td>' +
-                '<td>' + scanner + '</td>' +
-                '<td>' + market + '</td>' +
-                '<td>' + signalCell + '</td>' +
-                '<td>' + hint + '</td>' +
-              '</tr>';
-            }).join('') +
-            '</tbody>' +
-          '</table>' +
-          (issuesCount > 12 ? '<div class="muted small" style="margin-top: 6px;">+ weitere ' + (issuesCount - 12) + ' Einträge</div>' : '');
-
-          return summary + tableHtml;
-        } else {
-          const fallbackHtml = '<div class="realityTable">' +
-            '<div class="realityRow">' +
-              '<div class="realityCell" style="grid-column: 1/-1;">' +
-                '<div style="font-weight: 600; margin-bottom: 8px;">Reality Check Status</div>' +
-                '<div>ok: ' + esc(st.ok || 0) + ' · warn: ' + esc(st.warn || 0) + ' · error: ' + esc(st.error || 0) + '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-          return '<div class="realityMissing">Keine Vergleichsdaten vorhanden</div>' + summary + fallbackHtml;
+        function fmtD(value) {
+          const n = asNum(value);
+          if (n === null) return '–';
+          return (n > 0 ? '+' : '') + n.toFixed(2);
         }
+        function signalClass(verdict) {
+          verdict = normStr(verdict);
+          if (verdict === 'contra_market') return 'contra';
+          if (verdict === 'scanner_stronger' || verdict === 'aligned') return 'positive';
+          return 'neutral';
+        }
+
+        const body = rows.slice(0, 14).map(row => {
+          const verdict = normStr(row.verdict);
+          const basis = `n=${esc(row.n_valid ?? 0)}/${esc(row.n ?? 0)} · Cov ${esc(((asNum(row.coverage) ?? 0) * 100).toFixed(0))}%`;
+          const rowClass = verdict === 'unclear' ? 'sampleUnclear' : '';
+          return '<tr class="' + rowClass + '">' +
+            '<td>' + esc(row.intern || '–') + '</td>' +
+            '<td>' + esc(row.offiziell || '–') + '</td>' +
+            '<td class="right">' + esc(fmtD(row.scanner)) + '</td>' +
+            '<td class="right">' + esc(fmtD(row.market)) + '</td>' +
+            '<td><span class="signalBadge ' + signalClass(verdict) + '">' + esc(row.signal || verdict || 'Unklar') + '</span></td>' +
+            '<td title="' + esc(row.hint || '') + '">' + basis + '</td>' +
+          '</tr>';
+        }).join('');
+
+        const rules = (r && r.rules) || {};
+        const tol = asNum(rules.alignment_tolerance_dscore);
+        const minN = Number(rules.min_pair_valid || 0);
+        const minCov = asNum(rules.min_pair_coverage);
+        const ruleText = 'Regel: Gegenläufige Vorzeichen = Kontra Markt; |Differenz| ≤ ' +
+          (tol === null ? '–' : tol.toFixed(2)) +
+          ' = gleichgerichtet; sonst relative Stärke. Belastbare Aussage erst ab n≥' +
+          (minN || '–') + ' und Coverage≥' +
+          (minCov === null ? '–' : (minCov * 100).toFixed(0) + '%') + '.';
+
+        const basisMeta = '<div class="muted small" style="margin-bottom:6px;">Datenbasis: History ' +
+          esc(r.history_latest_date || '–') + ' · Segmente ' + esc(r.segment_latest_date || '–') +
+          ' · Vergleiche ' + esc(st.total || rows.length) + '.</div>';
+
+        return basisMeta + summary +
+          '<table class="realityTable">' +
+            '<thead><tr><th>Intern</th><th>Offiziell</th><th>Scanner dScore</th><th>Offiziell dScore</th><th>Einordnung</th><th>Basis</th></tr></thead>' +
+            '<tbody>' + body + '</tbody>' +
+          '</table>' +
+          '<div class="muted small" style="margin-top:6px;">Reality Check = Einordnung derselben Scanner-Bewegung über zwei Segment-Sichten. Keine Wahrheit, kein Kursbenchmark. ' + esc(ruleText) + '</div>';
       } catch (e) { return ''; }
     }
+
     function renderMacroChain() {
       if (!elMacroChain) return;
       try {
@@ -4077,97 +4153,93 @@ function applyHeatFilter(rows) {
       if (!elSegment) return;
       try {
         const s = (SEGMENT_MONITOR || {});
-        const latest = esc(normStr(s.latest_date) || '');
-        const prev = esc(normStr(s.prev_date) || '');
+        const latest = esc(normStr(s.latest_date) || '–');
+        const prev = esc(normStr(s.prev_date) || '–');
 
-        // Group helper: total + valid (dScore) + sum + pos
-        function buildGroups(getKey) {
+        function fallbackGroups(getKey) {
           const map = new Map();
           for (const r of rows || []) {
             const k = normStr(getKey(r)) || '';
+            if (!k) continue;
             const rec = map.get(k) || { total: 0, valid: 0, sum: 0, pos: 0 };
             rec.total += 1;
-            const d = r.dscore_1d;
-            if (Number.isFinite(d)) {
+            const d = asNum(r.dscore_1d);
+            if (d !== null) {
               rec.valid += 1;
               rec.sum += d;
               if (d > 0) rec.pos += 1;
             }
             map.set(k, rec);
           }
-          const out = [];
-          for (const [k, v] of map.entries()) {
-            const cov = v.total > 0 ? (v.valid / v.total) : 0;
-            const avg = v.valid > 0 ? (v.sum / v.valid) : null;
-            const pp = v.valid > 0 ? (v.pos / v.valid) : null;
-            out.push({ key: k, total: v.total, valid: v.valid, avg, posPct: pp, cov });
-          }
-          return out;
+          return Array.from(map.entries()).map(([key, v]) => ({
+            segment: key,
+            n_total: v.total,
+            n_valid: v.valid,
+            average_dscore_1d: v.valid ? v.sum / v.valid : null,
+            positive_share: v.valid ? v.pos / v.valid : null,
+            coverage: v.total ? v.valid / v.total : 0,
+            sample_state: v.valid >= 5 ? 'stable' : (v.valid ? 'thin' : 'unavailable'),
+          }));
         }
 
-        function fmtAvg(x) { return (x === null || x === undefined) ? '' : (x >= 0 ? '+' : '') + x.toFixed(2); }
-        function fmtPct(x) { return (x === null || x === undefined) ? '' : (x * 100).toFixed(1) + '%'; }
-        function fmtCov(x) { return (x === null || x === undefined) ? '' : (x * 100).toFixed(1) + '%'; }
+        const internal = Array.isArray(s.internal_segments) ? s.internal_segments : fallbackGroups(r => pillarLabel(r));
+        const official = Array.isArray(s.official_segments) ? s.official_segments : fallbackGroups(r => clusterLabel(r));
 
-        function stableBadge(valid) {
-          if (!Number.isFinite(valid)) return '';
-          const stable = valid >= 5;
-          return stable ? '<span class="stableSample">stable</span>' : '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">thin</span>';
+        function fmtAvg(x) {
+          const n = asNum(x);
+          return n === null ? '–' : (n >= 0 ? '+' : '') + n.toFixed(2);
         }
-
-        function nBadge(valid) {
-          if (!Number.isFinite(valid)) return '';
-          if (valid <= 2) return '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">' + valid + '</span>';
-          return String(valid);
+        function fmtPct(x) {
+          const n = asNum(x);
+          return n === null ? '–' : (n * 100).toFixed(1) + '%';
+        }
+        function stableBadge(state) {
+          state = normStr(state);
+          if (state === 'stable') return '<span class="stableSample">stable</span>';
+          if (state === 'thin') return '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">thin</span>';
+          return '<span class="muted">–</span>';
         }
 
         function renderTable(title, groups) {
-          groups = groups.slice().sort((a,b) => {
-            const av = (a.avg === null) ? -9999 : a.avg;
-            const bv = (b.avg === null) ? -9999 : b.avg;
-            if (bv !== av) return bv - av;
-            return (b.valid - a.valid);
+          groups = (groups || []).slice().sort((a,b) => {
+            const av = asNum(a.average_dscore_1d);
+            const bv = asNum(b.average_dscore_1d);
+            if (av === null && bv !== null) return 1;
+            if (bv === null && av !== null) return -1;
+            if (av !== null && bv !== null && av !== bv) return bv - av;
+            return Number(b.n_valid || 0) - Number(a.n_valid || 0);
           }).slice(0, 12);
-
-          const rowsHtml = groups.map(g => (
-            '<tr>' +
-              '<td title="' + esc(g.key) + '">' + esc(g.key) + '</td>' +
-              '<td class="right">' + fmtAvg(g.avg) + '</td>' +
-              '<td class="right">' + fmtPct(g.posPct) + '</td>' +
-              '<td class="right">' + stableBadge(g.valid) + '</td>' +
-              '<td class="right">' + fmtCov(g.cov) + '</td>' +
-              '<td class="right">' + nBadge(g.valid) + '</td>' +
-            '</tr>'
-          )).join('');
-
-          return (
-            '<table class="segmentTable">' +
-              '<thead>' +
-                '<tr><th colspan="6">' + esc(title) + '</th></tr>' +
-                '<tr>' +
-                  '<th>Segment</th><th class="right"> dScore</th><th class="right">Pos%</th><th class="right">Stable</th><th class="right">Cov%</th><th class="right">N</th>' +
-                '</tr>' +
-              '</thead>' +
-              '<tbody>' + (rowsHtml || '<tr><td colspan="6" class="muted"></td></tr>') + '</tbody>' +
-            '</table>'
-          );
+          const html = groups.map(g => {
+            const state = normStr(g.sample_state);
+            const rowClass = state === 'thin' ? 'sampleThin' : (state === 'unavailable' ? 'sampleUnavailable' : '');
+            return '<tr class="' + rowClass + '">' +
+            '<td title="' + esc(g.segment || '') + '">' + esc(g.segment || '–') + '</td>' +
+            '<td class="right">' + esc(fmtAvg(g.average_dscore_1d)) + '</td>' +
+            '<td class="right">' + esc(fmtPct(g.positive_share)) + '</td>' +
+            '<td class="right">' + stableBadge(g.sample_state) + '</td>' +
+            '<td class="right">' + esc(fmtPct(g.coverage)) + '</td>' +
+            '<td class="right">' + esc(g.n_valid ?? 0) + '/' + esc(g.n_total ?? 0) + '</td>' +
+          '</tr>';
+          }).join('');
+          return '<table class="segmentTable">' +
+            '<thead><tr><th colspan="6">' + esc(title) + '</th></tr>' +
+            '<tr><th>Segment</th><th class="right">Ø dScore</th><th class="right">Pos%</th><th class="right">Sample</th><th class="right">Cov%</th><th class="right">N</th></tr></thead>' +
+            '<tbody>' + (html || '<tr><td colspan="6" class="muted">–</td></tr>') + '</tbody></table>';
         }
 
-        // IMPORTANT: Use the same label logic as chips/filters so Segment Monitor matches the visible UI.
-        const intern = buildGroups(r => pillarLabel(r));     // internal: 5-sÃ¤ulen (scanner-owned)
-        const official = buildGroups(r => clusterLabel(r));  // official: market cluster/sector/industry
-
-        const metaLine = '<div class="muted small">Snapshot: ' + (prev || '') + '  ' + (latest || '') + ' | Universe: ' + (rows ? rows.length : 0) + '</div>';
+        const stats = s.stats || {};
+        const metaLine = '<div class="muted small">Snapshot: ' + prev + ' → ' + latest +
+          ' · Universe: ' + esc(stats.total ?? (rows ? rows.length : 0)) +
+          ' · 1D-Basis: ' + esc(stats.score_delta_basis_count ?? 0) + '</div>';
 
         elSegment.innerHTML = metaLine + '<div class="segmentTables">' +
-          renderTable('Intern (Scanner)', intern) +
+          renderTable('Intern (Scanner)', internal) +
           renderTable('Offiziell (Markt)', official) +
         '</div>';
       } catch (e) {
         elSegment.textContent = '';
       }
     }
-
 
     if (elBriefReal) {
       const t = normStr((BRIEFING_REALITIES || {}).text);

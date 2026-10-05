@@ -1,7 +1,8 @@
 """Generate History Delta report (score/rank changes).
 
 History Delta shows the internal progression of the scanner based on local daily snapshots.
-It is NOT market performance or price performance - it's scanner-internal ranking changes.
+It contains separate Rank Delta, Score Delta and event layers.
+It is NOT market performance or price performance.
 
 This script maintains the local snapshot store and computes deltas between the latest
 two snapshots. The snapshot store is the canonical source for all History Delta data.

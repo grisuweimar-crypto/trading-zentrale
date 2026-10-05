@@ -37,6 +37,9 @@ ALIASES = {
     "close": ("price", "close"), "currency": ("currency", "Currency"),
     "sector": ("sector", "Sector"), "pillar_primary": ("pillar_primary",),
     "cluster_official": ("cluster_official",), "bucket_type": ("bucket_type",),
+    "trend_ok": ("trend_ok", "TrendOK", "Trend Ok", "Trend"),
+    "liquidity_ok": ("liquidity_ok", "LiquidityOK", "LiqOK", "Liq"),
+    "score_status": ("score_status", "ScoreStatus", "Status"),
     "volatility": ("volatility", "Volatility"), "drawdown": ("max_drawdown", "MaxDrawdown"),
     "roe": ("roe", "ROE %"), "growth": ("growth", "Growth %"),
     "margin": ("margin", "Margin %"), "debt_ratio": ("debt_ratio", "Debt/Equity"),
@@ -92,11 +95,22 @@ class DailyInput:
         # Reuse the project's established R-code derivation for this validated
         # current scan only. All other values remain verbatim source strings.
         import pandas as pd
-        from scanner.reports.history_delta import _r_code_series, SCORING_VERSION
+        from scanner.reports.history_delta import (
+            HISTORY_SCHEMA_VERSION,
+            SCORING_VERSION,
+            _r_code_series,
+        )
         frame = pd.read_csv(io.BytesIO(self.watchlist_raw), dtype=str, keep_default_na=False)
         codes = _r_code_series(frame).tolist()
-        return [dict(row, r_code=row.get("r_code") or codes[i], scoring_version=SCORING_VERSION)
-                for i, row in enumerate(rows)]
+        return [
+            dict(
+                row,
+                r_code=row.get("r_code") or codes[i],
+                scoring_version=SCORING_VERSION,
+                history_schema_version=HISTORY_SCHEMA_VERSION,
+            )
+            for i, row in enumerate(rows)
+        ]
 
 
 def generate_daily(root: Path, receipt_path: Path, *, scanner_status="success", policy=None, now=None):
@@ -117,7 +131,12 @@ def generate_daily(root: Path, receipt_path: Path, *, scanner_status="success", 
     except (ValueError, UnicodeError, csv.Error) as exc:
         errors.append("invalid_watchlist: " + str(exc))
     columns = [c for c, aliases in ALIASES.items() if any(a in source_columns for a in aliases)]
-    columns = list(dict.fromkeys(columns + ["r_code", "run_id", "scoring_version"]))
+    columns = list(
+        dict.fromkeys(
+            columns
+            + ["r_code", "run_id", "scoring_version", "history_schema_version"]
+        )
+    )
     rows = []
     for original in source_rows:
         row = {c: next((original[a] for a in ALIASES[c] if original.get(a, "").strip()), "")
