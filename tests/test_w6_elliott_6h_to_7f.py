@@ -318,6 +318,16 @@ def test_stage3_source_adapter_preserves_all_degrees_without_reducer():
         "source_publication_commit": "a" * 40,
         "captured_at": "2026-09-29T17:58:45+00:00",
         "validation_partition": "prospective_unspent",
+        "source_hashes": {
+            "market_ohlcv_sha256": "a" * 64,
+            "daily_research_sha256": "b" * 64,
+        },
+        "validation_source": {
+            "adapter": "stage4_compact_aggregate_to_frozen_6g_v1",
+            "stage4_result_hash": "c" * 64,
+            "source_commit": "e" * 40,
+            "price_source_sha256": "f" * 64,
+        },
         "outputs": [first, second],
         "guards": {
             "research_only": True,
@@ -349,6 +359,25 @@ def test_stage3_source_adapter_preserves_all_degrees_without_reducer():
     assert meta["output_count"] == 2
     assert meta["symbol_count"] == 1
     assert meta["source_capture_id"] == "capture-stage3"
+    assert meta["source_hashes"] == capture["source_hashes"]
+    assert meta["validation_source"] == capture["validation_source"]
+
+    swing = build_elliott_7f_multidegree_swing_context(
+        indexed["TEST"],
+        source_commit=str(meta["source_commit"]),
+        source_available_from=str(meta["available_from"]),
+        source_provenance=meta,
+    )
+    assert swing["w6"]["source_provenance"]["source_hashes"] == capture["source_hashes"]
+    assert swing["w6"]["source_provenance"]["validation_source"] == capture["validation_source"]
+    for row in swing["w6"]["timeframe_degrees"]:
+        assert set(row["lineage_features"]) == {
+            "elliott_structure",
+            "fibonacci_geometry",
+            "swing_routing",
+            "uncertainty_state",
+        }
+        assert all(len(value) == 64 for value in row["lineage_features"].values())
 
 
 def test_w6_multidegree_add_reduce_conflict_is_preserved_without_direction_vote():
