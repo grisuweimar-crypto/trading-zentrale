@@ -17,7 +17,8 @@ from scanner.research.decision_layer.promotion_validation import (
 
 
 START = "2026-09-26"
-LAYERS = ["7D", "7E", "7F", "W8", "7G", "7H"]
+LAYERS = ["7D", "7E", "7F", "7G", "7H"]
+LAYERS_W8 = ["7D", "7E", "7F", "W8", "7G", "7H"]
 
 
 def _archive(packets=0):
@@ -165,8 +166,8 @@ def test_shadow_trace_summary_rejects_raw_position_values():
                 "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
                 "trace_rows": 1,
                 "symbols": 1,
-                "captured_layers": LAYERS,
-                "layer_metrics_ready": {layer: True for layer in LAYERS},
+                "captured_layers": LAYERS_W8,
+                "layer_metrics_ready": {layer: True for layer in LAYERS_W8},
                 "contains_raw_position_values": True,
                 "public_repository_persistence": False,
                 "as_of_min": "2026-09-26",
@@ -275,8 +276,8 @@ def test_w8_shadow_trace_accepts_post_change_prospective_rows():
             "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
             "trace_rows": 10,
             "symbols": 2,
-            "captured_layers": LAYERS,
-            "layer_metrics_ready": {layer: True for layer in LAYERS},
+            "captured_layers": LAYERS_W8,
+            "layer_metrics_ready": {layer: True for layer in LAYERS_W8},
             "contains_raw_position_values": False,
             "public_repository_persistence": False,
             "as_of_min": "2026-09-26",
@@ -291,3 +292,26 @@ def test_w8_shadow_trace_accepts_post_change_prospective_rows():
     )
     assert result["w8_trace_rows"] == 4
     assert result["w8_as_of_min"] == "2026-10-02"
+
+
+def test_w8_trace_is_forbidden_before_policy_introduction():
+    with pytest.raises(PromotionValidationError, match="w8_trace_before_policy_introduction_forbidden"):
+        validate_shadow_trace_summary(
+            {
+                "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+                "trace_rows": 2,
+                "symbols": 1,
+                "captured_layers": LAYERS_W8,
+                "layer_metrics_ready": {layer: False for layer in LAYERS_W8},
+                "contains_raw_position_values": False,
+                "public_repository_persistence": False,
+                "as_of_min": "2026-09-26",
+                "as_of_max": "2026-09-30",
+                "w8_trace_rows": 1,
+                "w8_as_of_min": "2026-09-30",
+                "w8_as_of_max": "2026-09-30",
+            },
+            prospective_start=START,
+            reviewed_as_of=date(2026, 9, 30),
+            w8_prospective_start=None,
+        )
