@@ -1100,6 +1100,10 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
 .hdGrid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 .hdColTitle { color: var(--muted); font-size: 11px; margin-bottom: 6px; }
 .hdList { display:flex; flex-direction:column; gap: 6px; }
+.hdEvents { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(148,163,184,.12); display:flex; flex-direction:column; gap:6px; }
+.hdEvent { display:grid; grid-template-columns: 90px minmax(0,1fr); gap:8px; font-family:var(--mono); font-size:11px; }
+.hdEventType { color:#cbd5e1; }
+.hdEventSym { font-weight:700; }
 
 .hdItem { display:grid; grid-template-columns: 72px 1fr 74px; gap: 8px; align-items:center; }
 .hdSym { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1299,11 +1303,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
             <div class="cardTitle">Briefing & Reality Check</div>
             <div class="cardActions">
               <button type="button" class="btn btnToggle" data-toggle="briefingReality">Ausblenden</button>
-              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report)</li><li><strong>Badges:</strong> Score, Percentil, Bucket, Confidence, Trend, LiquiditÃ¤t</li><li><strong>Reality:</strong> Daten-Mapping Check (intern vs. Yahoo/Markt)</li><li><strong>Warn/Error:</strong> Zeigen DatenqualitÃ¤tsprobleme</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+              <button type="button" class="iBtn" data-help-title="Briefing & Reality Check" data-help-html="<ul><li><strong>Briefing:</strong> Top-3 Picks aus aktuellem Scanner-Run (passiver Report).</li><li><strong>Reality Check:</strong> spiegelt interne Segmentbewegung gegen offizielle Gruppierungen.</li><li><strong>Kategorien:</strong> gleichgerichtet, Scanner stärker, Scanner schwächer, kontra Markt oder unklar.</li><li><strong>Wichtig:</strong> Einordnung, keine Wahrheit und keine Kursperformance-Prognose.</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
             </div>
           </div>
           <div class="cardBody" data-body="briefingReality">
-            <div class="muted small">Briefing: Privat/experimentell Â· Reality Check: Daten-/Mapping-QualitÃ¤t</div>
+            <div class="muted small">Briefing: Privat/experimentell · Reality Check: Segment-Spiegelung, keine Wahrheitsmetrik.</div>
             <div class="briefingRealityContent">
               <div class="briefingRealitySplit">
                 <div class="briefingRealitySection">
@@ -1343,11 +1347,11 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           <div class="cardTitle">Segment Monitor</div>
           <div class="cardActions">
             <button type="button" class="btn btnToggle" data-toggle="segment">Ausblenden</button>
-            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Segment:</strong> SÃ¤ule/Cluster/Bucket Kombination</li><li><strong>Changed:</strong> Anzahl verÃ¤nderter Segmente vs. letzter Snapshot</li><li><strong>Snapshot:</strong> Vergleichszeitpunkt</li><li><strong>Shifts:</strong> Zeigen wo sich Cluster neu bilden oder auflÃ¶sen</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
+            <button type="button" class="iBtn" data-help-title="Segment Monitor" data-help-html="<ul><li><strong>Intern:</strong> Scanner-eigene Säulen/Segmente.</li><li><strong>Offiziell:</strong> offizielle Cluster bzw. Sektor-Fallback.</li><li><strong>Ø dScore:</strong> mittlere 1D-Veränderung des Scanner-Scores.</li><li><strong>Pos% / Coverage / Stable:</strong> Breite und Belastbarkeit der Stichprobe.</li><li><strong>Wichtig:</strong> getrennt von History Delta, kein Super-Score.</li></ul>" aria-haspopup="dialog" aria-expanded="false">i</button>
           </div>
         </div>
         <div class="cardBody" data-body="segment">
-          <div class="muted small">SÃ¤ulen/Cluster/Bucket Â· inkl. nderungen vs. letzter Snapshot.</div>
+          <div class="muted small">Interne und offizielle Segmentbewegung auf Basis belastbarer dScore-1D-Vergleiche.</div>
           <div id="segmentText" class="reportText"></div>
         </div>
       </div>
@@ -1420,14 +1424,15 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
           data-action="help"
           data-help-title="History Delta"
           data-help-html="<ul>
-            <li><strong>Was:</strong> nderungen vs. letzter Snapshot (passiv, kein Einfluss auf Scoring).</li>
-            <li><strong>S:</strong> Score-Delta aus <span class='mono'>history_delta.json</span>.</li>
-            <li><strong>R:</strong> Rank-Delta (falls vorhanden).</li>
-            <li><strong>Filter:</strong> Respektiert das aktuelle Universe (Preset/Suche/Quick/Cluster/SÃ¤ule).</li>
+            <li><strong>Was:</strong> interner Scanner-Verlauf aus lokalen Tages-Snapshots.</li>
+            <li><strong>Rank 1D:</strong> relative Positionsveränderung im gemeinsamen Vergleichsuniversum.</li>
+            <li><strong>Score 1D:</strong> absolute Veränderung des Scanner-Scores.</li>
+            <li><strong>Events:</strong> operative Statuswechsel nur bei belastbarer Vorhistorie.</li>
+            <li><strong>Nicht:</strong> keine Kursperformance und kein Einfluss auf Scoring.</li>
           </ul>"
           aria-haspopup="dialog" aria-expanded="false">i</button>
       </div>
-      <div class="muted small">Delta-nderungen vs. letzter Snapshot (nicht Kurs-1D).</div>
+      <div class="muted small">Interner Scanner-Verlauf · lokale Tages-Snapshots · keine Kursperformance.</div>
       <div id="historyText" class="reportText"></div>
     </div>
   </div>
@@ -1454,7 +1459,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <th data-k="name" title="Name + Kategorie/Land/WÃ¤hrung">Name</th>
               <th data-k="price" class="right" title="Aktueller Kurs (OriginalwÃ¤hrung) + TagesÃ¤nderung (Perf %)">Kurs</th>
               <th data-k="score" class="right" title="Gesamtscore (hÃ¶her = besser)">Score</th>
-              <th data-k="dscore_1d" class="hide-sm right" title="Delta des Scanner-Scores vs. letzter Snapshot (History Delta), nicht Kurs-1D">ΔScore Snapshot</th>
+              <th data-k="dscore_1d" class="hide-sm right" title="dScore 1D = Veränderung des Scanner-Scores vs. letzter lokaler Tages-Snapshot; keine Kursrendite">dScore 1D</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
               <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
@@ -2390,6 +2395,12 @@ function applyPillarFilter(rows) {
         for (const s of specs) {
           const ka = a[s.k];
           const kb = b[s.k];
+          const missingA = ka === null || ka === undefined || ka === '';
+          const missingB = kb === null || kb === undefined || kb === '';
+          if (missingA || missingB) {
+            if (missingA && missingB) continue;
+            return missingA ? 1 : -1;
+          }
 
           // number first
           const na = asNum(ka);
@@ -3840,7 +3851,6 @@ function applyHeatFilter(rows) {
         const prev   = normStr(d.prev_date   || d.prev   || d.prevDate || '');
         const snaps  = (latest && prev) ? 2 : 1;
 
-        // Build global lookup from full DATA for label/link enrichment.
         const byKey = new Map();
         for (const r of (Array.isArray(DATA) ? DATA : [])) {
           const k = historyKey(r);
@@ -3854,54 +3864,40 @@ function applyHeatFilter(rows) {
           const sd = asNum(rec.score_delta ?? rec.scoreDelta ?? rec.delta ?? rec.dscore_1d ?? rec.dscore);
           const rd = asNum(rec.rank_delta  ?? rec.rankDelta  ?? rec.dr    ?? rec.rank_change);
           if (sd === null && rd === null) return null;
-
           const sym = row ? pickDisplaySymbol(row) : normStr(rec.symbol || rec.name || '');
           const yh  = row ? (pickYahooSymbol(row) || sym) : normStr(rec.symbol || '');
           const href = yahooHref(yh);
-
           const segFull = row
             ? (normStr(clusterLabel(row)) || (asBool(row.is_crypto) === true ? 'Krypto' : ''))
             : '';
-          const segShort = segFull
-            ? (segFull.split(' ').slice(0, 2).join(' ').slice(0, 10) + (segFull.length > 10 ? '' : ''))
-            : '';
-
+          const segShort = segFull ? segFull.slice(0, 12) : '';
           return { sym, href, sd, rd, segFull, segShort };
         }
 
         function fmtDelta(n, digits) {
-          if (n === null || n === undefined || !Number.isFinite(n)) return 'n/a';
+          if (n === null || n === undefined || !Number.isFinite(n)) return '–';
           const sign = n > 0 ? '+' : '';
           return sign + n.toFixed(digits);
         }
 
         const pos = (Array.isArray(d.movers_up) ? d.movers_up : [])
-          .map(fromMover)
-          .filter(x => !!x && x.rd !== null && Number(x.rd) > 0)
-          .slice(0, 12);
+          .map(fromMover).filter(x => !!x && x.rd !== null && Number(x.rd) > 0).slice(0, 12);
         const neg = (Array.isArray(d.movers_down) ? d.movers_down : [])
-          .map(fromMover)
-          .filter(x => !!x && x.rd !== null && Number(x.rd) < 0)
-          .slice(0, 12);
+          .map(fromMover).filter(x => !!x && x.rd !== null && Number(x.rd) < 0).slice(0, 12);
 
         const p1w = (d.periods && typeof d.periods === 'object') ? d.periods['1w'] : null;
         const p1m = (d.periods && typeof d.periods === 'object') ? d.periods['1m'] : null;
-        const wUp = p1w && Array.isArray(p1w.movers_up) ? p1w.movers_up.length : 0;
-        const wDn = p1w && Array.isArray(p1w.movers_down) ? p1w.movers_down.length : 0;
-        const mUp = p1m && Array.isArray(p1m.movers_up) ? p1m.movers_up.length : 0;
-        const mDn = p1m && Array.isArray(p1m.movers_down) ? p1m.movers_down.length : 0;
-        const wLabel = p1w ? `1W +${wUp}/-${wDn}` : '1W n/a';
-        const mLabel = p1m ? `1M +${mUp}/-${mDn}` : '1M n/a';
+        const wLabel = p1w ? '1W vorhanden' : '1W –';
+        const mLabel = p1m ? '1M vorhanden' : '1M –';
 
         const bySymbol = (d && typeof d.by_symbol === 'object' && d.by_symbol) ? d.by_symbol : {};
-        const withN = Object.values(bySymbol).filter(v => v && v.status === 'ok').length;
+        const withN = Number((d.stats && d.stats.comparison_basis_count) || Object.values(bySymbol).filter(v => v && v.status === 'ok').length || 0);
         const universeN = Array.isArray(DATA) ? DATA.length : ((rows || []).length);
-        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '')}  ${esc(latest || '')} · Universe: ${universeN} · with: ${withN}</div>`;
+        const header = `<div class="hdMeta">Snapshot: ${esc(prev || '–')} → ${esc(latest || '–')} · Universe: ${universeN} · 1D-Basis: ${withN}</div>`;
 
-        // Deine schÃ¶nen 4 Pills bleiben, plus Top/Weak ZÃ¤hler als Bonus
         const controls = `<div class="breadthRow" style="margin-top:6px;">
           ${chip(`Snapshots ${snaps}`, 'blue')}
-          ${chip(`1D`, 'blue')}
+          ${chip('1D', 'blue')}
           ${chip(wLabel, p1w ? 'blue' : 'warn')}
           ${chip(mLabel, p1m ? 'blue' : 'warn')}
           ${chip(`Top ${pos.length}`, pos.length ? 'good' : 'blue')}
@@ -3910,36 +3906,50 @@ function applyHeatFilter(rows) {
 
         function itemRow(x) {
           const symHtml = x.href
-            ? `<a class="yf hdSym" href="${x.href}" target="_blank" rel="noopener">${esc(x.sym)}</a>` 
+            ? `<a class="yf hdSym" href="${x.href}" target="_blank" rel="noopener">${esc(x.sym)}</a>`
             : `<span class="hdSym">${esc(x.sym)}</span>`;
-
           const sd = (x.sd === null || x.sd === undefined) ? null : Number(x.sd);
           const rd = (x.rd === null || x.rd === undefined) ? null : Number(x.rd);
-
           const sdCls = (sd === null) ? 'flat' : (sd > 0 ? 'pos' : (sd < 0 ? 'neg' : 'flat'));
           const rdCls = (rd === null) ? 'flat' : (rd > 0 ? 'pos' : (rd < 0 ? 'neg' : 'flat'));
-
-          const line1 = `<span class="hdLine ${sdCls}">S ${esc(fmtDelta(sd, 2))}</span>`;
-          const line2 = `<span class="hdLine ${rdCls}">R ${esc(fmtDelta(rd, 0))}</span>`;
-
+          const scoreLine = `<span class="hdLine ${sdCls}">Score 1D ${esc(fmtDelta(sd, 2))}</span>`;
+          const rankLine = `<span class="hdLine ${rdCls}">Rank 1D ${esc(fmtDelta(rd, 0))}</span>`;
           const seg = `<span class="hdSeg" title="${esc(x.segFull || '')}">${esc(x.segShort || '')}</span>`;
-
-          return `<div class="hdItem">${symHtml}<div class="hdVals">${line1}${line2}</div>${seg}</div>`;
+          return `<div class="hdItem">${symHtml}<div class="hdVals">${rankLine}${scoreLine}</div>${seg}</div>`;
         }
 
-        const topHtml  = pos.length ? pos.map(itemRow).join('') : `<div class="muted small"></div>`;
-        const weakHtml = neg.length ? neg.map(itemRow).join('') : `<div class="muted small"></div>`;
-
+        const topHtml  = pos.length ? pos.map(itemRow).join('') : '<div class="muted small">–</div>';
+        const weakHtml = neg.length ? neg.map(itemRow).join('') : '<div class="muted small">–</div>';
         const grid = `<div class="hdGrid">
-          <div><div class="hdColTitle">Top </div><div class="hdList">${topHtml}</div></div>
-          <div><div class="hdColTitle">Weak </div><div class="hdList">${weakHtml}</div></div>
+          <div><div class="hdColTitle">Top</div><div class="hdList">${topHtml}</div></div>
+          <div><div class="hdColTitle">Weak</div><div class="hdList">${weakHtml}</div></div>
         </div>`;
 
-        const explain = `<div class="muted small" style="margin-top:8px;">
-          Top/Weak basiert primär auf <b>Rank-Delta</b> in der <b>gemeinsamen Schnittmenge</b> beider Snapshots (stabil trotz New/Dropped). Score-Delta ist Zusatzinfo.
-        </div>`;
+        const visibleKeys = new Set((rows || []).map(historyKey).filter(Boolean));
+        const rawEvents = Array.isArray(d.events) ? d.events : [];
+        const events = rawEvents.filter(ev => !visibleKeys.size || visibleKeys.has(normStr(ev.symbol))).slice(0, 10);
+        const labels = {
+          entered_top_10: 'in Top 10',
+          left_top_10: 'aus Top 10',
+          entered_top_25: 'in Top 25',
+          left_top_25: 'aus Top 25',
+          trend_ok_changed: 'Trendstatus geändert',
+          liquidity_ok_changed: 'Liquidität geändert',
+          score_status_changed: 'Score-Status geändert',
+        };
+        const eventsHtml = events.length
+          ? '<div class="hdEvents"><div class="hdColTitle">Events</div>' + events.map(ev => {
+              const row = byKey.get(normStr(ev.symbol));
+              const sym = row ? pickDisplaySymbol(row) : normStr(ev.symbol);
+              const label = labels[normStr(ev.type)] || normStr(ev.type);
+              let detail = '';
+              if (ev.from !== undefined && ev.to !== undefined) detail = ` · ${esc(ev.from)} → ${esc(ev.to)}`;
+              return `<div class="hdEvent"><span class="hdEventSym">${esc(sym)}</span><span class="hdEventType">${esc(label)}${detail}</span></div>`;
+            }).join('') + '</div>'
+          : '';
 
-        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${explain}</div>`;
+        const explain = '<div class="muted small" style="margin-top:8px;">Interner Scanner-Verlauf aus lokalen Tages-Snapshots. Rank und Score bleiben getrennt; neue/entfallene Titel erzeugen ohne Vergleichsbasis keine Status-Events. Keine Kursperformance.</div>';
+        elHistory.innerHTML = `<div class="hdWrap">${header}${controls}${grid}${eventsHtml}${explain}</div>`;
       } catch (e) {
         elHistory.textContent = '';
       }
@@ -3947,91 +3957,56 @@ function applyHeatFilter(rows) {
 
     function renderReality(r) {
       try {
-        const hasStats = !!(r && r.stats && Object.keys(r.stats).length);
-        const hasIssues = Array.isArray(r && r.top_issues) && r.top_issues.length > 0;
-        const issuesCount = hasIssues ? r.top_issues.length : 0;
-
-        if (!r || (!hasStats && !hasIssues)) {
-          return '<div class="realityMissing">Reality Check Report fehlt / nicht generiert</div>';
+        const rows = Array.isArray(r && r.comparisons)
+          ? r.comparisons
+          : (Array.isArray(r && r.top_issues) ? r.top_issues : []);
+        const st = (r && r.stats) || {};
+        if (!r || !rows.length) {
+          return '<div class="realityMissing">Noch keine belastbare Segment-Vergleichsbasis vorhanden.</div>';
         }
 
-        const st = r.stats || {};
         const summary = '<div class="realitySummary">' +
-          '<div class="summaryChip ok">ok: ' + esc(st.ok || 0) + '</div>' +
-          '<div class="summaryChip warn">warn: ' + esc(st.warn || 0) + '</div>' +
-          '<div class="summaryChip error">error: ' + esc(st.error || 0) + '</div>' +
+          '<div class="summaryChip ok">gleich: ' + esc(st.aligned || 0) + '</div>' +
+          '<div class="summaryChip ok">Scanner+: ' + esc(st.scanner_stronger || 0) + '</div>' +
+          '<div class="summaryChip warn">Scanner−: ' + esc(st.scanner_weaker || 0) + '</div>' +
+          '<div class="summaryChip error">kontra: ' + esc(st.contra_market || 0) + '</div>' +
+          '<div class="summaryChip warn">unklar: ' + esc(st.unclear || 0) + '</div>' +
         '</div>';
 
-        if (hasIssues) {
-          const tableHtml = '<table class="realityTable">' +
-            '<thead>' +
-              '<tr>' +
-                '<th>Intern</th>' +
-                '<th>Offiziell</th>' +
-                '<th>Bewertung</th>' +
-                '<th>Markttrend</th>' +
-                '<th>Signal</th>' +
-                '<th>Hinweis</th>' +
-              '</tr>' +
-            '</thead>' +
-            '<tbody>' +
-            r.top_issues.slice(0, 12).map(issue => {
-              const intern = esc(issue.intern || issue.internal || issue.pillar_primary || issue.scanner_pillar || '—');
-              const official = esc(issue.offiziell || issue.official || issue.official_sector || issue.official_industry || '—');
-              const scanner = esc(issue.scanner || issue.cluster || issue.scanner_cluster || issue.pillar_primary || '—');
-              const market = esc(issue.market || issue.yahoo_sector || issue.yahoo_industry || issue.market_sector || '—');
-
-              let signalClass = 'neutral';
-              let signalText = 'OK';
-              const severity = (issue.severity || '').toLowerCase();
-              const verdict = (issue.verdict || '').toLowerCase();
-              const signal = (issue.signal || '').toLowerCase();
-
-              if (severity === 'error' || verdict === 'contra' || signal === 'contra') {
-                signalClass = 'contra';
-                signalText = issue.signal || 'Kontra';
-              } else if (severity === 'warn' || verdict === 'warn' || signal === 'warn') {
-                signalClass = 'neutral';
-                signalText = issue.signal || 'Warn';
-              } else {
-                signalClass = 'positive';
-                signalText = issue.signal || 'OK';
-              }
-
-              let signalCell = '<span class="signalBadge ' + signalClass + '">' + signalText + '</span>';
-              if (Array.isArray(issue.problems) && issue.problems.length > 0) {
-                signalCell = '<span class="signalBadge ' + signalClass + '" title="' + esc(issue.problems.join('; ')) + '">' + signalText + '</span>';
-              }
-              const hint = esc(issue.hint || issue.problems_text || '');
-
-              return '<tr>' +
-                '<td>' + intern + '</td>' +
-                '<td>' + official + '</td>' +
-                '<td>' + scanner + '</td>' +
-                '<td>' + market + '</td>' +
-                '<td>' + signalCell + '</td>' +
-                '<td>' + hint + '</td>' +
-              '</tr>';
-            }).join('') +
-            '</tbody>' +
-          '</table>' +
-          (issuesCount > 12 ? '<div class="muted small" style="margin-top: 6px;">+ weitere ' + (issuesCount - 12) + ' Einträge</div>' : '');
-
-          return summary + tableHtml;
-        } else {
-          const fallbackHtml = '<div class="realityTable">' +
-            '<div class="realityRow">' +
-              '<div class="realityCell" style="grid-column: 1/-1;">' +
-                '<div style="font-weight: 600; margin-bottom: 8px;">Reality Check Status</div>' +
-                '<div>ok: ' + esc(st.ok || 0) + ' · warn: ' + esc(st.warn || 0) + ' · error: ' + esc(st.error || 0) + '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-
-          return '<div class="realityMissing">Keine Vergleichsdaten vorhanden</div>' + summary + fallbackHtml;
+        function fmtD(value) {
+          const n = asNum(value);
+          if (n === null) return '–';
+          return (n > 0 ? '+' : '') + n.toFixed(2);
         }
+        function signalClass(verdict) {
+          verdict = normStr(verdict);
+          if (verdict === 'contra_market') return 'contra';
+          if (verdict === 'scanner_stronger' || verdict === 'aligned') return 'positive';
+          return 'neutral';
+        }
+
+        const body = rows.slice(0, 14).map(row => {
+          const verdict = normStr(row.verdict);
+          const basis = `n=${esc(row.n_valid ?? 0)}/${esc(row.n ?? 0)} · Cov ${esc(((asNum(row.coverage) ?? 0) * 100).toFixed(0))}%`;
+          return '<tr>' +
+            '<td>' + esc(row.intern || '–') + '</td>' +
+            '<td>' + esc(row.offiziell || '–') + '</td>' +
+            '<td class="right">' + esc(fmtD(row.scanner)) + '</td>' +
+            '<td class="right">' + esc(fmtD(row.market)) + '</td>' +
+            '<td><span class="signalBadge ' + signalClass(verdict) + '">' + esc(row.signal || verdict || 'Unklar') + '</span></td>' +
+            '<td title="' + esc(row.hint || '') + '">' + basis + '</td>' +
+          '</tr>';
+        }).join('');
+
+        return summary +
+          '<table class="realityTable">' +
+            '<thead><tr><th>Intern</th><th>Offiziell</th><th>Scanner dScore</th><th>Offiziell dScore</th><th>Einordnung</th><th>Basis</th></tr></thead>' +
+            '<tbody>' + body + '</tbody>' +
+          '</table>' +
+          '<div class="muted small" style="margin-top:6px;">Reality Check = Einordnung derselben Scanner-Bewegung über zwei Segment-Sichten. Keine Wahrheit, kein Kursbenchmark.</div>';
       } catch (e) { return ''; }
     }
+
     function renderMacroChain() {
       if (!elMacroChain) return;
       try {
@@ -4077,97 +4052,89 @@ function applyHeatFilter(rows) {
       if (!elSegment) return;
       try {
         const s = (SEGMENT_MONITOR || {});
-        const latest = esc(normStr(s.latest_date) || '');
-        const prev = esc(normStr(s.prev_date) || '');
+        const latest = esc(normStr(s.latest_date) || '–');
+        const prev = esc(normStr(s.prev_date) || '–');
 
-        // Group helper: total + valid (dScore) + sum + pos
-        function buildGroups(getKey) {
+        function fallbackGroups(getKey) {
           const map = new Map();
           for (const r of rows || []) {
             const k = normStr(getKey(r)) || '';
+            if (!k) continue;
             const rec = map.get(k) || { total: 0, valid: 0, sum: 0, pos: 0 };
             rec.total += 1;
-            const d = r.dscore_1d;
-            if (Number.isFinite(d)) {
+            const d = asNum(r.dscore_1d);
+            if (d !== null) {
               rec.valid += 1;
               rec.sum += d;
               if (d > 0) rec.pos += 1;
             }
             map.set(k, rec);
           }
-          const out = [];
-          for (const [k, v] of map.entries()) {
-            const cov = v.total > 0 ? (v.valid / v.total) : 0;
-            const avg = v.valid > 0 ? (v.sum / v.valid) : null;
-            const pp = v.valid > 0 ? (v.pos / v.valid) : null;
-            out.push({ key: k, total: v.total, valid: v.valid, avg, posPct: pp, cov });
-          }
-          return out;
+          return Array.from(map.entries()).map(([key, v]) => ({
+            segment: key,
+            n_total: v.total,
+            n_valid: v.valid,
+            average_dscore_1d: v.valid ? v.sum / v.valid : null,
+            positive_share: v.valid ? v.pos / v.valid : null,
+            coverage: v.total ? v.valid / v.total : 0,
+            sample_state: v.valid >= 5 ? 'stable' : (v.valid ? 'thin' : 'unavailable'),
+          }));
         }
 
-        function fmtAvg(x) { return (x === null || x === undefined) ? '' : (x >= 0 ? '+' : '') + x.toFixed(2); }
-        function fmtPct(x) { return (x === null || x === undefined) ? '' : (x * 100).toFixed(1) + '%'; }
-        function fmtCov(x) { return (x === null || x === undefined) ? '' : (x * 100).toFixed(1) + '%'; }
+        const internal = Array.isArray(s.internal_segments) ? s.internal_segments : fallbackGroups(r => pillarLabel(r));
+        const official = Array.isArray(s.official_segments) ? s.official_segments : fallbackGroups(r => clusterLabel(r));
 
-        function stableBadge(valid) {
-          if (!Number.isFinite(valid)) return '';
-          const stable = valid >= 5;
-          return stable ? '<span class="stableSample">stable</span>' : '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">thin</span>';
+        function fmtAvg(x) {
+          const n = asNum(x);
+          return n === null ? '–' : (n >= 0 ? '+' : '') + n.toFixed(2);
         }
-
-        function nBadge(valid) {
-          if (!Number.isFinite(valid)) return '';
-          if (valid <= 2) return '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">' + valid + '</span>';
-          return String(valid);
+        function fmtPct(x) {
+          const n = asNum(x);
+          return n === null ? '–' : (n * 100).toFixed(1) + '%';
+        }
+        function stableBadge(state) {
+          state = normStr(state);
+          if (state === 'stable') return '<span class="stableSample">stable</span>';
+          if (state === 'thin') return '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">thin</span>';
+          return '<span class="muted">–</span>';
         }
 
         function renderTable(title, groups) {
-          groups = groups.slice().sort((a,b) => {
-            const av = (a.avg === null) ? -9999 : a.avg;
-            const bv = (b.avg === null) ? -9999 : b.avg;
-            if (bv !== av) return bv - av;
-            return (b.valid - a.valid);
+          groups = (groups || []).slice().sort((a,b) => {
+            const av = asNum(a.average_dscore_1d);
+            const bv = asNum(b.average_dscore_1d);
+            if (av === null && bv !== null) return 1;
+            if (bv === null && av !== null) return -1;
+            if (av !== null && bv !== null && av !== bv) return bv - av;
+            return Number(b.n_valid || 0) - Number(a.n_valid || 0);
           }).slice(0, 12);
-
-          const rowsHtml = groups.map(g => (
-            '<tr>' +
-              '<td title="' + esc(g.key) + '">' + esc(g.key) + '</td>' +
-              '<td class="right">' + fmtAvg(g.avg) + '</td>' +
-              '<td class="right">' + fmtPct(g.posPct) + '</td>' +
-              '<td class="right">' + stableBadge(g.valid) + '</td>' +
-              '<td class="right">' + fmtCov(g.cov) + '</td>' +
-              '<td class="right">' + nBadge(g.valid) + '</td>' +
-            '</tr>'
-          )).join('');
-
-          return (
-            '<table class="segmentTable">' +
-              '<thead>' +
-                '<tr><th colspan="6">' + esc(title) + '</th></tr>' +
-                '<tr>' +
-                  '<th>Segment</th><th class="right"> dScore</th><th class="right">Pos%</th><th class="right">Stable</th><th class="right">Cov%</th><th class="right">N</th>' +
-                '</tr>' +
-              '</thead>' +
-              '<tbody>' + (rowsHtml || '<tr><td colspan="6" class="muted"></td></tr>') + '</tbody>' +
-            '</table>'
-          );
+          const html = groups.map(g => '<tr>' +
+            '<td title="' + esc(g.segment || '') + '">' + esc(g.segment || '–') + '</td>' +
+            '<td class="right">' + esc(fmtAvg(g.average_dscore_1d)) + '</td>' +
+            '<td class="right">' + esc(fmtPct(g.positive_share)) + '</td>' +
+            '<td class="right">' + stableBadge(g.sample_state) + '</td>' +
+            '<td class="right">' + esc(fmtPct(g.coverage)) + '</td>' +
+            '<td class="right">' + esc(g.n_valid ?? 0) + '/' + esc(g.n_total ?? 0) + '</td>' +
+          '</tr>').join('');
+          return '<table class="segmentTable">' +
+            '<thead><tr><th colspan="6">' + esc(title) + '</th></tr>' +
+            '<tr><th>Segment</th><th class="right">Ø dScore</th><th class="right">Pos%</th><th class="right">Sample</th><th class="right">Cov%</th><th class="right">N</th></tr></thead>' +
+            '<tbody>' + (html || '<tr><td colspan="6" class="muted">–</td></tr>') + '</tbody></table>';
         }
 
-        // IMPORTANT: Use the same label logic as chips/filters so Segment Monitor matches the visible UI.
-        const intern = buildGroups(r => pillarLabel(r));     // internal: 5-sÃ¤ulen (scanner-owned)
-        const official = buildGroups(r => clusterLabel(r));  // official: market cluster/sector/industry
-
-        const metaLine = '<div class="muted small">Snapshot: ' + (prev || '') + '  ' + (latest || '') + ' | Universe: ' + (rows ? rows.length : 0) + '</div>';
+        const stats = s.stats || {};
+        const metaLine = '<div class="muted small">Snapshot: ' + prev + ' → ' + latest +
+          ' · Universe: ' + esc(stats.total ?? (rows ? rows.length : 0)) +
+          ' · 1D-Basis: ' + esc(stats.score_delta_basis_count ?? 0) + '</div>';
 
         elSegment.innerHTML = metaLine + '<div class="segmentTables">' +
-          renderTable('Intern (Scanner)', intern) +
+          renderTable('Intern (Scanner)', internal) +
           renderTable('Offiziell (Markt)', official) +
         '</div>';
       } catch (e) {
         elSegment.textContent = '';
       }
     }
-
 
     if (elBriefReal) {
       const t = normStr((BRIEFING_REALITIES || {}).text);
