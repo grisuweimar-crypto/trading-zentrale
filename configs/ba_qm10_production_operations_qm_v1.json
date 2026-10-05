@@ -2,7 +2,7 @@
   "schema_version": "ba_qm10_production_operations_qm_v1",
   "business_area": "BA-QM10",
   "name": "Produktions- und Betriebs-QM",
-  "status": "IN_PROGRESS",
+  "status": "COMPLETE",
   "scope": "QUALITY_MANAGEMENT_ONLY",
   "research_logic_changed": false,
   "decision_logic_changed": false,
@@ -26,26 +26,26 @@
   ],
   "objective": "A correct research system must not emit false decisions because of a faulty production process.",
   "current_assessment": {
-    "SCANNER_AUTORUN": "PASS_WITH_RETRY_GUARD",
-    "GITHUB_ACTIONS": "CAPAS_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "PUBLICATION": "F01_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "WORKFLOW_DEPENDENCIES": "F02_F03_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "RETRY": "PASS_RETRY_REMAINS_ELIGIBLE_AFTER_UNPUBLISHED_FAILURE",
-    "IDEMPOTENCY": "PASS_ARCHIVE_IDENTITY_DEDUP_AND_COLLISION_FAIL_CLOSED",
+    "SCANNER_AUTORUN": "PASS",
+    "GITHUB_ACTIONS": "PASS",
+    "PUBLICATION": "PASS",
+    "WORKFLOW_DEPENDENCIES": "PASS",
+    "RETRY": "PASS",
+    "IDEMPOTENCY": "PASS",
     "ARTIFACT_PROVENANCE": "PASS",
-    "CANONICAL_FILE_SELECTION": "F04_CAPA_IMPLEMENTED_PENDING_FALSIFICATION_VERIFICATION",
-    "STALE_ARTIFACT_DETECTION": "PASS_FAIL_CLOSED",
-    "RACE_CONDITIONS": "R01_CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
-    "PARTIAL_RUNS": "PASS_FAIL_CLOSED",
-    "RECOVERY": "PASS_FAIL_CLOSED_RETRY_AND_OBSERVED_RECOVERY",
-    "FAILED_UPDATES": "CAPAS_IMPLEMENTED_PENDING_LIVE_VERIFICATION"
+    "CANONICAL_FILE_SELECTION": "PASS",
+    "STALE_ARTIFACT_DETECTION": "PASS",
+    "RACE_CONDITIONS": "PASS",
+    "PARTIAL_RUNS": "PASS",
+    "RECOVERY": "PASS",
+    "FAILED_UPDATES": "PASS"
   },
   "findings": [
     {
       "finding_id": "BA-QM10-F01",
       "inherited_from": "BA-QM9-F01",
       "category": "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY",
-      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+      "state": "CLOSED_EFFECTIVE",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -85,13 +85,26 @@
         "research_logic_changed": false,
         "decision_logic_changed": false,
         "packet_semantics_changed": false,
-        "effectiveness_verification": "PENDING_CURRENT_SNAPSHOT_CAPACITY_AUDIT_AND_REAL_PUBLICATION"
+        "effectiveness_verification": "VERIFIED_EFFECTIVE_LIVE_PUBLICATION_AND_CAPACITY_AUDIT"
+      },
+      "effectiveness": {
+        "verification_status": "EFFECTIVE",
+        "evidence": {
+          "current_snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+          "capacity_audit_max_shard_bytes": 1555574,
+          "hard_limit_bytes": 2000000,
+          "live_runtime_publish_run_id": 37236982364,
+          "live_runtime_publish_commit": "93d498c85ff674e7d40212620b6dace1f49c6693",
+          "published_shard_count": 32
+        },
+        "false_watch_accepted": false,
+        "decision_logic_changed": false
       }
     },
     {
       "finding_id": "BA-QM10-F02",
       "category": "WORKFLOW_DEPENDENCY_PREMATURE_FAN_IN",
-      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+      "state": "CLOSED_EFFECTIVE",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -118,13 +131,26 @@
         "research_logic_changed": false,
         "decision_logic_changed": false,
         "investment_logic_changed": false,
-        "effectiveness_verification": "PENDING_LIVE_TRIGGER_VERIFICATION"
+        "effectiveness_verification": "VERIFIED_EFFECTIVE_CONTROLLED_STALE_CURRENT_MISSING_AND_LIVE_INTEGRATION"
+      },
+      "effectiveness": {
+        "verification_status": "EFFECTIVE",
+        "evidence": {
+          "controlled_readiness_ci_run_id": 37238034848,
+          "live_same_snapshot_integration_run_id": 37236676543,
+          "live_integration_commit": "2df65b928485ae9a42f9adde5752f5d4561153e1",
+          "stale_phase2_case_tested": true,
+          "missing_phase2_case_tested": true,
+          "current_phase2_case_tested": true
+        },
+        "false_decision_published": false,
+        "decision_logic_changed": false
       }
     },
     {
       "finding_id": "BA-QM10-F03",
       "category": "SYMBOL_VIEW_PREMATURE_TRIGGER",
-      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+      "state": "CLOSED_EFFECTIVE",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -154,13 +180,24 @@
         "research_logic_changed": false,
         "decision_logic_changed": false,
         "investment_logic_changed": false,
-        "effectiveness_verification": "PENDING_LIVE_TRIGGER_VERIFICATION"
+        "effectiveness_verification": "VERIFIED_EFFECTIVE_LIVE_DEFER_AND_LIVE_PUBLICATION"
+      },
+      "effectiveness": {
+        "verification_status": "EFFECTIVE",
+        "evidence": {
+          "deferred_stale_runtime_run_id": 37236676559,
+          "deferred_publish_skipped": true,
+          "live_current_runtime_publish_run_id": 37237352164,
+          "live_symbol_views_commit": "714b7376722247116528bdd88ec98c52df5ac556"
+        },
+        "stale_symbol_views_published": false,
+        "decision_logic_changed": false
       }
     },
     {
       "finding_id": "BA-QM10-F04",
       "category": "CANONICAL_FILE_SELECTION",
-      "state": "CAPA_IMPLEMENTED_PENDING_CI_VERIFICATION",
+      "state": "CLOSED_EFFECTIVE",
       "observed_at": "2026-10-04",
       "evidence": [
         {
@@ -187,7 +224,17 @@
         "research_logic_changed": false,
         "decision_logic_changed": false,
         "falsification_logic_changed": false,
-        "effectiveness_verification": "PENDING_BA_QM7_CI_PASS"
+        "effectiveness_verification": "VERIFIED_EFFECTIVE_FROZEN_BA_QM7_CI_PASS"
+      },
+      "effectiveness": {
+        "verification_status": "EFFECTIVE",
+        "evidence": {
+          "frozen_falsification_success_run_id": 37230918562,
+          "canonical_archive": "artifacts/research/decision_evidence_7a.jsonl.gz",
+          "runner_uses_default_archive": true
+        },
+        "falsification_logic_changed": false,
+        "decision_logic_changed": false
       }
     }
   ],
@@ -195,16 +242,29 @@
     {
       "risk_id": "BA-QM10-R01",
       "category": "SCANNER_PUBLICATION_MAIN_ADVANCE",
-      "description": "Scanner publication uses a direct git push after a long build and does not currently have the explicit main-advanced refusal guard used by Decision Watch publication.",
+      "description": "Initially observed risk: a long Scanner build could reach direct publication after the publication branch had advanced.",
       "safety_expectation": "A rejected push must not publish the autorun marker remotely; a later retry must remain eligible.",
-      "state": "CAPA_IMPLEMENTED_PENDING_LIVE_VERIFICATION",
+      "state": "CLOSED_EFFECTIVE",
       "capa": {
         "implemented": true,
         "implementation": "Before recording the successful autorun marker or committing artifacts, fetch the publication branch and refuse publication if remote HEAD advanced beyond the scanner build base.",
         "research_logic_changed": false,
         "decision_logic_changed": false,
         "investment_logic_changed": false,
-        "effectiveness_verification": "PENDING_LIVE_MAIN_ADVANCE_OR_CONTROLLED_WORKFLOW_VERIFICATION"
+        "effectiveness_verification": "VERIFIED_EFFECTIVE_CONTROLLED_REMOTE_ADVANCE_RACE"
+      },
+      "effectiveness": {
+        "verification_status": "EFFECTIVE",
+        "evidence": {
+          "controlled_git_remote_race_ci_run_id": 37238034848,
+          "stale_publication_exit_code": 75,
+          "unchanged_remote_case_passed": true,
+          "remote_advance_case_rejected": true,
+          "retry_remained_eligible": true
+        },
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "investment_logic_changed": false
       }
     }
   ],
@@ -216,6 +276,25 @@
     "lag1_evidence_impact": "PROMOTION_BLOCKED",
     "ba_qm10_may_release_lag1_block": false
   },
-  "closure_claimed": false,
-  "next_step": "Complete live effectiveness verification for F01-F04 and R01, then prove retry/idempotency/recovery behavior before BA-QM10 closure."
+  "closure_claimed": true,
+  "next_step": "Begin BA-QM11 – Gesamtsystem-Audit. BA-QM10 remains closed unless a production regression or new operational finding is detected.",
+  "engineering_status": "COMPLETE",
+  "closure_evidence": {
+    "snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+    "snapshot_as_of": "2026-10-04",
+    "w10_commit": "06bc66d24b56a2b06ec11cb9caa2055e8907f311",
+    "runtime_commit": "95932d44ea69a430ed8bdf57b63da0faa3d6dfe4",
+    "symbol_views_commit": "fb69eca5aa0308e85c6dd7dc5ded168447016087",
+    "ba_qm10_ci_run_id": 37238034848,
+    "ba_qm10_ci_passed_tests": 76,
+    "ba_qm8_regression_run_id": 37238034902,
+    "runtime_publish_run_id": 37244656201,
+    "symbol_views_publish_run_id": 37245044284,
+    "frozen_falsification_run_id": 37230918562,
+    "public_runtime_shard_count": 32,
+    "public_runtime_symbol_count": 213,
+    "public_runtime_packet_count": 1491,
+    "public_runtime_projection_sha256": "243bffe3c45c3c6ee13bf4df38d8acff3a22f9321977cdf0e4ae08c6b3b26013"
+  },
+  "next_mandatory_work_package": "BA-QM11 – Gesamtsystem-Audit"
 }
