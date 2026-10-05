@@ -6,7 +6,10 @@ from scanner.research.decision_layer.current_evidence import (
     build_current_packet_set_from_frames,
     merge_packet_set_into_archive,
 )
-from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
+from scanner.research.decision_layer.depot_watch_orchestrator import (
+    _attach_path_reviews,
+    build_orchestrated_depot_watch,
+)
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
 from scanner.research.decision_layer.input_contract import build_input_packet
 
@@ -211,3 +214,56 @@ def test_missing_current_packet_remains_unavailable_not_scanner_fallback():
     assert row["daily_scanner_context"]["score"] == 30.0
     assert diagnostics["missing_current_packet_symbols"] == ["TEST"]
     assert diagnostics["scanner_scalar_fallback_used"] is False
+
+
+def test_active_overextension_monitor_is_surfaced_as_attention_without_changing_hold():
+    watch = {
+        "rows": [{
+            "symbol": "ACB.TO",
+            "attention_required": False,
+            "decision": {
+                "portfolio_action_state": "HOLD",
+            },
+        }],
+    }
+    bundle_set = {
+        "bundles": [{
+            "packet": {"symbol": "ACB.TO"},
+            "path_review": {
+                "review_state": "monitor",
+                "sequence_state": "active_overextension",
+            },
+        }],
+    }
+
+    result = _attach_path_reviews(watch, bundle_set)
+    row = result["rows"][0]
+    assert row["attention_required"] is True
+    assert row["decision"]["portfolio_action_state"] == "HOLD"
+    assert row["decision"]["path_review_state"] == "monitor"
+    assert row["decision"]["path_sequence_state"] == "active_overextension"
+    assert row["decision"]["path_review_is_trade_decision"] is False
+
+
+def test_post_overextension_monitor_memory_does_not_force_attention():
+    watch = {
+        "rows": [{
+            "symbol": "TEST",
+            "attention_required": False,
+            "decision": {
+                "portfolio_action_state": "HOLD",
+            },
+        }],
+    }
+    bundle_set = {
+        "bundles": [{
+            "packet": {"symbol": "TEST"},
+            "path_review": {
+                "review_state": "monitor",
+                "sequence_state": "post_overextension_memory",
+            },
+        }],
+    }
+
+    result = _attach_path_reviews(watch, bundle_set)
+    assert result["rows"][0]["attention_required"] is False
