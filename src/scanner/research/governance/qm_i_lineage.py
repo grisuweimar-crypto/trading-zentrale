@@ -659,6 +659,7 @@ class LineageRegistry:
                 "elliott_structure",
                 "fibonacci_geometry",
                 "swing_routing",
+                "uncertainty_state",
             )
             feature_lineage_complete = bool(output_ids)
             for output_id in output_ids:
@@ -728,6 +729,66 @@ class LineageRegistry:
                         "research_only": True,
                     },
                 }, actor_id, actor_role)
+
+                validation_source = (
+                    source_provenance.get("validation_source")
+                    if isinstance(source_provenance, Mapping)
+                    else None
+                )
+                validation_ref: tuple[str, str] | None = None
+                if isinstance(validation_source, Mapping):
+                    stage4_hash = str(validation_source.get("stage4_result_hash") or "").lower()
+                    validation_price_hash = str(validation_source.get("price_source_sha256") or "").lower()
+                    validation_commit = str(validation_source.get("source_commit") or "").strip()
+                    validation_adapter = str(validation_source.get("adapter") or "").strip()
+                    if sha256_hex(stage4_hash) and sha256_hex(validation_price_hash) and validation_adapter:
+                        validation_raw_id = f"elliott:validation_price_history:{validation_price_hash}"
+                        validation_id = f"elliott:stage4_validation:{stage4_hash}"
+                        self._ensure_node({
+                            "node_id": validation_raw_id,
+                            "version_id": validation_price_hash,
+                            "node_type": "RAW_SOURCE",
+                            "content_hash": validation_price_hash,
+                            "lineage_complete": True,
+                            "as_of": source_as_of,
+                            "metadata": {
+                                "phase": "Stage4/6G validation",
+                                "source": "historical Elliott validation price history",
+                                "source_commit": validation_commit or None,
+                                "research_only": True,
+                            },
+                        }, actor_id, actor_role)
+                        self._ensure_node({
+                            "node_id": validation_id,
+                            "version_id": validation_adapter,
+                            "node_type": "CALIBRATION",
+                            "content_hash": stage4_hash,
+                            "lineage_complete": True,
+                            "as_of": source_as_of,
+                            "metadata": {
+                                "phase": "Stage4->6G",
+                                "adapter": validation_adapter,
+                                "source_commit": validation_commit or None,
+                                "research_only": True,
+                                "automatic_promotion_allowed": False,
+                            },
+                        }, actor_id, actor_role)
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                validation_raw_id,
+                                validation_price_hash,
+                                validation_id,
+                                validation_adapter,
+                                "PRODUCES",
+                            ])[:24],
+                            "from_node_id": validation_raw_id,
+                            "from_version_id": validation_price_hash,
+                            "to_node_id": validation_id,
+                            "to_version_id": validation_adapter,
+                            "relation": "PRODUCES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+                        validation_ref = (validation_id, validation_adapter)
 
                 for output_id in output_ids:
                     output_id = output_id.lower()
@@ -825,6 +886,22 @@ class LineageRegistry:
                         "relation": "INFORMS",
                         "material_for_ancestry": True,
                     }, actor_id, actor_role)
+                    if validation_ref is not None:
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                validation_ref[0],
+                                validation_ref[1],
+                                output_node_id,
+                                "elliott_vnext_output_v2",
+                                "CALIBRATES",
+                            ])[:24],
+                            "from_node_id": validation_ref[0],
+                            "from_version_id": validation_ref[1],
+                            "to_node_id": output_node_id,
+                            "to_version_id": "elliott_vnext_output_v2",
+                            "relation": "CALIBRATES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
 
             self._ensure_node({
                 "node_id": context_id,
