@@ -1,0 +1,80 @@
+{
+  "schema_version": "ba_qm12_continuous_qm_v1",
+  "business_area": "BA-QM12",
+  "name": "Konsolidierung & Produktiver QM-Betrieb",
+  "engineering_status": "COMPLETE",
+  "operating_status": "ACTIVE_CONTINUOUS_QM",
+  "scope": "QUALITY_MANAGEMENT_ONLY",
+  "research_logic_changed": false,
+  "decision_logic_changed": false,
+  "investment_logic_changed": false,
+  "execution_enabled": false,
+  "empirical_promotion_performed": false,
+  "objective": "Make quality management a permanent operating control for future Scanner-vNext development instead of a one-time audit project.",
+  "predecessor": {
+    "business_area": "BA-QM11",
+    "required_status": "COMPLETE",
+    "required_result": "PASS"
+  },
+  "continuous_controls": {
+    "QM_A_GOVERNANCE": {"required": true, "authority": "configs/qm_a_research_governance_v1.json"},
+    "QM_H_CAPA": {"required": true, "authority": "configs/qm_h_capa_v1.json"},
+    "QM_I_LINEAGE": {"required": true, "authority": "configs/qm_i_evidence_lineage_v1.json"},
+    "NEGATIVE_CONTROLS": {"required": true, "authority": "configs/ba_qm7_qm_j_closure_v1.json"},
+    "REGRESSION_TESTS": {"required": true, "authority": ".github/workflows/ba_qm12_continuous_qm.yml"},
+    "COVERAGE_MONITORING": {"required": true, "authority": "artifacts/research/history_metadata.json"},
+    "DRIFT_MONITORING": {"required": true, "authority": "BA-QM12 current-snapshot monitor"},
+    "CALIBRATION_MONITORING": {"required": true, "authority": "artifacts/research/probability_calibration_2.json"},
+    "PRODUCTION_HEALTH": {"required": true, "authority": "BA-QM10 current operations audit"}
+  },
+  "future_module_lifecycle": [
+    "DESIGN",
+    "QM_CONTRACT",
+    "TEST",
+    "RESEARCH",
+    "VALIDATION",
+    "PROMOTION",
+    "PRODUCTION",
+    "CONTINUOUS_QM"
+  ],
+  "lifecycle_guards": {
+    "stage_skipping_allowed": false,
+    "engineering_completion_equals_empirical_validation": false,
+    "validation_equals_promotion": false,
+    "promotion_equals_production": false,
+    "production_without_continuous_qm_allowed": false,
+    "missing_monitoring_is_neutral": false
+  },
+  "monitoring_policy": {
+    "scheduled_continuous_qm_required": true,
+    "schedule_cadence": "DAILY",
+    "snapshot_identity_required": true,
+    "coverage_is_observed_not_invented": true,
+    "drift_thresholds_may_not_be_invented": true,
+    "drift_without_preregistered_threshold_is_report_only": true,
+    "calibration_must_bind_to_current_snapshot": true,
+    "production_health_must_fail_closed": true,
+    "automatic_research_or_decision_change_allowed": false,
+    "automatic_promotion_allowed": false
+  },
+  "independent_blocks": {
+    "lag1": {
+      "finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+      "required_evidence_impact": "PROMOTION_BLOCKED",
+      "ba_qm12_may_release": false
+    },
+    "w8": {
+      "required_promotion_eligible": false,
+      "prospective_unspent_from": "2026-10-02"
+    }
+  },
+  "definition_of_done": {
+    "continuous_control_orchestrator_present": true,
+    "scheduled_run_present": true,
+    "required_control_families_bound": true,
+    "future_module_lifecycle_enforced_by_contract": true,
+    "current_snapshot_monitoring_present": true,
+    "independent_promotion_blocks_preserved": true,
+    "continuous_qm_remains_active_after_ba_qm12_engineering_completion": true
+  }
+}
