@@ -408,6 +408,110 @@ def transition_incremental_validation(
     return result
 
 
+
+def transition_daily_sufficient_stats(
+    route_outcomes: Sequence[Mapping[str, object]],
+    event_masks: Mapping[str, int],
+) -> list[dict[str, object]]:
+    """Reduce event-time transition outcome comparisons to exact daily sums/counts."""
+
+    frame = _outcome_frame(route_outcomes)
+    if frame.empty:
+        return []
+
+    fields = (
+        "transition",
+        "partition",
+        "horizon_sessions",
+        "review_orientation",
+        "wave_stage",
+        "degree",
+        "elliott_direction",
+        "arm",
+        "metric",
+        "event_date",
+    )
+    acc: dict[tuple[object, ...], list[float]] = defaultdict(lambda: [0.0, 0.0])
+
+    for row in frame.to_dict(orient="records"):
+        event_id = str(row.get("source_event_id") or "")
+        mask = int(event_masks.get(event_id, 0))
+        event_date = pd.Timestamp(row["event_date"]).date().isoformat()
+        metric_values = {
+            "signed_forward_return": row.get("signed_forward_return"),
+            "review_correct_numeric": row.get("review_correct_numeric"),
+        }
+        for bit, transition in enumerate(TRANSITION_COLUMNS):
+            arm = "with_transition" if mask & (1 << bit) else "without_transition"
+            base = (
+                transition,
+                row.get("partition"),
+                int(row.get("horizon_sessions")),
+                row.get("review_orientation"),
+                row.get("wave_stage"),
+                row.get("degree"),
+                row.get("elliott_direction"),
+                arm,
+            )
+            for metric, raw in metric_values.items():
+                if raw is None or pd.isna(raw):
+                    continue
+                value = float(raw)
+                key = (*base, metric, event_date)
+                acc[key][0] += value
+                acc[key][1] += 1.0
+
+    result: list[dict[str, object]] = []
+    for key in sorted(
+        acc,
+        key=lambda item: tuple("" if value is None else str(value) for value in item),
+    ):
+        values = {field: key[index] for index, field in enumerate(fields)}
+        total, count = acc[key]
+        values["sum"] = float(total)
+        values["count"] = int(count)
+        result.append(values)
+    return result
+
+
+def lead_lag_sufficient_stats(
+    rows: Sequence[Mapping[str, object]],
+) -> list[dict[str, object]]:
+    """Reduce lead/lag rows to exact offset counts for global aggregation."""
+
+    fields = (
+        "partition",
+        "transition",
+        "wave_stage",
+        "degree",
+        "elliott_direction",
+        "review_orientation",
+        "relative_session",
+    )
+    counts: Counter[tuple[object, ...]] = Counter()
+    for row in rows:
+        key = (
+            row.get("partition"),
+            row.get("transition"),
+            row.get("wave_stage"),
+            row.get("degree"),
+            row.get("elliott_direction"),
+            row.get("review_orientation"),
+            int(row.get("relative_session")),
+        )
+        counts[key] += 1
+
+    result: list[dict[str, object]] = []
+    for key in sorted(
+        counts,
+        key=lambda item: tuple("" if value is None else str(value) for value in item),
+    ):
+        record = {field: key[index] for index, field in enumerate(fields)}
+        record["N"] = int(counts[key])
+        result.append(record)
+    return result
+
+
 def model_relation_validation(
     events: Sequence[Mapping[str, object]],
     route_outcomes: Sequence[Mapping[str, object]],
