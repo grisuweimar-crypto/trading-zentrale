@@ -12,6 +12,10 @@ from scanner.research.decision_layer.public_long_reference import (
     build_public_long_reference,
     public_long_reference_csv,
 )
+from scanner.research.decision_layer.public_flat_reference import (
+    build_public_flat_reference,
+    public_flat_reference_csv,
+)
 from scanner.research.decision_layer.watch_runtime import (
     DEFAULT_RUNTIME_DIR,
     build_watch_runtime,
@@ -24,6 +28,8 @@ DEFAULT_W10 = "artifacts/research/decision_snapshot_w10.json"
 DEFAULT_DAILY = "artifacts/research/daily_research.json"
 PUBLIC_LONG_JSON = "public_long_reference.json"
 PUBLIC_LONG_CSV = "public_long_reference.csv"
+PUBLIC_FLAT_JSON = "public_flat_reference.json"
+PUBLIC_FLAT_CSV = "public_flat_reference.csv"
 
 
 def _load(path: Path) -> dict:
@@ -86,6 +92,22 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    public_flat = build_public_flat_reference(
+        daily,
+        packets,
+        elliott_6h_source=elliott_6h_source,
+    )
+    if str(public_flat["snapshot_id"]) != str(manifest["snapshot_id"]):
+        raise ValueError("public_flat_reference_snapshot_mismatch")
+    (output_dir / PUBLIC_FLAT_JSON).write_text(
+        json.dumps(public_flat, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    (output_dir / PUBLIC_FLAT_CSV).write_text(
+        public_flat_reference_csv(public_flat),
+        encoding="utf-8",
+    )
+
     sizes = {
         path.name: path.stat().st_size
         for path in sorted(output_dir.glob("shard_*.json"))
@@ -100,6 +122,9 @@ def main() -> int:
         "public_long_reference_json": str(output_dir / PUBLIC_LONG_JSON),
         "public_long_reference_csv": str(output_dir / PUBLIC_LONG_CSV),
         "public_long_reference_rows": public_long["row_count"],
+        "public_flat_reference_json": str(output_dir / PUBLIC_FLAT_JSON),
+        "public_flat_reference_csv": str(output_dir / PUBLIC_FLAT_CSV),
+        "public_flat_reference_rows": public_flat["row_count"],
         "elliott_review_context_integration_enabled": elliott_6h_source is not None,
         "max_shard_bytes": max(sizes.values(), default=0),
         "total_shard_bytes": sum(sizes.values()),
