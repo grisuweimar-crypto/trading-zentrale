@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +11,7 @@ from scanner.research.decision_layer.promotion_validation import (
     SCHEMA_VERSION,
     TRACE_SUMMARY_SCHEMA_VERSION,
     _canonical_hash,
+    _post_freeze_w8_contract,
     _review_state,
     validate_promotion_report,
     validate_shadow_trace_summary,
@@ -18,6 +20,8 @@ from scanner.research.decision_layer.promotion_validation import (
 
 START = "2026-09-26"
 LAYERS = ["7D", "7E", "7F", "7G", "7H"]
+LAYERS_W8 = ["7D", "7E", "7F", "W8", "7G", "7H"]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _archive(packets=0):
@@ -48,12 +52,28 @@ def _trace(rows=0, layers=None, metrics_ready=False):
 
 def _valid_report(state="pre_prospective_start"):
     metrics_ready = state == "metrics_ready_for_promotion_review"
+    reviewed_as_of = "2027-03-20" if metrics_ready else "2026-09-25"
+    active_w8 = metrics_ready
+    trace = {
+        "trace_rows": 100 if metrics_ready else 0,
+        "captured_layers": LAYERS_W8 if metrics_ready else [],
+        "layer_metrics_ready": (
+            {layer: True for layer in LAYERS_W8} if metrics_ready else {}
+        ),
+        "w8_trace_rows": 20 if metrics_ready else 0,
+        "w8_as_of_min": "2026-10-02" if metrics_ready else None,
+        "w8_as_of_max": "2027-03-20" if metrics_ready else None,
+    }
     value = {
         "schema_version": SCHEMA_VERSION,
         "phase": "7I",
         "research_only": True,
         "productive_integration_enabled": False,
         "execution_allowed": False,
+        "reviewed_as_of": reviewed_as_of,
+        "prospective_evidence": {
+            "downstream_shadow_trace": trace,
+        },
         "readiness": {
             "state": state,
             "promotion_review_metrics_ready": metrics_ready,
@@ -72,6 +92,16 @@ def _valid_report(state="pre_prospective_start"):
             "metrics_ready_equals_promotion": False,
         },
     }
+    if active_w8:
+        value["post_freeze_governance"] = {
+            "W8": {
+                "active_at_review_date": True,
+                "introduced_on": "2026-10-01",
+                "prospective_unspent_from": "2026-10-02",
+                "contract_hash": "a" * 64,
+                "source_case_counts_as_independent_validation": False,
+            }
+        }
     value["report_id"] = _canonical_hash(value)
     return value
 
@@ -244,3 +274,122 @@ def test_metrics_ready_is_review_eligibility_not_promotion():
     assert validated["promotion"]["promotion_review_eligible"] is True
     assert validated["promotion"]["productive_promotion_approved"] is False
     assert validated["execution_allowed"] is False
+
+
+def test_w8_shadow_trace_rejects_pre_policy_prospective_rows():
+    with pytest.raises(PromotionValidationError, match="pre_w8_prospective_shadow_trace_forbidden"):
+        validate_shadow_trace_summary(
+            {
+                "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+                "trace_rows": 10,
+                "symbols": 2,
+                "captured_layers": LAYERS_W8,
+                "layer_metrics_ready": {layer: True for layer in LAYERS_W8},
+                "contains_raw_position_values": False,
+                "public_repository_persistence": False,
+                "as_of_min": "2026-09-26",
+                "as_of_max": "2026-10-02",
+                "w8_trace_rows": 2,
+                "w8_as_of_min": "2026-10-01",
+                "w8_as_of_max": "2026-10-02"
+            },
+            prospective_start=START,
+            reviewed_as_of=date(2026, 10, 5),
+            w8_prospective_start="2026-10-02",
+        )
+
+
+def test_w8_shadow_trace_accepts_post_change_prospective_rows():
+    result = validate_shadow_trace_summary(
+        {
+            "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+            "trace_rows": 10,
+            "symbols": 2,
+            "captured_layers": LAYERS_W8,
+            "layer_metrics_ready": {layer: True for layer in LAYERS_W8},
+            "contains_raw_position_values": False,
+            "public_repository_persistence": False,
+            "as_of_min": "2026-09-26",
+            "as_of_max": "2026-10-05",
+            "w8_trace_rows": 4,
+            "w8_as_of_min": "2026-10-02",
+            "w8_as_of_max": "2026-10-05"
+        },
+        prospective_start=START,
+        reviewed_as_of=date(2026, 10, 5),
+        w8_prospective_start="2026-10-02",
+    )
+    assert result["w8_trace_rows"] == 4
+    assert result["w8_as_of_min"] == "2026-10-02"
+
+
+def test_w8_trace_is_forbidden_before_policy_introduction():
+    with pytest.raises(PromotionValidationError, match="w8_trace_before_policy_introduction_forbidden"):
+        validate_shadow_trace_summary(
+            {
+                "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
+                "trace_rows": 2,
+                "symbols": 1,
+                "captured_layers": LAYERS_W8,
+                "layer_metrics_ready": {layer: False for layer in LAYERS_W8},
+                "contains_raw_position_values": False,
+                "public_repository_persistence": False,
+                "as_of_min": "2026-09-26",
+                "as_of_max": "2026-09-30",
+                "w8_trace_rows": 1,
+                "w8_as_of_min": "2026-09-30",
+                "w8_as_of_max": "2026-09-30",
+            },
+            prospective_start=START,
+            reviewed_as_of=date(2026, 9, 30),
+            w8_prospective_start=None,
+        )
+
+
+def test_post_freeze_w8_overlay_is_not_retrojected_before_introduction():
+    contract, digest = _post_freeze_w8_contract(ROOT, date(2026, 9, 30))
+    assert contract is None
+    assert digest is None
+
+
+def test_post_freeze_w8_overlay_activates_on_introduction_date():
+    contract, digest = _post_freeze_w8_contract(ROOT, date(2026, 10, 1))
+    assert contract is not None
+    assert contract["introduced_on"] == "2026-10-01"
+    assert contract["governance"]["prospective_unspent_from"] == "2026-10-02"
+    assert contract["validation"]["empirically_validated"] is False
+    assert isinstance(digest, str) and len(digest) == 64
+
+
+def test_validator_rejects_metrics_ready_without_w8_trace_after_w8_introduction():
+    report = _valid_report("metrics_ready_for_promotion_review")
+    report["prospective_evidence"]["downstream_shadow_trace"]["captured_layers"] = LAYERS
+    report["prospective_evidence"]["downstream_shadow_trace"]["layer_metrics_ready"] = {
+        layer: True for layer in LAYERS
+    }
+    report["prospective_evidence"]["downstream_shadow_trace"]["w8_trace_rows"] = 0
+    report["prospective_evidence"]["downstream_shadow_trace"]["w8_as_of_min"] = None
+    report["prospective_evidence"]["downstream_shadow_trace"]["w8_as_of_max"] = None
+    report["report_id"] = _canonical_hash(
+        {key: value for key, value in report.items() if key != "report_id"}
+    )
+    with pytest.raises(PromotionValidationError, match="metrics_ready_requires_w8_prospective_trace"):
+        validate_promotion_report(report)
+
+
+def test_validator_rejects_future_w8_governance_in_pre_introduction_report():
+    report = _valid_report()
+    report["post_freeze_governance"] = {
+        "W8": {
+            "active_at_review_date": False,
+            "introduced_on": "2026-10-01",
+            "prospective_unspent_from": None,
+            "contract_hash": None,
+            "source_case_counts_as_independent_validation": False,
+        }
+    }
+    report["report_id"] = _canonical_hash(
+        {key: value for key, value in report.items() if key != "report_id"}
+    )
+    with pytest.raises(PromotionValidationError, match="pre_w8_report_cannot_expose_future_governance"):
+        validate_promotion_report(report)

@@ -587,9 +587,108 @@ class LineageRegistry:
             "transaction_cost_bps": cost.get("transaction_cost_bps") if isinstance(cost, Mapping) else None,
         }
         self._ensure_node({"node_id": position_id, "version_id": position_version, "node_type": "POSITION_SNAPSHOT", "content_hash": content_hash(position_material), "lineage_complete": True, "as_of": position_version, "metadata": {"phase": "7F", "source": "position_context", "research_only": True}}, actor_id, actor_role)
-        self._ensure_node({"node_id": action_id, "version_id": version_id, "node_type": "PORTFOLIO_ACTION", "content_hash": content_hash(validated), "lineage_complete": False, "as_of": str(validated["as_of"]), "metadata": {"phase": "7F", "schema_version": validated["schema_version"], "research_only": True}}, actor_id, actor_role)
+        state_history = validated.get("state_history_context")
+        depot_policy = validated.get("depot_action_policy")
+        w8_evaluated = isinstance(depot_policy, Mapping)
+        self._ensure_node({"node_id": action_id, "version_id": version_id, "node_type": "PORTFOLIO_ACTION", "content_hash": content_hash(validated), "lineage_complete": False, "as_of": str(validated["as_of"]), "metadata": {"phase": "7F/W8" if w8_evaluated else "7F", "schema_version": validated["schema_version"], "research_only": True, "w8_action_policy_evaluated": w8_evaluated}}, actor_id, actor_role)
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([decision_id, decision_version_id, action_id, version_id, "INFORMS"])[:24], "from_node_id": decision_id, "from_version_id": decision_version_id, "to_node_id": action_id, "to_version_id": version_id, "relation": "INFORMS", "material_for_ancestry": True}, actor_id, actor_role)
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([position_id, position_version, action_id, version_id, "USES_POSITION"])[:24], "from_node_id": position_id, "from_version_id": position_version, "to_node_id": action_id, "to_version_id": version_id, "relation": "USES_POSITION", "material_for_ancestry": True}, actor_id, actor_role)
+
+        # BA-QM11 CAPA: W6 Elliott review context is a material immediate
+        # parent whenever 7F consumed it.  The context node is intentionally
+        # marked lineage-incomplete until the upstream Elliott provenance graph
+        # is bound into QM-I; missing upstream lineage therefore stays visible
+        # instead of masquerading as independence.
+        swing = validated.get("swing_management")
+        if isinstance(swing, Mapping) and swing.get("source") is not None:
+            context_id = _text(
+                swing.get("source_output_id"),
+                "swing_management.source_output_id",
+            )
+            context_version = _text(
+                swing.get("source"),
+                "swing_management.source",
+            )
+            context_material = {
+                "symbol": validated.get("symbol"),
+                "source": swing.get("source"),
+                "source_output_id": context_id,
+                "review_contexts": list(swing.get("review_contexts") or []),
+                "context_conflict": swing.get("context_conflict"),
+            }
+            self._ensure_node({
+                "node_id": context_id,
+                "version_id": context_version,
+                "node_type": "DECISION_CONTEXT",
+                "content_hash": content_hash(context_material),
+                "lineage_complete": False,
+                "as_of": str(validated["as_of"]),
+                "metadata": {
+                    "phase": "W6",
+                    "source": swing.get("source"),
+                    "context_type": "elliott_review_context",
+                    "research_only": True,
+                    "upstream_elliott_binding_complete": False,
+                },
+            }, actor_id, actor_role)
+            self._ensure_edge({
+                "edge_id": "qm-i:" + content_hash([
+                    context_id,
+                    context_version,
+                    action_id,
+                    version_id,
+                    "INFORMS_W6_ACTION",
+                ])[:24],
+                "from_node_id": context_id,
+                "from_version_id": context_version,
+                "to_node_id": action_id,
+                "to_version_id": version_id,
+                "relation": "INFORMS",
+                "material_for_ancestry": True,
+            }, actor_id, actor_role)
+
+        # BA-QM11 CAPA: W7/W8 path-state is a material parent whenever it is
+        # attached to the final portfolio-action artifact.  Before this guard,
+        # QM-I could register a W8-routed action using only 7D + position
+        # parents, hiding the scanner-path claim that actually changed the
+        # review state.
+        if isinstance(state_history, Mapping):
+            source_claim_id = _text(
+                state_history.get("source_claim_id"),
+                "state_history.source_claim_id",
+            )
+            _, state = self._load()
+            claim_versions = [
+                node
+                for node in state["nodes"].values()
+                if node["node_id"] == source_claim_id and node["node_type"] == "CLAIM"
+            ]
+            if len(claim_versions) != 1:
+                raise LineageError(
+                    f"w8_state_history_claim_version_not_unambiguous:{source_claim_id}"
+                )
+            source_claim = claim_versions[0]
+            self._ensure_edge({
+                "edge_id": "qm-i:" + content_hash([
+                    source_claim_id,
+                    source_claim["version_id"],
+                    action_id,
+                    version_id,
+                    "INFORMS_W8_ACTION",
+                ])[:24],
+                "from_node_id": source_claim_id,
+                "from_version_id": source_claim["version_id"],
+                "to_node_id": action_id,
+                "to_version_id": version_id,
+                "relation": "INFORMS",
+                "material_for_ancestry": True,
+            }, actor_id, actor_role)
+        elif (
+            isinstance(depot_policy, Mapping)
+            and depot_policy.get("action_changed") is True
+        ):
+            raise LineageError("w8_changed_action_requires_registered_state_history")
+
         return self.get_node(action_id, version_id)
 
     def register_phase7_watch(self, watch: Mapping[str, Any], *, parent_nodes: Sequence[Mapping[str, str]], actor_id: str, actor_role: str) -> dict[str, Any]:

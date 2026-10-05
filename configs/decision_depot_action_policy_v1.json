@@ -1,0 +1,36 @@
+{
+  "schema_version": "decision_depot_action_policy_v1",
+  "layer": "W8",
+  "name": "Post-7F Depot Action Policy",
+  "policy_id": "w8_complete_7f_action_matrix_v1",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "introduced_on": "2026-10-01",
+  "change_classification": "OUTCOME_DRIVEN_RESEARCH_CHANGE",
+  "source_case": "Ferrari/RACE F1-F4 regression sequence",
+  "governance": {
+    "source_case_is_spent_for_independent_confirmation": true,
+    "source_case_may_not_validate_policy": true,
+    "historical_replay_may_not_validate_policy": true,
+    "evidence_spent_through": "2026-10-01",
+    "prospective_unspent_from": "2026-10-02",
+    "prospective_private_shadow_trace_required": true,
+    "future_mature_outcomes_required": true,
+    "automatic_promotion_allowed": false
+  },
+  "semantics": {
+    "may_change_portfolio_review_state": true,
+    "may_change_universal_stance": false,
+    "may_create_directional_vote": false,
+    "may_create_indicator_threshold": false,
+    "may_create_market_evidence": false,
+    "may_generate_order": false
+  },
+  "validation": {
+    "empirically_validated": false,
+    "promotion_eligible": false,
+    "ferrari_regression_is_regression_only_not_validation": true,
+    "prospective_w8_metrics_required_for_promotion_review": true
+  }
+}

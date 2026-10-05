@@ -1,0 +1,165 @@
+{
+  "schema_version": "ba_qm11_system_audit_v1",
+  "business_area": "BA-QM11",
+  "name": "Gesamtsystem-Audit",
+  "status": "COMPLETE",
+  "engineering_status": "COMPLETE",
+  "result": "PASS",
+  "scope": "QUALITY_MANAGEMENT_ONLY",
+  "closure_claimed": true,
+  "research_logic_changed": false,
+  "decision_logic_changed": false,
+  "investment_logic_changed": false,
+  "execution_enabled": false,
+  "empirical_promotion_performed": false,
+  "baseline": {
+    "main_commit": "f097b9817c430d778d7dfe9e9a3d177cc92dcee7",
+    "ba_qm8_complete": true,
+    "ba_qm9_complete": true,
+    "ba_qm10_complete": true,
+    "authoritative_snapshot_id": "36cf527e-ca26-489f-aa55-9c7de3b4355b",
+    "authoritative_snapshot_as_of": "2026-10-04"
+  },
+  "dimensions": {
+    "ARCHITECTURE": {
+      "status": "PASS",
+      "assessment": "Selection, Timing, Probability, Risk, Confidence, Learning, Elliott, Decision and External Evidence remain semantically separated; External Evidence remains quarantined from the canonical Decision path."
+    },
+    "INFORMATION_FLOW": {
+      "status": "PASS",
+      "assessment": "Material post-7D Action parents are explicit after BA-QM11-F01 CAPA; W6 upstream lineage remains explicitly incomplete rather than being treated as independent.",
+      "finding_refs": [
+        "BA-QM11-F01"
+      ]
+    },
+    "DECISION_LOGIC": {
+      "status": "PASS",
+      "assessment": "Review actions are deterministically derived from preserved Universal Stance, transition, explicit position context and typed review contexts; no order execution is enabled.",
+      "empirical_value_status": "RESEARCH_REQUIRED"
+    },
+    "UNCERTAINTY": {
+      "status": "PASS",
+      "assessment": "Conflict, insufficient evidence, pending confirmation and provisional reliability remain visible; reliability is not converted into a numeric success probability."
+    },
+    "MISSINGNESS": {
+      "status": "PASS",
+      "assessment": "Missing Decision evidence fails closed; blocked states remain blocked and cannot be replaced by legacy scanner heuristics or neutralized."
+    },
+    "FALSIFIABILITY": {
+      "status": "PASS",
+      "assessment": "QM-J can and did trigger a promotion stop; the Lag-1 control remains unresolved by engineering success."
+    },
+    "LEARNING": {
+      "status": "PASS",
+      "assessment": "Outcome-driven W8 learning is now explicitly separated from independent validation and requires post-change prospective evidence.",
+      "finding_refs": [
+        "BA-QM11-F02"
+      ]
+    },
+    "OPERATIONALIZATION": {
+      "status": "PASS",
+      "assessment": "Depot Watch remains a same-snapshot presentation of the Decision chain; BA-QM9/10 fail-closed and production controls remain authoritative."
+    },
+    "PURPOSE_FIDELITY": {
+      "status": "PASS",
+      "assessment": "The system still prioritizes securities or existing positions for closer review and explains why; it does not convert the scanner into automatic execution."
+    }
+  },
+  "findings": [
+    {
+      "finding_id": "BA-QM11-F01",
+      "classification": "DEFECT",
+      "title": "Material post-7D Action parents were incomplete in QM-I lineage",
+      "state": "CLOSED_EFFECTIVE",
+      "root_cause": "QM-I Phase-7 action registration predated the later W6 and W7/W8 material review-context integrations and still represented Portfolio Action with only 7D Decision and Position Snapshot parents.",
+      "evidence": {
+        "w6_regression_proves_action_effect": true,
+        "w8_live_changed_action_count": 5,
+        "w8_live_changed_symbols": [
+          "DSV.TO",
+          "NOW",
+          "PLTR",
+          "SAP.DE",
+          "WPM.TO"
+        ],
+        "false_execution_observed": false
+      },
+      "capa": {
+        "w6_decision_context_parent_registered": true,
+        "w6_unknown_upstream_lineage_remains_explicit": true,
+        "w7_w8_state_history_claim_parent_registered": true,
+        "w8_changed_action_without_registered_state_history_fails_closed": true,
+        "decision_logic_changed": false
+      },
+      "evidence_impact": "EVIDENCE_REVIEW_REQUIRED",
+      "evidence_disposition": "No empirical promotion had occurred. Existing actions are not declared false. Future ancestry/independence review must use the corrected graph; incomplete W6 upstream lineage may not be interpreted as independence.",
+      "qm_h_finding_id": "QM-H-BA-QM11-F01",
+      "qm_h_capa_id": "QM-H-CAPA-BA-QM11-F01"
+    },
+    {
+      "finding_id": "BA-QM11-F02",
+      "classification": "METHODOLOGY_RISK",
+      "title": "Outcome-driven W8 policy was outside the original 7I freeze",
+      "state": "CLOSED_EFFECTIVE",
+      "root_cause": "The 7I protocol was frozen on 2026-09-25, while W8/Ferrari F1-F4 was introduced on 2026-10-01 after inspection of the source case and can change the final 7F review state.",
+      "capa": {
+        "change_classification": "OUTCOME_DRIVEN_RESEARCH_CHANGE",
+        "source_case_is_spent_for_independent_confirmation": true,
+        "w8_evidence_spent_through": "2026-10-01",
+        "w8_prospective_unspent_from": "2026-10-02",
+        "w8_private_shadow_trace_required": true,
+        "ferrari_regression_may_validate_w8": false,
+        "decision_logic_changed": false
+      },
+      "evidence_impact": "PROMOTION_BLOCKED",
+      "evidence_disposition": "W8 remains research-only and empirically unvalidated. Ferrari/RACE is regression evidence only; W8 promotion review requires post-2026-10-01 prospective-unspent shadow evidence.",
+      "qm_h_finding_id": "QM-H-BA-QM11-F02",
+      "qm_h_capa_id": "QM-H-CAPA-BA-QM11-F02"
+    }
+  ],
+  "live_system_evidence": {
+    "runtime_schema": "decision_watch_public_long_reference_v1",
+    "bundle_count": 213,
+    "missing_current_packet_symbols": [],
+    "phase8_external_evidence_activated": false,
+    "private_position_data_persisted": false,
+    "scanner_scalar_fallback_used": false,
+    "w8_changed_action_count": 5
+  },
+  "independent_blocks": {
+    "lag1": {
+      "finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+      "capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+      "effectiveness": "PENDING_PROSPECTIVE_UNSPENT_EVIDENCE",
+      "evidence_impact": "PROMOTION_BLOCKED",
+      "ba_qm11_may_release": false
+    },
+    "w8_empirical_validation": {
+      "status": "RESEARCH_REQUIRED",
+      "promotion_eligible": false,
+      "prospective_unspent_from": "2026-10-02"
+    },
+    "decision_layer_empirical_promotion": {
+      "status": "NOT_ESTABLISHED",
+      "productive_integration_enabled": false
+    }
+  },
+  "residual_risks": [
+    "W6 Elliott immediate action ancestry is now explicit, but its upstream Elliott-to-raw-data lineage is marked incomplete and must not be treated as proof of independence.",
+    "W8 empirical utility is unknown until prospective-unspent post-change evidence matures.",
+    "The independent Phase-1A Lag-1 promotion block remains active.",
+    "Phase-8 External Evidence remains intentionally outside the canonical Decision path until separately promoted."
+  ],
+  "definition_of_done": {
+    "nine_system_dimensions_assessed": true,
+    "concrete_findings_reproduced": true,
+    "capa_only_for_proven_defects_or_methodology_risk": true,
+    "evidence_impact_assessed": true,
+    "regression_protection_added": true,
+    "remaining_risks_documented": true,
+    "lag1_block_preserved": true,
+    "next_work_package": "BA-QM12 – Konsolidierung & produktiver QM-Betrieb",
+    "qm_h_findings_and_capas_registered": true
+  },
+  "next_mandatory_work_package": "BA-QM12 – Konsolidierung & produktiver QM-Betrieb"
+}

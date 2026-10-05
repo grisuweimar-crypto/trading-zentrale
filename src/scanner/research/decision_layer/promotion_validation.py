@@ -41,7 +41,11 @@ READINESS_STATES = frozenset({
     "metrics_ready_for_promotion_review",
 })
 REQUIRED_PHASES = ("7A", "7B", "7C", "7D", "7E", "7F", "7G", "7H")
-DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
+BASE_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "7G", "7H"})
+ALL_DOWNSTREAM_TRACE_LAYERS = frozenset({"7D", "7E", "7F", "W8", "7G", "7H"})
+W8_POLICY_PATH = Path("configs/decision_depot_action_policy_v1.json")
+W8_INTRODUCED_ON = "2026-10-01"
+W8_PROSPECTIVE_START = "2026-10-02"
 FORBIDDEN_TRUE_FIELDS = frozenset({
     "productive_integration_enabled",
     "execution_allowed",
@@ -192,6 +196,63 @@ def _source_contracts(
         raise PromotionValidationError("7i_new_performance_thresholds_forbidden")
 
     return contracts, hashes
+
+
+def _post_freeze_w8_contract(
+    root: Path,
+    reviewed_as_of: date,
+) -> tuple[dict[str, object] | None, str | None]:
+    """Return W8 governance only when it existed at the requested review date.
+
+    The frozen 7I contract remains unchanged.  W8 is a separate post-freeze
+    governance overlay introduced on 2026-10-01.
+    """
+    if reviewed_as_of < _day(W8_INTRODUCED_ON):
+        return None, None
+
+    path = root / W8_POLICY_PATH
+    w8 = _load_json(path)
+    if w8.get("schema_version") != "decision_depot_action_policy_v1":
+        raise PromotionValidationError("w8_policy_schema_mismatch")
+    if w8.get("layer") != "W8":
+        raise PromotionValidationError("w8_policy_layer_mismatch")
+    if w8.get("policy_id") != "w8_complete_7f_action_matrix_v1":
+        raise PromotionValidationError("w8_policy_id_mismatch")
+    if w8.get("research_only") is not True:
+        raise PromotionValidationError("w8_policy_not_research_only")
+    if w8.get("productive_integration_enabled") is not False:
+        raise PromotionValidationError("w8_policy_productive_integration_forbidden")
+    if w8.get("execution_allowed") is not False:
+        raise PromotionValidationError("w8_policy_execution_forbidden")
+    if w8.get("change_classification") != "OUTCOME_DRIVEN_RESEARCH_CHANGE":
+        raise PromotionValidationError("w8_outcome_driven_classification_required")
+
+    introduced_on = _day(w8.get("introduced_on"))
+    if w8.get("introduced_on") != W8_INTRODUCED_ON:
+        raise PromotionValidationError("w8_introduction_date_mismatch")
+    governance = w8.get("governance")
+    validation = w8.get("validation")
+    if not isinstance(governance, Mapping) or not isinstance(validation, Mapping):
+        raise PromotionValidationError("w8_governance_validation_missing")
+    if governance.get("source_case_is_spent_for_independent_confirmation") is not True:
+        raise PromotionValidationError("w8_source_case_must_be_spent")
+    if governance.get("source_case_may_not_validate_policy") is not True:
+        raise PromotionValidationError("w8_source_case_validation_forbidden_guard_missing")
+    if validation.get("empirically_validated") is not False:
+        raise PromotionValidationError("w8_must_remain_empirically_unvalidated")
+    if validation.get("promotion_eligible") is not False:
+        raise PromotionValidationError("w8_must_not_be_promotion_eligible")
+
+    w8_start = str(governance.get("prospective_unspent_from") or "")
+    w8_spent = str(governance.get("evidence_spent_through") or "")
+    if _day(w8_start) <= _day(w8_spent):
+        raise PromotionValidationError("w8_prospective_start_must_follow_spent_cutoff")
+    if _day(w8_start) <= introduced_on:
+        raise PromotionValidationError("w8_prospective_start_must_follow_introduction")
+    if w8_start != W8_PROSPECTIVE_START:
+        raise PromotionValidationError("w8_prospective_start_mismatch")
+
+    return w8, _canonical_hash(w8)
 
 
 def _publication_as_of(root: Path) -> str:
@@ -366,6 +427,7 @@ def validate_shadow_trace_summary(
     *,
     prospective_start: str,
     reviewed_as_of: date,
+    w8_prospective_start: str | None = None,
 ) -> dict[str, object]:
     if summary is None:
         return {
@@ -377,6 +439,9 @@ def validate_shadow_trace_summary(
             "layer_metrics_ready": {},
             "contains_raw_position_values": False,
             "public_repository_persistence": False,
+            "w8_trace_rows": 0,
+            "w8_as_of_min": None,
+            "w8_as_of_max": None,
             "future_trace_rows_ignored": 0,
         }
     if summary.get("schema_version") != TRACE_SUMMARY_SCHEMA_VERSION:
@@ -392,7 +457,7 @@ def validate_shadow_trace_summary(
     layers = summary.get("captured_layers")
     if not isinstance(layers, list):
         raise PromotionValidationError("shadow_trace_captured_layers_missing")
-    if any(str(layer) not in DOWNSTREAM_TRACE_LAYERS for layer in layers):
+    if any(str(layer) not in ALL_DOWNSTREAM_TRACE_LAYERS for layer in layers):
         raise PromotionValidationError("invalid_shadow_trace_layer")
     metrics = summary.get("layer_metrics_ready")
     if rows and not isinstance(metrics, Mapping):
@@ -401,7 +466,7 @@ def validate_shadow_trace_summary(
         metrics = {}
     if not isinstance(metrics, Mapping):
         raise PromotionValidationError("invalid_shadow_trace_layer_metrics_ready")
-    if any(str(layer) not in DOWNSTREAM_TRACE_LAYERS for layer in metrics):
+    if any(str(layer) not in ALL_DOWNSTREAM_TRACE_LAYERS for layer in metrics):
         raise PromotionValidationError("invalid_shadow_trace_metric_layer")
     if any(not isinstance(value, bool) for value in metrics.values()):
         raise PromotionValidationError("shadow_trace_metric_readiness_must_be_boolean")
@@ -414,6 +479,31 @@ def validate_shadow_trace_summary(
             raise PromotionValidationError("pre_prospective_shadow_trace_forbidden")
         if _day(as_of_max) > reviewed_as_of:
             raise PromotionValidationError("future_shadow_trace_forbidden")
+
+    w8_rows = int(summary.get("w8_trace_rows", 0))
+    w8_as_of_min = summary.get("w8_as_of_min")
+    w8_as_of_max = summary.get("w8_as_of_max")
+    if w8_rows < 0:
+        raise PromotionValidationError("invalid_w8_shadow_trace_count")
+    captured_layer_set = {str(layer) for layer in layers}
+    if w8_prospective_start is None and (
+        "W8" in captured_layer_set or metrics.get("W8") is True or w8_rows
+    ):
+        raise PromotionValidationError("w8_trace_before_policy_introduction_forbidden")
+    if "W8" in captured_layer_set and w8_prospective_start is not None:
+        if w8_rows <= 0:
+            raise PromotionValidationError("w8_shadow_trace_rows_required")
+        if not w8_as_of_min or not w8_as_of_max:
+            raise PromotionValidationError("w8_shadow_trace_dates_required")
+        effective_w8_start = w8_prospective_start or prospective_start
+        if _day(w8_as_of_min) < _day(effective_w8_start):
+            raise PromotionValidationError("pre_w8_prospective_shadow_trace_forbidden")
+        if _day(w8_as_of_max) > reviewed_as_of:
+            raise PromotionValidationError("future_w8_shadow_trace_forbidden")
+        if metrics.get("W8") is True and w8_rows == 0:
+            raise PromotionValidationError("w8_metrics_ready_without_trace_forbidden")
+    elif w8_prospective_start is not None and (metrics.get("W8") is True or w8_rows):
+        raise PromotionValidationError("w8_trace_requires_captured_w8_layer")
     return {
         "schema_version": TRACE_SUMMARY_SCHEMA_VERSION,
         "status": "available" if rows else "empty",
@@ -427,6 +517,9 @@ def validate_shadow_trace_summary(
         "public_repository_persistence": False,
         "as_of_min": str(as_of_min) if as_of_min else None,
         "as_of_max": str(as_of_max) if as_of_max else None,
+        "w8_trace_rows": w8_rows,
+        "w8_as_of_min": str(w8_as_of_min) if w8_as_of_min else None,
+        "w8_as_of_max": str(w8_as_of_max) if w8_as_of_max else None,
         "future_trace_rows_ignored": 0,
     }
 
@@ -448,6 +541,7 @@ def _review_state(
     archive: Mapping[str, object],
     dataset: Mapping[str, object],
     trace: Mapping[str, object],
+    required_trace_layers: frozenset[str] = BASE_DOWNSTREAM_TRACE_LAYERS,
 ) -> str:
     if reviewed_as_of < _day(prospective_start):
         return "pre_prospective_start"
@@ -467,8 +561,8 @@ def _review_state(
     captured = set(map(str, trace.get("captured_layers", [])))
     metrics = trace.get("layer_metrics_ready")
     metrics = metrics if isinstance(metrics, Mapping) else {}
-    layer_metrics_ready = all(metrics.get(layer) is True for layer in DOWNSTREAM_TRACE_LAYERS)
-    if traces == 0 or not DOWNSTREAM_TRACE_LAYERS.issubset(captured) or not layer_metrics_ready:
+    layer_metrics_ready = all(metrics.get(layer) is True for layer in required_trace_layers)
+    if traces == 0 or not required_trace_layers.issubset(captured) or not layer_metrics_ready:
         return "awaiting_downstream_shadow_trace"
     return "metrics_ready_for_promotion_review"
 
@@ -492,8 +586,21 @@ def build_promotion_report(
     if protocol.get("execution_allowed") is not False:
         raise PromotionValidationError("7i_execution_forbidden")
 
-    contracts, contract_hashes = _source_contracts(root, protocol)
     review_day = _day(reviewed_as_of or _publication_as_of(root))
+    contracts, contract_hashes = _source_contracts(root, protocol)
+    w8_contract, w8_contract_hash = _post_freeze_w8_contract(root, review_day)
+    w8_governance = w8_contract.get("governance") if isinstance(w8_contract, Mapping) else None
+    w8_start = (
+        str(w8_governance.get("prospective_unspent_from") or "")
+        if isinstance(w8_governance, Mapping)
+        else None
+    )
+    required_trace_layers = (
+        ALL_DOWNSTREAM_TRACE_LAYERS
+        if w8_contract is not None
+        else BASE_DOWNSTREAM_TRACE_LAYERS
+    )
+
     prospective_start = str(protocol.get("prospective_unspent_from") or "")
     dataset = _dataset_summary(root, contracts["7B"], contracts["7C"], review_day)
     archive = _archive_summary(root, review_day, prospective_start)
@@ -501,8 +608,16 @@ def build_promotion_report(
         trace_summary,
         prospective_start=prospective_start,
         reviewed_as_of=review_day,
+        w8_prospective_start=w8_start,
     )
-    state = _review_state(review_day, prospective_start, archive, dataset, trace)
+    state = _review_state(
+        review_day,
+        prospective_start,
+        archive,
+        dataset,
+        trace,
+        required_trace_layers=required_trace_layers,
+    )
 
     blockers: list[str] = []
     if state == "pre_prospective_start":
@@ -518,7 +633,11 @@ def build_promotion_report(
     elif state == "collecting_prospective_comparison_support":
         blockers.append("pre_registered_7c_comparisons_lack_frozen_minimum_support")
     elif state == "awaiting_downstream_shadow_trace":
-        blockers.append("private_downstream_7d_7h_shadow_trace_missing_or_incomplete")
+        blockers.append(
+            "private_downstream_7d_w8_7h_shadow_trace_missing_or_incomplete"
+            if w8_contract is not None
+            else "private_downstream_7d_7h_shadow_trace_missing_or_incomplete"
+        )
 
     metrics_ready = state == "metrics_ready_for_promotion_review"
     report: dict[str, object] = {
@@ -581,6 +700,22 @@ def build_promotion_report(
             "target_weight_can_be_enabled_by_7i": False,
         },
     }
+    if w8_contract is not None:
+        report["post_freeze_governance"] = {
+            "W8": {
+                "active_at_review_date": True,
+                "introduced_on": W8_INTRODUCED_ON,
+                "prospective_unspent_from": w8_start,
+                "contract_hash": w8_contract_hash,
+                "source_case_counts_as_independent_validation": False,
+            }
+        }
+        layer_status = report.get("layer_status")
+        assert isinstance(layer_status, dict)
+        layer_status["W8"] = (
+            "outcome_driven_action_policy_requires_post_2026_10_01_prospective_validation"
+        )
+
     unsigned = deepcopy(report)
     report["report_id"] = _canonical_hash(unsigned)
     validate_promotion_report(report)
@@ -597,12 +732,55 @@ def validate_promotion_report(report: Mapping[str, object]) -> dict[str, object]
     if report.get("execution_allowed") is not False:
         raise PromotionValidationError("7i_report_execution_forbidden")
 
+    reviewed_as_of = _day(report.get("reviewed_as_of"))
+    post_freeze = report.get("post_freeze_governance")
+    expected_w8_active = reviewed_as_of >= _day(W8_INTRODUCED_ON)
+    if not expected_w8_active:
+        if post_freeze is not None:
+            raise PromotionValidationError("pre_w8_report_cannot_expose_future_governance")
+    else:
+        if not isinstance(post_freeze, Mapping):
+            raise PromotionValidationError("post_freeze_governance_missing")
+        w8_guard = post_freeze.get("W8")
+        if not isinstance(w8_guard, Mapping):
+            raise PromotionValidationError("w8_post_freeze_guard_missing")
+        if w8_guard.get("active_at_review_date") is not True:
+            raise PromotionValidationError("w8_active_state_review_date_mismatch")
+        if w8_guard.get("introduced_on") != W8_INTRODUCED_ON:
+            raise PromotionValidationError("w8_report_introduction_date_mismatch")
+        if w8_guard.get("source_case_counts_as_independent_validation") is not False:
+            raise PromotionValidationError("w8_source_case_independent_validation_forbidden")
+        if w8_guard.get("prospective_unspent_from") != W8_PROSPECTIVE_START:
+            raise PromotionValidationError("w8_report_prospective_start_mismatch")
+        digest = str(w8_guard.get("contract_hash") or "")
+        if len(digest) != 64:
+            raise PromotionValidationError("w8_report_contract_hash_required")
+
     readiness = report.get("readiness")
     if not isinstance(readiness, Mapping):
         raise PromotionValidationError("7i_readiness_missing")
     state = str(readiness.get("state") or "")
     if state not in READINESS_STATES:
         raise PromotionValidationError("invalid_7i_readiness_state")
+
+    prospective = report.get("prospective_evidence")
+    if not isinstance(prospective, Mapping):
+        raise PromotionValidationError("7i_prospective_evidence_missing")
+    downstream = prospective.get("downstream_shadow_trace")
+    if not isinstance(downstream, Mapping):
+        raise PromotionValidationError("7i_downstream_shadow_trace_missing")
+    captured = {str(layer) for layer in downstream.get("captured_layers", [])}
+    metrics = downstream.get("layer_metrics_ready")
+    metrics = metrics if isinstance(metrics, Mapping) else {}
+    w8_rows = int(downstream.get("w8_trace_rows", 0) or 0)
+    if not expected_w8_active and ("W8" in captured or w8_rows):
+        raise PromotionValidationError("pre_w8_report_contains_future_w8_trace")
+    if state == "metrics_ready_for_promotion_review" and expected_w8_active:
+        if "W8" not in captured or metrics.get("W8") is not True or w8_rows <= 0:
+            raise PromotionValidationError("metrics_ready_requires_w8_prospective_trace")
+        w8_min = downstream.get("w8_as_of_min")
+        if not w8_min or _day(w8_min) < _day(W8_PROSPECTIVE_START):
+            raise PromotionValidationError("metrics_ready_uses_pre_w8_prospective_trace")
 
     promotion = report.get("promotion")
     if not isinstance(promotion, Mapping):
