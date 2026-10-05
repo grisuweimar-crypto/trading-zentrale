@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-05T16:03:22.544954+00:00",
+  "decision_as_of": "2026-10-05T18:32:53.086244+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -10,7 +10,7 @@
     "output_count": 0,
     "outputs": [],
     "read_only_presentation": true,
-    "reason": "current_capture_contains_no_6h_output_for_symbol",
+    "reason": "prospective_elliott_capture_does_not_match_current_watch_snapshot",
     "research_only": true,
     "review_contexts_are_actions": false,
     "scanner_published_at": "2026-10-05T15:24:44+00:00",
@@ -20,24 +20,28 @@
     "source_publication_commit": "b6ac6121aba1047106148136af0543480425be9a",
     "source_run_id": "github-37331082705-1",
     "source_snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
-    "status": "no_elliott_output_for_symbol",
+    "status": "prospective_capture_not_current_snapshot",
     "symbol": "UEC",
     "validation_partition": "prospective_unspent",
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "negative",
+    "known_directional_claim_ids": [
+      "timing:UEC:c672817d91249136:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 1
+    },
+    "relation_state": "single_direction_or_unopposed",
+    "state": "negative",
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
+  "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -102,6 +106,14 @@
       "source_snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-05T18:32:53.086244+00:00",
+      "direction": "negative",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+      "state": "negative",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -123,11 +135,11 @@
   "state_history_state": "post_overextension_correction",
   "symbol": "UEC",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "negative",
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "transition_pending"
   }
 }

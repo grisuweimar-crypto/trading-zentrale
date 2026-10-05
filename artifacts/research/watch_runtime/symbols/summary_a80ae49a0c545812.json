@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-05T16:03:22.544954+00:00",
+  "decision_as_of": "2026-10-05T18:32:53.086244+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -10,7 +10,7 @@
     "output_count": 0,
     "outputs": [],
     "read_only_presentation": true,
-    "reason": "current_capture_contains_no_6h_output_for_symbol",
+    "reason": "prospective_elliott_capture_does_not_match_current_watch_snapshot",
     "research_only": true,
     "review_contexts_are_actions": false,
     "scanner_published_at": "2026-10-05T15:24:44+00:00",
@@ -20,7 +20,7 @@
     "source_publication_commit": "b6ac6121aba1047106148136af0543480425be9a",
     "source_run_id": "github-37331082705-1",
     "source_snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
-    "status": "no_elliott_output_for_symbol",
+    "status": "prospective_capture_not_current_snapshot",
     "symbol": "SAP.DE",
     "validation_partition": "prospective_unspent",
     "w10_source_emitted": false
@@ -30,14 +30,12 @@
       {
         "negative_claim_ids": [
           "timing:SAP.DE:6b9ad841e92f8191:60T",
-          "timing:SAP.DE:8383be481c5c6052:60T",
           "timing:SAP.DE:312bf577128ab874:60T"
         ],
         "positive_claim_ids": [
-          "timing:SAP.DE:0671faf1011640c5:5T",
-          "timing:SAP.DE:b158fef8cbfb5c55:20T",
-          "timing:SAP.DE:3e260f25164f48ce:40T",
-          "timing:SAP.DE:6289a7880870e93e:60T",
+          "timing:SAP.DE:9aace91dab644870:5T",
+          "timing:SAP.DE:838b819bd450346e:5T",
+          "timing:SAP.DE:6267ff2c27f27eb8:20T",
           "timing:SAP.DE:5b62a0aabd2f08fc:60T"
         ],
         "relation_type": "within_family_conflict",
@@ -46,17 +44,15 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:SAP.DE:0671faf1011640c5:5T",
-      "timing:SAP.DE:b158fef8cbfb5c55:20T",
-      "timing:SAP.DE:3e260f25164f48ce:40T",
-      "timing:SAP.DE:6289a7880870e93e:60T",
+      "timing:SAP.DE:9aace91dab644870:5T",
+      "timing:SAP.DE:838b819bd450346e:5T",
+      "timing:SAP.DE:6267ff2c27f27eb8:20T",
       "timing:SAP.DE:5b62a0aabd2f08fc:60T",
       "timing:SAP.DE:6b9ad841e92f8191:60T",
-      "timing:SAP.DE:8383be481c5c6052:60T",
       "timing:SAP.DE:312bf577128ab874:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 8
+      "timing": 6
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -65,7 +61,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
+  "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -130,6 +126,14 @@
       "source_snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-05T18:32:53.086244+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -138,17 +142,17 @@
       "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
       "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-10-05",
-    "last_overextension_rs3m": 0.3058451063589138,
+    "last_overextension_rs3m": 0.299221782799445,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "active_overextension"
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "overextension_with_fading_dynamics"
   },
-  "state_history_state": "overextended",
+  "state_history_state": "overextension_with_momentum_loss",
   "symbol": "SAP.DE",
   "transition_state": {
     "pending_confirmation_count": 0,

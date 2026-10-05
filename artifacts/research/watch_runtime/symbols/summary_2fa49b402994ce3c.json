@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-05T16:03:22.544954+00:00",
+  "decision_as_of": "2026-10-05T18:32:53.086244+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -10,7 +10,7 @@
     "output_count": 0,
     "outputs": [],
     "read_only_presentation": true,
-    "reason": "current_capture_contains_no_6h_output_for_symbol",
+    "reason": "prospective_elliott_capture_does_not_match_current_watch_snapshot",
     "research_only": true,
     "review_contexts_are_actions": false,
     "scanner_published_at": "2026-10-05T15:24:44+00:00",
@@ -20,92 +20,47 @@
     "source_publication_commit": "b6ac6121aba1047106148136af0543480425be9a",
     "source_run_id": "github-37331082705-1",
     "source_snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
-    "status": "no_elliott_output_for_symbol",
+    "status": "prospective_capture_not_current_snapshot",
     "symbol": "AGI.TO",
     "validation_partition": "prospective_unspent",
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:AGI.TO:5df2a86791ff5f88:60T",
-          "timing:AGI.TO:b0fb906b9f3e02ec:60T",
-          "timing:AGI.TO:51a8cac8cfa550aa:60T",
-          "timing:AGI.TO:1691f75766881bca:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:AGI.TO:13dfd193091882d7:5T",
-          "timing:AGI.TO:a2763d94cd6f82e9:5T",
-          "timing:AGI.TO:d18193c29692a1cb:5T",
-          "timing:AGI.TO:9aace91dab644870:5T",
-          "timing:AGI.TO:056cab0d8c42f322:5T",
-          "timing:AGI.TO:03f6bed3788ea96b:5T",
-          "timing:AGI.TO:2ec83739629fba4d:5T",
-          "timing:AGI.TO:42bcd8a34d314c09:5T",
-          "timing:AGI.TO:838b819bd450346e:5T",
-          "timing:AGI.TO:1758b10ff7893792:20T",
-          "timing:AGI.TO:85b7b4bcb43aeb00:20T",
-          "timing:AGI.TO:ae61c82fbb0371fc:20T",
-          "timing:AGI.TO:a4278e33701f9d98:20T",
-          "timing:AGI.TO:6267ff2c27f27eb8:20T",
-          "timing:AGI.TO:cad5eb04910821c4:20T",
-          "timing:AGI.TO:15f457a0b3a6df9d:20T",
-          "timing:AGI.TO:b5c6f29104b27dae:40T",
-          "timing:AGI.TO:f9714fd629aaf7f2:40T",
-          "timing:AGI.TO:677e719dc170acd6:40T",
-          "timing:AGI.TO:2d034c21b8215d13:40T",
-          "timing:AGI.TO:e64908cc5e4c18f0:60T",
-          "timing:AGI.TO:a0bebf08166a0860:60T",
-          "timing:AGI.TO:ff63700b226f41b1:60T",
-          "timing:AGI.TO:2fbfff31832fc700:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
-    "direction": null,
+    "conflicts": [],
+    "direction": "positive",
     "known_directional_claim_ids": [
       "timing:AGI.TO:13dfd193091882d7:5T",
       "timing:AGI.TO:a2763d94cd6f82e9:5T",
-      "timing:AGI.TO:d18193c29692a1cb:5T",
-      "timing:AGI.TO:9aace91dab644870:5T",
       "timing:AGI.TO:056cab0d8c42f322:5T",
       "timing:AGI.TO:03f6bed3788ea96b:5T",
-      "timing:AGI.TO:2ec83739629fba4d:5T",
       "timing:AGI.TO:42bcd8a34d314c09:5T",
-      "timing:AGI.TO:838b819bd450346e:5T",
+      "timing:AGI.TO:63001daa7f481bc1:5T",
       "timing:AGI.TO:1758b10ff7893792:20T",
       "timing:AGI.TO:85b7b4bcb43aeb00:20T",
       "timing:AGI.TO:ae61c82fbb0371fc:20T",
-      "timing:AGI.TO:a4278e33701f9d98:20T",
-      "timing:AGI.TO:6267ff2c27f27eb8:20T",
       "timing:AGI.TO:cad5eb04910821c4:20T",
       "timing:AGI.TO:15f457a0b3a6df9d:20T",
       "timing:AGI.TO:b5c6f29104b27dae:40T",
       "timing:AGI.TO:f9714fd629aaf7f2:40T",
       "timing:AGI.TO:677e719dc170acd6:40T",
-      "timing:AGI.TO:2d034c21b8215d13:40T",
+      "timing:AGI.TO:28846bf8f8b491cd:40T",
+      "timing:AGI.TO:e3563708ab21aab0:60T",
       "timing:AGI.TO:e64908cc5e4c18f0:60T",
       "timing:AGI.TO:a0bebf08166a0860:60T",
-      "timing:AGI.TO:ff63700b226f41b1:60T",
-      "timing:AGI.TO:2fbfff31832fc700:60T",
-      "timing:AGI.TO:5df2a86791ff5f88:60T",
-      "timing:AGI.TO:b0fb906b9f3e02ec:60T",
-      "timing:AGI.TO:51a8cac8cfa550aa:60T",
-      "timing:AGI.TO:1691f75766881bca:60T"
+      "timing:AGI.TO:92ad9e5c355866b9:60T",
+      "timing:AGI.TO:2fbfff31832fc700:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 28
+      "timing": 20
     },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
+  "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -170,6 +125,14 @@
       "source_snapshot_id": "d6631f05-3561-4504-9fd8-61d1e2dca8dc",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-05T18:32:53.086244+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -194,8 +157,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "stable_confirmed"
   }
 }
