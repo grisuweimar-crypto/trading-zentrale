@@ -226,7 +226,9 @@ python -m scanner.ui.generator
       <ul>
         <li>Presets buendeln typische Sichten (z.B. CORE, TOP, AVOID-Filter).</li>
         <li>Quick-Filter fuer schnelle Einschraenkungen (z.B. nur Trend OK / Liquidity OK).</li>
+        <li><b>1D-Basis:</b> fokussiert auf Werte mit echter Vergleichsbasis zum vorherigen lokalen Snapshot.</li>
         <li>Mehrfachauswahl bei Cluster-/Saeulen-Filtern fuer gezielte Szenarien.</li>
+        <li>Die Zeile <b>Aktiv</b> zeigt Preset, Suche und alle wirksamen Filter permanent als Chips.</li>
       </ul>
       <h3>2) Haupttabelle</h3>
       <p>Die Tabelle zeigt pro Asset die wichtigsten Kennzahlen und Score-Signale.</p>
@@ -367,9 +369,9 @@ python -m scanner.ui.generator
       <h2>15) Roadmap / Aenderungslog</h2>
       <h3>Naechste 3 Prioritaeten</h3>
       <ul>
-        <li>Help-Seite vervollstaendigen und i-Hilfen konsistent in allen Karten.</li>
-        <li>Datenqualitaet: automatische Normalisierung von Symbol/Yahoo/ISIN (robust gegen ISIN als Ticker).</li>
-        <li>Market Context weiter schaerfen: klare Interpretation plus Action-Hinweise (passiv, ohne Scoring).</li>
+        <li>Datenqualitaet und Quellenabdeckung weiter haerten, ohne historische Werte rueckwirkend zu erfinden.</li>
+        <li>Explainability nur dort erweitern, wo eine belastbare Datenbasis vorhanden ist.</li>
+        <li>UI-Konsistenz und Scanbarkeit erhalten; neue Module bleiben passiv und getrennt vom Scoring.</li>
       </ul>
       <h3>Letzte Aenderungen (Beispiele)</h3>
       <ul>
