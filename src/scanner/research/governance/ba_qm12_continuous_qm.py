@@ -149,6 +149,10 @@ def _snapshot_monitor(root: Path) -> dict[str, Any]:
     runtime_current = str(diagnostics.get("snapshot_id") or "") == snapshot_id
     if not runtime_current:
         raise BAQM12Error("runtime_snapshot_stale")
+    runtime_rows = int(runtime.get("row_count") or 0)
+    runtime_bundles = int(diagnostics.get("bundle_count") or 0)
+    if runtime_rows != symbols or runtime_bundles != symbols:
+        raise BAQM12Error("runtime_symbol_coverage_mismatch")
     if list(diagnostics.get("missing_current_packet_symbols") or []):
         raise BAQM12Error("runtime_missing_current_packets")
     if diagnostics.get("private_position_data_persisted") is not False:
@@ -180,8 +184,8 @@ def _snapshot_monitor(root: Path) -> dict[str, Any]:
         },
         "runtime": {
             "snapshot_current": True,
-            "row_count": runtime.get("row_count"),
-            "bundle_count": diagnostics.get("bundle_count"),
+            "row_count": runtime_rows,
+            "bundle_count": runtime_bundles,
             "missing_current_packet_count": 0,
             "private_position_data_persisted": False,
             "scanner_scalar_fallback_used": False,
