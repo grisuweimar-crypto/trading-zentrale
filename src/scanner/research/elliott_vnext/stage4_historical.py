@@ -15,7 +15,12 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import pandas as pd
 
-from .validation import ValidationConfig, build_validation_report
+from .validation import (
+    ValidationConfig,
+    build_validation_report,
+    summarize_projection_outcomes,
+    summarize_route_outcomes,
+)
 from .validation_replay import replay_universe_states
 
 
@@ -270,6 +275,172 @@ def build_stage4_historical_validation_from_replay(
         "route_summary": report.get("route_summary") or [],
         "evidence_policy": dict(evidence_policy),
         "promotion_status_from_6g": report.get("promotion_status"),
+        "boundaries": {
+            "historical_results_are_descriptive_for_pre_freeze_claims": True,
+            "legacy_data_can_support_promotion": False,
+            "future_rows_used_for_replay": False,
+            "performance_used_to_build_elliott_state": False,
+            "raw_close_fallback_for_performance": False,
+            "same_session_projection_hit_allowed": False,
+            "round_trip_pnl_invented": False,
+            "numeric_w5_level_promoted": False,
+            "degree_reducer_used": False,
+            "elliott_core_modified": False,
+            "changes_universal_stance": False,
+            "changes_portfolio_action": False,
+            "direct_ordering_allowed": False,
+            "automatic_promotion_allowed": False,
+            "research_only": True,
+        },
+        "stage4_scope": {
+            "historical_prefix_replay": True,
+            "structure_progression_validation": True,
+            "projection_zone_validation": True,
+            "forward_outcomes_5_10_20_40_60_sessions": True,
+            "review_routing_directional_validation": True,
+            "cross_system_incremental_value_deferred_to_stage5": True,
+            "swing_execution_round_trip_deferred_until_frozen_execution_policy": True,
+            "prospective_confirmation_continues_in_parallel": True,
+        },
+    }
+    result["stage4_result_hash"] = _canonical_hash(result)
+    return result
+
+
+
+def build_stage4_historical_validation_from_components(
+    prices: pd.DataFrame | Iterable[Mapping[str, Any]],
+    *,
+    structure_validation: Sequence[Mapping[str, Any]],
+    projection_outcomes: Sequence[Mapping[str, Any]],
+    route_outcomes: Sequence[Mapping[str, Any]],
+    replay_coverage: Mapping[str, Any],
+    replay_guard_review: Mapping[str, Any],
+    projection_claim_count: int,
+    route_claim_count: int,
+    price_source_sha256: str,
+    source_commit: str,
+    replay_chunk_count: int,
+    source_workflow_run_id: int | None = None,
+    config: ValidationConfig = ValidationConfig(),
+) -> dict[str, Any]:
+    """Build Stage 4 from per-chunk 6G validation components.
+
+    This path is semantically equivalent to the full replay wrapper after the
+    causal replay has already been completed and each chunk has independently
+    extracted structure/projection/route evidence.  It exists to keep the final
+    aggregation bounded in memory and runtime.
+    """
+
+    frame, commit, source_hash = _prepare_stage4_inputs(
+        prices,
+        price_source_sha256=price_source_sha256,
+        source_commit=source_commit,
+    )
+    guards = dict(replay_guard_review)
+    if guards.get("valid") is not True:
+        raise Stage4HistoricalValidationError("component_replay_guard_invalid")
+    if int(guards.get("replay_error_count") or 0) != 0:
+        raise Stage4HistoricalValidationError("component_replay_errors_present")
+    if guards.get("coverage_complete") is not True:
+        raise Stage4HistoricalValidationError("component_replay_coverage_incomplete")
+
+    source_dates = pd.to_datetime(frame["date"], errors="coerce").dropna()
+    source_symbols = sorted(frame["symbol"].dropna().astype(str).unique().tolist())
+    requested = int(replay_coverage.get("symbols_requested") or 0)
+    if requested != len(source_symbols):
+        raise Stage4HistoricalValidationError(
+            f"replay_universe_incomplete:{requested}:{len(source_symbols)}"
+        )
+
+    structure_rows = [dict(row) for row in structure_validation]
+    projection_rows = [dict(row) for row in projection_outcomes]
+    route_rows = [dict(row) for row in route_outcomes]
+    prospective_mature = sum(
+        1
+        for row in [*projection_rows, *route_rows]
+        if row.get("partition") == "prospective_unspent"
+        and row.get("outcome_available")
+    )
+    prospective_structure = sum(
+        1
+        for row in structure_rows
+        if row.get("partition") == "prospective_unspent"
+        and row.get("structure_resolution") != "unresolved"
+    )
+    evidence_policy = {
+        "legacy_data_can_support_promotion": False,
+        "formal_claims_require_available_from_after_freeze": True,
+        "prospective_unspent_mature_outcomes": int(prospective_mature),
+        "prospective_unspent_resolved_structure_claims": int(prospective_structure),
+    }
+    coverage = {
+        "routed_snapshots": int(replay_coverage.get("snapshots") or 0),
+        "structure_claims": len(structure_rows),
+        "projection_claims": int(projection_claim_count),
+        "route_review_claims": int(route_claim_count),
+        "projection_outcome_rows": len(projection_rows),
+        "route_outcome_rows": len(route_rows),
+        "cross_system_rows": 0,
+        "context_alpha_rows": 0,
+    }
+    promotion_status = (
+        "prospective_evidence_accumulating_no_automatic_promotion"
+        if prospective_mature + prospective_structure > 0
+        else "awaiting_unspent_prospective_evidence"
+    )
+
+    result: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "stage": STAGE,
+        "technical_stage_status": "COMPLETE",
+        "empirical_promotion_status": "NOT_PROMOTED",
+        "source": {
+            "source_commit": commit,
+            "price_source_sha256": source_hash,
+            "price_row_count": int(len(frame)),
+            "price_symbol_count": len(source_symbols),
+            "price_first_date": (
+                source_dates.min().date().isoformat() if not source_dates.empty else None
+            ),
+            "price_last_date": (
+                source_dates.max().date().isoformat() if not source_dates.empty else None
+            ),
+            "stable_start": config.stable_start,
+            "rules_frozen_through": config.rules_frozen_through,
+        },
+        "replay": {
+            "execution_mode": "parallel_chunks",
+            "aggregation_mode": "distilled_validation_components",
+            "chunk_count": int(replay_chunk_count),
+            "symbols_requested": requested,
+            "symbols_with_snapshots": int(
+                replay_coverage.get("symbols_with_snapshots") or 0
+            ),
+            "snapshot_count": int(replay_coverage.get("snapshots") or 0),
+            "failures_are_missing_evidence_not_imputed": (
+                replay_coverage.get("failures_are_missing_evidence_not_imputed")
+                is True
+            ),
+            "guard_review": guards,
+            "source_workflow_run_id": (
+                int(source_workflow_run_id)
+                if source_workflow_run_id is not None
+                else None
+            ),
+        },
+        "coverage": coverage,
+        "structure_summary": _structure_summary(structure_rows),
+        "projection_summary": summarize_projection_outcomes(
+            projection_rows,
+            config,
+        ),
+        "route_summary": summarize_route_outcomes(
+            route_rows,
+            config,
+        ),
+        "evidence_policy": evidence_policy,
+        "promotion_status_from_6g": promotion_status,
         "boundaries": {
             "historical_results_are_descriptive_for_pre_freeze_claims": True,
             "legacy_data_can_support_promotion": False,
