@@ -37,6 +37,17 @@ LIFECYCLE = (
     "CONTINUOUS_QM",
 )
 
+MASTERPLAN_RESIDUAL_IDS = (
+    "W6_ELLIOTT_LINEAGE",
+    "PHASE1A_LAG1_CAPA",
+    "W8_EMPIRICAL_UTILITY",
+    "BA_QM2_EXTERNAL_HISTORICAL_INTEGRITY",
+    "BA_QM6_EMPIRICAL_VALIDATION",
+    "BA_QM7_EMPIRICAL_VALIDATION",
+    "DECISION_LAYER_EMPIRICAL_PROMOTION",
+    "PHASE8_EXTERNAL_EVIDENCE",
+)
+
 
 class BAQM12Error(ValueError):
     pass
@@ -112,6 +123,16 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         raise BAQM12Error("automatic_semantic_change_forbidden")
     if policy.get("automatic_promotion_allowed") is not False:
         raise BAQM12Error("automatic_promotion_forbidden")
+    completion = _mapping(value.get("masterplan_completion_gate"), "masterplan_completion_gate")
+    if completion.get("status") != "ACTIVE":
+        raise BAQM12Error("masterplan_completion_gate_not_active")
+    if completion.get("full_completion_claim_requires_zero_blocking_residuals") is not True:
+        raise BAQM12Error("masterplan_zero_residual_gate_missing")
+    if completion.get("engineering_completion_is_full_masterplan_completion") is not False:
+        raise BAQM12Error("engineering_may_not_equal_masterplan_completion")
+    tracked = _mapping(completion.get("tracked_residuals"), "masterplan_completion_gate.tracked_residuals")
+    if tuple(tracked.keys()) != MASTERPLAN_RESIDUAL_IDS:
+        raise BAQM12Error("masterplan_residual_set_invalid")
     return dict(value)
 
 
@@ -189,6 +210,124 @@ def _snapshot_monitor(root: Path) -> dict[str, Any]:
     }
 
 
+def _masterplan_residual_monitor(
+    root: Path,
+    *,
+    qmi: Mapping[str, Any],
+    qmj: Mapping[str, Any],
+    w8: Mapping[str, Any],
+) -> dict[str, Any]:
+    phase7 = _mapping(qmi.get("phase7_integration"), "qmi.phase7_integration")
+    w6_complete = all(
+        phase7.get(field) is True
+        for field in (
+            "w6_exact_prospective_raw_source_lineage_supported",
+            "w6_exact_prospective_feature_lineage_supported",
+            "w6_validation_lineage_supported",
+            "w6_uncertainty_lineage_supported",
+            "w6_legacy_missing_provenance_remains_incomplete",
+        )
+    )
+
+    capa = _mapping(qmj.get("open_capa"), "qmj.open_capa")
+    lag1_effectiveness = str(capa.get("effectiveness_verification") or "UNKNOWN")
+    lag1_blocked = (
+        capa.get("evidence_impact") == "PROMOTION_BLOCKED"
+        and lag1_effectiveness != "VERIFIED_EFFECTIVE"
+    )
+
+    w8_validation = _mapping(w8.get("validation"), "w8.validation")
+    w8_governance = _mapping(w8.get("governance"), "w8.governance")
+    w8_open = (
+        w8_validation.get("empirically_validated") is not True
+        or w8_validation.get("promotion_eligible") is not True
+    )
+
+    ba_qm2 = _read(root / "configs" / "ba_qm2_handoff_v2.json")
+    blockers = list(_mapping(ba_qm2.get("qm_b"), "ba_qm2.qm_b").get("external_blockers") or [])
+    ba_qm2_open = ba_qm2.get("strict_historical_promotion_status") != "PROMOTED"
+
+    ba_qm6 = _read(root / "configs" / "ba_qm6_qm_g_closure_v1.json")
+    ba_qm7 = _read(root / "configs" / "ba_qm7_qm_j_closure_v1.json")
+    ba_qm6_open = ba_qm6.get("empirical_validation_status") != "ESTABLISHED"
+    ba_qm7_open = ba_qm7.get("empirical_validation_status") != "ESTABLISHED"
+
+    decision = _read(root / "configs" / "decision_validation_promotion_v1.json")
+    decision_open = (
+        decision.get("productive_integration_enabled") is not True
+        or decision.get("execution_allowed") is not True
+    )
+
+    external = _read(root / "configs" / "external_evidence_8_contract_v1.json")
+    external_quarantined = external.get("status") != "productive_promoted"
+
+    residuals = {
+        "W6_ELLIOTT_LINEAGE": {
+            "status": (
+                "PROSPECTIVE_RAW_FEATURE_VALIDATION_UNCERTAINTY_LINEAGE_COMPLETE"
+                if w6_complete
+                else "UPSTREAM_LINEAGE_INCOMPLETE"
+            ),
+            "blocking_masterplan_completion": not w6_complete,
+            "legacy_backfill_policy": "MISSING_PROVENANCE_REMAINS_EXPLICIT_NOT_GUESSED",
+        },
+        "PHASE1A_LAG1_CAPA": {
+            "status": lag1_effectiveness,
+            "blocking_masterplan_completion": lag1_blocked,
+            "evidence_impact": capa.get("evidence_impact"),
+            "finding_id": capa.get("finding_id"),
+            "capa_id": capa.get("capa_id"),
+        },
+        "W8_EMPIRICAL_UTILITY": {
+            "status": "RESEARCH_REQUIRED" if w8_open else "ESTABLISHED",
+            "blocking_masterplan_completion": w8_open,
+            "prospective_unspent_from": w8_governance.get("prospective_unspent_from"),
+        },
+        "BA_QM2_EXTERNAL_HISTORICAL_INTEGRITY": {
+            "status": ba_qm2.get("strict_historical_promotion_status"),
+            "blocking_masterplan_completion": ba_qm2_open,
+            "external_blockers": blockers,
+        },
+        "BA_QM6_EMPIRICAL_VALIDATION": {
+            "status": ba_qm6.get("empirical_validation_status"),
+            "blocking_masterplan_completion": ba_qm6_open,
+        },
+        "BA_QM7_EMPIRICAL_VALIDATION": {
+            "status": ba_qm7.get("empirical_validation_status"),
+            "blocking_masterplan_completion": ba_qm7_open,
+        },
+        "DECISION_LAYER_EMPIRICAL_PROMOTION": {
+            "status": "NOT_ESTABLISHED" if decision_open else "ESTABLISHED",
+            "blocking_masterplan_completion": decision_open,
+            "productive_integration_enabled": decision.get("productive_integration_enabled"),
+            "execution_allowed": decision.get("execution_allowed"),
+        },
+        "PHASE8_EXTERNAL_EVIDENCE": {
+            "status": (
+                "QUARANTINED_PENDING_SEPARATE_PROMOTION"
+                if external_quarantined
+                else "SEPARATELY_PROMOTED"
+            ),
+            "blocking_masterplan_completion": False,
+            "canonical_decision_path_integration_required": False,
+        },
+    }
+    if tuple(residuals.keys()) != MASTERPLAN_RESIDUAL_IDS:
+        raise BAQM12Error("masterplan_residual_monitor_set_invalid")
+    blocking = [
+        residual_id
+        for residual_id, row in residuals.items()
+        if row["blocking_masterplan_completion"] is True
+    ]
+    return {
+        "residuals": residuals,
+        "blocking_residual_ids": blocking,
+        "blocking_residual_count": len(blocking),
+        "masterplan_end_state_complete": len(blocking) == 0,
+        "full_completion_claim_allowed": len(blocking) == 0,
+    }
+
+
 def evaluate_continuous_qm(root: str | Path = ROOT) -> dict[str, Any]:
     root = Path(root).resolve()
     contract = validate_contract(_read(root / "configs" / "ba_qm12_continuous_qm_v1.json"))
@@ -220,6 +359,7 @@ def evaluate_continuous_qm(root: str | Path = ROOT) -> dict[str, Any]:
     if w8_validation.get("promotion_eligible") is not False:
         raise BAQM12Error("w8_unexpectedly_promotion_eligible")
 
+    masterplan = _masterplan_residual_monitor(root, qmi=qmi, qmj=qmj, w8=w8)
     snapshot = _snapshot_monitor(root)
     production = audit_current_operations(root)
     if production.get("status") != "BA_QM10_ENGINEERING_COMPLETE":
@@ -248,6 +388,9 @@ def evaluate_continuous_qm(root: str | Path = ROOT) -> dict[str, Any]:
         "lag1_evidence_impact": "PROMOTION_BLOCKED",
         "ba_qm12_may_release_lag1_block": False,
         "w8_promotion_eligible": False,
+        "masterplan_residual_monitor": masterplan,
+        "masterplan_end_state_complete": masterplan["masterplan_end_state_complete"],
+        "full_masterplan_completion_claim_allowed": masterplan["full_completion_claim_allowed"],
         "research_logic_changed": False,
         "decision_logic_changed": False,
         "investment_logic_changed": False,
