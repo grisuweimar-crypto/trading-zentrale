@@ -128,7 +128,7 @@
       <ul>
         <li>sortiere nach Score (oder nutze TOP/Movers als Einstieg)</li>
         <li>klicke 1-3 Symbole und oeffne sie ueber den Yahoo-Link (externe Plausibilitaetspruefung)</li>
-        <li>parallel: pruefe in Reality Check, ob Datenwarnungen vorliegen</li>
+        <li>parallel: pruefe im Reality Check, ob interne und offizielle Segmentbewegung zusammenpassen</li>
       </ul>
 
       <h3>Mini-Regel</h3>
@@ -136,7 +136,7 @@
         <li>Ampel lesen (Breadth)</li>
         <li>Filter setzen (Preset + Quick)</li>
         <li>3 Kandidaten picken (Movers/Top + Tabelle)</li>
-        <li>Reality Check (Daten ok?)</li>
+        <li>Reality Check (Segmentbewegung bestaetigt oder widerspricht sich?)</li>
         <li>History Delta (hat sich wirklich was veraendert?)</li>
       </ul>
 
@@ -176,9 +176,9 @@ py -3 -X utf8 -m scanner.ui.generator</code></pre>
       <h3>3) Reports erzeugen</h3>
       <p>Neben dem Haupt-Datensatz entstehen zusaetzliche Report-Artefakte:</p>
       <ul>
-        <li><b>Reality Check:</b> Datenqualitaet und Vollstaendigkeit (Warnungen, fehlende Felder, Coverage).</li>
-        <li><b>History Delta:</b> Veraenderungen zum letzten Snapshot (dScore / dRank).</li>
-        <li><b>Segment Monitor:</b> interne vs. offizielle Segment-Sicht parallel (cluster/pillar/sector).</li>
+        <li><b>Reality Check:</b> interne Segmentbewegung vs. offizielle Segmentbewegung; Einordnung, keine Wahrheitsmetrik.</li>
+        <li><b>History Delta:</b> interner Scanner-Verlauf aus lokalen Tages-Snapshots (dScore, dRank, Events); keine Kursperformance.</li>
+        <li><b>Segment Monitor:</b> interne und offizielle Segment-Sicht getrennt mit dScore, Positivquote, Coverage und Stichprobenstatus.</li>
       </ul>
       <h3>4) Dashboard generieren</h3>
       <p>Ein Python-UI-Generator erzeugt daraus eine eigenstaendige HTML-Seite ohne manuelles Editieren an der Ausgabe.</p>
@@ -226,7 +226,9 @@ python -m scanner.ui.generator
       <ul>
         <li>Presets buendeln typische Sichten (z.B. CORE, TOP, AVOID-Filter).</li>
         <li>Quick-Filter fuer schnelle Einschraenkungen (z.B. nur Trend OK / Liquidity OK).</li>
+        <li><b>1D-Basis:</b> fokussiert auf Werte mit echter Vergleichsbasis zum vorherigen lokalen Snapshot.</li>
         <li>Mehrfachauswahl bei Cluster-/Saeulen-Filtern fuer gezielte Szenarien.</li>
+        <li>Die Zeile <b>Aktiv</b> zeigt Preset, Suche und alle wirksamen Filter permanent als Chips.</li>
       </ul>
       <h3>2) Haupttabelle</h3>
       <p>Die Tabelle zeigt pro Asset die wichtigsten Kennzahlen und Score-Signale.</p>
@@ -247,10 +249,10 @@ python -m scanner.ui.generator
       <ul>
         <li><b>Breadth:</b> Gewinner/Verlierer-Breite plus verstaendliche Ampel-Interpretation.</li>
         <li><b>Movers:</b> Top/Weak Tagesperformance (1D/1Y) mit Segment-Hint.</li>
-        <li><b>History Delta:</b> wer sich seit dem letzten Snapshot wirklich bewegt hat (dS / dR).</li>
+        <li><b>History Delta:</b> wie sich der Scanner intern seit dem letzten lokalen Snapshot bewegt hat (Score 1D / Rank 1D / Events).</li>
         <li><b>Mega-Trend Signal:</b> Ketten-Signal auf Saeulenebene (TechnoStack, Civilization, Finanzsystem, Cross-Chain) mit Status/Strength/Coverage.</li>
-        <li><b>Reality Check:</b> zeigt, ob die Datenlage fuer Titel belastbar ist.</li>
-        <li><b>Segment Monitor:</b> zeigt intern/offiziell parallel und ob Stichproben thin/stable sind.</li>
+        <li><b>Reality Check:</b> spiegelt interne gegen offizielle Segmentbewegung (gleichgerichtet / Scanner staerker / Scanner schwaecher / kontra Markt / unklar).</li>
+        <li><b>Segment Monitor:</b> zeigt intern/offiziell getrennt, mittleren dScore, Positivquote, Coverage und thin/stable.</li>
       </ul>
       <h3>Mega-Trend Signal (kompakt)</h3>
       <p>Das Modul ist ein Radar fuer systemische Kettenbestaetigung, kein Einzeltitel-Ranking.</p>
@@ -367,9 +369,9 @@ python -m scanner.ui.generator
       <h2>15) Roadmap / Aenderungslog</h2>
       <h3>Naechste 3 Prioritaeten</h3>
       <ul>
-        <li>Help-Seite vervollstaendigen und i-Hilfen konsistent in allen Karten.</li>
-        <li>Datenqualitaet: automatische Normalisierung von Symbol/Yahoo/ISIN (robust gegen ISIN als Ticker).</li>
-        <li>Market Context weiter schaerfen: klare Interpretation plus Action-Hinweise (passiv, ohne Scoring).</li>
+        <li>Datenqualitaet und Quellenabdeckung weiter haerten, ohne historische Werte rueckwirkend zu erfinden.</li>
+        <li>Explainability nur dort erweitern, wo eine belastbare Datenbasis vorhanden ist.</li>
+        <li>UI-Konsistenz und Scanbarkeit erhalten; neue Module bleiben passiv und getrennt vom Scoring.</li>
       </ul>
       <h3>Letzte Aenderungen (Beispiele)</h3>
       <ul>
