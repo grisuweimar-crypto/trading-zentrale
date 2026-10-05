@@ -479,7 +479,15 @@ def _attach_path_reviews(
             isinstance(policy, Mapping)
             and policy.get("policy_case") == "f3_delayed_profit_protection_suppressed"
         )
-        if path.get("review_state") == "profit_protection_review" and not suppressed:
+        review_state = str(path.get("review_state") or "")
+        sequence_state = str(path.get("sequence_state") or "")
+        if review_state == "profit_protection_review" and not suppressed:
+            row["attention_required"] = True
+        elif review_state == "monitor" and sequence_state == "active_overextension":
+            # Active overextension is not yet a reduce/exit signal, but for an
+            # existing holding it is explicitly handlungsrelevant monitoring.
+            # Surface it deterministically so 7H cannot silently hide a live
+            # overextension merely because 7F remains HOLD.
             row["attention_required"] = True
         decision = row.get("decision")
         if isinstance(decision, dict):
