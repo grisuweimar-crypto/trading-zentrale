@@ -431,15 +431,26 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
 
         events: list[dict[str, Any]] = []
         if status == "ok":
-            if rank_prev is not None and rank_now is not None:
-                if rank_prev > 10 and rank_now <= 10:
-                    events.append({"type": "entered_top_10", "from": rank_prev, "to": rank_now})
-                if rank_prev <= 10 and rank_now > 10:
-                    events.append({"type": "left_top_10", "from": rank_prev, "to": rank_now})
-                if rank_prev > 25 and rank_now <= 25:
-                    events.append({"type": "entered_top_25", "from": rank_prev, "to": rank_now})
-                if rank_prev <= 25 and rank_now > 25:
-                    events.append({"type": "left_top_25", "from": rank_prev, "to": rank_now})
+            # Rank-threshold events use the stable common universe, exactly like
+            # rank_delta. Universe additions/removals must not manufacture a
+            # Top-10/Top-25 crossing for an otherwise unchanged asset.
+            if rank_prev_common is not None and rank_now_common is not None:
+                if rank_prev_common > 10 and rank_now_common <= 10:
+                    events.append(
+                        {"type": "entered_top_10", "from": rank_prev_common, "to": rank_now_common}
+                    )
+                if rank_prev_common <= 10 and rank_now_common > 10:
+                    events.append(
+                        {"type": "left_top_10", "from": rank_prev_common, "to": rank_now_common}
+                    )
+                if rank_prev_common > 25 and rank_now_common <= 25:
+                    events.append(
+                        {"type": "entered_top_25", "from": rank_prev_common, "to": rank_now_common}
+                    )
+                if rank_prev_common <= 25 and rank_now_common > 25:
+                    events.append(
+                        {"type": "left_top_25", "from": rank_prev_common, "to": rank_now_common}
+                    )
 
             for field, event_type, parser in (
                 ("trend_ok", "trend_ok_changed", _optional_bool),
