@@ -55,9 +55,10 @@ def test_history_events_require_real_previous_basis() -> None:
         trend = True
         status = "OK"
         if symbol == "S11":
-            score = 200
             trend = False
             status = "AVOID"
+        elif symbol == "S26":
+            score = 200
         elif symbol == "S05":
             score = -100
         rows.append(
@@ -86,10 +87,12 @@ def test_history_events_require_real_previous_basis() -> None:
     by_symbol = payload["by_symbol"]
 
     s11_events = {event["type"] for event in by_symbol["S11"]["events"]}
-    assert "entered_top_10" in s11_events
-    assert "entered_top_25" in s11_events
     assert "trend_ok_changed" in s11_events
     assert "score_status_changed" in s11_events
+
+    s26_events = {event["type"] for event in by_symbol["S26"]["events"]}
+    assert "entered_top_10" in s26_events
+    assert "entered_top_25" in s26_events
 
     s05_events = {event["type"] for event in by_symbol["S05"]["events"]}
     assert "left_top_10" in s05_events
