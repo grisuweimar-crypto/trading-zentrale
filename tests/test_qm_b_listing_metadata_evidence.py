@@ -31,26 +31,41 @@ def test_real_contract_loads_and_keeps_production_disabled():
 
 def test_source_assessment_exact_matrix():
     result = assess_listing_metadata_sources(contract())
-    assert result["source_count"] == 7
+    assert result["source_count"] == 8
     assert result["source_class_counts"] == {
         "COMMERCIAL_VENDOR": 2,
         "IDENTIFIER_SERVICE": 1,
         "MARKET_REFERENCE_AUTHORITY": 1,
         "OFFICIAL_EXCHANGE": 2,
-        "REGULATOR": 1,
+        "REGULATOR": 2,
     }
-    assert result["pit_status_counts"] == {"PARTIAL": 2, "SAFE": 3, "UNSAFE": 2}
-    assert result["access_status_counts"] == {"LIMITED": 2, "OPEN": 4, "PAID_RESTRICTED": 1}
-    assert result["license_status_counts"] == {"RESTRICTED": 1, "REVIEW_REQUIRED": 5, "USABLE": 1}
+    assert result["pit_status_counts"] == {"PARTIAL": 2, "SAFE": 4, "UNSAFE": 2}
+    assert result["access_status_counts"] == {"LIMITED": 2, "OPEN": 5, "PAID_RESTRICTED": 1}
+    assert result["license_status_counts"] == {"RESTRICTED": 1, "REVIEW_REQUIRED": 5, "USABLE": 2}
     assert result["blocked_required_fields"] == ["venue_assignment", "listing_start", "listing_end"]
     assert result["strict_listing_ledger_ready"] is False
     assert result["global_strict_listing_source_available_and_cleared"] is False
 
 
-def test_no_source_is_strict_ready_for_any_listing_field():
+def test_esma_firds_is_regionally_strict_ready_without_closing_global_gap():
     result = assess_listing_metadata_sources(contract())
-    assert all(not source_ids for source_ids in result["strict_ready_sources_by_field"].values())
-    assert all(row["strict_ready_fields"] == [] for row in result["source_rows"])
+    rows = {row["source_id"]: row for row in result["source_rows"]}
+    esma = rows["esma_firds"]
+    assert esma["pit_status"] == "SAFE"
+    assert esma["license_status"] == "USABLE"
+    assert esma["promotion_eligible"] is True
+    assert esma["global_scope"] is False
+    assert esma["strict_ready_fields"] == ["listing_end", "listing_start", "venue_assignment"]
+    assert result["strict_ready_sources_by_field"]["venue_assignment"] == ["esma_firds"]
+    assert result["strict_ready_sources_by_field"]["listing_start"] == ["esma_firds"]
+    assert result["strict_ready_sources_by_field"]["listing_end"] == ["esma_firds"]
+    assert all(
+        not result["global_strict_ready_sources_by_field"][field]
+        for field in ("venue_assignment", "listing_start", "listing_end")
+    )
+    assert result["regional_strict_ready_source_ids"] == ["esma_firds"]
+    assert result["blocked_required_fields"] == ["venue_assignment", "listing_start", "listing_end"]
+    assert result["strict_listing_ledger_ready"] is False
 
 
 def test_prospective_and_event_date_challengers_are_separate():
