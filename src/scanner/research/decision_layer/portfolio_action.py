@@ -204,6 +204,11 @@ def _validate_swing_context(value: Mapping[str, object] | None, decision_as_of: 
         "review_contexts": normalized,
         "routing_is_trade_decision": False,
         "research_only": True,
+        "w6": (
+            deepcopy(dict(value.get("w6")))
+            if isinstance(value.get("w6"), Mapping)
+            else None
+        ),
     }
 
 
@@ -370,6 +375,7 @@ def compute_portfolio_action(
             "context_conflict": context_conflict,
             "adjustment": swing_adjustment,
             "elliott_changed_stance_direction": False,
+            "w6": deepcopy(swing.get("w6")),
         },
         "cost_context": {
             "cost_sensitive_action": cost_sensitive,
