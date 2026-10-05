@@ -27,8 +27,10 @@ We *upsert* today's snapshot (by date+symbol) into score_history.csv to keep the
 pipeline deterministic per day (reruns don't duplicate rows).
 
 Each snapshot row also carries the already computed ``cycle`` (0-100), the
-derived ``r_code`` (R0-R5) and a fixed ``scoring_version``. Rows written before
-these columns existed keep them empty.
+derived ``r_code`` (R0-R5), a fixed ``scoring_version``, the lightweight
+``history_schema_version`` and the status fields needed for deterministic event
+comparison. Rows written before these columns existed keep them empty; missing
+legacy values are never backfilled or inferred.
 """
 
 from dataclasses import dataclass
