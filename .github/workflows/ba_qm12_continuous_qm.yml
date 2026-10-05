@@ -1,0 +1,77 @@
+name: BA-QM12 Continuous QM
+
+on:
+  pull_request:
+    paths:
+      - "configs/ba_qm12_continuous_qm_v1.json"
+      - "src/scanner/research/governance/ba_qm12_continuous_qm.py"
+      - "tests/test_ba_qm12_continuous_qm.py"
+      - "docs/ba_qm12_continuous_qm.md"
+      - "configs/qm_a_research_governance_v1.json"
+      - "configs/qm_h_capa_v1.json"
+      - "configs/qm_i_evidence_lineage_v1.json"
+      - "configs/ba_qm7_qm_j_closure_v1.json"
+      - "configs/ba_qm10_production_operations_qm_v1.json"
+      - "configs/ba_qm11_system_audit_v1.json"
+      - "configs/decision_depot_action_policy_v1.json"
+      - "artifacts/research/history_metadata.json"
+      - "artifacts/research/probability_calibration_2.json"
+      - "artifacts/research/watch_runtime/public_long_reference.json"
+      - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
+      - ".github/workflows/ba_qm12_continuous_qm.yml"
+  push:
+    branches: [main]
+    paths:
+      - "configs/**"
+      - "src/scanner/research/**"
+      - "artifacts/research/history_metadata.json"
+      - "artifacts/research/probability_calibration_2.json"
+      - "artifacts/research/watch_runtime/public_long_reference.json"
+      - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
+  schedule:
+    - cron: "25 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ba-qm12-continuous-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
+
+jobs:
+  continuous-qm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Run BA-QM12 continuous-QM regression
+        run: python -m pytest -q tests/test_ba_qm12_continuous_qm.py
+      - name: Re-run permanent control regressions
+        run: >-
+          python -m pytest -q
+          tests/test_qm_a_research_governance.py
+          tests/test_qm_h_capa.py
+          tests/test_qm_i_lineage.py
+          tests/test_qm_j_negative_controls.py
+          tests/test_ba_qm10_production_operations.py
+          tests/test_ba_qm11_system_audit.py
+      - name: Emit current Continuous-QM receipt
+        run: |
+          python - <<'PY'
+          import json
+          from scanner.research.governance.ba_qm12_continuous_qm import evaluate_continuous_qm
+          receipt = evaluate_continuous_qm()
+          assert receipt["engineering_status"] == "BA_QM12_ENGINEERING_COMPLETE"
+          assert receipt["operating_status"] == "ACTIVE_CONTINUOUS_QM"
+          assert receipt["required_control_count"] == 9
+          assert receipt["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+          assert receipt["ba_qm12_may_release_lag1_block"] is False
+          assert receipt["w8_promotion_eligible"] is False
+          print(json.dumps(receipt, sort_keys=True))
+          PY
