@@ -8,11 +8,9 @@ on:
       - "src/scanner/research/elliott_vnext/cross_system.py"
       - "src/scanner/research/elliott_vnext/validation.py"
       - "scripts/run_elliott_stage5_chunk.py"
-      - "scripts/aggregate_elliott_stage5.py"
       - "tests/test_elliott_vnext_stage5_incremental.py"
       - "configs/elliott_vnext_stage5_incremental_v1.json"
       - "docs/elliott_vnext_stage5_incremental.md"
-      - ".github/workflows/elliott_vnext_stage5_incremental.yml"
   push:
     branches: [main]
     paths:
