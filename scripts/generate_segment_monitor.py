@@ -11,6 +11,7 @@ Snapshot store:
 from __future__ import annotations
 
 import argparse
+import json
 import pandas as pd
 
 from scanner.data.io.paths import artifacts_dir
@@ -42,7 +43,18 @@ def main() -> int:
     hist_path = resolve_segment_history_path()
     hist = upsert_segment_snapshot(hist_path, snap)
 
-    df_out, payload = compute_segment_monitor(hist, snap)
+    history_delta_path = artifacts_dir() / "reports" / "history_delta.json"
+    history_delta = (
+        json.loads(history_delta_path.read_text(encoding="utf-8"))
+        if history_delta_path.exists()
+        else {}
+    )
+
+    df_out, payload = compute_segment_monitor(
+        hist,
+        snap,
+        history_delta=history_delta,
+    )
     out = write_segment_monitor_outputs(df_out, payload)
 
     print("✅ Segment Monitor outputs:")
