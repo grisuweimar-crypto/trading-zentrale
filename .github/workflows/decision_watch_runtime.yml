@@ -112,7 +112,7 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
-      actions: read
+      actions: write
     steps:
       - name: Checkout current main
         uses: actions/checkout@v6
@@ -261,3 +261,8 @@ jobs:
             git commit -m '🧭 Publish compact Decision Watch runtime [skip ci]'
             git push origin HEAD:main
           fi
+
+      - name: Dispatch symbol views after runtime publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run decision_watch_symbol_views.yml --ref main
