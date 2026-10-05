@@ -525,20 +525,29 @@ def evaluate_ba_qm10_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         raise BAQM10AuditError("ba_qm10_runtime_capacity_limit_exceeded")
 
     evidence = _mapping(contract.get("closure_evidence"), "closure_evidence")
-    if str(evidence.get("snapshot_id") or "") != str(
-        operations.get("snapshot_id") or ""
-    ):
-        raise BAQM10AuditError("ba_qm10_closure_snapshot_mismatch")
-    if evidence.get("public_runtime_shard_count") != capacity.get("shard_count"):
-        raise BAQM10AuditError("ba_qm10_closure_shard_count_mismatch")
-    if evidence.get("public_runtime_symbol_count") != capacity.get("symbol_count"):
-        raise BAQM10AuditError("ba_qm10_closure_symbol_count_mismatch")
-    if evidence.get("public_runtime_packet_count") != capacity.get("packet_count"):
-        raise BAQM10AuditError("ba_qm10_closure_packet_count_mismatch")
-    if str(evidence.get("public_runtime_projection_sha256") or "") != str(
-        operations.get("runtime_projection_sha256") or ""
-    ):
-        raise BAQM10AuditError("ba_qm10_closure_projection_hash_mismatch")
+
+    # BA-QM10 is a historical engineering-closure record.  Its frozen evidence
+    # must remain internally self-consistent, but it must not be compared to
+    # mutable current runtime identity.  BA-QM12 separately audits current
+    # snapshot/runtime health through audit_current_operations() above.
+    closure_snapshot_id = str(evidence.get("snapshot_id") or "").strip()
+    closure_snapshot_as_of = str(evidence.get("snapshot_as_of") or "").strip()
+    closure_projection = str(
+        evidence.get("public_runtime_projection_sha256") or ""
+    ).strip()
+    closure_projection_alias = str(
+        evidence.get("runtime_projection_sha256") or ""
+    ).strip()
+    if not closure_snapshot_id or not closure_snapshot_as_of:
+        raise BAQM10AuditError("ba_qm10_closure_identity_missing")
+    if not closure_projection or closure_projection != closure_projection_alias:
+        raise BAQM10AuditError("ba_qm10_closure_projection_evidence_inconsistent")
+    if int(evidence.get("public_runtime_shard_count") or 0) <= 0:
+        raise BAQM10AuditError("ba_qm10_closure_shard_count_invalid")
+    if int(evidence.get("public_runtime_symbol_count") or 0) <= 0:
+        raise BAQM10AuditError("ba_qm10_closure_symbol_count_invalid")
+    if int(evidence.get("public_runtime_packet_count") or 0) <= 0:
+        raise BAQM10AuditError("ba_qm10_closure_packet_count_invalid")
 
     return {
         "schema_version": "ba_qm10_engineering_closure_receipt_v1",
@@ -558,6 +567,16 @@ def evaluate_ba_qm10_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         "runtime_packet_count": capacity["packet_count"],
         "runtime_projection_sha256": operations["runtime_projection_sha256"],
         "symbol_views_runtime_projection_matches": True,
+        "historical_closure_evidence": {
+            "snapshot_id": closure_snapshot_id,
+            "snapshot_as_of": closure_snapshot_as_of,
+            "runtime_projection_sha256": closure_projection,
+            "public_runtime_shard_count": evidence["public_runtime_shard_count"],
+            "public_runtime_symbol_count": evidence["public_runtime_symbol_count"],
+            "public_runtime_packet_count": evidence["public_runtime_packet_count"],
+            "historical_record_not_live_runtime_identity": True,
+        },
+        "current_runtime_evaluated_separately": True,
         "engineering_closure_performed": True,
         "research_logic_changed": False,
         "decision_logic_changed": False,
