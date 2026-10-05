@@ -15,6 +15,8 @@ import io
 import json
 import os
 from pathlib import Path
+import xml.etree.ElementTree as ET
+import zipfile
 from typing import Any, Mapping, Sequence
 
 
@@ -174,6 +176,176 @@ def parse_nasdaq_symbol_directory(raw_payload: bytes, *, filename: str) -> dict[
             "project_investability_computed": False,
         },
     }
+
+
+
+def _xml_local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _xml_first_child_text(parent: ET.Element | None, child_name: str) -> str | None:
+    if parent is None:
+        return None
+    for child in list(parent):
+        if _xml_local_name(child.tag) == child_name:
+            value = _clean(child.text)
+            return value or None
+    return None
+
+
+def _xml_first_descendant(parent: ET.Element, name: str) -> ET.Element | None:
+    for node in parent.iter():
+        if _xml_local_name(node.tag) == name:
+            return node
+    return None
+
+
+def _esma_firds_xml_payload(raw_payload: bytes, *, filename: str) -> tuple[bytes, str]:
+    name = Path(filename).name
+    lower = name.lower()
+    if lower.endswith(".zip"):
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw_payload)) as archive:
+                members = [
+                    member for member in archive.namelist()
+                    if not member.endswith("/") and member.lower().endswith(".xml")
+                ]
+                if len(members) != 1:
+                    raise ProspectiveListingSnapshotError(
+                        f"esma_firds_zip_requires_single_xml:{len(members)}"
+                    )
+                return archive.read(members[0]), Path(members[0]).name
+        except zipfile.BadZipFile as exc:
+            raise ProspectiveListingSnapshotError("esma_firds_zip_invalid") from exc
+    if lower.endswith(".xml"):
+        return bytes(raw_payload), name
+    raise ProspectiveListingSnapshotError(f"esma_firds_file_unsupported:{filename}")
+
+
+def _esma_firds_record(ref_data: ET.Element, *, event_type: str, file_type: str) -> dict[str, Any]:
+    general = _xml_first_descendant(ref_data, "FinInstrmGnlAttrbts")
+    venue = _xml_first_descendant(ref_data, "TradgVnRltdAttrbts")
+    isin = _xml_first_child_text(general, "Id")
+    mic = _xml_first_child_text(venue, "Id")
+    if not isin or not mic:
+        raise ProspectiveListingSnapshotError("esma_firds_record_identity_missing")
+    first_trade = _xml_first_child_text(venue, "FrstTradDt")
+    termination = _xml_first_child_text(venue, "TermntnDt")
+    request_admission = _xml_first_child_text(venue, "ReqForAdmssnDt")
+    if event_type == "TermntdRcrd":
+        listing_state = "TERMINATED_EVENT"
+    elif event_type == "CancRcrd":
+        listing_state = "CANCELLED_EVENT"
+    elif event_type == "NewRcrd":
+        listing_state = "NEW_RECORD_EVENT"
+    elif event_type == "ModfdRcrd":
+        listing_state = "MODIFIED_RECORD_EVENT"
+    elif file_type == "FULINS":
+        listing_state = "LISTED_IN_SOURCE_FULL_FILE"
+    elif file_type == "INVINS":
+        listing_state = "INVALID_OR_SUPERSEDED_RECORD"
+    else:
+        listing_state = "REFERENCE_RECORD"
+    return {
+        "instrument_id": isin,
+        "source_isin": isin,
+        "venue_namespace": "iso_10383_mic",
+        "venue_code": mic,
+        "listing_state": listing_state,
+        "listing_start": first_trade,
+        "listing_end": termination,
+        "request_for_admission": request_admission,
+        "source_event_type": event_type,
+        "source_file_type": file_type,
+        "market_tradability": "UNKNOWN",
+        "project_investability": "UNKNOWN",
+    }
+
+
+def parse_esma_firds_reference_file(raw_payload: bytes, *, filename: str) -> dict[str, Any]:
+    """Parse one official ESMA FIRDS reference file without inferring tradability.
+
+    Both the distributed ZIP wrapper and an extracted XML member are accepted.
+    Full files contain active reference records; Delta/Invalid files can carry
+    additions, modifications, terminations, cancellations and superseded data.
+    """
+    xml_bytes, member_name = _esma_firds_xml_payload(raw_payload, filename=filename)
+    try:
+        root = ET.fromstring(xml_bytes)
+    except ET.ParseError as exc:
+        raise ProspectiveListingSnapshotError("esma_firds_xml_invalid") from exc
+
+    upper_name = member_name.upper()
+    if upper_name.startswith("FULINS_"):
+        file_type = "FULINS"
+    elif upper_name.startswith("DLTINS_"):
+        file_type = "DLTINS"
+    elif upper_name.startswith("INVINS_"):
+        file_type = "INVINS"
+    else:
+        raise ProspectiveListingSnapshotError(
+            f"esma_firds_member_type_unsupported:{member_name}"
+        )
+
+    creation = None
+    for node in root.iter():
+        if _xml_local_name(node.tag) == "CreDt":
+            creation = _clean(node.text) or None
+            break
+
+    records: list[dict[str, Any]] = []
+    event_names = {"NewRcrd", "ModfdRcrd", "TermntdRcrd", "CancRcrd"}
+    event_nodes = [node for node in root.iter() if _xml_local_name(node.tag) in event_names]
+    if event_nodes:
+        for event_node in event_nodes:
+            event_type = _xml_local_name(event_node.tag)
+            for ref_data in event_node.iter():
+                if _xml_local_name(ref_data.tag) == "RefData":
+                    records.append(
+                        _esma_firds_record(
+                            ref_data,
+                            event_type=event_type,
+                            file_type=file_type,
+                        )
+                    )
+    else:
+        for ref_data in root.iter():
+            if _xml_local_name(ref_data.tag) == "RefData":
+                records.append(
+                    _esma_firds_record(
+                        ref_data,
+                        event_type="FULL_RECORD" if file_type == "FULINS" else "REFERENCE_RECORD",
+                        file_type=file_type,
+                    )
+                )
+
+    if not records:
+        raise ProspectiveListingSnapshotError("esma_firds_no_reference_records")
+    records.sort(
+        key=lambda row: (
+            str(row.get("instrument_id")),
+            str(row.get("venue_code")),
+            str(row.get("source_event_type")),
+        )
+    )
+    return {
+        "parser_id": "esma_firds_reference_v1",
+        "parser_version": "1",
+        "source_generated_at_raw": creation,
+        "source_generated_timezone": None,
+        "filename": Path(filename).name,
+        "member_filename": member_name,
+        "file_type": file_type,
+        "record_count": len(records),
+        "records": records,
+        "inferences": {
+            "publication_time_inferred_from_filename": False,
+            "listing_dates_inferred": False,
+            "tradability_inferred_from_listing": False,
+            "project_investability_computed": False,
+        },
+    }
+
 
 
 def _normalized_payload_from_envelope(envelope: Mapping[str, Any]) -> dict[str, Any]:
