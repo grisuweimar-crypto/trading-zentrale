@@ -45,7 +45,6 @@ from scanner.reports.briefing import (
     _bool_series,
     _first_col,
     _norm_str,
-    _num_series,
     _percentile_rank,
     _rec_code,
 )
@@ -99,10 +98,21 @@ def _first_nonempty(*vals: Any) -> Any:
     return None
 
 
+def _history_num_series(df: pd.DataFrame, col: str | None) -> pd.Series:
+    """Numeric helper that keeps missing source fields genuinely missing.
+
+    Use float NaN rather than pd.NA with numpy float64 so the helper remains
+    compatible with pandas 3.x while preserving the no-fallback semantics.
+    """
+    if not col or col not in df.columns:
+        return pd.Series(float("nan"), index=df.index, dtype="float64")
+    return pd.to_numeric(df[col], errors="coerce")
+
+
 def _cycle_series(df_full: pd.DataFrame) -> pd.Series:
     """Already computed cycle value (0-100) from the watchlist."""
     col = _first_col(df_full, ["cycle", "Zyklus %", "Zyklus", "cycle_pct"])
-    return _num_series(df_full, col)
+    return _history_num_series(df_full, col)
 
 
 def _r_code_series(df_full: pd.DataFrame) -> pd.Series:
@@ -116,7 +126,7 @@ def _r_code_series(df_full: pd.DataFrame) -> pd.Series:
     c_trend = _first_col(df_full, ["trend_ok", "TrendOK", "Trend Ok", "Trend"])
     c_liq = _first_col(df_full, ["liquidity_ok", "LiquidityOK", "LiqOK", "Liq"])
 
-    scores = _num_series(df_full, c_score)
+    scores = _history_num_series(df_full, c_score)
     score_sorted = sorted(float(x) for x in scores.dropna().tolist())
     trend = _bool_series(df_full, c_trend)
     liq = _bool_series(df_full, c_liq)
