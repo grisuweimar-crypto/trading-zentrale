@@ -258,13 +258,19 @@ jobs:
           done
 
       - uses: actions/setup-python@v6
-        if: github.event_name == 'pull_request' || steps.bind.outputs.process == 'true'
+        if: >-
+          github.event_name == 'pull_request' ||
+          steps.bind.outputs.process == 'true' ||
+          (github.event_name != 'pull_request' && steps.bind.outputs.process != 'true')
         with:
           python-version: '3.11'
           cache: pip
 
       - name: Install project and test dependencies
-        if: github.event_name == 'pull_request' || steps.bind.outputs.process == 'true'
+        if: >-
+          github.event_name == 'pull_request' ||
+          steps.bind.outputs.process == 'true' ||
+          (github.event_name != 'pull_request' && steps.bind.outputs.process != 'true')
         run: python -m pip install -e '.[test]'
 
       - name: Run frozen-core and prospective-capture regressions
@@ -432,6 +438,110 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run elliott_vnext_prospective_capture.yml --ref main
 
+      - name: Smoke-test latest valid Scanner snapshot when nothing is uncaptured
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          meta = json.loads(Path('artifacts/research/history_metadata.json').read_text(encoding='utf-8'))
+          run_id = str(((meta.get('daily_run') or {}).get('run_id')) or '').strip()
+          if meta.get('latest_run_complete') is not True or (meta.get('daily_run') or {}).get('scanner_status') != 'success':
+              raise SystemExit('latest Scanner snapshot is not complete/successful')
+          if not run_id:
+              raise SystemExit('latest Scanner run_id missing')
+
+          shas = subprocess.check_output(
+              ['git','rev-list','--first-parent','origin/main','--','artifacts/research/history_metadata.json'],
+              text=True,
+          ).splitlines()
+          selected = None
+          for sha in shas:
+              subject = subprocess.check_output(['git','show','-s','--format=%s',sha], text=True).strip()
+              if subject != '📊 Autopilot: artifacts update [skip ci]':
+                  continue
+              try:
+                  raw = subprocess.check_output(
+                      ['git','show',f'{sha}:artifacts/research/history_metadata.json'],
+                      text=True,
+                  )
+                  candidate = json.loads(raw)
+              except Exception:
+                  continue
+              candidate_run = str(((candidate.get('daily_run') or {}).get('run_id')) or '').strip()
+              if candidate_run == run_id:
+                  selected = sha
+                  break
+          if selected is None:
+              raise SystemExit(f'cannot resolve publication commit for current run_id:{run_id}')
+
+          published_at = subprocess.check_output(
+              ['git','show','-s','--format=%cI',selected], text=True
+          ).strip()
+          Path(os.environ['RUNNER_TEMP'],'elliott-smoke-identity.json').write_text(
+              json.dumps({'commit':selected,'run_id':run_id,'published_at':published_at}),
+              encoding='utf-8',
+          )
+          print({'commit': selected, 'run_id': run_id, 'published_at': published_at})
+          PY
+
+          IDENTITY="$RUNNER_TEMP/elliott-smoke-identity.json"
+          COMMIT=$(python -c "import json; print(json.load(open('$IDENTITY'))['commit'])")
+          RUN_ID=$(python -c "import json; print(json.load(open('$IDENTITY'))['run_id'])")
+          PUBLISHED_AT=$(python -c "import json; print(json.load(open('$IDENTITY'))['published_at'])")
+
+          python scripts/run_elliott_prospective_capture_6h.py             --publication-commit "$COMMIT"             --publication-available-from "$PUBLISHED_AT"             --expected-run-id "$RUN_ID"             --current "$RUNNER_TEMP/elliott-smoke-current.json"             --archive "$RUNNER_TEMP/elliott-smoke-history.jsonl"
+
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          capture = json.loads(
+              Path(os.environ['RUNNER_TEMP'], 'elliott-smoke-current.json').read_text(encoding='utf-8')
+          )
+          assert capture['output_count'] > 0
+          assert capture['symbols_with_outputs'] > 0
+          assert capture['validation_partition'] == 'prospective_unspent'
+          source = capture.get('validation_source')
+          assert isinstance(source, dict)
+          assert source.get('adapter') == 'stage4_compact_aggregate_to_frozen_6g_v1'
+          assert source.get('stage4_result_hash')
+          guards = capture['guards']
+          assert guards['research_only'] is True
+          assert guards['changes_universal_stance'] is False
+          assert guards['changes_portfolio_action'] is False
+          assert guards['direct_ordering_allowed'] is False
+          assert guards['future_rows_used'] is False
+          assert guards['frozen_elliott_core_modified'] is False
+
+          missing_expectancy = []
+          for output in capture['outputs']:
+              if output.get('historical_expectancy') is None:
+                  missing_expectancy.append(output.get('output_id'))
+              assert output['validation']['automatic_promotion_allowed'] is False
+              assert 'historical_expectancy_not_supplied' not in output.get('warnings', [])
+              assert output['integration']['productive_integration_enabled'] is False
+              assert output['integration']['direct_ordering_allowed'] is False
+          assert not missing_expectancy, missing_expectancy
+
+          print(json.dumps({
+              'snapshot_id': capture['snapshot_id'],
+              'as_of': capture['as_of'],
+              'run_id': capture['run_id'],
+              'symbols_with_outputs': capture['symbols_with_outputs'],
+              'output_count': capture['output_count'],
+              'validation_adapter': source.get('adapter'),
+              'historical_expectancy_missing_outputs': len(missing_expectancy),
+              'archive_published': False,
+          }, indent=2))
+          PY
+
       - name: Report no uncaptured scanner publication
         if: github.event_name != 'pull_request' && steps.bind.outputs.process != 'true'
-        run: echo "No eligible uncaptured Scanner_vNext publication found."
+        run: echo "No eligible uncaptured Scanner_vNext publication found; latest valid snapshot smoke-tested read-only."
