@@ -27,7 +27,7 @@ from scanner.data.io.safe_csv import to_csv_safely
 
 SCHEMA_VERSION = 2
 ALIGNMENT_TOLERANCE = 0.10
-MIN_PAIR_VALID = 3
+MIN_PAIR_VALID = 5
 MIN_PAIR_COVERAGE = 0.50
 
 
