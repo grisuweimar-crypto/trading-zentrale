@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from scanner.research.governance.ba_qm10_production_operations import audit_current_operations
 from scanner.research.governance.ba_qm12_continuous_qm import (
     BAQM12Error,
     LIFECYCLE,
@@ -21,6 +22,8 @@ def _contract():
 
 
 def test_ba_qm12_current_system_is_continuous_qm_active():
+    production = audit_current_operations(ROOT)
+    assert production["status"] == "BA_QM10_ENGINEERING_COMPLETE", production
     receipt = evaluate_continuous_qm(ROOT)
     assert receipt["engineering_status"] == "BA_QM12_ENGINEERING_COMPLETE"
     assert receipt["operating_status"] == "ACTIVE_CONTINUOUS_QM"
