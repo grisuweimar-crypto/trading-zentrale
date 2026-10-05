@@ -325,6 +325,8 @@ def test_stage3_source_adapter_preserves_all_degrees_without_reducer():
         "validation_source": {
             "adapter": "stage4_compact_aggregate_to_frozen_6g_v1",
             "stage4_result_hash": "c" * 64,
+            "source_commit": "e" * 40,
+            "price_source_sha256": "f" * 64,
         },
         "outputs": [first, second],
         "guards": {
@@ -373,6 +375,7 @@ def test_stage3_source_adapter_preserves_all_degrees_without_reducer():
             "elliott_structure",
             "fibonacci_geometry",
             "swing_routing",
+            "uncertainty_state",
         }
         assert all(len(value) == 64 for value in row["lineage_features"].values())
 
