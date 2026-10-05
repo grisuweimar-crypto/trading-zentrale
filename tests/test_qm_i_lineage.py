@@ -161,6 +161,200 @@ def test_phase7_claim_ref_is_material_direct_lineage(tmp_path):
     assert ancestry["classification"] == "DIRECT_DEPENDENCY"
 
 
+
+def _portfolio_action_with_w6(*, complete_provenance: bool):
+    output_id = "d" * 64
+    source_provenance = None
+    timeframe_degrees = [{
+        "output_id": output_id,
+        "timeframe": "daily",
+        "degree": "intermediate",
+        "current_wave_stage": "wave_4",
+        "primary_scenario_id": "scenario-1",
+    }]
+    if complete_provenance:
+        timeframe_degrees[0]["lineage_features"] = {
+            "elliott_structure": "e" * 64,
+            "fibonacci_geometry": "f" * 64,
+            "swing_routing": "1" * 64,
+        }
+        source_provenance = {
+            "source_capture_id": "capture-2026-10-05",
+            "snapshot_id": "snapshot-2026-10-05",
+            "source_hashes": {
+                "market_ohlcv_sha256": "a" * 64,
+                "daily_research_sha256": "b" * 64,
+            },
+            "validation_source": {
+                "adapter": "stage4_compact_aggregate_to_frozen_6g_v1",
+                "stage4_result_hash": "c" * 64,
+            },
+        }
+    return {
+        "schema_version": "decision_portfolio_action_v1",
+        "phase": "7F",
+        "symbol": "TEST",
+        "as_of": "2026-10-05T10:00:00Z",
+        "source_snapshot_id": "snapshot-2026-10-05",
+        "universal_stance_context": {
+            "raw_state": "positive",
+            "raw_direction": "positive",
+            "preserved": True,
+        },
+        "transition_context": {
+            "status": "stable_confirmed",
+            "stable_directional_anchor": "positive",
+            "pending_direction": None,
+            "stable_anchor_is_current_stance": True,
+            "preserved": True,
+        },
+        "position_context": {
+            "schema_version": "decision_position_snapshot_v1",
+            "source_snapshot_id": "position-2026-10-05",
+            "as_of": "2026-10-05T09:59:00Z",
+            "position_state": "long",
+            "quantity": 1,
+            "currency": "USD",
+            "average_entry_price": 100.0,
+            "current_price": 110.0,
+            "add_capacity_state": "unknown",
+            "remaining_adds": None,
+        },
+        "pnl_context": {
+            "unrealized_return_pct": 10.0,
+            "unrealized_pnl": 10.0,
+            "currency": "USD",
+            "complete": True,
+            "used_for_stance_direction": False,
+            "used_for_action_direction": False,
+        },
+        "portfolio_action": {
+            "state": "REDUCE_REVIEW",
+            "reason_code": "test_w6_lineage",
+            "review_only": True,
+            "execution_allowed": False,
+            "order_instruction": None,
+        },
+        "swing_management": {
+            "mode": "position_reduce_review",
+            "source": "elliott_vnext_6h",
+            "source_output_id": output_id,
+            "review_contexts": ["profit_protection_review"],
+            "review_contexts_are_actions": False,
+            "context_conflict": False,
+            "adjustment": "positive_stance_swing_reduction_review",
+            "elliott_changed_stance_direction": False,
+            "w6": {
+                "source_commit": "2" * 40,
+                "elliott_output_as_of": "2026-10-05",
+                "source_output_ids": [output_id],
+                "output_count": 1,
+                "timeframe_degrees": timeframe_degrees,
+                "source_provenance": source_provenance,
+            },
+        },
+        "cost_context": {
+            "cost_sensitive_action": True,
+            "transaction_cost_bps": None,
+            "cost_model_present": False,
+            "net_benefit_claim_made": False,
+            "missing_cost_model_blocks_net_benefit_claim": True,
+        },
+        "semantics": {
+            "position_state_changed_universal_stance": False,
+            "pnl_changed_universal_stance": False,
+            "pnl_changed_action_direction": False,
+            "elliott_is_directional_vote": False,
+            "elliott_review_context_is_order": False,
+            "weighted_super_score_used": False,
+            "position_sizing_computed": False,
+            "target_weight_computed": False,
+            "score_used_as_price_proxy": False,
+            "broker_order_generated": False,
+        },
+        "validation": {
+            "status": "prospective_unconfirmed",
+            "research_only": True,
+            "portfolio_action_rule_empirically_validated": False,
+            "swing_action_edge_empirically_validated": False,
+            "future_mature_outcomes_required": True,
+            "productive_integration_enabled": False,
+            "execution_allowed": False,
+            "promotion_eligible": False,
+        },
+    }
+
+
+def test_w6_complete_prospective_provenance_reaches_raw_data_through_features(tmp_path):
+    registry = LineageRegistry(tmp_path / "lineage.jsonl")
+    decision = add(registry, node("DECISION-W6", "DECISION", complete=False))
+    action = _portfolio_action_with_w6(complete_provenance=True)
+    registry.register_phase7_portfolio_action(
+        action,
+        action_id="ACTION-W6",
+        version_id="v1",
+        decision_id=decision[0],
+        decision_version_id=decision[1],
+        actor_id="tester",
+        actor_role="reviewer",
+    )
+
+    output_id = "d" * 64
+    market_id = "elliott:market_ohlcv:" + ("a" * 64)
+    context = registry.get_node(
+        output_id,
+        "elliott_vnext_6h:capture:capture-2026-10-05",
+    )
+    assert context["lineage_complete"] is True
+    assert context["metadata"]["upstream_elliott_binding_complete"] is True
+
+    for feature_name, feature_hash in {
+        "elliott_structure": "e" * 64,
+        "fibonacci_geometry": "f" * 64,
+        "swing_routing": "1" * 64,
+    }.items():
+        feature = registry.get_node(
+            f"elliott:{output_id}:{feature_name}",
+            feature_hash,
+        )
+        assert feature["node_type"] == "FEATURE"
+        assert feature["lineage_complete"] is True
+
+    ancestry = registry.analyze_ancestry(
+        left_node_id=market_id,
+        left_version_id="a" * 64,
+        right_node_id="ACTION-W6",
+        right_version_id="v1",
+    )
+    assert ancestry["classification"] == "DIRECT_DEPENDENCY"
+    assert market_id + "::" + ("a" * 64) == ancestry["direct_path"][0]
+    assert ancestry["direct_path"][-1] == "ACTION-W6::v1"
+
+
+def test_w6_missing_exact_provenance_remains_lineage_incomplete(tmp_path):
+    registry = LineageRegistry(tmp_path / "lineage.jsonl")
+    decision = add(registry, node("DECISION-W6", "DECISION", complete=False))
+    action = _portfolio_action_with_w6(complete_provenance=False)
+    registry.register_phase7_portfolio_action(
+        action,
+        action_id="ACTION-W6",
+        version_id="v1",
+        decision_id=decision[0],
+        decision_version_id=decision[1],
+        actor_id="tester",
+        actor_role="reviewer",
+    )
+
+    context = registry.get_node("d" * 64, "elliott_vnext_6h")
+    assert context["lineage_complete"] is False
+    assert context["metadata"]["upstream_elliott_binding_complete"] is False
+    with pytest.raises(LineageError, match="lineage_node_not_found"):
+        registry.get_node(
+            "elliott:market_ohlcv:" + ("a" * 64),
+            "a" * 64,
+        )
+
+
 def test_current_qm_c_rejected_result_ids_and_hashes_are_reused_without_rekeying(tmp_path):
     hypotheses = HypothesisRegistry(tmp_path / "hypotheses.jsonl")
     plans = AnalysisPlanRegistry(tmp_path / "plans.jsonl")
