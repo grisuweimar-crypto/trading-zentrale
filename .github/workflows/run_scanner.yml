@@ -61,7 +61,18 @@ jobs:
           python -m pip install -e ".[test]"
 
       - name: History-Regressionstests
-        run: python -m pytest tests -v
+        # Produktions-Gate fuer die scannernahe History-/Research-Kette.
+        # Governance-/QM-Suiten laufen in ihren eigenen Workflows und duerfen
+        # einen ansonsten gueltigen Tageslauf nicht blockieren.
+        run: |
+          python -m pytest \
+            tests/test_history_delta_completion.py \
+            tests/test_daily_research.py \
+            tests/test_history_query_and_daily_research.py \
+            tests/test_history_research.py \
+            tests/test_recent_history.py \
+            tests/test_research_views.py \
+            -v
 
       - name: Daily-Lauf vorbereiten
         env:
