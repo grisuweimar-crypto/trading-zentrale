@@ -99,7 +99,14 @@ def bootstrap_difference_daily(
     min_support_regions: int = 2,
     seed_key: Sequence[object] = (),
 ) -> dict[str, object]:
-    """Exact sufficient-statistics equivalent of 6G block_bootstrap_difference."""
+    """Exact daily-statistics equivalent of 6G block_bootstrap_difference.
+
+    The original implementation materializes every sampled observation date for
+    every bootstrap replicate.  Here the same circular blocks are represented by
+    precomputed block sums/counts, so one replicate needs only a handful of array
+    lookups.  RNG seeds, block starts, truncation of the final block and weighted
+    observation means remain unchanged.
+    """
 
     v_n, v_mean = _mean_from_daily(values)
     b_n, b_mean = _mean_from_daily(baseline)
@@ -128,43 +135,71 @@ def bootstrap_difference_daily(
     ):
         return result
 
-    span = min(block_length, len(dates))
-    draws_per_rep = int(ceil(len(dates) / block_length))
+    n = len(dates)
+    span = min(block_length, n)
+    draws_per_rep = int(ceil(n / block_length))
+    full_blocks = n // span
+    remainder = n - full_blocks * span
+    if full_blocks == draws_per_rep and remainder == 0:
+        full_draws = draws_per_rep
+    else:
+        full_draws = max(0, draws_per_rep - 1)
+
+    v_sum = np.asarray([float(values.get(day, (0.0, 0))[0]) for day in dates], dtype=float)
+    v_count = np.asarray([int(values.get(day, (0.0, 0))[1]) for day in dates], dtype=np.int64)
+    b_sum = np.asarray([float(baseline.get(day, (0.0, 0))[0]) for day in dates], dtype=float)
+    b_count = np.asarray([int(baseline.get(day, (0.0, 0))[1]) for day in dates], dtype=np.int64)
+
+    offsets = np.arange(span, dtype=np.int64)
+    block_indices = (np.arange(n, dtype=np.int64)[:, None] + offsets[None, :]) % n
+    v_block_sum = v_sum[block_indices].sum(axis=1)
+    v_block_count = v_count[block_indices].sum(axis=1)
+    b_block_sum = b_sum[block_indices].sum(axis=1)
+    b_block_count = b_count[block_indices].sum(axis=1)
+
+    if remainder:
+        partial_indices = block_indices[:, :remainder]
+        v_partial_sum = v_sum[partial_indices].sum(axis=1)
+        v_partial_count = v_count[partial_indices].sum(axis=1)
+        b_partial_sum = b_sum[partial_indices].sum(axis=1)
+        b_partial_count = b_count[partial_indices].sum(axis=1)
+    else:
+        v_partial_sum = v_block_sum
+        v_partial_count = v_block_count
+        b_partial_sum = b_block_sum
+        b_partial_count = b_block_count
+
     rng = np.random.default_rng(
         _stable_seed(random_seed, *seed_key, "diff", metric, horizon)
     )
-    estimates: list[float] = []
-    for _ in range(bootstrap_reps):
-        chosen = rng.integers(0, len(dates), size=draws_per_rep)
-        sampled_dates: list[str] = []
-        for index in chosen:
-            start = int(index)
-            sampled_dates.extend(
-                dates[(start + offset) % len(dates)]
-                for offset in range(span)
-            )
-        sampled_dates = sampled_dates[: len(dates)]
+    chosen = rng.integers(0, n, size=(bootstrap_reps, draws_per_rep))
 
-        v_sum = 0.0
-        v_count = 0
-        b_sum = 0.0
-        b_count = 0
-        for day in sampled_dates:
-            if day in values:
-                day_sum, day_count = values[day]
-                if day_count:
-                    v_sum += float(day_sum)
-                    v_count += int(day_count)
-            if day in baseline:
-                day_sum, day_count = baseline[day]
-                if day_count:
-                    b_sum += float(day_sum)
-                    b_count += int(day_count)
-        if v_count and b_count:
-            estimates.append(v_sum / v_count - b_sum / b_count)
+    if full_draws:
+        full = chosen[:, :full_draws]
+        rep_v_sum = v_block_sum[full].sum(axis=1)
+        rep_v_count = v_block_count[full].sum(axis=1)
+        rep_b_sum = b_block_sum[full].sum(axis=1)
+        rep_b_count = b_block_count[full].sum(axis=1)
+    else:
+        rep_v_sum = np.zeros(bootstrap_reps, dtype=float)
+        rep_v_count = np.zeros(bootstrap_reps, dtype=np.int64)
+        rep_b_sum = np.zeros(bootstrap_reps, dtype=float)
+        rep_b_count = np.zeros(bootstrap_reps, dtype=np.int64)
 
-    if estimates:
-        lo, hi = np.quantile(np.asarray(estimates, dtype=float), [0.025, 0.975])
+    if remainder:
+        last = chosen[:, full_draws]
+        rep_v_sum = rep_v_sum + v_partial_sum[last]
+        rep_v_count = rep_v_count + v_partial_count[last]
+        rep_b_sum = rep_b_sum + b_partial_sum[last]
+        rep_b_count = rep_b_count + b_partial_count[last]
+
+    valid = (rep_v_count > 0) & (rep_b_count > 0)
+    if np.any(valid):
+        estimates = (
+            rep_v_sum[valid] / rep_v_count[valid]
+            - rep_b_sum[valid] / rep_b_count[valid]
+        )
+        lo, hi = np.quantile(estimates.astype(float), [0.025, 0.975])
         result["difference_95"] = [float(lo), float(hi)]
         result["robust_interval_available"] = True
     return result
@@ -251,7 +286,17 @@ def main() -> int:
     events_without_scanner_anchor = 0
     lead_lag_rows = 0
 
-    daily_acc: dict[tuple[object, ...], list[float]] = defaultdict(lambda: [0.0, 0.0])
+    # Indexed once while reading chunks.  Key:
+    # class tuple -> metric -> arm -> date -> [sum, count].
+    # This avoids the previous O(number_of_classes × all_daily_rows) rescan.
+    daily_index: dict[
+        tuple[object, ...],
+        dict[str, dict[str, dict[str, list[float]]]],
+    ] = defaultdict(
+        lambda: defaultdict(
+            lambda: defaultdict(lambda: defaultdict(lambda: [0.0, 0.0]))
+        )
+    )
     lead_lag_counts: Counter[tuple[object, ...]] = Counter()
 
     for path in paths:
@@ -296,13 +341,13 @@ def main() -> int:
         lead_lag_rows += int(transition_coverage.get("lead_lag_rows") or 0)
 
         for row in payload.get("transition_daily_sufficient_stats") or []:
-            key = tuple(row.get(field) for field in TRANSITION_FIELDS) + (
-                row.get("arm"),
-                row.get("metric"),
-                str(row.get("event_date")),
-            )
-            daily_acc[key][0] += float(row.get("sum") or 0.0)
-            daily_acc[key][1] += int(row.get("count") or 0)
+            base = tuple(row.get(field) for field in TRANSITION_FIELDS)
+            metric = str(row.get("metric"))
+            arm = str(row.get("arm"))
+            day = str(row.get("event_date"))
+            aggregate = daily_index[base][metric][arm][day]
+            aggregate[0] += float(row.get("sum") or 0.0)
+            aggregate[1] += int(row.get("count") or 0)
 
         for row in payload.get("lead_lag_sufficient_stats") or []:
             key = tuple(row.get(field) for field in LEAD_LAG_FIELDS) + (
@@ -317,12 +362,8 @@ def main() -> int:
     if len(price_hashes) != 1 or "" in price_hashes:
         raise ValueError("stage5_price_hash_not_unique")
 
-    class_keys = {
-        key[: len(TRANSITION_FIELDS)]
-        for key in daily_acc
-    }
     validation_rows: list[dict[str, object]] = []
-    for base in sorted(class_keys, key=_sort_key):
+    for base in sorted(daily_index, key=_sort_key):
         values = {
             field: base[index]
             for index, field in enumerate(TRANSITION_FIELDS)
@@ -336,18 +377,15 @@ def main() -> int:
         stats: dict[str, dict[str, object]] = {}
         valid_comparison = True
         for metric in metrics:
-            with_daily: dict[str, tuple[float, int]] = {}
-            without_daily: dict[str, tuple[float, int]] = {}
-            for key, aggregate in daily_acc.items():
-                if key[: len(TRANSITION_FIELDS)] != base:
-                    continue
-                arm = str(key[len(TRANSITION_FIELDS)])
-                row_metric = str(key[len(TRANSITION_FIELDS) + 1])
-                day = str(key[len(TRANSITION_FIELDS) + 2])
-                if row_metric != metric:
-                    continue
-                target = with_daily if arm == "with_transition" else without_daily
-                target[day] = (float(aggregate[0]), int(aggregate[1]))
+            metric_arms = daily_index[base].get(metric, {})
+            with_daily = {
+                day: (float(aggregate[0]), int(aggregate[1]))
+                for day, aggregate in metric_arms.get("with_transition", {}).items()
+            }
+            without_daily = {
+                day: (float(aggregate[0]), int(aggregate[1]))
+                for day, aggregate in metric_arms.get("without_transition", {}).items()
+            }
 
             if not with_daily or not without_daily:
                 valid_comparison = False
