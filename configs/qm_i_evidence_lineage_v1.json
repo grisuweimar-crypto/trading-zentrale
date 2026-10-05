@@ -63,7 +63,11 @@
       "POSITION_SNAPSHOT",
       "WATCH"
     ],
-    "root_node_types": ["RAW_SOURCE", "EXTERNAL_EVIDENCE", "POSITION_SNAPSHOT"],
+    "root_node_types": [
+      "RAW_SOURCE",
+      "EXTERNAL_EVIDENCE",
+      "POSITION_SNAPSHOT"
+    ],
     "semantic_id_fields": {
       "CLAIM": "claim_id",
       "CALIBRATION": "calibration_id",
@@ -171,7 +175,12 @@
     "depot_watch_schema": "decision_depot_watch_v1",
     "watch_id_reused_from_phase7h": true,
     "decision_id_must_be_supplied_when_source_artifact_has_no_stable_decision_id": true,
-    "historical_decision_ids_may_not_be_guessed": true
+    "historical_decision_ids_may_not_be_guessed": true,
+    "w6_exact_prospective_raw_source_lineage_supported": true,
+    "w6_exact_prospective_feature_lineage_supported": true,
+    "w6_validation_lineage_supported": true,
+    "w6_uncertainty_lineage_supported": true,
+    "w6_legacy_missing_provenance_remains_incomplete": true
   },
   "qm_c_integration": {
     "handoff_schema": "ba_qm2_handoff_v2",
