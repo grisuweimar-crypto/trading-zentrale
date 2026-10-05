@@ -36,6 +36,9 @@ def test_ba_qm12_current_system_is_continuous_qm_active():
     assert tuple(monitor["residuals"]) == MASTERPLAN_RESIDUAL_IDS
     assert monitor["residuals"]["W6_ELLIOTT_LINEAGE"]["blocking_masterplan_completion"] is False
     assert monitor["residuals"]["W6_ELLIOTT_LINEAGE"]["status"] == "PROSPECTIVE_RAW_FEATURE_VALIDATION_UNCERTAINTY_LINEAGE_COMPLETE"
+    assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["prospective_plan_validated"] is True
+    assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["eligible_observation_from"] == "2026-10-06"
+    assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["automatic_release_allowed"] is False
     assert monitor["blocking_residual_count"] == 6
     assert set(monitor["blocking_residual_ids"]) == {
         "PHASE1A_LAG1_CAPA",
