@@ -118,9 +118,7 @@ def main() -> int:
                 "current": str(current_path),
                 "archive": str(archive_path),
                 "w10_source_emitted": False,
-                "validation_report_supplied": stored_capture["guards"].get(
-                    "validation_report_supplied"
-                ),
+                "validation_report_supplied": stored_capture.get("validation_source") is not None,
                 "validation_source": stored_capture.get("validation_source"),
             },
             indent=2,
