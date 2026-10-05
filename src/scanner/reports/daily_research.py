@@ -131,7 +131,12 @@ def generate_daily(root: Path, receipt_path: Path, *, scanner_status="success", 
     except (ValueError, UnicodeError, csv.Error) as exc:
         errors.append("invalid_watchlist: " + str(exc))
     columns = [c for c, aliases in ALIASES.items() if any(a in source_columns for a in aliases)]
-    columns = list(dict.fromkeys(columns + ["r_code", "run_id", "scoring_version"]))
+    columns = list(
+        dict.fromkeys(
+            columns
+            + ["r_code", "run_id", "scoring_version", "history_schema_version"]
+        )
+    )
     rows = []
     for original in source_rows:
         row = {c: next((original[a] for a in ALIASES[c] if original.get(a, "").strip()), "")
