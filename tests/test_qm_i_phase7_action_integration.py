@@ -230,6 +230,25 @@ def test_w8_state_history_claim_is_material_portfolio_action_parent(tmp_path):
 
 
 def test_w6_elliott_review_context_is_material_portfolio_action_parent(tmp_path):
+    old_packet = build_input_packet(
+        symbol="TEST",
+        as_of="2026-10-03T17:00:00Z",
+        source_snapshot_id="snapshot-w6-old",
+        evidence=[
+            {
+                "family": "selection",
+                "claim_id": "SEL-W6-OLD",
+                "as_of": "2026-10-03T17:00:00Z",
+                "available_from": "2026-10-03T17:00:00Z",
+                "source_version": "selection-v1-old",
+                "coverage_state": "available",
+                "maturity_state": "robust",
+                "pit_state": "verified",
+                "integration_mode": "research_only",
+                "payload": {"direction": "positive"},
+            }
+        ],
+    )
     packet = build_input_packet(
         symbol="TEST",
         as_of="2026-10-04T17:00:00Z",
@@ -249,8 +268,9 @@ def test_w6_elliott_review_context_is_material_portfolio_action_parent(tmp_path)
             }
         ],
     )
+    old_stance = compute_universal_stance(old_packet)
     stance = compute_universal_stance(packet)
-    transition = build_state_transition_history([stance])
+    transition = build_state_transition_history([old_stance, stance])
     action = compute_portfolio_action(
         transition,
         {
