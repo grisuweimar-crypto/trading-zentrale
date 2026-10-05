@@ -594,43 +594,204 @@ class LineageRegistry:
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([decision_id, decision_version_id, action_id, version_id, "INFORMS"])[:24], "from_node_id": decision_id, "from_version_id": decision_version_id, "to_node_id": action_id, "to_version_id": version_id, "relation": "INFORMS", "material_for_ancestry": True}, actor_id, actor_role)
         self._ensure_edge({"edge_id": "qm-i:" + content_hash([position_id, position_version, action_id, version_id, "USES_POSITION"])[:24], "from_node_id": position_id, "from_version_id": position_version, "to_node_id": action_id, "to_version_id": version_id, "relation": "USES_POSITION", "material_for_ancestry": True}, actor_id, actor_role)
 
-        # BA-QM11 CAPA: W6 Elliott review context is a material immediate
-        # parent whenever 7F consumed it.  The context node is intentionally
-        # marked lineage-incomplete until the upstream Elliott provenance graph
-        # is bound into QM-I; missing upstream lineage therefore stays visible
-        # instead of masquerading as independence.
+        # BA-QM11/W6 closure: Elliott review context is a material immediate
+        # parent whenever 7F consumed it.  New prospective 6H captures carry
+        # exact source hashes and output identities, allowing QM-I to bind the
+        # review context to raw market/daily inputs.  Older/manual W6 sources
+        # without those fields remain explicitly lineage-incomplete; no
+        # historical provenance is guessed.
         swing = validated.get("swing_management")
         if isinstance(swing, Mapping) and swing.get("source") is not None:
             context_id = _text(
                 swing.get("source_output_id"),
                 "swing_management.source_output_id",
             )
-            context_version = _text(
+            source_name = _text(
                 swing.get("source"),
                 "swing_management.source",
             )
+            w6_meta = swing.get("w6")
+            source_provenance = (
+                w6_meta.get("source_provenance")
+                if isinstance(w6_meta, Mapping)
+                else None
+            )
+            source_hashes = (
+                source_provenance.get("source_hashes")
+                if isinstance(source_provenance, Mapping)
+                else None
+            )
+            market_hash = (
+                str(source_hashes.get("market_ohlcv_sha256") or "").lower()
+                if isinstance(source_hashes, Mapping)
+                else ""
+            )
+            daily_hash = (
+                str(source_hashes.get("daily_research_sha256") or "").lower()
+                if isinstance(source_hashes, Mapping)
+                else ""
+            )
+            source_capture_id = (
+                str(source_provenance.get("source_capture_id") or "").strip()
+                if isinstance(source_provenance, Mapping)
+                else ""
+            )
+            snapshot_id = (
+                str(source_provenance.get("snapshot_id") or "").strip()
+                if isinstance(source_provenance, Mapping)
+                else ""
+            )
+            output_ids = (
+                [str(value).strip() for value in w6_meta.get("source_output_ids") or []]
+                if isinstance(w6_meta, Mapping)
+                else []
+            )
+            sha256_hex = lambda value: (
+                len(value) == 64
+                and all(char in "0123456789abcdef" for char in value)
+            )
+            provenance_complete = bool(
+                source_capture_id
+                and snapshot_id
+                and sha256_hex(market_hash)
+                and sha256_hex(daily_hash)
+                and output_ids
+                and all(sha256_hex(value.lower()) for value in output_ids)
+            )
+            context_version = (
+                f"{source_name}:capture:{source_capture_id}"
+                if provenance_complete
+                else source_name
+            )
             context_material = {
                 "symbol": validated.get("symbol"),
-                "source": swing.get("source"),
+                "source": source_name,
                 "source_output_id": context_id,
                 "review_contexts": list(swing.get("review_contexts") or []),
                 "context_conflict": swing.get("context_conflict"),
             }
+
+            if provenance_complete:
+                source_as_of = str(validated["as_of"])
+                market_node_id = f"elliott:market_ohlcv:{market_hash}"
+                daily_node_id = f"elliott:daily_research:{snapshot_id}"
+                self._ensure_node({
+                    "node_id": market_node_id,
+                    "version_id": market_hash,
+                    "node_type": "RAW_SOURCE",
+                    "content_hash": market_hash,
+                    "lineage_complete": True,
+                    "as_of": source_as_of,
+                    "metadata": {
+                        "phase": "6A-6H",
+                        "source": "artifacts/market_data/yahoo_ohlcv.csv",
+                        "source_capture_id": source_capture_id,
+                        "research_only": True,
+                    },
+                }, actor_id, actor_role)
+                self._ensure_node({
+                    "node_id": daily_node_id,
+                    "version_id": daily_hash,
+                    "node_type": "RAW_SOURCE",
+                    "content_hash": daily_hash,
+                    "lineage_complete": True,
+                    "as_of": source_as_of,
+                    "metadata": {
+                        "phase": "6H prospective capture",
+                        "source": "daily_research",
+                        "snapshot_id": snapshot_id,
+                        "source_capture_id": source_capture_id,
+                        "research_only": True,
+                    },
+                }, actor_id, actor_role)
+
+                timeframe_rows = {
+                    str(row.get("output_id") or ""): dict(row)
+                    for row in (w6_meta.get("timeframe_degrees") or [])
+                    if isinstance(row, Mapping)
+                } if isinstance(w6_meta, Mapping) else {}
+                for output_id in output_ids:
+                    output_id = output_id.lower()
+                    row = timeframe_rows.get(output_id, {})
+                    self._ensure_node({
+                        "node_id": output_id,
+                        "version_id": "elliott_vnext_output_v2",
+                        "node_type": "INDICATOR",
+                        "content_hash": output_id,
+                        "lineage_complete": True,
+                        "as_of": source_as_of,
+                        "metadata": {
+                            "phase": "6H",
+                            "module": "elliott_vnext",
+                            "timeframe": row.get("timeframe"),
+                            "degree": row.get("degree"),
+                            "source_capture_id": source_capture_id,
+                            "validation_source": (
+                                dict(source_provenance.get("validation_source"))
+                                if isinstance(source_provenance.get("validation_source"), Mapping)
+                                else None
+                            ),
+                            "research_only": True,
+                        },
+                    }, actor_id, actor_role)
+                    for raw_node_id, raw_version, marker in (
+                        (market_node_id, market_hash, "MARKET_OHLCV"),
+                        (daily_node_id, daily_hash, "DAILY_RESEARCH"),
+                    ):
+                        self._ensure_edge({
+                            "edge_id": "qm-i:" + content_hash([
+                                raw_node_id,
+                                raw_version,
+                                output_id,
+                                "elliott_vnext_output_v2",
+                                marker,
+                                "PRODUCES",
+                            ])[:24],
+                            "from_node_id": raw_node_id,
+                            "from_version_id": raw_version,
+                            "to_node_id": output_id,
+                            "to_version_id": "elliott_vnext_output_v2",
+                            "relation": "PRODUCES",
+                            "material_for_ancestry": True,
+                        }, actor_id, actor_role)
+
             self._ensure_node({
                 "node_id": context_id,
                 "version_id": context_version,
                 "node_type": "DECISION_CONTEXT",
                 "content_hash": content_hash(context_material),
-                "lineage_complete": False,
+                "lineage_complete": provenance_complete,
                 "as_of": str(validated["as_of"]),
                 "metadata": {
                     "phase": "W6",
-                    "source": swing.get("source"),
+                    "source": source_name,
                     "context_type": "elliott_review_context",
                     "research_only": True,
-                    "upstream_elliott_binding_complete": False,
+                    "upstream_elliott_binding_complete": provenance_complete,
+                    "source_capture_id": source_capture_id or None,
+                    "snapshot_id": snapshot_id or None,
                 },
             }, actor_id, actor_role)
+
+            if provenance_complete:
+                for output_id in output_ids:
+                    output_id = output_id.lower()
+                    self._ensure_edge({
+                        "edge_id": "qm-i:" + content_hash([
+                            output_id,
+                            "elliott_vnext_output_v2",
+                            context_id,
+                            context_version,
+                            "INFORMS_W6_CONTEXT",
+                        ])[:24],
+                        "from_node_id": output_id,
+                        "from_version_id": "elliott_vnext_output_v2",
+                        "to_node_id": context_id,
+                        "to_version_id": context_version,
+                        "relation": "INFORMS",
+                        "material_for_ancestry": True,
+                    }, actor_id, actor_role)
+
             self._ensure_edge({
                 "edge_id": "qm-i:" + content_hash([
                     context_id,
