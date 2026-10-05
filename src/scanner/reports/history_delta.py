@@ -488,11 +488,19 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
 
     delta = pd.DataFrame(rows)
     both = delta[delta["status"] == "ok"].copy()
-    both["rank_delta_num"] = pd.to_numeric(both["rank_delta"], errors="coerce").fillna(0)
-    both["score_delta_num"] = pd.to_numeric(both["score_delta"], errors="coerce").fillna(0)
+    comparable = both[
+        pd.to_numeric(both["score_prev"], errors="coerce").notna()
+        & pd.to_numeric(both["score_now"], errors="coerce").notna()
+    ].copy()
+    comparable["rank_delta_num"] = pd.to_numeric(
+        comparable["rank_delta"], errors="coerce"
+    ).fillna(0)
+    comparable["score_delta_num"] = pd.to_numeric(
+        comparable["score_delta"], errors="coerce"
+    ).fillna(0)
 
-    up_pool = both[both["rank_delta_num"] > 0].copy()
-    down_pool = both[both["rank_delta_num"] < 0].copy()
+    up_pool = comparable[comparable["rank_delta_num"] > 0].copy()
+    down_pool = comparable[comparable["rank_delta_num"] < 0].copy()
 
     movers_up = up_pool.sort_values(["rank_delta_num", "score_delta_num"], ascending=[False, False]).head(top_n)
     movers_down = down_pool.sort_values(["rank_delta_num", "score_delta_num"], ascending=[True, True]).head(top_n)
@@ -526,7 +534,7 @@ def _compute_pair_payload(work: pd.DataFrame, *, prev_date: str, latest_date: st
     payload = {
         "prev_date": prev_date,
         "latest_date": latest_date,
-        "with": int(len(both)),
+        "with": int(len(comparable)),
         "movers_up": _pack(movers_up),
         "movers_down": _pack(movers_down),
         "events": all_events,
@@ -560,6 +568,8 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
                 "internal_scanner_history_only": True,
                 "price_performance_metric": False,
                 "events_require_comparable_previous_snapshot": True,
+                "rank_threshold_events_use_common_universe": True,
+                "comparison_basis_requires_scores_on_both_snapshots": True,
                 "new_or_dropped_assets_do_not_create_status_events": True,
             },
         }
@@ -597,6 +607,8 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
                 "internal_scanner_history_only": True,
                 "price_performance_metric": False,
                 "events_require_comparable_previous_snapshot": True,
+                "rank_threshold_events_use_common_universe": True,
+                "comparison_basis_requires_scores_on_both_snapshots": True,
                 "new_or_dropped_assets_do_not_create_status_events": True,
             },
         }
@@ -646,6 +658,8 @@ def compute_history_delta(score_hist: pd.DataFrame) -> tuple[pd.DataFrame, dict[
             "score_delta": _as_float(rr.get("score_delta")),
             "rank_prev": _as_int(rr.get("rank_prev")),
             "rank_now": _as_int(rr.get("rank_now")),
+            "rank_prev_common": _as_int(rr.get("rank_prev_common")),
+            "rank_now_common": _as_int(rr.get("rank_now_common")),
             "rank_delta": _as_int(rr.get("rank_delta")),
             "events": events,
         }
