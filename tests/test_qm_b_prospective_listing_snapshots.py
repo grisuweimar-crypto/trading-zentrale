@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
+import zipfile
 
 import pytest
 
@@ -10,6 +12,7 @@ from scanner.research.governance.qm_b_prospective_listing_snapshots import (
     archive_snapshot,
     build_snapshot_envelope,
     load_snapshot_contract,
+    parse_esma_firds_reference_file,
     parse_nasdaq_symbol_directory,
     verify_snapshot_ledger,
 )
@@ -17,6 +20,55 @@ from scanner.research.governance.qm_b_prospective_listing_snapshots import (
 
 NASDAQ_LISTED = b"Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares\nAAPL|Apple Inc.|Q|N|N|100|N|N\nFile Creation Time: 0929202617:03|||||||\n"
 OTHER_LISTED = b"ACT Symbol|Security Name|Exchange|CQS Symbol|ETF|Round Lot Size|Test Issue|NASDAQ Symbol\nIBM|International Business Machines|N|IBM|N|100|N|IBM\nFile Creation Time: 0929202617:04|||||||\n"
+
+ESMA_FULINS_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<BizData xmlns="urn:iso:std:iso:20022:tech:xsd:head.003.001.01">
+  <Hdr><AppHdr xmlns="urn:iso:std:iso:20022:tech:xsd:head.001.001.01"><CreDt>2026-10-04T07:55:00Z</CreDt></AppHdr></Hdr>
+  <Pyld>
+    <Document xmlns="urn:iso:std:iso:20022:tech:xsd:auth.017.001.02">
+      <FinInstrmRptgRefDataRpt>
+        <RefData>
+          <FinInstrmGnlAttrbts><Id>FR0000120693</Id><FullNm>PERNOD RICARD</FullNm></FinInstrmGnlAttrbts>
+          <TradgVnRltdAttrbts>
+            <Id>XPAR</Id>
+            <ReqForAdmssnDt>1999-01-01T00:00:00Z</ReqForAdmssnDt>
+            <FrstTradDt>1999-01-04T08:00:00Z</FrstTradDt>
+          </TradgVnRltdAttrbts>
+        </RefData>
+      </FinInstrmRptgRefDataRpt>
+    </Document>
+  </Pyld>
+</BizData>
+"""
+
+ESMA_DLTINS_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<BizData xmlns="urn:iso:std:iso:20022:tech:xsd:head.003.001.01">
+  <Pyld>
+    <Document xmlns="urn:iso:std:iso:20022:tech:xsd:auth.036.001.03">
+      <FinInstrmRptgRefDataDeltaRpt>
+        <TermntdRcrd>
+          <RefData>
+            <FinInstrmGnlAttrbts><Id>FR0000120693</Id></FinInstrmGnlAttrbts>
+            <TradgVnRltdAttrbts>
+              <Id>XPAR</Id>
+              <FrstTradDt>1999-01-04T08:00:00Z</FrstTradDt>
+              <TermntnDt>2026-10-03T16:30:00Z</TermntnDt>
+            </TradgVnRltdAttrbts>
+          </RefData>
+        </TermntdRcrd>
+      </FinInstrmRptgRefDataDeltaRpt>
+    </Document>
+  </Pyld>
+</BizData>
+"""
+
+
+def _zip_xml(filename: str, payload: bytes) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(filename, payload)
+    return buffer.getvalue()
+
 
 
 def _envelope(raw: bytes, parser_result: dict, *, retrieved_at: str = "2026-09-29T20:55:00+00:00") -> dict:
@@ -146,3 +198,46 @@ def test_unknown_or_missing_listing_fields_are_not_filled_by_parser():
     assert row["listing_end"] is None
     assert row["market_tradability"] == "UNKNOWN"
     assert row["project_investability"] == "UNKNOWN"
+
+
+def test_esma_firds_full_zip_parser_preserves_isin_mic_and_dates_without_tradability_inference():
+    raw = _zip_xml("FULINS_E_20261004_01of01.xml", ESMA_FULINS_XML)
+    parsed = parse_esma_firds_reference_file(raw, filename="FULINS_E_20261004_01of01.zip")
+    assert parsed["file_type"] == "FULINS"
+    assert parsed["source_generated_at_raw"] == "2026-10-04T07:55:00Z"
+    assert parsed["record_count"] == 1
+    row = parsed["records"][0]
+    assert row["instrument_id"] == "FR0000120693"
+    assert row["venue_code"] == "XPAR"
+    assert row["venue_namespace"] == "iso_10383_mic"
+    assert row["listing_start"] == "1999-01-04T08:00:00Z"
+    assert row["listing_end"] is None
+    assert row["listing_state"] == "LISTED_IN_SOURCE_FULL_FILE"
+    assert row["market_tradability"] == "UNKNOWN"
+    assert row["project_investability"] == "UNKNOWN"
+    assert parsed["inferences"]["tradability_inferred_from_listing"] is False
+
+
+def test_esma_firds_delta_termination_is_event_not_general_tradability_claim():
+    parsed = parse_esma_firds_reference_file(
+        ESMA_DLTINS_XML,
+        filename="DLTINS_E_20261004_01of01.xml",
+    )
+    row = parsed["records"][0]
+    assert parsed["file_type"] == "DLTINS"
+    assert row["source_event_type"] == "TermntdRcrd"
+    assert row["listing_state"] == "TERMINATED_EVENT"
+    assert row["listing_end"] == "2026-10-03T16:30:00Z"
+    assert row["market_tradability"] == "UNKNOWN"
+
+
+def test_esma_firds_zip_with_multiple_xml_members_fails_closed():
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("FULINS_E_20261004_01of02.xml", ESMA_FULINS_XML)
+        archive.writestr("FULINS_E_20261004_02of02.xml", ESMA_FULINS_XML)
+    with pytest.raises(ProspectiveListingSnapshotError, match="requires_single_xml"):
+        parse_esma_firds_reference_file(
+            buffer.getvalue(),
+            filename="FULINS_E_20261004_bundle.zip",
+        )
