@@ -10,7 +10,7 @@ from scanner.reports.history_delta import (
 )
 from scanner.reports.reality_check import build_reality_check
 from scanner.reports.segment_monitor import compute_segment_monitor
-from scanner.ui.generator import _render_fallback_tbody
+from scanner.ui.generator import _render_fallback_tbody, _render_html
 
 
 def test_fallback_table_keeps_dscore_column_alignment() -> None:
@@ -23,7 +23,7 @@ def test_fallback_table_keeps_dscore_column_alignment() -> None:
                 {
                     "ticker": "AAA",
                     "name": "Alpha",
-                    "price": 10.0,
+                    "price": 222.27000042724609,
                     "score": 42.0,
                     "confidence": 70.0,
                     "cycle": 50.0,
@@ -36,6 +36,40 @@ def test_fallback_table_keeps_dscore_column_alignment() -> None:
         )
     )
     assert html.count("<td") == 11
+    assert "222.27" in html
+    assert "222.27000042724609" not in html
+    assert "42.00" in html
+    assert "70.0" in html
+    assert "50%" in html
+
+
+def test_ui_polish_exposes_history_basis_filters_and_explainability() -> None:
+    html = _render_html(
+        data_records=[],
+        presets={"ALL": {"filters": [], "sort": [], "limit": 0}},
+        source_csv="fixture.csv",
+        version="test",
+        build="test",
+        briefing_text="",
+        briefing_source="",
+        history_delta={},
+        segment_monitor={},
+        reality_check={},
+        macro_chain_signal={},
+        briefing_realities_text="",
+        briefing_realities_source="",
+        run_at="",
+        run_src="",
+        run_universe="",
+        fallback_tbody_html="",
+    )
+    assert 'id="activeFilters"' in html
+    assert 'data-key="onlyHistoryBasis"' in html
+    assert "Nur Werte mit belastbarer dScore-1D-Vergleichsbasis" in html
+    assert "kein Handelssignal" in html
+    assert "sampleThin" in html
+    assert "sampleUnclear" in html
+    assert "Datenbasis: History" in html
 
 
 def test_productive_daily_bridge_preserves_history_status_contract() -> None:
