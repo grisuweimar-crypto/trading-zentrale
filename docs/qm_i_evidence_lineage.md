@@ -64,3 +64,39 @@ QM-B strict historical promotion remains blocked by the external listing, market
 The next mandatory work package is:
 
 **BA-QM4 / QM-D + QM-E — Dependence, Effective N & Calibration**.
+
+
+## BA-QM11 addendum — material post-7D action ancestry
+
+BA-QM11 found that the canonical Portfolio Action path had gained material
+post-7D parents after the original QM-I integration:
+
+- W6 Elliott review context can change a positive confirmed long position from
+  `HOLD` to `REDUCE_REVIEW` or `ADD_REVIEW` without changing Universal
+  Stance.
+- W7 scanner path/history context can be consumed by W8 and can change the final
+  7F review state.
+
+QM-I therefore treats both as material immediate Action ancestry.
+
+### W6
+
+The W6 source output is registered as a typed `DECISION_CONTEXT` node and is
+connected to the final `PORTFOLIO_ACTION` with a material `INFORMS` edge.
+
+Its upstream Elliott-to-raw-data lineage is deliberately marked incomplete
+until that provenance is explicitly bound into QM-I. Missing upstream lineage
+must never be interpreted as evidence independence.
+
+### W7/W8
+
+The source scanner-path claim referenced by
+`decision_state_history_context_v1.source_claim_id` is connected directly to
+the final W8-resolved `PORTFOLIO_ACTION`.
+
+If W8 reports `action_changed=true` but no registered state-history ancestry
+is available, registration fails closed.
+
+These changes affect lineage and auditability only. They do not change
+Universal Stance, W8 action rules, broker execution or empirical promotion
+status.
