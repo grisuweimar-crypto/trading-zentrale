@@ -170,6 +170,14 @@ def test_contract_cannot_claim_ba_qm10_releases_lag1() -> None:
         validate_contract(changed)
 
 
+def test_qm3_preserves_historical_32_shard_closure_while_live_runtime_uses_64() -> None:
+    contract = load_contract()
+    assert contract["closure_evidence"]["public_runtime_shard_count"] == 32
+    current = audit_current_runtime_capacity()
+    assert current["configured_shard_count"] == 64
+    assert current["shard_count"] == 64
+
+
 def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     result = audit_current_runtime_capacity()
     assert result["status"] == "PASS"
