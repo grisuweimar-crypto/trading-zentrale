@@ -1,0 +1,114 @@
+{
+  "schema_version": "pattern_discovery_l1_run_contract_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L1",
+  "name": "Discovery Run Contract",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Pre-register every Pattern Discovery run completely and deterministically before search execution.",
+  "principles": {
+    "preregistration_precedes_search": true,
+    "run_identity_is_deterministic": true,
+    "same_plan_and_same_inputs_produce_same_identity": true,
+    "incomplete_preregistration_fails_closed": true,
+    "frozen_manifests_are_immutable": true,
+    "input_content_is_fingerprinted": true,
+    "point_in_time_cutoff_precedes_or_equals_declared_start": true,
+    "productive_semantics_must_not_change": true
+  },
+  "preregistration": {
+    "required_fields": [
+      "declared_start_at",
+      "data_cutoff",
+      "data_sources",
+      "pit_rules",
+      "universe_version",
+      "feature_library_version",
+      "allowed_transformations",
+      "pattern_complexity",
+      "pattern_types",
+      "targets",
+      "horizons_sessions",
+      "baselines",
+      "minimum_criteria",
+      "search_budget",
+      "candidate_budget",
+      "multiple_testing",
+      "statistical_primary_method",
+      "robustness_checks",
+      "exclusion_rules",
+      "dependency_rules",
+      "code_version",
+      "determinism"
+    ],
+    "reject_unknown_fields": true,
+    "allowed_horizons_sessions": [5, 20, 40, 60],
+    "allowed_pattern_types": [
+      "DIRECTIONAL",
+      "RELATIVE_ALPHA",
+      "RISK",
+      "PATH",
+      "MODIFIER"
+    ],
+    "max_atomic_conditions_initial": 3
+  },
+  "minimum_criteria": {
+    "required_fields": [
+      "minimum_raw_n",
+      "minimum_temporal_support_regions",
+      "minimum_effect_size",
+      "minimum_baseline_lift"
+    ]
+  },
+  "search_budget": {
+    "required_fields": [
+      "max_tested_candidates_total",
+      "max_tested_candidates_per_family"
+    ]
+  },
+  "candidate_budget": {
+    "required_fields": [
+      "max_frozen_candidates_total",
+      "max_frozen_candidates_per_horizon"
+    ]
+  },
+  "multiple_testing": {
+    "required_fields": ["primary_method", "parameters"],
+    "allowed_primary_methods": [
+      "PREDECLARED_SINGLE_PRIMARY",
+      "BONFERRONI_FWER",
+      "HOLM_FWER",
+      "BENJAMINI_HOCHBERG_FDR",
+      "CUSTOM_PREDECLARED"
+    ]
+  },
+  "determinism": {
+    "required_fields": ["randomness_allowed", "seed"],
+    "seed_required_when_randomness_allowed": true,
+    "seed_forbidden_when_randomness_disabled": true
+  },
+  "identity": {
+    "hash_algorithm": "sha256",
+    "canonical_json": true,
+    "run_id_prefix": "DISC",
+    "run_id_digest_chars": 20,
+    "manifest_schema_version": "pattern_discovery_run_manifest_v1",
+    "manifest_path_template": "artifacts/research/pattern_discovery/discovery_runs/{run_id}/manifest.json"
+  },
+  "bindings": {
+    "l0_boundary_schema": "pattern_discovery_l0_boundary_v1",
+    "l0_write_guard_required": true,
+    "l0_read_guard_required_for_input_fingerprints": true
+  },
+  "boundaries": {
+    "feature_library_implemented_here": false,
+    "pattern_search_executed_here": false,
+    "candidate_selection_executed_here": false,
+    "multiple_testing_calculated_here": false,
+    "prospective_confirmation_implemented_here": false,
+    "promotion_implemented_here": false,
+    "decision_layer_integration_implemented_here": false
+  }
+}
