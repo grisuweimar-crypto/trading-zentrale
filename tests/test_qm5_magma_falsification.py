@@ -33,7 +33,7 @@ def test_magma_case_cannot_be_reinterpreted_as_buy_add_or_execution():
     assert contract["interpretation"]["hold_does_not_claim_positive_forward_return"] is True
     assert contract["interpretation"]["hold_does_not_equal_buy_or_add"] is True
     assert row["decision"]["portfolio_action_state"] == "HOLD"
-    assert runtime["semantics"]["execution_semantics"] == "non_executable_research_watch"
+    assert runtime["semantics"]["reference_is_trade_instruction"] is False\n    assert runtime["semantics"]["actual_holdings_included"] is False
     assert contract["promotion_or_semantic_change_performed"] is False
     assert runtime["diagnostics"]["scanner_scalar_fallback_used"] is False
 
