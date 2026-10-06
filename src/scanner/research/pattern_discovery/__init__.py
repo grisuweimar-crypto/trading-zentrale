@@ -1,8 +1,9 @@
 """Pattern Discovery Lab v2 research-only bounded context.
 
 L0 provides the hard research boundary. L1 adds deterministic pre-registration
-and immutable Discovery Run manifests. Later phases implement the actual search,
-candidate freeze, prospective confirmation, rating and promotion.
+and immutable Discovery Run manifests. L2 adds the versioned PIT-safe Feature
+Library. Later phases implement actual search, candidate freeze, prospective
+confirmation, rating and promotion.
 """
 
 from .boundary import (
@@ -22,6 +23,13 @@ from .run_contract import (
     verify_run_manifest,
     write_run_manifest,
 )
+from .feature_library import (
+    FeatureLibrary,
+    FeatureLibraryError,
+    feature_library_hash,
+    feature_version_hash,
+    load_feature_library,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -37,4 +45,9 @@ __all__ = [
     "run_contract_hash",
     "verify_run_manifest",
     "write_run_manifest",
+    "FeatureLibrary",
+    "FeatureLibraryError",
+    "feature_library_hash",
+    "feature_version_hash",
+    "load_feature_library",
 ]
