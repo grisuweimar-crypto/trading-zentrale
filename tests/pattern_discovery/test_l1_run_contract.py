@@ -150,6 +150,31 @@ def test_cutoff_must_not_follow_declared_start():
         normalize_preregistration(raw)
 
 
+def test_every_target_requires_exactly_one_preregistered_baseline():
+    raw = preregistration(
+        baselines={
+            "peer_excess_5t_gt_0": "same_horizon_same_regime_peer_baseline"
+        }
+    )
+    with pytest.raises(
+        DiscoveryRunContractError,
+        match="baseline_target_mismatch:missing=peer_excess_20t_gt_0",
+    ):
+        normalize_preregistration(raw)
+
+
+def test_equivalent_timestamp_offsets_normalize_to_same_semantics():
+    first = normalize_preregistration(preregistration())
+    second = normalize_preregistration(
+        preregistration(
+            declared_start_at="2026-10-06T17:00:00+02:00",
+            data_cutoff="2026-10-06T16:59:00+02:00",
+        )
+    )
+    assert first["declared_start_at"] == second["declared_start_at"]
+    assert first["data_cutoff"] == second["data_cutoff"]
+
+
 def test_complexity_and_budgets_are_bounded():
     raw = preregistration(
         pattern_complexity={"min_atomic_conditions": 1, "max_atomic_conditions": 4}
