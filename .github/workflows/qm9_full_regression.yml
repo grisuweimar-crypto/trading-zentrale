@@ -1,0 +1,36 @@
+name: QM-9 Full Regression
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/qm9_full_regression.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  full-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.11", cache: pip}
+      - run: python -m pip install -e ".[test]"
+      - name: Run consolidated QM regression
+        run: >-
+          python -m pytest -q
+          tests/test_qm5_magma_falsification.py
+          tests/test_qm6_witness_library.py
+          tests/test_qm7_workflow_gate_scope.py
+          tests/test_qm8_capa_finding_consolidation.py
+          tests/test_qm_h_capa.py
+          tests/test_qm_i_lineage.py
+          tests/test_qm_j_negative_controls.py
+          tests/test_qm_j_phase1a_lag1_effectiveness.py
+          tests/test_ba_qm8_end_to_end.py
+          tests/test_ba_qm9_end_application_audit.py
+          tests/test_ba_qm10_production_operations.py
+          tests/test_ba_qm11_system_audit.py
+          tests/test_ba_qm12_continuous_qm.py
+          tests/test_watch_runtime_transport.py
+          tests/test_w10_snapshot_orchestration.py
+          tests/test_w11_end_to_end_acceptance.py
+          tests/test_w12_ferrari_regression.py
