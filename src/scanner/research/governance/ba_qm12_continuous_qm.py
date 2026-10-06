@@ -115,6 +115,33 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
     if any(guards.get(field) is not False for field in required_false):
         raise BAQM12Error("lifecycle_guard_invalid")
 
+    finding_policy = _mapping(value.get("finding_lifecycle_policy"), "finding_lifecycle_policy")
+    expected_states = ("OPEN", "CAPA_IMPLEMENTED_PENDING_VERIFICATION", "CLOSED_EFFECTIVE", "REOPENED")
+    if tuple(finding_policy.get("states") or ()) != expected_states:
+        raise BAQM12Error("finding_lifecycle_states_invalid")
+    for field in (
+        "closure_requires_effectiveness_evidence",
+        "recurrence_requires_reopen_or_linked_new_finding",
+        "closed_finding_may_not_hide_current_failure",
+    ):
+        if finding_policy.get(field) is not True:
+            raise BAQM12Error(f"finding_lifecycle_guard_missing:{field}")
+    reopen_triggers = tuple(finding_policy.get("reopen_triggers") or ())
+    if reopen_triggers != (
+        "CONTROL_REGRESSION",
+        "RECURRENCE",
+        "EFFECTIVENESS_EVIDENCE_INVALIDATED",
+        "CURRENT_FAIL_CLOSED_GUARD_FAILURE",
+    ):
+        raise BAQM12Error("finding_reopen_triggers_invalid")
+    escalation = _mapping(finding_policy.get("escalation"), "finding_lifecycle_policy.escalation")
+    if not tuple(escalation.get("required_for") or ()):
+        raise BAQM12Error("finding_escalation_triggers_missing")
+    if escalation.get("automatic_semantic_change_allowed") is not False:
+        raise BAQM12Error("finding_escalation_semantic_change_forbidden")
+    if escalation.get("automatic_promotion_allowed") is not False:
+        raise BAQM12Error("finding_escalation_auto_promotion_forbidden")
+
     policy = _mapping(value.get("monitoring_policy"), "monitoring_policy")
     if policy.get("scheduled_continuous_qm_required") is not True:
         raise BAQM12Error("scheduled_continuous_qm_required")
@@ -392,6 +419,9 @@ def evaluate_continuous_qm(root: str | Path = ROOT) -> dict[str, Any]:
         "operating_status": "ACTIVE_CONTINUOUS_QM",
         "required_control_count": len(REQUIRED_CONTROLS),
         "required_controls_active": list(REQUIRED_CONTROLS),
+        "finding_lifecycle_status": "ACTIVE_FAIL_CLOSED",
+        "finding_reopen_triggers": list(contract["finding_lifecycle_policy"]["reopen_triggers"]),
+        "finding_escalation_required_for": list(contract["finding_lifecycle_policy"]["escalation"]["required_for"]),
         "future_module_lifecycle": list(LIFECYCLE),
         "snapshot_monitor": snapshot,
         "production_health_status": production["status"],

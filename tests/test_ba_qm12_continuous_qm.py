@@ -25,6 +25,9 @@ def test_ba_qm12_current_system_is_continuous_qm_active():
     assert receipt["engineering_status"] == "BA_QM12_ENGINEERING_COMPLETE"
     assert receipt["operating_status"] == "ACTIVE_CONTINUOUS_QM"
     assert receipt["required_control_count"] == 9
+    assert receipt["finding_lifecycle_status"] == "ACTIVE_FAIL_CLOSED"
+    assert "RECURRENCE" in receipt["finding_reopen_triggers"]
+    assert "FALSE_DECISION_OBSERVED" in receipt["finding_escalation_required_for"]
     assert tuple(receipt["required_controls_active"]) == REQUIRED_CONTROLS
     assert tuple(receipt["future_module_lifecycle"]) == LIFECYCLE
     assert receipt["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
@@ -84,4 +87,25 @@ def test_engineering_completion_cannot_be_relabelled_full_masterplan_completion(
     value = deepcopy(_contract())
     value["masterplan_completion_gate"]["engineering_completion_is_full_masterplan_completion"] = True
     with pytest.raises(BAQM12Error, match="engineering_may_not_equal_masterplan_completion"):
+        validate_contract(value)
+
+
+def test_closed_finding_cannot_hide_current_failure():
+    value = deepcopy(_contract())
+    value["finding_lifecycle_policy"]["closed_finding_may_not_hide_current_failure"] = False
+    with pytest.raises(BAQM12Error, match="finding_lifecycle_guard_missing"):
+        validate_contract(value)
+
+
+def test_recurrence_must_reopen_or_create_linked_finding():
+    value = deepcopy(_contract())
+    value["finding_lifecycle_policy"]["recurrence_requires_reopen_or_linked_new_finding"] = False
+    with pytest.raises(BAQM12Error, match="finding_lifecycle_guard_missing"):
+        validate_contract(value)
+
+
+def test_finding_escalation_cannot_auto_promote():
+    value = deepcopy(_contract())
+    value["finding_lifecycle_policy"]["escalation"]["automatic_promotion_allowed"] = True
+    with pytest.raises(BAQM12Error, match="finding_escalation_auto_promotion_forbidden"):
         validate_contract(value)
