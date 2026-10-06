@@ -186,6 +186,9 @@ def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     assert result["configured_shard_count"] == len(SHARD_IDS)
     assert result["shard_count"] == result["configured_shard_count"]
     assert result["max_shard_bytes"] < result["hard_limit_bytes"] == 2_000_000
+    assert result["headroom_bytes"] == result["hard_limit_bytes"] - result["max_shard_bytes"]
+    assert 0.0 < result["headroom_ratio"] < 1.0
+    assert result["capacity_review_recommended"] is False
     assert result["symbol_count"] > 0
     assert result["packet_count"] >= result["symbol_count"]
     assert result["private_position_data_included"] is False
@@ -357,3 +360,17 @@ def test_historical_ba_qm10_closure_survives_new_valid_live_snapshot(monkeypatch
     assert historical["snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
     assert historical["runtime_projection_sha256"] != result["runtime_projection_sha256"]
     assert result["status"] == "BA_QM10_ENGINEERING_COMPLETE"
+
+
+def test_qm3_capacity_recurrence_is_separate_from_historical_f01() -> None:
+    contract = load_contract()
+    f01 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F01")
+    f05 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F05")
+    assert f01["state"] == "CLOSED_EFFECTIVE"
+    assert f01["capa"]["implementation"].startswith("Expand deterministic Watch runtime transport from 16 to 32")
+    assert f01["effectiveness"]["evidence"]["published_shard_count"] == 32
+    assert f05["related_prior_finding_id"] == "BA-QM10-F01"
+    assert f05["state"] == "CLOSED_EFFECTIVE"
+    assert f05["effectiveness"]["evidence"]["published_shard_count"] == len(SHARD_IDS)
+    assert f05["effectiveness"]["historical_f01_evidence_rewritten"] is False
+    assert f05["capa"]["early_warning_headroom_ratio"] == 0.20
