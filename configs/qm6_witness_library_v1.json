@@ -1,19 +1,118 @@
 {
   "schema_version": "qm6_witness_library_v1",
   "source_artifact": "artifacts/research/watch_runtime/public_long_reference.json",
-  "purpose": "Lock representative Decision/Watch behaviours to explicit productive witnesses.",
+  "purpose": "Named productive witness coverage with invariant guards. Snapshot-dependent Decision outcomes are observed rather than frozen across market snapshots.",
   "witnesses": [
-    {"id":"WPM_PROFIT_PROTECTION","symbol":"WPM.TO","expect":{"universal_stance_state":"positive","portfolio_action_state":"REDUCE_REVIEW","w8_action_policy_case":"f2_profit_protection_before_correction"}},
-    {"id":"AURORA_OVEREXTENSION_INSUFFICIENT","symbol":"ACB.TO","expect":{"state_history_state":"overextended","universal_stance_state":"insufficient_evidence","portfolio_action_state":"HOLD"}},
-    {"id":"FERRARI_DIRECTIONAL_CONFLICT","symbol":"RACE","expect":{"universal_stance_state":"conflicted","transition_status":"blocked_conflict","portfolio_action_state":"HOLD","w8_action_policy_conflict":true}},
-    {"id":"PERNOD_INSUFFICIENT","symbol":"RI.PA","expect":{"universal_stance_state":"insufficient_evidence","transition_status":"blocked_insufficient","portfolio_action_state":"HOLD"}},
-    {"id":"DRONESHIELD_INSUFFICIENT","symbol":"DRO.AX","expect":{"universal_stance_state":"insufficient_evidence","transition_status":"blocked_insufficient","portfolio_action_state":"HOLD"}},
-    {"id":"MAGMA_POSITIVE_EXISTING_LONG","symbol":"MGMA.V","expect":{"universal_stance_state":"positive","transition_status":"stable_confirmed","portfolio_action_state":"HOLD","portfolio_action_reason_code":"positive_confirmed_existing_long"}}
+    {
+      "id": "WPM_PROFIT_PROTECTION",
+      "symbol": "WPM.TO",
+      "required_decision_fields": [
+        "universal_stance_state",
+        "portfolio_action_state",
+        "w8_action_policy_case"
+      ],
+      "historical_reference_expect": {
+        "universal_stance_state": "positive",
+        "portfolio_action_state": "REDUCE_REVIEW",
+        "w8_action_policy_case": "f2_profit_protection_before_correction"
+      }
+    },
+    {
+      "id": "AURORA_OVEREXTENSION_INSUFFICIENT",
+      "symbol": "ACB.TO",
+      "required_decision_fields": [
+        "state_history_state",
+        "universal_stance_state",
+        "portfolio_action_state"
+      ],
+      "historical_reference_expect": {
+        "state_history_state": "overextended",
+        "universal_stance_state": "insufficient_evidence",
+        "portfolio_action_state": "HOLD"
+      }
+    },
+    {
+      "id": "FERRARI_DIRECTIONAL_CONFLICT",
+      "symbol": "RACE",
+      "required_decision_fields": [
+        "universal_stance_state",
+        "transition_status",
+        "portfolio_action_state",
+        "w8_action_policy_conflict"
+      ],
+      "historical_reference_expect": {
+        "universal_stance_state": "conflicted",
+        "transition_status": "blocked_conflict",
+        "portfolio_action_state": "HOLD",
+        "w8_action_policy_conflict": true
+      }
+    },
+    {
+      "id": "PERNOD_INSUFFICIENT",
+      "symbol": "RI.PA",
+      "required_decision_fields": [
+        "universal_stance_state",
+        "transition_status",
+        "portfolio_action_state"
+      ],
+      "historical_reference_expect": {
+        "universal_stance_state": "insufficient_evidence",
+        "transition_status": "blocked_insufficient",
+        "portfolio_action_state": "HOLD"
+      }
+    },
+    {
+      "id": "DRONESHIELD_INSUFFICIENT",
+      "symbol": "DRO.AX",
+      "required_decision_fields": [
+        "universal_stance_state",
+        "transition_status",
+        "portfolio_action_state"
+      ],
+      "historical_reference_expect": {
+        "universal_stance_state": "insufficient_evidence",
+        "transition_status": "blocked_insufficient",
+        "portfolio_action_state": "HOLD"
+      }
+    },
+    {
+      "id": "MAGMA_POSITIVE_EXISTING_LONG",
+      "symbol": "MGMA.V",
+      "required_decision_fields": [
+        "universal_stance_state",
+        "transition_status",
+        "portfolio_action_state",
+        "portfolio_action_reason_code"
+      ],
+      "historical_reference_expect": {
+        "universal_stance_state": "positive",
+        "transition_status": "stable_confirmed",
+        "portfolio_action_state": "HOLD",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long"
+      }
+    }
   ],
   "global_witnesses": [
-    {"id":"ELLIOTT_NOT_SUPPLIED","path":"diagnostics.elliott_6h_source_status","expected":"not_supplied"},
-    {"id":"ELLIOTT_NO_STANCE_CHANGE","path":"diagnostics.elliott_changed_universal_stance","expected":false},
-    {"id":"NO_SCANNER_SCALAR_FALLBACK","path":"diagnostics.scanner_scalar_fallback_used","expected":false},
-    {"id":"REFERENCE_NOT_TRADE_INSTRUCTION","path":"semantics.reference_is_trade_instruction","expected":false}
-  ]
+    {
+      "id": "ELLIOTT_NOT_SUPPLIED",
+      "path": "diagnostics.elliott_6h_source_status",
+      "expected": "not_supplied"
+    },
+    {
+      "id": "ELLIOTT_NO_STANCE_CHANGE",
+      "path": "diagnostics.elliott_changed_universal_stance",
+      "expected": false
+    },
+    {
+      "id": "NO_SCANNER_SCALAR_FALLBACK",
+      "path": "diagnostics.scanner_scalar_fallback_used",
+      "expected": false
+    },
+    {
+      "id": "REFERENCE_NOT_TRADE_INSTRUCTION",
+      "path": "semantics.reference_is_trade_instruction",
+      "expected": false
+    }
+  ],
+  "snapshot_dependent_outcomes_must_not_be_frozen": true
 }
