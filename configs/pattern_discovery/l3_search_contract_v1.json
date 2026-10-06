@@ -1,0 +1,116 @@
+{
+  "schema_version": "pattern_discovery_l3_search_contract_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L3",
+  "name": "Search Engine / Discovery Core",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Generate and rank reproducible Pattern Discovery candidates inside a bounded, pre-registered search space using only L1-frozen runs and L2-registered PIT-safe features.",
+  "principles": {
+    "discovery_only": true,
+    "confirmation_data_forbidden": true,
+    "candidate_ranking_uses_discovery_only": true,
+    "all_tested_candidates_are_retained": true,
+    "rejected_candidates_keep_reason_codes": true,
+    "search_space_is_deterministically_enumerated": true,
+    "search_budgets_are_hard_limits": true,
+    "candidate_shortlist_is_not_a_freeze": true,
+    "l4_statistical_guard_is_not_implemented_here": true,
+    "productive_semantics_must_not_change": true
+  },
+  "supported_pattern_types": [
+    "DIRECTIONAL",
+    "RELATIVE_ALPHA"
+  ],
+  "deferred_pattern_types": [
+    "RISK",
+    "PATH",
+    "MODIFIER"
+  ],
+  "supported_horizons_sessions": [5, 20, 40, 60],
+  "target_id_patterns": {
+    "DIRECTIONAL": "^return_(5|20|40|60)t_(gt|lt)_0$",
+    "RELATIVE_ALPHA": "^peer_excess_(5|20|40|60)t_(gt|lt)_0$"
+  },
+  "observation_schema": {
+    "required_fields": ["symbol", "as_of", "outcomes"],
+    "outcomes_object_required": true,
+    "outcome_required_fields": ["value", "end_at"],
+    "future_outcome_after_cutoff_forbidden": true
+  },
+  "atom_generation": {
+    "included_transformations": [
+      "change_direction",
+      "threshold_crossing",
+      "state_transition",
+      "regime_context",
+      "raw"
+    ],
+    "continuous_raw_atomization": false,
+    "continuous_delta_atomization": false,
+    "change_direction_states": ["UP", "DOWN"],
+    "threshold_crossing_states": ["CROSS_UP", "CROSS_DOWN"],
+    "state_transition_requires_change": true,
+    "categorical_raw_uses_exact_recorded_state": true,
+    "boolean_raw_uses_exact_recorded_state": true,
+    "regime_context_uses_exact_recorded_state": true
+  },
+  "candidate_generation": {
+    "minimum_conditions": 1,
+    "maximum_conditions": 3,
+    "combination_order": "canonical_lexicographic",
+    "mutually_exclusive_conditions_are_skipped_before_testing": true,
+    "duplicate_specs_are_rejected": true,
+    "family_key_fields": [
+      "pattern_type",
+      "target_id",
+      "horizon_sessions",
+      "expected_direction"
+    ]
+  },
+  "discovery_gates": {
+    "use_l1_minimum_raw_n": true,
+    "use_l1_minimum_effect_size": true,
+    "minimum_temporal_support_regions_applied_here": false,
+    "minimum_baseline_lift_applied_here": false,
+    "multiple_testing_applied_here": false,
+    "dependency_adjustment_applied_here": false
+  },
+  "ranking": {
+    "scope": "WITHIN_DISCOVERY_FAMILY",
+    "primary": "aligned_effect_desc",
+    "secondary": "hit_rate_desc",
+    "tertiary": "raw_n_desc",
+    "quaternary": "candidate_id_asc"
+  },
+  "shortlist": {
+    "uses_l1_candidate_budget_as_upper_bound": true,
+    "state": "DISCOVERY_SHORTLIST",
+    "is_frozen_pattern": false,
+    "is_qm_c_hypothesis": false,
+    "is_productive_evidence": false
+  },
+  "identity": {
+    "hash_algorithm": "sha256",
+    "canonical_json": true,
+    "candidate_id_prefix": "CAND",
+    "candidate_id_digest_chars": 24,
+    "result_schema_version": "pattern_discovery_l3_result_v1",
+    "result_path_template": "artifacts/research/pattern_discovery/discovery_runs/{run_id}/l3_search_result.json"
+  },
+  "bindings": {
+    "l0_boundary_required": true,
+    "l1_frozen_run_manifest_required": true,
+    "l2_feature_library_exact_binding_required": true
+  },
+  "boundaries": {
+    "l4_multiple_testing_performed": false,
+    "l4_robust_uncertainty_performed": false,
+    "l5_candidate_freeze_performed": false,
+    "qm_c_registration_performed": false,
+    "prospective_confirmation_performed": false,
+    "productive_scanner_or_decision_semantics_changed": false
+  }
+}
