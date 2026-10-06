@@ -236,6 +236,53 @@
         "falsification_logic_changed": false,
         "decision_logic_changed": false
       }
+    },
+    {
+      "finding_id": "BA-QM10-F05",
+      "related_prior_finding_id": "BA-QM10-F01",
+      "category": "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY_RECURRENCE",
+      "state": "IMPLEMENTED_PENDING_VERIFICATION",
+      "observed_at": "2026-10-05",
+      "evidence": [
+        {
+          "workflow": "Decision Watch Runtime Publish",
+          "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+          "prior_configured_shard_count": 32,
+          "observed_max_shard_bytes_before_capa": 2295757,
+          "hard_limit_bytes": 2000000,
+          "fail_closed": true
+        },
+        {
+          "snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+          "configured_shard_count_after_capa": 64,
+          "observed_max_shard_bytes_after_capa": 1170640,
+          "hard_limit_bytes": 2000000,
+          "headroom_bytes": 829360,
+          "headroom_ratio": 0.41468,
+          "runtime_publish_succeeded": true
+        }
+      ],
+      "effect": {
+        "runtime_publication_temporarily_blocked": true,
+        "false_watch_accepted": false,
+        "decision_safety": "FAIL_CLOSED"
+      },
+      "root_cause": "A fixed shard-count capacity remedy can become stale as retained runtime history grows; duplicating a fixed shard count in QM also couples live health checks to historical architecture.",
+      "capa": {
+        "implemented": true,
+        "implementation": "Keep historical F01 16-to-32 evidence immutable; bind current capacity audit to the production SHARD_IDS contract, require actual shard count to equal configured count, retain the 2,000,000-byte hard limit, and record the 32-to-64 event as a recurrence.",
+        "durable_strategy": "Treat shard fan-out as a mutable transport contract and capacity as an independent safety invariant. Future fan-out changes must preserve packet/Decision semantics and remain below the hard byte limit without rewriting historical closure evidence.",
+        "early_warning_headroom_ratio": 0.2,
+        "early_warning_definition": "Operational follow-up should flag capacity review when measured free headroom falls below 20% of the hard per-shard byte limit; the hard publish gate remains unchanged.",
+        "research_logic_changed": false,
+        "decision_logic_changed": false,
+        "packet_semantics_changed": false
+      },
+      "effectiveness": {
+        "verification_status": "PENDING_QM3_CI_AND_CURRENT_CAPACITY_AUDIT",
+        "historical_f01_state_unchanged": true,
+        "historical_f01_evidence_rewritten": false
+      }
     }
   ],
   "static_risks_to_verify": [
