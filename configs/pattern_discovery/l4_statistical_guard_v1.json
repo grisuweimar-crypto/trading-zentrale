@@ -35,11 +35,12 @@
   ],
   "multiple_testing": {
     "supported_primary_methods": [
-      "PREDECLARED_SINGLE_PRIMARY",
       "BONFERRONI_FWER",
       "HOLM_FWER",
       "BENJAMINI_HOCHBERG_FDR"
     ],
+    "single_primary_supported": false,
+    "single_primary_reason": "L1 v1 does not preregister a family alpha for PREDECLARED_SINGLE_PRIMARY, so L4 v1 fails closed rather than inventing one after search.",
     "custom_predeclared_supported": false,
     "family_scope": "L3_FAMILY_ALL_TESTED_CANDIDATES",
     "raw_p_value_method": "DEPENDENCY_AWARE_ONE_SIDED_NORMAL_APPROXIMATION",
