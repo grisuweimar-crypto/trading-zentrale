@@ -2,8 +2,9 @@
 
 L0 provides the hard research boundary. L1 adds deterministic pre-registration
 and immutable Discovery Run manifests. L2 adds the versioned PIT-safe Feature
-Library. L3 adds the bounded discovery-only Search Engine. Later phases add
-statistical guards, hard freeze, prospective confirmation, rating and promotion.
+Library. L3 adds the bounded discovery-only Search Engine. L4 adds the
+Statistical Discovery Guard. Later phases add hard freeze, prospective
+confirmation, rating and promotion.
 """
 
 from .boundary import (
@@ -39,6 +40,15 @@ from .search_engine import (
     verify_search_result,
     write_search_result,
 )
+from .statistical_guard import (
+    DiscoveryGuardError,
+    apply_statistical_guard,
+    evidence_repo_path,
+    guard_contract_hash,
+    load_guard_contract,
+    verify_statistical_evidence,
+    write_statistical_evidence,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -66,4 +76,11 @@ __all__ = [
     "search_result_repo_path",
     "verify_search_result",
     "write_search_result",
+    "DiscoveryGuardError",
+    "apply_statistical_guard",
+    "evidence_repo_path",
+    "guard_contract_hash",
+    "load_guard_contract",
+    "verify_statistical_evidence",
+    "write_statistical_evidence",
 ]
