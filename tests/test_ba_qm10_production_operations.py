@@ -71,7 +71,7 @@ def test_ba_qm10_current_operations_audit_is_complete_and_same_snapshot() -> Non
 def test_scanner_autorun_has_retry_serialization_provenance_and_partial_run_guards() -> None:
     result = audit_current_operations()
     guards = result["static_guards"]
-    assert guards["scanner_three_retry_slots"] is True
+    assert guards["scanner_current_retry_schedule"] is True
     assert guards["scanner_serialized"] is True
     assert guards["scanner_provenance_required"] is True
     assert guards["scanner_records_success_marker_only_after_validation"] is True
@@ -173,8 +173,8 @@ def test_contract_cannot_claim_ba_qm10_releases_lag1() -> None:
 def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     result = audit_current_runtime_capacity()
     assert result["status"] == "PASS"
-    assert result["configured_shard_count"] == 32
-    assert result["shard_count"] == 32
+    assert result["configured_shard_count"] == 64
+    assert result["shard_count"] == 64
     assert result["max_shard_bytes"] < result["hard_limit_bytes"] == 2_000_000
     assert result["symbol_count"] > 0
     assert result["packet_count"] >= result["symbol_count"]
@@ -285,7 +285,7 @@ def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -
     assert result["all_required_guards_passed"] is True
     assert result["open_finding_count"] == 0
     assert result["open_static_risk_count"] == 0
-    assert result["runtime_shard_count"] == 32
+    assert result["runtime_shard_count"] == 64
     assert result["runtime_max_shard_bytes"] < result["runtime_hard_limit_bytes"] == 2_000_000
     assert result["runtime_symbol_count"] > 0
     assert result["runtime_packet_count"] >= result["runtime_symbol_count"]

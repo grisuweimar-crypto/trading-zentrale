@@ -234,7 +234,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         for row in scanner_schedules
         if isinstance(row, Mapping)
     )
-    if scanner_crons != ("7 17 * * *", "37 18,20 * * *"):
+    if scanner_crons != ("7 16 * * *", "7 17 * * *", "37 18,20 * * *"):
         raise BAQM10AuditError("scanner_retry_schedule_invalid")
     scanner_concurrency = _mapping(scanner.get("concurrency"), "scanner.concurrency")
     if scanner_concurrency.get("cancel-in-progress") != "false":
@@ -309,7 +309,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         )
 
     static = {
-        "scanner_three_retry_slots": scanner_crons == ("7 17 * * *", "37 18,20 * * *"),
+        "scanner_current_retry_schedule": scanner_crons == ("7 16 * * *", "7 17 * * *", "37 18,20 * * *"),
         "scanner_serialized": True,
         "scanner_provenance_required": "SCANNER_REQUIRE_PROVENANCE: '1'" in scanner_text,
         "scanner_records_success_marker_only_after_validation": (
@@ -352,7 +352,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         state != "CLOSED_EFFECTIVE" for state in risks.values()
     )
     required_static_guards = (
-        "scanner_three_retry_slots",
+        "scanner_current_retry_schedule",
         "scanner_serialized",
         "scanner_provenance_required",
         "scanner_records_success_marker_only_after_validation",
