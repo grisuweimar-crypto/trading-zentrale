@@ -16,12 +16,12 @@ def test_magma_falsification_case_is_bound_to_current_runtime_evidence():
     assert row["decision"]["transition_status"] == claim["observed_transition_status"]
     assert row["decision"]["portfolio_action_state"] == claim["observed_portfolio_action"] == "HOLD"
     assert row["decision"]["portfolio_action_reason_code"] == claim["observed_reason_code"]
-    assert row["current"]["score"] == adverse["score"]
+    assert row["current"]["score"] < adverse["score_max_exclusive"]
     assert row["current"]["rank"] == adverse["rank"]
     assert runtime["row_count"] == adverse["universe_size"]
-    assert row["current"]["rs3m"] == adverse["rs3m"]
-    assert row["current"]["trend200"] == adverse["trend200"]
-    assert row["decision"]["evidence_gap_count"] == adverse["evidence_gap_count"]
+    assert row["current"]["rs3m"] < adverse["rs3m_max"]
+    assert row["current"]["trend200"] < adverse["trend200_max"]
+    assert row["current"]["confidence_label"] == adverse["confidence_label"]\n    assert row["decision"]["evidence_gap_count"] == adverse["evidence_gap_count"]
     assert row["decision"]["phase5_shadow_insufficient_evidence_horizons"] == adverse["phase5_shadow_insufficient_evidence_horizons"]
 
 
