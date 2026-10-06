@@ -1,0 +1,24 @@
+name: QM-7 Workflow Gate Scope
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm7_workflow_gate_scope_v1.json"
+      - "tests/test_qm7_workflow_gate_scope.py"
+      - ".github/workflows/ba_qm9_end_application_audit.yml"
+      - ".github/workflows/ba_qm11_system_audit.yml"
+      - ".github/workflows/ba_qm12_continuous_qm.yml"
+      - ".github/workflows/qm7_workflow_gate_scope.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  qm7-gate-scope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: python -m pip install --disable-pip-version-check "pytest>=8,<9" pyyaml
+      - run: python -m pytest -q tests/test_qm7_workflow_gate_scope.py
