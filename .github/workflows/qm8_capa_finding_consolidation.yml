@@ -16,5 +16,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.11"}
-      - run: python -m pip install --disable-pip-version-check "pytest>=8,<9"
+      - run: python -m pip install -e ".[test]"
       - run: python -m pytest -q tests/test_qm8_capa_finding_consolidation.py tests/test_qm_h_capa.py
