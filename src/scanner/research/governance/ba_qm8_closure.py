@@ -1,8 +1,10 @@
-"""BA-QM8 fail-closed engineering closure gate.
+"""BA-QM8 fail-closed engineering closure and live-audit gate.
 
-Engineering closure is allowed only when the current real snapshot has complete
-stage bindings and all 10 adjacent transitions pass the seven-class guard.
-A BA-QM8 closure never releases the independent Lag-1 CAPA promotion block.
+The engineering-closure receipt is immutable historical evidence. Current real
+stage bindings and transitions are audited separately on every snapshot. A
+failed current audit blocks current health without rewriting or invalidating
+the historical closure receipt. BA-QM8 never releases the independent Lag-1
+CAPA promotion block.
 """
 from __future__ import annotations
 
@@ -87,13 +89,19 @@ def evaluate_ba_qm8_closure(root: str | Path = _ROOT) -> dict[str, Any]:
 
     eligible = stage_complete and transition_complete
 
-    if foundation.get("engineering_status") == "COMPLETE":
-        if not eligible:
-            raise BAQM8ClosureError("ba_qm8_complete_without_eligible_real_audit")
-        if str(foundation.get("closure_snapshot_id") or "") != str(stages.get("snapshot_id") or ""):
-            raise BAQM8ClosureError("ba_qm8_closure_snapshot_identity_mismatch")
-        if str(foundation.get("closure_snapshot_as_of") or "") != str(stages.get("snapshot_as_of") or ""):
-            raise BAQM8ClosureError("ba_qm8_closure_snapshot_as_of_mismatch")
+    historical_closure_performed = (
+        foundation.get("engineering_status") == "COMPLETE" and closure_claimed is True
+    )
+    historical_snapshot_id = str(foundation.get("closure_snapshot_id") or "").strip()
+    historical_snapshot_as_of = str(
+        foundation.get("closure_snapshot_as_of") or ""
+    ).strip()
+
+    if historical_closure_performed:
+        if not historical_snapshot_id:
+            raise BAQM8ClosureError("ba_qm8_closure_snapshot_id_missing")
+        if not historical_snapshot_as_of:
+            raise BAQM8ClosureError("ba_qm8_closure_snapshot_as_of_missing")
         if foundation.get("closure_transition_pass_count") != 10:
             raise BAQM8ClosureError("ba_qm8_closure_transition_pass_count_invalid")
         if foundation.get("closure_transition_blocked_count") != 0:
@@ -115,27 +123,36 @@ def evaluate_ba_qm8_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         else:
             blockers.append("transition:real_transition_audit_incomplete")
 
-    performed = foundation.get("engineering_status") == "COMPLETE" and eligible
+    current_snapshot_audit_passed = eligible
 
     return {
         "schema_version": SCHEMA_VERSION,
         "status": (
-            "BA_QM8_ENGINEERING_COMPLETE"
-            if performed
+            (
+                "BA_QM8_ENGINEERING_COMPLETE"
+                if current_snapshot_audit_passed
+                else "CURRENT_SNAPSHOT_AUDIT_BLOCKED"
+            )
+            if historical_closure_performed
             else (
                 "ELIGIBLE_FOR_BA_QM8_ENGINEERING_CLOSURE"
-                if eligible
+                if current_snapshot_audit_passed
                 else "PENDING_PROSPECTIVE_SNAPSHOT"
             )
         ),
         "snapshot_id": stages.get("snapshot_id"),
+        "snapshot_as_of": stages.get("snapshot_as_of"),
+        "historical_closure_snapshot_id": historical_snapshot_id,
+        "historical_closure_snapshot_as_of": historical_snapshot_as_of,
+        "historical_closure_evidence_immutable": True,
+        "current_snapshot_audit_passed": current_snapshot_audit_passed,
         "stage_bindings_complete": stage_complete,
         "real_transitions_complete": transition_complete,
         "transition_pass_count": transitions.get("transition_pass_count"),
         "transition_blocked_count": transitions.get("transition_blocked_count"),
         "closure_blockers": blockers,
         "engineering_closure_eligible": eligible,
-        "engineering_closure_performed": performed,
+        "engineering_closure_performed": historical_closure_performed,
         "empirical_validation_claimed": False,
         "empirical_promotion_performed": False,
         "lag1_finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
