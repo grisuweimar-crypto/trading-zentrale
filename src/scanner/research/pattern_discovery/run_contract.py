@@ -7,7 +7,7 @@ confirmation, promotion or Decision-Layer integration.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import math
@@ -61,7 +61,7 @@ def _aware_timestamp(value: Any, field: str) -> str:
         raise DiscoveryRunContractError(f"invalid_timestamp:{field}") from exc
     if parsed.tzinfo is None:
         raise DiscoveryRunContractError(f"timezone_required:{field}")
-    return parsed.isoformat()
+    return parsed.astimezone(timezone.utc).isoformat()
 
 
 def _string_list(value: Any, field: str, *, nonempty: bool) -> list[str]:
@@ -212,6 +212,7 @@ def normalize_preregistration(
     if max_conditions > int(prereg["max_atomic_conditions_initial"]):
         raise DiscoveryRunContractError("pattern_complexity_exceeds_l1_initial_limit")
 
+    targets = sorted(_string_list(raw["targets"], "targets", nonempty=True))
     baselines = raw["baselines"]
     if not isinstance(baselines, Mapping) or not baselines:
         raise DiscoveryRunContractError("nonempty_object_required:baselines")
@@ -219,6 +220,17 @@ def normalize_preregistration(
         _nonblank(key, "baselines.key"): _nonblank(value, f"baselines.{key}")
         for key, value in baselines.items()
     }
+    if set(normalized_baselines) != set(targets):
+        missing_baselines = sorted(set(targets) - set(normalized_baselines))
+        extra_baselines = sorted(set(normalized_baselines) - set(targets))
+        detail = []
+        if missing_baselines:
+            detail.append("missing=" + ",".join(missing_baselines))
+        if extra_baselines:
+            detail.append("extra=" + ",".join(extra_baselines))
+        raise DiscoveryRunContractError(
+            "baseline_target_mismatch:" + ";".join(detail)
+        )
 
     minimum_spec = spec["minimum_criteria"]
     minimum = _exact_mapping(
@@ -241,6 +253,10 @@ def normalize_preregistration(
             minimum["minimum_baseline_lift"], "minimum_criteria.minimum_baseline_lift"
         ),
     }
+    if minimum_normalized["minimum_effect_size"] < 0.0:
+        raise DiscoveryRunContractError("minimum_effect_size_must_be_nonnegative")
+    if minimum_normalized["minimum_baseline_lift"] < 0.0:
+        raise DiscoveryRunContractError("minimum_baseline_lift_must_be_nonnegative")
 
     search = _exact_mapping(
         raw["search_budget"],
@@ -341,7 +357,7 @@ def normalize_preregistration(
             "max_atomic_conditions": max_conditions,
         },
         "pattern_types": sorted(pattern_types),
-        "targets": sorted(_string_list(raw["targets"], "targets", nonempty=True)),
+        "targets": targets,
         "horizons_sessions": sorted(horizons),
         "baselines": dict(sorted(normalized_baselines.items())),
         "minimum_criteria": minimum_normalized,
@@ -482,12 +498,44 @@ def verify_run_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
     if _hash(body) != stored_manifest_hash:
         raise DiscoveryRunContractError("manifest_hash_mismatch")
 
+    contract = load_run_contract()
+    if manifest.get("l1_run_contract_hash") != run_contract_hash(contract):
+        raise DiscoveryRunContractError("manifest_l1_contract_hash_mismatch")
+    if manifest.get("l0_boundary_contract_hash") != boundary_contract_hash():
+        raise DiscoveryRunContractError("manifest_l0_contract_hash_mismatch")
+
     prereg = manifest.get("preregistration")
     fingerprints = manifest.get("input_fingerprints")
     if not isinstance(prereg, Mapping) or not isinstance(fingerprints, list):
         raise DiscoveryRunContractError("manifest_identity_components_missing")
+    normalized_prereg = normalize_preregistration(prereg, contract=contract)
+    if normalized_prereg != dict(prereg):
+        raise DiscoveryRunContractError("manifest_preregistration_not_canonical")
     if _hash(prereg) != manifest.get("config_hash"):
         raise DiscoveryRunContractError("manifest_config_hash_mismatch")
+
+    if not fingerprints:
+        raise DiscoveryRunContractError("manifest_input_fingerprints_empty")
+    fingerprint_paths = []
+    for index, item in enumerate(fingerprints):
+        if not isinstance(item, Mapping) or set(item) != {"path", "sha256", "size_bytes"}:
+            raise DiscoveryRunContractError(
+                f"manifest_input_fingerprint_schema_invalid:{index}"
+            )
+        path = str(item["path"])
+        digest = str(item["sha256"])
+        size = item["size_bytes"]
+        if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest.lower()):
+            raise DiscoveryRunContractError(
+                f"manifest_input_fingerprint_sha_invalid:{index}"
+            )
+        if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+            raise DiscoveryRunContractError(
+                f"manifest_input_fingerprint_size_invalid:{index}"
+            )
+        fingerprint_paths.append(path)
+    if fingerprint_paths != list(prereg["data_sources"]):
+        raise DiscoveryRunContractError("manifest_input_paths_mismatch")
     if _hash(fingerprints) != manifest.get("input_fingerprint_hash"):
         raise DiscoveryRunContractError("manifest_input_fingerprint_hash_mismatch")
 
@@ -501,7 +549,6 @@ def verify_run_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
     if run_identity_hash != manifest.get("run_identity_hash"):
         raise DiscoveryRunContractError("manifest_run_identity_hash_mismatch")
 
-    contract = load_run_contract()
     digest_chars = int(contract["identity"]["run_id_digest_chars"])
     expected_run_id = (
         f"{contract['identity']['run_id_prefix']}-"
