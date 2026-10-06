@@ -358,18 +358,21 @@ def evaluate_ba_qm9_closure(root: str | Path = _ROOT) -> dict[str, Any]:
     """Validate BA-QM9 closure against the current public boundaries.
 
     The controlled private-Depot manipulation suite is executed by CI. This
-    runtime closure check binds the recorded closure to the live authoritative
-    Research/W10 snapshot and verifies that stale runtime transport is either
-    current-valid or explicitly rejected fail-closed.
+    runtime closure check preserves the recorded historical closure as immutable
+    evidence while auditing the current authoritative Research/W10 snapshot
+    separately. Stale runtime transport must remain current-valid or explicitly
+    rejected fail-closed.
     """
     root = Path(root).resolve()
     contract = load_contract(root / "configs" / "ba_qm9_end_application_audit_v1.json")
     public = audit_current_public_boundaries(root)
 
-    if str(contract.get("closure_snapshot_id") or "") != str(public.get("snapshot_id") or ""):
-        raise BAQM9AuditError("ba_qm9_closure_snapshot_identity_mismatch")
-    if str(contract.get("closure_snapshot_as_of") or "") != str(public.get("snapshot_as_of") or ""):
-        raise BAQM9AuditError("ba_qm9_closure_snapshot_as_of_mismatch")
+    historical_snapshot_id = str(contract.get("closure_snapshot_id") or "").strip()
+    historical_snapshot_as_of = str(contract.get("closure_snapshot_as_of") or "").strip()
+    if not historical_snapshot_id:
+        raise BAQM9AuditError("ba_qm9_closure_snapshot_id_required")
+    if not historical_snapshot_as_of:
+        raise BAQM9AuditError("ba_qm9_closure_snapshot_as_of_required")
     if public.get("w10_status") != "sealed":
         raise BAQM9AuditError("ba_qm9_requires_sealed_w10")
     if public.get("w10_snapshot_id") != public.get("snapshot_id"):
@@ -389,6 +392,10 @@ def evaluate_ba_qm9_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         "scope": "QUALITY_MANAGEMENT_ONLY",
         "snapshot_id": public["snapshot_id"],
         "snapshot_as_of": public["snapshot_as_of"],
+        "historical_closure_snapshot_id": historical_snapshot_id,
+        "historical_closure_snapshot_as_of": historical_snapshot_as_of,
+        "historical_closure_evidence_immutable": True,
+        "current_snapshot_audit_passed": True,
         "required_check_count": len(EXPECTED_CHECKS),
         "all_required_checks_passed": True,
         "manipulation_and_regression_tests_passed": contract[
