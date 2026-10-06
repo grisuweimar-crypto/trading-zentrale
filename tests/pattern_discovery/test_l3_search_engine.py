@@ -222,6 +222,8 @@ def test_search_space_is_bounded_by_preregistered_budgets(tmp_path):
         tmp_path,
         search_total=6,
         search_per_family=4,
+        candidate_total=6,
+        candidate_per_horizon=6,
     )
     result = run_discovery_search(
         run,
