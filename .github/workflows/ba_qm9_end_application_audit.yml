@@ -7,6 +7,8 @@ on:
       - "src/scanner/research/governance/ba_qm9_end_application_audit.py"
       - "tests/test_ba_qm9_end_application_audit.py"
       - ".github/workflows/ba_qm9_end_application_audit.yml"
+      - "src/scanner/research/decision_layer/**"
+      - "artifacts/research/watch_runtime/public_long_reference.json"
   workflow_dispatch:
 
 permissions:

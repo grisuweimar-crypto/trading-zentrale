@@ -27,6 +27,10 @@ on:
       - "artifacts/research/watch_runtime/public_long_reference.json"
       - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
       - ".github/workflows/ba_qm12_continuous_qm.yml"
+      - "configs/qm5_magma_falsification_v1.json"
+      - "configs/qm6_witness_library_v1.json"
+      - "tests/test_qm5_magma_falsification.py"
+      - "tests/test_qm6_witness_library.py"
   push:
     branches: [main]
     paths:

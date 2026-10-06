@@ -16,6 +16,8 @@ on:
       - "tests/test_qm_i_phase7_action_integration.py"
       - "tests/test_decision_validation_promotion_7i.py"
       - ".github/workflows/ba_qm11_system_audit.yml"
+      - "src/scanner/research/decision_layer/**"
+      - "artifacts/research/watch_runtime/public_long_reference.json"
   workflow_dispatch:
 
 permissions:
