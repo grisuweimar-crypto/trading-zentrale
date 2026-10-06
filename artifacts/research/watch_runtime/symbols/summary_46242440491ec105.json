@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
+  "decision_as_of": "2026-10-06T19:43:06.305141+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -26,18 +26,66 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:DSV.TO:6b9ad841e92f8191:60T",
+          "timing:DSV.TO:5df2a86791ff5f88:60T",
+          "timing:DSV.TO:b0fb906b9f3e02ec:60T",
+          "timing:DSV.TO:51a8cac8cfa550aa:60T",
+          "timing:DSV.TO:1691f75766881bca:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:DSV.TO:a2763d94cd6f82e9:5T",
+          "timing:DSV.TO:d18193c29692a1cb:5T",
+          "timing:DSV.TO:9aace91dab644870:5T",
+          "timing:DSV.TO:056cab0d8c42f322:5T",
+          "timing:DSV.TO:838b819bd450346e:5T",
+          "timing:DSV.TO:85b7b4bcb43aeb00:20T",
+          "timing:DSV.TO:ae61c82fbb0371fc:20T",
+          "timing:DSV.TO:a4278e33701f9d98:20T",
+          "timing:DSV.TO:6267ff2c27f27eb8:20T",
+          "timing:DSV.TO:f9714fd629aaf7f2:40T",
+          "timing:DSV.TO:677e719dc170acd6:40T",
+          "timing:DSV.TO:2d034c21b8215d13:40T",
+          "timing:DSV.TO:ff63700b226f41b1:60T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
     "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "known_directional_claim_ids": [
+      "timing:DSV.TO:a2763d94cd6f82e9:5T",
+      "timing:DSV.TO:d18193c29692a1cb:5T",
+      "timing:DSV.TO:9aace91dab644870:5T",
+      "timing:DSV.TO:056cab0d8c42f322:5T",
+      "timing:DSV.TO:838b819bd450346e:5T",
+      "timing:DSV.TO:85b7b4bcb43aeb00:20T",
+      "timing:DSV.TO:ae61c82fbb0371fc:20T",
+      "timing:DSV.TO:a4278e33701f9d98:20T",
+      "timing:DSV.TO:6267ff2c27f27eb8:20T",
+      "timing:DSV.TO:f9714fd629aaf7f2:40T",
+      "timing:DSV.TO:677e719dc170acd6:40T",
+      "timing:DSV.TO:2d034c21b8215d13:40T",
+      "timing:DSV.TO:ff63700b226f41b1:60T",
+      "timing:DSV.TO:6b9ad841e92f8191:60T",
+      "timing:DSV.TO:5df2a86791ff5f88:60T",
+      "timing:DSV.TO:b0fb906b9f3e02ec:60T",
+      "timing:DSV.TO:51a8cac8cfa550aa:60T",
+      "timing:DSV.TO:1691f75766881bca:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 18
+    },
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -126,6 +174,14 @@
       "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-06T19:43:06.305141+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -137,7 +193,7 @@
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-10-06",
-    "last_overextension_rs3m": 0.3092222458099938,
+    "last_overextension_rs3m": 0.3138395358990611,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
@@ -152,6 +208,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "blocked_conflict"
   }
 }

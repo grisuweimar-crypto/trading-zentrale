@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
+  "decision_as_of": "2026-10-06T19:43:06.305141+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,17 +27,21 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "positive",
+    "known_directional_claim_ids": [
+      "timing:MRNA:ff63700b226f41b1:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 1
+    },
+    "relation_state": "single_direction_or_unopposed",
+    "state": "positive",
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -126,6 +130,14 @@
       "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-06T19:43:06.305141+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -133,11 +145,11 @@
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
-      "score_falling_5t": false,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-10-06",
-    "last_overextension_rs3m": 1.711459649204465,
+    "last_overextension_rs3m": 1.4345244745701593,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
@@ -150,8 +162,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "stable_confirmed"
   }
 }

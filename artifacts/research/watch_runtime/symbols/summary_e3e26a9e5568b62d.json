@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
+  "decision_as_of": "2026-10-06T19:43:06.305141+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,17 +27,56 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "negative",
+    "known_directional_claim_ids": [
+      "timing:LIN:7ab4476ed5a235ac:5T",
+      "timing:LIN:e4f8c33d470c0e2f:5T",
+      "timing:LIN:66d94c2cea42792c:5T",
+      "timing:LIN:2ed3249c1c56577f:5T",
+      "timing:LIN:9800f91be0712c70:5T",
+      "timing:LIN:401cca5a7c173601:5T",
+      "timing:LIN:1e430f9cea7b7f13:5T",
+      "timing:LIN:283554fb98246319:5T",
+      "timing:LIN:03870b806b6eca6d:5T",
+      "timing:LIN:5f83639c2a489191:5T",
+      "timing:LIN:de6f9e876313f22e:5T",
+      "timing:LIN:ef7f3870ca002abb:5T",
+      "timing:LIN:bdcecff3727fc9bd:20T",
+      "timing:LIN:dfdda8982133a796:20T",
+      "timing:LIN:9ded9b32e0bc8942:20T",
+      "timing:LIN:494c50d063b91cd4:20T",
+      "timing:LIN:d47ac29f6efaa46d:20T",
+      "timing:LIN:11940d7ea1f0f388:20T",
+      "timing:LIN:eefa168ef78d755e:20T",
+      "timing:LIN:c3fe1ba2fba5156b:20T",
+      "timing:LIN:487ac8cc07de8323:20T",
+      "timing:LIN:c5c42af2647d5f95:20T",
+      "timing:LIN:e205699319458e1e:20T",
+      "timing:LIN:9f8c45116d8eb363:20T",
+      "timing:LIN:153913eb77a6fd4e:40T",
+      "timing:LIN:b5ad69e9c49b4283:40T",
+      "timing:LIN:ba1546185d8440ab:40T",
+      "timing:LIN:8aad3655cfd70cc5:40T",
+      "timing:LIN:40a0ee3503943b7d:40T",
+      "timing:LIN:2447db533437437f:40T",
+      "timing:LIN:81e555089a6cf423:40T",
+      "timing:LIN:089d1930a0f04204:40T",
+      "timing:LIN:6eab277f58068de7:40T",
+      "timing:LIN:0c9ee67b0531915a:40T",
+      "timing:LIN:696f56e402c4c294:40T",
+      "timing:LIN:d1d231d5f510ed40:40T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 36
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "negative",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -126,14 +165,22 @@
       "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-06T19:43:06.305141+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": true,
-      "rs3m_falling_5t": true,
-      "score_falling_5t": true,
+      "rank_worsening_5t": false,
+      "rs3m_falling_5t": false,
+      "score_falling_5t": false,
       "trend200_falling_5t": false
     },
     "last_overextension_date": null,
@@ -147,11 +194,11 @@
   "state_history_state": "never_overextended",
   "symbol": "LIN",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "negative",
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "transition_pending"
   }
 }
