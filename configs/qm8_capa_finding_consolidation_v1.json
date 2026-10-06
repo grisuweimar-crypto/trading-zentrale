@@ -1,0 +1,17 @@
+{
+  "schema_version": "qm8_capa_finding_consolidation_v1",
+  "authoritative_ledger": "artifacts/research/qm/qm_h_capa_ledger.jsonl",
+  "required_findings": {
+    "QM-H-QMJ-PHASE1A-LAG1-001": {"expected_state":"IMPLEMENTED","expected_evidence_impact":"PROMOTION_BLOCKED","closure_allowed_without_prospective_effectiveness":false},
+    "QM-H-BA-QM11-F01": {"expected_state":"CLOSED","expected_evidence_impact":"EVIDENCE_REVIEW_REQUIRED"},
+    "QM-H-BA-QM11-F02": {"expected_state":"CLOSED","expected_evidence_impact":"PROMOTION_BLOCKED"}
+  },
+  "operational_recurrence_register": {
+    "contract": "configs/ba_qm10_production_operations_qm_v1.json",
+    "historical_finding": "BA-QM10-F01",
+    "linked_recurrence": "BA-QM10-F05",
+    "historical_evidence_must_remain_immutable": true
+  },
+  "automatic_promotion_allowed": false,
+  "automatic_semantic_change_allowed": false
+}
