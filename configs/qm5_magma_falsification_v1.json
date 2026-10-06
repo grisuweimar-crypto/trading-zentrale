@@ -1,0 +1,47 @@
+{
+  "schema_version": "qm5_magma_falsification_v1",
+  "scope": "QUALITY_MANAGEMENT_ONLY",
+  "symbol": "MGMA.V",
+  "name": "MAGMA SILVER",
+  "source_artifact": "artifacts/research/watch_runtime/public_long_reference.json",
+  "claim_under_test": {
+    "type": "DECISION_PATH_CONSISTENCY",
+    "observed_universal_stance": "positive",
+    "observed_transition_status": "stable_confirmed",
+    "observed_portfolio_action": "HOLD",
+    "observed_reason_code": "positive_confirmed_existing_long",
+    "position_context": "existing_long"
+  },
+  "adverse_current_evidence": {
+    "score": 2.73,
+    "rank": 212,
+    "universe_size": 213,
+    "rs3m": -0.21741542021294402,
+    "trend200": -0.43090435528039783,
+    "confidence": 27.3,
+    "confidence_label": "LOW",
+    "coverage_admission_state": "admissible_with_gaps",
+    "evidence_gap_count": 14,
+    "phase5_shadow_insufficient_evidence_horizons": [5,20,40,60]
+  },
+  "falsification_questions": [
+    "Does HOLD arise from the validated same-snapshot Decision chain rather than scanner scalar fallback?",
+    "Does replacing or destroying directional evidence fail to enter the live Decision path?",
+    "Does missing evidence remain explicit instead of being reconstructed from current scanner scalars?",
+    "Is HOLD an existing-position portfolio action rather than a BUY or ADD instruction?",
+    "Does the packet remain non-executable and free of order instructions?"
+  ],
+  "required_existing_controls": {
+    "scanner_scalar_fallback_used": false,
+    "decision_placebo_may_enter_live_path": false,
+    "negative_controls_productive_integration_enabled": false,
+    "execution_allowed": false
+  },
+  "interpretation": {
+    "hold_does_not_claim_positive_forward_return": true,
+    "hold_does_not_equal_buy_or_add": true,
+    "weak_scanner_scalars_do_not_override_validated_decision_chain": true,
+    "insufficient_phase5_shadow_evidence_does_not_change_production_action": true
+  },
+  "promotion_or_semantic_change_performed": false
+}

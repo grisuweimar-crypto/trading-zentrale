@@ -1,0 +1,26 @@
+name: QM-5 Magma Falsification
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm5_magma_falsification_v1.json"
+      - "tests/test_qm5_magma_falsification.py"
+      - ".github/workflows/qm5_magma_falsification.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm5-magma-falsification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test runner
+        run: python -m pip install --disable-pip-version-check "pytest>=8,<9"
+      - name: Run Magma falsification regressions
+        run: python -m pytest -q tests/test_qm5_magma_falsification.py
