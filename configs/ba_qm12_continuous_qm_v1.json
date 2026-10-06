@@ -136,5 +136,32 @@
         "authority": "configs/external_evidence_8_contract_v1.json"
       }
     }
+  },
+  "finding_lifecycle_policy": {
+    "states": [
+      "OPEN",
+      "CAPA_IMPLEMENTED_PENDING_VERIFICATION",
+      "CLOSED_EFFECTIVE",
+      "REOPENED"
+    ],
+    "closure_requires_effectiveness_evidence": true,
+    "recurrence_requires_reopen_or_linked_new_finding": true,
+    "closed_finding_may_not_hide_current_failure": true,
+    "reopen_triggers": [
+      "CONTROL_REGRESSION",
+      "RECURRENCE",
+      "EFFECTIVENESS_EVIDENCE_INVALIDATED",
+      "CURRENT_FAIL_CLOSED_GUARD_FAILURE"
+    ],
+    "escalation": {
+      "required_for": [
+        "REPEATED_RECURRENCE",
+        "PROMOTION_BLOCK_AT_RISK",
+        "FALSE_DECISION_OBSERVED",
+        "PRODUCTION_HEALTH_FAILURE"
+      ],
+      "automatic_semantic_change_allowed": false,
+      "automatic_promotion_allowed": false
+    }
   }
 }
