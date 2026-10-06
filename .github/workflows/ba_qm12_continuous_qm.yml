@@ -38,6 +38,10 @@ on:
       - "artifacts/research/qm/qm_h_capa_ledger.jsonl"
   schedule:
     - cron: "25 5 * * *"
+      - "configs/qm5_magma_falsification_v1.json"
+      - "configs/qm6_witness_library_v1.json"
+      - "tests/test_qm5_magma_falsification.py"
+      - "tests/test_qm6_witness_library.py"
   workflow_dispatch:
 
 permissions:
