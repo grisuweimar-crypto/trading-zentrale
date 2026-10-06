@@ -1,0 +1,24 @@
+name: QM-6 Witness Library
+
+on:
+  pull_request:
+    paths:
+      - "configs/qm6_witness_library_v1.json"
+      - "tests/test_qm6_witness_library.py"
+      - ".github/workflows/qm6_witness_library.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qm6-witness-library:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --disable-pip-version-check "pytest>=8,<9"
+      - run: python -m pytest -q tests/test_qm6_witness_library.py
