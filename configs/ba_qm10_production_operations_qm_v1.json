@@ -241,7 +241,7 @@
       "finding_id": "BA-QM10-F05",
       "related_prior_finding_id": "BA-QM10-F01",
       "category": "PUBLICATION_RUNTIME_TRANSPORT_CAPACITY_RECURRENCE",
-      "state": "IMPLEMENTED_PENDING_VERIFICATION",
+      "state": "CLOSED_EFFECTIVE",
       "observed_at": "2026-10-05",
       "evidence": [
         {
@@ -279,7 +279,20 @@
         "packet_semantics_changed": false
       },
       "effectiveness": {
-        "verification_status": "PENDING_QM3_CI_AND_CURRENT_CAPACITY_AUDIT",
+        "verification_status": "EFFECTIVE",
+        "evidence": {
+          "current_snapshot_id": "9ee4f121-75d1-4091-a490-e6a2a034c1aa",
+          "live_runtime_publish_run_id": 37356948434,
+          "configured_shard_count": 64,
+          "published_shard_count": 64,
+          "capacity_audit_max_shard_bytes": 1170640,
+          "hard_limit_bytes": 2000000,
+          "headroom_bytes": 829360,
+          "headroom_ratio": 0.41468,
+          "packet_semantics_unchanged": true
+        },
+        "false_watch_accepted": false,
+        "decision_logic_changed": false,
         "historical_f01_state_unchanged": true,
         "historical_f01_evidence_rewritten": false
       }
