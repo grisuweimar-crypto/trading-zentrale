@@ -1,0 +1,18 @@
+name: QM-10 Productive Snapshot Proof
+on:
+  pull_request:
+    paths:
+      - "configs/qm10_productive_snapshot_proof_v1.json"
+      - "tests/test_qm10_productive_snapshot_proof.py"
+      - ".github/workflows/qm10_productive_snapshot_proof.yml"
+  workflow_dispatch:
+permissions: {contents: read}
+jobs:
+  qm10-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: python -m pip install --disable-pip-version-check "pytest>=8,<9"
+      - run: python -m pytest -q tests/test_qm10_productive_snapshot_proof.py tests/test_qm5_magma_falsification.py tests/test_qm6_witness_library.py tests/test_qm8_capa_finding_consolidation.py

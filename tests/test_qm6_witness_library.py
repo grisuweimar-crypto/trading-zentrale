@@ -17,8 +17,10 @@ def test_qm6_productive_symbol_witnesses():
     for witness in contract["witnesses"]:
         assert witness["symbol"] in rows, witness["id"]
         decision = rows[witness["symbol"]]["decision"]
-        for key, expected in witness["expect"].items():
-            assert decision[key] == expected, f'{witness["id"]}:{key}'
+        for key in witness["required_decision_fields"]:
+            assert key in decision, f'{witness["id"]}:{key}'
+        assert witness["historical_reference_expect"]
+    assert contract["snapshot_dependent_outcomes_must_not_be_frozen"] is True
 
 
 def test_qm6_global_fail_closed_witnesses():
