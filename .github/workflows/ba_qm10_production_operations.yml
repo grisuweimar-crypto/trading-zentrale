@@ -45,7 +45,7 @@ jobs:
         run: |
           python - <<'PY'
           from scanner.research.decision_layer.watch_runtime import SHARD_IDS
-from scanner.research.governance.ba_qm10_production_operations import (
+          from scanner.research.governance.ba_qm10_production_operations import (
               EXPECTED_CHECKS,
               EXPECTED_FINDINGS,
               audit_current_operations,
