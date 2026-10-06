@@ -160,6 +160,7 @@ def test_bound_provenance_rejects_tampering(
 ) -> None:
     root = _root(tmp_path)
     monkeypatch.setenv("GITHUB_RUN_ID", "20")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
     monkeypatch.setenv("GITHUB_SHA", "c" * 40)
     pre = capture_pre_run_provenance(root)
     _write(root / "artifacts/watchlist/watchlist_full_raw.csv", "Ticker\nAAA\n")
@@ -213,6 +214,7 @@ def test_active_yahoo_enrichment_requires_provider_frame_digest(
 ) -> None:
     root = _root(tmp_path)
     monkeypatch.setenv("GITHUB_RUN_ID", "30")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
     monkeypatch.setenv("GITHUB_SHA", "e" * 40)
     pre = capture_pre_run_provenance(root)
     _write(root / "artifacts/watchlist/watchlist_full_raw.csv", "Ticker\nAAA\n")
@@ -240,6 +242,7 @@ def test_empty_yahoo_frame_is_a_valid_bound_fallback_state(
 ) -> None:
     root = _root(tmp_path)
     monkeypatch.setenv("GITHUB_RUN_ID", "31")
+    monkeypatch.setenv("GITHUB_RUN_ATTEMPT", "1")
     monkeypatch.setenv("GITHUB_SHA", "f" * 40)
     pre = capture_pre_run_provenance(root)
     _write(root / "artifacts/watchlist/watchlist_full_raw.csv", "Ticker\nAAA\n")
