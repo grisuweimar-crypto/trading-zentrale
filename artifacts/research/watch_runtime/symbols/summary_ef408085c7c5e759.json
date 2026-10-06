@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T01:32:03.885022+00:00",
+  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,21 +29,19 @@
     "conflicts": [],
     "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:STLA:0b9187e88ff3ae83:60T",
-      "timing:STLA:cce5c47f08a2bf66:60T",
-      "timing:STLA:6c608d2ad71a6396:60T"
+      "timing:STLA:8383be481c5c6052:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "negative",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
+  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -124,6 +122,14 @@
       "source_snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-06T06:37:13.715723+00:00",
+      "direction": "negative",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+      "state": "negative",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -131,8 +137,8 @@
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
       "rs3m_falling_5t": false,
-      "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "score_falling_5t": true,
+      "trend200_falling_5t": true
     },
     "last_overextension_date": null,
     "last_overextension_rs3m": null,
@@ -150,6 +156,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "negative",
-    "status": "transition_confirmed"
+    "status": "stable_confirmed"
   }
 }

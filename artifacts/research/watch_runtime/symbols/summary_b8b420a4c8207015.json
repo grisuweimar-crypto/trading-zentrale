@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T01:32:03.885022+00:00",
+  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,22 +29,13 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:XOM:ea08718de33a1787:5T",
-      "timing:XOM:c42ca6c1baee697b:20T",
       "timing:XOM:f483a5247b57affc:20T",
-      "timing:XOM:494a15c3341a0317:20T",
-      "timing:XOM:15f457a0b3a6df9d:20T",
-      "timing:XOM:4ccb45d4ee923f1a:40T",
       "timing:XOM:df23cc7f8d9328ee:60T",
-      "timing:XOM:e64908cc5e4c18f0:60T",
-      "timing:XOM:32bb40f535b6b527:60T",
-      "timing:XOM:5472db56664c10c8:60T",
       "timing:XOM:6289a7880870e93e:60T",
-      "timing:XOM:fe6ff0aee1bf447a:60T",
-      "timing:XOM:ff63700b226f41b1:60T"
+      "timing:XOM:fe6ff0aee1bf447a:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 13
+      "timing": 4
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -53,7 +44,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
+  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -134,6 +125,14 @@
       "source_snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-06T06:37:13.715723+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -141,16 +140,16 @@
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
-      "score_falling_5t": false,
+      "score_falling_5t": true,
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-10-01",
     "last_overextension_rs3m": 0.1874019085818803,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 4,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "post_overextension_memory"
+    "sessions_since_last_overextension": 5,
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "post_overextension_decay"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "XOM",

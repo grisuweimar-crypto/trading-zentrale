@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T01:32:03.885022+00:00",
+  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,18 +29,16 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:2899.HK:9aace91dab644870:5T",
-      "timing:2899.HK:03f6bed3788ea96b:5T",
-      "timing:2899.HK:2ec83739629fba4d:5T",
-      "timing:2899.HK:42bcd8a34d314c09:5T",
-      "timing:2899.HK:838b819bd450346e:5T",
-      "timing:2899.HK:6267ff2c27f27eb8:20T",
-      "timing:2899.HK:cad5eb04910821c4:20T",
-      "timing:2899.HK:a0bebf08166a0860:60T",
-      "timing:2899.HK:2fbfff31832fc700:60T"
+      "timing:2899.HK:0671faf1011640c5:5T",
+      "timing:2899.HK:f483a5247b57affc:20T",
+      "timing:2899.HK:b158fef8cbfb5c55:20T",
+      "timing:2899.HK:3e260f25164f48ce:40T",
+      "timing:2899.HK:6289a7880870e93e:60T",
+      "timing:2899.HK:fe6ff0aee1bf447a:60T",
+      "timing:2899.HK:92ad9e5c355866b9:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 9
+      "timing": 7
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -49,7 +47,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
+  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -130,6 +128,14 @@
       "source_snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-06T06:37:13.715723+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -138,13 +144,13 @@
       "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
-      "trend200_falling_5t": true
+      "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-09-29",
     "last_overextension_rs3m": 0.1569677195636682,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 6,
+    "sessions_since_last_overextension": 7,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },

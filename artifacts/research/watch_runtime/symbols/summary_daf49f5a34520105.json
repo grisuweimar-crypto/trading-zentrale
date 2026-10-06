@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-06T01:32:03.885022+00:00",
+  "decision_as_of": "2026-10-06T06:37:13.715723+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -26,64 +26,18 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:COIN:9800f91be0712c70:5T",
-          "timing:COIN:1e430f9cea7b7f13:5T",
-          "timing:COIN:283554fb98246319:5T",
-          "timing:COIN:03870b806b6eca6d:5T",
-          "timing:COIN:bdcecff3727fc9bd:20T",
-          "timing:COIN:dfdda8982133a796:20T",
-          "timing:COIN:494c50d063b91cd4:20T",
-          "timing:COIN:eefa168ef78d755e:20T",
-          "timing:COIN:c3fe1ba2fba5156b:20T",
-          "timing:COIN:153913eb77a6fd4e:40T",
-          "timing:COIN:b5ad69e9c49b4283:40T",
-          "timing:COIN:ba1546185d8440ab:40T",
-          "timing:COIN:8aad3655cfd70cc5:40T",
-          "timing:COIN:40a0ee3503943b7d:40T",
-          "timing:COIN:2447db533437437f:40T",
-          "timing:COIN:81e555089a6cf423:40T"
-        ],
-        "positive_claim_ids": [
-          "timing:COIN:5b62a0aabd2f08fc:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
+    "conflicts": [],
     "direction": null,
-    "known_directional_claim_ids": [
-      "timing:COIN:9800f91be0712c70:5T",
-      "timing:COIN:1e430f9cea7b7f13:5T",
-      "timing:COIN:283554fb98246319:5T",
-      "timing:COIN:03870b806b6eca6d:5T",
-      "timing:COIN:bdcecff3727fc9bd:20T",
-      "timing:COIN:dfdda8982133a796:20T",
-      "timing:COIN:494c50d063b91cd4:20T",
-      "timing:COIN:eefa168ef78d755e:20T",
-      "timing:COIN:c3fe1ba2fba5156b:20T",
-      "timing:COIN:153913eb77a6fd4e:40T",
-      "timing:COIN:b5ad69e9c49b4283:40T",
-      "timing:COIN:ba1546185d8440ab:40T",
-      "timing:COIN:8aad3655cfd70cc5:40T",
-      "timing:COIN:40a0ee3503943b7d:40T",
-      "timing:COIN:2447db533437437f:40T",
-      "timing:COIN:81e555089a6cf423:40T",
-      "timing:COIN:5b62a0aabd2f08fc:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 17
-    },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
+  "snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -164,6 +118,14 @@
       "source_snapshot_id": "1eda1c6b-46c4-487c-9d78-570f2a7be24f",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-06T06:37:13.715723+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "c0b21f74-29aa-4748-a3a0-d4cf722d8e8f",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -178,7 +140,7 @@
     "last_overextension_rs3m": 0.1653267589283027,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 6,
+    "sessions_since_last_overextension": 7,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },
@@ -190,6 +152,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "blocked_insufficient"
   }
 }
