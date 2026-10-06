@@ -1,0 +1,110 @@
+{
+  "schema_version": "pattern_discovery_l0_boundary_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L0",
+  "name": "Foundations / Boundary Freeze",
+  "status": "active_research_boundary",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Establish a fail-closed bounded context for Pattern Discovery Lab v2 without changing productive Scanner_vNext or Decision Layer semantics.",
+  "principles": {
+    "repository_is_source_of_truth": true,
+    "discovery_never_changes_productive_decisions": true,
+    "missing_data_remains_missing": true,
+    "point_in_time_rules_are_mandatory": true,
+    "discovery_confirmation_and_promotion_are_separate": true,
+    "existing_qm_c_governance_is_reused": true,
+    "negative_results_are_retained": true,
+    "productive_semantics_must_not_change": true
+  },
+  "namespaces": {
+    "source": "src/scanner/research/pattern_discovery/",
+    "config": "configs/pattern_discovery/",
+    "artifact": "artifacts/research/pattern_discovery/",
+    "scripts": "scripts/pattern_discovery/",
+    "tests": "tests/pattern_discovery/",
+    "docs": "docs/pattern_discovery/"
+  },
+  "read_policy": {
+    "allowed_prefixes": [
+      "artifacts/research/",
+      "configs/"
+    ],
+    "notes": "L0 permits research/config reads only. Future input families require an explicit boundary-contract version change."
+  },
+  "write_policy": {
+    "allowed_prefixes": [
+      "artifacts/research/pattern_discovery/"
+    ],
+    "productive_artifact_write_allowed": false,
+    "config_write_allowed_at_runtime": false,
+    "source_write_allowed_at_runtime": false,
+    "notes": "Runtime writes are confined to the lab artifact namespace. No other repository path is writable through the L0 guard."
+  },
+  "forbidden_semantics": {
+    "payload_keys": [
+      "universal_stance",
+      "portfolio_action",
+      "trade_decision",
+      "order_instruction",
+      "buy_signal",
+      "sell_signal",
+      "position_size",
+      "target_weight"
+    ],
+    "direct_scanner_score_change_allowed": false,
+    "direct_timing_change_allowed": false,
+    "direct_decision_layer_change_allowed": false,
+    "direct_portfolio_action_allowed": false,
+    "direct_execution_allowed": false
+  },
+  "governance_bindings": {
+    "hypothesis_identity": {
+      "authority": "QM-C1",
+      "module": "scanner.research.governance.qm_c",
+      "symbol": "HypothesisRegistry",
+      "reuse_required": true
+    },
+    "analysis_plan_freeze": {
+      "authority": "QM-C2",
+      "module": "scanner.research.governance.qm_c_analysis_plan",
+      "symbol": "AnalysisPlanRegistry",
+      "reuse_required": true
+    },
+    "multiplicity": {
+      "authority": "QM-C3",
+      "module": "scanner.research.governance.qm_c_families_multiplicity",
+      "symbol": "FamilyMultiplicityRegistry",
+      "reuse_required": true
+    },
+    "sequential_monitoring": {
+      "authority": "QM-C4",
+      "module": "scanner.research.governance.qm_c_sequential_monitoring",
+      "symbol": "SequentialMonitoringRegistry",
+      "reuse_required": true
+    },
+    "negative_results": {
+      "authority": "QM-C5",
+      "module": "scanner.research.governance.qm_c_negative_results",
+      "symbol": "NegativeResultRegistry",
+      "reuse_required": true
+    }
+  },
+  "identity": {
+    "hash_algorithm": "sha256",
+    "canonical_json": true,
+    "contract_hash_is_deterministic": true,
+    "future_run_identity_belongs_to_phase_l1": true
+  },
+  "boundaries": {
+    "pattern_search_implemented_here": false,
+    "feature_library_implemented_here": false,
+    "candidate_registry_implemented_here": false,
+    "prospective_capture_implemented_here": false,
+    "outcome_maturation_implemented_here": false,
+    "rating_implemented_here": false,
+    "promotion_implemented_here": false,
+    "decision_layer_integration_implemented_here": false
+  }
+}
