@@ -118,6 +118,11 @@
       "path": "src/scanner/research/query_api.py",
       "status": "SAFE",
       "reason": "Query API only returns taxonomy already stored in history_recent; it performs no current metadata lookup or enrichment."
+    },
+    {
+      "path": "src/scanner/research/governance/ba_qm9_end_application_audit.py",
+      "status": "SAFE",
+      "reason": "BA-QM9 quality-governance code preserves an immutable historical closure receipt while auditing the current Research/W10/runtime boundary separately; it does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,

@@ -362,6 +362,10 @@ def test_same_inputs_are_reproducible_and_tampering_breaks_watch_id() -> None:
 
 def test_ba_qm9_formal_closure_is_qm_only_and_routes_operations_to_ba_qm10() -> None:
     result = evaluate_ba_qm9_closure()
+    assert result["historical_closure_snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+    assert result["historical_closure_snapshot_as_of"] == "2026-10-04"
+    assert result["historical_closure_evidence_immutable"] is True
+    assert result["current_snapshot_audit_passed"] is True
     assert result["status"] == "BA_QM9_ENGINEERING_COMPLETE"
     assert result["scope"] == "QUALITY_MANAGEMENT_ONLY"
     assert result["required_check_count"] == 11
@@ -375,3 +379,36 @@ def test_ba_qm9_formal_closure_is_qm_only_and_routes_operations_to_ba_qm10() -> 
     assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert result["ba_qm9_may_release_lag1_block"] is False
     assert result["next_mandatory_work_package"] == "BA-QM10 – Produktions- und Betriebs-QM"
+
+
+def test_ba_qm9_historical_closure_does_not_require_current_snapshot_identity(monkeypatch) -> None:
+    import scanner.research.governance.ba_qm9_end_application_audit as qm9_module
+
+    contract = deepcopy(load_contract())
+    monkeypatch.setattr(qm9_module, "load_contract", lambda path: contract)
+    monkeypatch.setattr(
+        qm9_module,
+        "audit_current_public_boundaries",
+        lambda root: {
+            "snapshot_id": "current-live-snapshot",
+            "snapshot_as_of": "2026-10-06",
+            "w10_status": "sealed",
+            "w10_snapshot_id": "current-live-snapshot",
+            "stale_runtime_silently_accepted": False,
+            "runtime_transport_accepted": True,
+            "runtime_transport_state": "CURRENT_VALID",
+            "lag1_finding_id": "QM-H-QMJ-PHASE1A-LAG1-001",
+            "lag1_capa_id": "QM-H-CAPA-QMJ-PHASE1A-LAG1-001",
+            "lag1_evidence_impact": "PROMOTION_BLOCKED",
+        },
+    )
+
+    result = qm9_module.evaluate_ba_qm9_closure(".")
+    assert result["status"] == "BA_QM9_ENGINEERING_COMPLETE"
+    assert result["snapshot_id"] == "current-live-snapshot"
+    assert result["historical_closure_snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
+    assert result["historical_closure_snapshot_as_of"] == "2026-10-04"
+    assert result["historical_closure_evidence_immutable"] is True
+    assert result["current_snapshot_audit_passed"] is True
+    assert result["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
+    assert result["ba_qm9_may_release_lag1_block"] is False
