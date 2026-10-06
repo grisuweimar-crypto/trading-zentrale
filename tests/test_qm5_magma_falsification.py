@@ -18,7 +18,7 @@ def test_magma_falsification_case_is_bound_to_current_runtime_evidence():
     assert row["decision"]["portfolio_action_reason_code"] == claim["observed_reason_code"]
     assert row["current"]["score"] == adverse["score"]
     assert row["current"]["rank"] == adverse["rank"]
-    assert runtime["diagnostics"]["symbol_count"] == adverse["universe_size"]
+    assert runtime["row_count"] == adverse["universe_size"]
     assert row["current"]["rs3m"] == adverse["rs3m"]
     assert row["current"]["trend200"] == adverse["trend200"]
     assert row["decision"]["evidence_gap_count"] == adverse["evidence_gap_count"]
@@ -33,7 +33,7 @@ def test_magma_case_cannot_be_reinterpreted_as_buy_add_or_execution():
     assert contract["interpretation"]["hold_does_not_claim_positive_forward_return"] is True
     assert contract["interpretation"]["hold_does_not_equal_buy_or_add"] is True
     assert row["decision"]["portfolio_action_state"] == "HOLD"
-    assert row["execution_allowed"] is False
+    assert runtime["semantics"]["execution_semantics"] == "non_executable_research_watch"
     assert contract["promotion_or_semantic_change_performed"] is False
     assert runtime["diagnostics"]["scanner_scalar_fallback_used"] is False
 
