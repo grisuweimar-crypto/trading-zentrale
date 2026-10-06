@@ -41,12 +41,13 @@ EXPECTED_CHECKS = (
     "RECOVERY",
     "FAILED_UPDATES",
 )
-EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03", "BA-QM10-F04")
+EXPECTED_FINDINGS = ("BA-QM10-F01", "BA-QM10-F02", "BA-QM10-F03", "BA-QM10-F04", "BA-QM10-F05")
 EXPECTED_FINDING_STATES = {
     "BA-QM10-F01": "CLOSED_EFFECTIVE",
     "BA-QM10-F02": "CLOSED_EFFECTIVE",
     "BA-QM10-F03": "CLOSED_EFFECTIVE",
     "BA-QM10-F04": "CLOSED_EFFECTIVE",
+    "BA-QM10-F05": "CLOSED_EFFECTIVE",
 }
 
 
@@ -128,7 +129,7 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
         effect = _mapping(row.get("effect"), f"effect:{row.get('finding_id')}")
         if effect.get("decision_safety") != "FAIL_CLOSED":
             raise BAQM10AuditError(f"ba_qm10_finding_not_fail_closed:{row.get('finding_id')}")
-        if row.get("finding_id") == "BA-QM10-F01" and effect.get("false_watch_accepted") is not False:
+        if row.get("finding_id") in {"BA-QM10-F01", "BA-QM10-F05"} and effect.get("false_watch_accepted") is not False:
             raise BAQM10AuditError("ba_qm10_f01_false_watch_guard_invalid")
         effectiveness = _mapping(
             row.get("effectiveness"),
@@ -234,7 +235,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         for row in scanner_schedules
         if isinstance(row, Mapping)
     )
-    if scanner_crons != ("7 17 * * *", "37 18,20 * * *"):
+    if scanner_crons != ("7 16 * * *", "7 17 * * *", "37 18,20 * * *"):
         raise BAQM10AuditError("scanner_retry_schedule_invalid")
     scanner_concurrency = _mapping(scanner.get("concurrency"), "scanner.concurrency")
     if scanner_concurrency.get("cancel-in-progress") != "false":
@@ -309,7 +310,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         )
 
     static = {
-        "scanner_three_retry_slots": scanner_crons == ("7 17 * * *", "37 18,20 * * *"),
+        "scanner_current_retry_schedule": scanner_crons == ("7 16 * * *", "7 17 * * *", "37 18,20 * * *"),
         "scanner_serialized": True,
         "scanner_provenance_required": "SCANNER_REQUIRE_PROVENANCE: '1'" in scanner_text,
         "scanner_records_success_marker_only_after_validation": (
@@ -352,7 +353,7 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
         state != "CLOSED_EFFECTIVE" for state in risks.values()
     )
     required_static_guards = (
-        "scanner_three_retry_slots",
+        "scanner_current_retry_schedule",
         "scanner_serialized",
         "scanner_provenance_required",
         "scanner_records_success_marker_only_after_validation",
@@ -472,15 +473,21 @@ def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
     }
     max_id = max(sizes, key=sizes.get)
     max_size = sizes[max_id]
+    hard_limit = 2_000_000
+    headroom_bytes = hard_limit - max_size
+    headroom_ratio = headroom_bytes / hard_limit
     return {
         "schema_version": "ba_qm10_runtime_capacity_audit_v1",
-        "status": "PASS" if max_size < 2_000_000 else "FAIL",
+        "status": "PASS" if max_size < hard_limit else "FAIL",
         "snapshot_id": manifest["snapshot_id"],
         "shard_count": len(shards),
         "configured_shard_count": len(SHARD_IDS),
         "max_shard_id": max_id,
         "max_shard_bytes": max_size,
-        "hard_limit_bytes": 2_000_000,
+        "hard_limit_bytes": hard_limit,
+        "headroom_bytes": headroom_bytes,
+        "headroom_ratio": headroom_ratio,
+        "capacity_review_recommended": headroom_ratio < 0.20,
         "total_shard_bytes": sum(sizes.values()),
         "symbol_count": manifest["symbol_count"],
         "packet_count": manifest["packet_count"],

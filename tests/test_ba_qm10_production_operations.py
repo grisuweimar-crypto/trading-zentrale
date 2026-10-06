@@ -11,6 +11,7 @@ from scanner.research.decision_layer.current_evidence import (
     merge_packet_set_into_archive,
 )
 from scanner.research.decision_layer.input_contract import build_input_packet
+from scanner.research.decision_layer.watch_runtime import SHARD_IDS
 from scanner.research.governance.ba_qm10_production_operations import (
     BAQM10AuditError,
     EXPECTED_CHECKS,
@@ -71,7 +72,7 @@ def test_ba_qm10_current_operations_audit_is_complete_and_same_snapshot() -> Non
 def test_scanner_autorun_has_retry_serialization_provenance_and_partial_run_guards() -> None:
     result = audit_current_operations()
     guards = result["static_guards"]
-    assert guards["scanner_three_retry_slots"] is True
+    assert guards["scanner_current_retry_schedule"] is True
     assert guards["scanner_serialized"] is True
     assert guards["scanner_provenance_required"] is True
     assert guards["scanner_records_success_marker_only_after_validation"] is True
@@ -170,12 +171,24 @@ def test_contract_cannot_claim_ba_qm10_releases_lag1() -> None:
         validate_contract(changed)
 
 
+def test_qm3_preserves_historical_32_shard_closure_while_live_runtime_uses_64() -> None:
+    contract = load_contract()
+    assert contract["closure_evidence"]["public_runtime_shard_count"] == 32
+    current = audit_current_runtime_capacity()
+    assert current["configured_shard_count"] == len(SHARD_IDS)
+    assert current["shard_count"] == current["configured_shard_count"]
+    assert current["max_shard_bytes"] < current["hard_limit_bytes"]
+
+
 def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     result = audit_current_runtime_capacity()
     assert result["status"] == "PASS"
-    assert result["configured_shard_count"] == 32
-    assert result["shard_count"] == 32
+    assert result["configured_shard_count"] == len(SHARD_IDS)
+    assert result["shard_count"] == result["configured_shard_count"]
     assert result["max_shard_bytes"] < result["hard_limit_bytes"] == 2_000_000
+    assert result["headroom_bytes"] == result["hard_limit_bytes"] - result["max_shard_bytes"]
+    assert 0.0 < result["headroom_ratio"] < 1.0
+    assert result["capacity_review_recommended"] is False
     assert result["symbol_count"] > 0
     assert result["packet_count"] >= result["symbol_count"]
     assert result["private_position_data_included"] is False
@@ -285,7 +298,7 @@ def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -
     assert result["all_required_guards_passed"] is True
     assert result["open_finding_count"] == 0
     assert result["open_static_risk_count"] == 0
-    assert result["runtime_shard_count"] == 32
+    assert result["runtime_shard_count"] == len(SHARD_IDS)
     assert result["runtime_max_shard_bytes"] < result["runtime_hard_limit_bytes"] == 2_000_000
     assert result["runtime_symbol_count"] > 0
     assert result["runtime_packet_count"] >= result["runtime_symbol_count"]
@@ -347,3 +360,17 @@ def test_historical_ba_qm10_closure_survives_new_valid_live_snapshot(monkeypatch
     assert historical["snapshot_id"] == "36cf527e-ca26-489f-aa55-9c7de3b4355b"
     assert historical["runtime_projection_sha256"] != result["runtime_projection_sha256"]
     assert result["status"] == "BA_QM10_ENGINEERING_COMPLETE"
+
+
+def test_qm3_capacity_recurrence_is_separate_from_historical_f01() -> None:
+    contract = load_contract()
+    f01 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F01")
+    f05 = next(row for row in contract["findings"] if row["finding_id"] == "BA-QM10-F05")
+    assert f01["state"] == "CLOSED_EFFECTIVE"
+    assert f01["capa"]["implementation"].startswith("Expand deterministic Watch runtime transport from 16 to 32")
+    assert f01["effectiveness"]["evidence"]["published_shard_count"] == 32
+    assert f05["related_prior_finding_id"] == "BA-QM10-F01"
+    assert f05["state"] == "CLOSED_EFFECTIVE"
+    assert f05["effectiveness"]["evidence"]["published_shard_count"] == len(SHARD_IDS)
+    assert f05["effectiveness"]["historical_f01_evidence_rewritten"] is False
+    assert f05["capa"]["early_warning_headroom_ratio"] == 0.20

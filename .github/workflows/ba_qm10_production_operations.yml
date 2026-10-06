@@ -44,6 +44,7 @@ jobs:
       - name: Emit current BA-QM10 operations receipt
         run: |
           python - <<'PY'
+          from scanner.research.decision_layer.watch_runtime import SHARD_IDS
           from scanner.research.governance.ba_qm10_production_operations import (
               EXPECTED_CHECKS,
               EXPECTED_FINDINGS,
@@ -79,8 +80,8 @@ jobs:
           assert result["closure_eligible"] is True
           capacity = audit_current_runtime_capacity()
           assert capacity["status"] == "PASS"
-          assert capacity["configured_shard_count"] == 32
-          assert capacity["shard_count"] == 32
+          assert capacity["configured_shard_count"] == len(SHARD_IDS)
+          assert capacity["shard_count"] == capacity["configured_shard_count"]
           assert capacity["max_shard_bytes"] < capacity["hard_limit_bytes"] == 2_000_000
           assert capacity["decision_logic_changed"] is False
           assert capacity["writes_performed"] is False
@@ -91,7 +92,7 @@ jobs:
           assert closure["all_required_guards_passed"] is True
           assert closure["open_finding_count"] == 0
           assert closure["open_static_risk_count"] == 0
-          assert closure["runtime_shard_count"] == 32
+          assert closure["runtime_shard_count"] == len(SHARD_IDS)
           assert closure["runtime_max_shard_bytes"] < closure["runtime_hard_limit_bytes"] == 2_000_000
           assert closure["engineering_closure_performed"] is True
           assert closure["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
