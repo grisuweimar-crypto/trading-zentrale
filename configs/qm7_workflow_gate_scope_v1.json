@@ -1,0 +1,10 @@
+{
+  "schema_version": "qm7_workflow_gate_scope_v1",
+  "required_gate_bindings": [
+    {"workflow":".github/workflows/ba_qm9_end_application_audit.yml","required_paths":["src/scanner/research/decision_layer/**","artifacts/research/watch_runtime/public_long_reference.json"]},
+    {"workflow":".github/workflows/ba_qm11_system_audit.yml","required_paths":["src/scanner/research/decision_layer/**","artifacts/research/watch_runtime/public_long_reference.json"]},
+    {"workflow":".github/workflows/ba_qm12_continuous_qm.yml","required_paths":["configs/qm5_magma_falsification_v1.json","configs/qm6_witness_library_v1.json","tests/test_qm5_magma_falsification.py","tests/test_qm6_witness_library.py"]}
+  ],
+  "rationale": "End-application/system/continuous gates must trigger when productive Decision behaviour or permanent QM witnesses change.",
+  "gate_weakening_allowed": false
+}
