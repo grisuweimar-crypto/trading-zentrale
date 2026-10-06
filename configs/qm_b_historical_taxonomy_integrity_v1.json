@@ -123,6 +123,11 @@
       "path": "src/scanner/research/governance/ba_qm9_end_application_audit.py",
       "status": "SAFE",
       "reason": "BA-QM9 quality-governance code preserves an immutable historical closure receipt while auditing the current Research/W10/runtime boundary separately; it does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
+    },
+    {
+      "path": "configs/ba_qm10_production_operations_qm_v1.json",
+      "status": "SAFE",
+      "reason": "BA-QM10 operational-QM evidence preserves historical F01 capacity evidence and records a separate current F05 recurrence/CAPA. It does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,
