@@ -2184,6 +2184,36 @@ def _pattern_result_class(
     return "INCONCLUSIVE", reasons
 
 
+def _validate_outcome_claim_sources(
+    rows: Sequence[Mapping[str, Any]],
+    prospective_source_bundle: Mapping[str, Any],
+) -> None:
+    snapshots, claims = source_bundle_indexes(prospective_source_bundle)
+    for row in rows:
+        claim_id = str(row["claim_id"])
+        source = claims.get(claim_id)
+        if source is None:
+            raise ConfirmationEngineError(
+                f"l8_outcome_claim_missing_from_verified_l7_source:{claim_id}"
+            )
+        checks = {
+            "claim_hash": row["claim_hash"],
+            "symbol": row["symbol"],
+            "snapshot_id": row["capture_snapshot_id"],
+            "snapshot_binding_hash": row["capture_snapshot_binding_hash"],
+        }
+        for field, actual in checks.items():
+            if source.get(field) != actual:
+                raise ConfirmationEngineError(
+                    f"l8_outcome_l7_source_mismatch:{claim_id}:{field}"
+                )
+        snapshot = snapshots.get(str(source["snapshot_id"]))
+        if snapshot is None:
+            raise ConfirmationEngineError(
+                f"l8_outcome_source_snapshot_missing:{claim_id}"
+            )
+
+
 def _validate_context_against_outcomes(
     contexts: Mapping[str, Mapping[str, Any]],
     outcome_rows_by_claim: Mapping[str, Mapping[str, Any]],
@@ -2600,6 +2630,10 @@ def build_confirmation_look(
         candidate_rows = _normalize_pattern_outcomes(
             pattern,
             verified_maturations,
+        )
+        _validate_outcome_claim_sources(
+            candidate_rows,
+            prospective_source_bundle,
         )
         baseline_rows = _normalize_pattern_baseline(
             pattern,
