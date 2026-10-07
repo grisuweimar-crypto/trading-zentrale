@@ -1641,8 +1641,10 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
     binding = report["input_bindings"]["l8_maturation_registry"]
-    assert binding["eligible_prefix_event_count"] == 0
-    assert binding["eligible_event_hashes"] == []
+    assert binding["asof_registry_event_count"] == 0
+    assert binding["asof_registry_event_hashes"] == []
+    assert binding["consumable_event_count"] == 0
+    assert binding["consumable_event_hashes"] == []
 
 
 def test_same_day_target_session_is_not_eligible_until_later_date(tmp_path):
@@ -1687,9 +1689,10 @@ def test_same_day_target_session_is_not_eligible_until_later_date(tmp_path):
         context_bundle=contexts,
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
-    assert report["input_bindings"]["l8_maturation_registry"][
-        "eligible_prefix_event_count"
-    ] == 0
+    binding = report["input_bindings"]["l8_maturation_registry"]
+    assert binding["asof_registry_event_count"] == 1
+    assert binding["consumable_event_count"] == 0
+    assert binding["consumable_event_hashes"] == []
 
 
 def test_truncated_valid_l8_chain_is_rejected_against_authoritative_registry(tmp_path):
@@ -2457,6 +2460,127 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
     assert second["qm_governance"]["look_id"] == "FINAL"
     assert second["family_decision"] == "FINAL_COMPLETE"
     assert second["qm_c_handoff"]["qm_c5_results"]
+
+
+def test_newly_consumable_earlier_registry_event_does_not_break_sequential_cumulative_evidence(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(
+        tmp_path,
+        planned_looks=[
+            {"look_id": "LOOK_1", "information_fraction": 0.5},
+            {"look_id": "FINAL", "information_fraction": 1.0},
+        ],
+        minimum_raw_n=1,
+    )
+    same_day = matured_outcome(
+        pattern,
+        claim_id="SEQ-INSERT-A",
+        symbol="AAA",
+        start_day="2027-01-10",
+        target_value=0.08,
+    )
+    older_target = matured_outcome(
+        pattern,
+        claim_id="SEQ-INSERT-B",
+        symbol="BBB",
+        start_day="2027-01-09",
+        target_value=0.08,
+    )
+    source, normalized = prospective_source_for(
+        [pattern],
+        [same_day, older_target],
+    )
+    events = maturation_registry_events(
+        normalized,
+        recorded_at="2027-01-15T20:00:00Z",
+    )
+
+    first = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=normalized,
+        prospective_source=source,
+        evaluated_at="2027-01-15T20:00:00Z",
+        maturation_events_override=events,
+    )
+    first_binding = first["input_bindings"]["l8_maturation_registry"]
+    assert first["look_status"] == "EVALUATED"
+    assert first["qm_governance"]["look_id"] == "LOOK_1"
+    assert first_binding["asof_registry_event_count"] == 2
+    assert first_binding["consumable_event_count"] == 1
+    assert first_binding["consumable_event_hashes"] == [events[1]["entry_hash"]]
+
+    first_baseline = baseline_bundle_for_test(
+        [pattern],
+        source,
+        tmp_path,
+        baseline_bundle_id="BASE-L9-TEST",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    first_context = context_bundle_for([pattern], normalized, source)
+    persisted = persist_confirmation_look(
+        tmp_path,
+        first,
+        source,
+        first_baseline,
+        context_bundle=first_context,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    local_registry = ConfirmationLookRegistry(persisted["registry_path"])
+
+    regs["c4"].record_monitoring_look(
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version="v1",
+        look_id="LOOK_1",
+        artifact_hash=first["confirmation_evidence_hash"],
+        decision="CONTINUE",
+        control_registry=regs["c3"],
+        qm_a_ledger=regs["qm_a"],
+        actor_id="tester",
+        actor_role="researcher",
+        observed_at=first["evaluated_at"],
+    )
+    member = control["family_members"][0]
+    regs["qm_a"].transition(
+        analysis_id=member["qm_a_analysis_id"],
+        version_id=member["qm_a_version_id"],
+        to_state="CONFIRMATORY_EVALUATED",
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Consume first look before delayed same-day event becomes eligible.",
+    )
+    monitor2 = regs["c4"].get_monitoring_plan(
+        monitor["monitoring_plan_id"],
+        "v1",
+    )
+
+    second = build_report(
+        regs,
+        pattern,
+        control,
+        monitor2,
+        outcomes=normalized,
+        prospective_source=source,
+        evaluated_at="2027-01-16T20:00:00Z",
+        confirmation_registry=local_registry,
+        maturation_events_override=events,
+    )
+    second_binding = second["input_bindings"]["l8_maturation_registry"]
+    assert second["look_status"] == "EVALUATED"
+    assert second["qm_governance"]["look_id"] == "FINAL"
+    assert second_binding["asof_registry_event_hashes"] == [
+        events[0]["entry_hash"],
+        events[1]["entry_hash"],
+    ]
+    assert second_binding["consumable_event_hashes"] == [
+        events[0]["entry_hash"],
+        events[1]["entry_hash"],
+    ]
+    assert set(first_binding["consumable_event_hashes"]).issubset(
+        set(second_binding["consumable_event_hashes"])
+    )
 
 
 def test_second_look_cannot_drop_evidence_consumed_by_first_look(tmp_path):
