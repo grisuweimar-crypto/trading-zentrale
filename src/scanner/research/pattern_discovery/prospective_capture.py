@@ -1553,7 +1553,14 @@ class ProspectiveClaimRegistry:
                     0o644,
                 )
                 try:
-                    os.write(fd, payload)
+                    view = memoryview(payload)
+                    while view:
+                        written = os.write(fd, view)
+                        if written <= 0:
+                            raise ProspectiveCaptureError(
+                                "prospective_registry_short_write"
+                            )
+                        view = view[written:]
                     os.fsync(fd)
                 finally:
                     os.close(fd)
@@ -1651,18 +1658,9 @@ def persist_prospective_capture(
             "prospective_capture_path_outside_repo"
         ) from exc
 
-    registry = ProspectiveClaimRegistry(
-        registry_path,
-        contract=spec,
-    )
-    registry_status = registry.register_claims(
-        report["claims"],
-        actor_id=actor_id,
-        actor_role=actor_role,
-    )
-
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    if report_path.exists():
+    report_already_exists = report_path.exists()
+    if report_already_exists:
         try:
             existing = json.loads(
                 report_path.read_text(encoding="utf-8")
@@ -1676,7 +1674,18 @@ def persist_prospective_capture(
             raise ProspectiveCaptureError(
                 f"capture_report_identity_collision:{report_repo_path}"
             )
-    else:
+
+    registry = ProspectiveClaimRegistry(
+        registry_path,
+        contract=spec,
+    )
+    registry_status = registry.register_claims(
+        report["claims"],
+        actor_id=actor_id,
+        actor_role=actor_role,
+    )
+
+    if not report_already_exists:
         with report_path.open(
             "x",
             encoding="utf-8",
