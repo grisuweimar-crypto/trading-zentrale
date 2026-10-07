@@ -14,7 +14,9 @@ from scanner.research.governance.qm_c_sequential_monitoring import (
     SequentialMonitoringRegistry,
 )
 from scanner.research.pattern_discovery import (
+    ConfirmationLookRegistry,
     build_confirmation_look,
+    confirmation_registry_repo_path,
     persist_confirmation_look,
 )
 
@@ -125,6 +127,10 @@ def main() -> int:
         else None
     )
 
+    local_confirmation_registry = ConfirmationLookRegistry(
+        _path(root, confirmation_registry_repo_path())
+    )
+
     report = build_confirmation_look(
         patterns,
         maturation_events,
@@ -140,6 +146,7 @@ def main() -> int:
         monitoring_registry=SequentialMonitoringRegistry(_path(root, args.qm_c4_registry)),
         qm_a_ledger=GovernanceLedger(_path(root, args.qm_a_registry)),
         evaluated_at=args.evaluated_at,
+        confirmation_registry=local_confirmation_registry,
         context_bundle=context,
     )
 
