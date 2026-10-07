@@ -216,7 +216,6 @@ Each matured outcome binds:
 - exact start and target sessions,
 - every session date in the subject path,
 - subject adjusted-price path hash,
-- exact price-file / price-binding hash and price-as-of,
 - peer snapshot binding,
 - peer-set hashes,
 - immutable outcome hash.
