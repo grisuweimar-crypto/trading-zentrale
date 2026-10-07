@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import date, timedelta
 from hashlib import sha256
+import csv
 import json
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from scanner.research.pattern_discovery.confirmation_engine import (
     build_confirmation_look,
     build_context_bundle,
     build_context_bundle_from_sources,
+    canonical_baseline_price_state,
     load_confirmation_contract,
     persist_confirmation_look,
     verify_confirmation_look,
@@ -827,7 +829,62 @@ def write_authoritative_maturation_registry(repo_root, events):
     return target
 
 
-def baseline_record(pattern, prospective_source_bundle, *, negative=False):
+def write_canonical_price_fixture(
+    repo_root,
+    prospective_source_bundle,
+    *,
+    horizon=5,
+):
+    target = Path(repo_root) / "artifacts/research/price_backfill.csv"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    rows = {}
+    for snapshot in prospective_source_bundle["snapshots"]:
+        for session in snapshot["market_sessions"]:
+            symbol = session["symbol"]
+            start_day = date.fromisoformat(session["start_at"][:10])
+            for offset in range(horizon + 1):
+                day = (start_day + timedelta(days=offset)).isoformat()
+                rows[(symbol, day)] = {
+                    "date": day,
+                    "symbol": symbol,
+                    "currency": "USD",
+                    "open": "100",
+                    "high": "100",
+                    "low": "100",
+                    "close": "100",
+                    "adj_close": "100",
+                    "volume": "1000",
+                    "source": "l9-test-canonical-price",
+                    "retrieved_at": "2027-01-14T20:00:00Z",
+                    "observation_type": "observed_price",
+                }
+    fields = [
+        "date",
+        "symbol",
+        "currency",
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume",
+        "source",
+        "retrieved_at",
+        "observation_type",
+    ]
+    with target.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        for key in sorted(rows):
+            writer.writerow(rows[key])
+    return target
+
+
+def baseline_record(
+    pattern,
+    prospective_source_bundle,
+    price_groups,
+):
     forecast = pattern["pattern_spec"]["forecast"]
     observations = []
     counter = 0
@@ -854,38 +911,87 @@ def baseline_record(pattern, prospective_source_bundle, *, negative=False):
                 ),
                 "capture_snapshot_id": snapshot["snapshot_id"],
                 "symbol": symbol,
-                "session_id": (
-                    session["session_id"] if session is not None else None
-                ),
-                "start_at": (
-                    session["start_at"] if session is not None else None
-                ),
-                "end_at": (
-                    (
-                        date.fromisoformat(session["start_at"][:10])
-                        + timedelta(days=5)
-                    ).isoformat()
-                    + "T08:00:00Z"
-                    if session is not None
-                    else None
-                ),
-                "availability_status": (
-                    "AVAILABLE"
-                    if session is not None
-                    else "START_SESSION_UNAVAILABLE"
-                ),
-                "target_value": (
-                    (
-                        -0.005
-                        if negative
-                        else (0.005 if counter % 2 == 0 else -0.005)
-                    )
-                    if session is not None
-                    else None
-                ),
+                "session_id": None,
+                "calendar_id": None,
+                "session_source": None,
+                "start_at": None,
+                "start_session_date": None,
+                "session_date_binding_hash": None,
+                "target_session_date": None,
+                "session_dates": [],
+                "currency": None,
+                "price_path_hash": None,
+                "start_adjusted_close": None,
+                "target_adjusted_close": None,
+                "availability_status": "START_SESSION_UNAVAILABLE",
+                "target_value": None,
                 "target_id": forecast["target_id"],
                 "horizon_sessions": forecast["horizon_sessions"],
             }
+            if session is not None:
+                start_session_date = session["start_at"][:10]
+                session_binding_body = {
+                    "capture_snapshot_id": snapshot["snapshot_id"],
+                    "symbol": symbol,
+                    "session_id": session["session_id"],
+                    "calendar_id": session["calendar_id"],
+                    "start_at": session["start_at"],
+                    "session_source": session["source"],
+                    "start_session_date": start_session_date,
+                }
+                event.update(
+                    {
+                        "session_id": session["session_id"],
+                        "calendar_id": session["calendar_id"],
+                        "session_source": session["source"],
+                        "start_at": session["start_at"],
+                        "start_session_date": start_session_date,
+                        "session_date_binding_hash": digest(
+                            session_binding_body
+                        ),
+                    }
+                )
+                series = list(price_groups.get(symbol, ()))
+                positions = {
+                    str(value["date"]): index
+                    for index, value in enumerate(series)
+                }
+                start_index = positions.get(start_session_date)
+                horizon = int(forecast["horizon_sessions"])
+                if (
+                    start_index is not None
+                    and start_index + horizon < len(series)
+                ):
+                    path = series[start_index : start_index + horizon + 1]
+                    values = [float(value["adj_close"]) for value in path]
+                    target_value = values[-1] / values[0] - 1.0
+                    path_hash = digest(
+                        [
+                            {
+                                "symbol": value["symbol"],
+                                "date": value["date"],
+                                "currency": value["currency"],
+                                "adj_close": value["adj_close"],
+                            }
+                            for value in path
+                        ]
+                    )
+                    event.update(
+                        {
+                            "availability_status": "AVAILABLE",
+                            "target_session_date": path[-1]["date"],
+                            "session_dates": [
+                                value["date"] for value in path
+                            ],
+                            "currency": path[0]["currency"],
+                            "price_path_hash": path_hash,
+                            "start_adjusted_close": values[0],
+                            "target_adjusted_close": values[-1],
+                            "target_value": target_value,
+                        }
+                    )
+                else:
+                    event["availability_status"] = "MISSING_OUTCOME"
             event["source_hash"] = digest(event)
             observations.append(event)
             counter += 1
@@ -896,9 +1002,7 @@ def baseline_record(pattern, prospective_source_bundle, *, negative=False):
         "pattern_spec_hash": pattern["pattern_spec_hash"],
         "baseline_definition": forecast["baseline"],
         "universe_version": pattern["pattern_spec"]["data"]["universe_version"],
-        "population_source_id": prospective_source_bundle[
-            "source_bundle_id"
-        ],
+        "population_source_id": prospective_source_bundle["source_bundle_id"],
         "population_source_hash": prospective_source_bundle[
             "source_bundle_hash"
         ],
@@ -919,6 +1023,8 @@ def baseline_record(pattern, prospective_source_bundle, *, negative=False):
         "horizon_sessions": forecast["horizon_sessions"],
         "observations": observations,
     }
+
+
 
 
 def context_bundle_for(patterns, outcomes, prospective_source_bundle=None):
