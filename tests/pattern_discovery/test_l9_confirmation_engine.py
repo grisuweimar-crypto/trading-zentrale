@@ -1723,18 +1723,48 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
         ],
         minimum_raw_n=20,
     )
-    first_outcomes = prospective_rows(pattern, count=12, prefix="FIRST")
+    first_outcomes = prospective_rows(pattern, count=12, prefix="SEQ")
+    source1, normalized1 = prospective_source_for([pattern], first_outcomes)
+    first_events = maturation_registry_events(
+        normalized1,
+        recorded_at="2027-01-15T20:00:00Z",
+    )
     first = build_report(
         regs,
         pattern,
         control,
         monitor,
-        outcomes=first_outcomes,
-        baseline=baseline_record(pattern, count=12),
+        outcomes=normalized1,
+        prospective_source=source1,
+        maturation_events_override=first_events,
     )
     assert first["qm_governance"]["look_id"] == "LOOK_1"
     assert first["family_decision"] == "CONTINUE"
     assert first["qm_c_handoff"]["qm_c5_results"] == []
+
+    first_baseline = build_baseline_bundle(
+        [baseline_record(pattern, source1)],
+        source1,
+        baseline_bundle_id="BASE-SEQ-LOOK1",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    first_context = context_bundle_for(
+        [pattern],
+        normalized1,
+        source1,
+    )
+    persisted = persist_confirmation_look(
+        tmp_path,
+        first,
+        source1,
+        first_baseline,
+        context_bundle=first_context,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    local_registry = ConfirmationLookRegistry(
+        persisted["registry_path"]
+    )
 
     regs["c4"].record_monitoring_look(
         monitoring_plan_id=monitor["monitoring_plan_id"],
@@ -1763,15 +1793,23 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
     )
     assert monitor2["state"] == "MONITORING"
 
-    second_outcomes = prospective_rows(pattern, count=24, prefix="SECOND")
+    second_outcomes = prospective_rows(pattern, count=24, prefix="SEQ")
+    source2, normalized2 = prospective_source_for([pattern], second_outcomes)
+    second_events = maturation_registry_events(
+        normalized2[len(normalized1):],
+        recorded_at="2027-02-15T20:00:00Z",
+        prior_events=first_events,
+    )
     second = build_report(
         regs,
         pattern,
         control,
         monitor2,
-        outcomes=second_outcomes,
-        baseline=baseline_record(pattern, count=24),
+        outcomes=normalized2,
+        prospective_source=source2,
         evaluated_at="2027-02-15T20:00:00Z",
+        confirmation_registry=local_registry,
+        maturation_events_override=second_events,
     )
     assert second["qm_governance"]["look_id"] == "FINAL"
     assert second["family_decision"] == "FINAL_COMPLETE"
@@ -1797,22 +1835,32 @@ def test_automatic_early_stop_fails_closed_without_machine_readable_boundary(tmp
             control,
             monitor,
             outcomes=prospective_rows(pattern, count=12),
-            baseline=baseline_record(pattern, count=12),
         )
 
 
 def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
-    report = build_report(regs, pattern, control, monitor)
+    outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=normalized,
+        prospective_source=source,
+    )
     baseline_bundle = build_baseline_bundle(
-        [baseline_record(pattern)],
+        [baseline_record(pattern, source)],
+        source,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(prospective_rows(pattern))
+    contexts = context_bundle_for([pattern], normalized, source)
     first = persist_confirmation_look(
         tmp_path,
         report,
+        source,
         baseline_bundle,
         context_bundle=contexts,
         actor_id="tester",
@@ -1822,6 +1870,7 @@ def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
     second = persist_confirmation_look(
         tmp_path,
         report,
+        source,
         baseline_bundle,
         context_bundle=contexts,
         actor_id="tester",
