@@ -1106,6 +1106,14 @@ def _normalize_pattern_outcomes(
                 "claim_id": claim_id,
                 "outcome_hash": outcome_hash,
                 "symbol": _text(claim["symbol"], f"claim.symbol:{claim_id}"),
+                "capture_snapshot_id": _safe_token(
+                    claim["capture_snapshot_id"],
+                    f"claim.capture_snapshot_id:{claim_id}",
+                ),
+                "capture_snapshot_binding_hash": _sha256_text(
+                    claim["capture_snapshot_binding_hash"],
+                    f"claim.capture_snapshot_binding_hash:{claim_id}",
+                ),
                 "start_at": raw["horizon_provenance"]["start_at"],
                 "target_session_date": raw["horizon_provenance"][
                     "target_session_date"
@@ -1587,6 +1595,17 @@ def _validate_context_against_outcomes(
         if context["symbol"] != row["symbol"]:
             raise ConfirmationEngineError(
                 f"context_symbol_mismatch:{claim_id}"
+            )
+        if context["capture_snapshot_id"] != row["capture_snapshot_id"]:
+            raise ConfirmationEngineError(
+                f"context_capture_snapshot_id_mismatch:{claim_id}"
+            )
+        if (
+            context["capture_snapshot_binding_hash"]
+            != row["capture_snapshot_binding_hash"]
+        ):
+            raise ConfirmationEngineError(
+                f"context_capture_snapshot_binding_hash_mismatch:{claim_id}"
             )
         if _as_datetime(
             context["observation_as_of"],
