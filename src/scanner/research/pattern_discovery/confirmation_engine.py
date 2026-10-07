@@ -2294,6 +2294,68 @@ def _validate_outcome_claim_sources(
             )
 
 
+def _derived_contexts_from_sources(
+    claim_ids: Sequence[str],
+    prospective_source_bundle: Mapping[str, Any],
+) -> dict[str, dict[str, Any]]:
+    """Derive scientific context directly from immutable L7 row projections."""
+    snapshots, source_claims = source_bundle_indexes(
+        prospective_source_bundle
+    )
+    field_map = {
+        "sector": "sector",
+        "pillar_primary": "pillar_primary",
+        "cluster_official": "cluster_official",
+        "market_regime_stock": "market_regime_stock",
+        "market_regime_crypto": "market_regime_crypto",
+    }
+    result: dict[str, dict[str, Any]] = {}
+    for raw_claim_id in claim_ids:
+        claim_id = _safe_token(raw_claim_id, "context.claim_id")
+        source_claim = source_claims.get(claim_id)
+        if source_claim is None:
+            raise ConfirmationEngineError(
+                f"context_claim_missing_from_prospective_source:{claim_id}"
+            )
+        snapshot = snapshots.get(str(source_claim["snapshot_id"]))
+        if snapshot is None:
+            raise ConfirmationEngineError(
+                f"context_snapshot_missing_from_prospective_source:{claim_id}"
+            )
+        source_row = next(
+            (
+                item
+                for item in snapshot["rows"]
+                if item["symbol"] == source_claim["symbol"]
+            ),
+            None,
+        )
+        if source_row is None:
+            raise ConfirmationEngineError(
+                f"context_source_row_missing_from_bundle:{claim_id}"
+            )
+        projection = source_row["row_projection"]
+        context: dict[str, Any] = {
+            "claim_id": claim_id,
+            "symbol": source_claim["symbol"],
+            "observation_as_of": projection["as_of"],
+            "capture_snapshot_id": source_claim["snapshot_id"],
+            "capture_snapshot_binding_hash": source_claim[
+                "snapshot_binding_hash"
+            ],
+            "claim_hash": source_claim["claim_hash"],
+            "current_row_hash": source_claim["current_row_hash"],
+            "source_row_projection": projection,
+            "context_source_hash": source_claim["current_row_hash"],
+        }
+        for output_field, source_field in field_map.items():
+            value = projection.get(source_field)
+            if value is not None and str(value).strip() != "":
+                context[output_field] = value
+        result[claim_id] = context
+    return result
+
+
 def _validate_context_against_outcomes(
     contexts: Mapping[str, Mapping[str, Any]],
     outcome_rows_by_claim: Mapping[str, Mapping[str, Any]],
@@ -2809,7 +2871,7 @@ def build_confirmation_look(
     )
 
     baseline_map = _pattern_baseline_map(baseline_bundle)
-    contexts = _context_map(context_bundle)
+    supplied_contexts = _context_map(context_bundle)
     all_outcome_rows_by_claim: dict[str, Mapping[str, Any]] = {}
     per_member: dict[str, dict[str, Any]] = {}
     readiness: dict[str, Any] = {}
@@ -2890,9 +2952,19 @@ def build_confirmation_look(
         current_baseline_hashes=current_baseline_hashes,
     )
 
-    _validate_context_against_outcomes(
-        contexts,
-        all_outcome_rows_by_claim,
+    expected_context_claim_ids = set(all_outcome_rows_by_claim)
+    if context_bundle is not None:
+        if set(supplied_contexts) != expected_context_claim_ids:
+            raise ConfirmationEngineError(
+                "context_bundle_must_exactly_cover_eligible_confirmation_claims"
+            )
+        _validate_context_against_outcomes(
+            supplied_contexts,
+            all_outcome_rows_by_claim,
+            prospective_source_bundle,
+        )
+    contexts = _derived_contexts_from_sources(
+        sorted(expected_context_claim_ids),
         prospective_source_bundle,
     )
 
