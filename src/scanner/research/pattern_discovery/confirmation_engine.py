@@ -1674,6 +1674,25 @@ def _validate_family_bindings(
     return pattern_by_hypothesis
 
 
+def _confirmation_evidence_payload(
+    report: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return the immutable statistical/governance evidence core.
+
+    QM handoff payloads and outer artifact hashes are excluded to avoid a
+    circular hash dependency. QM-C4/QM-C5 bind to this evidence hash.
+    """
+    return {
+        key: value
+        for key, value in report.items()
+        if key not in {
+            "look_hash",
+            "confirmation_evidence_hash",
+            "qm_c_handoff",
+        }
+    }
+
+
 def _look_identity(
     *,
     control_plan: Mapping[str, Any],
@@ -2065,13 +2084,14 @@ def build_confirmation_look(
         },
     }
     PatternDiscoveryBoundary().assert_research_payload(report)
-    pre_handoff_hash = _hash(report)
+    evidence_hash = _hash(_confirmation_evidence_payload(report))
+    report["confirmation_evidence_hash"] = evidence_hash
 
     c4_payload = {
         "monitoring_plan_id": monitoring["monitoring_plan_id"],
         "monitoring_plan_version": monitoring["monitoring_plan_version"],
         "look_id": next_look["look_id"],
-        "artifact_hash": pre_handoff_hash,
+        "artifact_hash": evidence_hash,
         "decision": family_decision,
         "observed_at": evaluated,
     }
@@ -2103,7 +2123,7 @@ def build_confirmation_look(
                     "evidence_scope": "CONFIRMATORY",
                     "outcome_classification": classification,
                     "conclusion": conclusion,
-                    "evidence_artifact_hash": pre_handoff_hash,
+                    "evidence_artifact_hash": evidence_hash,
                     "analysis_plan_id": row["analysis_plan_id"],
                     "analysis_plan_version": row["analysis_plan_version"],
                     "analysis_plan_hash": row["analysis_plan_hash"],
@@ -2150,23 +2170,6 @@ def build_confirmation_look(
     }
     PatternDiscoveryBoundary().assert_research_payload(report)
     report["look_hash"] = _hash(report)
-    report["qm_c_handoff"]["qm_c4_record_look"]["artifact_hash"] = report[
-        "look_hash"
-    ]
-    for record in report["qm_c_handoff"]["qm_c5_results"]:
-        record["evidence_artifact_hash"] = report["look_hash"]
-    report["look_hash"] = _hash(
-        {key: value for key, value in report.items() if key != "look_hash"}
-    )
-    # One final rewrite keeps the handoff's artifact hash exact.
-    report["qm_c_handoff"]["qm_c4_record_look"]["artifact_hash"] = report[
-        "look_hash"
-    ]
-    for record in report["qm_c_handoff"]["qm_c5_results"]:
-        record["evidence_artifact_hash"] = report["look_hash"]
-    report["look_hash"] = _hash(
-        {key: value for key, value in report.items() if key != "look_hash"}
-    )
     return report
 
 
@@ -2244,13 +2247,21 @@ def verify_confirmation_look(
             raise ConfirmationEngineError("confirmation_qm_handoff_missing")
         if handoff.get("direct_qm_registry_write_performed") is not False:
             raise ConfirmationEngineError("direct_qm_write_forbidden")
+        evidence_hash = _sha256_text(
+            report.get("confirmation_evidence_hash"),
+            "confirmation_evidence_hash",
+        )
+        if _hash(_confirmation_evidence_payload(report)) != evidence_hash:
+            raise ConfirmationEngineError(
+                "confirmation_evidence_hash_mismatch"
+            )
         c4 = handoff.get("qm_c4_record_look")
         if not isinstance(c4, Mapping):
             raise ConfirmationEngineError("qm_c4_handoff_missing")
-        if c4.get("artifact_hash") != stored:
+        if c4.get("artifact_hash") != evidence_hash:
             raise ConfirmationEngineError("qm_c4_handoff_artifact_hash_mismatch")
         for record in handoff.get("qm_c5_results") or []:
-            if record.get("evidence_artifact_hash") != stored:
+            if record.get("evidence_artifact_hash") != evidence_hash:
                 raise ConfirmationEngineError(
                     "qm_c5_handoff_artifact_hash_mismatch"
                 )
@@ -2619,7 +2630,7 @@ def validate_applied_qm_confirmation_handoff(
         look
         for look in monitor["recorded_looks"]
         if look["look_id"] == handoff["look_id"]
-        and look["artifact_hash"] == report["look_hash"]
+        and look["artifact_hash"] == report["confirmation_evidence_hash"]
         and look["decision"] == handoff["decision"]
     ]
     if len(matches) != 1:
