@@ -1768,6 +1768,59 @@ def test_newly_eligible_earlier_registry_event_preserves_consumed_evidence_order
         )
 
 
+def test_confirmation_registry_replay_accepts_delayed_eligibility_insertion(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "scanner.research.pattern_discovery.confirmation_engine.verify_confirmation_look",
+        lambda report, contract=None: {"valid": True},
+    )
+    registry = ConfirmationLookRegistry(tmp_path / "confirmation_looks.jsonl")
+
+    def report(look_id, hashes):
+        return {
+            "look_status": "EVALUATED",
+            "qm_governance": {
+                "monitoring_plan_id": "MON-LATE-ELIGIBILITY",
+                "monitoring_plan_version": "v1",
+                "look_id": look_id,
+            },
+            "input_bindings": {
+                "l8_maturation_registry": {
+                    "eligible_event_hashes": list(hashes),
+                },
+            },
+            "pattern_results": [],
+        }
+
+    events = [
+        {
+            "event_type": "CONFIRMATION_LOOK_PERSISTED",
+            "report": report("LOOK_1", ["B"]),
+        },
+        {
+            "event_type": "CONFIRMATION_LOOK_PERSISTED",
+            "report": report("FINAL", ["A", "B"]),
+        },
+    ]
+    replayed = registry._replay(events)
+    assert len(replayed) == 2
+
+    dropped = [
+        events[0],
+        {
+            "event_type": "CONFIRMATION_LOOK_PERSISTED",
+            "report": report("FINAL", ["A"]),
+        },
+    ]
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_registry_not_append_only_across_looks",
+    ):
+        registry._replay(dropped)
+
+
 def test_truncated_valid_l8_chain_is_rejected_against_authoritative_registry(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
