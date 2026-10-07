@@ -472,6 +472,7 @@ def verify_baseline_bundle(
 
 def build_context_bundle(
     claim_contexts: Sequence[Mapping[str, Any]],
+    prospective_source_bundle: Mapping[str, Any],
     *,
     context_bundle_id: str,
     generated_at: str,
@@ -486,6 +487,7 @@ def build_context_bundle(
         claim_contexts, Sequence
     ):
         raise ConfirmationEngineError("claim_contexts_sequence_required")
+    verify_prospective_source_bundle(prospective_source_bundle)
     bundle: dict[str, Any] = {
         "schema_version": CONTEXT_SCHEMA_VERSION,
         "research_only": True,
@@ -494,11 +496,92 @@ def build_context_bundle(
             "context_bundle_id",
         ),
         "generated_at": _timestamp(generated_at, "generated_at"),
+        "prospective_source_bundle_id": prospective_source_bundle[
+            "source_bundle_id"
+        ],
+        "prospective_source_bundle_hash": prospective_source_bundle[
+            "source_bundle_hash"
+        ],
         "claim_contexts": [dict(value) for value in claim_contexts],
     }
     bundle["context_bundle_hash"] = _hash(bundle)
     verify_context_bundle(bundle, contract=spec)
     return bundle
+
+
+def build_context_bundle_from_sources(
+    claim_ids: Sequence[str],
+    prospective_source_bundle: Mapping[str, Any],
+    *,
+    context_bundle_id: str,
+    generated_at: str,
+    contract: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derive L9 diagnostic contexts only from hash-proven L7 row projections."""
+    verify_prospective_source_bundle(prospective_source_bundle)
+    snapshots, claims = source_bundle_indexes(prospective_source_bundle)
+    contexts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    field_map = {
+        "sector": "sector",
+        "pillar_primary": "pillar_primary",
+        "cluster_official": "cluster_official",
+        "market_regime_stock": "market_regime_stock",
+        "market_regime_crypto": "market_regime_crypto",
+    }
+    for index, raw_claim_id in enumerate(claim_ids):
+        claim_id = _safe_token(
+            raw_claim_id,
+            f"claim_ids[{index}]",
+        )
+        if claim_id in seen:
+            raise ConfirmationEngineError(
+                f"duplicate_context_claim_id:{claim_id}"
+            )
+        seen.add(claim_id)
+        source_claim = claims.get(claim_id)
+        if source_claim is None:
+            raise ConfirmationEngineError(
+                f"context_claim_missing_from_prospective_source:{claim_id}"
+            )
+        snapshot = snapshots[source_claim["snapshot_id"]]
+        source_row = next(
+            (
+                item
+                for item in snapshot["rows"]
+                if item["symbol"] == source_claim["symbol"]
+            ),
+            None,
+        )
+        if source_row is None:
+            raise ConfirmationEngineError(
+                f"context_source_row_missing:{claim_id}"
+            )
+        projection = dict(source_row["row_projection"])
+        row: dict[str, Any] = {
+            "claim_id": claim_id,
+            "symbol": source_claim["symbol"],
+            "observation_as_of": projection["as_of"],
+            "capture_snapshot_id": source_claim["snapshot_id"],
+            "capture_snapshot_binding_hash": source_claim[
+                "snapshot_binding_hash"
+            ],
+            "claim_hash": source_claim["claim_hash"],
+            "current_row_hash": source_claim["current_row_hash"],
+            "source_row_projection": projection,
+            "context_source_hash": source_claim["current_row_hash"],
+        }
+        for output_field, source_field in field_map.items():
+            if source_field in projection and projection.get(source_field) is not None:
+                row[output_field] = projection.get(source_field)
+        contexts.append(row)
+    return build_context_bundle(
+        contexts,
+        prospective_source_bundle,
+        context_bundle_id=context_bundle_id,
+        generated_at=generated_at,
+        contract=contract,
+    )
 
 
 def verify_context_bundle(
@@ -519,6 +602,14 @@ def verify_context_bundle(
         raise ConfirmationEngineError("context_bundle_research_only_guard_missing")
     _safe_token(bundle.get("context_bundle_id"), "context_bundle_id")
     _timestamp(bundle.get("generated_at"), "context_bundle.generated_at")
+    _safe_token(
+        bundle.get("prospective_source_bundle_id"),
+        "prospective_source_bundle_id",
+    )
+    _sha256_text(
+        bundle.get("prospective_source_bundle_hash"),
+        "prospective_source_bundle_hash",
+    )
     stored = _sha256_text(
         bundle.get("context_bundle_hash"),
         "context_bundle_hash",
@@ -565,14 +656,64 @@ def verify_context_bundle(
             )
         seen.add(claim_id)
         _text(raw["symbol"], f"claim_contexts[{index}].symbol")
-        _timestamp(
+        observation_as_of = _timestamp(
             raw["observation_as_of"],
             f"claim_contexts[{index}].observation_as_of",
         )
         _sha256_text(
+            raw["claim_hash"],
+            f"claim_contexts[{index}].claim_hash",
+        )
+        current_row_hash = _sha256_text(
+            raw["current_row_hash"],
+            f"claim_contexts[{index}].current_row_hash",
+        )
+        context_source_hash = _sha256_text(
             raw["context_source_hash"],
             f"claim_contexts[{index}].context_source_hash",
         )
+        if context_source_hash != current_row_hash:
+            raise ConfirmationEngineError(
+                f"context_source_hash_must_equal_current_row_hash:{claim_id}"
+            )
+        projection = raw["source_row_projection"]
+        if not isinstance(projection, Mapping):
+            raise ConfirmationEngineError(
+                f"context_source_row_projection_must_be_object:{claim_id}"
+            )
+        if _hash(projection) != current_row_hash:
+            raise ConfirmationEngineError(
+                f"context_source_row_projection_hash_mismatch:{claim_id}"
+            )
+        if projection.get("symbol") != raw["symbol"]:
+            raise ConfirmationEngineError(
+                f"context_source_row_symbol_mismatch:{claim_id}"
+            )
+        if projection.get("snapshot_id") != raw["capture_snapshot_id"]:
+            raise ConfirmationEngineError(
+                f"context_source_row_snapshot_mismatch:{claim_id}"
+            )
+        if _timestamp(
+            projection.get("as_of"),
+            f"context_source_row.as_of:{claim_id}",
+        ) != observation_as_of:
+            raise ConfirmationEngineError(
+                f"context_source_row_as_of_mismatch:{claim_id}"
+            )
+        context_field_map = {
+            "sector": "sector",
+            "pillar_primary": "pillar_primary",
+            "cluster_official": "cluster_official",
+            "market_regime_stock": "market_regime_stock",
+            "market_regime_crypto": "market_regime_crypto",
+        }
+        for output_field, source_field in context_field_map.items():
+            if output_field not in raw:
+                continue
+            if raw.get(output_field) != projection.get(source_field):
+                raise ConfirmationEngineError(
+                    f"context_value_not_from_capture_row:{claim_id}:{output_field}"
+                )
     return {
         "valid": True,
         "context_bundle_id": bundle["context_bundle_id"],
