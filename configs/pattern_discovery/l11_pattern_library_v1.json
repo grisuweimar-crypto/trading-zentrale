@@ -1,0 +1,57 @@
+{
+  "schema_version": "pattern_discovery_l11_pattern_library_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L11",
+  "name": "Pattern Library / Research UI",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Present immutable Pattern Discovery evidence and lifecycle state in a comparable human-readable research library without recomputing evidence, changing ratings, promoting patterns, or affecting productive scanner/decision semantics.",
+  "principles": {
+    "presentation_only": true,
+    "discovery_and_prospective_evidence_visually_separate": true,
+    "uncertainty_must_remain_visible": true,
+    "horizons_never_aggregated": true,
+    "missing_remains_missing": true,
+    "rating_not_recomputed": true,
+    "promotion_not_performed": true,
+    "negative_results_remain_visible": true,
+    "dependency_is_context_not_vote_count": true
+  },
+  "display": {
+    "ratings": ["D", "C", "B", "A", "U", "F"],
+    "missing_value_label": "—",
+    "primary_columns": [
+      "pattern_id",
+      "pattern_version",
+      "description",
+      "pattern_type",
+      "direction",
+      "horizon_sessions",
+      "rating",
+      "direction_probability",
+      "baseline_probability",
+      "probability_advantage_lift",
+      "effect_size",
+      "raw_n",
+      "effective_n",
+      "support_regions",
+      "robust_intervals",
+      "dependency",
+      "last_status_change"
+    ]
+  },
+  "storage": {
+    "library_json_path": "artifacts/research/pattern_discovery/library/pattern_library.json",
+    "library_html_path": "artifacts/research/pattern_discovery/library/pattern_library.html"
+  },
+  "boundaries": {
+    "source_artifacts_mutated": false,
+    "confirmation_recomputed": false,
+    "rating_recomputed": false,
+    "promotion_performed": false,
+    "decision_layer_integration_performed": false,
+    "portfolio_or_execution_effect_created": false
+  }
+}
