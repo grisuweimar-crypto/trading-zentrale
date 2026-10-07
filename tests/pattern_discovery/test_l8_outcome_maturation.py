@@ -416,6 +416,19 @@ def test_missing_intermediate_adjusted_price_does_not_collapse_session_count():
     assert report["matured_outcomes"] == []
 
 
+def test_invalid_adjusted_close_preserves_raw_session_and_fails_closed():
+    prices = complete_prices()
+    for row in prices:
+        if row["symbol"] == "AAA" and row["date"] == "2026-10-10":
+            row["adj_close"] = "0"
+    report = build_check(prices=prices)
+    evaluation = report["evaluations"][0]
+    assert evaluation["status"] == "MISSING_ADJUSTED_PRICE"
+    assert report["matured_outcomes"] == []
+    issues = report["price_binding"]["validation_issues"]["AAA"]
+    assert issues["invalid_adj_close_preserved_as_missing"] == 1
+
+
 def test_reverse_split_raw_close_jump_never_changes_adjusted_return():
     prices = complete_prices()
     for row in prices:
