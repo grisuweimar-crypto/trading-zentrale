@@ -2372,44 +2372,22 @@ def _validate_context_against_outcomes(
         "market_regime_crypto": "market_regime_crypto",
     }
     for claim_id, context in contexts.items():
-        row = outcome_rows_by_claim.get(claim_id)
-        if row is None:
-            continue
         source_claim = source_claims.get(claim_id)
         if source_claim is None:
             raise ConfirmationEngineError(
                 f"context_claim_missing_from_prospective_source:{claim_id}"
             )
-        if context["symbol"] != row["symbol"]:
-            raise ConfirmationEngineError(
-                f"context_symbol_mismatch:{claim_id}"
-            )
         if context["symbol"] != source_claim["symbol"]:
             raise ConfirmationEngineError(
                 f"context_source_symbol_mismatch:{claim_id}"
-            )
-        if context["claim_hash"] != row["claim_hash"]:
-            raise ConfirmationEngineError(
-                f"context_claim_hash_mismatch_l8:{claim_id}"
             )
         if context["claim_hash"] != source_claim["claim_hash"]:
             raise ConfirmationEngineError(
                 f"context_claim_hash_mismatch_l7:{claim_id}"
             )
-        if context["capture_snapshot_id"] != row["capture_snapshot_id"]:
-            raise ConfirmationEngineError(
-                f"context_capture_snapshot_id_mismatch:{claim_id}"
-            )
         if context["capture_snapshot_id"] != source_claim["snapshot_id"]:
             raise ConfirmationEngineError(
                 f"context_source_snapshot_id_mismatch:{claim_id}"
-            )
-        if (
-            context["capture_snapshot_binding_hash"]
-            != row["capture_snapshot_binding_hash"]
-        ):
-            raise ConfirmationEngineError(
-                f"context_capture_snapshot_binding_hash_mismatch:{claim_id}"
             )
         if (
             context["capture_snapshot_binding_hash"]
@@ -2448,16 +2426,6 @@ def _validate_context_against_outcomes(
             raise ConfirmationEngineError(
                 f"context_source_row_hash_mismatch_l7:{claim_id}"
             )
-        if _as_datetime(
-            context["observation_as_of"],
-            f"context.observation_as_of:{claim_id}",
-        ) >= _as_datetime(
-            row["start_at"],
-            f"outcome.start_at:{claim_id}",
-        ):
-            raise ConfirmationEngineError(
-                f"context_not_strictly_pre_start_session:{claim_id}"
-            )
         if _timestamp(
             context["observation_as_of"],
             f"context.observation_as_of:{claim_id}",
@@ -2482,6 +2450,39 @@ def _validate_context_against_outcomes(
                 raise ConfirmationEngineError(
                     f"context_value_not_from_exact_l7_row:{claim_id}:{output_field}"
                 )
+
+        row = outcome_rows_by_claim.get(claim_id)
+        if row is None:
+            continue
+        if context["symbol"] != row["symbol"]:
+            raise ConfirmationEngineError(
+                f"context_symbol_mismatch:{claim_id}"
+            )
+        if context["claim_hash"] != row["claim_hash"]:
+            raise ConfirmationEngineError(
+                f"context_claim_hash_mismatch_l8:{claim_id}"
+            )
+        if context["capture_snapshot_id"] != row["capture_snapshot_id"]:
+            raise ConfirmationEngineError(
+                f"context_capture_snapshot_id_mismatch:{claim_id}"
+            )
+        if (
+            context["capture_snapshot_binding_hash"]
+            != row["capture_snapshot_binding_hash"]
+        ):
+            raise ConfirmationEngineError(
+                f"context_capture_snapshot_binding_hash_mismatch:{claim_id}"
+            )
+        if _as_datetime(
+            context["observation_as_of"],
+            f"context.observation_as_of:{claim_id}",
+        ) >= _as_datetime(
+            row["start_at"],
+            f"outcome.start_at:{claim_id}",
+        ):
+            raise ConfirmationEngineError(
+                f"context_not_strictly_pre_start_session:{claim_id}"
+            )
 
 
 def _validate_family_bindings(
@@ -2952,11 +2953,14 @@ def build_confirmation_look(
         current_baseline_hashes=current_baseline_hashes,
     )
 
-    expected_context_claim_ids = set(all_outcome_rows_by_claim)
+    _, source_claims = source_bundle_indexes(
+        prospective_source_bundle
+    )
+    source_context_claim_ids = set(source_claims)
     if context_bundle is not None:
-        if set(supplied_contexts) != expected_context_claim_ids:
+        if set(supplied_contexts) != source_context_claim_ids:
             raise ConfirmationEngineError(
-                "context_bundle_must_exactly_cover_eligible_confirmation_claims"
+                "context_bundle_must_exactly_cover_prospective_source_claims"
             )
         _validate_context_against_outcomes(
             supplied_contexts,
@@ -2964,7 +2968,7 @@ def build_confirmation_look(
             prospective_source_bundle,
         )
     contexts = _derived_contexts_from_sources(
-        sorted(expected_context_claim_ids),
+        sorted(all_outcome_rows_by_claim),
         prospective_source_bundle,
     )
 
