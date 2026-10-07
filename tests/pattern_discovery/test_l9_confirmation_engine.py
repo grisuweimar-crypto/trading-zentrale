@@ -889,10 +889,10 @@ def baseline_record(pattern, prospective_source_bundle, *, negative=False):
         "population_source_hash": prospective_source_bundle[
             "source_bundle_hash"
         ],
-        "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1",
+        "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_VERIFIED_L7_SCANNER_POPULATION_SAME_TARGET_HORIZON_V1",
         "selection_rule_hash": digest(
             {
-                "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1",
+                "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_VERIFIED_L7_SCANNER_POPULATION_SAME_TARGET_HORIZON_V1",
                 "baseline_definition": forecast["baseline"],
                 "universe_version": pattern["pattern_spec"]["data"][
                     "universe_version"
