@@ -1305,9 +1305,10 @@ def test_strong_negative_final_result_is_falsified_and_retained(tmp_path):
     ] == "NEGATIVE"
 
     source, normalized = prospective_source_for([pattern], outcomes)
-    baseline_bundle = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline_bundle = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1444,9 +1445,10 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
         normalized,
         recorded_at="2027-01-16T20:00:00Z",
     )
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-FUTURE-MATURATION",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1491,9 +1493,10 @@ def test_same_day_target_session_is_not_eligible_until_later_date(tmp_path):
         recorded_at="2027-01-15T20:00:00Z",
     )
     write_authoritative_maturation_registry(tmp_path, events)
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-SAME-DAY-CLOSE",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1529,9 +1532,10 @@ def test_truncated_valid_l8_chain_is_rejected_against_authoritative_registry(tmp
     full_events = maturation_registry_events(normalized)
     write_authoritative_maturation_registry(tmp_path, full_events)
     truncated = full_events[:-1]
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-TRUNCATED-L8",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1572,9 +1576,10 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
     events[1]["entry_hash"] = digest(
         {k: v for k, v in events[1].items() if k != "entry_hash"}
     )
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-NONMONOTONIC",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1612,9 +1617,10 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
         normalized,
         recorded_at="2027-01-15T20:00:00Z",
     )
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-SUFFIX-INDEPENDENCE",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1688,9 +1694,10 @@ def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
     source, normalized = prospective_source_for([pattern], outcomes)
     events = maturation_registry_events(normalized)
     events[1]["previous_event_hash"] = "0" * 64
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-BAD-CHAIN",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1728,9 +1735,10 @@ def test_tampered_l8_outcome_fails_closed(tmp_path):
     )
     normalized[0]["outcome"]["target_value"] = 99.0
     events = maturation_registry_events(normalized)
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -1790,11 +1798,13 @@ def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
     body = dict(baseline["observations"][0])
     body.pop("source_hash", None)
     baseline["observations"][0]["source_hash"] = digest(body)
-    report_bundle = build_baseline_bundle(
-        [baseline],
+    report_bundle = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-FUTURE-OUTCOME",
         generated_at="2027-01-15T20:00:00Z",
+        records=[baseline],
     )
     contexts = context_bundle_for([pattern], normalized, source)
     events = maturation_registry_events(normalized)
@@ -1984,12 +1994,10 @@ def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
         [pattern_a, pattern_b],
         outcomes,
     )
-    baseline = build_baseline_bundle(
-        [
-            baseline_record(pattern_a, source, tmp_path),
-            baseline_record(pattern_b, source, tmp_path),
-        ],
+    baseline = baseline_bundle_for_test(
+        [pattern_a, pattern_b],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-FAMILY",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -2048,12 +2056,10 @@ def test_bonferroni_family_and_sequential_threshold_are_both_applied(tmp_path):
         [pattern_a, pattern_b],
         outcomes,
     )
-    baseline = build_baseline_bundle(
-        [
-            baseline_record(pattern_a, source, tmp_path),
-            baseline_record(pattern_b, source, tmp_path),
-        ],
+    baseline = baseline_bundle_for_test(
+        [pattern_a, pattern_b],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-MULTI",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -2119,9 +2125,10 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
     assert first["family_decision"] == "CONTINUE"
     assert first["qm_c_handoff"]["qm_c5_results"] == []
 
-    first_baseline = build_baseline_bundle(
-        [baseline_record(pattern, source1, tmp_path)],
+    first_baseline = baseline_bundle_for_test(
+        [pattern],
         source1,
+        tmp_path,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -2217,9 +2224,10 @@ def test_second_look_cannot_drop_evidence_consumed_by_first_look(tmp_path):
         prospective_source=source1,
         maturation_events_override=first_events,
     )
-    first_baseline = build_baseline_bundle(
-        [baseline_record(pattern, source1, tmp_path)],
+    first_baseline = baseline_bundle_for_test(
+        [pattern],
         source1,
+        tmp_path,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
@@ -2338,9 +2346,10 @@ def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
         outcomes=normalized,
         prospective_source=source,
     )
-    baseline_bundle = build_baseline_bundle(
-        [baseline_record(pattern, source, tmp_path)],
+    baseline_bundle = baseline_bundle_for_test(
+        [pattern],
         source,
+        tmp_path,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
