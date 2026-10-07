@@ -478,6 +478,11 @@ def verify_baseline_bundle(
         horizon = int(raw["horizon_sessions"])
         if horizon <= 0:
             raise ConfirmationEngineError("baseline_horizon_must_be_positive")
+        snapshot_session_bindings = raw["snapshot_session_bindings"]
+        if not isinstance(snapshot_session_bindings, list):
+            raise ConfirmationEngineError(
+                f"baseline_snapshot_session_bindings_list_required:{pid}:{pver}"
+            )
         observations = raw["observations"]
         if not isinstance(observations, list):
             raise ConfirmationEngineError(
@@ -1822,6 +1827,10 @@ def _normalize_pattern_outcomes(
                 "calendar_id": _safe_token(
                     raw["horizon_provenance"]["calendar_id"],
                     f"outcome.calendar_id:{claim_id}",
+                ),
+                "start_session_binding_hash": _sha256_text(
+                    raw["horizon_provenance"]["start_session_binding_hash"],
+                    f"outcome.start_session_binding_hash:{claim_id}",
                 ),
                 "target_session_date": raw["horizon_provenance"][
                     "target_session_date"
