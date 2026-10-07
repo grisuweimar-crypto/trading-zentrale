@@ -11,6 +11,7 @@
   "principles": {
     "discovery_evidence_never_counts_as_confirmation": true,
     "only_hash_valid_l8_matured_outcomes_are_confirmation_events": true,
+    "l8_maturation_registry_time_is_part_of_confirmation_provenance": true,
     "strictly_post_freeze_outcomes_only": true,
     "pattern_versions_and_horizons_remain_separate": true,
     "frozen_target_direction_baseline_and_horizon_are_immutable": true,
@@ -31,6 +32,9 @@
   "bindings": {
     "l5_frozen_pattern_schema": "pattern_discovery_l5_frozen_pattern_v1",
     "l8_matured_outcome_schema": "pattern_discovery_l8_matured_outcome_v1",
+    "l8_maturation_event_schema": "pattern_discovery_l8_maturation_event_v1",
+    "complete_l8_maturation_registry_chain_required": true,
+    "l8_maturation_recorded_at_must_not_follow_l9_evaluation": true,
     "qm_c1_contract_schema": "qm_c_hypothesis_registry_v1",
     "qm_c2_contract_schema": "qm_c_analysis_plan_v1",
     "qm_c3_contract_schema": "qm_c3_families_multiplicity_v1",
