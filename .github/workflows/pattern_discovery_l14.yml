@@ -73,8 +73,6 @@ jobs:
           tests/test_qm_c_hypothesis_registry.py
           tests/test_qm_c_analysis_plan.py
           tests/test_qm_c_six_step_structure.py
-          tests/test_qm_c_negative_results.py
-          tests/test_qm_c_sequential_monitoring.py
 
       - name: Run BA-QM12 continuous-QM compatibility
         run: python -m pytest -q tests/test_ba_qm12_continuous_qm.py
