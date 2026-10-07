@@ -231,9 +231,74 @@ def _verify_frozen_pattern(record: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _file_sha256(path: Path) -> str:
+    digest = sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _csv_rows(path: Path) -> list[dict[str, Any]]:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return [dict(row) for row in csv.DictReader(handle)]
+
+
+def canonical_baseline_price_state(
+    repo_root: str | Path,
+    evaluated_at: str,
+    *,
+    contract: Mapping[str, Any] | None = None,
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
+    """Load and normalize the canonical price source as-of the L9 look."""
+    spec = (
+        dict(contract)
+        if contract is not None
+        else load_confirmation_contract()
+    )
+    evaluated = _as_datetime(evaluated_at, "evaluated_at")
+    root = Path(repo_root).resolve()
+    repo_path = str(
+        spec["baseline_bundle"]["canonical_price_source_path"]
+    )
+    target = (root / repo_path).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ConfirmationEngineError(
+            "canonical_baseline_price_path_outside_repo"
+        ) from exc
+    if not target.exists():
+        raise ConfirmationEngineError(
+            "canonical_baseline_price_source_missing"
+        )
+    price_file_sha256 = _file_sha256(target)
+    price_as_of = (evaluated.date() - timedelta(days=1)).isoformat()
+    try:
+        groups, binding = _normalize_prices(
+            _csv_rows(target),
+            price_as_of=price_as_of,
+            checked_at=evaluated.isoformat().replace("+00:00", "Z"),
+            price_file_sha256=price_file_sha256,
+        )
+    except Exception as exc:
+        raise ConfirmationEngineError(
+            f"canonical_baseline_price_normalization_failed:{exc}"
+        ) from exc
+    provenance = {
+        "price_source_path": repo_path,
+        "price_file_sha256": price_file_sha256,
+        "price_as_of": binding["price_as_of"],
+        "price_binding_hash": binding["price_binding_hash"],
+        "normalized_price_hash": binding["normalized_price_hash"],
+    }
+    return groups, provenance
+
+
 def build_baseline_bundle(
     pattern_baselines: Sequence[Mapping[str, Any]],
     prospective_source_bundle: Mapping[str, Any],
+    price_provenance: Mapping[str, Any],
     *,
     baseline_bundle_id: str,
     generated_at: str,
@@ -263,6 +328,22 @@ def build_baseline_bundle(
         "prospective_source_bundle_hash": prospective_source_bundle[
             "source_bundle_hash"
         ],
+        "price_source_path": _text(
+            price_provenance.get("price_source_path"),
+            "price_provenance.price_source_path",
+        ),
+        "price_file_sha256": _sha256_text(
+            price_provenance.get("price_file_sha256"),
+            "price_provenance.price_file_sha256",
+        ),
+        "price_as_of": _text(
+            price_provenance.get("price_as_of"),
+            "price_provenance.price_as_of",
+        ),
+        "price_binding_hash": _sha256_text(
+            price_provenance.get("price_binding_hash"),
+            "price_provenance.price_binding_hash",
+        ),
         "pattern_baselines": [dict(value) for value in pattern_baselines],
     }
     bundle["baseline_bundle_hash"] = _hash(bundle)
@@ -295,6 +376,23 @@ def verify_baseline_bundle(
     _sha256_text(
         bundle.get("prospective_source_bundle_hash"),
         "prospective_source_bundle_hash",
+    )
+    _text(bundle.get("price_source_path"), "baseline_bundle.price_source_path")
+    _sha256_text(
+        bundle.get("price_file_sha256"),
+        "baseline_bundle.price_file_sha256",
+    )
+    try:
+        datetime.fromisoformat(
+            str(bundle.get("price_as_of")) + "T00:00:00+00:00"
+        )
+    except ValueError as exc:
+        raise ConfirmationEngineError(
+            "baseline_bundle_price_as_of_invalid"
+        ) from exc
+    _sha256_text(
+        bundle.get("price_binding_hash"),
+        "baseline_bundle.price_binding_hash",
     )
     stored = _sha256_text(
         bundle.get("baseline_bundle_hash"),
