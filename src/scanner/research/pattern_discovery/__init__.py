@@ -4,8 +4,8 @@ L0 provides the hard research boundary. L1 adds deterministic pre-registration
 and immutable Discovery Run manifests. L2 adds the versioned PIT-safe Feature
 Library. L3 adds the bounded discovery-only Search Engine. L4 adds the
 Statistical Discovery Guard. L5 adds the immutable Candidate Registry and
-QM-C handoff. Later phases add dependency analysis, prospective confirmation,
-rating and promotion.
+QM-C handoff. L6 adds the deterministic Dependency / Redundancy Graph. Later
+phases add prospective confirmation, rating and promotion.
 """
 
 from .boundary import (
@@ -63,6 +63,17 @@ from .candidate_registry import (
     verify_freeze_snapshot,
     write_freeze_snapshot,
 )
+from .dependency_graph import (
+    DependencyGraphError,
+    build_dependency_graph,
+    build_event_context,
+    dependency_graph_contract_hash,
+    dependency_graph_repo_path,
+    load_dependency_graph_contract,
+    verify_dependency_graph,
+    verify_event_context,
+    write_dependency_graph,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -108,4 +119,13 @@ __all__ = [
     "validate_applied_qm_handoff",
     "verify_freeze_snapshot",
     "write_freeze_snapshot",
+    "DependencyGraphError",
+    "build_dependency_graph",
+    "build_event_context",
+    "dependency_graph_contract_hash",
+    "dependency_graph_repo_path",
+    "load_dependency_graph_contract",
+    "verify_dependency_graph",
+    "verify_event_context",
+    "write_dependency_graph",
 ]
