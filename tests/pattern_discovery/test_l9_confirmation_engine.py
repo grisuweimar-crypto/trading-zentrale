@@ -901,9 +901,17 @@ def canonical_price_state_for_test(
 def baseline_record(
     pattern,
     prospective_source_bundle,
-    price_groups,
+    repo_root,
+    *,
+    evaluated_at="2027-01-15T20:00:00Z",
 ):
     forecast = pattern["pattern_spec"]["forecast"]
+    price_groups, _ = canonical_price_state_for_test(
+        repo_root,
+        prospective_source_bundle,
+        evaluated_at=evaluated_at,
+        horizon=int(forecast["horizon_sessions"]),
+    )
     observations = []
     counter = 0
     eligible_snapshot_ids = {
@@ -1045,6 +1053,47 @@ def baseline_record(
 
 
 
+def baseline_bundle_for_test(
+    patterns,
+    prospective_source_bundle,
+    repo_root,
+    *,
+    baseline_bundle_id="BASE-L9-TEST",
+    generated_at="2027-01-15T20:00:00Z",
+    records=None,
+):
+    horizons = [
+        int(pattern["pattern_spec"]["forecast"]["horizon_sessions"])
+        for pattern in patterns
+    ]
+    _, price_provenance = canonical_price_state_for_test(
+        repo_root,
+        prospective_source_bundle,
+        evaluated_at=generated_at,
+        horizon=max(horizons),
+    )
+    values = (
+        records
+        if records is not None
+        else [
+            baseline_record(
+                pattern,
+                prospective_source_bundle,
+                repo_root,
+                evaluated_at=generated_at,
+            )
+            for pattern in patterns
+        ]
+    )
+    return build_baseline_bundle(
+        values,
+        prospective_source_bundle,
+        price_provenance,
+        baseline_bundle_id=baseline_bundle_id,
+        generated_at=generated_at,
+    )
+
+
 def context_bundle_for(patterns, outcomes, prospective_source_bundle=None):
     source = prospective_source_bundle
     values = outcomes
@@ -1140,7 +1189,12 @@ def build_report(
     baseline_value = (
         baseline
         if baseline is not None
-        else baseline_record(pattern, source, price_groups)
+        else baseline_record(
+            pattern,
+            source,
+            regs["repo_root"],
+            evaluated_at=evaluated_at,
+        )
     )
     baseline_bundle = build_baseline_bundle(
         [baseline_value],
