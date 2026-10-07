@@ -128,6 +128,11 @@ jobs:
           now=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
           cycle=build_operations_cycle(".", evaluated_at=now)
           verified=verify_operations_cycle(cycle)
+          print(json.dumps({
+              "pre_assert_cycle_status": cycle["cycle_status"],
+              "pre_assert_blocking_reasons": cycle["blocking_reasons"],
+              "pre_assert_qm_audit": cycle["qm_audit"],
+          }, sort_keys=True))
           assert verified["valid"] is True
           assert cycle["cycle_status"] != "BLOCKED_FAIL_CLOSED", cycle["blocking_reasons"]
           assert cycle["boundaries"]["l12_promotion_performed"] is False
