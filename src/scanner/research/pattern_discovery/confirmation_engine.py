@@ -1137,9 +1137,12 @@ def _verify_l8_maturation_registry_events(
         )
     evaluation_time = _as_datetime(evaluated_at, "evaluated_at")
     previous: str | None = None
-    verified: list[dict[str, Any]] = []
+    previous_recorded_at: datetime | None = None
+    eligible: list[dict[str, Any]] = []
     seen_claims: set[str] = set()
-    event_hashes: list[str] = []
+    all_event_hashes: list[str] = []
+    eligible_event_hashes: list[str] = []
+
     for expected_sequence, raw in enumerate(events, start=1):
         if not isinstance(raw, Mapping):
             raise ConfirmationEngineError(
@@ -1175,10 +1178,14 @@ def _verify_l8_maturation_registry_events(
             raw.get("recorded_at"),
             f"l8_maturation_registry.recorded_at.{expected_sequence}",
         )
-        if recorded_at > evaluation_time:
+        if (
+            previous_recorded_at is not None
+            and recorded_at < previous_recorded_at
+        ):
             raise ConfirmationEngineError(
-                f"l8_maturation_event_after_evaluation:{expected_sequence}"
+                f"l8_maturation_registry_time_not_monotonic:{expected_sequence}"
             )
+
         record = raw.get("record")
         if not isinstance(record, Mapping):
             raise ConfirmationEngineError(
@@ -1194,6 +1201,7 @@ def _verify_l8_maturation_registry_events(
                 f"l8_maturation_duplicate_claim:{claim_id}"
             )
         seen_claims.add(claim_id)
+
         target_day = str(
             record.get("horizon_provenance", {}).get("target_session_date")
             or ""
@@ -1210,30 +1218,39 @@ def _verify_l8_maturation_registry_events(
             raise ConfirmationEngineError(
                 f"l8_maturation_recorded_before_target_session:{claim_id}"
             )
-        verified.append(
-            {
-                "record": dict(record),
-                "maturation_recorded_at": recorded_at.isoformat().replace(
-                    "+00:00", "Z"
-                ),
-                "maturation_event_hash": stored,
-            }
-        )
-        event_hashes.append(stored)
-        previous = stored
 
-    return verified, {
+        all_event_hashes.append(stored)
+        if recorded_at <= evaluation_time:
+            eligible.append(
+                {
+                    "record": dict(record),
+                    "maturation_recorded_at": recorded_at.isoformat().replace(
+                        "+00:00", "Z"
+                    ),
+                    "maturation_event_hash": stored,
+                }
+            )
+            eligible_event_hashes.append(stored)
+
+        previous = stored
+        previous_recorded_at = recorded_at
+
+    eligible_head = (
+        eligible_event_hashes[-1] if eligible_event_hashes else None
+    )
+    full_head = all_event_hashes[-1] if all_event_hashes else None
+    binding_core = {
+        "registry_event_count_total": len(all_event_hashes),
+        "registry_head_hash_total": full_head,
+        "eligible_prefix_event_count": len(eligible_event_hashes),
+        "eligible_prefix_head_hash": eligible_head,
+        "eligible_event_hashes": eligible_event_hashes,
+        "evaluated_at": evaluation_time.isoformat().replace("+00:00", "Z"),
+    }
+    return eligible, {
         "schema_version": "pattern_discovery_l9_l8_maturation_binding_v1",
-        "event_count": len(verified),
-        "head_hash": previous,
-        "event_hashes": event_hashes,
-        "binding_hash": _hash(
-            {
-                "event_count": len(verified),
-                "head_hash": previous,
-                "event_hashes": event_hashes,
-            }
-        ),
+        **binding_core,
+        "binding_hash": _hash(binding_core),
     }
 
 
@@ -2655,7 +2672,7 @@ class ConfirmationLookRegistry:
             current_hashes = list(
                 report.get("input_bindings", {})
                 .get("l8_maturation_registry", {})
-                .get("event_hashes")
+                .get("eligible_event_hashes")
                 or []
             )
             previous_hashes = prior_maturation_hashes.get(monitor_key)
