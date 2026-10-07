@@ -18,6 +18,8 @@ L8 consumes:
 
 - one hash-valid L7 capture report,
 - the exact scanner snapshot used by that capture as peer-cohort evidence,
+- an explicit market-session binding file containing
+  `symbol + session_id + calendar_id + session_date + start_at + source`,
 - validated research price rows,
 - an explicit price-as-of date,
 - an explicit check timestamp,
@@ -45,11 +47,14 @@ L8 does not:
 
 For the subject claim:
 
-1. the UTC date embedded in the frozen L7
-   `start_market_session.start_at` identifies the required start-session date;
-2. a valid stored price bar must exist on exactly that date;
-3. the H-th later valid observed session is the target session;
-4. the path therefore contains H + 1 observed sessions including the start.
+1. the L8 session-binding input must contain the subject symbol;
+2. its `session_id`, `calendar_id`, `start_at` and `source` must exactly
+   match the immutable L7 start-market-session identity;
+3. its explicit `session_date` supplies the market trading date;
+4. that date is **not** derived from the UTC date of `start_at`;
+5. a valid stored price bar must exist on exactly that `session_date`;
+6. the H-th later valid observed session is the target session;
+7. the path therefore contains H + 1 observed sessions including the start.
 
 If the exact start bar is absent, the claim remains
 `MISSING_START_SESSION`.
@@ -98,11 +103,14 @@ The peer population comes from the exact L7 scanner snapshot.
 
 The subject symbol is always excluded.
 
-For each other snapshot symbol, L8 attempts to build a complete H-session
-adjusted-price return beginning with that peer's first valid observed market
-session on or after the subject's start-session date.
+For each other snapshot symbol, L8 requires its own explicit market-session
+binding and an exact price bar on that peer's bound `session_date`. From that
+session it builds the complete H-session adjusted-price path.
 
-Incomplete or invalid peer paths are excluded and counted by reason.
+A missing peer binding is excluded as
+`START_SESSION_BINDING_UNAVAILABLE`; no exchange date is guessed from ticker,
+UTC time or the subject's calendar. Other incomplete or invalid peer paths are
+also excluded and counted by reason.
 
 Reference selection is:
 
@@ -169,6 +177,7 @@ A check can classify a claim as:
 
 - `MATURED`
 - `IMMATURE_HORIZON`
+- `START_SESSION_BINDING_UNAVAILABLE`
 - `MISSING_START_SESSION`
 - `MISSING_ADJUSTED_PRICE`
 - `CURRENCY_UNAVAILABLE`
@@ -187,6 +196,7 @@ Each maturation check binds:
 - L8 contract hash,
 - L7 capture hash,
 - exact peer-snapshot hash and membership hash,
+- exact explicit start-session binding file hash and normalized session hash,
 - exact price-file hash,
 - normalized validated price-input hash,
 - price-as-of,
@@ -235,6 +245,7 @@ Required arguments:
 
 - `--capture-report`
 - `--peer-snapshot`
+- `--start-sessions`
 - `--prices`
 - `--checked-at`
 - `--price-as-of`
@@ -250,6 +261,8 @@ L8 is complete when:
 - only hash-valid immutable L7 claims are accepted;
 - L7 claims remain byte/content unchanged;
 - start and target are defined by exact observed market sessions;
+- start-session dates are explicit market-calendar facts and are never derived
+  from UTC timestamp dates;
 - 5T/20T/40T/60T remain separate;
 - no outcome is created before the full horizon exists;
 - adjusted prices are mandatory;
