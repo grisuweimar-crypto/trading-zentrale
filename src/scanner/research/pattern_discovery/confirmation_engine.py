@@ -2153,14 +2153,6 @@ def _normalize_pattern_baseline(
                 raw.get("target_session_date"),
                 f"baseline.target_session_date:{event_id}",
             )
-            end_at = _timestamp(
-                raw.get("end_at"),
-                f"baseline.end_at:{event_id}",
-            )
-            if end_at[:10] != target_session_date:
-                raise ConfirmationEngineError(
-                    f"baseline_end_at_date_not_target_session_date:{event_id}"
-                )
 
             if snapshot_id not in candidate_snapshot_ids:
                 continue
@@ -2180,7 +2172,6 @@ def _normalize_pattern_baseline(
                     "price_path_hash": path["path_hash"],
                     "price_file_sha256": price_provenance["price_file_sha256"],
                     "price_binding_hash": price_provenance["price_binding_hash"],
-                    "end_at": end_at,
                     "target_value": canonical_return,
                     "aligned_value": _aligned(
                         canonical_return,
@@ -3176,6 +3167,9 @@ def build_confirmation_look(
         "price_file_sha256": baseline_price_provenance["price_file_sha256"],
         "price_as_of": baseline_price_provenance["price_as_of"],
         "price_binding_hash": baseline_price_provenance["price_binding_hash"],
+        "normalized_price_hash": baseline_price_provenance[
+            "normalized_price_hash"
+        ],
     }
     for field, expected in expected_price_bindings.items():
         if baseline_bundle.get(field) != expected:
