@@ -520,37 +520,115 @@ def verify_baseline_bundle(
             session_id = obs.get("session_id")
             start_raw = obs.get("start_at")
             end_raw = obs.get("end_at")
+            session_fields = (
+                "session_id",
+                "calendar_id",
+                "session_source",
+                "start_at",
+                "start_session_date",
+            )
+            outcome_fields = (
+                "target_session_date",
+                "currency",
+                "price_path_hash",
+                "start_adjusted_close",
+                "target_adjusted_close",
+                "end_at",
+                "target_value",
+            )
             if status == "START_SESSION_UNAVAILABLE":
-                if session_id not in (None, "") or start_raw not in (None, ""):
+                if any(obs.get(field) not in (None, "") for field in session_fields):
                     raise ConfirmationEngineError(
                         f"baseline_missing_session_must_not_claim_session:{event_id}"
+                    )
+                if any(obs.get(field) not in (None, "") for field in outcome_fields):
+                    raise ConfirmationEngineError(
+                        f"baseline_missing_session_must_not_claim_outcome:{event_id}"
+                    )
+                if obs.get("session_dates") not in (None, []):
+                    raise ConfirmationEngineError(
+                        f"baseline_missing_session_dates_must_be_empty:{event_id}"
                     )
             else:
                 _safe_token(
                     session_id,
                     f"baseline[{pid}].session_id",
                 )
-                start = _as_datetime(
+                _safe_token(
+                    obs.get("calendar_id"),
+                    f"baseline[{pid}].calendar_id",
+                )
+                _text(
+                    obs.get("session_source"),
+                    f"baseline[{pid}].session_source",
+                )
+                _as_datetime(
                     start_raw,
                     f"baseline[{pid}].start_at",
                 )
-                end = _as_datetime(
-                    end_raw,
-                    f"baseline[{pid}].end_at",
+                _session_date_text(
+                    obs.get("start_session_date"),
+                    f"baseline[{pid}].start_session_date",
                 )
-                if end <= start:
-                    raise ConfirmationEngineError(
-                        f"baseline_end_not_after_start:{event_id}"
-                    )
             if status == "AVAILABLE":
                 _finite(
                     obs["target_value"],
                     f"baseline[{pid}].target_value",
                 )
-            elif obs.get("target_value") is not None:
-                raise ConfirmationEngineError(
-                    f"baseline_unavailable_target_must_be_null:{event_id}"
+                _session_date_text(
+                    obs.get("target_session_date"),
+                    f"baseline[{pid}].target_session_date",
                 )
+                dates = obs.get("session_dates")
+                if not isinstance(dates, list) or not dates:
+                    raise ConfirmationEngineError(
+                        f"baseline_session_dates_nonempty_list_required:{event_id}"
+                    )
+                for date_index, value in enumerate(dates):
+                    _session_date_text(
+                        value,
+                        f"baseline[{pid}].session_dates[{date_index}]",
+                    )
+                _text(obs.get("currency"), f"baseline[{pid}].currency")
+                _sha256_text(
+                    obs.get("price_path_hash"),
+                    f"baseline[{pid}].price_path_hash",
+                )
+                _finite(
+                    obs.get("start_adjusted_close"),
+                    f"baseline[{pid}].start_adjusted_close",
+                )
+                _finite(
+                    obs.get("target_adjusted_close"),
+                    f"baseline[{pid}].target_adjusted_close",
+                )
+                _as_datetime(
+                    end_raw,
+                    f"baseline[{pid}].end_at",
+                )
+            elif status == "MISSING_OUTCOME":
+                if obs.get("target_value") is not None:
+                    raise ConfirmationEngineError(
+                        f"baseline_unavailable_target_must_be_null:{event_id}"
+                    )
+                if any(
+                    obs.get(field) not in (None, "")
+                    for field in (
+                        "target_session_date",
+                        "currency",
+                        "price_path_hash",
+                        "start_adjusted_close",
+                        "target_adjusted_close",
+                        "end_at",
+                    )
+                ):
+                    raise ConfirmationEngineError(
+                        f"baseline_missing_outcome_provenance_must_be_null:{event_id}"
+                    )
+                if obs.get("session_dates") not in (None, []):
+                    raise ConfirmationEngineError(
+                        f"baseline_missing_outcome_session_dates_must_be_empty:{event_id}"
+                    )
             if _text(obs["target_id"], f"baseline[{pid}].target_id") != str(
                 raw["target_id"]
             ):
@@ -944,6 +1022,17 @@ def _context_map(bundle: Mapping[str, Any] | None) -> dict[str, dict[str, Any]]:
         str(item["claim_id"]): dict(item)
         for item in bundle["claim_contexts"]
     }
+
+
+def _session_date_text(value: Any, field: str) -> str:
+    text = _text(value, field)
+    try:
+        parsed = datetime.strptime(text, "%Y-%m-%d")
+    except ValueError as exc:
+        raise ConfirmationEngineError(
+            f"invalid_exchange_session_date:{field}"
+        ) from exc
+    return parsed.date().isoformat()
 
 
 def _aligned(value: float, direction: str) -> float:
