@@ -1,0 +1,137 @@
+{
+  "schema_version": "pattern_discovery_l8_outcome_maturation_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L8",
+  "name": "Outcome Maturation",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Mature immutable L7 prospective claims only after their exact forward market-session horizon is present, using adjusted original-currency prices and immutable outcome records without performing confirmation or rating.",
+  "principles": {
+    "l7_claims_are_read_only": true,
+    "only_hash_valid_l7_capture_reports_are_accepted": true,
+    "horizons_remain_separate": true,
+    "observed_price_bars_define_sessions": true,
+    "calendar_days_are_never_substituted_for_market_sessions": true,
+    "exact_claim_start_session_date_is_required": true,
+    "start_session_date_is_explicit_not_derived_from_utc_timestamp": true,
+    "adjusted_close_is_required_for_returns": true,
+    "raw_close_never_substitutes_for_adjusted_close": true,
+    "raw_valid_bars_still_define_session_positions": true,
+    "original_currency_is_preserved": true,
+    "currency_conversion_is_forbidden": true,
+    "missing_prices_remain_missing": true,
+    "premature_outcomes_are_forbidden": true,
+    "peer_reference_is_leave_one_symbol_out": true,
+    "same_currency_peer_median_precedes_global_peer_fallback": true,
+    "peer_cohort_is_bound_to_the_exact_l7_snapshot": true,
+    "matured_outcomes_are_append_only_and_immutable": true,
+    "same_scientific_inputs_are_deterministic": true,
+    "l9_confirmation_is_not_performed_here": true,
+    "productive_semantics_must_not_change": true
+  },
+  "inputs": {
+    "l7_capture_report_schema": "pattern_discovery_l7_capture_report_v1",
+    "l7_capture_hash_required": true,
+    "l7_claim_hash_required": true,
+    "peer_snapshot_sha256_must_equal_l7_snapshot_file_sha256": true,
+    "peer_snapshot_required_fields": [
+      "symbol",
+      "currency",
+      "snapshot_id"
+    ],
+    "start_session_binding_sha256_required": true,
+    "start_session_binding_required_fields": [
+      "symbol",
+      "session_id",
+      "calendar_id",
+      "session_date",
+      "start_at",
+      "source"
+    ],
+    "price_file_sha256_required": true,
+    "price_as_of_required": true,
+    "checked_at_required": true
+  },
+  "price_semantics": {
+    "session_key": [
+      "symbol",
+      "date"
+    ],
+    "price_validation_module": "scanner.data.price_history.validated_rows",
+    "start_session_date_source": "EXPLICIT_SESSION_ID_AND_CALENDAR_BOUND_SESSION_DATE",
+    "subject_session_id_calendar_start_at_and_source_must_match_l7_claim": true,
+    "start_session_requires_exact_price_bar": true,
+    "target_session_definition": "HORIZON_TH_LATER_VALID_OBSERVED_PRICE_SESSION",
+    "path_includes_start_and_target": true,
+    "all_path_sessions_require_adjusted_close": true,
+    "allowed_horizons_sessions": [
+      5,
+      20,
+      40,
+      60
+    ]
+  },
+  "reference_semantics": {
+    "method_id": "LEAVE_ONE_SYMBOL_OUT_PEER_MEDIAN_V1",
+    "cohort_source": "EXACT_L7_CAPTURE_SNAPSHOT",
+    "subject_excluded": true,
+    "same_currency_first": true,
+    "global_fallback_when_no_same_currency_peer": true,
+    "peer_start": "EXPLICIT_PEER_START_SESSION_BINDING_WITH_EXACT_PRICE_BAR",
+    "peer_horizon": "SAME_HORIZON_SESSIONS_AS_CLAIM",
+    "peer_requires_complete_adjusted_path": true,
+    "minimum_peer_count": 1,
+    "missing_peers_are_excluded_and_counted": true,
+    "currency_source": "L7_PEER_SNAPSHOT_WITH_PRICE_CURRENCY_CONSISTENCY_CHECK",
+    "benchmark_symbol_is_not_inferred_from_baseline_text": true
+  },
+  "outcome": {
+    "schema_version": "pattern_discovery_l8_matured_outcome_v1",
+    "record_id_prefix": "PMAT",
+    "id_digest_chars": 24,
+    "matured_state": "MATURED_OUTCOME",
+    "statuses": [
+      "MATURED",
+      "IMMATURE_HORIZON",
+      "START_SESSION_BINDING_UNAVAILABLE",
+      "MISSING_START_SESSION",
+      "MISSING_ADJUSTED_PRICE",
+      "CURRENCY_UNAVAILABLE",
+      "CURRENCY_MISMATCH",
+      "REFERENCE_UNAVAILABLE"
+    ],
+    "supported_target_patterns": {
+      "DIRECTIONAL": "^return_(5|20|40|60)t_(gt|lt)_0$",
+      "RELATIVE_ALPHA": "^peer_excess_(5|20|40|60)t_(gt|lt)_0$"
+    },
+    "return_definition": "TARGET_ADJ_CLOSE_DIV_START_ADJ_CLOSE_MINUS_ONE",
+    "peer_excess_definition": "SUBJECT_RETURN_MINUS_LEAVE_ONE_OUT_PEER_MEDIAN_RETURN",
+    "adverse_excursion_definition": "MIN_ALIGNED_CUMULATIVE_RETURN_FROM_START_INCLUDING_START",
+    "path_max_drawdown_definition": "MIN_ADJ_CLOSE_DIV_RUNNING_PEAK_MINUS_ONE",
+    "direction_hit_not_computed_here": true,
+    "probability_not_computed_here": true,
+    "confirmation_not_computed_here": true
+  },
+  "storage": {
+    "registry_event_schema_version": "pattern_discovery_l8_maturation_event_v1",
+    "registry_path": "artifacts/research/pattern_discovery/outcome_maturations.jsonl",
+    "check_report_schema_version": "pattern_discovery_l8_maturation_check_v1",
+    "check_report_path_template": "artifacts/research/pattern_discovery/outcome_maturation_checks/{capture_id}/{check_id}.json",
+    "registry_is_append_only": true,
+    "registry_is_hash_chained": true,
+    "one_matured_record_per_claim": true,
+    "identical_record_replay_is_idempotent": true,
+    "claim_outcome_collision_fails_closed": true
+  },
+  "boundaries": {
+    "l7_claim_mutation_performed": false,
+    "confirmation_evaluation_performed": false,
+    "sequential_monitoring_performed": false,
+    "rating_assigned": false,
+    "promotion_performed": false,
+    "decision_layer_integration_performed": false,
+    "portfolio_or_execution_effect_created": false
+  }
+}
