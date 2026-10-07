@@ -2187,18 +2187,50 @@ def _pattern_result_class(
 def _validate_context_against_outcomes(
     contexts: Mapping[str, Mapping[str, Any]],
     outcome_rows_by_claim: Mapping[str, Mapping[str, Any]],
+    prospective_source_bundle: Mapping[str, Any],
 ) -> None:
+    snapshots, source_claims = source_bundle_indexes(
+        prospective_source_bundle
+    )
+    context_field_map = {
+        "sector": "sector",
+        "pillar_primary": "pillar_primary",
+        "cluster_official": "cluster_official",
+        "market_regime_stock": "market_regime_stock",
+        "market_regime_crypto": "market_regime_crypto",
+    }
     for claim_id, context in contexts.items():
         row = outcome_rows_by_claim.get(claim_id)
         if row is None:
             continue
+        source_claim = source_claims.get(claim_id)
+        if source_claim is None:
+            raise ConfirmationEngineError(
+                f"context_claim_missing_from_prospective_source:{claim_id}"
+            )
         if context["symbol"] != row["symbol"]:
             raise ConfirmationEngineError(
                 f"context_symbol_mismatch:{claim_id}"
             )
+        if context["symbol"] != source_claim["symbol"]:
+            raise ConfirmationEngineError(
+                f"context_source_symbol_mismatch:{claim_id}"
+            )
+        if context["claim_hash"] != row["claim_hash"]:
+            raise ConfirmationEngineError(
+                f"context_claim_hash_mismatch_l8:{claim_id}"
+            )
+        if context["claim_hash"] != source_claim["claim_hash"]:
+            raise ConfirmationEngineError(
+                f"context_claim_hash_mismatch_l7:{claim_id}"
+            )
         if context["capture_snapshot_id"] != row["capture_snapshot_id"]:
             raise ConfirmationEngineError(
                 f"context_capture_snapshot_id_mismatch:{claim_id}"
+            )
+        if context["capture_snapshot_id"] != source_claim["snapshot_id"]:
+            raise ConfirmationEngineError(
+                f"context_source_snapshot_id_mismatch:{claim_id}"
             )
         if (
             context["capture_snapshot_binding_hash"]
@@ -2206,6 +2238,43 @@ def _validate_context_against_outcomes(
         ):
             raise ConfirmationEngineError(
                 f"context_capture_snapshot_binding_hash_mismatch:{claim_id}"
+            )
+        if (
+            context["capture_snapshot_binding_hash"]
+            != source_claim["snapshot_binding_hash"]
+        ):
+            raise ConfirmationEngineError(
+                f"context_source_snapshot_binding_hash_mismatch:{claim_id}"
+            )
+        if context["current_row_hash"] != source_claim["current_row_hash"]:
+            raise ConfirmationEngineError(
+                f"context_current_row_hash_mismatch_l7:{claim_id}"
+            )
+        if context["context_source_hash"] != source_claim["current_row_hash"]:
+            raise ConfirmationEngineError(
+                f"context_source_hash_mismatch_l7:{claim_id}"
+            )
+
+        source_snapshot = snapshots[source_claim["snapshot_id"]]
+        source_row = next(
+            (
+                item
+                for item in source_snapshot["rows"]
+                if item["symbol"] == source_claim["symbol"]
+            ),
+            None,
+        )
+        if source_row is None:
+            raise ConfirmationEngineError(
+                f"context_source_row_missing_from_bundle:{claim_id}"
+            )
+        if context["source_row_projection"] != source_row["row_projection"]:
+            raise ConfirmationEngineError(
+                f"context_source_row_projection_not_exact_l7_row:{claim_id}"
+            )
+        if context["current_row_hash"] != source_row["row_hash"]:
+            raise ConfirmationEngineError(
+                f"context_source_row_hash_mismatch_l7:{claim_id}"
             )
         if _as_datetime(
             context["observation_as_of"],
@@ -2217,6 +2286,25 @@ def _validate_context_against_outcomes(
             raise ConfirmationEngineError(
                 f"context_not_strictly_pre_start_session:{claim_id}"
             )
+        if _timestamp(
+            context["observation_as_of"],
+            f"context.observation_as_of:{claim_id}",
+        ) != _timestamp(
+            source_row["row_projection"]["as_of"],
+            f"source_row.as_of:{claim_id}",
+        ):
+            raise ConfirmationEngineError(
+                f"context_observation_as_of_not_from_l7_row:{claim_id}"
+            )
+        for output_field, source_field in context_field_map.items():
+            if output_field not in context:
+                continue
+            if context.get(output_field) != source_row["row_projection"].get(
+                source_field
+            ):
+                raise ConfirmationEngineError(
+                    f"context_value_not_from_exact_l7_row:{claim_id}:{output_field}"
+                )
 
 
 def _validate_family_bindings(
@@ -2317,6 +2405,7 @@ def _look_identity(
     control_plan: Mapping[str, Any],
     monitoring_plan: Mapping[str, Any],
     look: Mapping[str, Any],
+    prospective_source_bundle_hash: str,
     baseline_bundle_hash: str,
     context_bundle_hash: str | None,
     maturation_binding_hash: str,
@@ -2332,6 +2421,7 @@ def _look_identity(
         "monitoring_plan_hash": monitoring_plan["monitoring_plan_hash"],
         "look_id": look["look_id"],
         "information_fraction": look["information_fraction"],
+        "prospective_source_bundle_hash": prospective_source_bundle_hash,
         "baseline_bundle_hash": baseline_bundle_hash,
         "context_bundle_hash": context_bundle_hash,
         "maturation_binding_hash": maturation_binding_hash,
@@ -2343,6 +2433,7 @@ def _look_identity(
 def build_confirmation_look(
     frozen_patterns: Sequence[Mapping[str, Any]],
     maturation_events: Sequence[Mapping[str, Any]],
+    prospective_source_bundle: Mapping[str, Any],
     baseline_bundle: Mapping[str, Any],
     *,
     control_plan_id: str,
@@ -2384,7 +2475,27 @@ def build_confirmation_look(
             evaluated_at=evaluated,
         )
     )
+    verify_prospective_source_bundle(prospective_source_bundle)
+    if _as_datetime(
+        prospective_source_bundle["generated_at"],
+        "prospective_source_bundle.generated_at",
+    ) > _as_datetime(evaluated, "evaluated_at"):
+        raise ConfirmationEngineError(
+            "prospective_source_bundle_generated_after_evaluation"
+        )
     verify_baseline_bundle(baseline_bundle, contract=spec)
+    if baseline_bundle["prospective_source_bundle_id"] != prospective_source_bundle[
+        "source_bundle_id"
+    ]:
+        raise ConfirmationEngineError(
+            "baseline_source_bundle_id_mismatch"
+        )
+    if baseline_bundle["prospective_source_bundle_hash"] != prospective_source_bundle[
+        "source_bundle_hash"
+    ]:
+        raise ConfirmationEngineError(
+            "baseline_source_bundle_hash_mismatch"
+        )
     if _as_datetime(
         baseline_bundle["generated_at"],
         "baseline_bundle.generated_at",
@@ -2394,6 +2505,18 @@ def build_confirmation_look(
         )
     if context_bundle is not None:
         verify_context_bundle(context_bundle, contract=spec)
+        if context_bundle["prospective_source_bundle_id"] != prospective_source_bundle[
+            "source_bundle_id"
+        ]:
+            raise ConfirmationEngineError(
+                "context_source_bundle_id_mismatch"
+            )
+        if context_bundle["prospective_source_bundle_hash"] != prospective_source_bundle[
+            "source_bundle_hash"
+        ]:
+            raise ConfirmationEngineError(
+                "context_source_bundle_hash_mismatch"
+            )
         if _as_datetime(
             context_bundle["generated_at"],
             "context_bundle.generated_at",
@@ -2481,6 +2604,8 @@ def build_confirmation_look(
         baseline_rows = _normalize_pattern_baseline(
             pattern,
             baseline_record,
+            candidate_rows,
+            prospective_source_bundle,
             contract=spec,
         )
         for baseline_row in baseline_rows:
@@ -2520,6 +2645,7 @@ def build_confirmation_look(
     _validate_context_against_outcomes(
         contexts,
         all_outcome_rows_by_claim,
+        prospective_source_bundle,
     )
 
     contract_hash = confirmation_contract_hash(spec)
@@ -2527,6 +2653,9 @@ def build_confirmation_look(
         control_plan=control,
         monitoring_plan=monitoring,
         look=next_look,
+        prospective_source_bundle_hash=prospective_source_bundle[
+            "source_bundle_hash"
+        ],
         baseline_bundle_hash=baseline_bundle["baseline_bundle_hash"],
         context_bundle_hash=(
             context_bundle["context_bundle_hash"]
@@ -2561,6 +2690,12 @@ def build_confirmation_look(
                 "recorded_look_count_before": look_index,
             },
             "input_bindings": {
+                "prospective_source_bundle_id": prospective_source_bundle[
+                    "source_bundle_id"
+                ],
+                "prospective_source_bundle_hash": prospective_source_bundle[
+                    "source_bundle_hash"
+                ],
                 "baseline_bundle_id": baseline_bundle["baseline_bundle_id"],
                 "baseline_bundle_hash": baseline_bundle["baseline_bundle_hash"],
                 "context_bundle_id": (
@@ -2707,6 +2842,12 @@ def build_confirmation_look(
             "stopping_rule": monitoring["stopping_rule"],
         },
         "input_bindings": {
+            "prospective_source_bundle_id": prospective_source_bundle[
+                "source_bundle_id"
+            ],
+            "prospective_source_bundle_hash": prospective_source_bundle[
+                "source_bundle_hash"
+            ],
             "baseline_bundle_id": baseline_bundle["baseline_bundle_id"],
             "baseline_bundle_hash": baseline_bundle["baseline_bundle_hash"],
             "context_bundle_id": (
