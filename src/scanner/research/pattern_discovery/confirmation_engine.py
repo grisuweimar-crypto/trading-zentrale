@@ -47,7 +47,10 @@ from .confirmation_sources import (
     source_bundle_indexes,
     verify_prospective_source_bundle,
 )
-from .outcome_maturation import verify_matured_outcome
+from .outcome_maturation import (
+    maturation_registry_repo_path,
+    verify_matured_outcome,
+)
 
 
 SCHEMA_VERSION = "pattern_discovery_l9_confirmation_engine_v1"
@@ -1336,6 +1339,56 @@ def _other_context_splits(
     return result
 
 
+def _authoritative_l8_maturation_events(
+    repo_root: str | Path,
+) -> list[dict[str, Any]]:
+    """Read the only authoritative L8 maturation registry from repo_root."""
+    root = Path(repo_root).resolve()
+    repo_path = maturation_registry_repo_path()
+    target = (root / repo_path).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ConfirmationEngineError(
+            "authoritative_l8_registry_path_outside_repo"
+        ) from exc
+    if not target.exists():
+        return []
+    events: list[dict[str, Any]] = []
+    for line_number, line in enumerate(
+        target.read_text(encoding="utf-8").splitlines(),
+        start=1,
+    ):
+        if not line.strip():
+            continue
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ConfirmationEngineError(
+                f"authoritative_l8_registry_invalid_json:{line_number}"
+            ) from exc
+        if not isinstance(event, dict):
+            raise ConfirmationEngineError(
+                f"authoritative_l8_registry_event_not_object:{line_number}"
+            )
+        events.append(event)
+    return events
+
+
+def _require_authoritative_l8_registry(
+    supplied_events: Sequence[Mapping[str, Any]],
+    *,
+    repo_root: str | Path,
+) -> list[dict[str, Any]]:
+    authoritative = _authoritative_l8_maturation_events(repo_root)
+    supplied = [dict(event) for event in supplied_events]
+    if supplied != authoritative:
+        raise ConfirmationEngineError(
+            "supplied_l8_maturation_chain_not_equal_authoritative_registry"
+        )
+    return authoritative
+
+
 def _verify_l8_maturation_registry_events(
     events: Sequence[Mapping[str, Any]],
     *,
@@ -1426,9 +1479,9 @@ def _verify_l8_maturation_registry_events(
             raise ConfirmationEngineError(
                 f"l8_maturation_target_session_date_invalid:{claim_id}"
             ) from exc
-        if target_date > recorded_at.date():
+        if target_date >= recorded_at.date():
             raise ConfirmationEngineError(
-                f"l8_maturation_recorded_before_target_session:{claim_id}"
+                f"l8_maturation_recorded_before_target_session_close_proven:{claim_id}"
             )
 
         all_event_hashes.append(stored)
@@ -2351,11 +2404,16 @@ def _validate_context_against_outcomes(
                 f"context_observation_as_of_not_from_l7_row:{claim_id}"
             )
         for output_field, source_field in context_field_map.items():
-            if output_field not in context:
-                continue
-            if context.get(output_field) != source_row["row_projection"].get(
-                source_field
-            ):
+            source_value = source_row["row_projection"].get(source_field)
+            source_present = (
+                source_value is not None
+                and str(source_value).strip() != ""
+            )
+            if source_present and output_field not in context:
+                raise ConfirmationEngineError(
+                    f"context_value_required_from_exact_l7_row:{claim_id}:{output_field}"
+                )
+            if output_field in context and context.get(output_field) != source_value:
                 raise ConfirmationEngineError(
                     f"context_value_not_from_exact_l7_row:{claim_id}:{output_field}"
                 )
@@ -2602,6 +2660,7 @@ def build_confirmation_look(
     monitoring_registry: SequentialMonitoringRegistry,
     qm_a_ledger: GovernanceLedger,
     evaluated_at: str,
+    repo_root: str | Path,
     confirmation_registry: Any | None = None,
     context_bundle: Mapping[str, Any] | None = None,
     contract: Mapping[str, Any] | None = None,
@@ -2625,10 +2684,14 @@ def build_confirmation_look(
         raise ConfirmationEngineError(
             "l8_maturation_registry_events_sequence_required"
         )
+    authoritative_events = _require_authoritative_l8_registry(
+        maturation_events,
+        repo_root=repo_root,
+    )
     evaluated = _timestamp(evaluated_at, "evaluated_at")
     verified_maturations, maturation_binding = (
         _verify_l8_maturation_registry_events(
-            maturation_events,
+            authoritative_events,
             evaluated_at=evaluated,
         )
     )
@@ -3291,6 +3354,19 @@ def verify_confirmation_look(
             raise ConfirmationEngineError("qm_c4_handoff_missing")
         if c4.get("artifact_hash") != evidence_hash:
             raise ConfirmationEngineError("qm_c4_handoff_artifact_hash_mismatch")
+        governance = report.get("qm_governance") or {}
+        c4_bindings = {
+            "monitoring_plan_id": governance.get("monitoring_plan_id"),
+            "monitoring_plan_version": governance.get("monitoring_plan_version"),
+            "look_id": governance.get("look_id"),
+            "decision": report.get("family_decision"),
+            "observed_at": report.get("evaluated_at"),
+        }
+        for field, expected in c4_bindings.items():
+            if c4.get(field) != expected:
+                raise ConfirmationEngineError(
+                    f"qm_c4_handoff_report_binding_mismatch:{field}"
+                )
         for record in handoff.get("qm_c5_results") or []:
             if record.get("evidence_artifact_hash") != evidence_hash:
                 raise ConfirmationEngineError(
