@@ -1,0 +1,96 @@
+{
+  "schema_version": "pattern_discovery_l10_rating_engine_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L10",
+  "name": "Pattern Rating Engine",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Interpret immutable L5 Pattern versions and unchanged L9 prospective confirmation/falsification evidence as an auditable lifecycle rating history without changing confirmation, promotion, scanner, Decision Layer, portfolio, or execution semantics.",
+  "principles": {
+    "rating_is_not_performance_score": true,
+    "direction_probability_evidence_strength_and_rating_remain_separate": true,
+    "only_l9_prospective_evidence_can_move_post_discovery_rating": true,
+    "discovery_evidence_never_counts_as_confirmation": true,
+    "l9_result_classes_are_not_rewritten": true,
+    "l9_statistics_are_not_recomputed": true,
+    "missing_or_not_due_evidence_is_not_falsification": true,
+    "negative_results_are_retained": true,
+    "positive_and_negative_status_changes_are_audited_symmetrically": true,
+    "rating_can_degrade": true,
+    "rating_never_promotes_by_itself": true,
+    "productive_semantics_must_not_change": true
+  },
+  "ratings": {
+    "D": {"name": "Discovery", "meaning": "Frozen Pattern with Discovery evidence only and no prospective confirmation authority."},
+    "C": {"name": "Challenger", "meaning": "First prospective evidence is aligned with the frozen direction, but confirmatory gates remain unmet."},
+    "B": {"name": "Confirmed", "meaning": "L9 confirmatory gates passed on prospective evidence; robustness across repeated independent confirmation epochs is not yet established or has weakened."},
+    "A": {"name": "Robust", "meaning": "Repeated final prospective confirmation across distinct predeclared monitoring epochs with L9 gates passed."},
+    "U": {"name": "Unresolved / Insufficient", "meaning": "Evidence is not yet mature or remains insufficient/inconclusive and is neither positive confirmation nor falsification."},
+    "F": {"name": "Falsified / Retired", "meaning": "L9 falsification or final non-replication occurred, or the exact Pattern version was formally retired."}
+  },
+  "challenger_gate": {
+    "l9_result_class_required": "INCONCLUSIVE",
+    "mean_aligned_outcome_must_exceed_zero": true,
+    "probability_advantage_lift_must_exceed_zero": true,
+    "direction_probability_alone_is_never_sufficient": true
+  },
+  "a_rating": {
+    "minimum_distinct_supported_final_monitoring_epochs": 2,
+    "same_monitoring_plan_sequential_looks_count_as_one_epoch": true,
+    "only_final_supported_looks_count_toward_repeated_confirmation": true,
+    "rationale": "Avoid treating cumulative sequential looks over the same confirmation stream as independent replication."
+  },
+  "lifecycle": {
+    "initial_rating": "D",
+    "f_is_terminal_for_pattern_version": true,
+    "not_due_does_not_erase_established_rating": true,
+    "allowed_status_changes": {
+      "INITIAL": ["D"],
+      "D": ["U", "C", "B", "F"],
+      "U": ["C", "B", "F"],
+      "C": ["U", "B", "F"],
+      "B": ["U", "C", "A", "F"],
+      "A": ["U", "B", "C", "F"],
+      "F": []
+    }
+  },
+  "l9_mapping": {
+    "SUPPORTED": "B_OR_A_BY_REPLICATION_GATE",
+    "FALSIFIED": "F",
+    "NEGATIVE_NOT_CONFIRMED": "F",
+    "INCONCLUSIVE": "C_IF_POSITIVE_CHALLENGER_GATE_ELSE_U",
+    "UNRESOLVED_NOT_DUE": "U_ONLY_BEFORE_ESTABLISHED_RATING_OTHERWISE_PRESERVE"
+  },
+  "retirement": {
+    "allowed": true,
+    "requires_explicit_evidence_hash": true,
+    "allowed_reason_codes": ["FORMAL_RETIREMENT", "STRUCTURAL_INVALIDATION", "DATA_SEMANTICS_INVALIDATED"],
+    "same_pattern_version_cannot_be_reactivated_after_f": true
+  },
+  "audit": {
+    "status_change_requires_timestamp": true,
+    "status_change_requires_previous_and_new_status": true,
+    "status_change_requires_reason_codes": true,
+    "status_change_requires_evidence_snapshot": true,
+    "evidence_snapshot_is_hash_bound": true,
+    "history_is_hash_bound": true,
+    "registry_is_append_only": true,
+    "registry_is_hash_chained": true,
+    "identical_replay_is_idempotent": true
+  },
+  "storage": {
+    "rating_registry_path": "artifacts/research/pattern_discovery/pattern_rating_history.jsonl",
+    "rating_history_path_template": "artifacts/research/pattern_discovery/rating_histories/{pattern_id}/{pattern_version}/{history_hash}.json"
+  },
+  "boundaries": {
+    "l5_pattern_mutation_performed": false,
+    "l9_confirmation_mutation_performed": false,
+    "confirmation_recomputed": false,
+    "discovery_evidence_used_as_confirmation": false,
+    "promotion_performed": false,
+    "decision_layer_integration_performed": false,
+    "portfolio_or_execution_effect_created": false
+  }
+}
