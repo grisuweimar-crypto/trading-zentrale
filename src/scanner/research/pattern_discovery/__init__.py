@@ -142,6 +142,18 @@ from .rating_engine import (
     verify_rating_transition,
 )
 
+from .pattern_library import (
+    PatternLibraryError,
+    build_pattern_library,
+    load_pattern_library_contract,
+    pattern_library_contract_hash,
+    pattern_library_html_repo_path,
+    pattern_library_json_repo_path,
+    persist_pattern_library,
+    render_pattern_library_html,
+    verify_pattern_library,
+)
+
 __all__ = [
     "BoundaryViolation",
     "PatternDiscoveryBoundary",
@@ -249,4 +261,13 @@ __all__ = [
     "rating_registry_repo_path",
     "verify_rating_history",
     "verify_rating_transition",
+    "PatternLibraryError",
+    "build_pattern_library",
+    "load_pattern_library_contract",
+    "pattern_library_contract_hash",
+    "pattern_library_html_repo_path",
+    "pattern_library_json_repo_path",
+    "persist_pattern_library",
+    "render_pattern_library_html",
+    "verify_pattern_library",
 ]
