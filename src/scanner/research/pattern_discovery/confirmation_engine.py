@@ -457,10 +457,16 @@ def verify_baseline_bundle(
                 raise ConfirmationEngineError(
                     f"baseline_horizon_mismatch:{event_id}"
                 )
-            _sha256_text(
+            source_hash = _sha256_text(
                 obs["source_hash"],
                 f"baseline[{pid}].source_hash",
             )
+            source_body = dict(obs)
+            source_body.pop("source_hash", None)
+            if _hash(source_body) != source_hash:
+                raise ConfirmationEngineError(
+                    f"baseline_observation_source_hash_mismatch:{event_id}"
+                )
     return {
         "valid": True,
         "baseline_bundle_id": bundle["baseline_bundle_id"],
@@ -1910,6 +1916,9 @@ def _pattern_statistics(
     return {
         "raw_n": len(candidate_rows),
         "baseline_raw_n": len(baseline_rows),
+        "baseline_observation_hashes": sorted(
+            str(row["source_hash"]) for row in baseline_rows
+        ),
         "effective_n": effective_n,
         "effective_n_method": contract["statistics"]["effective_n_method"],
         "symbol_count": len({str(row["symbol"]) for row in candidate_rows}),
@@ -3232,6 +3241,7 @@ class ConfirmationLookRegistry:
     ) -> dict[str, dict[str, Any]]:
         looks: dict[str, dict[str, Any]] = {}
         prior_maturation_hashes: dict[str, list[str]] = {}
+        prior_baseline_hashes: dict[str, dict[str, set[str]]] = {}
         for raw in events:
             if raw.get("event_type") != "CONFIRMATION_LOOK_PERSISTED":
                 raise ConfirmationEngineError(
@@ -3282,6 +3292,24 @@ class ConfirmationLookRegistry:
                         f"l8_maturation_registry_not_append_only_across_looks:{monitor_key}"
                     )
             prior_maturation_hashes[monitor_key] = current_hashes
+
+            current_baselines = {
+                str(result["pattern_id"]) + "::" + str(result["pattern_version"]): set(
+                    result.get("prospective_evidence", {}).get(
+                        "baseline_observation_hashes"
+                    ) or []
+                )
+                for result in report.get("pattern_results") or []
+            }
+            previous_baselines = prior_baseline_hashes.get(monitor_key)
+            if previous_baselines is not None:
+                for pattern_key, previous_set in previous_baselines.items():
+                    current_set = current_baselines.get(pattern_key)
+                    if current_set is None or not previous_set.issubset(current_set):
+                        raise ConfirmationEngineError(
+                            f"baseline_evidence_not_append_only_across_looks:{monitor_key}:{pattern_key}"
+                        )
+            prior_baseline_hashes[monitor_key] = current_baselines
             looks[key] = dict(report)
         return looks
 
