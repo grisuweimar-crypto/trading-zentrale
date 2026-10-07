@@ -513,6 +513,12 @@ An identical replay is idempotent.
 
 Different content for an already persisted look fails closed.
 
+Registry replay uses the same cumulative-evidence rule as look construction:
+previously consumed L8 event hashes must remain an ordered subsequence of later
+consumable evidence. This permits a previously recorded but temporarily
+non-consumable event to become eligible earlier in canonical registry order,
+while still rejecting any actual removal or reordering of consumed evidence.
+
 Detailed reports are stored under:
 
 `artifacts/research/pattern_discovery/confirmation_reports/{monitoring_plan_id}/{look_id}/{look_hash}.json`
