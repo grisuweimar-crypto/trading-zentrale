@@ -8,7 +8,8 @@ QM-C handoff. L6 adds the deterministic Dependency / Redundancy Graph. L7 adds
 immutable prospective PIT claim capture. L8 adds immutable outcome maturation
 after exact forward-session horizons. L9 adds governed prospective
 confirmation/falsification. L10 adds the auditable lifecycle Rating Engine.
-Later phases add library presentation and promotion.
+L11 adds the Pattern Library / Research UI. L12 adds the explicit reversible
+Promotion Gate. Later phases add controlled challenger integration.
 """
 
 from .boundary import (
@@ -154,6 +155,21 @@ from .pattern_library import (
     verify_pattern_library,
 )
 
+from .promotion_gate import (
+    PromotionGateError,
+    PromotionRegistry,
+    build_promotion_review,
+    load_promotion_contract,
+    persist_promotion_review,
+    promotion_contract_hash,
+    promotion_registry_repo_path,
+    record_promotion_decision,
+    review_repo_path,
+    validate_admission_current,
+    verify_promotion_decision,
+    verify_promotion_review,
+)
+
 __all__ = [
     "BoundaryViolation",
     "PatternDiscoveryBoundary",
@@ -270,4 +286,16 @@ __all__ = [
     "persist_pattern_library",
     "render_pattern_library_html",
     "verify_pattern_library",
+    "PromotionGateError",
+    "PromotionRegistry",
+    "build_promotion_review",
+    "load_promotion_contract",
+    "persist_promotion_review",
+    "promotion_contract_hash",
+    "promotion_registry_repo_path",
+    "record_promotion_decision",
+    "review_repo_path",
+    "validate_admission_current",
+    "verify_promotion_decision",
+    "verify_promotion_review",
 ]
