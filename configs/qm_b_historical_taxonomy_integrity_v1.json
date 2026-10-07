@@ -133,6 +133,11 @@
       "path": "configs/pattern_discovery/feature_library_v1.json",
       "status": "SAFE",
       "reason": "Pattern Discovery L2 registry only declares versioned point-in-time features sourced from the observed row at each observation as_of. Its contract explicitly forbids historical reconstruction and leaves missing historical values unavailable; it does not load current taxonomy metadata to define, enrich, filter, or backfill historical samples."
+    },
+    {
+      "path": "configs/pattern_discovery/l9_confirmation_engine_v1.json",
+      "status": "SAFE",
+      "reason": "Pattern Discovery L9 confirmation contract permits only capture-time context derived from hash-verified L7 row projections, forbids current-taxonomy backfill, and uses taxonomy/regime fields only as PIT diagnostics; it does not retroject current metadata into historical samples."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,
