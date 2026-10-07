@@ -68,7 +68,11 @@ def main() -> int:
         description="Run the next permitted Pattern Discovery L9 confirmation look."
     )
     parser.add_argument("--frozen-patterns", required=True)
-    parser.add_argument("--matured-outcomes", required=True)
+    parser.add_argument(
+        "--maturation-registry",
+        required=True,
+        help="Complete L8 outcome_maturations.jsonl hash chain.",
+    )
     parser.add_argument("--baseline-bundle", required=True)
     parser.add_argument("--context-bundle")
     parser.add_argument("--control-plan-id", required=True)
@@ -104,7 +108,7 @@ def main() -> int:
     root = Path(args.repo_root).resolve()
     patterns = _patterns(_json(_path(root, args.frozen_patterns)))
     maturation_events = _maturation_events(
-        _path(root, args.matured_outcomes)
+        _path(root, args.maturation_registry)
     )
     baseline = _json(_path(root, args.baseline_bundle))
     context = (
