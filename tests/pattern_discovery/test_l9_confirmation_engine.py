@@ -1206,6 +1206,30 @@ def test_context_missing_is_inconclusive_not_falsified(tmp_path):
     ] == "INCONCLUSIVE"
 
 
+def test_capture_time_regime_cannot_be_selectively_omitted(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
+    contexts["claim_contexts"][0].pop("market_regime_stock")
+    contexts["context_bundle_hash"] = digest(
+        {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="context_value_required_from_exact_l7_row",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=normalized,
+            prospective_source=source,
+            context=contexts,
+        )
+
+
 def test_context_rows_without_capture_time_regime_are_inconclusive_not_supported(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
@@ -1267,6 +1291,90 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
     binding = report["input_bindings"]["l8_maturation_registry"]
     assert binding["eligible_prefix_event_count"] == 0
     assert binding["eligible_event_hashes"] == []
+
+
+def test_same_day_target_session_maturation_is_not_accepted_without_close_time(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcome = matured_outcome(
+        pattern,
+        claim_id="SAME-DAY-CLOSE",
+        symbol="AAA",
+        start_day="2027-01-10",
+        target_value=0.08,
+    )
+    source, normalized = prospective_source_for([pattern], [outcome])
+    events = maturation_registry_events(
+        normalized,
+        recorded_at="2027-01-15T20:00:00Z",
+    )
+    write_authoritative_maturation_registry(tmp_path, events)
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern, source)],
+        source,
+        baseline_bundle_id="BASE-SAME-DAY-CLOSE",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for([pattern], normalized, source)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_recorded_before_target_session_close_proven",
+    ):
+        build_confirmation_look(
+            [pattern],
+            events,
+            source,
+            baseline,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version=control["control_plan_version"],
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version=monitor["monitoring_plan_version"],
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
+            context_bundle=contexts,
+        )
+
+
+def test_truncated_valid_l8_chain_is_rejected_against_authoritative_registry(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    full_events = maturation_registry_events(normalized)
+    write_authoritative_maturation_registry(tmp_path, full_events)
+    truncated = full_events[:-1]
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern, source)],
+        source,
+        baseline_bundle_id="BASE-TRUNCATED-L8",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for([pattern], normalized, source)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="supplied_l8_maturation_chain_not_equal_authoritative_registry",
+    ):
+        build_confirmation_look(
+            [pattern],
+            truncated,
+            source,
+            baseline,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version=control["control_plan_version"],
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version=monitor["monitoring_plan_version"],
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
+            context_bundle=contexts,
+        )
 
 
 def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
@@ -2012,6 +2120,21 @@ def test_automatic_early_stop_fails_closed_without_machine_readable_boundary(tmp
             monitor,
             outcomes=prospective_rows(pattern, count=12),
         )
+
+
+def test_qm_c4_handoff_fields_are_bound_to_the_evaluated_report(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    report = build_report(regs, pattern, control, monitor)
+    tampered = deepcopy(report)
+    tampered["qm_c_handoff"]["qm_c4_record_look"]["look_id"] = "OTHER_LOOK"
+    tampered["look_hash"] = digest(
+        {k: v for k, v in tampered.items() if k != "look_hash"}
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="qm_c4_handoff_report_binding_mismatch:look_id",
+    ):
+        verify_confirmation_look(tampered)
 
 
 def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
