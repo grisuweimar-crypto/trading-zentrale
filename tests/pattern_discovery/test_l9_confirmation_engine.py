@@ -584,6 +584,10 @@ def context_bundle_for(outcomes):
                 "claim_id": claim["claim_id"],
                 "symbol": claim["symbol"],
                 "observation_as_of": f"{observed_day.isoformat()}T12:00:00Z",
+                "capture_snapshot_id": claim["capture_snapshot_id"],
+                "capture_snapshot_binding_hash": claim[
+                    "capture_snapshot_binding_hash"
+                ],
                 "context_source_hash": digest({"context": claim["claim_id"]}),
                 "sector": "TECH" if index % 2 == 0 else "INDUSTRIAL",
                 "segment": "LARGE" if index % 3 else "MID",
