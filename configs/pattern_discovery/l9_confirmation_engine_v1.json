@@ -118,7 +118,7 @@
     "strictly_post_freeze_required": true,
     "canonical_price_source_path": "artifacts/research/price_backfill.csv",
     "price_kind": "ADJUSTED_CLOSE",
-    "canonical_price_file_must_be_verified_at_evaluation": true,
+    "canonical_price_source_must_reproduce_same_asof_normalized_projection": true,
     "baseline_return_is_recomputed_from_canonical_price_path": true,
     "raw_close_substitution_forbidden": true,
     "original_currency_required": true,
