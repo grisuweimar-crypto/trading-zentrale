@@ -544,10 +544,12 @@ def maturation_registry_events(
     outcomes,
     *,
     recorded_at="2027-01-15T20:00:00Z",
+    prior_events=None,
 ):
-    events = []
-    previous = None
-    for sequence, record in enumerate(outcomes, start=1):
+    events = [deepcopy(event) for event in (prior_events or [])]
+    previous = events[-1]["entry_hash"] if events else None
+    start_sequence = len(events) + 1
+    for sequence, record in enumerate(outcomes, start=start_sequence):
         event = {
             "schema_version": "pattern_discovery_l8_maturation_event_v1",
             "sequence": sequence,
@@ -951,6 +953,7 @@ def build_report(
     prospective_source=None,
     evaluated_at="2027-01-15T20:00:00Z",
     confirmation_registry=None,
+    maturation_events_override=None,
 ):
     raw_values = outcomes if outcomes is not None else prospective_rows(pattern)
     if prospective_source is None:
@@ -979,9 +982,13 @@ def build_report(
                 }
             )
 
-    events = maturation_registry_events(
-        values,
-        recorded_at=evaluated_at,
+    events = (
+        list(maturation_events_override)
+        if maturation_events_override is not None
+        else maturation_registry_events(
+            values,
+            recorded_at=evaluated_at,
+        )
     )
     baseline_value = (
         baseline
