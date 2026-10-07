@@ -6,8 +6,8 @@ Library. L3 adds the bounded discovery-only Search Engine. L4 adds the
 Statistical Discovery Guard. L5 adds the immutable Candidate Registry and
 QM-C handoff. L6 adds the deterministic Dependency / Redundancy Graph. L7 adds
 immutable prospective PIT claim capture. L8 adds immutable outcome maturation
-after exact forward-session horizons. Later phases add confirmation, rating and
-promotion.
+after exact forward-session horizons. L9 adds governed prospective
+confirmation/falsification. Later phases add rating and promotion.
 """
 
 from .boundary import (
@@ -102,6 +102,22 @@ from .outcome_maturation import (
     verify_maturation_check,
     verify_matured_outcome,
 )
+from .confirmation_engine import (
+    ConfirmationEngineError,
+    ConfirmationLookRegistry,
+    build_baseline_bundle,
+    build_confirmation_look,
+    build_context_bundle,
+    confirmation_contract_hash,
+    confirmation_registry_repo_path,
+    confirmation_report_repo_path,
+    load_confirmation_contract,
+    persist_confirmation_look,
+    validate_applied_qm_confirmation_handoff,
+    verify_baseline_bundle,
+    verify_confirmation_look,
+    verify_context_bundle,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -178,4 +194,18 @@ __all__ = [
     "persist_outcome_maturation",
     "verify_maturation_check",
     "verify_matured_outcome",
+    "ConfirmationEngineError",
+    "ConfirmationLookRegistry",
+    "build_baseline_bundle",
+    "build_confirmation_look",
+    "build_context_bundle",
+    "confirmation_contract_hash",
+    "confirmation_registry_repo_path",
+    "confirmation_report_repo_path",
+    "load_confirmation_contract",
+    "persist_confirmation_look",
+    "validate_applied_qm_confirmation_handoff",
+    "verify_baseline_bundle",
+    "verify_confirmation_look",
+    "verify_context_bundle",
 ]
