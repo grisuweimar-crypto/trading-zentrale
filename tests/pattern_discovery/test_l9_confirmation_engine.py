@@ -1070,14 +1070,12 @@ def test_positive_final_look_uses_only_prospective_l8_evidence(tmp_path):
 def test_missing_maturity_is_unresolved_not_due_and_does_not_consume_look(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern, count=12)
-    baseline = baseline_record(pattern, count=12)
     report = build_report(
         regs,
         pattern,
         control,
         monitor,
         outcomes=outcomes,
-        baseline=baseline,
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
     assert report["look_consumes_qm_c4_schedule"] is False
