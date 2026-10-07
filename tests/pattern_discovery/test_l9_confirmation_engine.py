@@ -1245,6 +1245,7 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
+    write_authoritative_maturation_registry(tmp_path, events)
     report = build_confirmation_look(
         [pattern],
         events,
@@ -1260,6 +1261,7 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
         monitoring_registry=regs["c4"],
         qm_a_ledger=regs["qm_a"],
         evaluated_at="2027-01-15T20:00:00Z",
+        repo_root=tmp_path,
         context_bundle=contexts,
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
@@ -1287,6 +1289,7 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
+    write_authoritative_maturation_registry(tmp_path, events)
     with pytest.raises(
         ConfirmationEngineError,
         match="l8_maturation_registry_time_not_monotonic",
@@ -1325,6 +1328,7 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
+    write_authoritative_maturation_registry(tmp_path, prefix)
     first = build_confirmation_look(
         [pattern],
         prefix,
@@ -1362,9 +1366,11 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
         "previous_event_hash": prefix[-1]["entry_hash"],
     }
     future_event["entry_hash"] = digest(future_event)
+    full_chain = [*prefix, future_event]
+    write_authoritative_maturation_registry(tmp_path, full_chain)
     second = build_confirmation_look(
         [pattern],
-        [*prefix, future_event],
+        full_chain,
         source,
         baseline,
         control_plan_id=control["control_plan_id"],
@@ -1396,6 +1402,7 @@ def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
+    write_authoritative_maturation_registry(tmp_path, events)
     with pytest.raises(
         ConfirmationEngineError,
         match="l8_maturation_registry_previous_hash_invalid",
@@ -1434,6 +1441,7 @@ def test_tampered_l8_outcome_fails_closed(tmp_path):
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
+    write_authoritative_maturation_registry(tmp_path, events)
     with pytest.raises(Exception, match="matured_outcome_hash_mismatch"):
         build_confirmation_look(
             [pattern],
@@ -1494,13 +1502,15 @@ def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
+    events = maturation_registry_events(normalized)
+    write_authoritative_maturation_registry(tmp_path, events)
     with pytest.raises(
         ConfirmationEngineError,
         match="baseline_outcome_after_l9_evaluation",
     ):
         build_confirmation_look(
             [pattern],
-            maturation_registry_events(normalized),
+            events,
             source,
             report_bundle,
             control_plan_id=control["control_plan_id"],
@@ -1692,13 +1702,15 @@ def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
         normalized,
         source,
     )
+    events = maturation_registry_events(normalized)
+    write_authoritative_maturation_registry(tmp_path, events)
     with pytest.raises(
         ConfirmationEngineError,
         match="l9_patterns_must_exactly_cover_qm_c3_family",
     ):
         build_confirmation_look(
             [pattern_a],
-            maturation_registry_events(normalized),
+            events,
             source,
             baseline,
             control_plan_id=control["control_plan_id"],
@@ -1753,9 +1765,11 @@ def test_bonferroni_family_and_sequential_threshold_are_both_applied(tmp_path):
         normalized,
         source,
     )
+    events = maturation_registry_events(normalized)
+    write_authoritative_maturation_registry(tmp_path, events)
     report = build_confirmation_look(
         [pattern_a, pattern_b],
-        maturation_registry_events(normalized),
+        events,
         source,
         baseline,
         control_plan_id=control["control_plan_id"],
