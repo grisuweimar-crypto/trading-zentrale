@@ -3411,6 +3411,11 @@ def build_confirmation_look(
                 ],
                 "baseline_bundle_id": baseline_bundle["baseline_bundle_id"],
                 "baseline_bundle_hash": baseline_bundle["baseline_bundle_hash"],
+                "baseline_price_source_path": baseline_bundle["price_source_path"],
+                "baseline_price_file_sha256": baseline_bundle["price_file_sha256"],
+                "baseline_price_as_of": baseline_bundle["price_as_of"],
+                "baseline_price_binding_hash": baseline_bundle["price_binding_hash"],
+                "baseline_normalized_price_hash": baseline_bundle["normalized_price_hash"],
                 "context_bundle_id": (
                     context_bundle["context_bundle_id"]
                     if context_bundle is not None
@@ -3563,6 +3568,11 @@ def build_confirmation_look(
             ],
             "baseline_bundle_id": baseline_bundle["baseline_bundle_id"],
             "baseline_bundle_hash": baseline_bundle["baseline_bundle_hash"],
+            "baseline_price_source_path": baseline_bundle["price_source_path"],
+            "baseline_price_file_sha256": baseline_bundle["price_file_sha256"],
+            "baseline_price_as_of": baseline_bundle["price_as_of"],
+            "baseline_price_binding_hash": baseline_bundle["price_binding_hash"],
+            "baseline_normalized_price_hash": baseline_bundle["normalized_price_hash"],
             "context_bundle_id": (
                 context_bundle["context_bundle_id"]
                 if context_bundle is not None
