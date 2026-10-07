@@ -1468,7 +1468,9 @@ def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
 
 def test_baseline_definition_must_match_frozen_pattern(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
-    baseline = baseline_record(pattern)
+    outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source)
     baseline["baseline_definition"] = "posthoc_new_baseline"
     with pytest.raises(
         ConfirmationEngineError,
@@ -1479,6 +1481,8 @@ def test_baseline_definition_must_match_frozen_pattern(tmp_path):
             pattern,
             control,
             monitor,
+            outcomes=outcomes,
+            prospective_source=source,
             baseline=baseline,
         )
 
@@ -1486,12 +1490,13 @@ def test_baseline_definition_must_match_frozen_pattern(tmp_path):
 def test_candidate_date_missing_from_unconditional_baseline_fails_closed(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    baseline = baseline_record(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source)
     baseline["observations"][0]["start_at"] = "2026-10-09T08:00:00Z"
     baseline["observations"][0]["end_at"] = "2026-10-14T08:00:00Z"
-    baseline["observations"][0]["source_hash"] = digest(
-        {"changed": "baseline-date-axis"}
-    )
+    body = dict(baseline["observations"][0])
+    body.pop("source_hash", None)
+    baseline["observations"][0]["source_hash"] = digest(body)
     with pytest.raises(
         ConfirmationEngineError,
         match="candidate_date_missing_from_unconditional_baseline_axis",
@@ -1502,13 +1507,16 @@ def test_candidate_date_missing_from_unconditional_baseline_fails_closed(tmp_pat
             control,
             monitor,
             outcomes=outcomes,
+            prospective_source=source,
             baseline=baseline,
         )
 
 
 def test_baseline_selection_rule_cannot_be_changed_after_freeze(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
-    baseline = baseline_record(pattern)
+    outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source)
     baseline["selection_rule_id"] = "POSTHOC_FAVORABLE_SUBSET"
     with pytest.raises(
         ConfirmationEngineError,
@@ -1519,13 +1527,17 @@ def test_baseline_selection_rule_cannot_be_changed_after_freeze(tmp_path):
             pattern,
             control,
             monitor,
+            outcomes=outcomes,
+            prospective_source=source,
             baseline=baseline,
         )
 
 
 def test_declared_baseline_population_must_be_fully_present(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
-    baseline = baseline_record(pattern)
+    outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source)
     baseline["eligible_population_count"] += 1
     with pytest.raises(
         ConfirmationEngineError,
@@ -1536,6 +1548,8 @@ def test_declared_baseline_population_must_be_fully_present(tmp_path):
             pattern,
             control,
             monitor,
+            outcomes=outcomes,
+            prospective_source=source,
             baseline=baseline,
         )
 
@@ -1543,14 +1557,15 @@ def test_declared_baseline_population_must_be_fully_present(tmp_path):
 def test_context_must_match_exact_l8_capture_snapshot(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    contexts = context_bundle_for(outcomes)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     contexts["claim_contexts"][0]["capture_snapshot_id"] = "OTHER-SNAPSHOT"
     contexts["context_bundle_hash"] = digest(
         {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
     )
     with pytest.raises(
         ConfirmationEngineError,
-        match="context_capture_snapshot_id_mismatch",
+        match="context_source_row_snapshot_mismatch|context_capture_snapshot_id_mismatch",
     ):
         build_report(
             regs,
@@ -1558,6 +1573,7 @@ def test_context_must_match_exact_l8_capture_snapshot(tmp_path):
             control,
             monitor,
             outcomes=outcomes,
+            prospective_source=source,
             context=contexts,
         )
 
