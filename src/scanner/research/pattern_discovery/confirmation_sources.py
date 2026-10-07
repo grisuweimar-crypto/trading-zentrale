@@ -351,6 +351,7 @@ def build_prospective_source_bundle(
             capture_report=report,
         )
         snapshot = {
+            "capture_report": dict(report),
             "capture_id": report["capture_id"],
             "capture_hash": report["capture_hash"],
             "captured_at": report["captured_at"],
@@ -508,10 +509,46 @@ def verify_prospective_source_bundle(
             raise ConfirmationSourceError(
                 f"prospective_source_snapshot_must_be_object:{index}"
             )
+        capture_report = snapshot.get("capture_report")
+        if not isinstance(capture_report, Mapping):
+            raise ConfirmationSourceError(
+                f"prospective_source_capture_report_missing:{index}"
+            )
+        verify_capture_report(capture_report)
         snapshot_id = _safe_token(
             snapshot.get("snapshot_id"),
             f"snapshots[{index}].snapshot_id",
         )
+        if capture_report["snapshot_binding"]["snapshot_id"] != snapshot_id:
+            raise ConfirmationSourceError(
+                f"prospective_source_capture_snapshot_id_mismatch:{snapshot_id}"
+            )
+        if snapshot.get("capture_id") != capture_report["capture_id"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_capture_id_mismatch:{snapshot_id}"
+            )
+        if snapshot.get("capture_hash") != capture_report["capture_hash"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_capture_hash_mismatch:{snapshot_id}"
+            )
+        if snapshot.get("snapshot_binding_hash") != capture_report[
+            "snapshot_binding"
+        ]["snapshot_binding_hash"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_snapshot_binding_hash_mismatch:{snapshot_id}"
+            )
+        if snapshot.get("snapshot_file_sha256") != capture_report[
+            "snapshot_binding"
+        ]["snapshot_file_sha256"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_snapshot_file_hash_mismatch:{snapshot_id}"
+            )
+        if snapshot.get("snapshot_generated_at") != capture_report[
+            "snapshot_binding"
+        ]["snapshot_generated_at"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_snapshot_generated_at_mismatch:{snapshot_id}"
+            )
         if snapshot_id in snapshot_ids:
             raise ConfirmationSourceError(
                 f"prospective_source_duplicate_snapshot:{snapshot_id}"
@@ -583,6 +620,12 @@ def verify_prospective_source_bundle(
             raise ConfirmationSourceError(
                 f"prospective_source_projected_rows_hash_mismatch:{snapshot_id}"
             )
+        if snapshot.get("projected_rows_hash") != capture_report[
+            "snapshot_binding"
+        ]["projected_rows_hash"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_projected_rows_not_bound_to_l7:{snapshot_id}"
+            )
         sessions = snapshot.get("market_sessions")
         if not isinstance(sessions, list):
             raise ConfirmationSourceError(
@@ -592,7 +635,21 @@ def verify_prospective_source_bundle(
             raise ConfirmationSourceError(
                 f"prospective_source_session_map_hash_mismatch:{snapshot_id}"
             )
+        if snapshot.get("session_map_hash") != capture_report["session_map_hash"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_session_map_not_bound_to_l7:{snapshot_id}"
+            )
         row_hashes_by_snapshot[snapshot_id] = row_hashes
+
+    expected_claims = {
+        str(raw_claim["claim_id"]): raw_claim
+        for snapshot in snapshots
+        for raw_claim in snapshot["capture_report"]["claims"]
+    }
+    if {str(item.get("claim_id")) for item in claims} != set(expected_claims):
+        raise ConfirmationSourceError(
+            "prospective_source_claim_set_mismatch_capture_reports"
+        )
 
     seen_claims: set[str] = set()
     for index, claim in enumerate(claims):
@@ -630,10 +687,27 @@ def verify_prospective_source_bundle(
             raise ConfirmationSourceError(
                 f"prospective_source_claim_row_hash_mismatch:{claim_id}"
             )
-        _sha256_text(
+        claim_hash = _sha256_text(
             claim.get("claim_hash"),
             f"claims[{index}].claim_hash",
         )
+        expected_claim = expected_claims[claim_id]
+        if claim_hash != expected_claim["claim_hash"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_claim_hash_not_bound_to_l7:{claim_id}"
+            )
+        if claim.get("event_id") != expected_claim["event_id"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_claim_event_not_bound_to_l7:{claim_id}"
+            )
+        if claim.get("pattern_id") != expected_claim["pattern"]["pattern_id"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_claim_pattern_not_bound_to_l7:{claim_id}"
+            )
+        if claim.get("pattern_version") != expected_claim["pattern"]["pattern_version"]:
+            raise ConfirmationSourceError(
+                f"prospective_source_claim_version_not_bound_to_l7:{claim_id}"
+            )
         _sha256_text(
             claim.get("pattern_spec_hash"),
             f"claims[{index}].pattern_spec_hash",
