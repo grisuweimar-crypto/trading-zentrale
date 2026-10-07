@@ -3000,6 +3000,18 @@ def verify_confirmation_look(
     if _hash(body) != stored:
         raise ConfirmationEngineError("confirmation_look_hash_mismatch")
 
+    source_bundle_hash = _sha256_text(
+        report.get("input_bindings", {}).get(
+            "prospective_source_bundle_hash"
+        ),
+        "input_bindings.prospective_source_bundle_hash",
+    )
+    _safe_token(
+        report.get("input_bindings", {}).get(
+            "prospective_source_bundle_id"
+        ),
+        "input_bindings.prospective_source_bundle_id",
+    )
     maturation_binding = (
         report.get("input_bindings", {}).get("l8_maturation_registry")
     )
@@ -3357,6 +3369,26 @@ class ConfirmationLookRegistry:
         }
 
 
+def prospective_source_bundle_repo_path(
+    source_bundle_hash: str,
+    *,
+    contract: Mapping[str, Any] | None = None,
+) -> str:
+    spec = (
+        dict(contract)
+        if contract is not None
+        else load_confirmation_contract()
+    )
+    return str(
+        spec["storage"]["prospective_source_bundle_path_template"]
+    ).format(
+        source_bundle_hash=_sha256_text(
+            source_bundle_hash,
+            "source_bundle_hash",
+        )
+    )
+
+
 def baseline_bundle_repo_path(
     baseline_bundle_hash: str,
     *,
@@ -3470,6 +3502,7 @@ def confirmation_report_repo_path(
 def persist_confirmation_look(
     repo_root: str | Path,
     report: Mapping[str, Any],
+    prospective_source_bundle: Mapping[str, Any],
     baseline_bundle: Mapping[str, Any],
     *,
     context_bundle: Mapping[str, Any] | None = None,
@@ -3487,6 +3520,19 @@ def persist_confirmation_look(
     if report["look_status"] != "EVALUATED":
         raise ConfirmationEngineError(
             "confirmation_not_due_report_not_persistable"
+        )
+    verify_prospective_source_bundle(prospective_source_bundle)
+    if prospective_source_bundle["source_bundle_hash"] != report[
+        "input_bindings"
+    ]["prospective_source_bundle_hash"]:
+        raise ConfirmationEngineError(
+            "persisted_prospective_source_hash_mismatch_report"
+        )
+    if prospective_source_bundle["source_bundle_id"] != report[
+        "input_bindings"
+    ]["prospective_source_bundle_id"]:
+        raise ConfirmationEngineError(
+            "persisted_prospective_source_id_mismatch_report"
         )
     verify_baseline_bundle(baseline_bundle, contract=spec)
     if baseline_bundle["baseline_bundle_hash"] != report["input_bindings"][
@@ -3510,6 +3556,17 @@ def persist_confirmation_look(
 
     guard = boundary or PatternDiscoveryBoundary()
     root = Path(repo_root).resolve()
+
+    source_repo = prospective_source_bundle_repo_path(
+        prospective_source_bundle["source_bundle_hash"],
+        contract=spec,
+    )
+    source_path = _write_immutable_json(
+        root,
+        source_repo,
+        prospective_source_bundle,
+        boundary=guard,
+    )
 
     baseline_repo = baseline_bundle_repo_path(
         baseline_bundle["baseline_bundle_hash"],
@@ -3587,6 +3644,7 @@ def persist_confirmation_look(
         "confirmation_look_id": report["confirmation_look_id"],
         "look_hash": report["look_hash"],
         "report_path": str(report_path),
+        "prospective_source_bundle_path": str(source_path),
         "baseline_bundle_path": str(baseline_path),
         "context_bundle_path": (
             str(context_path) if context_path is not None else None
