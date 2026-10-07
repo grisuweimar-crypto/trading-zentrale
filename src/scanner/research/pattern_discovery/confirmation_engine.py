@@ -4178,10 +4178,9 @@ class ConfirmationLookRegistry:
             )
             previous_hashes = prior_maturation_hashes.get(monitor_key)
             if previous_hashes is not None:
-                if (
-                    len(current_hashes) < len(previous_hashes)
-                    or current_hashes[: len(previous_hashes)]
-                    != previous_hashes
+                if not _is_ordered_subsequence(
+                    previous_hashes,
+                    current_hashes,
                 ):
                     raise ConfirmationEngineError(
                         f"l8_maturation_registry_not_append_only_across_looks:{monitor_key}"
