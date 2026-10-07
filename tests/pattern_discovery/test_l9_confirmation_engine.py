@@ -880,6 +880,24 @@ def write_canonical_price_fixture(
     return target
 
 
+def canonical_price_state_for_test(
+    repo_root,
+    prospective_source_bundle,
+    *,
+    evaluated_at="2027-01-15T20:00:00Z",
+    horizon=5,
+):
+    write_canonical_price_fixture(
+        repo_root,
+        prospective_source_bundle,
+        horizon=horizon,
+    )
+    return canonical_baseline_price_state(
+        repo_root,
+        evaluated_at,
+    )
+
+
 def baseline_record(
     pattern,
     prospective_source_bundle,
@@ -1113,14 +1131,21 @@ def build_report(
         regs["repo_root"],
         events,
     )
+    price_groups, price_provenance = canonical_price_state_for_test(
+        regs["repo_root"],
+        source,
+        evaluated_at=evaluated_at,
+        horizon=int(pattern["pattern_spec"]["forecast"]["horizon_sessions"]),
+    )
     baseline_value = (
         baseline
         if baseline is not None
-        else baseline_record(pattern, source)
+        else baseline_record(pattern, source, price_groups)
     )
     baseline_bundle = build_baseline_bundle(
         [baseline_value],
         source,
+        price_provenance,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at=evaluated_at,
     )
