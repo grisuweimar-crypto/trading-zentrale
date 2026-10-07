@@ -166,9 +166,11 @@ Its outcome `end_at` must also be no later than the L9 evaluation time.
 
 ## PIT-safe context diagnostics
 
-Sector, pillar, cluster and market-regime diagnostics are optional context fields in a separate hash-protected context bundle.
+Sector, pillar, cluster and market-regime diagnostics are derived directly from the hash-verified L7 capture-time row projections.
 
-They may not be populated from today's taxonomy or from manually copied labels.
+A separate hash-protected context bundle may be supplied and archived as an audit mirror, but it is not statistical authority. If supplied, it must cover exactly every eligible confirmation claim and reproduce every non-empty projected diagnostic field. It may not add, alter or omit values.
+
+Today's taxonomy or manually copied labels therefore cannot influence the L9 diagnostics.
 
 Each context row is bound to:
 
