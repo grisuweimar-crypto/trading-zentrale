@@ -38,7 +38,10 @@
     "complete_l8_maturation_registry_chain_required": true,
     "l8_maturation_registry_must_be_time_monotonic": true,
     "l8_confirmation_input_is_registry_prefix_asof_evaluation": true,
+    "l8_registry_source_must_be_canonical_contract_path_under_repo_root": true,
+    "caller_supplied_truncated_l8_registry_is_forbidden": true,
     "used_l8_maturation_recorded_at_must_not_follow_l9_evaluation": true,
+    "when_target_close_timestamp_is_unavailable_maturation_must_be_recorded_on_later_calendar_date": true,
     "qm_c1_contract_schema": "qm_c_hypothesis_registry_v1",
     "qm_c2_contract_schema": "qm_c_analysis_plan_v1",
     "qm_c3_contract_schema": "qm_c3_families_multiplicity_v1",
@@ -49,7 +52,15 @@
     "exact_qm_c3_family_membership_required": true,
     "exact_qm_c4_monitoring_plan_required": true,
     "direct_qm_registry_write_forbidden_by_l0": true,
-    "qm_c4_c5_handoff_required": true
+    "qm_c4_c5_handoff_required": true,
+    "qm_c4_handoff_fields_must_exactly_match_evaluated_report": [
+      "monitoring_plan_id",
+      "monitoring_plan_version",
+      "look_id",
+      "decision",
+      "observed_at",
+      "artifact_hash"
+    ]
   },
   "baseline_bundle": {
     "schema_version": "pattern_discovery_l9_baseline_bundle_v1",
@@ -144,6 +155,7 @@
     "context_source_hash_must_equal_l7_current_row_hash": true,
     "source_row_projection_must_reproduce_l7_current_row_hash": true,
     "context_values_must_equal_capture_time_source_row_projection": true,
+    "nonempty_projected_context_fields_must_not_be_omitted": true,
     "current_taxonomy_backfill_forbidden": true
   },
   "statistics": {
