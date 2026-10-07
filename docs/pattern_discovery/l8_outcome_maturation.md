@@ -216,6 +216,7 @@ Each matured outcome binds:
 - exact start and target sessions,
 - every session date in the subject path,
 - subject adjusted-price path hash,
+- exact price-file / price-binding hash and price-as-of,
 - peer snapshot binding,
 - peer-set hashes,
 - immutable outcome hash.
@@ -257,8 +258,8 @@ Required arguments:
 - `--price-as-of`
 - `--actor-id`
 
-The runner hashes the exact peer snapshot and price files it reads before
-building the check.
+The runner hashes the exact peer snapshot, explicit start-session binding file
+and price file it reads before building the check.
 
 ## Definition of Done
 
