@@ -961,6 +961,7 @@ def _build_claim(
             "symbol": row["symbol"],
             "observation_as_of": row["as_of"],
             "snapshot_id": snapshot_binding["snapshot_id"],
+            "snapshot_generated_at": snapshot_binding["snapshot_generated_at"],
             "snapshot_binding_hash": snapshot_binding["snapshot_binding_hash"],
             "history_binding_hash": history_binding["history_binding_hash"],
             "session_map_hash": session_map_hash,
@@ -1042,13 +1043,13 @@ def verify_prospective_claim(
         claim.get("pattern", {}).get("freeze_timestamp"),
         "claim.pattern.freeze_timestamp",
     )
-    snapshot_as_of = _as_datetime(
-        claim.get("match", {}).get("observation_as_of"),
-        "claim.match.observation_as_of",
+    snapshot_generated = _as_datetime(
+        claim.get("match", {}).get("snapshot_generated_at"),
+        "claim.match.snapshot_generated_at",
     )
-    if snapshot_as_of <= freeze:
+    if snapshot_generated <= freeze:
         raise ProspectiveCaptureError(
-            "prospective_claim_observation_not_post_freeze"
+            "prospective_claim_snapshot_not_post_freeze"
         )
     PatternDiscoveryBoundary().assert_research_payload(claim)
     return {
