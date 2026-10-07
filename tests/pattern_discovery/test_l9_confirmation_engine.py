@@ -1293,7 +1293,7 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
     assert binding["eligible_event_hashes"] == []
 
 
-def test_same_day_target_session_maturation_is_not_accepted_without_close_time(tmp_path):
+def test_same_day_target_session_is_not_eligible_until_later_date(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcome = matured_outcome(
         pattern,
@@ -1315,28 +1315,28 @@ def test_same_day_target_session_maturation_is_not_accepted_without_close_time(t
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for([pattern], normalized, source)
-    with pytest.raises(
-        ConfirmationEngineError,
-        match="l8_maturation_recorded_before_target_session_close_proven",
-    ):
-        build_confirmation_look(
-            [pattern],
-            events,
-            source,
-            baseline,
-            control_plan_id=control["control_plan_id"],
-            control_plan_version=control["control_plan_version"],
-            monitoring_plan_id=monitor["monitoring_plan_id"],
-            monitoring_plan_version=monitor["monitoring_plan_version"],
-            hypothesis_registry=regs["hypotheses"],
-            analysis_plan_registry=regs["plans"],
-            control_registry=regs["c3"],
-            monitoring_registry=regs["c4"],
-            qm_a_ledger=regs["qm_a"],
-            evaluated_at="2027-01-15T20:00:00Z",
-            repo_root=tmp_path,
-            context_bundle=contexts,
-        )
+    report = build_confirmation_look(
+        [pattern],
+        events,
+        source,
+        baseline,
+        control_plan_id=control["control_plan_id"],
+        control_plan_version=control["control_plan_version"],
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version=monitor["monitoring_plan_version"],
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        control_registry=regs["c3"],
+        monitoring_registry=regs["c4"],
+        qm_a_ledger=regs["qm_a"],
+        evaluated_at="2027-01-15T20:00:00Z",
+        repo_root=tmp_path,
+        context_bundle=contexts,
+    )
+    assert report["look_status"] == "UNRESOLVED_NOT_DUE"
+    assert report["input_bindings"]["l8_maturation_registry"][
+        "eligible_prefix_event_count"
+    ] == 0
 
 
 def test_truncated_valid_l8_chain_is_rejected_against_authoritative_registry(tmp_path):
