@@ -222,7 +222,7 @@ def _current_scanner_state(root: Path) -> dict[str, Any]:
     )
     required = int(validation.get("required_symbol_count") or 0)
     observed = int(validation.get("symbol_count") or 0)
-    if required <= 0 or observed != required:
+    if required <= 0 or observed < required:
         raise ContinuousOperationsError("scanner_snapshot_coverage_incomplete")
     return {
         "snapshot_id": snapshot_id,
