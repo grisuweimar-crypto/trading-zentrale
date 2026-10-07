@@ -1431,7 +1431,7 @@ class RatingHistoryRegistry:
                         fd,
                         (
                             _canonical_json(event)
-                            + "\\n"
+                            + "\n"
                         ).encode("utf-8"),
                     )
                     os.fsync(fd)
@@ -1610,7 +1610,7 @@ def persist_rating_history(
         with report_path.open(
             "x",
             encoding="utf-8",
-            newline="\\n",
+            newline="\n",
         ) as handle:
             json.dump(
                 dict(history),
@@ -1620,7 +1620,7 @@ def persist_rating_history(
                 ensure_ascii=True,
                 allow_nan=False,
             )
-            handle.write("\\n")
+            handle.write("\n")
 
     registry = RatingHistoryRegistry(
         registry_path,
