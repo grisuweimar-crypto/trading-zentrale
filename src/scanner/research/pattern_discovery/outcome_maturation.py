@@ -868,7 +868,6 @@ def _build_matured_record(
     peer_snapshot_binding: Mapping[str, Any],
     start_session_binding: Mapping[str, Any],
     subject_start_session: Mapping[str, Any],
-    price_binding: Mapping[str, Any],
     contract: Mapping[str, Any],
 ) -> dict[str, Any]:
     claim_id = _text(claim.get("claim_id"), "claim_id")
@@ -954,9 +953,6 @@ def _build_matured_record(
             "currency": subject["currency"],
             "currency_conversion_performed": False,
             "subject_path_hash": subject["path_hash"],
-            "price_file_sha256": price_binding["price_file_sha256"],
-            "price_as_of": price_binding["price_as_of"],
-            "price_binding_hash": price_binding["price_binding_hash"],
         },
         "reference": {
             "status": reference["status"],
@@ -1075,9 +1071,6 @@ def verify_matured_outcome(
         raise OutcomeMaturationError("matured_outcome_fx_conversion_forbidden")
     _text(price.get("currency"), "record.price_provenance.currency")
     _sha256_text(price.get("subject_path_hash"), "subject_path_hash")
-    _sha256_text(price.get("price_file_sha256"), "price_file_sha256")
-    _sha256_text(price.get("price_binding_hash"), "price_binding_hash")
-    _as_date(price.get("price_as_of"), "record.price_provenance.price_as_of")
 
     outcome = record.get("outcome")
     if not isinstance(outcome, Mapping):
@@ -1125,7 +1118,6 @@ def evaluate_claim_maturation(
     start_sessions: Mapping[str, Mapping[str, Any]],
     start_session_binding: Mapping[str, Any],
     price_groups: Mapping[str, Sequence[Mapping[str, Any]]],
-    price_binding: Mapping[str, Any],
     contract: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     spec = (
@@ -1208,7 +1200,6 @@ def evaluate_claim_maturation(
         peer_snapshot_binding=peer_snapshot_binding,
         start_session_binding=start_session_binding,
         subject_start_session=subject_start_session,
-        price_binding=price_binding,
         contract=spec,
     )
     verify_matured_outcome(record, contract=spec)
@@ -1279,7 +1270,6 @@ def build_outcome_maturation_check(
             start_sessions=start_sessions,
             start_session_binding=start_session_binding,
             price_groups=price_groups,
-            price_binding=price_binding,
             contract=spec,
         )
         for claim in capture_report["claims"]
