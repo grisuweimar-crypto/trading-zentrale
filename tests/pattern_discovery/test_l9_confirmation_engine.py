@@ -567,15 +567,21 @@ def baseline_record(pattern, *, count=24, negative=False):
         "pattern_version": pattern["pattern_version"],
         "pattern_spec_hash": pattern["pattern_spec_hash"],
         "baseline_definition": forecast["baseline"],
+        "universe_version": pattern["pattern_spec"]["data"]["universe_version"],
         "population_source_id": f"POP-{pattern['pattern_id']}",
         "population_source_hash": digest(
             {"population": pattern["pattern_id"], "count": count}
         ),
-        "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_V1",
+        "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1",
         "selection_rule_hash": digest(
             {
-                "rule": "ALL_ELIGIBLE_POST_FREEZE_PIT_V1",
-                "baseline": forecast["baseline"],
+                "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1",
+                "baseline_definition": forecast["baseline"],
+                "universe_version": pattern["pattern_spec"]["data"][
+                    "universe_version"
+                ],
+                "target_id": forecast["target_id"],
+                "horizon_sessions": forecast["horizon_sessions"],
             }
         ),
         "eligible_population_count": len(observations),
