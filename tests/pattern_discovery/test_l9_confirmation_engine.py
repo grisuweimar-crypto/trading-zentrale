@@ -969,6 +969,7 @@ def baseline_record(
         horizon=int(forecast["horizon_sessions"]),
     )
     observations = []
+    snapshot_session_bindings = []
     counter = 0
     eligible_snapshot_ids = {
         str(claim["snapshot_id"])
@@ -980,9 +981,15 @@ def baseline_record(
     for snapshot in prospective_source_bundle["snapshots"]:
         if snapshot["snapshot_id"] not in eligible_snapshot_ids:
             continue
+        fixture_binding = fixture_start_session_binding(
+            snapshot["snapshot_id"],
+            snapshot["session_map_hash"],
+            snapshot["market_sessions"],
+        )
+        snapshot_session_bindings.append(fixture_binding)
         sessions = {
             item["symbol"]: item
-            for item in snapshot["market_sessions"]
+            for item in fixture_binding["sessions"]
         }
         for row in snapshot["rows"]:
             symbol = row["symbol"]
@@ -1011,7 +1018,7 @@ def baseline_record(
                 "horizon_sessions": forecast["horizon_sessions"],
             }
             if session is not None:
-                start_session_date = session["start_at"][:10]
+                start_session_date = session["session_date"]
                 session_binding_body = {
                     "capture_snapshot_id": snapshot["snapshot_id"],
                     "symbol": symbol,
@@ -1103,6 +1110,7 @@ def baseline_record(
         "eligible_population_count": len(observations),
         "target_id": forecast["target_id"],
         "horizon_sessions": forecast["horizon_sessions"],
+        "snapshot_session_bindings": snapshot_session_bindings,
         "observations": observations,
     }
 
