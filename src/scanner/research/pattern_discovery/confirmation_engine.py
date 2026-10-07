@@ -21,7 +21,8 @@ Decision/Portfolio/Execution authority.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+import csv
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
 import math
@@ -48,6 +49,8 @@ from .confirmation_sources import (
     verify_prospective_source_bundle,
 )
 from .outcome_maturation import (
+    _complete_path,
+    _normalize_prices,
     maturation_registry_repo_path,
     verify_matured_outcome,
 )
