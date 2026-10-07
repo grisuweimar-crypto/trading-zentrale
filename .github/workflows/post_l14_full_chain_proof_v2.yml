@@ -1,0 +1,290 @@
+name: Post-L14 Full Chain Proof V2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/post_l14_full_chain_proof_v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-chain-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test]"
+
+      - name: Verify canonical universe and master-derived expected count
+        run: |
+          python - <<'PY'
+          import csv
+          from collections import Counter
+          from scanner.app.build_watchlist import expected_master_universe_count
+          rows=list(csv.DictReader(open("data/inputs/universe_master.csv", encoding="utf-8")))
+          active=[r for r in rows if str(r.get("active","")).strip()=="1"]
+          counts=Counter(r["symbol"] for r in active)
+          expected=expected_master_universe_count()
+          assert counts["GOOGL"]==1
+          assert counts["AVGO"]==1
+          assert counts["ANET"]==1
+          assert expected==215, expected
+          print({"active_master_rows":len(active),"post_dedup_expected":expected})
+          PY
+
+      - name: Run Pattern Discovery L0-L14 regression
+        run: >-
+          python -m pytest -q
+          tests/pattern_discovery/test_l0_boundary.py
+          tests/pattern_discovery/test_l1_run_contract.py
+          tests/pattern_discovery/test_l2_feature_library.py
+          tests/pattern_discovery/test_l3_search_engine.py
+          tests/pattern_discovery/test_l4_statistical_guard.py
+          tests/pattern_discovery/test_l5_candidate_registry.py
+          tests/pattern_discovery/test_l6_dependency_graph.py
+          tests/pattern_discovery/test_l7_prospective_capture.py
+          tests/pattern_discovery/test_l8_outcome_maturation.py
+          tests/pattern_discovery/test_l9_confirmation_engine.py
+          tests/pattern_discovery/test_l10_rating_engine.py
+          tests/pattern_discovery/test_l11_pattern_library.py
+          tests/pattern_discovery/test_l12_promotion_gate.py
+          tests/pattern_discovery/test_l13_decision_challenger.py
+          tests/pattern_discovery/test_l14_continuous_operations.py
+
+      - name: Prepare real scanner run
+        env:
+          SCANNER_REQUIRE_PROVENANCE: "1"
+          SCANNER_FETCH_YAHOO: "1"
+        run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/scanner-run.json"
+
+      - name: Run real scanner
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          TELEGRAM_ENABLED: "0"
+          SCANNER_FETCH_YAHOO: "1"
+          SCANNER_REQUIRE_PROVENANCE: "1"
+        run: python -m scanner.app.run_daily
+
+      - name: Build authoritative research views
+        env:
+          SCANNER_REQUIRE_PROVENANCE: "1"
+        run: |
+          python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status success
+          python scripts/prefetch_market_history.py --minimum-sessions 300
+          python scripts/generate_research_views.py --refresh-prices
+          python scripts/generate_daily_research.py
+          python scripts/build_current_decision_evidence_7a.py --archive
+
+      - name: Verify 215-symbol scanner and new recommendations
+        run: |
+          python - <<'PY'
+          import csv,json
+          rows=list(csv.DictReader(open("artifacts/research/latest_scanner.csv",encoding="utf-8")))
+          counts={}
+          for row in rows:
+              s=row.get("symbol") or row.get("Symbol") or row.get("ticker") or row.get("Ticker")
+              counts[s]=counts.get(s,0)+1
+          m=json.load(open("artifacts/research/history_metadata.json"))
+          assert len(rows)==215
+          assert m["latest_run_complete"] is True
+          assert m["validation"]["status"]=="ok"
+          assert m["validation"]["symbol_count"]==215
+          assert m["validation"]["required_symbol_count"]==215
+          assert m["validation"]["baseline_symbol_count"]==215
+          assert counts.get("GOOGL")==1
+          assert counts.get("AVGO")==1
+          assert counts.get("ANET")==1
+          pc=m["price_coverage"]
+          assert pc["required_symbol_count"]==215
+          assert int(pc["covered_symbol_count"])+int(pc["unavailable_symbol_count"])==215
+          print({"snapshot_id":m["snapshot_id"],"symbols":215,"required":215,"GOOGL":1,"AVGO":1,"ANET":1})
+          PY
+
+      - name: Refresh Phase 2 for exact snapshot
+        run: |
+          python scripts/run_probability_calibration_2.py
+          python - <<'PY'
+          import json
+          m=json.load(open("artifacts/research/history_metadata.json"))
+          p=json.load(open("artifacts/research/probability_calibration_2.json"))
+          assert p["source"]["snapshot_id"]==m["snapshot_id"]
+          print({"snapshot_id":m["snapshot_id"],"phase2_snapshot":p["source"]["snapshot_id"]})
+          PY
+
+      - name: Create local provenance commit for Phase 2
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action Bot"
+          git add -f artifacts/research/probability_calibration_2.json
+          git commit -m "test: local phase2 same-snapshot provenance" >/dev/null
+
+      - name: Initialize W10 and bind Phase 2
+        run: |
+          python scripts/run_w10_snapshot_orchestration.py init
+          python scripts/run_w10_snapshot_orchestration.py record-git --stage phase2_probability --artifact artifacts/research/probability_calibration_2.json --require-snapshot-match
+
+      - name: Build Phase 3 and Phase 4
+        run: |
+          python scripts/run_risk_vnext_3.py --output "$RUNNER_TEMP/risk_vnext_3.json"
+          python scripts/run_w10_snapshot_orchestration.py record-runtime --stage phase3_risk --artifact "$RUNNER_TEMP/risk_vnext_3.json"
+          python scripts/audit_phase4_risk_scale.py --output "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json"
+          python scripts/run_confidence_vnext_research_4.py --phase2 artifacts/research/probability_calibration_2.json --risk "$RUNNER_TEMP/risk_vnext_3.json" --risk-scale "$RUNNER_TEMP/confidence_vnext_risk_scale_4.json" --output "$RUNNER_TEMP/confidence_vnext_research_4.json"
+          python scripts/run_w10_snapshot_orchestration.py record-runtime --stage phase4_confidence --artifact "$RUNNER_TEMP/confidence_vnext_research_4.json"
+
+      - name: Restore Phase 5 governance
+        shell: bash
+        run: |
+          set -euo pipefail
+          PHASE5_PATH='artifacts/research/confidence_vnext_promotion_5e.json'
+          git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+          PHASE5_COMMIT=$(git log -1 --format=%H origin/phase4e-shadow-data -- "$PHASE5_PATH")
+          test -n "$PHASE5_COMMIT"
+          PHASE5_AVAILABLE_FROM=$(git show -s --format=%cI "$PHASE5_COMMIT")
+          git show "$PHASE5_COMMIT:$PHASE5_PATH" > "$RUNNER_TEMP/confidence_vnext_promotion_5e.json"
+          echo "PHASE5_SOURCE_COMMIT=$PHASE5_COMMIT" >> "$GITHUB_ENV"
+          echo "PHASE5_AVAILABLE_FROM=$PHASE5_AVAILABLE_FROM" >> "$GITHUB_ENV"
+          python scripts/run_w10_snapshot_orchestration.py record-git --stage phase5_governance --artifact "$RUNNER_TEMP/confidence_vnext_promotion_5e.json" --source-commit "$PHASE5_COMMIT"
+
+      - name: Restore matching Elliott evidence when available
+        id: elliott
+        shell: bash
+        run: |
+          set -euo pipefail
+          CAPTURE_PATH='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          CAPTURE_FILE="$RUNNER_TEMP/elliott_vnext_prospective_current_6h.json"
+          SOURCE_FILE="$RUNNER_TEMP/decision_elliott_6h_source_v1.json"
+          echo "source_path=" >> "$GITHUB_OUTPUT"
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          if ! git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then exit 0; fi
+          if ! git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" 2>/dev/null; then exit 0; fi
+          CAPTURE_COMMIT=$(git log -1 --format=%H origin/elliott-vnext-shadow-data -- "$CAPTURE_PATH")
+          CAPTURE_AVAILABLE_FROM=$(git show -s --format=%cI "$CAPTURE_COMMIT")
+          git show "$CAPTURE_COMMIT:$CAPTURE_PATH" > "$CAPTURE_FILE"
+          set +e
+          CAPTURE_FILE="$CAPTURE_FILE" python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads(Path("artifacts/research/daily_research.json").read_text())
+          c=json.loads(Path(os.environ["CAPTURE_FILE"]).read_text())
+          same=str(c.get("snapshot_id") or "")==str(d.get("snapshot_id") or "") and str(c.get("as_of") or "")==str(d.get("as_of") or "")
+          if not same: raise SystemExit(1)
+          if int(c.get("output_count") or 0)<=0: raise SystemExit(2)
+          PY
+          STATE=$?
+          set -e
+          if [[ "$STATE" -eq 0 ]]; then
+            python scripts/build_elliott_w6_source.py --capture "$CAPTURE_FILE" --source-commit "$CAPTURE_COMMIT" --evidence-available-from "$CAPTURE_AVAILABLE_FROM" --output "$SOURCE_FILE"
+            echo "source_path=$SOURCE_FILE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Freeze W10 and build integrated Decision evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ steps.elliott.outputs.source_path }}" ]]; then
+            python scripts/run_w10_snapshot_orchestration.py resolve-phase6 --artifact "${{ steps.elliott.outputs.source_path }}"
+          else
+            python scripts/run_w10_snapshot_orchestration.py resolve-phase6
+          fi
+          python scripts/run_w10_snapshot_orchestration.py freeze
+          python scripts/build_integrated_decision_evidence_7a.py --phase4-report "$RUNNER_TEMP/confidence_vnext_research_4.json" --phase5-report "$RUNNER_TEMP/confidence_vnext_promotion_5e.json" --phase5-source-commit "$PHASE5_SOURCE_COMMIT" --phase5-available-from "$PHASE5_AVAILABLE_FROM" --archive --force-revision
+          python scripts/run_w10_snapshot_orchestration.py seal
+          python scripts/run_w10_snapshot_orchestration.py validate
+
+      - name: Verify sealed 215-symbol Decision packet set
+        run: |
+          python - <<'PY'
+          import json
+          d=json.load(open("artifacts/research/daily_research.json"))
+          p=json.load(open("artifacts/research/current_decision_packets_7a.json"))
+          w=json.load(open("artifacts/research/decision_snapshot_w10.json"))
+          assert d["universe_size"]==215
+          assert p["packet_count"]==215
+          assert p["snapshot_id"]==d["snapshot_id"]==w["snapshot_id"]
+          assert w["status"]=="sealed"
+          assert p["semantics"]["phase5_production_change_performed"] is False
+          assert p["semantics"]["external_evidence_phase8_activated"] is False
+          print({"snapshot_id":d["snapshot_id"],"packets":p["packet_count"],"w10":w["status"]})
+          PY
+
+      - name: Build same-snapshot Watch Runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ steps.elliott.outputs.source_path }}" ]]; then
+            python scripts/build_watch_runtime_w10.py --elliott-6h-source "${{ steps.elliott.outputs.source_path }}"
+          else
+            python scripts/build_watch_runtime_w10.py
+          fi
+
+      - name: Verify Watch Runtime
+        run: |
+          python - <<'PY'
+          import json
+          m=json.load(open("artifacts/research/history_metadata.json"))
+          r=json.load(open("artifacts/research/watch_runtime/manifest.json"))
+          p=json.load(open("artifacts/research/watch_runtime/public_long_reference.json"))
+          assert r["snapshot_id"]==m["snapshot_id"]
+          assert r["symbol_count"]==215
+          assert p["snapshot_id"]==m["snapshot_id"]
+          assert p["row_count"]==215
+          assert p["diagnostics"]["bundle_count"]==215
+          assert p["diagnostics"]["missing_current_packet_symbols"]==[]
+          assert p["diagnostics"]["private_position_data_persisted"] is False
+          assert p["diagnostics"]["scanner_scalar_fallback_used"] is False
+          print({"snapshot_id":m["snapshot_id"],"runtime_symbols":215,"public_long_rows":215})
+          PY
+
+      - name: Evaluate real BA-QM12
+        run: |
+          python - <<'PY'
+          import json
+          from scanner.research.governance.ba_qm12_continuous_qm import evaluate_continuous_qm
+          r=evaluate_continuous_qm(".")
+          assert r["engineering_status"]=="BA_QM12_ENGINEERING_COMPLETE"
+          assert r["operating_status"]=="ACTIVE_CONTINUOUS_QM"
+          assert r["snapshot_monitor"]["coverage"]["required_symbol_count"]==215
+          assert r["snapshot_monitor"]["coverage"]["symbol_count"]==215
+          assert r["snapshot_monitor"]["calibration"]["snapshot_current"] is True
+          assert r["snapshot_monitor"]["runtime"]["snapshot_current"] is True
+          print(json.dumps({"snapshot_id":r["snapshot_monitor"]["snapshot_id"],"coverage":r["snapshot_monitor"]["coverage"],"runtime":r["snapshot_monitor"]["runtime"],"production_health":r["production_health_status"]},sort_keys=True))
+          PY
+
+      - name: Run L14 against complete same-snapshot chain
+        run: |
+          python - <<'PY'
+          from datetime import datetime,timezone
+          import json
+          from scanner.research.pattern_discovery import build_operations_cycle,verify_operations_cycle
+          now=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
+          c=build_operations_cycle(".",evaluated_at=now)
+          assert verify_operations_cycle(c)["valid"] is True
+          assert c["cycle_status"]!="BLOCKED_FAIL_CLOSED",c["blocking_reasons"]
+          assert c["blocking_reasons"]==[]
+          assert c["qm_audit"]["status"]=="PASS"
+          assert c["boundaries"]["l12_promotion_performed"] is False
+          assert c["boundaries"]["l13_regular_integration_performed"] is False
+          assert c["boundaries"]["productive_decision_change_performed"] is False
+          n=[x for x in c["work_items"] if x["stage"]=="NEGATIVE_RESULT_AUDIT"][0]
+          assert n["authority"]=="QM-C5"
+          assert n["parallel_registry_created"] is False
+          print(json.dumps({"cycle_hash":c["cycle_hash"],"cycle_status":c["cycle_status"],"blocking_reasons":c["blocking_reasons"],"discovery_trigger":c["discovery"]["trigger"],"laboratory_state":c["laboratory_state"],"work_items":[{"stage":x["stage"],"status":x["status"]} for x in c["work_items"]],"decay_alert_count":len(c["decay_alerts"]),"qm_status":c["qm_audit"]["status"]},sort_keys=True))
+          PY
+
+      - name: Final coherence
+        run: |
+          python scripts/generate_research_views.py --validate-only
+          python scripts/validate_contract.py
