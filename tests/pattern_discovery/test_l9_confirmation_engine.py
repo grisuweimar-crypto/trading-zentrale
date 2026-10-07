@@ -41,6 +41,7 @@ from scanner.research.pattern_discovery.confirmation_sources import (
 from scanner.research.pattern_discovery.outcome_maturation import (
     _record_id,
     load_outcome_maturation_contract,
+    maturation_registry_repo_path,
 )
 
 
@@ -68,6 +69,7 @@ def qm_b_closure():
 
 def registries(tmp_path):
     return {
+        "repo_root": tmp_path,
         "hypotheses": HypothesisRegistry(tmp_path / "qm_c1.jsonl"),
         "plans": AnalysisPlanRegistry(tmp_path / "qm_c2.jsonl"),
         "qm_a": GovernanceLedger(tmp_path / "qm_a.jsonl"),
@@ -814,6 +816,16 @@ def prospective_source_for(patterns, outcomes):
     return bundle, values
 
 
+def write_authoritative_maturation_registry(repo_root, events):
+    target = Path(repo_root) / maturation_registry_repo_path()
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "".join(canonical(event) + "\n" for event in events),
+        encoding="utf-8",
+    )
+    return target
+
+
 def baseline_record(pattern, prospective_source_bundle, *, negative=False):
     forecast = pattern["pattern_spec"]["forecast"]
     observations = []
@@ -990,6 +1002,10 @@ def build_report(
             recorded_at=evaluated_at,
         )
     )
+    write_authoritative_maturation_registry(
+        regs["repo_root"],
+        events,
+    )
     baseline_value = (
         baseline
         if baseline is not None
@@ -1021,6 +1037,7 @@ def build_report(
         monitoring_registry=regs["c4"],
         qm_a_ledger=regs["qm_a"],
         evaluated_at=evaluated_at,
+        repo_root=regs["repo_root"],
         confirmation_registry=confirmation_registry,
         context_bundle=contexts,
     )
