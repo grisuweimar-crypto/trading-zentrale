@@ -535,6 +535,39 @@ def prospective_rows(pattern, *, count=24, target_value=0.08, prefix="A"):
     return rows
 
 
+def maturation_registry_events(
+    outcomes,
+    *,
+    recorded_at="2027-01-15T20:00:00Z",
+):
+    events = []
+    previous = None
+    for sequence, record in enumerate(outcomes, start=1):
+        event = {
+            "schema_version": "pattern_discovery_l8_maturation_event_v1",
+            "sequence": sequence,
+            "event_id": (
+                "PME-"
+                + digest(
+                    {
+                        "claim_id": record["claim"]["claim_id"],
+                        "outcome_hash": record["outcome_hash"],
+                    }
+                )[:24].upper()
+            ),
+            "event_type": "OUTCOME_MATURED",
+            "recorded_at": recorded_at,
+            "actor_id": "tester",
+            "actor_role": "researcher",
+            "record": record,
+            "previous_event_hash": previous,
+        }
+        event["entry_hash"] = digest(event)
+        events.append(event)
+        previous = event["entry_hash"]
+    return events
+
+
 def baseline_record(pattern, *, count=24, negative=False):
     observations = []
     base = date(2026, 10, 8)
@@ -654,6 +687,10 @@ def build_report(
     evaluated_at="2027-01-15T20:00:00Z",
 ):
     values = outcomes if outcomes is not None else prospective_rows(pattern)
+    events = maturation_registry_events(
+        values,
+        recorded_at=evaluated_at,
+    )
     baseline_bundle = build_baseline_bundle(
         [baseline if baseline is not None else baseline_record(pattern)],
         baseline_bundle_id="BASE-L9-TEST",
@@ -662,7 +699,7 @@ def build_report(
     contexts = context if context is not None else context_bundle_for(values)
     return build_confirmation_look(
         [pattern],
-        values,
+        events,
         baseline_bundle,
         control_plan_id=control["control_plan_id"],
         control_plan_version=control["control_plan_version"],
@@ -856,6 +893,74 @@ def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
     assert "REGIME_CONTEXT_COVERAGE_INSUFFICIENT" in result["result_reasons"]
 
 
+def test_l8_maturation_event_after_l9_evaluation_fails_closed(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    events = maturation_registry_events(
+        outcomes,
+        recorded_at="2027-01-16T20:00:00Z",
+    )
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern)],
+        baseline_bundle_id="BASE-FUTURE-MATURATION",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(outcomes)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_event_after_evaluation",
+    ):
+        build_confirmation_look(
+            [pattern],
+            events,
+            baseline,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version=control["control_plan_version"],
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version=monitor["monitoring_plan_version"],
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            context_bundle=contexts,
+        )
+
+
+def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    events = maturation_registry_events(outcomes)
+    events[1]["previous_event_hash"] = "0" * 64
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern)],
+        baseline_bundle_id="BASE-BAD-CHAIN",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(outcomes)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_registry_previous_hash_invalid",
+    ):
+        build_confirmation_look(
+            [pattern],
+            events,
+            baseline,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version=control["control_plan_version"],
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version=monitor["monitoring_plan_version"],
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            context_bundle=contexts,
+        )
+
+
 def test_tampered_l8_outcome_fails_closed(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
@@ -993,7 +1098,7 @@ def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
     ):
         build_confirmation_look(
             [pattern_a],
-            outcomes,
+            maturation_registry_events(outcomes),
             baseline,
             control_plan_id=control["control_plan_id"],
             control_plan_version="v1",
@@ -1040,7 +1145,7 @@ def test_bonferroni_family_and_sequential_threshold_are_both_applied(tmp_path):
     contexts = context_bundle_for(outcomes)
     report = build_confirmation_look(
         [pattern_a, pattern_b],
-        outcomes,
+        maturation_registry_events(outcomes),
         baseline,
         control_plan_id=control["control_plan_id"],
         control_plan_version="v1",
