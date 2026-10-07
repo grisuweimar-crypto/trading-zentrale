@@ -130,6 +130,8 @@ def main() -> int:
         persisted = persist_confirmation_look(
             root,
             report,
+            baseline,
+            context_bundle=context,
             actor_id=args.actor_id,
             actor_role=args.actor_role,
         )
