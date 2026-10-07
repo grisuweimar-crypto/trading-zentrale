@@ -1,0 +1,1065 @@
+from __future__ import annotations
+
+from copy import deepcopy
+from datetime import date, timedelta
+from hashlib import sha256
+import json
+from pathlib import Path
+
+import pytest
+
+from scanner.research.governance.qm_a import GovernanceLedger
+from scanner.research.governance.qm_c import (
+    HypothesisRegistry,
+    hypothesis_version_hash,
+)
+from scanner.research.governance.qm_c_analysis_plan import (
+    AnalysisPlanRegistry,
+    analysis_plan_hash,
+)
+from scanner.research.governance.qm_c_families_multiplicity import (
+    FamilyMultiplicityRegistry,
+)
+from scanner.research.governance.qm_c_sequential_monitoring import (
+    SequentialMonitoringRegistry,
+)
+from scanner.research.pattern_discovery.confirmation_engine import (
+    ConfirmationEngineError,
+    ConfirmationLookRegistry,
+    build_baseline_bundle,
+    build_confirmation_look,
+    build_context_bundle,
+    load_confirmation_contract,
+    persist_confirmation_look,
+    verify_confirmation_look,
+)
+from scanner.research.pattern_discovery.outcome_maturation import (
+    _record_id,
+    load_outcome_maturation_contract,
+)
+
+
+ROOT = Path(__file__).resolve().parents[2]
+QM_B_CLOSURE = ROOT / "configs/qm_b_closure_v1.json"
+
+
+def canonical(value):
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
+
+
+def digest(value):
+    return sha256(canonical(value).encode("utf-8")).hexdigest()
+
+
+def qm_b_closure():
+    return json.loads(QM_B_CLOSURE.read_text(encoding="utf-8"))
+
+
+def registries(tmp_path):
+    return {
+        "hypotheses": HypothesisRegistry(tmp_path / "qm_c1.jsonl"),
+        "plans": AnalysisPlanRegistry(tmp_path / "qm_c2.jsonl"),
+        "qm_a": GovernanceLedger(tmp_path / "qm_a.jsonl"),
+        "c3": FamilyMultiplicityRegistry(tmp_path / "qm_c3.jsonl"),
+        "c4": SequentialMonitoringRegistry(tmp_path / "qm_c4.jsonl"),
+    }
+
+
+def make_pattern(
+    *,
+    pattern_id="PAT-L9-A",
+    family_id="FAM-L9",
+    freeze_timestamp="2026-10-06T15:05:00Z",
+    minimum_raw_n=20,
+    minimum_support=3,
+    minimum_effect=0.01,
+    minimum_lift=0.10,
+):
+    hypothesis_id = f"H-{pattern_id}"
+    plan_id = f"AP-{pattern_id}"
+    qm_a_id = f"A-{pattern_id}"
+    hypothesis_record = {
+        "hypothesis_id": hypothesis_id,
+        "hypothesis_version": "v1",
+        "research_question": f"Does {pattern_id} retain its prospective effect?",
+        "hypothesis_statement": f"{pattern_id} has positive return_5t_gt_0 versus its frozen baseline.",
+        "hypothesis_family_id": f"HF-{family_id}",
+        "research_mode": "CONFIRMATION",
+        "qm_a_analysis_id": qm_a_id,
+        "universe_requirement": "OBSERVED_SCANNER_UNIVERSE",
+    }
+    hypothesis_hash = hypothesis_version_hash(hypothesis_record)
+    plan_record = {
+        "analysis_plan_id": plan_id,
+        "analysis_plan_version": "v1",
+        "hypothesis_id": hypothesis_id,
+        "hypothesis_version": "v1",
+        "hypothesis_version_hash": hypothesis_hash,
+        "research_mode": "CONFIRMATION",
+        "primary_estimand": f"Prospective probability advantage and aligned outcome of {pattern_id}.",
+        "primary_metrics": [
+            "direction_probability",
+            "probability_advantage_lift",
+            "mean_aligned_outcome",
+        ],
+        "population_definition": f"Strictly post-freeze PIT observations matching {pattern_id}.",
+        "universe_requirement": "OBSERVED_SCANNER_UNIVERSE",
+        "evaluation_windows": ["5_sessions"],
+        "exclusion_rules": [
+            "pre_freeze_observation",
+            "missing_or_immature_outcome",
+            "pattern_version_mismatch",
+        ],
+        "outcome_definitions": [
+            "return_5t_gt_0 with expected_direction=POSITIVE and baseline=same_horizon_unconditional_return_baseline"
+        ],
+        "planned_sensitivity_analyses": [
+            "moving_block_bootstrap",
+            "symbol_concentration",
+            "temporal_support",
+        ],
+    }
+    plan_hash = analysis_plan_hash(plan_record)
+    freeze_context = {
+        "code_or_commit_hash": "l9-test-code",
+        "config_hash": "l9-test-config",
+        "dataset_snapshot_hash": "l9-test-dataset",
+        "universe_ledger_version": "l9-test-universe-ledger",
+        "instrument_master_version": "l9-test-instrument-master",
+        "label_definition_hash": digest(
+            {
+                "target_id": "return_5t_gt_0",
+                "expected_direction": "POSITIVE",
+                "horizon_sessions": 5,
+            }
+        ),
+        "benchmark_definition_hash": digest(
+            {
+                "pattern_type": "DIRECTIONAL",
+                "baseline": "same_horizon_unconditional_return_baseline",
+            }
+        ),
+        "environment_or_dependency_fingerprint": "python311-pytest",
+        "evaluation_cohort_id": f"COHORT-{pattern_id}-v1-POSTFREEZE",
+        "temporal_boundary": freeze_timestamp,
+    }
+    qm_a_identity = {
+        "hypothesis_version_hash": hypothesis_hash,
+        "analysis_plan_hash": plan_hash,
+        **freeze_context,
+    }
+    pattern_spec = {
+        "identity": {
+            "pattern_id": pattern_id,
+            "pattern_version": "v1",
+            "discovery_run_id": "DISC-L9-TEST",
+            "candidate_id": f"CAND-{pattern_id}",
+            "candidate_spec_hash": digest({"candidate": pattern_id}),
+        },
+        "semantics": {
+            "pattern_type": "DIRECTIONAL",
+            "natural_language_description": f"Fixture {pattern_id}",
+            "conditions": [],
+            "feature_versions": [],
+            "transformation_rules": [],
+        },
+        "forecast": {
+            "target_id": "return_5t_gt_0",
+            "expected_direction": "POSITIVE",
+            "horizon_sessions": 5,
+            "baseline": "same_horizon_unconditional_return_baseline",
+            "reference_definition": "same_horizon_unconditional_return_baseline",
+        },
+        "data": {
+            "universe_version": "universe-l9-test",
+            "feature_library_version": "PDL-FEATURE-LIBRARY-v1",
+            "discovery_period": {
+                "start": "2026-06-01T00:00:00Z",
+                "end": "2026-10-01T00:00:00Z",
+                "data_cutoff": "2026-10-01T00:00:00Z",
+            },
+            "pit_rules": ["no_future_features"],
+            "minimum_coverage_rule": "L4_MATURE_TARGET_COVERAGE_GATE",
+        },
+        "statistics": {
+            "primary_method": "cluster_aware_effect_and_probability_estimation",
+            "multiple_testing": {
+                "primary_method": "BENJAMINI_HOCHBERG_FDR",
+                "parameters": {"fdr_q": 0.05},
+            },
+            "minimum_criteria": {
+                "minimum_raw_n": minimum_raw_n,
+                "minimum_temporal_support_regions": minimum_support,
+                "minimum_effect_size": minimum_effect,
+                "minimum_baseline_lift": minimum_lift,
+            },
+            "robustness_checks": [
+                "moving_block_bootstrap",
+                "symbol_concentration",
+                "temporal_support",
+            ],
+            "discovery_evidence_hash": digest({"l4": pattern_id}),
+        },
+        "freeze": {
+            "freeze_timestamp": freeze_timestamp,
+            "code_version": "l9-test-code",
+            "l1_manifest_hash": digest({"l1": pattern_id}),
+            "l3_result_hash": digest({"l3": pattern_id}),
+            "l4_evidence_hash": digest({"l4e": pattern_id}),
+        },
+    }
+    spec_hash = digest(pattern_spec)
+    handoff = {
+        "application_status": "READY_NOT_APPLIED_BY_L5",
+        "direct_registry_write_performed": False,
+        "l0_write_boundary_preserved": True,
+        "application_order": [],
+        "hypothesis_record": hypothesis_record,
+        "hypothesis_version_hash": hypothesis_hash,
+        "requested_hypothesis_target_state": "FROZEN_FOR_CONFIRMATION",
+        "analysis_plan_record": plan_record,
+        "analysis_plan_hash": plan_hash,
+        "freeze_context": freeze_context,
+        "freeze_context_hash": digest(freeze_context),
+        "requested_analysis_plan_target_state": "FROZEN_FOR_CONFIRMATION",
+        "qm_a_analysis_id": qm_a_id,
+        "qm_a_identity": qm_a_identity,
+        "qm_a_state_after_l5": "NOT_REGISTERED_BY_L5",
+        "pattern_spec_hash": spec_hash,
+        "pattern_description": f"Fixture {pattern_id}",
+    }
+    handoff["handoff_hash"] = digest(handoff)
+    frozen = {
+        "schema_version": "pattern_discovery_l5_frozen_pattern_v1",
+        "state": "FROZEN_CANDIDATE",
+        "research_only": True,
+        "productive_integration_enabled": False,
+        "execution_allowed": False,
+        "pattern_id": pattern_id,
+        "pattern_version": "v1",
+        "pattern_spec_hash": spec_hash,
+        "natural_language_description": f"Fixture {pattern_id}",
+        "pattern_spec": pattern_spec,
+        "freeze_timestamp": freeze_timestamp,
+        "data_cutoff": "2026-10-01T00:00:00Z",
+        "code_version": "l9-test-code",
+        "universe_version": "universe-l9-test",
+        "feature_library_version": "PDL-FEATURE-LIBRARY-v1",
+        "candidate_id": f"CAND-{pattern_id}",
+        "discovery_run_id": "DISC-L9-TEST",
+        "l4_evidence_hash": digest({"l4e": pattern_id}),
+        "discovery_evidence": {
+            "raw_n": 999,
+            "direction_probability": 0.99,
+            "probability_advantage_lift": 0.49,
+        },
+        "qm_c_handoff": handoff,
+        "confirmation_data_used": False,
+        "prospective_capture_started": False,
+        "rating": None,
+        "promotion_status": "NOT_EVALUATED",
+    }
+    frozen["frozen_record_hash"] = digest(frozen)
+    return frozen
+
+
+def apply_l5_handoff(pattern, regs, *, qm_a_version="analysis-v1"):
+    handoff = pattern["qm_c_handoff"]
+    hypothesis_record = handoff["hypothesis_record"]
+    plan_record = handoff["analysis_plan_record"]
+
+    regs["hypotheses"].register_hypothesis(
+        record=hypothesis_record,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    regs["plans"].register_plan(
+        record=plan_record,
+        hypothesis_registry=regs["hypotheses"],
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    regs["plans"].freeze_plan(
+        analysis_plan_id=plan_record["analysis_plan_id"],
+        analysis_plan_version=plan_record["analysis_plan_version"],
+        freeze_context=handoff["freeze_context"],
+        hypothesis_registry=regs["hypotheses"],
+        qm_b_closure=qm_b_closure(),
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Freeze Pattern L9 fixture analysis plan.",
+    )
+    regs["qm_a"].register_analysis(
+        analysis_id=handoff["qm_a_analysis_id"],
+        version_id=qm_a_version,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    regs["qm_a"].transition(
+        analysis_id=handoff["qm_a_analysis_id"],
+        version_id=qm_a_version,
+        to_state="FROZEN_FOR_CONFIRMATION",
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Freeze exact L9 fixture analysis identity.",
+        analysis_identity=regs["plans"].build_qm_a_identity(
+            plan_record["analysis_plan_id"],
+            plan_record["analysis_plan_version"],
+        ),
+    )
+    regs["hypotheses"].transition(
+        hypothesis_id=hypothesis_record["hypothesis_id"],
+        hypothesis_version=hypothesis_record["hypothesis_version"],
+        to_state="FROZEN_FOR_CONFIRMATION",
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Freeze Pattern hypothesis.",
+    )
+    return {
+        "hypothesis_id": hypothesis_record["hypothesis_id"],
+        "hypothesis_version": hypothesis_record["hypothesis_version"],
+        "hypothesis_version_hash": handoff["hypothesis_version_hash"],
+        "analysis_plan_id": plan_record["analysis_plan_id"],
+        "analysis_plan_version": plan_record["analysis_plan_version"],
+        "analysis_plan_hash": handoff["analysis_plan_hash"],
+        "qm_a_analysis_id": handoff["qm_a_analysis_id"],
+        "qm_a_version_id": qm_a_version,
+    }
+
+
+def freeze_family(
+    regs,
+    members,
+    *,
+    family_id="HF-FAM-L9",
+    strategy="PREDECLARED_SINGLE_PRIMARY",
+    parameters=None,
+    planned_looks=None,
+    early_stop_allowed=False,
+):
+    control_record = {
+        "control_plan_id": f"CP-{family_id}",
+        "control_plan_version": "v1",
+        "hypothesis_family_id": family_id,
+        "research_mode": "CONFIRMATION",
+        "family_members": members,
+        "multiplicity_strategy": strategy,
+        "multiplicity_parameters": parameters or {},
+    }
+    regs["c3"].register_control_plan(
+        record=control_record,
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    regs["c3"].freeze_control_plan(
+        control_plan_id=control_record["control_plan_id"],
+        control_plan_version="v1",
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        qm_a_ledger=regs["qm_a"],
+        qm_b_closure=qm_b_closure(),
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Freeze L9 test family.",
+    )
+    control = regs["c3"].get_control_plan(
+        control_record["control_plan_id"],
+        "v1",
+    )
+
+    looks = planned_looks or [
+        {"look_id": "FINAL", "information_fraction": 1.0}
+    ]
+    monitoring_record = {
+        "monitoring_plan_id": f"MP-{family_id}",
+        "monitoring_plan_version": "v1",
+        "control_plan_id": control["control_plan_id"],
+        "control_plan_version": control["control_plan_version"],
+        "control_plan_hash": control["control_plan_hash"],
+        "mode": (
+            "FIXED_HORIZON_NO_INTERIM"
+            if len(looks) == 1
+            else "PREDECLARED_LOOKS"
+        ),
+        "planned_looks": looks,
+        "early_stop_allowed": early_stop_allowed,
+        "stopping_rule": (
+            "FINAL_ONLY"
+            if len(looks) == 1
+            else "CONTINUE_UNLESS_PREDECLARED_BOUNDARY"
+        ),
+    }
+    regs["c4"].register_monitoring_plan(
+        record=monitoring_record,
+        control_registry=regs["c3"],
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    regs["c4"].freeze_monitoring_plan(
+        monitoring_plan_id=monitoring_record["monitoring_plan_id"],
+        monitoring_plan_version="v1",
+        control_registry=regs["c3"],
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Freeze L9 test sequential schedule.",
+    )
+    monitor = regs["c4"].get_monitoring_plan(
+        monitoring_record["monitoring_plan_id"],
+        "v1",
+    )
+    return control, monitor
+
+
+def matured_outcome(
+    pattern,
+    *,
+    claim_id,
+    symbol,
+    start_day,
+    target_value,
+):
+    l8_contract = load_outcome_maturation_contract()
+    horizon = 5
+    start = date.fromisoformat(start_day)
+    dates = [
+        (start + timedelta(days=offset)).isoformat()
+        for offset in range(horizon + 1)
+    ]
+    record = {
+        "schema_version": "pattern_discovery_l8_matured_outcome_v1",
+        "state": "MATURED_OUTCOME",
+        "research_only": True,
+        "productive_integration_enabled": False,
+        "execution_allowed": False,
+        "record_id": _record_id(claim_id, contract=l8_contract),
+        "claim": {
+            "claim_id": claim_id,
+            "event_id": f"PEV-{claim_id}",
+            "claim_hash": digest({"claim": claim_id}),
+            "pattern_id": pattern["pattern_id"],
+            "pattern_version": pattern["pattern_version"],
+            "pattern_spec_hash": pattern["pattern_spec_hash"],
+            "symbol": symbol,
+            "capture_snapshot_id": "snap-l9-test",
+            "capture_snapshot_binding_hash": digest({"snapshot": "l9"}),
+        },
+        "target": {
+            "pattern_type": "DIRECTIONAL",
+            "target_id": "return_5t_gt_0",
+            "expected_direction": "POSITIVE",
+            "horizon_sessions": 5,
+            "baseline": "same_horizon_unconditional_return_baseline",
+            "reference_definition": "same_horizon_unconditional_return_baseline",
+        },
+        "horizon_provenance": {
+            "start_market_session_id": f"{symbol}-{start_day}",
+            "calendar_id": f"{symbol}-CAL",
+            "session_source": "fixture-session-source-v1",
+            "start_at": f"{start_day}T08:00:00Z",
+            "start_session_date": dates[0],
+            "target_session_date": dates[-1],
+            "horizon_sessions": 5,
+            "observed_session_count_including_start": 6,
+            "session_dates": dates,
+        },
+        "price_provenance": {
+            "price_kind": "ADJUSTED_CLOSE",
+            "currency": "USD",
+            "currency_conversion_performed": False,
+            "subject_path_hash": digest(
+                {"claim": claim_id, "path": dates, "value": target_value}
+            ),
+        },
+        "reference": {
+            "status": "AVAILABLE",
+            "method_id": "LEAVE_ONE_SYMBOL_OUT_PEER_MEDIAN_V1",
+            "scope": "SAME_CURRENCY",
+            "peer_snapshot_id": "snap-l9-test",
+            "peer_snapshot_binding_hash": digest({"peer": claim_id}),
+            "peer_return": 0.0,
+            "peer_count": 3,
+            "same_currency_peer_count": 3,
+            "global_peer_count": 3,
+            "eligible_peer_count": 3,
+            "excluded_peer_count": 0,
+            "excluded_peer_status_counts": {},
+            "peer_details_hash": digest({"peers": claim_id}),
+            "chosen_peer_set_hash": digest({"chosen": claim_id}),
+            "reason_codes": ["LEAVE_ONE_OUT_SAME_CURRENCY_MEDIAN"],
+        },
+        "outcome": {
+            "return": target_value,
+            "peer_excess": None,
+            "adverse_excursion": min(0.0, target_value),
+            "path_max_drawdown": min(0.0, target_value / 2),
+            "target_value": target_value,
+            "target_value_kind": "RETURN",
+        },
+        "boundaries": {
+            "direction_hit_computed": False,
+            "probability_computed": False,
+            "confirmation_evaluation_performed": False,
+            "sequential_monitoring_performed": False,
+            "rating_assigned": False,
+            "promotion_performed": False,
+            "decision_layer_integration_performed": False,
+        },
+    }
+    record["outcome_hash"] = digest(record)
+    return record
+
+
+def prospective_rows(pattern, *, count=24, target_value=0.08, prefix="A"):
+    rows = []
+    base = date(2026, 10, 8)
+    symbols = ("AAA", "BBB", "CCC", "DDD")
+    for index in range(count):
+        day = base + timedelta(days=index * 2)
+        rows.append(
+            matured_outcome(
+                pattern,
+                claim_id=f"{prefix}-{index:03d}",
+                symbol=symbols[index % len(symbols)],
+                start_day=day.isoformat(),
+                target_value=target_value,
+            )
+        )
+    return rows
+
+
+def baseline_record(pattern, *, count=24, negative=False):
+    observations = []
+    base = date(2026, 10, 8)
+    symbols = ("AAA", "BBB", "CCC", "DDD")
+    for index in range(count):
+        value = (
+            -0.005
+            if negative
+            else (0.005 if index % 2 == 0 else -0.005)
+        )
+        start = base + timedelta(days=index * 2)
+        end = start + timedelta(days=5)
+        observations.append(
+            {
+                "baseline_event_id": f"B-{pattern['pattern_id']}-{index:03d}",
+                "symbol": symbols[index % len(symbols)],
+                "start_at": f"{start.isoformat()}T08:00:00Z",
+                "end_at": f"{end.isoformat()}T08:00:00Z",
+                "target_value": value,
+                "target_id": "return_5t_gt_0",
+                "horizon_sessions": 5,
+                "source_hash": digest(
+                    {"pattern": pattern["pattern_id"], "baseline": index}
+                ),
+            }
+        )
+    forecast = pattern["pattern_spec"]["forecast"]
+    return {
+        "pattern_id": pattern["pattern_id"],
+        "pattern_version": pattern["pattern_version"],
+        "pattern_spec_hash": pattern["pattern_spec_hash"],
+        "baseline_definition": forecast["baseline"],
+        "target_id": forecast["target_id"],
+        "horizon_sessions": forecast["horizon_sessions"],
+        "observations": observations,
+    }
+
+
+def context_bundle_for(outcomes):
+    contexts = []
+    for index, outcome in enumerate(outcomes):
+        claim = outcome["claim"]
+        start = outcome["horizon_provenance"]["start_at"]
+        observed_day = date.fromisoformat(start[:10]) - timedelta(days=1)
+        contexts.append(
+            {
+                "claim_id": claim["claim_id"],
+                "symbol": claim["symbol"],
+                "observation_as_of": f"{observed_day.isoformat()}T12:00:00Z",
+                "context_source_hash": digest({"context": claim["claim_id"]}),
+                "sector": "TECH" if index % 2 == 0 else "INDUSTRIAL",
+                "segment": "LARGE" if index % 3 else "MID",
+                "pillar_primary": "QUALITY",
+                "cluster_official": "C1" if index % 2 == 0 else "C2",
+                "market_regime_stock": "BULL" if index % 2 == 0 else "NEUTRAL",
+                "market_regime_crypto": "N/A",
+            }
+        )
+    return build_context_bundle(
+        contexts,
+        context_bundle_id="CTX-L9-TEST",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+
+
+def setup_single_family(
+    tmp_path,
+    *,
+    planned_looks=None,
+    early_stop_allowed=False,
+    minimum_raw_n=20,
+):
+    regs = registries(tmp_path)
+    pattern = make_pattern(minimum_raw_n=minimum_raw_n)
+    member = apply_l5_handoff(pattern, regs)
+    control, monitor = freeze_family(
+        regs,
+        [member],
+        family_id="HF-FAM-L9",
+        planned_looks=planned_looks,
+        early_stop_allowed=early_stop_allowed,
+    )
+    return regs, pattern, control, monitor
+
+
+def build_report(
+    regs,
+    pattern,
+    control,
+    monitor,
+    *,
+    outcomes=None,
+    baseline=None,
+    context=None,
+    evaluated_at="2027-01-15T20:00:00Z",
+):
+    values = outcomes if outcomes is not None else prospective_rows(pattern)
+    baseline_bundle = build_baseline_bundle(
+        [baseline if baseline is not None else baseline_record(pattern)],
+        baseline_bundle_id="BASE-L9-TEST",
+        generated_at=evaluated_at,
+    )
+    contexts = context if context is not None else context_bundle_for(values)
+    return build_confirmation_look(
+        [pattern],
+        values,
+        baseline_bundle,
+        control_plan_id=control["control_plan_id"],
+        control_plan_version=control["control_plan_version"],
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version=monitor["monitoring_plan_version"],
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        control_registry=regs["c3"],
+        monitoring_registry=regs["c4"],
+        qm_a_ledger=regs["qm_a"],
+        evaluated_at=evaluated_at,
+        context_bundle=contexts,
+    )
+
+
+def test_l9_contract_reuses_qm_and_defers_rating():
+    contract = load_confirmation_contract()
+    assert contract["phase"] == "L9"
+    assert contract["research_only"] is True
+    assert contract["principles"]["qm_c1_c2_c3_c4_are_authoritative"] is True
+    assert contract["principles"]["discovery_evidence_never_counts_as_confirmation"] is True
+    assert contract["principles"]["missing_maturity_is_unresolved_not_falsified"] is True
+    assert contract["boundaries"]["rating_assigned"] is False
+    assert contract["boundaries"]["promotion_performed"] is False
+
+
+def test_positive_final_look_uses_only_prospective_l8_evidence(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    report = build_report(regs, pattern, control, monitor)
+
+    checked = verify_confirmation_look(report)
+    assert checked["valid"] is True
+    assert report["look_status"] == "EVALUATED"
+    assert report["family_decision"] == "FINAL_COMPLETE"
+    result = report["pattern_results"][0]
+    assert result["result_class"] == "SUPPORTED"
+    assert result["discovery_evidence_used_as_confirmation"] is False
+    evidence = result["prospective_evidence"]
+    assert evidence["raw_n"] == 24
+    assert evidence["effective_n"] <= evidence["raw_n"]
+    assert evidence["support_region_count"] >= 3
+    assert evidence["direction_probability"] == pytest.approx(1.0)
+    assert evidence["baseline_probability"] == pytest.approx(0.5)
+    assert evidence["probability_advantage_lift"] == pytest.approx(0.5)
+    assert evidence["effect_size_vs_baseline"] > 0.07
+    assert evidence["robust_uncertainty"]["effect_size_interval_95"][0] > 0
+    assert evidence["robust_uncertainty"]["probability_lift_interval_95"][0] > 0
+    assert result["multiple_testing"]["passed"] is True
+    assert report["qm_c_handoff"]["qm_c5_results"][0][
+        "outcome_classification"
+    ] == "POSITIVE"
+
+
+def test_missing_maturity_is_unresolved_not_due_and_does_not_consume_look(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern, count=12)
+    baseline = baseline_record(pattern, count=12)
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=outcomes,
+        baseline=baseline,
+    )
+    assert report["look_status"] == "UNRESOLVED_NOT_DUE"
+    assert report["look_consumes_qm_c4_schedule"] is False
+    assert report["pattern_results"] == []
+    assert report["qm_c_handoff"]["qm_c4_record_look"] is None
+    assert report["qm_c_handoff"]["qm_c5_results"] == []
+
+
+def test_strong_negative_final_result_is_falsified_and_retained(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern, target_value=-0.08, prefix="NEG")
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=outcomes,
+    )
+    result = report["pattern_results"][0]
+    assert result["result_class"] == "FALSIFIED"
+    assert "ROBUST_SIGN_REVERSAL" in result["result_reasons"]
+    assert report["qm_c_handoff"]["qm_c5_results"][0][
+        "outcome_classification"
+    ] == "NEGATIVE"
+
+    saved = persist_confirmation_look(
+        tmp_path,
+        report,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    assert saved["registry"]["look_count"] == 1
+    registry = ConfirmationLookRegistry(saved["registry_path"])
+    assert registry.verify_integrity()["look_count"] == 1
+
+
+def test_discovery_evidence_cannot_rescue_failed_confirmation(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    assert pattern["discovery_evidence"]["direction_probability"] == 0.99
+    outcomes = prospective_rows(pattern, target_value=-0.08, prefix="NORESCUE")
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=outcomes,
+    )
+    assert report["pattern_results"][0]["result_class"] == "FALSIFIED"
+
+
+def test_no_posthoc_regime_rescue_of_negative_full_sample(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern, target_value=-0.04, prefix="REGIME")
+    contexts = context_bundle_for(outcomes)
+    # Make one small diagnostic subgroup look positive in metadata only; L9
+    # still uses the full prospective outcome sample as the primary evidence.
+    contexts["claim_contexts"][0]["market_regime_stock"] = "SPECIAL"
+    contexts["context_bundle_hash"] = digest(
+        {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
+    )
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=outcomes,
+        context=contexts,
+    )
+    assert report["pattern_results"][0]["result_class"] == "FALSIFIED"
+
+
+def test_context_missing_is_inconclusive_not_falsified(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    empty_context = build_context_bundle(
+        [],
+        context_bundle_id="CTX-EMPTY",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=outcomes,
+        context=empty_context,
+    )
+    result = report["pattern_results"][0]
+    assert result["result_class"] == "INCONCLUSIVE"
+    assert "CONTEXT_COVERAGE_INSUFFICIENT" in result["result_reasons"]
+    assert report["qm_c_handoff"]["qm_c5_results"][0][
+        "outcome_classification"
+    ] == "INCONCLUSIVE"
+
+
+def test_tampered_l8_outcome_fails_closed(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    outcomes[0]["outcome"]["target_value"] = 99.0
+    with pytest.raises(Exception, match="matured_outcome_hash_mismatch"):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+        )
+
+
+def test_pre_freeze_outcome_cannot_enter_confirmation(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    bad = deepcopy(outcomes[0])
+    bad["horizon_provenance"]["start_at"] = "2026-10-01T08:00:00Z"
+    bad["outcome_hash"] = digest(
+        {k: v for k, v in bad.items() if k != "outcome_hash"}
+    )
+    outcomes[0] = bad
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="nonprospective_l8_outcome_after_freeze_required",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+        )
+
+
+def test_baseline_definition_must_match_frozen_pattern(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    baseline = baseline_record(pattern)
+    baseline["baseline_definition"] = "posthoc_new_baseline"
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_frozen_pattern_mismatch",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            baseline=baseline,
+        )
+
+
+def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
+    regs = registries(tmp_path)
+    pattern_a = make_pattern(pattern_id="PAT-L9-A", family_id="FAM-L9")
+    pattern_b = make_pattern(pattern_id="PAT-L9-B", family_id="FAM-L9")
+    member_a = apply_l5_handoff(pattern_a, regs, qm_a_version="analysis-a")
+    member_b = apply_l5_handoff(pattern_b, regs, qm_a_version="analysis-b")
+    control, monitor = freeze_family(
+        regs,
+        [member_a, member_b],
+        family_id="HF-FAM-L9",
+        strategy="BONFERRONI_FWER",
+        parameters={"family_alpha": 0.05},
+    )
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern_a), baseline_record(pattern_b)],
+        baseline_bundle_id="BASE-FAMILY",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    outcomes = prospective_rows(pattern_a, prefix="A") + prospective_rows(
+        pattern_b, prefix="B"
+    )
+    contexts = context_bundle_for(outcomes)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l9_patterns_must_exactly_cover_qm_c3_family",
+    ):
+        build_confirmation_look(
+            [pattern_a],
+            outcomes,
+            baseline,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version="v1",
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version="v1",
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            context_bundle=contexts,
+        )
+
+
+def test_bonferroni_family_and_sequential_threshold_are_both_applied(tmp_path):
+    regs = registries(tmp_path)
+    pattern_a = make_pattern(pattern_id="PAT-L9-A", family_id="FAM-L9")
+    pattern_b = make_pattern(pattern_id="PAT-L9-B", family_id="FAM-L9")
+    member_a = apply_l5_handoff(pattern_a, regs, qm_a_version="analysis-a")
+    member_b = apply_l5_handoff(pattern_b, regs, qm_a_version="analysis-b")
+    control, monitor = freeze_family(
+        regs,
+        [member_a, member_b],
+        family_id="HF-FAM-L9",
+        strategy="BONFERRONI_FWER",
+        parameters={"family_alpha": 0.05},
+        planned_looks=[
+            {"look_id": "LOOK_1", "information_fraction": 0.5},
+            {"look_id": "FINAL", "information_fraction": 1.0},
+        ],
+    )
+    outcomes = prospective_rows(pattern_a, count=12, prefix="A") + prospective_rows(
+        pattern_b, count=12, prefix="B"
+    )
+    baseline = build_baseline_bundle(
+        [
+            baseline_record(pattern_a, count=12),
+            baseline_record(pattern_b, count=12),
+        ],
+        baseline_bundle_id="BASE-MULTI",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(outcomes)
+    report = build_confirmation_look(
+        [pattern_a, pattern_b],
+        outcomes,
+        baseline,
+        control_plan_id=control["control_plan_id"],
+        control_plan_version="v1",
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version="v1",
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        control_registry=regs["c3"],
+        monitoring_registry=regs["c4"],
+        qm_a_ledger=regs["qm_a"],
+        evaluated_at="2027-01-15T20:00:00Z",
+        context_bundle=contexts,
+    )
+    assert report["look_status"] == "EVALUATED"
+    for result in report["pattern_results"]:
+        mt = result["multiple_testing"]
+        assert mt["strategy"] == "BONFERRONI_FWER"
+        assert mt["base_threshold"] == pytest.approx(0.05)
+        assert mt["sequential_threshold"] == pytest.approx(0.025)
+        assert mt["adjusted_p_value"] >= mt["raw_p_value"]
+
+
+def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(
+        tmp_path,
+        planned_looks=[
+            {"look_id": "LOOK_1", "information_fraction": 0.5},
+            {"look_id": "FINAL", "information_fraction": 1.0},
+        ],
+        minimum_raw_n=20,
+    )
+    first_outcomes = prospective_rows(pattern, count=12, prefix="FIRST")
+    first = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=first_outcomes,
+        baseline=baseline_record(pattern, count=12),
+    )
+    assert first["qm_governance"]["look_id"] == "LOOK_1"
+    assert first["family_decision"] == "CONTINUE"
+    assert first["qm_c_handoff"]["qm_c5_results"] == []
+
+    regs["c4"].record_monitoring_look(
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version="v1",
+        look_id="LOOK_1",
+        artifact_hash=first["confirmation_evidence_hash"],
+        decision="CONTINUE",
+        control_registry=regs["c3"],
+        qm_a_ledger=regs["qm_a"],
+        actor_id="tester",
+        actor_role="researcher",
+        observed_at=first["evaluated_at"],
+    )
+    member = control["family_members"][0]
+    regs["qm_a"].transition(
+        analysis_id=member["qm_a_analysis_id"],
+        version_id=member["qm_a_version_id"],
+        to_state="CONFIRMATORY_EVALUATED",
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Consume first predeclared confirmation look.",
+    )
+    monitor2 = regs["c4"].get_monitoring_plan(
+        monitor["monitoring_plan_id"],
+        "v1",
+    )
+    assert monitor2["state"] == "MONITORING"
+
+    second_outcomes = prospective_rows(pattern, count=24, prefix="SECOND")
+    second = build_report(
+        regs,
+        pattern,
+        control,
+        monitor2,
+        outcomes=second_outcomes,
+        baseline=baseline_record(pattern, count=24),
+        evaluated_at="2027-02-15T20:00:00Z",
+    )
+    assert second["qm_governance"]["look_id"] == "FINAL"
+    assert second["family_decision"] == "FINAL_COMPLETE"
+    assert second["qm_c_handoff"]["qm_c5_results"]
+
+
+def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    report = build_report(regs, pattern, control, monitor)
+    first = persist_confirmation_look(
+        tmp_path,
+        report,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    assert first["registry"]["idempotent"] is False
+    second = persist_confirmation_look(
+        tmp_path,
+        report,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    assert second["registry"]["idempotent"] is True
+
+    tampered = deepcopy(report)
+    tampered["pattern_results"][0]["prospective_evidence"][
+        "direction_probability"
+    ] = 0.123
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="confirmation_look_hash_mismatch",
+    ):
+        verify_confirmation_look(tampered)
+
+
+def test_l9_creates_no_rating_promotion_decision_or_execution_authority(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    report = build_report(regs, pattern, control, monitor)
+    serialized = json.dumps(report, sort_keys=True)
+    for forbidden in (
+        '"universal_stance"',
+        '"portfolio_action"',
+        '"trade_decision"',
+        '"order_instruction"',
+        '"buy_signal"',
+        '"sell_signal"',
+        '"position_size"',
+        '"target_weight"',
+    ):
+        assert forbidden not in serialized
+    assert report["boundaries"]["rating_assigned"] is False
+    assert report["boundaries"]["promotion_performed"] is False
+    assert report["boundaries"]["decision_layer_integration_performed"] is False
+    assert report["qm_c_handoff"]["direct_qm_registry_write_performed"] is False
