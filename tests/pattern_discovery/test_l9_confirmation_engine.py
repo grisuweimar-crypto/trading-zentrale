@@ -1404,15 +1404,36 @@ def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
 
 def test_tampered_l8_outcome_fails_closed(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
-    outcomes = prospective_rows(pattern)
-    outcomes[0]["outcome"]["target_value"] = 99.0
+    source, normalized = prospective_source_for(
+        [pattern],
+        prospective_rows(pattern),
+    )
+    normalized[0]["outcome"]["target_value"] = 99.0
+    events = maturation_registry_events(normalized)
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern, source)],
+        source,
+        baseline_bundle_id="BASE-L9-TEST",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for([pattern], normalized, source)
     with pytest.raises(Exception, match="matured_outcome_hash_mismatch"):
-        build_report(
-            regs,
-            pattern,
-            control,
-            monitor,
-            outcomes=outcomes,
+        build_confirmation_look(
+            [pattern],
+            events,
+            source,
+            baseline,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version=control["control_plan_version"],
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version=monitor["monitoring_plan_version"],
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            context_bundle=contexts,
         )
 
 
@@ -1500,7 +1521,7 @@ def test_baseline_definition_must_match_frozen_pattern(tmp_path):
         )
 
 
-def test_candidate_date_missing_from_unconditional_baseline_fails_closed(tmp_path):
+def test_baseline_start_date_cannot_depart_from_l7_session_map(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
     source, _ = prospective_source_for([pattern], outcomes)
@@ -1512,7 +1533,7 @@ def test_candidate_date_missing_from_unconditional_baseline_fails_closed(tmp_pat
     baseline["observations"][0]["source_hash"] = digest(body)
     with pytest.raises(
         ConfirmationEngineError,
-        match="candidate_date_missing_from_unconditional_baseline_axis",
+        match="baseline_start_at_not_from_l7_session_map",
     ):
         build_report(
             regs,
@@ -1772,7 +1793,7 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
     first_baseline = build_baseline_bundle(
         [baseline_record(pattern, source1)],
         source1,
-        baseline_bundle_id="BASE-SEQ-LOOK1",
+        baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
     first_context = context_bundle_for(
@@ -1870,7 +1891,7 @@ def test_second_look_cannot_drop_evidence_consumed_by_first_look(tmp_path):
     first_baseline = build_baseline_bundle(
         [baseline_record(pattern, source1)],
         source1,
-        baseline_bundle_id="BASE-CUMULATIVE-LOOK1",
+        baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
     first_context = context_bundle_for(
