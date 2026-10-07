@@ -335,6 +335,28 @@ def _dedupe_universe(df: pd.DataFrame) -> tuple[pd.DataFrame, list[int], pd.Data
 
     return df.loc[keep_idx_sorted].copy(), keep_idx_sorted, dupes_df
 
+def expected_master_universe_count(path: Path | None = None) -> int | None:
+    """Return the post-canonicalization/dedup size of the active master universe.
+
+    This is intentionally derived from the master source, not from scanner
+    output, so research completeness can detect rows lost during a scan.
+    """
+    master = _load_master_universe(path)
+    if master is None or master.empty:
+        return None
+
+    seed_columns = [
+        "Ticker", "Symbol", "YahooSymbol", "Yahoo", "ISIN", "Name",
+        "Sektor", "Sector", "Industry", "Country", "Currency", "Währung",
+        "AssetType",
+    ]
+    seed = pd.DataFrame(columns=seed_columns)
+    synced, _ = _sync_watchlist_from_master(seed, master)
+    canonical = canonicalize_df(synced)
+    deduped, _, _ = _dedupe_universe(canonical)
+    return int(len(deduped))
+
+
 def _find_input_watchlist() -> Path:
     p1 = artifacts_dir() / "watchlist" / "watchlist.csv"
     if p1.exists():

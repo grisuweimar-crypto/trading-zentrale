@@ -3,12 +3,19 @@ import argparse
 import json
 import os
 from pathlib import Path
-
+from scanner.app.build_watchlist import expected_master_universe_count
 from scanner.reports.daily_research import begin_daily, generate_daily
 from scanner.reports.research_validation import validate_publication
 from scanner.reports.research_views import ValidationPolicy, refresh_price_backfill
 
 
+def derive_expected_symbol_count(root: Path, explicit: int | None = None) -> int | None:
+    """Return the current master-derived post-dedup universe size."""
+    if explicit is not None:
+        return explicit
+    return expected_master_universe_count(
+        root.resolve() / "data" / "inputs" / "universe_master.csv"
+    )
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -30,8 +37,9 @@ def main():
                   if os.environ.get("GITHUB_RUN_ID") else None)
         result = begin_daily(args.root, args.receipt, run_id=run_id)
     else:
+        expected_symbol_count = derive_expected_symbol_count(args.root, args.expected_symbol_count)
         result = generate_daily(args.root, args.receipt, scanner_status=args.scanner_status,
-                                policy=ValidationPolicy(expected_symbol_count=args.expected_symbol_count))
+                                policy=ValidationPolicy(expected_symbol_count=expected_symbol_count))
         if output := os.environ.get("GITHUB_OUTPUT"):
             with open(output, "a", encoding="utf-8") as handle:
                 handle.write(f"complete={str(result['latest_run_complete']).lower()}\n")
