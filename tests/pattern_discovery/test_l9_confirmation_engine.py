@@ -1191,7 +1191,7 @@ def test_context_bundle_cannot_omit_entire_eligible_claims(tmp_path):
     )
     with pytest.raises(
         ConfirmationEngineError,
-        match="context_bundle_must_exactly_cover_eligible_confirmation_claims",
+        match="context_bundle_must_exactly_cover_prospective_source_claims",
     ):
         build_report(
             regs,
