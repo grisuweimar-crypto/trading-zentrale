@@ -32,6 +32,7 @@ from scanner.research.pattern_discovery.confirmation_engine import (
     build_context_bundle,
     build_context_bundle_from_sources,
     canonical_baseline_price_state,
+    _support_regions,
     load_confirmation_contract,
     persist_confirmation_look,
     validate_applied_qm_confirmation_handoff,
@@ -2041,6 +2042,33 @@ def test_baseline_target_session_must_be_exact_horizon_session(tmp_path):
             prospective_source=source,
             baseline=baseline,
         )
+
+
+def test_support_regions_use_exchange_session_date_not_utc_prefix():
+    candidate = [
+        {
+            "start_at": "2026-10-07T23:00:00Z",
+            "start_session_date": "2026-10-08",
+        }
+    ]
+    baseline = [
+        {
+            "start_at": "2026-10-07T08:00:00Z",
+            "start_session_date": "2026-10-07",
+        },
+        {
+            "start_at": "2026-10-07T23:00:00Z",
+            "start_session_date": "2026-10-08",
+        },
+    ]
+    count, regions, axis = _support_regions(
+        candidate,
+        baseline,
+        block_length=1,
+    )
+    assert axis == ["2026-10-07", "2026-10-08"]
+    assert regions == {"2026-10-08": 0}
+    assert count == 1
 
 
 def test_non_utc_exchange_session_date_drives_baseline_axis(tmp_path):
