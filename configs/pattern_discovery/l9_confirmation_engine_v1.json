@@ -56,6 +56,7 @@
       "pattern_version",
       "pattern_spec_hash",
       "baseline_definition",
+      "universe_version",
       "population_source_id",
       "population_source_hash",
       "selection_rule_id",
@@ -79,7 +80,11 @@
     "target_and_horizon_must_match_pattern": true,
     "baseline_definition_must_match_frozen_pattern": true,
     "all_declared_eligible_baseline_observations_must_be_present": true,
-    "baseline_selection_rule_is_auditable_not_posthoc": true
+    "baseline_selection_rule_is_auditable_not_posthoc": true,
+    "supported_baseline_selection_rules": {
+      "same_horizon_unconditional_return_baseline": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1"
+    },
+    "unknown_baseline_selection_rule_fails_closed": true
   },
   "context_bundle": {
     "schema_version": "pattern_discovery_l9_context_bundle_v1",
