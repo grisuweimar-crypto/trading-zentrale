@@ -56,6 +56,11 @@
       "pattern_version",
       "pattern_spec_hash",
       "baseline_definition",
+      "population_source_id",
+      "population_source_hash",
+      "selection_rule_id",
+      "selection_rule_hash",
+      "eligible_population_count",
       "target_id",
       "horizon_sessions",
       "observations"
@@ -72,7 +77,9 @@
     ],
     "strictly_post_freeze_required": true,
     "target_and_horizon_must_match_pattern": true,
-    "baseline_definition_must_match_frozen_pattern": true
+    "baseline_definition_must_match_frozen_pattern": true,
+    "all_declared_eligible_baseline_observations_must_be_present": true,
+    "baseline_selection_rule_is_auditable_not_posthoc": true
   },
   "context_bundle": {
     "schema_version": "pattern_discovery_l9_context_bundle_v1",
@@ -120,7 +127,9 @@
     ],
     "raw_p_value_method": "DEPENDENCY_AWARE_ONE_SIDED_NORMAL_APPROXIMATION",
     "single_primary_alpha": 0.05,
-    "sequential_alpha_method": "BONFERRONI_OVER_PREDECLARED_QM_C4_LOOK_COUNT"
+    "sequential_alpha_method": "BONFERRONI_OVER_PREDECLARED_QM_C4_LOOK_COUNT",
+    "automatic_early_stop_supported": false,
+    "automatic_early_stop_reason": "QM-C4 v1 stores the schedule and stopping-rule identity but not a machine-readable efficacy/futility boundary; L9 v1 therefore fails closed instead of inventing one."
   },
   "look_readiness": {
     "information_denominator_source": "FROZEN_PATTERN_SPEC_MINIMUM_RAW_N",
@@ -166,8 +175,7 @@
   },
   "sequential_decisions": {
     "interim_default": "CONTINUE",
-    "interim_positive_if_early_stop_allowed": "STOP_EFFICACY",
-    "interim_falsified_if_early_stop_allowed": "STOP_FUTILITY",
+    "automatic_early_stop_supported": false,
     "final_required": "FINAL_COMPLETE"
   },
   "result_classes": [
