@@ -79,7 +79,14 @@ jobs:
         env:
           SCANNER_REQUIRE_PROVENANCE: "1"
         run: |
-          python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status success
+          EXPECTED_SYMBOL_COUNT="$(python - <<'PY'
+          import csv
+          rows=list(csv.DictReader(open("data/inputs/universe_master.csv", encoding="utf-8")))
+          print(len({r["symbol"] for r in rows if r.get("active") == "1"}))
+          PY
+          )"
+          echo "Expected active unique symbols: $EXPECTED_SYMBOL_COUNT"
+          python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status success --expected-symbol-count "$EXPECTED_SYMBOL_COUNT"
           python scripts/prefetch_market_history.py --minimum-sessions 300
           python scripts/generate_research_views.py --refresh-prices
           python scripts/generate_daily_research.py
