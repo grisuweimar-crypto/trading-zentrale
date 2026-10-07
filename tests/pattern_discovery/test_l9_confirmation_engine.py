@@ -579,6 +579,52 @@ def maturation_registry_events(
     return events
 
 
+def fixture_start_session_binding(
+    snapshot_id,
+    session_map_hash,
+    sessions,
+    *,
+    session_date_overrides=None,
+):
+    overrides = session_date_overrides or {}
+    normalized = []
+    for session in sessions:
+        symbol = session["symbol"]
+        session_date = overrides.get(symbol, session["start_at"][:10])
+        normalized.append(
+            {
+                "symbol": symbol,
+                "session_id": session["session_id"],
+                "calendar_id": session["calendar_id"],
+                "session_date": session_date,
+                "start_at": session["start_at"],
+                "source": session["source"],
+            }
+        )
+    normalized.sort(key=lambda item: item["symbol"])
+    binding_body = {
+        "start_session_binding_file_sha256": digest(
+            {
+                "fixture": "l9-start-session-file",
+                "snapshot_id": snapshot_id,
+                "sessions": normalized,
+            }
+        ),
+        "l7_session_map_hash": session_map_hash,
+        "row_count": len(normalized),
+        "symbol_count": len({row["symbol"] for row in normalized}),
+        "sessions_hash": digest(normalized),
+    }
+    return {
+        "capture_snapshot_id": snapshot_id,
+        "start_session_binding": {
+            **binding_body,
+            "start_session_binding_hash": digest(binding_body),
+        },
+        "sessions": normalized,
+    }
+
+
 def prospective_source_for(patterns, outcomes, *, include_regime=True):
     """Create hash-consistent synthetic L7 capture proofs for L9 tests."""
     patterns_by_id = {
@@ -654,6 +700,11 @@ def prospective_source_for(patterns, outcomes, *, include_regime=True):
             )
         sessions.sort(key=lambda value: value["symbol"])
         session_map_hash = digest(sessions)
+        fixture_session_binding = fixture_start_session_binding(
+            snapshot_id,
+            session_map_hash,
+            sessions,
+        )
 
         binding_body = {
             "snapshot_id": snapshot_id,
@@ -796,6 +847,11 @@ def prospective_source_for(patterns, outcomes, *, include_regime=True):
         )
         outcome["horizon_provenance"]["start_market_session_id"] = (
             f"{snapshot_id}-{symbol}"
+        )
+        outcome["horizon_provenance"]["start_session_binding_hash"] = (
+            fixture_session_binding["start_session_binding"][
+                "start_session_binding_hash"
+            ]
         )
         outcome["outcome_hash"] = digest(
             {k: v for k, v in outcome.items() if k != "outcome_hash"}
