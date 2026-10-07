@@ -80,7 +80,7 @@ def make_claim(
             "snapshot_generated_at": "2026-10-07T18:00:00Z",
             "snapshot_binding_hash": snapshot_binding_hash,
             "history_binding_hash": "6" * 64,
-            "session_map_hash": "7" * 64,
+            "session_map_hash": exact_session_map_hash,
             "current_row_hash": "8" * 64,
             "condition_evidence": [],
             "condition_evidence_hash": digest([]),
@@ -108,8 +108,32 @@ def make_claim(
     return claim
 
 
-def make_capture_report(claims):
+def session_map_hash(rows):
+    projection = [
+        {
+            "symbol": row["symbol"],
+            "session_id": row["session_id"],
+            "calendar_id": row["calendar_id"],
+            "start_at": row["start_at"],
+            "source": row["source"],
+        }
+        for row in sorted(rows, key=lambda item: item["symbol"])
+    ]
+    return digest(projection)
+
+
+def make_capture_report(claims, sessions):
     snapshot_file_sha = "a" * 64
+    exact_session_map_hash = session_map_hash(sessions)
+    bound_claims = []
+    for original in claims:
+        claim = deepcopy(original)
+        claim["match"]["session_map_hash"] = exact_session_map_hash
+        claim["claim_hash"] = digest(
+            {key: value for key, value in claim.items() if key != "claim_hash"}
+        )
+        bound_claims.append(claim)
+    claims = bound_claims
     report = {
         "schema_version": "pattern_discovery_l7_capture_report_v1",
         "module": "pattern_discovery_lab",
@@ -256,12 +280,15 @@ def build_check(
 ):
     if claims is None:
         claims = [claim or make_claim()]
-    capture = make_capture_report(claims)
     primary_claim = claims[0] if claims else make_claim()
+    session_rows = (
+        sessions if sessions is not None else session_bindings(primary_claim)
+    )
+    capture = make_capture_report(claims, session_rows)
     return build_outcome_maturation_check(
         capture,
         peers if peers is not None else peer_snapshot(),
-        sessions if sessions is not None else session_bindings(primary_claim),
+        session_rows,
         prices if prices is not None else complete_prices(),
         checked_at=checked_at,
         price_as_of=price_as_of,
@@ -560,12 +587,13 @@ def test_negative_direction_adverse_excursion_is_aligned_against_expected_move()
 
 def test_build_does_not_mutate_l7_capture_or_claim():
     claim = make_claim()
-    capture = make_capture_report([claim])
+    sessions = session_bindings(claim)
+    capture = make_capture_report([claim], sessions)
     before = deepcopy(capture)
     build_outcome_maturation_check(
         capture,
         peer_snapshot(),
-        session_bindings(claim),
+        sessions,
         complete_prices(),
         checked_at="2026-10-31T20:00:00Z",
         price_as_of="2026-10-31",
