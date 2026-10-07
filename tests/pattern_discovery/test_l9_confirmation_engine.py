@@ -1599,22 +1599,35 @@ def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
         strategy="BONFERRONI_FWER",
         parameters={"family_alpha": 0.05},
     )
-    baseline = build_baseline_bundle(
-        [baseline_record(pattern_a), baseline_record(pattern_b)],
-        baseline_bundle_id="BASE-FAMILY",
-        generated_at="2027-01-15T20:00:00Z",
-    )
     outcomes = prospective_rows(pattern_a, prefix="A") + prospective_rows(
         pattern_b, prefix="B"
     )
-    contexts = context_bundle_for(outcomes)
+    source, normalized = prospective_source_for(
+        [pattern_a, pattern_b],
+        outcomes,
+    )
+    baseline = build_baseline_bundle(
+        [
+            baseline_record(pattern_a, source),
+            baseline_record(pattern_b, source),
+        ],
+        source,
+        baseline_bundle_id="BASE-FAMILY",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(
+        [pattern_a, pattern_b],
+        normalized,
+        source,
+    )
     with pytest.raises(
         ConfirmationEngineError,
         match="l9_patterns_must_exactly_cover_qm_c3_family",
     ):
         build_confirmation_look(
             [pattern_a],
-            maturation_registry_events(outcomes),
+            maturation_registry_events(normalized),
+            source,
             baseline,
             control_plan_id=control["control_plan_id"],
             control_plan_version="v1",
@@ -1650,18 +1663,28 @@ def test_bonferroni_family_and_sequential_threshold_are_both_applied(tmp_path):
     outcomes = prospective_rows(pattern_a, count=12, prefix="A") + prospective_rows(
         pattern_b, count=12, prefix="B"
     )
+    source, normalized = prospective_source_for(
+        [pattern_a, pattern_b],
+        outcomes,
+    )
     baseline = build_baseline_bundle(
         [
-            baseline_record(pattern_a, count=12),
-            baseline_record(pattern_b, count=12),
+            baseline_record(pattern_a, source),
+            baseline_record(pattern_b, source),
         ],
+        source,
         baseline_bundle_id="BASE-MULTI",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for(
+        [pattern_a, pattern_b],
+        normalized,
+        source,
+    )
     report = build_confirmation_look(
         [pattern_a, pattern_b],
-        maturation_registry_events(outcomes),
+        maturation_registry_events(normalized),
+        source,
         baseline,
         control_plan_id=control["control_plan_id"],
         control_plan_version="v1",
