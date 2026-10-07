@@ -893,7 +893,7 @@ def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
     assert "REGIME_CONTEXT_COVERAGE_INSUFFICIENT" in result["result_reasons"]
 
 
-def test_l8_maturation_event_after_l9_evaluation_fails_closed(tmp_path):
+def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
     events = maturation_registry_events(
@@ -906,9 +906,49 @@ def test_l8_maturation_event_after_l9_evaluation_fails_closed(tmp_path):
         generated_at="2027-01-15T20:00:00Z",
     )
     contexts = context_bundle_for(outcomes)
+    report = build_confirmation_look(
+        [pattern],
+        events,
+        baseline,
+        control_plan_id=control["control_plan_id"],
+        control_plan_version=control["control_plan_version"],
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version=monitor["monitoring_plan_version"],
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        control_registry=regs["c3"],
+        monitoring_registry=regs["c4"],
+        qm_a_ledger=regs["qm_a"],
+        evaluated_at="2027-01-15T20:00:00Z",
+        context_bundle=contexts,
+    )
+    assert report["look_status"] == "UNRESOLVED_NOT_DUE"
+    binding = report["input_bindings"]["l8_maturation_registry"]
+    assert binding["registry_event_count_total"] == len(events)
+    assert binding["eligible_prefix_event_count"] == 0
+    assert binding["eligible_event_hashes"] == []
+
+
+def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern, count=2)
+    events = maturation_registry_events(
+        outcomes,
+        recorded_at="2027-01-15T20:00:00Z",
+    )
+    events[1]["recorded_at"] = "2027-01-14T20:00:00Z"
+    events[1]["entry_hash"] = digest(
+        {k: v for k, v in events[1].items() if k != "entry_hash"}
+    )
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern, count=2)],
+        baseline_bundle_id="BASE-NONMONOTONIC",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(outcomes)
     with pytest.raises(
         ConfirmationEngineError,
-        match="l8_maturation_event_after_evaluation",
+        match="l8_maturation_registry_time_not_monotonic",
     ):
         build_confirmation_look(
             [pattern],
@@ -994,6 +1034,39 @@ def test_pre_freeze_outcome_cannot_enter_confirmation(tmp_path):
             control,
             monitor,
             outcomes=outcomes,
+        )
+
+
+def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    baseline = baseline_record(pattern)
+    baseline["observations"][0]["end_at"] = "2027-01-16T08:00:00Z"
+    report_bundle = build_baseline_bundle(
+        [baseline],
+        baseline_bundle_id="BASE-FUTURE-OUTCOME",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    outcomes = prospective_rows(pattern)
+    contexts = context_bundle_for(outcomes)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_outcome_after_l9_evaluation",
+    ):
+        build_confirmation_look(
+            [pattern],
+            maturation_registry_events(outcomes),
+            report_bundle,
+            control_plan_id=control["control_plan_id"],
+            control_plan_version=control["control_plan_version"],
+            monitoring_plan_id=monitor["monitoring_plan_id"],
+            monitoring_plan_version=monitor["monitoring_plan_version"],
+            hypothesis_registry=regs["hypotheses"],
+            analysis_plan_registry=regs["plans"],
+            control_registry=regs["c3"],
+            monitoring_registry=regs["c4"],
+            qm_a_ledger=regs["qm_a"],
+            evaluated_at="2027-01-15T20:00:00Z",
+            context_bundle=contexts,
         )
 
 
