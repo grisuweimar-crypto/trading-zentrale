@@ -1,0 +1,569 @@
+# Pattern Discovery Lab v2 — L9 Confirmation & Falsification Engine
+
+## Purpose
+
+L9 is the first phase allowed to evaluate the empirical performance of a frozen
+Pattern version.
+
+It uses only evidence that became observable after the Pattern freeze and stops
+before rating, promotion or productive integration.
+
+L9 answers:
+
+- did the frozen prospective hypothesis survive later data?
+- how large and broad is the observed prospective effect?
+- how uncertain is it after temporal dependence and concentration?
+- is the result supported, falsified, negative/not confirmed, inconclusive, or
+  simply not mature enough for the next predeclared look?
+
+It does **not** answer whether the Pattern is an A/B/C/D/F lifecycle rating.
+That belongs to L10.
+
+## Authoritative governance
+
+L9 reuses the existing governance chain instead of creating a second one:
+
+1. **QM-C1** — exact hypothesis/version identity
+2. **QM-C2** — frozen confirmatory analysis plan
+3. **QM-C3** — exact family membership and multiplicity strategy
+4. **QM-C4** — predeclared sequential look schedule
+5. **QM-C5** — positive, negative and inconclusive result retention
+6. **QM-A** — immutable analysis identity and consumed-evidence state
+
+Before evaluating any Pattern, L9 verifies that the applied QM-C1/C2 objects
+match the exact L5 handoff.
+
+The supplied frozen Pattern set must then exactly cover the frozen QM-C3 family.
+Adding, omitting or substituting a hypothesis fails closed.
+
+The next L9 look is never chosen by L9. It is the next unconsumed look in the
+frozen QM-C4 monitoring plan.
+
+For a later look, the already-consumed QM-C4 history must also resolve to the exact local hash-chained L9 reports that produced those looks. The current L8 maturation prefix must extend the previously consumed prefix, and the baseline evidence set for each Pattern must contain every baseline observation already used. A disjoint or selectively reduced later sample fails closed before new statistics are calculated.
+
+## L0 write boundary
+
+The Pattern Discovery L0 boundary still permits runtime writes only under:
+
+`artifacts/research/pattern_discovery/`
+
+Therefore L9 does not secretly write the central QM-C or QM-A registries.
+
+Instead, an evaluated L9 report contains an exact handoff package describing:
+
+- the QM-C4 monitoring look to record;
+- the QM-A transition required after the first consumed look;
+- terminal QM-C5 result records when the family reaches its final/terminal look.
+
+The central governance layer remains the authority that applies and validates
+those changes.
+
+The QM-C4 handoff is itself verified against the evaluated report. Its monitoring-plan ID/version, look ID, decision, observation time and evidence hash must exactly match `qm_governance`, `family_decision`, `evaluated_at` and the confirmation-evidence hash. Because the handoff is excluded from the evidence-core hash to avoid a circular hash dependency, this explicit field-by-field binding is mandatory.
+
+## Evidence separation
+
+Discovery evidence embedded in the L5 Pattern is provenance only.
+
+It is never added to:
+
+- prospective N,
+- Direction Probability,
+- Effect Size,
+- robust intervals,
+- p-values,
+- support regions,
+- confirmation decisions.
+
+Only outcomes from the complete hash-valid L8 maturation registry can enter
+the Pattern sample.
+
+L9 verifies the full registry hash chain, event ordering and monotonic
+`recorded_at` timestamps. The source must be the canonical L8 registry path
+declared by the L8 contract under the selected repository root. The runner no
+longer accepts an arbitrary maturation-registry path. A caller-supplied event
+list must equal the complete canonical registry byte-for-byte at evaluation
+time; a genesis-valid truncation therefore fails closed.
+
+For a historical or current look L9 derives the exact **as-of registry prefix**
+whose `recorded_at` timestamps are not later than `evaluated_at`. Only that
+eligible prefix is part of the immutable confirmation-evidence identity. A
+later append to the canonical L8 registry therefore cannot change the hash or
+result of an already reproducible historical L9 look; the later suffix is still
+validated but remains invisible to that look.
+
+L8 currently carries `target_session_date` but not an authoritative target
+session-close timestamp. L9 v1 therefore uses a conservative rule: an event
+whose target session is on the evaluation date is not yet eligible for that
+look. It becomes eligible only on a later calendar date, while an event
+registered before its target session date is invalid. Same-date registration
+therefore cannot leak an as-yet-unobserved adjusted close into a same-day look.
+
+Every L8 outcome must match:
+
+- Pattern ID
+- Pattern version
+- Pattern Spec hash
+- target
+- expected direction
+- horizon
+- baseline
+- reference definition
+
+and its start session must be strictly later than the Pattern freeze timestamp.
+
+A pre-freeze or mismatched outcome fails closed.
+
+## L7 source proof
+
+L9 does not trust copied snapshot IDs, context labels or baseline-population counts.
+
+A separate hash-protected prospective source bundle replays the exact L7 capture provenance. It contains the original L7 capture reports plus the capture-time scanner-row projections and market-session maps needed by L9.
+
+For every source snapshot L9 re-verifies the original L7 capture report hash, the snapshot-binding hash, the projected scanner-row hash and row/symbol counts, the market-session-map hash, the exact prospective claim set and the L2 Feature Library identity.
+
+A later L8 outcome can enter L9 only if its claim identity, symbol, capture snapshot and snapshot-binding hash resolve back to this verified L7 source proof. If the historical source evidence needed to reproduce the L7 binding is unavailable, the evidence remains unavailable.
+
+## Baseline / control population
+
+L9 does not derive the baseline from the Pattern matches themselves.
+
+A separate hash-protected baseline bundle is required and is bound to the exact L7 prospective source bundle used by the confirmation look.
+
+L9 v1 deliberately does not reinterpret the frozen `universe_version` string as proof of a historical symbol-membership list. The population claim it can actually prove is the complete observed scanner population in each verified L7 capture snapshot. A stronger pre-freeze membership proof would require its own archived universe artifact and a new methodology/version rather than silent reconstruction.
+
+For the initial supported baseline:
+
+`same_horizon_unconditional_return_baseline`
+
+the rule is fixed as:
+
+`ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_VERIFIED_L7_SCANNER_POPULATION_SAME_TARGET_HORIZON_V1`
+
+The baseline record must bind:
+
+- exact Pattern ID/version/spec hash;
+- immutable Pattern universe version;
+- frozen baseline definition;
+- exact target and horizon;
+- the exact prospective-source bundle ID and hash;
+- deterministic selection-rule ID and rule hash;
+- declared eligible population count;
+- every baseline observation and its self-hash;
+- the exact L7 capture snapshot and start-session identity for each row;
+- the canonical `artifacts/research/price_backfill.csv` file hash and normalized as-of price projection;
+- the explicit exchange session date and L8-compatible start-session binding;
+- the complete adjusted-close session path through the exact horizon-th later observed session.
+
+For every L7 capture snapshot belonging to the Pattern version, the baseline record must contain exactly one row for every symbol present in the verified capture-time scanner snapshot. Dropping an unfavorable symbol, changing the declared count, or substituting a different start session fails closed.
+
+Unavailable outcomes are explicit states, not silently removed from the population. `MISSING_OUTCOME` and `START_SESSION_UNAVAILABLE` remain visible while only actually available, as-of-eligible observations enter the statistical denominator.
+
+The number of supplied baseline observations must equal the complete verified L7 source population represented by the bundle. At a particular L9 look, only baseline observations associated with L8 claims already mature in the eligible as-of prefix are used statistically.
+
+Unknown baseline semantics fail closed in L9 v1. They require a new explicit
+methodology rather than an improvised comparator after seeing outcomes.
+
+Every baseline observation must also begin strictly after Pattern freeze.
+
+L9 v1 does **not** accept a free-form baseline `end_at`. The target date,
+session sequence, adjusted closes and return are recomputed from the canonical
+price source. The start session uses the explicit exchange-local session date
+from the L8-compatible binding rather than the UTC prefix of `start_at`.
+An AVAILABLE baseline must contain exactly the start session plus the frozen
+horizon number of later observed price sessions. Any different target session,
+session sequence, price-path hash, adjusted close, currency or return fails
+closed.
+
+## PIT-safe context diagnostics
+
+Sector, pillar, cluster and market-regime diagnostics are derived directly from the hash-verified L7 capture-time row projections.
+
+A separate hash-protected context bundle may be supplied and archived as an audit mirror, but it is not statistical authority. If supplied, it must cover exactly every claim in the verified prospective L7 source bundle and reproduce every non-empty projected diagnostic field. The statistical diagnostics themselves still use only claims whose L8 outcomes are eligible at the current look. It may not add, alter or omit values.
+
+Today's taxonomy or manually copied labels therefore cannot influence the L9 diagnostics.
+
+Each context row is bound to:
+
+- L8 claim ID and exact L7 claim hash;
+- symbol;
+- exact capture snapshot ID and snapshot-binding hash;
+- exact L7 current-row hash;
+- the complete L2-defined capture-time row projection;
+- an observation timestamp strictly before the Pattern's start session.
+
+`context_source_hash` must equal the L7 current-row hash, the supplied row projection must reproduce that hash, and every diagnostic value must equal the corresponding value stored in that projection. If a non-empty diagnostic field exists in the verified L7 projection, the context bundle must carry it; callers may not selectively omit an adverse regime/sector/pillar/cluster value.
+
+The same claim identity must agree across L7 source proof and L8 matured outcome. This prevents current sector/regime metadata or outcome-aware labels from being retrofitted into old prospective events.
+
+Context splits are diagnostic only. They cannot replace the full prospective
+sample and cannot rescue a failed primary result by post-hoc subgroup choice.
+
+## Look readiness
+
+Each frozen Pattern already contains its predeclared Discovery/Confirmation
+minimum criteria.
+
+For a QM-C4 look with information fraction `f`, L9 v1 requires:
+
+`required_n = ceil(frozen_minimum_raw_n × f)`
+
+for both:
+
+- matured Pattern observations;
+- eligible baseline observations.
+
+Every member of the frozen QM-C3 family must be ready before the family look is
+evaluated.
+
+If any member is not ready:
+
+- status = `UNRESOLVED_NOT_DUE`;
+- no statistical confirmation result is emitted;
+- no QM-C4 look is consumed;
+- no QM-C5 result is created;
+- the hypothesis is not falsified.
+
+This is the explicit implementation of “missing maturity is unresolved, not
+falsified.”
+
+## Sequential looks
+
+L9 follows the exact QM-C4 order.
+
+For L9 v1:
+
+- one final look is supported;
+- multiple predeclared looks are supported;
+- intermediate looks default to `CONTINUE`;
+- the final look must map to `FINAL_COMPLETE`.
+
+Automatic early stopping is intentionally fail-closed in v1.
+
+QM-C4 v1 stores whether early stop is allowed and a stopping-rule identity/text,
+but it does not provide a machine-readable efficacy/futility statistical
+boundary. L9 therefore refuses to invent one.
+
+A future methodology version can enable automatic
+`STOP_EFFICACY`/`STOP_FUTILITY` only after such boundaries are explicitly
+predeclared and machine-verifiable.
+
+## Multiplicity
+
+The exact frozen QM-C3 strategy is used:
+
+- `PREDECLARED_SINGLE_PRIMARY`
+- `BONFERRONI_FWER`
+- `HOLM_FWER`
+- `BENJAMINI_HOCHBERG_FDR`
+
+Custom methods fail closed in L9 v1.
+
+Family multiplicity is combined conservatively with the predeclared number of
+QM-C4 looks.
+
+The L9 v1 sequential rule is:
+
+`sequential_threshold = family_threshold / planned_look_count`
+
+This is fixed in the versioned L9 contract before L9 outcome interpretation.
+
+## Prospective statistics
+
+For each Pattern version L9 reports at least:
+
+- raw N
+- baseline raw N
+- Effective-N
+- symbol count
+- observation-date count
+- temporal support-region count
+- Direction Probability
+- Baseline Probability
+- Probability Advantage / Lift
+- mean/median aligned outcome
+- mean/median aligned baseline outcome
+- Effect Size versus baseline
+- mean/median raw outcome
+- mean Peer Excess when present
+- median Adverse Excursion
+- median Path Max Drawdown
+- robust uncertainty intervals
+- concentration metrics
+- temporal stability
+- regime diagnostics
+- sector/segment/pillar/cluster diagnostics
+- confirmation period
+- raw dependency-aware p-value
+- family/sequential multiplicity status
+- open failure/blocker reasons
+
+### Direction alignment
+
+Positive frozen direction:
+
+`aligned = target_value`
+
+Negative frozen direction:
+
+`aligned = -target_value`
+
+This lets one confirmatory engine evaluate both directional signs without
+changing the frozen target.
+
+### Direction Probability
+
+`P(aligned target > 0 | frozen Pattern, post-freeze data)`
+
+### Baseline Probability
+
+`P(aligned baseline target > 0 | frozen baseline population)`
+
+### Probability Advantage
+
+`Direction Probability - Baseline Probability`
+
+### Frozen aligned effect
+
+The primary effect metric inherited from the frozen QM-C2 plan is:
+
+`mean(aligned Pattern outcome)`
+
+The frozen `minimum_effect_size` threshold applies to this exact metric.
+
+L9 additionally reports the descriptive baseline difference:
+
+`effect_size_vs_baseline = mean(aligned Pattern outcome) - mean(aligned baseline outcome)`
+
+but this additional quantity does not silently replace the frozen primary
+estimand.
+
+## Dependence and Effective-N
+
+Raw N is not treated as independent N.
+
+L9 v1 reuses the established Pattern Discovery dependence philosophy:
+
+- block length = `2 × horizon`;
+- support regions are non-overlapping temporal regions on the unconditional
+  baseline date axis, matching L4 semantics;
+- every candidate start date must exist on that baseline axis; otherwise the
+  declared baseline population fails closed;
+- Effective-N proxy = unique `symbol × support-region` clusters;
+- robust intervals use deterministic hash-seeded circular moving-block
+  bootstrap.
+
+Raw N, Effective-N and temporal support are stored separately.
+
+## Concentration
+
+L9 reports:
+
+- top-symbol share
+- symbol HHI
+- top observation-date share
+- observation-date HHI
+- top support-region share
+- support-region HHI
+
+Support cannot be granted merely because many highly dependent observations
+repeat the same symbol/date/region.
+
+## Stability
+
+### Temporal
+
+When enough observations exist, the prospective sample is split
+chronologically into two halves.
+
+A non-positive aligned effect in either sufficiently populated half is a
+temporal stability warning and blocks `SUPPORTED`.
+
+### Regime
+
+Capture-time market-regime contexts are evaluated separately.
+
+L9 distinguishes generic context coverage from actual regime coverage. A row
+that contains only sector/segment metadata does **not** count as regime
+evidence. `SUPPORTED` requires the versioned minimum regime-context coverage;
+otherwise the result remains `INCONCLUSIVE`.
+
+A sufficiently populated regime with a sign reversal blocks `SUPPORTED`.
+
+The subgroup itself never becomes the primary hypothesis.
+
+## Confirmation
+
+A Pattern can be `SUPPORTED` only when the full prospective sample passes all
+applicable predeclared gates, including:
+
+- frozen minimum aligned effect;
+- frozen minimum Probability Lift;
+- frozen minimum temporal support;
+- instrument breadth/concentration;
+- robust intervals;
+- family + sequential multiplicity;
+- required PIT context coverage;
+- temporal/regime stability.
+
+This is deliberately stricter than a high raw hit rate.
+
+## Falsification
+
+L9 does not classify every failed confirmation gate as falsification.
+
+Strong falsification in v1 requires both:
+
+- upper bound of the robust aligned-effect interval <= 0;
+- upper bound of the robust Probability Lift interval <= 0;
+
+at a final permitted look.
+
+Thus:
+
+- a genuinely robust sign reversal can become `FALSIFIED`;
+- a final result that merely fails support becomes
+  `NEGATIVE_NOT_CONFIRMED`;
+- insufficient/blocked evidence becomes `INCONCLUSIVE`;
+- an immature scheduled look remains `UNRESOLVED_NOT_DUE`.
+
+This prevents “absence of sufficient evidence” from being silently rewritten as
+evidence of the opposite.
+
+## Result classes
+
+L9 emits:
+
+- `SUPPORTED`
+- `FALSIFIED`
+- `NEGATIVE_NOT_CONFIRMED`
+- `INCONCLUSIVE`
+- `UNRESOLVED_NOT_DUE`
+
+Terminal results are mapped for QM-C5:
+
+- `SUPPORTED` → `POSITIVE`
+- `FALSIFIED` → `NEGATIVE`
+- `NEGATIVE_NOT_CONFIRMED` → `NEGATIVE`
+- `INCONCLUSIVE` → `INCONCLUSIVE`
+- `UNRESOLVED_NOT_DUE` → no result yet
+
+Negative outcomes therefore remain first-class immutable evidence.
+
+## No post-hoc rescue
+
+After a look has been evaluated, L9 does not:
+
+- change the Pattern conditions;
+- change target/direction/horizon/baseline;
+- select a favorable sector/regime;
+- drop an unfavorable support region;
+- substitute Discovery evidence;
+- change the multiplicity family;
+- alter the scheduled look;
+- retune the frozen minimum criteria.
+
+Any genuine semantic redesign requires a successor Pattern/Hypothesis/Plan
+version and cannot reuse consumed evidence as fresh confirmation.
+
+## Integrity hashes
+
+L9 separates two hashes deliberately.
+
+### Confirmation evidence hash
+
+Binds the statistical/governance evidence core while excluding the QM handoff.
+QM-C4 and QM-C5 reference this hash.
+
+This avoids a circular dependency where the handoff itself would contain the
+hash of the document containing the handoff.
+
+### Look hash
+
+Binds the complete local L9 report, including the handoff.
+
+Both are verified independently.
+
+## Local append-only persistence
+
+Consumed/evaluated L9 looks are stored under:
+
+`artifacts/research/pattern_discovery/confirmation_looks.jsonl`
+
+The registry is append-only and hash-chained.
+
+The identity is the exact:
+
+`monitoring_plan_id + monitoring_plan_version + look_id`
+
+An identical replay is idempotent.
+
+Different content for an already persisted look fails closed.
+
+Detailed reports are stored under:
+
+`artifacts/research/pattern_discovery/confirmation_reports/{monitoring_plan_id}/{look_id}/{look_hash}.json`
+
+The exact novel confirmation inputs are archived immutably as well:
+
+- baseline bundles:
+  `artifacts/research/pattern_discovery/confirmation_inputs/baselines/{baseline_bundle_hash}.json`
+- PIT context bundles:
+  `artifacts/research/pattern_discovery/confirmation_inputs/contexts/{context_bundle_hash}.json`
+
+This means a terminal negative result does not survive merely as a summary:
+the exact baseline population and diagnostic context used by the look remain
+hash-addressable for later replay.
+
+`UNRESOLVED_NOT_DUE` is deliberately not written as a consumed look.
+
+## Operational runner
+
+`scripts/pattern_discovery/run_l9_confirmation.py`
+
+The runner resolves the L8 maturation registry only from the canonical L8 contract path under `--repo-root`; there is no caller-selectable `--maturation-registry` override.
+
+Inputs:
+
+- frozen L5 Pattern list/snapshot
+- complete L8 `outcome_maturations.jsonl` registry (including event hashes
+  and `recorded_at`, not extracted naked outcome records)
+- L9 baseline bundle
+- optional PIT-safe context bundle
+- exact QM-C3 control-plan ID/version
+- exact QM-C4 monitoring-plan ID/version
+- evaluation timestamp
+- paths to the existing C1/C2/C3/C4/QM-A registries
+- actor identity
+
+The runner produces the next permitted L9 result and persists it only if the
+look is actually due/evaluated.
+
+It outputs the exact QM handoff required to apply the consumed look centrally.
+
+## Definition of Done
+
+L9 is complete only when:
+
+- only hash-valid L5/L8 evidence enters confirmation;
+- all evidence is strictly post-freeze;
+- Discovery evidence cannot affect prospective statistics;
+- the baseline is frozen-universe, deterministic and hash-auditable;
+- current taxonomy cannot backfill regime/segment context;
+- C3 family membership is exact;
+- C4 look ordering is exact;
+- insufficient maturity consumes no look and cannot falsify;
+- 5T/20T/40T/60T remain distinct through Pattern identity;
+- Probability, Baseline Lift, Effect Size, Effective-N, support, concentration
+  and robust intervals are explicit and separate;
+- multiple testing and sequential-look control are machine-readable;
+- stability/regime diagnostics cannot become post-hoc rescue mechanisms;
+- strong falsification is distinguishable from simple non-confirmation;
+- negative/inconclusive terminal results receive exact QM-C5 handoffs;
+- the L0 write boundary remains intact;
+- no rating, promotion, Decision Layer, portfolio or execution authority is
+  created;
+- the complete L0-L9 and relevant QM/price-session regression suites are green.
+
+## Next phase
+
+L10 — Rating Engine.
