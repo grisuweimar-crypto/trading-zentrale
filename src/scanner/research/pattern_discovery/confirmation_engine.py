@@ -1238,10 +1238,7 @@ def _verify_l8_maturation_registry_events(
     eligible_head = (
         eligible_event_hashes[-1] if eligible_event_hashes else None
     )
-    full_head = all_event_hashes[-1] if all_event_hashes else None
     binding_core = {
-        "registry_event_count_total": len(all_event_hashes),
-        "registry_head_hash_total": full_head,
         "eligible_prefix_event_count": len(eligible_event_hashes),
         "eligible_prefix_head_hash": eligible_head,
         "eligible_event_hashes": eligible_event_hashes,
@@ -1954,6 +1951,7 @@ def _look_identity(
     look: Mapping[str, Any],
     baseline_bundle_hash: str,
     context_bundle_hash: str | None,
+    maturation_binding_hash: str,
     contract_hash: str,
     evaluated_at: str,
 ) -> dict[str, Any]:
@@ -1968,6 +1966,7 @@ def _look_identity(
         "information_fraction": look["information_fraction"],
         "baseline_bundle_hash": baseline_bundle_hash,
         "context_bundle_hash": context_bundle_hash,
+        "maturation_binding_hash": maturation_binding_hash,
         "l9_contract_hash": contract_hash,
         "evaluated_at": evaluated_at,
     }
@@ -2166,6 +2165,7 @@ def build_confirmation_look(
             if context_bundle is not None
             else None
         ),
+        maturation_binding_hash=maturation_binding["binding_hash"],
         contract_hash=contract_hash,
         evaluated_at=evaluated,
     )
@@ -2490,6 +2490,47 @@ def verify_confirmation_look(
     body.pop("look_hash", None)
     if _hash(body) != stored:
         raise ConfirmationEngineError("confirmation_look_hash_mismatch")
+
+    maturation_binding = (
+        report.get("input_bindings", {}).get("l8_maturation_registry")
+    )
+    if not isinstance(maturation_binding, Mapping):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_binding_missing"
+        )
+    hashes = maturation_binding.get("eligible_event_hashes")
+    if not isinstance(hashes, list):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_event_hashes_invalid"
+        )
+    if maturation_binding.get("eligible_prefix_event_count") != len(hashes):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_prefix_count_mismatch"
+        )
+    expected_head = hashes[-1] if hashes else None
+    if maturation_binding.get("eligible_prefix_head_hash") != expected_head:
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_prefix_head_mismatch"
+        )
+    for index, value in enumerate(hashes):
+        _sha256_text(
+            value,
+            f"confirmation_l8_maturation_event_hashes.{index}",
+        )
+    binding_core = {
+        "eligible_prefix_event_count": len(hashes),
+        "eligible_prefix_head_hash": expected_head,
+        "eligible_event_hashes": hashes,
+        "evaluated_at": maturation_binding.get("evaluated_at"),
+    }
+    if _hash(binding_core) != maturation_binding.get("binding_hash"):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_binding_hash_mismatch"
+        )
+    if maturation_binding.get("evaluated_at") != report.get("evaluated_at"):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_evaluated_at_mismatch"
+        )
 
     status = report.get("look_status")
     if status not in {"UNRESOLVED_NOT_DUE", "EVALUATED"}:
