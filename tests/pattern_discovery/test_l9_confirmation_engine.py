@@ -34,6 +34,7 @@ from scanner.research.pattern_discovery.confirmation_engine import (
     canonical_baseline_price_state,
     load_confirmation_contract,
     persist_confirmation_look,
+    validate_applied_qm_confirmation_handoff,
     verify_confirmation_look,
 )
 from scanner.research.pattern_discovery.confirmation_sources import (
@@ -1258,6 +1259,7 @@ def build_report(
     evaluated_at="2027-01-15T20:00:00Z",
     confirmation_registry=None,
     maturation_events_override=None,
+    session_date_shift_days=0,
 ):
     raw_values = outcomes if outcomes is not None else prospective_rows(pattern)
     if prospective_source is None:
@@ -1303,6 +1305,7 @@ def build_report(
         source,
         evaluated_at=evaluated_at,
         horizon=int(pattern["pattern_spec"]["forecast"]["horizon_sessions"]),
+        session_date_shift_days=session_date_shift_days,
     )
     baseline_value = (
         baseline
@@ -1312,6 +1315,7 @@ def build_report(
             source,
             regs["repo_root"],
             evaluated_at=evaluated_at,
+            session_date_shift_days=session_date_shift_days,
         )
     )
     baseline_bundle = build_baseline_bundle(
@@ -1907,47 +1911,26 @@ def test_pre_freeze_outcome_cannot_enter_confirmation(tmp_path):
         )
 
 
-def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
-    regs, pattern, control, monitor = setup_single_family(tmp_path)
+def test_freeform_baseline_end_timestamp_is_rejected(tmp_path):
+    _, pattern, _, _ = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    source, normalized = prospective_source_for([pattern], outcomes)
+    source, _ = prospective_source_for([pattern], outcomes)
     baseline = baseline_record(pattern, source, tmp_path)
-    baseline["observations"][0]["end_at"] = "2027-01-16T08:00:00Z"
+    baseline["observations"][0]["end_at"] = "2099-01-01T00:00:00Z"
     body = dict(baseline["observations"][0])
     body.pop("source_hash", None)
     baseline["observations"][0]["source_hash"] = digest(body)
-    report_bundle = baseline_bundle_for_test(
-        [pattern],
-        source,
-        tmp_path,
-        baseline_bundle_id="BASE-FUTURE-OUTCOME",
-        generated_at="2027-01-15T20:00:00Z",
-        records=[baseline],
-    )
-    contexts = context_bundle_for([pattern], normalized, source)
-    events = maturation_registry_events(normalized)
-    write_authoritative_maturation_registry(tmp_path, events)
     with pytest.raises(
         ConfirmationEngineError,
-        match="baseline_outcome_after_l9_evaluation",
+        match="baseline_observation_unknown_fields",
     ):
-        build_confirmation_look(
+        baseline_bundle_for_test(
             [pattern],
-            events,
             source,
-            report_bundle,
-            control_plan_id=control["control_plan_id"],
-            control_plan_version=control["control_plan_version"],
-            monitoring_plan_id=monitor["monitoring_plan_id"],
-            monitoring_plan_version=monitor["monitoring_plan_version"],
-            hypothesis_registry=regs["hypotheses"],
-            analysis_plan_registry=regs["plans"],
-            control_registry=regs["c3"],
-            monitoring_registry=regs["c4"],
-            qm_a_ledger=regs["qm_a"],
-            evaluated_at="2027-01-15T20:00:00Z",
-            repo_root=tmp_path,
-            context_bundle=contexts,
+            tmp_path,
+            baseline_bundle_id="BASE-FREEFORM-END",
+            generated_at="2027-01-15T20:00:00Z",
+            records=[baseline],
         )
 
 
@@ -1984,7 +1967,7 @@ def test_baseline_start_date_cannot_depart_from_l7_session_map(tmp_path):
     baseline["observations"][0]["source_hash"] = digest(body)
     with pytest.raises(
         ConfirmationEngineError,
-        match="baseline_start_at_not_from_l7_session_map",
+        match="baseline_session_date_binding_hash_mismatch|baseline_session_binding_mismatch",
     ):
         build_report(
             regs,
@@ -1995,6 +1978,81 @@ def test_baseline_start_date_cannot_depart_from_l7_session_map(tmp_path):
             prospective_source=source,
             baseline=baseline,
         )
+
+
+def test_baseline_return_must_reproduce_from_canonical_adjusted_prices(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source, tmp_path)
+    baseline["observations"][0]["target_value"] = 0.25
+    body = dict(baseline["observations"][0])
+    body.pop("source_hash", None)
+    baseline["observations"][0]["source_hash"] = digest(body)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_return_not_reproduced_from_canonical_prices",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            prospective_source=source,
+            baseline=baseline,
+        )
+
+
+def test_baseline_target_session_must_be_exact_horizon_session(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source, tmp_path)
+    original = baseline["observations"][0]["target_session_date"]
+    replacement = (
+        date.fromisoformat(original) + timedelta(days=1)
+    ).isoformat()
+    baseline["observations"][0]["target_session_date"] = replacement
+    body = dict(baseline["observations"][0])
+    body.pop("source_hash", None)
+    baseline["observations"][0]["source_hash"] = digest(body)
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_target_session_date_mismatch",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            prospective_source=source,
+            baseline=baseline,
+        )
+
+
+def test_non_utc_exchange_session_date_drives_baseline_axis(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for(
+        [pattern],
+        outcomes,
+        session_date_shift_days=1,
+    )
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=normalized,
+        prospective_source=source,
+        session_date_shift_days=1,
+    )
+    result = report["pattern_results"][0]
+    assert report["look_status"] == "EVALUATED"
+    assert result["prospective_evidence"]["baseline_raw_n"] >= 20
+    assert result["prospective_evidence"]["observation_date_count"] > 0
 
 
 def test_baseline_selection_rule_cannot_be_changed_after_freeze(tmp_path):
@@ -2450,6 +2508,53 @@ def test_qm_c4_handoff_fields_are_bound_to_the_evaluated_report(tmp_path):
         match="qm_c4_handoff_report_binding_mismatch:look_id",
     ):
         verify_confirmation_look(tampered)
+
+
+def test_qm_c5_handoff_is_exactly_reconstructed_from_l9_results(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    report = build_report(regs, pattern, control, monitor)
+    assert report["qm_c_handoff"]["qm_c5_results"]
+    tampered = deepcopy(report)
+    record = tampered["qm_c_handoff"]["qm_c5_results"][0]
+    record["outcome_classification"] = (
+        "NEGATIVE"
+        if record["outcome_classification"] != "NEGATIVE"
+        else "POSITIVE"
+    )
+    tampered["look_hash"] = digest(
+        {k: v for k, v in tampered.items() if k != "look_hash"}
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="qm_c5_handoff_does_not_match_evaluated_pattern_results",
+    ):
+        verify_confirmation_look(tampered)
+
+
+def test_applied_qm_c4_observed_at_must_match_l9_handoff(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    report = build_report(regs, pattern, control, monitor)
+    handoff = report["qm_c_handoff"]["qm_c4_record_look"]
+    regs["c4"].record_monitoring_look(
+        monitoring_plan_id=handoff["monitoring_plan_id"],
+        monitoring_plan_version=handoff["monitoring_plan_version"],
+        look_id=handoff["look_id"],
+        artifact_hash=handoff["artifact_hash"],
+        decision=handoff["decision"],
+        control_registry=regs["c3"],
+        qm_a_ledger=regs["qm_a"],
+        actor_id="tester",
+        actor_role="researcher",
+        observed_at="2027-01-16T20:00:00Z",
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="qm_c4_applied_look_does_not_match_l9_handoff",
+    ):
+        validate_applied_qm_confirmation_handoff(
+            report,
+            monitoring_registry=regs["c4"],
+        )
 
 
 def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
