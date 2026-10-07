@@ -248,6 +248,27 @@ jobs:
           print({"snapshot_id":m["snapshot_id"],"runtime_symbols":215,"public_long_rows":215})
           PY
 
+      - name: Build same-snapshot Symbol Views
+        run: python scripts/build_watch_symbol_views.py
+
+      - name: Verify Symbol Views identity and privacy
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("artifacts/research/watch_runtime/manifest.json").read_text())
+          i=json.loads(Path("artifacts/research/watch_runtime/symbols/index.json").read_text())
+          assert i["snapshot_id"]==r["snapshot_id"]
+          assert i["symbol_count"]==r["symbol_count"]==215
+          assert i["packet_count"]==r["packet_count"]
+          assert i["source_runtime_projection_sha256"]==r["runtime_projection_sha256"]
+          assert i["private_position_data_included"] is False
+          assert i["decision_logic_changed"] is False
+          assert len(i["symbol_files"])==215
+          assert len(i["summary_files"])==215
+          print({"snapshot_id":i["snapshot_id"],"symbol_views":i["symbol_count"],"projection_match":True})
+          PY
+
       - name: Evaluate real BA-QM12
         run: |
           python - <<'PY'
