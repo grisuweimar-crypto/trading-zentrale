@@ -2574,6 +2574,83 @@ class ConfirmationLookRegistry:
         }
 
 
+def baseline_bundle_repo_path(
+    baseline_bundle_hash: str,
+    *,
+    contract: Mapping[str, Any] | None = None,
+) -> str:
+    spec = (
+        dict(contract)
+        if contract is not None
+        else load_confirmation_contract()
+    )
+    return str(spec["storage"]["baseline_bundle_path_template"]).format(
+        baseline_bundle_hash=_sha256_text(
+            baseline_bundle_hash,
+            "baseline_bundle_hash",
+        )
+    )
+
+
+def context_bundle_repo_path(
+    context_bundle_hash: str,
+    *,
+    contract: Mapping[str, Any] | None = None,
+) -> str:
+    spec = (
+        dict(contract)
+        if contract is not None
+        else load_confirmation_contract()
+    )
+    return str(spec["storage"]["context_bundle_path_template"]).format(
+        context_bundle_hash=_sha256_text(
+            context_bundle_hash,
+            "context_bundle_hash",
+        )
+    )
+
+
+def _write_immutable_json(
+    root: Path,
+    repo_path: str,
+    payload: Mapping[str, Any],
+    *,
+    boundary: PatternDiscoveryBoundary,
+) -> Path:
+    boundary.assert_write_path_allowed(repo_path)
+    target = (root / repo_path).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError as exc:
+        raise ConfirmationEngineError(
+            "confirmation_input_path_outside_repo"
+        ) from exc
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        try:
+            existing = json.loads(target.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ConfirmationEngineError(
+                f"existing_confirmation_input_unreadable:{repo_path}"
+            ) from exc
+        if existing != dict(payload):
+            raise ConfirmationEngineError(
+                f"confirmation_input_identity_collision:{repo_path}"
+            )
+        return target
+    with target.open("x", encoding="utf-8", newline="\n") as handle:
+        json.dump(
+            dict(payload),
+            handle,
+            indent=2,
+            sort_keys=True,
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+        handle.write("\n")
+    return target
+
+
 def confirmation_registry_repo_path(
     *,
     contract: Mapping[str, Any] | None = None,
@@ -2610,7 +2687,9 @@ def confirmation_report_repo_path(
 def persist_confirmation_look(
     repo_root: str | Path,
     report: Mapping[str, Any],
+    baseline_bundle: Mapping[str, Any],
     *,
+    context_bundle: Mapping[str, Any] | None = None,
     actor_id: str,
     actor_role: str,
     boundary: PatternDiscoveryBoundary | None = None,
@@ -2626,8 +2705,51 @@ def persist_confirmation_look(
         raise ConfirmationEngineError(
             "confirmation_not_due_report_not_persistable"
         )
+    verify_baseline_bundle(baseline_bundle, contract=spec)
+    if baseline_bundle["baseline_bundle_hash"] != report["input_bindings"][
+        "baseline_bundle_hash"
+    ]:
+        raise ConfirmationEngineError(
+            "persisted_baseline_bundle_hash_mismatch_report"
+        )
+    if context_bundle is not None:
+        verify_context_bundle(context_bundle, contract=spec)
+        if context_bundle["context_bundle_hash"] != report["input_bindings"][
+            "context_bundle_hash"
+        ]:
+            raise ConfirmationEngineError(
+                "persisted_context_bundle_hash_mismatch_report"
+            )
+    elif report["input_bindings"].get("context_bundle_hash") is not None:
+        raise ConfirmationEngineError(
+            "confirmation_report_requires_context_bundle_for_persistence"
+        )
+
     guard = boundary or PatternDiscoveryBoundary()
     root = Path(repo_root).resolve()
+
+    baseline_repo = baseline_bundle_repo_path(
+        baseline_bundle["baseline_bundle_hash"],
+        contract=spec,
+    )
+    baseline_path = _write_immutable_json(
+        root,
+        baseline_repo,
+        baseline_bundle,
+        boundary=guard,
+    )
+    context_path: Path | None = None
+    if context_bundle is not None:
+        context_repo = context_bundle_repo_path(
+            context_bundle["context_bundle_hash"],
+            contract=spec,
+        )
+        context_path = _write_immutable_json(
+            root,
+            context_repo,
+            context_bundle,
+            boundary=guard,
+        )
     registry_repo = confirmation_registry_repo_path(contract=spec)
     report_repo = confirmation_report_repo_path(report, contract=spec)
     guard.assert_write_path_allowed(registry_repo)
@@ -2641,6 +2763,16 @@ def persist_confirmation_look(
         raise ConfirmationEngineError(
             "confirmation_path_outside_repo"
         ) from exc
+
+    registry = ConfirmationLookRegistry(
+        registry_path,
+        contract=spec,
+    )
+    registry_status = registry.register(
+        report,
+        actor_id=actor_id,
+        actor_role=actor_role,
+    )
 
     report_path.parent.mkdir(parents=True, exist_ok=True)
     if report_path.exists():
@@ -2667,20 +2799,15 @@ def persist_confirmation_look(
             )
             handle.write("\n")
 
-    registry = ConfirmationLookRegistry(
-        registry_path,
-        contract=spec,
-    )
-    registry_status = registry.register(
-        report,
-        actor_id=actor_id,
-        actor_role=actor_role,
-    )
     return {
         "valid": True,
         "confirmation_look_id": report["confirmation_look_id"],
         "look_hash": report["look_hash"],
         "report_path": str(report_path),
+        "baseline_bundle_path": str(baseline_path),
+        "context_bundle_path": (
+            str(context_path) if context_path is not None else None
+        ),
         "registry_path": str(registry_path),
         "registry": registry_status,
     }
