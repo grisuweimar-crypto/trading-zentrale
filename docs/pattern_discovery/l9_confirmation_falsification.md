@@ -92,10 +92,11 @@ result of an already reproducible historical L9 look; the later suffix is still
 validated but remains invisible to that look.
 
 L8 currently carries `target_session_date` but not an authoritative target
-session-close timestamp. L9 v1 therefore uses a conservative rule: a matured
-event is confirmable only when its `recorded_at` calendar date is strictly
-later than the target session date. Same-date registration is not sufficient
-proof that the adjusted close had already become observable.
+session-close timestamp. L9 v1 therefore uses a conservative rule: an event
+whose target session is on the evaluation date is not yet eligible for that
+look. It becomes eligible only on a later calendar date, while an event
+registered before its target session date is invalid. Same-date registration
+therefore cannot leak an as-yet-unobserved adjusted close into a same-day look.
 
 Every L8 outcome must match:
 
