@@ -537,6 +537,15 @@ def verify_prospective_source_bundle(
             raise ConfirmationSourceError(
                 f"prospective_source_snapshot_binding_hash_mismatch:{snapshot_id}"
             )
+        binding_body = dict(capture_report["snapshot_binding"])
+        binding_stored = _sha256_text(
+            binding_body.pop("snapshot_binding_hash", None),
+            f"capture_report.snapshot_binding_hash:{snapshot_id}",
+        )
+        if _hash(binding_body) != binding_stored:
+            raise ConfirmationSourceError(
+                f"prospective_source_l7_snapshot_binding_tampered:{snapshot_id}"
+            )
         if snapshot.get("snapshot_file_sha256") != capture_report[
             "snapshot_binding"
         ]["snapshot_file_sha256"]:
