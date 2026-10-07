@@ -625,7 +625,13 @@ def fixture_start_session_binding(
     }
 
 
-def prospective_source_for(patterns, outcomes, *, include_regime=True):
+def prospective_source_for(
+    patterns,
+    outcomes,
+    *,
+    include_regime=True,
+    session_date_shift_days=0,
+):
     """Create hash-consistent synthetic L7 capture proofs for L9 tests."""
     patterns_by_id = {
         str(pattern["pattern_id"]): pattern
@@ -700,10 +706,18 @@ def prospective_source_for(patterns, outcomes, *, include_regime=True):
             )
         sessions.sort(key=lambda value: value["symbol"])
         session_map_hash = digest(sessions)
+        session_date_overrides = {
+            item["symbol"]: (
+                date.fromisoformat(item["start_at"][:10])
+                + timedelta(days=session_date_shift_days)
+            ).isoformat()
+            for item in sessions
+        }
         fixture_session_binding = fixture_start_session_binding(
             snapshot_id,
             session_map_hash,
             sessions,
+            session_date_overrides=session_date_overrides,
         )
 
         binding_body = {
@@ -853,6 +867,27 @@ def prospective_source_for(patterns, outcomes, *, include_regime=True):
                 "start_session_binding_hash"
             ]
         )
+        if session_date_shift_days:
+            bound_session = next(
+                item
+                for item in fixture_session_binding["sessions"]
+                if item["symbol"] == symbol
+            )
+            explicit_start = date.fromisoformat(
+                bound_session["session_date"]
+            )
+            shifted_dates = [
+                (explicit_start + timedelta(days=offset)).isoformat()
+                for offset in range(
+                    int(outcome["target"]["horizon_sessions"]) + 1
+                )
+            ]
+            outcome["horizon_provenance"]["start_session_date"] = shifted_dates[0]
+            outcome["horizon_provenance"]["target_session_date"] = shifted_dates[-1]
+            outcome["horizon_provenance"]["session_dates"] = shifted_dates
+            outcome["horizon_provenance"][
+                "observed_session_count_including_start"
+            ] = len(shifted_dates)
         outcome["outcome_hash"] = digest(
             {k: v for k, v in outcome.items() if k != "outcome_hash"}
         )
