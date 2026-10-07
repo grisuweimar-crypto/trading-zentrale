@@ -99,8 +99,10 @@
     "missing_baseline_outcomes_must_be_explicit_not_dropped": true,
     "candidate_start_dates_must_exist_on_unconditional_baseline_axis": true,
     "baseline_selection_rule_is_auditable_not_posthoc": true,
+    "baseline_population_is_verified_l7_scanner_population_not_reconstructed_pre_freeze_membership": true,
+    "universe_version_remains_immutable_pattern_metadata_but_is_not_silently_promoted_to_membership_proof": true,
     "supported_baseline_selection_rules": {
-      "same_horizon_unconditional_return_baseline": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1"
+      "same_horizon_unconditional_return_baseline": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_VERIFIED_L7_SCANNER_POPULATION_SAME_TARGET_HORIZON_V1"
     },
     "unknown_baseline_selection_rule_fails_closed": true,
     "availability_status_values": [
