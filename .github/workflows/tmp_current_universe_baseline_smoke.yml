@@ -1,0 +1,25 @@
+name: Temporary Current Universe Baseline Smoke
+
+on:
+  push:
+    branches:
+      - fix/current-universe-research-baseline
+
+jobs:
+  research-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - name: Research and history regressions
+        run: >-
+          python -m pytest -q
+          tests/test_daily_research.py
+          tests/test_research_views.py
+          tests/test_history_delta_completion.py
+          tests/test_history_query_and_daily_research.py
+          tests/test_history_research.py
+          tests/test_recent_history.py
