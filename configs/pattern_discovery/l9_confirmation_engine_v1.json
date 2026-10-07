@@ -86,6 +86,7 @@
     "target_and_horizon_must_match_pattern": true,
     "baseline_definition_must_match_frozen_pattern": true,
     "all_declared_eligible_baseline_observations_must_be_present": true,
+    "candidate_start_dates_must_exist_on_unconditional_baseline_axis": true,
     "baseline_selection_rule_is_auditable_not_posthoc": true,
     "supported_baseline_selection_rules": {
       "same_horizon_unconditional_return_baseline": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1"
@@ -130,7 +131,7 @@
     "effect_size_vs_baseline_definition": "MEAN_ALIGNED_TARGET_MINUS_MEAN_ALIGNED_BASELINE",
     "frozen_minimum_effect_size_applies_to": "MEAN_ALIGNED_TARGET",
     "effective_n_method": "UNIQUE_SYMBOL_X_SUPPORT_REGION_CLUSTER_COUNT",
-    "support_region_method": "GREEDY_NONOVERLAPPING_OCCURRENCE_REGIONS_ON_COMBINED_PROSPECTIVE_DATE_AXIS",
+    "support_region_method": "GREEDY_NONOVERLAPPING_OCCURRENCE_REGIONS_ON_BASELINE_DATE_AXIS",
     "block_length_sessions_multiplier": 2,
     "bootstrap_method": "DETERMINISTIC_HASH_SEEDED_CIRCULAR_MOVING_BLOCK_BOOTSTRAP",
     "bootstrap_repetitions": 512,
