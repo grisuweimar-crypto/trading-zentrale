@@ -36,16 +36,18 @@ def _patterns(payload):
     raise ValueError("frozen_patterns_json_must_be_list_or_l5_snapshot")
 
 
-def _matured_outcomes(path: Path):
+def _maturation_events(path: Path):
     if path.suffix.lower() == ".json":
         payload = _json(path)
         if isinstance(payload, list):
             return payload
-        if isinstance(payload, dict) and isinstance(payload.get("matured_outcomes"), list):
-            return payload["matured_outcomes"]
-        raise ValueError("matured_outcomes_json_invalid")
+        if isinstance(payload, dict) and isinstance(payload.get("events"), list):
+            return payload["events"]
+        raise ValueError(
+            "maturation_events_json_must_be_list_or_events_object"
+        )
 
-    outcomes = []
+    events = []
     for line_number, line in enumerate(
         path.read_text(encoding="utf-8").splitlines(),
         start=1,
@@ -53,11 +55,12 @@ def _matured_outcomes(path: Path):
         if not line.strip():
             continue
         event = json.loads(line)
-        record = event.get("record")
-        if not isinstance(record, dict):
-            raise ValueError(f"maturation_registry_record_missing:{line_number}")
-        outcomes.append(record)
-    return outcomes
+        if not isinstance(event, dict):
+            raise ValueError(
+                f"maturation_registry_event_not_object:{line_number}"
+            )
+        events.append(event)
+    return events
 
 
 def main() -> int:
@@ -100,7 +103,9 @@ def main() -> int:
 
     root = Path(args.repo_root).resolve()
     patterns = _patterns(_json(_path(root, args.frozen_patterns)))
-    outcomes = _matured_outcomes(_path(root, args.matured_outcomes))
+    maturation_events = _maturation_events(
+        _path(root, args.matured_outcomes)
+    )
     baseline = _json(_path(root, args.baseline_bundle))
     context = (
         _json(_path(root, args.context_bundle))
@@ -110,7 +115,7 @@ def main() -> int:
 
     report = build_confirmation_look(
         patterns,
-        outcomes,
+        maturation_events,
         baseline,
         control_plan_id=args.control_plan_id,
         control_plan_version=args.control_plan_version,
