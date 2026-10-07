@@ -1,0 +1,91 @@
+{
+  "schema_version": "pattern_discovery_l5_candidate_registry_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L5",
+  "name": "Candidate Registry & Hard Freeze",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Turn L4-eligible Discovery candidates into immutable versioned PAT research objects and bind them to the existing QM-C1/QM-C2 governance without activating prospective confirmation or production.",
+  "principles": {
+    "only_l4_eligible_candidates_can_freeze": true,
+    "pattern_versions_are_immutable": true,
+    "semantic_change_requires_new_version": true,
+    "old_versions_are_retained": true,
+    "freeze_timestamp_is_explicit_input": true,
+    "discovery_evidence_is_embedded_and_hash_bound": true,
+    "qm_c_governance_is_reused_not_reimplemented": true,
+    "qm_identity_gaps_fail_closed": true,
+    "confirmation_data_is_forbidden": true,
+    "productive_semantics_must_not_change": true
+  },
+  "identity": {
+    "hash_algorithm": "sha256",
+    "canonical_json": true,
+    "pattern_id_prefix": "PAT",
+    "pattern_id_digest_chars": 20,
+    "initial_pattern_version": "v1",
+    "registry_event_schema_version": "pattern_discovery_l5_registry_event_v1",
+    "registry_path_template": "artifacts/research/pattern_discovery/pattern_registry.jsonl",
+    "snapshot_schema_version": "pattern_discovery_l5_freeze_snapshot_v1",
+    "snapshot_path_template": "artifacts/research/pattern_discovery/discovery_runs/{run_id}/l5_freeze_snapshot.json"
+  },
+  "bindings": {
+    "l1_manifest_required": true,
+    "l3_result_hash_required": true,
+    "l4_evidence_hash_required": true,
+    "l4_gate_status_required": "ELIGIBLE_FOR_L5",
+    "l3_shortlist_status_required": "DISCOVERY_SHORTLIST",
+    "l1_candidate_budget_is_hard_freeze_limit": true,
+    "qm_c1_hypothesis_schema_binding_required": true,
+    "qm_c2_analysis_plan_schema_binding_required": true,
+    "direct_qm_registry_write_forbidden_by_l0": true,
+    "qm_c_handoff_package_required": true,
+    "qm_a_activation_performed_here": false
+  },
+  "pattern_spec": {
+    "required_sections": [
+      "identity",
+      "semantics",
+      "forecast",
+      "data",
+      "statistics",
+      "freeze"
+    ],
+    "semantic_change_fields": [
+      "conditions",
+      "pattern_type",
+      "target_id",
+      "expected_direction",
+      "horizon_sessions",
+      "baseline",
+      "universe_version",
+      "feature_library_version"
+    ]
+  },
+  "qm_handoff": {
+    "research_mode": "CONFIRMATION",
+    "universe_requirement": "OBSERVED_SCANNER_UNIVERSE",
+    "required_external_context_fields": [
+      "universe_ledger_version",
+      "instrument_master_version",
+      "environment_or_dependency_fingerprint"
+    ],
+    "hypothesis_version": "v1",
+    "analysis_plan_version": "v1",
+    "requested_hypothesis_target_state": "FROZEN_FOR_CONFIRMATION",
+    "requested_analysis_plan_target_state": "FROZEN_FOR_CONFIRMATION",
+    "handoff_application_status": "READY_NOT_APPLIED_BY_L5",
+    "qm_a_state_after_l5": "NOT_REGISTERED_BY_L5"
+  },
+  "boundaries": {
+    "dependency_graph_performed": false,
+    "prospective_capture_started": false,
+    "outcome_maturation_performed": false,
+    "confirmation_evaluation_performed": false,
+    "rating_assigned": false,
+    "promotion_performed": false,
+    "decision_layer_integration_performed": false
+  }
+}

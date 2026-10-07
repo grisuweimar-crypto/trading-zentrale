@@ -3,8 +3,9 @@
 L0 provides the hard research boundary. L1 adds deterministic pre-registration
 and immutable Discovery Run manifests. L2 adds the versioned PIT-safe Feature
 Library. L3 adds the bounded discovery-only Search Engine. L4 adds the
-Statistical Discovery Guard. Later phases add hard freeze, prospective
-confirmation, rating and promotion.
+Statistical Discovery Guard. L5 adds the immutable Candidate Registry and
+QM-C handoff. Later phases add dependency analysis, prospective confirmation,
+rating and promotion.
 """
 
 from .boundary import (
@@ -49,6 +50,19 @@ from .statistical_guard import (
     verify_statistical_evidence,
     write_statistical_evidence,
 )
+from .candidate_registry import (
+    CandidateFreezeError,
+    PatternCandidateRegistry,
+    build_frozen_pattern_record,
+    candidate_registry_contract_hash,
+    freeze_candidates,
+    freeze_snapshot_repo_path,
+    load_candidate_registry_contract,
+    pattern_id_for_candidate,
+    validate_applied_qm_handoff,
+    verify_freeze_snapshot,
+    write_freeze_snapshot,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -83,4 +97,15 @@ __all__ = [
     "load_guard_contract",
     "verify_statistical_evidence",
     "write_statistical_evidence",
+    "CandidateFreezeError",
+    "PatternCandidateRegistry",
+    "build_frozen_pattern_record",
+    "candidate_registry_contract_hash",
+    "freeze_candidates",
+    "freeze_snapshot_repo_path",
+    "load_candidate_registry_contract",
+    "pattern_id_for_candidate",
+    "validate_applied_qm_handoff",
+    "verify_freeze_snapshot",
+    "write_freeze_snapshot",
 ]
