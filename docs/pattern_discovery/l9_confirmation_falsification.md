@@ -149,7 +149,10 @@ The baseline record must bind:
 - deterministic selection-rule ID and rule hash;
 - declared eligible population count;
 - every baseline observation and its self-hash;
-- the exact L7 capture snapshot and start-session identity for each row.
+- the exact L7 capture snapshot and start-session identity for each row;
+- the canonical `artifacts/research/price_backfill.csv` file hash and normalized as-of price projection;
+- the explicit exchange session date and L8-compatible start-session binding;
+- the complete adjusted-close session path through the exact horizon-th later observed session.
 
 For every L7 capture snapshot belonging to the Pattern version, the baseline record must contain exactly one row for every symbol present in the verified capture-time scanner snapshot. Dropping an unfavorable symbol, changing the declared count, or substituting a different start session fails closed.
 
@@ -162,7 +165,14 @@ methodology rather than an improvised comparator after seeing outcomes.
 
 Every baseline observation must also begin strictly after Pattern freeze.
 
-Its outcome `end_at` must also be no later than the L9 evaluation time.
+L9 v1 does **not** accept a free-form baseline `end_at`. The target date,
+session sequence, adjusted closes and return are recomputed from the canonical
+price source. The start session uses the explicit exchange-local session date
+from the L8-compatible binding rather than the UTC prefix of `start_at`.
+An AVAILABLE baseline must contain exactly the start session plus the frozen
+horizon number of later observed price sessions. Any different target session,
+session sequence, price-path hash, adjusted close, currency or return fails
+closed.
 
 ## PIT-safe context diagnostics
 
