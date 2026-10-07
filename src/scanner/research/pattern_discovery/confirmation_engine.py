@@ -2578,6 +2578,57 @@ def _confirmation_evidence_payload(
     }
 
 
+def _expected_qm_c5_results(
+    report: Mapping[str, Any],
+    *,
+    evidence_hash: str,
+    contract: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Reconstruct the only valid terminal QM-C5 handoff from L9 results."""
+    decision = report.get("family_decision")
+    if decision not in {"FINAL_COMPLETE", "STOP_EFFICACY", "STOP_FUTILITY"}:
+        return []
+
+    governance = report.get("qm_governance") or {}
+    mapping = contract["qm_c5_mapping"]
+    expected: list[dict[str, Any]] = []
+    for row in report.get("pattern_results") or []:
+        classification = mapping.get(row.get("result_class"))
+        if classification is None:
+            continue
+        reasons = row.get("result_reasons") or []
+        conclusion = (
+            f"L9 {row['result_class']} at predeclared QM-C4 look "
+            f"{governance.get('look_id')}; reasons="
+            f"{','.join(reasons) if reasons else 'NONE'}."
+        )
+        expected.append(
+            {
+                "result_id": f"R-{row['hypothesis_id']}",
+                "result_version": "v1",
+                "hypothesis_id": row["hypothesis_id"],
+                "hypothesis_version": row["hypothesis_version"],
+                "hypothesis_version_hash": row["hypothesis_version_hash"],
+                "evidence_scope": "CONFIRMATORY",
+                "outcome_classification": classification,
+                "conclusion": conclusion,
+                "evidence_artifact_hash": evidence_hash,
+                "analysis_plan_id": row["analysis_plan_id"],
+                "analysis_plan_version": row["analysis_plan_version"],
+                "analysis_plan_hash": row["analysis_plan_hash"],
+                "control_plan_id": governance["control_plan_id"],
+                "control_plan_version": governance["control_plan_version"],
+                "control_plan_hash": governance["control_plan_hash"],
+                "monitoring_plan_id": governance["monitoring_plan_id"],
+                "monitoring_plan_version": governance["monitoring_plan_version"],
+                "monitoring_plan_hash": governance["monitoring_plan_hash"],
+                "qm_a_analysis_id": row["qm_a_analysis_id"],
+                "qm_a_version_id": row["qm_a_version_id"],
+            }
+        )
+    return expected
+
+
 def _look_identity(
     *,
     control_plan: Mapping[str, Any],
@@ -3220,43 +3271,11 @@ def build_confirmation_look(
         "STOP_EFFICACY",
         "STOP_FUTILITY",
     }
-    c5_results: list[dict[str, Any]] = []
-    if terminal_after_application:
-        mapping = spec["qm_c5_mapping"]
-        for row in pattern_results:
-            classification = mapping[row["result_class"]]
-            if classification is None:
-                continue
-            result_id = f"R-{row['hypothesis_id']}"
-            conclusion = (
-                f"L9 {row['result_class']} at predeclared QM-C4 look "
-                f"{next_look['look_id']}; reasons="
-                f"{','.join(row['result_reasons']) if row['result_reasons'] else 'NONE'}."
-            )
-            c5_results.append(
-                {
-                    "result_id": result_id,
-                    "result_version": "v1",
-                    "hypothesis_id": row["hypothesis_id"],
-                    "hypothesis_version": row["hypothesis_version"],
-                    "hypothesis_version_hash": row["hypothesis_version_hash"],
-                    "evidence_scope": "CONFIRMATORY",
-                    "outcome_classification": classification,
-                    "conclusion": conclusion,
-                    "evidence_artifact_hash": evidence_hash,
-                    "analysis_plan_id": row["analysis_plan_id"],
-                    "analysis_plan_version": row["analysis_plan_version"],
-                    "analysis_plan_hash": row["analysis_plan_hash"],
-                    "control_plan_id": control["control_plan_id"],
-                    "control_plan_version": control["control_plan_version"],
-                    "control_plan_hash": control["control_plan_hash"],
-                    "monitoring_plan_id": monitoring["monitoring_plan_id"],
-                    "monitoring_plan_version": monitoring["monitoring_plan_version"],
-                    "monitoring_plan_hash": monitoring["monitoring_plan_hash"],
-                    "qm_a_analysis_id": row["qm_a_analysis_id"],
-                    "qm_a_version_id": row["qm_a_version_id"],
-                }
-            )
+    c5_results = _expected_qm_c5_results(
+        report,
+        evidence_hash=evidence_hash,
+        contract=spec,
+    )
 
     report["qm_c_handoff"] = {
         "application_status": "READY_NOT_APPLIED_BY_L9",
@@ -3446,11 +3465,18 @@ def verify_confirmation_look(
                 raise ConfirmationEngineError(
                     f"qm_c4_handoff_report_binding_mismatch:{field}"
                 )
-        for record in handoff.get("qm_c5_results") or []:
-            if record.get("evidence_artifact_hash") != evidence_hash:
-                raise ConfirmationEngineError(
-                    "qm_c5_handoff_artifact_hash_mismatch"
-                )
+        actual_c5 = handoff.get("qm_c5_results") or []
+        if not isinstance(actual_c5, list):
+            raise ConfirmationEngineError("qm_c5_handoff_results_list_required")
+        expected_c5 = _expected_qm_c5_results(
+            report,
+            evidence_hash=evidence_hash,
+            contract=spec,
+        )
+        if actual_c5 != expected_c5:
+            raise ConfirmationEngineError(
+                "qm_c5_handoff_does_not_match_evaluated_pattern_results"
+            )
     PatternDiscoveryBoundary().assert_research_payload(report)
     return {
         "valid": True,
@@ -4034,6 +4060,7 @@ def validate_applied_qm_confirmation_handoff(
         if look["look_id"] == handoff["look_id"]
         and look["artifact_hash"] == report["confirmation_evidence_hash"]
         and look["decision"] == handoff["decision"]
+        and look["observed_at"] == handoff["observed_at"]
     ]
     if len(matches) != 1:
         raise ConfirmationEngineError(
