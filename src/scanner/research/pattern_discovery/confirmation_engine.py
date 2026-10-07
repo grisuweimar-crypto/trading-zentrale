@@ -3351,9 +3351,7 @@ def build_confirmation_look(
     )
     expected_price_bindings = {
         "price_source_path": baseline_price_provenance["price_source_path"],
-        "price_file_sha256": baseline_price_provenance["price_file_sha256"],
         "price_as_of": baseline_price_provenance["price_as_of"],
-        "price_binding_hash": baseline_price_provenance["price_binding_hash"],
         "normalized_price_hash": baseline_price_provenance[
             "normalized_price_hash"
         ],
