@@ -1960,14 +1960,25 @@ def test_baseline_start_date_cannot_depart_from_l7_session_map(tmp_path):
     outcomes = prospective_rows(pattern)
     source, _ = prospective_source_for([pattern], outcomes)
     baseline = baseline_record(pattern, source, tmp_path)
-    baseline["observations"][0]["start_at"] = "2026-10-09T08:00:00Z"
-    baseline["observations"][0]["end_at"] = "2026-10-14T08:00:00Z"
-    body = dict(baseline["observations"][0])
+    obs = baseline["observations"][0]
+    obs["start_at"] = "2026-10-09T08:00:00Z"
+    obs["session_date_binding_hash"] = digest(
+        {
+            "capture_snapshot_id": obs["capture_snapshot_id"],
+            "symbol": obs["symbol"],
+            "session_id": obs["session_id"],
+            "calendar_id": obs["calendar_id"],
+            "start_at": obs["start_at"],
+            "session_source": obs["session_source"],
+            "start_session_date": obs["start_session_date"],
+        }
+    )
+    body = dict(obs)
     body.pop("source_hash", None)
-    baseline["observations"][0]["source_hash"] = digest(body)
+    obs["source_hash"] = digest(body)
     with pytest.raises(
         ConfirmationEngineError,
-        match="baseline_session_date_binding_hash_mismatch|baseline_session_binding_mismatch",
+        match="baseline_session_binding_mismatch:.*:start_at",
     ):
         build_report(
             regs,
