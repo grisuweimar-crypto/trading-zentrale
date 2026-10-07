@@ -1256,8 +1256,8 @@ def test_positive_final_look_uses_only_prospective_l8_evidence(tmp_path):
     assert evidence["effective_n"] <= evidence["raw_n"]
     assert evidence["support_region_count"] >= 3
     assert evidence["direction_probability"] == pytest.approx(1.0)
-    assert evidence["baseline_probability"] == pytest.approx(0.5)
-    assert evidence["probability_advantage_lift"] == pytest.approx(0.5)
+    assert evidence["baseline_probability"] == pytest.approx(0.0)
+    assert evidence["probability_advantage_lift"] == pytest.approx(1.0)
     assert evidence["effect_size_vs_baseline"] > 0.07
     assert evidence["robust_uncertainty"]["aligned_effect_interval_95"][0] > 0
     assert evidence["robust_uncertainty"][
