@@ -3,10 +3,38 @@ import argparse
 import json
 import os
 from pathlib import Path
+import csv
 
 from scanner.reports.daily_research import begin_daily, generate_daily
 from scanner.reports.research_validation import validate_publication
 from scanner.reports.research_views import ValidationPolicy, refresh_price_backfill
+
+
+CURRENT_UNIVERSE_VIEW = Path("artifacts/watchlist/watchlist_full.csv")
+
+
+def derive_expected_symbol_count(root: Path, explicit: int | None = None) -> int | None:
+    """Return the current post-dedup scanner universe size.
+
+    An explicit CLI value remains authoritative. Otherwise use the current
+    canonical scanner-universe view produced by run_daily. Falling back to None
+    preserves the existing historical-baseline fail-closed behavior when the
+    current universe view is unavailable.
+    """
+    if explicit is not None:
+        return explicit
+    path = root.resolve() / CURRENT_UNIVERSE_VIEW
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            reader = csv.DictReader(handle)
+            rows = list(reader)
+    except (OSError, csv.Error, UnicodeError):
+        return None
+    if not rows:
+        return None
+    return len(rows)
 
 
 def main():
@@ -30,8 +58,9 @@ def main():
                   if os.environ.get("GITHUB_RUN_ID") else None)
         result = begin_daily(args.root, args.receipt, run_id=run_id)
     else:
+        expected_symbol_count = derive_expected_symbol_count(args.root, args.expected_symbol_count)
         result = generate_daily(args.root, args.receipt, scanner_status=args.scanner_status,
-                                policy=ValidationPolicy(expected_symbol_count=args.expected_symbol_count))
+                                policy=ValidationPolicy(expected_symbol_count=expected_symbol_count))
         if output := os.environ.get("GITHUB_OUTPUT"):
             with open(output, "a", encoding="utf-8") as handle:
                 handle.write(f"complete={str(result['latest_run_complete']).lower()}\n")

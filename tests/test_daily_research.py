@@ -178,6 +178,50 @@ class DailyResearchTests(unittest.TestCase):
         for step in steps[index("generate_history_delta.py --report-only"):index("--validate-only")]:
             self.assertEqual(step["if"], "steps.research.outputs.complete == 'true'")
 
+
+    def test_cli_derives_expected_count_from_current_scanner_universe(self):
+        env = dict(os.environ, PYTHONPATH=str(PROJECT / "src"), PYTHONIOENCODING="utf-8")
+        env.pop("GITHUB_OUTPUT", None)
+        env.pop("GITHUB_STEP_SUMMARY", None)
+        script = str(PROJECT / "scripts/generate_research_views.py")
+        current_universe = self.root / "artifacts" / "watchlist" / "watchlist_full.csv"
+        current_universe.parent.mkdir(parents=True, exist_ok=True)
+
+        begin_daily(self.root, self.receipt, run_id="expanded")
+        self.write_watchlist()
+        current_universe.write_text(
+            "symbol\n001\nB\nC\n",
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [sys.executable, script, "--root", str(self.root), "--receipt", str(self.receipt)],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        meta = json.loads((self.root / OUTPUT / "history_metadata.json").read_text(encoding="utf-8"))
+        self.assertTrue(meta["latest_run_complete"])
+        self.assertEqual(meta["validation"]["required_symbol_count"], 3)
+        self.assertEqual(meta["validation"]["baseline_symbol_count"], 3)
+
+        begin_daily(self.root, self.receipt, run_id="partial-after-expansion")
+        self.write_watchlist(self.rows[:2])
+        current_universe.write_text(
+            "symbol\n001\nB\nC\n",
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            [sys.executable, script, "--root", str(self.root), "--receipt", str(self.receipt)],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        meta = json.loads((self.root / OUTPUT / "history_metadata.json").read_text(encoding="utf-8"))
+        self.assertFalse(meta["latest_run_complete"])
+        self.assertIn("symbol_count_below_threshold", meta["latest_run_error"])
+
     def test_report_only_does_not_upsert_or_mix_same_day_runs(self):
         from scripts import generate_history_delta as script
         source = self.root / SOURCE
