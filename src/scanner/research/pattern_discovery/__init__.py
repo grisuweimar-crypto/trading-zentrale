@@ -168,6 +168,20 @@ from .promotion_gate import (
 )
 from .promotion_registry import PromotionRegistry
 
+from .challenger_integration import (
+    ChallengerIntegrationError,
+    build_challenger_trace,
+    challenger_contract_hash,
+    evaluate_incremental_value,
+    evaluation_repo_path,
+    load_challenger_contract,
+    persist_challenger_trace,
+    persist_incremental_evaluation,
+    trace_repo_path,
+    verify_challenger_trace,
+    verify_incremental_evaluation,
+)
+
 __all__ = [
     "BoundaryViolation",
     "PatternDiscoveryBoundary",
@@ -295,4 +309,15 @@ __all__ = [
     "validate_admission_current",
     "verify_promotion_decision",
     "verify_promotion_review",
+    "ChallengerIntegrationError",
+    "build_challenger_trace",
+    "challenger_contract_hash",
+    "evaluate_incremental_value",
+    "evaluation_repo_path",
+    "load_challenger_contract",
+    "persist_challenger_trace",
+    "persist_incremental_evaluation",
+    "trace_repo_path",
+    "verify_challenger_trace",
+    "verify_incremental_evaluation",
 ]
