@@ -40,6 +40,14 @@ def main() -> int:
     )
     parser.add_argument("--capture-report", required=True)
     parser.add_argument("--peer-snapshot", required=True)
+    parser.add_argument(
+        "--start-sessions",
+        required=True,
+        help=(
+            "JSON list (or {sessions:[...]}) with explicit symbol/session_id/"
+            "calendar_id/session_date/start_at/source bindings."
+        ),
+    )
     parser.add_argument("--prices", required=True)
     parser.add_argument("--checked-at", required=True)
     parser.add_argument("--price-as-of", required=True)
@@ -51,15 +59,26 @@ def main() -> int:
     root = Path(args.repo_root).resolve()
     capture_path = _path(root, args.capture_report)
     peer_path = _path(root, args.peer_snapshot)
+    sessions_path = _path(root, args.start_sessions)
     price_path = _path(root, args.prices)
+    session_payload = _json(sessions_path)
+    sessions = (
+        session_payload["sessions"]
+        if isinstance(session_payload, dict)
+        else session_payload
+    )
+    if not isinstance(sessions, list):
+        raise ValueError("start_sessions_json_must_be_list_or_sessions_object")
 
     report = build_outcome_maturation_check(
         _json(capture_path),
         _csv(peer_path),
+        sessions,
         _csv(price_path),
         checked_at=args.checked_at,
         price_as_of=args.price_as_of,
         peer_snapshot_file_sha256=_sha256(peer_path),
+        start_session_binding_file_sha256=_sha256(sessions_path),
         price_file_sha256=_sha256(price_path),
     )
     persisted = persist_outcome_maturation(
