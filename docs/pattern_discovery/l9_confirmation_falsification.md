@@ -58,6 +58,8 @@ Instead, an evaluated L9 report contains an exact handoff package describing:
 The central governance layer remains the authority that applies and validates
 those changes.
 
+The QM-C4 handoff is itself verified against the evaluated report. Its monitoring-plan ID/version, look ID, decision, observation time and evidence hash must exactly match `qm_governance`, `family_decision`, `evaluated_at` and the confirmation-evidence hash. Because the handoff is excluded from the evidence-core hash to avoid a circular hash dependency, this explicit field-by-field binding is mandatory.
+
 ## Evidence separation
 
 Discovery evidence embedded in the L5 Pattern is provenance only.
@@ -76,14 +78,24 @@ Only outcomes from the complete hash-valid L8 maturation registry can enter
 the Pattern sample.
 
 L9 verifies the full registry hash chain, event ordering and monotonic
-`recorded_at` timestamps. For a historical or current look it then derives
-the exact **as-of registry prefix** whose `recorded_at` timestamps are not
-later than `evaluated_at`.
+`recorded_at` timestamps. The source must be the canonical L8 registry path
+declared by the L8 contract under the selected repository root. The runner no
+longer accepts an arbitrary maturation-registry path. A caller-supplied event
+list must equal the complete canonical registry byte-for-byte at evaluation
+time; a genesis-valid truncation therefore fails closed.
 
-Only that eligible prefix is part of the immutable confirmation-evidence
-identity. A later append to the L8 registry therefore cannot change the hash or
+For a historical or current look L9 derives the exact **as-of registry prefix**
+whose `recorded_at` timestamps are not later than `evaluated_at`. Only that
+eligible prefix is part of the immutable confirmation-evidence identity. A
+later append to the canonical L8 registry therefore cannot change the hash or
 result of an already reproducible historical L9 look; the later suffix is still
 validated but remains invisible to that look.
+
+L8 currently carries `target_session_date` but not an authoritative target
+session-close timestamp. L9 v1 therefore uses a conservative rule: a matured
+event is confirmable only when its `recorded_at` calendar date is strictly
+later than the target session date. Same-date registration is not sufficient
+proof that the adjusted close had already become observable.
 
 Every L8 outcome must match:
 
@@ -166,7 +178,7 @@ Each context row is bound to:
 - the complete L2-defined capture-time row projection;
 - an observation timestamp strictly before the Pattern's start session.
 
-`context_source_hash` must equal the L7 current-row hash, the supplied row projection must reproduce that hash, and every diagnostic value must equal the corresponding value stored in that projection.
+`context_source_hash` must equal the L7 current-row hash, the supplied row projection must reproduce that hash, and every diagnostic value must equal the corresponding value stored in that projection. If a non-empty diagnostic field exists in the verified L7 projection, the context bundle must carry it; callers may not selectively omit an adverse regime/sector/pillar/cluster value.
 
 The same claim identity must agree across L7 source proof and L8 matured outcome. This prevents current sector/regime metadata or outcome-aware labels from being retrofitted into old prospective events.
 
@@ -494,6 +506,8 @@ hash-addressable for later replay.
 ## Operational runner
 
 `scripts/pattern_discovery/run_l9_confirmation.py`
+
+The runner resolves the L8 maturation registry only from the canonical L8 contract path under `--repo-root`; there is no caller-selectable `--maturation-registry` override.
 
 Inputs:
 
