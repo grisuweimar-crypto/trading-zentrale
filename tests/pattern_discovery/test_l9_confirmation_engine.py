@@ -1272,6 +1272,10 @@ def build_report(
             row["claim_id"]: row
             for row in source["claims"]
         }
+        source_snapshots = {
+            snapshot["snapshot_id"]: snapshot
+            for snapshot in source["snapshots"]
+        }
         for outcome in values:
             claim_id = outcome["claim"]["claim_id"]
             src = source_claims[claim_id]
@@ -1281,6 +1285,46 @@ def build_report(
             outcome["claim"]["capture_snapshot_binding_hash"] = src[
                 "snapshot_binding_hash"
             ]
+            snapshot = source_snapshots[src["snapshot_id"]]
+            session_date_overrides = {
+                item["symbol"]: (
+                    date.fromisoformat(item["start_at"][:10])
+                    + timedelta(days=session_date_shift_days)
+                ).isoformat()
+                for item in snapshot["market_sessions"]
+            }
+            fixture_binding = fixture_start_session_binding(
+                snapshot["snapshot_id"],
+                snapshot["session_map_hash"],
+                snapshot["market_sessions"],
+                session_date_overrides=session_date_overrides,
+            )
+            outcome["horizon_provenance"]["start_session_binding_hash"] = (
+                fixture_binding["start_session_binding"][
+                    "start_session_binding_hash"
+                ]
+            )
+            if session_date_shift_days:
+                bound_session = next(
+                    item
+                    for item in fixture_binding["sessions"]
+                    if item["symbol"] == outcome["claim"]["symbol"]
+                )
+                explicit_start = date.fromisoformat(
+                    bound_session["session_date"]
+                )
+                shifted_dates = [
+                    (explicit_start + timedelta(days=offset)).isoformat()
+                    for offset in range(
+                        int(outcome["target"]["horizon_sessions"]) + 1
+                    )
+                ]
+                outcome["horizon_provenance"]["start_session_date"] = shifted_dates[0]
+                outcome["horizon_provenance"]["target_session_date"] = shifted_dates[-1]
+                outcome["horizon_provenance"]["session_dates"] = shifted_dates
+                outcome["horizon_provenance"][
+                    "observed_session_count_including_start"
+                ] = len(shifted_dates)
             outcome["outcome_hash"] = digest(
                 {
                     k: v
