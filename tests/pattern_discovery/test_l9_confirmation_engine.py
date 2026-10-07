@@ -924,7 +924,6 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
     binding = report["input_bindings"]["l8_maturation_registry"]
-    assert binding["registry_event_count_total"] == len(events)
     assert binding["eligible_prefix_event_count"] == 0
     assert binding["eligible_event_hashes"] == []
 
@@ -966,6 +965,75 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
             evaluated_at="2027-01-15T20:00:00Z",
             context_bundle=contexts,
         )
+
+
+def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    prefix = maturation_registry_events(
+        outcomes,
+        recorded_at="2027-01-15T20:00:00Z",
+    )
+    baseline = build_baseline_bundle(
+        [baseline_record(pattern)],
+        baseline_bundle_id="BASE-SUFFIX-INDEPENDENCE",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(outcomes)
+    first = build_confirmation_look(
+        [pattern],
+        prefix,
+        baseline,
+        control_plan_id=control["control_plan_id"],
+        control_plan_version=control["control_plan_version"],
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version=monitor["monitoring_plan_version"],
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        control_registry=regs["c3"],
+        monitoring_registry=regs["c4"],
+        qm_a_ledger=regs["qm_a"],
+        evaluated_at="2027-01-15T20:00:00Z",
+        context_bundle=contexts,
+    )
+
+    future_record = matured_outcome(
+        pattern,
+        claim_id="FUTURE-SUFFIX",
+        symbol="AAA",
+        start_day="2026-12-01",
+        target_value=0.50,
+    )
+    future_event = {
+        "schema_version": "pattern_discovery_l8_maturation_event_v1",
+        "sequence": len(prefix) + 1,
+        "event_id": "PME-FUTURE-SUFFIX",
+        "event_type": "OUTCOME_MATURED",
+        "recorded_at": "2027-01-16T20:00:00Z",
+        "actor_id": "tester",
+        "actor_role": "researcher",
+        "record": future_record,
+        "previous_event_hash": prefix[-1]["entry_hash"],
+    }
+    future_event["entry_hash"] = digest(future_event)
+    second = build_confirmation_look(
+        [pattern],
+        [*prefix, future_event],
+        baseline,
+        control_plan_id=control["control_plan_id"],
+        control_plan_version=control["control_plan_version"],
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version=monitor["monitoring_plan_version"],
+        hypothesis_registry=regs["hypotheses"],
+        analysis_plan_registry=regs["plans"],
+        control_registry=regs["c3"],
+        monitoring_registry=regs["c4"],
+        qm_a_ledger=regs["qm_a"],
+        evaluated_at="2027-01-15T20:00:00Z",
+        context_bundle=contexts,
+    )
+    assert second == first
+    assert second["look_hash"] == first["look_hash"]
 
 
 def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
