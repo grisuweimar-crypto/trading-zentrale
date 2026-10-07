@@ -1835,7 +1835,7 @@ def _normalize_pattern_outcomes(
                     f"outcome.calendar_id:{claim_id}",
                 ),
                 "start_session_binding_hash": _sha256_text(
-                    raw["horizon_provenance"]["start_session_binding_hash"],
+                    raw["horizon_provenance"].get("start_session_binding_hash"),
                     f"outcome.start_session_binding_hash:{claim_id}",
                 ),
                 "target_session_date": raw["horizon_provenance"][
