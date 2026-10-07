@@ -28,8 +28,14 @@ L8 consumes:
 The peer-snapshot SHA-256 must equal the snapshot-file SHA-256 already frozen
 inside the L7 capture report.
 
-This prevents a later watchlist or universe from being used retroactively as
-the peer population for an older prospective claim.
+The session-binding file additionally reconstructs the L7 session-map identity
+from `symbol + session_id + calendar_id + start_at + source`. That hash must
+equal the immutable `session_map_hash` in the L7 capture. The added
+`session_date` enriches that exact L7 session identity; it cannot replace the
+identity with a different calendar/session record.
+
+This prevents a later watchlist, universe or newly guessed session map from
+being used retroactively for an older prospective claim.
 
 ## Exact market-session semantics
 
