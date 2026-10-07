@@ -830,6 +830,29 @@ def test_context_missing_is_inconclusive_not_falsified(tmp_path):
     ] == "INCONCLUSIVE"
 
 
+def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    contexts = context_bundle_for(outcomes)
+    for row in contexts["claim_contexts"]:
+        row.pop("market_regime_stock", None)
+        row.pop("market_regime_crypto", None)
+    contexts["context_bundle_hash"] = digest(
+        {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
+    )
+    report = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=outcomes,
+        context=contexts,
+    )
+    result = report["pattern_results"][0]
+    assert result["result_class"] == "INCONCLUSIVE"
+    assert "REGIME_CONTEXT_COVERAGE_INSUFFICIENT" in result["result_reasons"]
+
+
 def test_tampered_l8_outcome_fails_closed(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
