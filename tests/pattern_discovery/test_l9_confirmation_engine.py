@@ -1096,15 +1096,18 @@ def test_strong_negative_final_result_is_falsified_and_retained(tmp_path):
         "outcome_classification"
     ] == "NEGATIVE"
 
+    source, normalized = prospective_source_for([pattern], outcomes)
     baseline_bundle = build_baseline_bundle(
-        [baseline_record(pattern)],
+        [baseline_record(pattern, source)],
+        source,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     saved = persist_confirmation_look(
         tmp_path,
         report,
+        source,
         baseline_bundle,
         context_bundle=contexts,
         actor_id="tester",
@@ -1132,31 +1135,36 @@ def test_discovery_evidence_cannot_rescue_failed_confirmation(tmp_path):
 def test_no_posthoc_regime_rescue_of_negative_full_sample(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern, target_value=-0.04, prefix="REGIME")
-    contexts = context_bundle_for(outcomes)
-    # Make one small diagnostic subgroup look positive in metadata only; L9
-    # still uses the full prospective outcome sample as the primary evidence.
+    source, normalized = prospective_source_for([pattern], outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     contexts["claim_contexts"][0]["market_regime_stock"] = "SPECIAL"
     contexts["context_bundle_hash"] = digest(
         {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
     )
-    report = build_report(
-        regs,
-        pattern,
-        control,
-        monitor,
-        outcomes=outcomes,
-        context=contexts,
-    )
-    assert report["pattern_results"][0]["result_class"] == "FALSIFIED"
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="context_value_not_from_capture_row",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            prospective_source=source,
+            context=contexts,
+        )
 
 
 def test_context_missing_is_inconclusive_not_falsified(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
     empty_context = build_context_bundle(
         [],
+        source,
         context_bundle_id="CTX-EMPTY",
-        generated_at="2027-01-15T20:00:00Z",
+        generated_at=source["generated_at"],
     )
     report = build_report(
         regs,
@@ -1164,6 +1172,7 @@ def test_context_missing_is_inconclusive_not_falsified(tmp_path):
         control,
         monitor,
         outcomes=outcomes,
+        prospective_source=source,
         context=empty_context,
     )
     result = report["pattern_results"][0]
@@ -1177,7 +1186,8 @@ def test_context_missing_is_inconclusive_not_falsified(tmp_path):
 def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    contexts = context_bundle_for(outcomes)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     for row in contexts["claim_contexts"]:
         row.pop("market_regime_stock", None)
         row.pop("market_regime_crypto", None)
@@ -1190,6 +1200,7 @@ def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
         control,
         monitor,
         outcomes=outcomes,
+        prospective_source=source,
         context=contexts,
     )
     result = report["pattern_results"][0]
