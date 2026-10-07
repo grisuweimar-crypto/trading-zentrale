@@ -1621,6 +1621,19 @@ def _normalize_pattern_baseline(
             )
 
     observations = baseline_record["observations"]
+    pattern_snapshot_ids = {
+        str(claim["snapshot_id"])
+        for claim in prospective_source_bundle["claims"]
+        if claim["pattern_id"] == pattern["pattern_id"]
+        and claim["pattern_version"] == pattern["pattern_version"]
+        and claim["pattern_spec_hash"] == pattern["pattern_spec_hash"]
+    }
+    if not candidate_snapshot_ids.issubset(pattern_snapshot_ids):
+        missing = sorted(candidate_snapshot_ids - pattern_snapshot_ids)
+        raise ConfirmationEngineError(
+            "candidate_snapshot_missing_from_pattern_source_population:"
+            + ",".join(missing)
+        )
     observed_snapshot_ids = {
         _safe_token(
             raw["capture_snapshot_id"],
@@ -1628,9 +1641,9 @@ def _normalize_pattern_baseline(
         )
         for raw in observations
     }
-    if observed_snapshot_ids != candidate_snapshot_ids:
+    if observed_snapshot_ids != pattern_snapshot_ids:
         raise ConfirmationEngineError(
-            "baseline_snapshot_population_must_exactly_match_candidate_snapshots"
+            "baseline_snapshot_population_must_exactly_match_pattern_source_population"
         )
 
     by_snapshot: dict[str, dict[str, Mapping[str, Any]]] = defaultdict(dict)
@@ -1660,7 +1673,7 @@ def _normalize_pattern_baseline(
         by_snapshot[snapshot_id][symbol] = raw
 
     available: list[dict[str, Any]] = []
-    for snapshot_id in sorted(candidate_snapshot_ids):
+    for snapshot_id in sorted(pattern_snapshot_ids):
         snapshot = snapshots[snapshot_id]
         expected_symbols = {
             str(item["symbol"])
@@ -1778,6 +1791,8 @@ def _normalize_pattern_baseline(
                 raw["target_value"],
                 f"baseline.target_value:{event_id}",
             )
+            if snapshot_id not in candidate_snapshot_ids:
+                continue
             available.append(
                 {
                     "baseline_event_id": event_id,
@@ -1797,7 +1812,7 @@ def _normalize_pattern_baseline(
 
     expected_population_count = sum(
         len(snapshots[snapshot_id]["rows"])
-        for snapshot_id in candidate_snapshot_ids
+        for snapshot_id in pattern_snapshot_ids
     )
     if int(baseline_record["eligible_population_count"]) != expected_population_count:
         raise ConfirmationEngineError(
