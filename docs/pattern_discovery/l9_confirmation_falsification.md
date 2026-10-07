@@ -116,13 +116,15 @@ L9 does not derive the baseline from the Pattern matches themselves.
 
 A separate hash-protected baseline bundle is required and is bound to the exact L7 prospective source bundle used by the confirmation look.
 
+L9 v1 deliberately does not reinterpret the frozen `universe_version` string as proof of a historical symbol-membership list. The population claim it can actually prove is the complete observed scanner population in each verified L7 capture snapshot. A stronger pre-freeze membership proof would require its own archived universe artifact and a new methodology/version rather than silent reconstruction.
+
 For the initial supported baseline:
 
 `same_horizon_unconditional_return_baseline`
 
 the rule is fixed as:
 
-`ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1`
+`ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_VERIFIED_L7_SCANNER_POPULATION_SAME_TARGET_HORIZON_V1`
 
 The baseline record must bind:
 
