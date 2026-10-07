@@ -39,6 +39,8 @@ Adding, omitting or substituting a hypothesis fails closed.
 The next L9 look is never chosen by L9. It is the next unconsumed look in the
 frozen QM-C4 monitoring plan.
 
+For a later look, the already-consumed QM-C4 history must also resolve to the exact local hash-chained L9 reports that produced those looks. The current L8 maturation prefix must extend the previously consumed prefix, and the baseline evidence set for each Pattern must contain every baseline observation already used. A disjoint or selectively reduced later sample fails closed before new statistics are calculated.
+
 ## L0 write boundary
 
 The Pattern Discovery L0 boundary still permits runtime writes only under:
@@ -98,11 +100,21 @@ and its start session must be strictly later than the Pattern freeze timestamp.
 
 A pre-freeze or mismatched outcome fails closed.
 
+## L7 source proof
+
+L9 does not trust copied snapshot IDs, context labels or baseline-population counts.
+
+A separate hash-protected prospective source bundle replays the exact L7 capture provenance. It contains the original L7 capture reports plus the capture-time scanner-row projections and market-session maps needed by L9.
+
+For every source snapshot L9 re-verifies the original L7 capture report hash, the snapshot-binding hash, the projected scanner-row hash and row/symbol counts, the market-session-map hash, the exact prospective claim set and the L2 Feature Library identity.
+
+A later L8 outcome can enter L9 only if its claim identity, symbol, capture snapshot and snapshot-binding hash resolve back to this verified L7 source proof. If the historical source evidence needed to reproduce the L7 binding is unavailable, the evidence remains unavailable.
+
 ## Baseline / control population
 
 L9 does not derive the baseline from the Pattern matches themselves.
 
-A separate hash-protected baseline bundle is required.
+A separate hash-protected baseline bundle is required and is bound to the exact L7 prospective source bundle used by the confirmation look.
 
 For the initial supported baseline:
 
@@ -115,16 +127,20 @@ the rule is fixed as:
 The baseline record must bind:
 
 - exact Pattern ID/version/spec hash;
-- frozen universe version;
+- immutable Pattern universe version;
 - frozen baseline definition;
 - exact target and horizon;
-- population source ID and hash;
+- the exact prospective-source bundle ID and hash;
 - deterministic selection-rule ID and rule hash;
 - declared eligible population count;
-- every included baseline observation and its source hash.
+- every baseline observation and its self-hash;
+- the exact L7 capture snapshot and start-session identity for each row.
 
-The number of supplied baseline observations must equal the declared eligible
-population count.
+For every L7 capture snapshot belonging to the Pattern version, the baseline record must contain exactly one row for every symbol present in the verified capture-time scanner snapshot. Dropping an unfavorable symbol, changing the declared count, or substituting a different start session fails closed.
+
+Unavailable outcomes are explicit states, not silently removed from the population. `MISSING_OUTCOME` and `START_SESSION_UNAVAILABLE` remain visible while only actually available, as-of-eligible observations enter the statistical denominator.
+
+The number of supplied baseline observations must equal the complete verified L7 source population represented by the bundle. At a particular L9 look, only baseline observations associated with L8 claims already mature in the eligible as-of prefix are used statistically.
 
 Unknown baseline semantics fail closed in L9 v1. They require a new explicit
 methodology rather than an improvised comparator after seeing outcomes.
@@ -135,24 +151,22 @@ Its outcome `end_at` must also be no later than the L9 evaluation time.
 
 ## PIT-safe context diagnostics
 
-Sector, segment, pillar, cluster and market-regime diagnostics are optional
-context fields in a separate hash-protected context bundle.
+Sector, pillar, cluster and market-regime diagnostics are optional context fields in a separate hash-protected context bundle.
 
-They may not be populated from today's taxonomy.
+They may not be populated from today's taxonomy or from manually copied labels.
 
 Each context row is bound to:
 
-- L8 claim ID and symbol;
-- the exact capture snapshot ID;
-- the exact capture snapshot binding hash;
-- an observation timestamp strictly before the Pattern's start session;
-- a context-source hash.
+- L8 claim ID and exact L7 claim hash;
+- symbol;
+- exact capture snapshot ID and snapshot-binding hash;
+- exact L7 current-row hash;
+- the complete L2-defined capture-time row projection;
+- an observation timestamp strictly before the Pattern's start session.
 
-The capture identity must equal the immutable identity already carried by the
-L8 outcome.
+`context_source_hash` must equal the L7 current-row hash, the supplied row projection must reproduce that hash, and every diagnostic value must equal the corresponding value stored in that projection.
 
-This prevents current sector/regime metadata from being retrofitted into old
-prospective events.
+The same claim identity must agree across L7 source proof and L8 matured outcome. This prevents current sector/regime metadata or outcome-aware labels from being retrofitted into old prospective events.
 
 Context splits are diagnostic only. They cannot replace the full prospective
 sample and cannot rescue a failed primary result by post-hoc subgroup choice.
