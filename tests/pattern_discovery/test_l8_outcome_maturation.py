@@ -80,7 +80,7 @@ def make_claim(
             "snapshot_generated_at": "2026-10-07T18:00:00Z",
             "snapshot_binding_hash": snapshot_binding_hash,
             "history_binding_hash": "6" * 64,
-            "session_map_hash": exact_session_map_hash,
+            "session_map_hash": "7" * 64,
             "current_row_hash": "8" * 64,
             "condition_evidence": [],
             "condition_evidence_hash": digest([]),
@@ -166,7 +166,7 @@ def make_capture_report(claims, sessions):
             "max_generated_at": "2026-10-07T13:00:00Z",
             "history_binding_hash": "6" * 64,
         },
-        "session_map_hash": "7" * 64,
+        "session_map_hash": exact_session_map_hash,
         "counts": {
             "frozen_pattern_count": 1,
             "post_freeze_pattern_count": 1,
