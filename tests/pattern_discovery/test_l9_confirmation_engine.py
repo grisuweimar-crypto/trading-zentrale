@@ -1179,7 +1179,7 @@ def test_no_posthoc_regime_rescue_of_negative_full_sample(tmp_path):
         )
 
 
-def test_context_missing_is_inconclusive_not_falsified(tmp_path):
+def test_context_bundle_cannot_omit_entire_eligible_claims(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
     source, _ = prospective_source_for([pattern], outcomes)
@@ -1189,21 +1189,19 @@ def test_context_missing_is_inconclusive_not_falsified(tmp_path):
         context_bundle_id="CTX-EMPTY",
         generated_at=source["generated_at"],
     )
-    report = build_report(
-        regs,
-        pattern,
-        control,
-        monitor,
-        outcomes=outcomes,
-        prospective_source=source,
-        context=empty_context,
-    )
-    result = report["pattern_results"][0]
-    assert result["result_class"] == "INCONCLUSIVE"
-    assert "CONTEXT_COVERAGE_INSUFFICIENT" in result["result_reasons"]
-    assert report["qm_c_handoff"]["qm_c5_results"][0][
-        "outcome_classification"
-    ] == "INCONCLUSIVE"
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="context_bundle_must_exactly_cover_eligible_confirmation_claims",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            prospective_source=source,
+            context=empty_context,
+        )
 
 
 def test_capture_time_regime_cannot_be_selectively_omitted(tmp_path):
