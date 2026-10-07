@@ -184,15 +184,19 @@ class DailyResearchTests(unittest.TestCase):
         env.pop("GITHUB_OUTPUT", None)
         env.pop("GITHUB_STEP_SUMMARY", None)
         script = str(PROJECT / "scripts/generate_research_views.py")
-        current_universe = self.root / "artifacts" / "watchlist" / "watchlist_full.csv"
-        current_universe.parent.mkdir(parents=True, exist_ok=True)
+        master = self.root / "data" / "inputs" / "universe_master.csv"
+        master.parent.mkdir(parents=True, exist_ok=True)
+        master.write_text(
+            "active,symbol,name,isin,asset_type\n"
+            "1,001,A,,stock\n"
+            "1,B,B,,stock\n"
+            "1,C,C,,stock\n"
+            "1,C,C duplicate,,stock\n",
+            encoding="utf-8",
+        )
 
         begin_daily(self.root, self.receipt, run_id="expanded")
         self.write_watchlist()
-        current_universe.write_text(
-            "symbol\n001\nB\nC\n",
-            encoding="utf-8",
-        )
         result = subprocess.run(
             [sys.executable, script, "--root", str(self.root), "--receipt", str(self.receipt)],
             env=env,
@@ -207,10 +211,6 @@ class DailyResearchTests(unittest.TestCase):
 
         begin_daily(self.root, self.receipt, run_id="partial-after-expansion")
         self.write_watchlist(self.rows[:2])
-        current_universe.write_text(
-            "symbol\n001\nB\nC\n",
-            encoding="utf-8",
-        )
         result = subprocess.run(
             [sys.executable, script, "--root", str(self.root), "--receipt", str(self.receipt)],
             env=env,
