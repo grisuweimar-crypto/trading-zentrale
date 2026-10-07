@@ -70,8 +70,13 @@ It is never added to:
 - support regions,
 - confirmation decisions.
 
-Only hash-valid L8 matured outcomes from the exact frozen Pattern version can
-enter the Pattern sample.
+Only outcomes from the complete hash-valid L8 maturation registry can enter
+the Pattern sample.
+
+L9 verifies the full registry hash chain and event ordering. For a historical
+or current look it then derives the exact **as-of registry prefix** whose
+`recorded_at` timestamps are not later than `evaluated_at`. Later registry
+events remain verifiable but are invisible to that look.
 
 Every L8 outcome must match:
 
@@ -120,6 +125,8 @@ Unknown baseline semantics fail closed in L9 v1. They require a new explicit
 methodology rather than an improvised comparator after seeing outcomes.
 
 Every baseline observation must also begin strictly after Pattern freeze.
+
+Its outcome `end_at` must also be no later than the L9 evaluation time.
 
 ## PIT-safe context diagnostics
 
@@ -468,7 +475,8 @@ hash-addressable for later replay.
 Inputs:
 
 - frozen L5 Pattern list/snapshot
-- L8 matured outcomes / maturation registry
+- complete L8 `outcome_maturations.jsonl` registry (including event hashes
+  and `recorded_at`, not extracted naked outcome records)
 - L9 baseline bundle
 - optional PIT-safe context bundle
 - exact QM-C3 control-plan ID/version
