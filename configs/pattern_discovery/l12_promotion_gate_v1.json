@@ -1,0 +1,104 @@
+{
+  "schema_version": "pattern_discovery_l12_promotion_gate_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L12",
+  "name": "Pattern Promotion Gate",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Define an explicit, auditable and reversible admission gate from frozen Pattern Discovery evidence into the later challenger/integration architecture without directly changing productive Scanner, Decision Layer, portfolio, or execution semantics.",
+  "principles": {
+    "rating_alone_never_promotes": true,
+    "only_exact_pattern_version_can_be_admitted": true,
+    "separate_review_required": true,
+    "prospective_confirmation_required": true,
+    "discovery_probability_never_attached_as_confirmatory_probability": true,
+    "dependency_must_be_explicitly_handled": true,
+    "no_vote_counting": true,
+    "modifier_requires_separate_admission_contract": true,
+    "admission_is_reversible": true,
+    "downstream_use_must_revalidate_current_bindings": true,
+    "l13_required_before_any_decision_layer_effect": true
+  },
+  "eligibility": {
+    "allowed_ratings": ["B", "A"],
+    "required_l9_result_class": "SUPPORTED",
+    "terminal_family_decisions": ["FINAL_COMPLETE", "STOP_EFFICACY"],
+    "require_l6_dependency_graph": true,
+    "disallowed_pattern_type_tokens": ["MODIFIER", "CONTEXT_MODIFIER"]
+  },
+  "integration": {
+    "allowed_modes": ["ANNOTATION_ONLY", "SHADOW_CHALLENGER"],
+    "mode_directional_authority": {
+      "ANNOTATION_ONLY": "NONE",
+      "SHADOW_CHALLENGER": "SHADOW_ONLY"
+    },
+    "productive_timing_evidence_enabled_in_l12": false,
+    "decision_layer_effect_enabled_in_l12": false
+  },
+  "probability_attachment": {
+    "source": "LATEST_TERMINAL_SUPPORTED_L9_PROSPECTIVE_EVIDENCE",
+    "fields": [
+      "direction_probability",
+      "baseline_probability",
+      "probability_advantage_lift",
+      "mean_aligned_outcome",
+      "effect_size_vs_baseline",
+      "effective_n",
+      "support_region_count",
+      "robust_uncertainty"
+    ],
+    "recalibration_performed": false
+  },
+  "dependency_handling": {
+    "allowed_modes": [
+      "INDEPENDENT_IF_NO_HIGH_DEPENDENCY",
+      "PRIMARY_REPRESENTATIVE",
+      "CORRELATED_NO_COUNTING",
+      "ANNOTATION_ONLY"
+    ],
+    "high_severities": ["HIGH", "CRITICAL"],
+    "high_dependency_disallows_independent_mode": true,
+    "duplicate_disallows_independent_mode": true
+  },
+  "conflict_handling": {
+    "allowed_modes": ["DEFER_TO_L13_RELATION_GRAPH", "ANNOTATION_ONLY"],
+    "directional_fusion_performed_in_l12": false
+  },
+  "review": {
+    "allowed_decisions": ["APPROVE", "REJECT", "DEFER"],
+    "approval_requires_eligibility": true,
+    "approval_requires_reason_codes": true,
+    "approval_requires_explicit_integration_contract": true,
+    "rejection_and_defer_are_retained": true
+  },
+  "reversibility": {
+    "allowed_terminal_actions": ["DEMOTE", "ROLLBACK"],
+    "reason_codes": [
+      "RATING_DEGRADED",
+      "FALSIFIED",
+      "DEPENDENCY_INVALIDATED",
+      "CONFLICT_INVALIDATED",
+      "SEMANTICS_INVALIDATED",
+      "GOVERNANCE_REVIEW",
+      "INCREMENTAL_VALUE_NOT_CONFIRMED"
+    ],
+    "current_rating_history_binding_required": true,
+    "current_l9_binding_required": true,
+    "current_dependency_graph_binding_required": true
+  },
+  "storage": {
+    "review_path_template": "artifacts/research/pattern_discovery/promotion/reviews/{pattern_id}/{pattern_version}/{review_id}.json",
+    "registry_path": "artifacts/research/pattern_discovery/promotion/promotion_registry.jsonl"
+  },
+  "boundaries": {
+    "l5_pattern_mutation_performed": false,
+    "l9_confirmation_mutation_performed": false,
+    "l10_rating_mutation_performed": false,
+    "scanner_score_change_performed": false,
+    "timing_change_performed": false,
+    "decision_layer_integration_performed": false,
+    "portfolio_or_execution_effect_created": false
+  }
+}

@@ -154,6 +154,20 @@ from .pattern_library import (
     verify_pattern_library,
 )
 
+from .promotion_gate import (
+    PromotionGateError,
+    build_promotion_review,
+    load_promotion_contract,
+    persist_promotion_review,
+    promotion_contract_hash,
+    record_promotion_decision,
+    review_repo_path,
+    validate_admission_current,
+    verify_promotion_decision,
+    verify_promotion_review,
+)
+from .promotion_registry import PromotionRegistry
+
 __all__ = [
     "BoundaryViolation",
     "PatternDiscoveryBoundary",
@@ -270,4 +284,15 @@ __all__ = [
     "persist_pattern_library",
     "render_pattern_library_html",
     "verify_pattern_library",
+    "PromotionGateError",
+    "PromotionRegistry",
+    "build_promotion_review",
+    "load_promotion_contract",
+    "persist_promotion_review",
+    "promotion_contract_hash",
+    "record_promotion_decision",
+    "review_repo_path",
+    "validate_admission_current",
+    "verify_promotion_decision",
+    "verify_promotion_review",
 ]
