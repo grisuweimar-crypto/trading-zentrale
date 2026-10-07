@@ -816,7 +816,16 @@ def baseline_record(pattern, prospective_source_bundle, *, negative=False):
     forecast = pattern["pattern_spec"]["forecast"]
     observations = []
     counter = 0
+    eligible_snapshot_ids = {
+        str(claim["snapshot_id"])
+        for claim in prospective_source_bundle["claims"]
+        if claim["pattern_id"] == pattern["pattern_id"]
+        and claim["pattern_version"] == pattern["pattern_version"]
+        and claim["pattern_spec_hash"] == pattern["pattern_spec_hash"]
+    }
     for snapshot in prospective_source_bundle["snapshots"]:
+        if snapshot["snapshot_id"] not in eligible_snapshot_ids:
+            continue
         sessions = {
             item["symbol"]: item
             for item in snapshot["market_sessions"]
