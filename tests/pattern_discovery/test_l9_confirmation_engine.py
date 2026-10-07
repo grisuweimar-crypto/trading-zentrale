@@ -883,6 +883,62 @@ def test_baseline_definition_must_match_frozen_pattern(tmp_path):
         )
 
 
+def test_baseline_selection_rule_cannot_be_changed_after_freeze(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    baseline = baseline_record(pattern)
+    baseline["selection_rule_id"] = "POSTHOC_FAVORABLE_SUBSET"
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_frozen_pattern_mismatch",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            baseline=baseline,
+        )
+
+
+def test_declared_baseline_population_must_be_fully_present(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    baseline = baseline_record(pattern)
+    baseline["eligible_population_count"] += 1
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_eligible_population_not_fully_present",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            baseline=baseline,
+        )
+
+
+def test_context_must_match_exact_l8_capture_snapshot(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    contexts = context_bundle_for(outcomes)
+    contexts["claim_contexts"][0]["capture_snapshot_id"] = "OTHER-SNAPSHOT"
+    contexts["context_bundle_hash"] = digest(
+        {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="context_capture_snapshot_id_mismatch",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            context=contexts,
+        )
+
+
 def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
     regs = registries(tmp_path)
     pattern_a = make_pattern(pattern_id="PAT-L9-A", family_id="FAM-L9")
