@@ -84,19 +84,33 @@ longer accepts an arbitrary maturation-registry path. A caller-supplied event
 list must equal the complete canonical registry byte-for-byte at evaluation
 time; a genesis-valid truncation therefore fails closed.
 
-For a historical or current look L9 derives the exact **as-of registry prefix**
-whose `recorded_at` timestamps are not later than `evaluated_at`. Only that
-eligible prefix is part of the immutable confirmation-evidence identity. A
-later append to the canonical L8 registry therefore cannot change the hash or
-result of an already reproducible historical L9 look; the later suffix is still
-validated but remains invisible to that look.
+For a historical or current look L9 derives two distinct views of the
+authoritative registry:
+
+- the exact **recorded as-of prefix**, containing every registry event whose
+  `recorded_at` is not later than `evaluated_at`;
+- the **consumable evidence subset**, containing only events whose target
+  session is also safely observable for that look.
+
+These are deliberately not treated as the same sequence. A recorded event can
+be temporarily non-consumable and become eligible at a later look. If such an
+event sits earlier in the canonical registry than evidence already consumed,
+the later eligible sequence may therefore gain an item before an older consumed
+hash. Sequential cumulative validation requires every previously consumed hash
+to remain present in the same relative order (ordered subsequence); it does not
+incorrectly require the prior consumable list to remain a literal prefix.
+
+A later append to the canonical L8 registry cannot alter the recorded as-of
+prefix of an already reproducible historical look. The later suffix is still
+validated but remains outside that historical prefix.
 
 L8 currently carries `target_session_date` but not an authoritative target
 session-close timestamp. L9 v1 therefore uses a conservative rule: an event
-whose target session is on the evaluation date is not yet eligible for that
-look. It becomes eligible only on a later calendar date, while an event
-registered before its target session date is invalid. Same-date registration
-therefore cannot leak an as-yet-unobserved adjusted close into a same-day look.
+whose target session is on the evaluation date is recorded in the as-of prefix
+but is not yet consumable for that look. It becomes consumable only on a later
+calendar date, while an event registered before its target session date is
+invalid. Same-date registration therefore cannot leak an as-yet-unobserved
+adjusted close into a same-day look.
 
 Every L8 outcome must match:
 
@@ -498,6 +512,12 @@ The identity is the exact:
 An identical replay is idempotent.
 
 Different content for an already persisted look fails closed.
+
+Registry replay uses the same cumulative-evidence rule as look construction:
+previously consumed L8 event hashes must remain an ordered subsequence of later
+consumable evidence. This permits a previously recorded but temporarily
+non-consumable event to become eligible earlier in canonical registry order,
+while still rejecting any actual removal or reordering of consumed evidence.
 
 Detailed reports are stored under:
 

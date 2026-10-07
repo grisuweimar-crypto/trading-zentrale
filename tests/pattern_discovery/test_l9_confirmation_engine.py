@@ -26,6 +26,8 @@ from scanner.research.governance.qm_c_sequential_monitoring import (
 )
 from scanner.research.pattern_discovery.confirmation_engine import (
     ConfirmationEngineError,
+    _require_cumulative_evidence,
+    _verify_l8_maturation_registry_events,
     ConfirmationLookRegistry,
     build_baseline_bundle,
     build_confirmation_look,
@@ -1641,7 +1643,8 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
     binding = report["input_bindings"]["l8_maturation_registry"]
-    assert binding["eligible_prefix_event_count"] == 0
+    assert binding["recorded_prefix_event_count"] == 0
+    assert binding["eligible_event_count"] == 0
     assert binding["eligible_event_hashes"] == []
 
 
@@ -1687,9 +1690,135 @@ def test_same_day_target_session_is_not_eligible_until_later_date(tmp_path):
         context_bundle=contexts,
     )
     assert report["look_status"] == "UNRESOLVED_NOT_DUE"
-    assert report["input_bindings"]["l8_maturation_registry"][
-        "eligible_prefix_event_count"
-    ] == 0
+    binding = report["input_bindings"]["l8_maturation_registry"]
+    assert binding["recorded_prefix_event_count"] == 1
+    assert binding["eligible_event_count"] == 0
+    assert binding["eligible_event_hashes"] == []
+
+
+def test_newly_eligible_earlier_registry_event_preserves_consumed_evidence_order(tmp_path):
+    _, pattern, _, _ = setup_single_family(tmp_path)
+    same_day = matured_outcome(
+        pattern,
+        claim_id="ELIG-A",
+        symbol="AAA",
+        start_day="2027-01-10",
+        target_value=0.08,
+    )
+    already_mature = matured_outcome(
+        pattern,
+        claim_id="ELIG-B",
+        symbol="BBB",
+        start_day="2027-01-09",
+        target_value=0.07,
+    )
+    events = maturation_registry_events(
+        [same_day, already_mature],
+        recorded_at="2027-01-15T20:00:00Z",
+    )
+
+    first_rows, first_binding = _verify_l8_maturation_registry_events(
+        events,
+        evaluated_at="2027-01-15T21:00:00Z",
+    )
+    assert [row["maturation_event_hash"] for row in first_rows] == [
+        events[1]["entry_hash"]
+    ]
+    assert first_binding["recorded_prefix_event_hashes"] == [
+        events[0]["entry_hash"],
+        events[1]["entry_hash"],
+    ]
+    assert first_binding["eligible_event_hashes"] == [
+        events[1]["entry_hash"]
+    ]
+
+    second_rows, second_binding = _verify_l8_maturation_registry_events(
+        events,
+        evaluated_at="2027-01-16T20:00:00Z",
+    )
+    assert [row["maturation_event_hash"] for row in second_rows] == [
+        events[0]["entry_hash"],
+        events[1]["entry_hash"],
+    ]
+    assert second_binding["eligible_event_hashes"] == [
+        events[0]["entry_hash"],
+        events[1]["entry_hash"],
+    ]
+
+    prior_report = {
+        "input_bindings": {
+            "l8_maturation_registry": first_binding,
+        },
+        "pattern_results": [],
+    }
+    _require_cumulative_evidence(
+        [prior_report],
+        current_maturation_hashes=second_binding["eligible_event_hashes"],
+        current_baseline_hashes={},
+    )
+
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_evidence_not_cumulative_before_later_look",
+    ):
+        _require_cumulative_evidence(
+            [prior_report],
+            current_maturation_hashes=[events[0]["entry_hash"]],
+            current_baseline_hashes={},
+        )
+
+
+def test_confirmation_registry_replay_accepts_delayed_eligibility_insertion(
+    tmp_path,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "scanner.research.pattern_discovery.confirmation_engine.verify_confirmation_look",
+        lambda report, contract=None: {"valid": True},
+    )
+    registry = ConfirmationLookRegistry(tmp_path / "confirmation_looks.jsonl")
+
+    def report(look_id, hashes):
+        return {
+            "look_status": "EVALUATED",
+            "qm_governance": {
+                "monitoring_plan_id": "MON-LATE-ELIGIBILITY",
+                "monitoring_plan_version": "v1",
+                "look_id": look_id,
+            },
+            "input_bindings": {
+                "l8_maturation_registry": {
+                    "eligible_event_hashes": list(hashes),
+                },
+            },
+            "pattern_results": [],
+        }
+
+    events = [
+        {
+            "event_type": "CONFIRMATION_LOOK_PERSISTED",
+            "report": report("LOOK_1", ["B"]),
+        },
+        {
+            "event_type": "CONFIRMATION_LOOK_PERSISTED",
+            "report": report("FINAL", ["A", "B"]),
+        },
+    ]
+    replayed = registry._replay(events)
+    assert len(replayed) == 2
+
+    dropped = [
+        events[0],
+        {
+            "event_type": "CONFIRMATION_LOOK_PERSISTED",
+            "report": report("FINAL", ["A"]),
+        },
+    ]
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_registry_not_append_only_across_looks",
+    ):
+        registry._replay(dropped)
 
 
 def test_truncated_valid_l8_chain_is_rejected_against_authoritative_registry(tmp_path):

@@ -1632,6 +1632,7 @@ def _verify_l8_maturation_registry_events(
     eligible: list[dict[str, Any]] = []
     seen_claims: set[str] = set()
     all_event_hashes: list[str] = []
+    recorded_prefix_event_hashes: list[str] = []
     eligible_event_hashes: list[str] = []
 
     for expected_sequence, raw in enumerate(events, start=1):
@@ -1711,35 +1712,38 @@ def _verify_l8_maturation_registry_events(
             )
 
         all_event_hashes.append(stored)
-        if (
-            recorded_at <= evaluation_time
-            and target_date < evaluation_time.date()
-        ):
-            eligible.append(
-                {
-                    "record": dict(record),
-                    "maturation_recorded_at": recorded_at.isoformat().replace(
-                        "+00:00", "Z"
-                    ),
-                    "maturation_event_hash": stored,
-                }
-            )
-            eligible_event_hashes.append(stored)
+        if recorded_at <= evaluation_time:
+            recorded_prefix_event_hashes.append(stored)
+            if target_date < evaluation_time.date():
+                eligible.append(
+                    {
+                        "record": dict(record),
+                        "maturation_recorded_at": recorded_at.isoformat().replace(
+                            "+00:00", "Z"
+                        ),
+                        "maturation_event_hash": stored,
+                    }
+                )
+                eligible_event_hashes.append(stored)
 
         previous = stored
         previous_recorded_at = recorded_at
 
-    eligible_head = (
-        eligible_event_hashes[-1] if eligible_event_hashes else None
+    recorded_head = (
+        recorded_prefix_event_hashes[-1]
+        if recorded_prefix_event_hashes
+        else None
     )
     binding_core = {
-        "eligible_prefix_event_count": len(eligible_event_hashes),
-        "eligible_prefix_head_hash": eligible_head,
+        "recorded_prefix_event_count": len(recorded_prefix_event_hashes),
+        "recorded_prefix_head_hash": recorded_head,
+        "recorded_prefix_event_hashes": recorded_prefix_event_hashes,
+        "eligible_event_count": len(eligible_event_hashes),
         "eligible_event_hashes": eligible_event_hashes,
         "evaluated_at": evaluation_time.isoformat().replace("+00:00", "Z"),
     }
     return eligible, {
-        "schema_version": "pattern_discovery_l9_l8_maturation_binding_v1",
+        "schema_version": "pattern_discovery_l9_l8_maturation_binding_v2",
         **binding_core,
         "binding_hash": _hash(binding_core),
     }
@@ -3221,6 +3225,22 @@ def _prior_local_confirmation_reports(
     return ordered
 
 
+def _is_ordered_subsequence(
+    prior: Sequence[str],
+    current: Sequence[str],
+) -> bool:
+    """Return True when every prior hash remains in canonical relative order."""
+    if not prior:
+        return True
+    position = 0
+    for value in current:
+        if value == prior[position]:
+            position += 1
+            if position == len(prior):
+                return True
+    return False
+
+
 def _require_cumulative_evidence(
     prior_reports: Sequence[Mapping[str, Any]],
     *,
@@ -3237,10 +3257,7 @@ def _require_cumulative_evidence(
         or []
     )
     current_maturation = list(current_maturation_hashes)
-    if (
-        len(current_maturation) < len(prior_maturation)
-        or current_maturation[: len(prior_maturation)] != prior_maturation
-    ):
+    if not _is_ordered_subsequence(prior_maturation, current_maturation):
         raise ConfirmationEngineError(
             "l8_maturation_evidence_not_cumulative_before_later_look"
         )
@@ -3895,29 +3912,54 @@ def verify_confirmation_look(
         raise ConfirmationEngineError(
             "confirmation_l8_maturation_binding_missing"
         )
-    hashes = maturation_binding.get("eligible_event_hashes")
-    if not isinstance(hashes, list):
+    if maturation_binding.get("schema_version") != (
+        "pattern_discovery_l9_l8_maturation_binding_v2"
+    ):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_binding_schema_invalid"
+        )
+    recorded_hashes = maturation_binding.get("recorded_prefix_event_hashes")
+    eligible_hashes = maturation_binding.get("eligible_event_hashes")
+    if not isinstance(recorded_hashes, list) or not isinstance(
+        eligible_hashes, list
+    ):
         raise ConfirmationEngineError(
             "confirmation_l8_maturation_event_hashes_invalid"
         )
-    if maturation_binding.get("eligible_prefix_event_count") != len(hashes):
+    if maturation_binding.get("recorded_prefix_event_count") != len(
+        recorded_hashes
+    ):
         raise ConfirmationEngineError(
-            "confirmation_l8_maturation_prefix_count_mismatch"
+            "confirmation_l8_maturation_recorded_prefix_count_mismatch"
         )
-    expected_head = hashes[-1] if hashes else None
-    if maturation_binding.get("eligible_prefix_head_hash") != expected_head:
+    recorded_head = recorded_hashes[-1] if recorded_hashes else None
+    if maturation_binding.get("recorded_prefix_head_hash") != recorded_head:
         raise ConfirmationEngineError(
-            "confirmation_l8_maturation_prefix_head_mismatch"
+            "confirmation_l8_maturation_recorded_prefix_head_mismatch"
         )
-    for index, value in enumerate(hashes):
-        _sha256_text(
-            value,
-            f"confirmation_l8_maturation_event_hashes.{index}",
+    if maturation_binding.get("eligible_event_count") != len(eligible_hashes):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_eligible_count_mismatch"
+        )
+    for label, values in (
+        ("recorded", recorded_hashes),
+        ("eligible", eligible_hashes),
+    ):
+        for index, value in enumerate(values):
+            _sha256_text(
+                value,
+                f"confirmation_l8_maturation_{label}_event_hashes.{index}",
+            )
+    if not _is_ordered_subsequence(eligible_hashes, recorded_hashes):
+        raise ConfirmationEngineError(
+            "confirmation_l8_maturation_eligible_not_subsequence_of_recorded_prefix"
         )
     binding_core = {
-        "eligible_prefix_event_count": len(hashes),
-        "eligible_prefix_head_hash": expected_head,
-        "eligible_event_hashes": hashes,
+        "recorded_prefix_event_count": len(recorded_hashes),
+        "recorded_prefix_head_hash": recorded_head,
+        "recorded_prefix_event_hashes": recorded_hashes,
+        "eligible_event_count": len(eligible_hashes),
+        "eligible_event_hashes": eligible_hashes,
         "evaluated_at": maturation_binding.get("evaluated_at"),
     }
     if _hash(binding_core) != maturation_binding.get("binding_hash"):
@@ -4136,10 +4178,9 @@ class ConfirmationLookRegistry:
             )
             previous_hashes = prior_maturation_hashes.get(monitor_key)
             if previous_hashes is not None:
-                if (
-                    len(current_hashes) < len(previous_hashes)
-                    or current_hashes[: len(previous_hashes)]
-                    != previous_hashes
+                if not _is_ordered_subsequence(
+                    previous_hashes,
+                    current_hashes,
                 ):
                     raise ConfirmationEngineError(
                         f"l8_maturation_registry_not_append_only_across_looks:{monitor_key}"
