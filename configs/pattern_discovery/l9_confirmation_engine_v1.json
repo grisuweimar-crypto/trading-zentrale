@@ -90,6 +90,7 @@
       "eligible_population_count",
       "target_id",
       "horizon_sessions",
+      "snapshot_session_bindings",
       "observations"
     ],
     "observation_required_fields": [
@@ -123,6 +124,8 @@
     "original_currency_required": true,
     "explicit_exchange_session_date_required": true,
     "session_date_binding_hash_covers_l7_session_identity_and_explicit_exchange_date": true,
+    "each_used_snapshot_session_binding_must_reproduce_l8_start_session_binding_hash": true,
+    "snapshot_session_binding_covers_all_l7_snapshot_symbols": true,
     "utc_date_inference_for_exchange_session_forbidden": true,
     "target_session_must_be_exact_horizon_th_later_observed_price_session": true,
     "freeform_end_timestamp_is_not_used_for_horizon_or_stratification": true,
