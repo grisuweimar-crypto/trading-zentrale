@@ -230,6 +230,27 @@ jobs:
             python scripts/build_watch_runtime_w10.py
           fi
 
+      - name: Build per-symbol Watch views
+        run: python scripts/build_watch_symbol_views.py
+
+      - name: Verify per-symbol Watch views
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          runtime=json.load(open("artifacts/research/watch_runtime/manifest.json"))
+          index=json.load(open("artifacts/research/watch_runtime/symbols/index.json"))
+          assert index["snapshot_id"]==runtime["snapshot_id"]
+          assert index["symbol_count"]==215
+          assert index["packet_count"]==runtime["packet_count"]
+          assert index["source_runtime_projection_sha256"]==runtime["runtime_projection_sha256"]
+          assert index["private_position_data_included"] is False
+          assert index["decision_logic_changed"] is False
+          assert len(index["symbol_files"])==215
+          assert len(index["summary_files"])==215
+          print({"snapshot_id":index["snapshot_id"],"symbol_views":index["symbol_count"]})
+          PY
+
       - name: Verify Watch Runtime
         run: |
           python - <<'PY'
