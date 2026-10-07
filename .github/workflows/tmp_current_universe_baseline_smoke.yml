@@ -1,9 +1,10 @@
 name: Temporary Current Universe Baseline Smoke
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/current-universe-research-baseline
+      - main
+  workflow_dispatch:
 
 jobs:
   research-baseline:
