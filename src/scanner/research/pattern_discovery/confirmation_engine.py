@@ -581,6 +581,37 @@ def _pattern_key(pattern: Mapping[str, Any]) -> tuple[str, str]:
     )
 
 
+def _expected_baseline_selection_rule(
+    pattern: Mapping[str, Any],
+    *,
+    contract: Mapping[str, Any],
+) -> tuple[str, str]:
+    forecast = _pattern_forecast(pattern)
+    baseline = forecast["baseline"]
+    rules = contract["baseline_bundle"].get(
+        "supported_baseline_selection_rules"
+    ) or {}
+    rule_id = rules.get(baseline)
+    if not rule_id:
+        raise ConfirmationEngineError(
+            f"l9_baseline_selection_rule_not_supported:{baseline}"
+        )
+    universe_version = _text(
+        pattern.get("pattern_spec", {}).get("data", {}).get("universe_version"),
+        "pattern.universe_version",
+    )
+    rule_hash = _hash(
+        {
+            "selection_rule_id": rule_id,
+            "baseline_definition": baseline,
+            "universe_version": universe_version,
+            "target_id": forecast["target_id"],
+            "horizon_sessions": forecast["horizon_sessions"],
+        }
+    )
+    return str(rule_id), rule_hash
+
+
 def _pattern_baseline_map(
     bundle: Mapping[str, Any],
 ) -> dict[tuple[str, str], dict[str, Any]]:
@@ -1167,17 +1198,26 @@ def _normalize_pattern_outcomes(
 def _normalize_pattern_baseline(
     pattern: Mapping[str, Any],
     baseline_record: Mapping[str, Any],
+    *,
+    contract: Mapping[str, Any],
 ) -> list[dict[str, Any]]:
     forecast = _pattern_forecast(pattern)
     freeze_at = _as_datetime(
         pattern["freeze_timestamp"],
         "pattern.freeze_timestamp",
     )
+    rule_id, rule_hash = _expected_baseline_selection_rule(
+        pattern,
+        contract=contract,
+    )
     checks = {
         "pattern_id": pattern["pattern_id"],
         "pattern_version": pattern["pattern_version"],
         "pattern_spec_hash": pattern["pattern_spec_hash"],
         "baseline_definition": forecast["baseline"],
+        "universe_version": pattern["pattern_spec"]["data"]["universe_version"],
+        "selection_rule_id": rule_id,
+        "selection_rule_hash": rule_hash,
         "target_id": forecast["target_id"],
         "horizon_sessions": forecast["horizon_sessions"],
     }
@@ -1872,6 +1912,7 @@ def build_confirmation_look(
         baseline_rows = _normalize_pattern_baseline(
             pattern,
             baseline_record,
+            contract=spec,
         )
         for row in candidate_rows:
             all_outcome_rows_by_claim[str(row["claim_id"])] = row
