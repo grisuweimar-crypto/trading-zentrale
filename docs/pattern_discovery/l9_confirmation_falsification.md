@@ -84,12 +84,24 @@ longer accepts an arbitrary maturation-registry path. A caller-supplied event
 list must equal the complete canonical registry byte-for-byte at evaluation
 time; a genesis-valid truncation therefore fails closed.
 
-For a historical or current look L9 derives the exact **as-of registry prefix**
-whose `recorded_at` timestamps are not later than `evaluated_at`. Only that
-eligible prefix is part of the immutable confirmation-evidence identity. A
-later append to the canonical L8 registry therefore cannot change the hash or
-result of an already reproducible historical L9 look; the later suffix is still
-validated but remains invisible to that look.
+For a historical or current look L9 derives two distinct views:
+
+- the exact **as-of registry prefix** whose `recorded_at` timestamps are not
+  later than `evaluated_at`; and
+- the **consumable outcome set** inside that prefix whose target session is
+  already eligible under the conservative close-availability rule.
+
+Both are hash-bound in the L9 maturation binding. A later append to the
+canonical L8 registry therefore cannot change the as-of prefix of an already
+reproducible historical look; the later suffix is still validated but remains
+invisible to that look.
+
+The consumable set is deliberately not treated as a literal registry prefix.
+An earlier registry event may become consumable on a later calendar day after
+its target-session close gate clears. Across sequential looks L9 therefore
+requires the previously consumed event hashes to remain a **set-wise subset**
+of the later consumable set. This preserves every already-consumed outcome
+without falsely rejecting legitimate delayed eligibility insertions.
 
 L8 currently carries `target_session_date` but not an authoritative target
 session-close timestamp. L9 v1 therefore uses a conservative rule: an event
