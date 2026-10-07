@@ -505,6 +505,12 @@ def verify_baseline_bundle(
                     f"baseline_observation_fields_missing:{pid}:{obs_index}:"
                     + ",".join(missing_obs)
                 )
+            extra_obs = sorted(set(obs) - set(observation_required))
+            if extra_obs:
+                raise ConfirmationEngineError(
+                    f"baseline_observation_unknown_fields:{pid}:{obs_index}:"
+                    + ",".join(extra_obs)
+                )
             event_id = _safe_token(
                 obs["baseline_event_id"],
                 f"baseline[{pid}].observations[{obs_index}].baseline_event_id",
