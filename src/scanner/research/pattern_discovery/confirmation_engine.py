@@ -761,7 +761,8 @@ def _bootstrap_intervals(
         "support_region_count": support_region_count,
         "repetitions_requested": repetitions,
         "repetitions_completed": 0,
-        "effect_size_interval_95": None,
+        "aligned_effect_interval_95": None,
+        "effect_size_vs_baseline_interval_95": None,
         "probability_lift_interval_95": None,
         "direction_probability_interval_95": None,
         "baseline_probability_interval_95": None,
@@ -801,7 +802,8 @@ def _bootstrap_intervals(
     )
     rng = random.Random(seed)
 
-    effects: list[float] = []
+    aligned_effects: list[float] = []
+    baseline_effect_differences: list[float] = []
     lifts: list[float] = []
     candidate_probabilities: list[float] = []
     baseline_probabilities: list[float] = []
@@ -828,16 +830,21 @@ def _bootstrap_intervals(
         baseline_mean = sum(baseline) / len(baseline)
         candidate_p = sum(value > 0 for value in candidate) / len(candidate)
         baseline_p = sum(value > 0 for value in baseline) / len(baseline)
-        effects.append(candidate_mean - baseline_mean)
+        aligned_effects.append(candidate_mean)
+        baseline_effect_differences.append(candidate_mean - baseline_mean)
         lifts.append(candidate_p - baseline_p)
         candidate_probabilities.append(candidate_p)
         baseline_probabilities.append(baseline_p)
 
-    diagnostics["repetitions_completed"] = len(effects)
-    if effects:
-        diagnostics["effect_size_interval_95"] = [
-            _percentile(effects, low_q),
-            _percentile(effects, high_q),
+    diagnostics["repetitions_completed"] = len(aligned_effects)
+    if aligned_effects:
+        diagnostics["aligned_effect_interval_95"] = [
+            _percentile(aligned_effects, low_q),
+            _percentile(aligned_effects, high_q),
+        ]
+        diagnostics["effect_size_vs_baseline_interval_95"] = [
+            _percentile(baseline_effect_differences, low_q),
+            _percentile(baseline_effect_differences, high_q),
         ]
         diagnostics["probability_lift_interval_95"] = [
             _percentile(lifts, low_q),
@@ -1494,8 +1501,8 @@ def _data_quality_blockers(
 ) -> list[str]:
     blockers: list[str] = []
     robust = metrics["robust_uncertainty"]
-    if robust.get("effect_size_interval_95") is None:
-        blockers.append("ROBUST_EFFECT_INTERVAL_UNAVAILABLE")
+    if robust.get("aligned_effect_interval_95") is None:
+        blockers.append("ROBUST_ALIGNED_EFFECT_INTERVAL_UNAVAILABLE")
     if robust.get("probability_lift_interval_95") is None:
         blockers.append("ROBUST_PROBABILITY_LIFT_INTERVAL_UNAVAILABLE")
     context_coverage = float(
@@ -1532,10 +1539,10 @@ def _confirmation_gate_reasons(
 ) -> list[str]:
     reasons: list[str] = []
     minimums = metrics["frozen_minimum_criteria"]
-    if metrics["effect_size_vs_baseline"] is None or float(
-        metrics["effect_size_vs_baseline"]
+    if metrics["mean_aligned_outcome"] is None or float(
+        metrics["mean_aligned_outcome"]
     ) < float(minimums["minimum_effect_size"]):
-        reasons.append("MINIMUM_EFFECT_SIZE_NOT_MET")
+        reasons.append("MINIMUM_ALIGNED_EFFECT_SIZE_NOT_MET")
     if metrics["probability_advantage_lift"] is None or float(
         metrics["probability_advantage_lift"]
     ) < float(minimums["minimum_baseline_lift"]):
@@ -1572,17 +1579,17 @@ def _confirmation_gate_reasons(
             reasons.append(reason)
 
     effect_interval = metrics["robust_uncertainty"].get(
-        "effect_size_interval_95"
+        "aligned_effect_interval_95"
     )
     if (
-        cfg["effect_interval_lower_must_exceed_zero"]
+        cfg["aligned_effect_interval_lower_must_exceed_zero"]
         and (
             not effect_interval
             or effect_interval[0] is None
             or float(effect_interval[0]) <= 0
         )
     ):
-        reasons.append("ROBUST_EFFECT_INTERVAL_DOES_NOT_EXCLUDE_ZERO")
+        reasons.append("ROBUST_ALIGNED_EFFECT_INTERVAL_DOES_NOT_EXCLUDE_ZERO")
     lift_interval = metrics["robust_uncertainty"].get(
         "probability_lift_interval_95"
     )
@@ -1623,7 +1630,7 @@ def _strong_falsification(
     contract: Mapping[str, Any],
 ) -> bool:
     robust = metrics["robust_uncertainty"]
-    effect = robust.get("effect_size_interval_95")
+    effect = robust.get("aligned_effect_interval_95")
     lift = robust.get("probability_lift_interval_95")
     if not effect or not lift:
         return False
