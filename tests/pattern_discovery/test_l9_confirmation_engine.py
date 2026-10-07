@@ -1309,6 +1309,7 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
             monitoring_registry=regs["c4"],
             qm_a_ledger=regs["qm_a"],
             evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
             context_bundle=contexts,
         )
 
@@ -1344,6 +1345,7 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
         monitoring_registry=regs["c4"],
         qm_a_ledger=regs["qm_a"],
         evaluated_at="2027-01-15T20:00:00Z",
+        repo_root=tmp_path,
         context_bundle=contexts,
     )
 
