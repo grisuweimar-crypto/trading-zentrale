@@ -651,15 +651,21 @@ def _support_regions(
     *,
     block_length: int,
 ) -> tuple[int, dict[str, int], list[str]]:
-    date_axis = sorted(
-        {
-            *(_date_key(str(row["start_at"])) for row in candidate_rows),
-            *(_date_key(str(row["start_at"])) for row in baseline_rows),
-        }
+    baseline_dates = sorted(
+        {_date_key(str(row["start_at"])) for row in baseline_rows}
     )
-    positions = {day: index for index, day in enumerate(date_axis)}
+    positions = {day: index for index, day in enumerate(baseline_dates)}
+    candidate_dates_all = {
+        _date_key(str(row["start_at"])) for row in candidate_rows
+    }
+    missing_candidate_dates = sorted(candidate_dates_all - set(positions))
+    if missing_candidate_dates:
+        raise ConfirmationEngineError(
+            "candidate_date_missing_from_unconditional_baseline_axis:"
+            + ",".join(missing_candidate_dates)
+        )
     candidate_dates = sorted(
-        {_date_key(str(row["start_at"])) for row in candidate_rows},
+        candidate_dates_all,
         key=lambda day: positions[day],
     )
     region_by_date: dict[str, int] = {}
@@ -674,7 +680,7 @@ def _support_regions(
     return (
         len(set(region_by_date.values())),
         region_by_date,
-        date_axis,
+        baseline_dates,
     )
 
 
@@ -749,10 +755,7 @@ def _bootstrap_intervals(
         float(value) for value in stats["bootstrap_interval"]
     ]
     date_axis = sorted(
-        {
-            *(_date_key(str(row["start_at"])) for row in candidate_rows),
-            *(_date_key(str(row["start_at"])) for row in baseline_rows),
-        }
+        {_date_key(str(row["start_at"])) for row in baseline_rows}
     )
     diagnostics: dict[str, Any] = {
         "method": stats["bootstrap_method"],
@@ -1550,7 +1553,7 @@ def _pattern_statistics(
         ),
         "support_region_count": support_count,
         "support_region_method": contract["statistics"]["support_region_method"],
-        "combined_prospective_date_axis_count": len(date_axis),
+        "baseline_date_axis_count": len(date_axis),
         "direction_probability": direction_probability,
         "baseline_probability": baseline_probability,
         "probability_advantage_lift": probability_lift,
