@@ -1492,6 +1492,7 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
         monitoring_registry=regs["c4"],
         qm_a_ledger=regs["qm_a"],
         evaluated_at="2027-01-15T20:00:00Z",
+        repo_root=tmp_path,
         context_bundle=contexts,
     )
     assert second == first
@@ -1531,6 +1532,7 @@ def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
             monitoring_registry=regs["c4"],
             qm_a_ledger=regs["qm_a"],
             evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
             context_bundle=contexts,
         )
 
@@ -1567,6 +1569,7 @@ def test_tampered_l8_outcome_fails_closed(tmp_path):
             monitoring_registry=regs["c4"],
             qm_a_ledger=regs["qm_a"],
             evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
             context_bundle=contexts,
         )
 
@@ -1632,6 +1635,7 @@ def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
             monitoring_registry=regs["c4"],
             qm_a_ledger=regs["qm_a"],
             evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
             context_bundle=contexts,
         )
 
@@ -1832,6 +1836,7 @@ def test_qm_c3_family_membership_must_exactly_match_patterns(tmp_path):
             monitoring_registry=regs["c4"],
             qm_a_ledger=regs["qm_a"],
             evaluated_at="2027-01-15T20:00:00Z",
+            repo_root=tmp_path,
             context_bundle=contexts,
         )
 
@@ -1891,6 +1896,7 @@ def test_bonferroni_family_and_sequential_threshold_are_both_applied(tmp_path):
         monitoring_registry=regs["c4"],
         qm_a_ledger=regs["qm_a"],
         evaluated_at="2027-01-15T20:00:00Z",
+        repo_root=tmp_path,
         context_bundle=contexts,
     )
     assert report["look_status"] == "EVALUATED"
