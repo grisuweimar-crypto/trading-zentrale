@@ -1414,12 +1414,13 @@ def test_tampered_l8_outcome_fails_closed(tmp_path):
 def test_pre_freeze_outcome_cannot_enter_confirmation(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    bad = deepcopy(outcomes[0])
+    source, normalized = prospective_source_for([pattern], outcomes)
+    bad = deepcopy(normalized[0])
     bad["horizon_provenance"]["start_at"] = "2026-10-01T08:00:00Z"
     bad["outcome_hash"] = digest(
         {k: v for k, v in bad.items() if k != "outcome_hash"}
     )
-    outcomes[0] = bad
+    normalized[0] = bad
     with pytest.raises(
         ConfirmationEngineError,
         match="nonprospective_l8_outcome_after_freeze_required",
@@ -1429,28 +1430,35 @@ def test_pre_freeze_outcome_cannot_enter_confirmation(tmp_path):
             pattern,
             control,
             monitor,
-            outcomes=outcomes,
+            outcomes=normalized,
+            prospective_source=source,
         )
 
 
 def test_baseline_outcome_after_l9_evaluation_fails_closed(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
-    baseline = baseline_record(pattern)
+    outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source)
     baseline["observations"][0]["end_at"] = "2027-01-16T08:00:00Z"
+    body = dict(baseline["observations"][0])
+    body.pop("source_hash", None)
+    baseline["observations"][0]["source_hash"] = digest(body)
     report_bundle = build_baseline_bundle(
         [baseline],
+        source,
         baseline_bundle_id="BASE-FUTURE-OUTCOME",
         generated_at="2027-01-15T20:00:00Z",
     )
-    outcomes = prospective_rows(pattern)
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     with pytest.raises(
         ConfirmationEngineError,
         match="baseline_outcome_after_l9_evaluation",
     ):
         build_confirmation_look(
             [pattern],
-            maturation_registry_events(outcomes),
+            maturation_registry_events(normalized),
+            source,
             report_bundle,
             control_plan_id=control["control_plan_id"],
             control_plan_version=control["control_plan_version"],
