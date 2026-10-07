@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -26,24 +26,40 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
-    "direction": "positive",
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:TTK.DE:9a55520ffefb694c:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:TTK.DE:03f6bed3788ea96b:5T",
+          "timing:TTK.DE:2ec83739629fba4d:5T",
+          "timing:TTK.DE:838b819bd450346e:5T",
+          "timing:TTK.DE:2fbfff31832fc700:60T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
+    "direction": null,
     "known_directional_claim_ids": [
-      "timing:TTK.DE:15f457a0b3a6df9d:20T",
-      "timing:TTK.DE:e64908cc5e4c18f0:60T",
-      "timing:TTK.DE:ff63700b226f41b1:60T"
+      "timing:TTK.DE:03f6bed3788ea96b:5T",
+      "timing:TTK.DE:2ec83739629fba4d:5T",
+      "timing:TTK.DE:838b819bd450346e:5T",
+      "timing:TTK.DE:2fbfff31832fc700:60T",
+      "timing:TTK.DE:9a55520ffefb694c:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 5
     },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -140,18 +156,26 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
-      "r_code_downgrade": true,
+      "r_code_downgrade": false,
       "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
-    "last_overextension_date": "2026-10-06",
-    "last_overextension_rs3m": 0.22881490439394847,
+    "last_overextension_date": "2026-10-07",
+    "last_overextension_rs3m": 0.27883693151612565,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
@@ -164,8 +188,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_conflict"
   }
 }

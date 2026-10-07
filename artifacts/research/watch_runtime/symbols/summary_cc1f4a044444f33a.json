@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,19 +29,12 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:CVX:42bcd8a34d314c09:5T",
-      "timing:CVX:0671faf1011640c5:5T",
-      "timing:CVX:f483a5247b57affc:20T",
-      "timing:CVX:cad5eb04910821c4:20T",
-      "timing:CVX:b158fef8cbfb5c55:20T",
-      "timing:CVX:3e260f25164f48ce:40T",
-      "timing:CVX:a0bebf08166a0860:60T",
-      "timing:CVX:6289a7880870e93e:60T",
-      "timing:CVX:fe6ff0aee1bf447a:60T",
-      "timing:CVX:92ad9e5c355866b9:60T"
+      "timing:CVX:15f457a0b3a6df9d:20T",
+      "timing:CVX:e64908cc5e4c18f0:60T",
+      "timing:CVX:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 10
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -50,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -147,6 +140,14 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -158,14 +159,14 @@
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-10-06",
-    "last_overextension_rs3m": 0.16722225172442595,
-    "overextension_active": true,
+    "last_overextension_rs3m": 0.1672222517244259,
+    "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 0,
+    "sessions_since_last_overextension": 1,
     "upstream_review_state": "profit_protection_review",
-    "upstream_sequence_state": "overextension_with_fading_dynamics"
+    "upstream_sequence_state": "post_overextension_decay"
   },
-  "state_history_state": "overextension_with_momentum_loss",
+  "state_history_state": "post_overextension_correction",
   "symbol": "CVX",
   "transition_state": {
     "pending_confirmation_count": 0,

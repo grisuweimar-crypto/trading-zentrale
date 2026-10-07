@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,17 +29,12 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:ICE:03f6bed3788ea96b:5T",
-      "timing:ICE:42bcd8a34d314c09:5T",
-      "timing:ICE:cad5eb04910821c4:20T",
-      "timing:ICE:28846bf8f8b491cd:40T",
-      "timing:ICE:e3563708ab21aab0:60T",
-      "timing:ICE:a0bebf08166a0860:60T",
-      "timing:ICE:92ad9e5c355866b9:60T",
-      "timing:ICE:2fbfff31832fc700:60T"
+      "timing:ICE:862e678b240083af:40T",
+      "timing:ICE:8868c70444a4a57f:40T",
+      "timing:ICE:9d34e7ebabe3e590:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 8
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -48,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -145,6 +140,14 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -159,7 +162,7 @@
     "last_overextension_rs3m": 0.1772527368858674,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 7,
+    "sessions_since_last_overextension": 8,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },

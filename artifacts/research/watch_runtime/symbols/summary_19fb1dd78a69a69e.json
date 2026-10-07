@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,22 +29,34 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:LC0A.MU:ea08718de33a1787:5T",
-      "timing:LC0A.MU:c42ca6c1baee697b:20T",
+      "timing:LC0A.MU:13dfd193091882d7:5T",
+      "timing:LC0A.MU:a2763d94cd6f82e9:5T",
+      "timing:LC0A.MU:d18193c29692a1cb:5T",
+      "timing:LC0A.MU:9aace91dab644870:5T",
+      "timing:LC0A.MU:2ec83739629fba4d:5T",
+      "timing:LC0A.MU:42bcd8a34d314c09:5T",
+      "timing:LC0A.MU:63001daa7f481bc1:5T",
+      "timing:LC0A.MU:1758b10ff7893792:20T",
+      "timing:LC0A.MU:85b7b4bcb43aeb00:20T",
+      "timing:LC0A.MU:a4278e33701f9d98:20T",
+      "timing:LC0A.MU:1aa807ae1a9556c5:20T",
+      "timing:LC0A.MU:6267ff2c27f27eb8:20T",
       "timing:LC0A.MU:f483a5247b57affc:20T",
+      "timing:LC0A.MU:cad5eb04910821c4:20T",
       "timing:LC0A.MU:494a15c3341a0317:20T",
       "timing:LC0A.MU:15f457a0b3a6df9d:20T",
-      "timing:LC0A.MU:4ccb45d4ee923f1a:40T",
+      "timing:LC0A.MU:b5c6f29104b27dae:40T",
+      "timing:LC0A.MU:f9714fd629aaf7f2:40T",
+      "timing:LC0A.MU:2d034c21b8215d13:40T",
       "timing:LC0A.MU:df23cc7f8d9328ee:60T",
       "timing:LC0A.MU:e64908cc5e4c18f0:60T",
-      "timing:LC0A.MU:32bb40f535b6b527:60T",
-      "timing:LC0A.MU:5472db56664c10c8:60T",
+      "timing:LC0A.MU:a0bebf08166a0860:60T",
       "timing:LC0A.MU:6289a7880870e93e:60T",
       "timing:LC0A.MU:fe6ff0aee1bf447a:60T",
       "timing:LC0A.MU:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 13
+      "timing": 25
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -53,7 +65,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -150,12 +162,20 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
+      "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": false
@@ -163,10 +183,10 @@
     "last_overextension_date": "2026-09-16",
     "last_overextension_rs3m": 0.171390556240004,
     "overextension_active": false,
-    "recent_overextension": true,
-    "sessions_since_last_overextension": 20,
-    "upstream_review_state": "profit_protection_review",
-    "upstream_sequence_state": "post_overextension_decay"
+    "recent_overextension": false,
+    "sessions_since_last_overextension": 21,
+    "upstream_review_state": "none",
+    "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "LC0A.MU",

@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,22 +29,12 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:AG.TO:a2763d94cd6f82e9:5T",
-      "timing:AG.TO:d18193c29692a1cb:5T",
-      "timing:AG.TO:9aace91dab644870:5T",
-      "timing:AG.TO:056cab0d8c42f322:5T",
-      "timing:AG.TO:838b819bd450346e:5T",
-      "timing:AG.TO:85b7b4bcb43aeb00:20T",
-      "timing:AG.TO:ae61c82fbb0371fc:20T",
-      "timing:AG.TO:a4278e33701f9d98:20T",
-      "timing:AG.TO:6267ff2c27f27eb8:20T",
-      "timing:AG.TO:f9714fd629aaf7f2:40T",
-      "timing:AG.TO:677e719dc170acd6:40T",
-      "timing:AG.TO:2d034c21b8215d13:40T",
+      "timing:AG.TO:15f457a0b3a6df9d:20T",
+      "timing:AG.TO:e64908cc5e4c18f0:60T",
       "timing:AG.TO:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 13
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -53,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -150,21 +140,29 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rank_worsening_5t": true,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-09-13",
     "last_overextension_rs3m": 0.1831769001257277,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 23,
+    "sessions_since_last_overextension": 24,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

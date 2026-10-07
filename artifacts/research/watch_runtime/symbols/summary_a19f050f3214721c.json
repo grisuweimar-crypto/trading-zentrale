@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,28 +27,17 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
-    "known_directional_claim_ids": [
-      "timing:NESN.SW:03f6bed3788ea96b:5T",
-      "timing:NESN.SW:42bcd8a34d314c09:5T",
-      "timing:NESN.SW:cad5eb04910821c4:20T",
-      "timing:NESN.SW:28846bf8f8b491cd:40T",
-      "timing:NESN.SW:e3563708ab21aab0:60T",
-      "timing:NESN.SW:a0bebf08166a0860:60T",
-      "timing:NESN.SW:92ad9e5c355866b9:60T",
-      "timing:NESN.SW:2fbfff31832fc700:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 8
-    },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "direction": null,
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -145,12 +134,20 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": true,
+      "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
@@ -169,8 +166,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_insufficient"
   }
 }

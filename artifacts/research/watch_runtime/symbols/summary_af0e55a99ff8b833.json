@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -26,74 +26,24 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:ENSG:b0fb906b9f3e02ec:60T",
-          "timing:ENSG:51a8cac8cfa550aa:60T",
-          "timing:ENSG:1691f75766881bca:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:ENSG:13dfd193091882d7:5T",
-          "timing:ENSG:a2763d94cd6f82e9:5T",
-          "timing:ENSG:056cab0d8c42f322:5T",
-          "timing:ENSG:03f6bed3788ea96b:5T",
-          "timing:ENSG:42bcd8a34d314c09:5T",
-          "timing:ENSG:1758b10ff7893792:20T",
-          "timing:ENSG:85b7b4bcb43aeb00:20T",
-          "timing:ENSG:ae61c82fbb0371fc:20T",
-          "timing:ENSG:cad5eb04910821c4:20T",
-          "timing:ENSG:15f457a0b3a6df9d:20T",
-          "timing:ENSG:b5c6f29104b27dae:40T",
-          "timing:ENSG:f9714fd629aaf7f2:40T",
-          "timing:ENSG:677e719dc170acd6:40T",
-          "timing:ENSG:28846bf8f8b491cd:40T",
-          "timing:ENSG:e3563708ab21aab0:60T",
-          "timing:ENSG:e64908cc5e4c18f0:60T",
-          "timing:ENSG:a0bebf08166a0860:60T",
-          "timing:ENSG:92ad9e5c355866b9:60T",
-          "timing:ENSG:2fbfff31832fc700:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
-    "direction": null,
+    "conflicts": [],
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:ENSG:13dfd193091882d7:5T",
-      "timing:ENSG:a2763d94cd6f82e9:5T",
-      "timing:ENSG:056cab0d8c42f322:5T",
-      "timing:ENSG:03f6bed3788ea96b:5T",
-      "timing:ENSG:42bcd8a34d314c09:5T",
-      "timing:ENSG:1758b10ff7893792:20T",
-      "timing:ENSG:85b7b4bcb43aeb00:20T",
-      "timing:ENSG:ae61c82fbb0371fc:20T",
-      "timing:ENSG:cad5eb04910821c4:20T",
       "timing:ENSG:15f457a0b3a6df9d:20T",
-      "timing:ENSG:b5c6f29104b27dae:40T",
-      "timing:ENSG:f9714fd629aaf7f2:40T",
-      "timing:ENSG:677e719dc170acd6:40T",
-      "timing:ENSG:28846bf8f8b491cd:40T",
-      "timing:ENSG:e3563708ab21aab0:60T",
       "timing:ENSG:e64908cc5e4c18f0:60T",
-      "timing:ENSG:a0bebf08166a0860:60T",
-      "timing:ENSG:92ad9e5c355866b9:60T",
-      "timing:ENSG:2fbfff31832fc700:60T",
-      "timing:ENSG:b0fb906b9f3e02ec:60T",
-      "timing:ENSG:51a8cac8cfa550aa:60T",
-      "timing:ENSG:1691f75766881bca:60T"
+      "timing:ENSG:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 22
+      "timing": 3
     },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -190,6 +140,14 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -214,8 +172,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "stable_confirmed"
   }
 }

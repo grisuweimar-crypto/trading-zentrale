@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-07T00:12:54.992138+00:00",
+  "decision_as_of": "2026-10-07T19:05:12.241084+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -26,42 +26,24 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:VZLA.TO:6b9ad841e92f8191:60T",
-          "timing:VZLA.TO:312bf577128ab874:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:VZLA.TO:9aace91dab644870:5T",
-          "timing:VZLA.TO:838b819bd450346e:5T",
-          "timing:VZLA.TO:6267ff2c27f27eb8:20T",
-          "timing:VZLA.TO:5b62a0aabd2f08fc:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
-    "direction": null,
+    "conflicts": [],
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:VZLA.TO:9aace91dab644870:5T",
-      "timing:VZLA.TO:838b819bd450346e:5T",
-      "timing:VZLA.TO:6267ff2c27f27eb8:20T",
-      "timing:VZLA.TO:5b62a0aabd2f08fc:60T",
-      "timing:VZLA.TO:6b9ad841e92f8191:60T",
-      "timing:VZLA.TO:312bf577128ab874:60T"
+      "timing:VZLA.TO:15f457a0b3a6df9d:20T",
+      "timing:VZLA.TO:e64908cc5e4c18f0:60T",
+      "timing:VZLA.TO:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 6
+      "timing": 3
     },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
+  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -158,13 +140,21 @@
       "source_snapshot_id": "a740d668-75d3-4274-ac6c-b0b1a8e6df36",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-07T19:05:12.241084+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": false,
+      "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
@@ -172,9 +162,9 @@
     "last_overextension_rs3m": 0.2059443165476242,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 9,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "post_overextension_memory"
+    "sessions_since_last_overextension": 10,
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "post_overextension_decay"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "VZLA.TO",
@@ -182,8 +172,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "stable_confirmed"
   }
 }
