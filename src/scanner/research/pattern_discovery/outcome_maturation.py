@@ -232,6 +232,79 @@ def _normalize_peer_snapshot(
     return by_symbol, binding
 
 
+def _normalize_start_session_bindings(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    capture_report: Mapping[str, Any],
+    start_session_binding_file_sha256: str,
+    contract: Mapping[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Normalize explicit exchange-session identities without inferring dates.
+
+    The session_date is a supplied market-session date. It is intentionally not
+    derived from start_at because the UTC date can differ from the exchange-local
+    trading date.
+    """
+    if isinstance(rows, (str, bytes, bytearray)) or not isinstance(rows, Sequence):
+        raise OutcomeMaturationError("start_session_bindings_sequence_required")
+    required = tuple(contract["inputs"]["start_session_binding_required_fields"])
+    capture_at = _as_datetime(capture_report["captured_at"], "capture_report.captured_at")
+    by_symbol: dict[str, dict[str, Any]] = {}
+
+    for index, raw in enumerate(rows):
+        if not isinstance(raw, Mapping):
+            raise OutcomeMaturationError(
+                f"start_session_binding_must_be_object:{index}"
+            )
+        missing = [field for field in required if field not in raw]
+        if missing:
+            raise OutcomeMaturationError(
+                f"start_session_binding_fields_missing:{index}:"
+                + ",".join(missing)
+            )
+        symbol = _text(raw.get("symbol"), f"start_sessions[{index}].symbol")
+        if symbol in by_symbol:
+            raise OutcomeMaturationError(
+                f"duplicate_start_session_binding_symbol:{symbol}"
+            )
+        start_at = _timestamp(
+            raw.get("start_at"), f"start_sessions[{index}].start_at"
+        )
+        if _as_datetime(start_at, f"start_sessions[{index}].start_at") <= capture_at:
+            raise OutcomeMaturationError(
+                f"start_session_not_strictly_after_capture:{symbol}"
+            )
+        by_symbol[symbol] = {
+            "symbol": symbol,
+            "session_id": _safe_token(
+                raw.get("session_id"), f"start_sessions[{index}].session_id"
+            ),
+            "calendar_id": _safe_token(
+                raw.get("calendar_id"), f"start_sessions[{index}].calendar_id"
+            ),
+            "session_date": _as_date(
+                raw.get("session_date"), f"start_sessions[{index}].session_date"
+            ).isoformat(),
+            "start_at": start_at,
+            "source": _text(
+                raw.get("source"), f"start_sessions[{index}].source"
+            ),
+        }
+
+    normalized = [by_symbol[symbol] for symbol in sorted(by_symbol)]
+    binding = {
+        "start_session_binding_file_sha256": _sha256_text(
+            start_session_binding_file_sha256,
+            "start_session_binding_file_sha256",
+        ),
+        "row_count": len(normalized),
+        "symbol_count": len(normalized),
+        "sessions_hash": _hash(normalized),
+    }
+    binding["start_session_binding_hash"] = _hash(binding)
+    return by_symbol, binding
+
+
 def _normalize_prices(
     rows: Sequence[Mapping[str, Any]],
     *,
@@ -351,14 +424,35 @@ def _parse_target(
     raise OutcomeMaturationError(f"target_not_supported_by_l8:{target_id}")
 
 
-def _claim_start_date(claim: Mapping[str, Any]) -> str:
-    start = claim.get("start_market_session")
-    if not isinstance(start, Mapping):
+def _subject_start_session_binding(
+    claim: Mapping[str, Any],
+    start_sessions: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    symbol = _text(claim.get("match", {}).get("symbol"), "claim.match.symbol")
+    binding = start_sessions.get(symbol)
+    if binding is None:
+        return None
+    claim_start = claim.get("start_market_session")
+    if not isinstance(claim_start, Mapping):
         raise OutcomeMaturationError("claim_start_market_session_missing")
-    return _as_datetime(
-        start.get("start_at"),
-        "claim.start_market_session.start_at",
-    ).date().isoformat()
+
+    exact_fields = ("session_id", "calendar_id", "start_at", "source")
+    for field in exact_fields:
+        expected = (
+            _timestamp(claim_start.get(field), f"claim.start_market_session.{field}")
+            if field == "start_at"
+            else _text(claim_start.get(field), f"claim.start_market_session.{field}")
+        )
+        actual = (
+            _timestamp(binding.get(field), f"start_session_binding.{field}")
+            if field == "start_at"
+            else _text(binding.get(field), f"start_session_binding.{field}")
+        )
+        if actual != expected:
+            raise OutcomeMaturationError(
+                f"subject_start_session_binding_mismatch:{symbol}:{field}"
+            )
+    return dict(binding)
 
 
 def _path_hash(path: Sequence[Mapping[str, Any]]) -> str:
@@ -463,28 +557,29 @@ def _complete_path(
 
 def _subject_path(
     claim: Mapping[str, Any],
+    start_session: Mapping[str, Any],
     price_groups: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
     horizon: int,
     expected_direction: str,
 ) -> dict[str, Any]:
     symbol = _text(claim.get("match", {}).get("symbol"), "claim.match.symbol")
-    start_date = _claim_start_date(claim)
+    start_date = _as_date(
+        start_session.get("session_date"),
+        "subject_start_session.session_date",
+    ).isoformat()
     series = list(price_groups.get(symbol, ()))
     if not series:
         return {
             "status": "MISSING_START_SESSION",
             "reason_codes": ["NO_VALID_PRICE_SESSIONS_FOR_SUBJECT"],
         }
-    positions = {
-        str(row["date"]): index
-        for index, row in enumerate(series)
-    }
+    positions = {str(row["date"]): index for index, row in enumerate(series)}
     if start_date not in positions:
         return {
             "status": "MISSING_START_SESSION",
             "reason_codes": [
-                "EXACT_L7_START_SESSION_DATE_PRICE_BAR_MISSING"
+                "EXACT_EXPLICIT_START_SESSION_DATE_PRICE_BAR_MISSING"
             ],
         }
     return _complete_path(
@@ -497,9 +592,9 @@ def _subject_path(
 
 def _peer_path(
     symbol: str,
+    start_session: Mapping[str, Any],
     price_groups: Mapping[str, Sequence[Mapping[str, Any]]],
     *,
-    subject_start_date: str,
     horizon: int,
 ) -> dict[str, Any]:
     series = list(price_groups.get(symbol, ()))
@@ -508,19 +603,19 @@ def _peer_path(
             "status": "MISSING_START_SESSION",
             "reason_codes": ["NO_VALID_PRICE_SESSIONS_FOR_PEER"],
         }
-    start_index: int | None = None
-    for index, row in enumerate(series):
-        if str(row["date"]) >= subject_start_date:
-            start_index = index
-            break
-    if start_index is None:
+    session_date = _as_date(
+        start_session.get("session_date"),
+        f"peer_start_session.{symbol}.session_date",
+    ).isoformat()
+    positions = {str(row["date"]): index for index, row in enumerate(series)}
+    if session_date not in positions:
         return {
-            "status": "IMMATURE_HORIZON",
-            "reason_codes": ["NO_PEER_SESSION_ON_OR_AFTER_SUBJECT_START"],
+            "status": "MISSING_START_SESSION",
+            "reason_codes": ["EXACT_PEER_START_SESSION_DATE_PRICE_BAR_MISSING"],
         }
     return _complete_path(
         series,
-        start_index=start_index,
+        start_index=positions[session_date],
         horizon=horizon,
         expected_direction="POSITIVE",
     )
@@ -530,9 +625,9 @@ def _reference_outcome(
     *,
     subject_symbol: str,
     subject_currency: str,
-    subject_start_date: str,
     horizon: int,
     peer_snapshot: Mapping[str, Mapping[str, Any]],
+    start_sessions: Mapping[str, Mapping[str, Any]],
     price_groups: Mapping[str, Sequence[Mapping[str, Any]]],
     contract: Mapping[str, Any],
 ) -> dict[str, Any]:
@@ -575,10 +670,14 @@ def _reference_outcome(
     for symbol in sorted(peer_snapshot):
         if symbol == subject_symbol:
             continue
+        start_session = start_sessions.get(symbol)
+        if start_session is None:
+            excluded["START_SESSION_BINDING_UNAVAILABLE"] += 1
+            continue
         peer = _peer_path(
             symbol,
+            start_session,
             price_groups,
-            subject_start_date=subject_start_date,
             horizon=horizon,
         )
         if peer["status"] != "COMPLETE":
@@ -669,6 +768,8 @@ def _build_matured_record(
     subject: Mapping[str, Any],
     reference: Mapping[str, Any],
     peer_snapshot_binding: Mapping[str, Any],
+    start_session_binding: Mapping[str, Any],
+    subject_start_session: Mapping[str, Any],
     contract: Mapping[str, Any],
 ) -> dict[str, Any]:
     claim_id = _text(claim.get("claim_id"), "claim_id")
@@ -736,7 +837,12 @@ def _build_matured_record(
             "calendar_id": start_session["calendar_id"],
             "session_source": start_session["source"],
             "start_at": start_session["start_at"],
+            "explicit_session_date_source": "START_SESSION_BINDING",
             "start_session_date": subject["start_session_date"],
+            "start_session_binding_hash": start_session_binding[
+                "start_session_binding_hash"
+            ],
+            "subject_start_session": dict(subject_start_session),
             "target_session_date": subject["target_session_date"],
             "horizon_sessions": int(target["horizon_sessions"]),
             "observed_session_count_including_start": len(
@@ -911,6 +1017,8 @@ def evaluate_claim_maturation(
     *,
     peer_snapshot: Mapping[str, Mapping[str, Any]],
     peer_snapshot_binding: Mapping[str, Any],
+    start_sessions: Mapping[str, Mapping[str, Any]],
+    start_session_binding: Mapping[str, Any],
     price_groups: Mapping[str, Sequence[Mapping[str, Any]]],
     contract: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -921,8 +1029,26 @@ def evaluate_claim_maturation(
     )
     verify_prospective_claim(claim)
     target = _parse_target(claim, contract=spec)
+    subject_start_session = _subject_start_session_binding(
+        claim,
+        start_sessions,
+    )
+    if subject_start_session is None:
+        return {
+            "claim_id": claim["claim_id"],
+            "event_id": claim["event_id"],
+            "pattern_id": claim["pattern"]["pattern_id"],
+            "pattern_version": claim["pattern"]["pattern_version"],
+            "symbol": claim["match"]["symbol"],
+            "target_id": target["target_id"],
+            "horizon_sessions": int(target["horizon_sessions"]),
+            "status": "START_SESSION_BINDING_UNAVAILABLE",
+            "reason_codes": ["EXPLICIT_SUBJECT_START_SESSION_BINDING_MISSING"],
+            "matured_outcome": None,
+        }
     subject = _subject_path(
         claim,
+        subject_start_session,
         price_groups,
         horizon=int(target["horizon_sessions"]),
         expected_direction=str(target["expected_direction"]),
@@ -944,9 +1070,9 @@ def evaluate_claim_maturation(
     reference = _reference_outcome(
         subject_symbol=str(claim["match"]["symbol"]),
         subject_currency=str(subject["currency"]),
-        subject_start_date=str(subject["start_session_date"]),
         horizon=int(target["horizon_sessions"]),
         peer_snapshot=peer_snapshot,
+        start_sessions=start_sessions,
         price_groups=price_groups,
         contract=spec,
     )
@@ -974,6 +1100,8 @@ def evaluate_claim_maturation(
         subject=subject,
         reference=reference,
         peer_snapshot_binding=peer_snapshot_binding,
+        start_session_binding=start_session_binding,
+        subject_start_session=subject_start_session,
         contract=spec,
     )
     verify_matured_outcome(record, contract=spec)
@@ -995,11 +1123,13 @@ def evaluate_claim_maturation(
 def build_outcome_maturation_check(
     capture_report: Mapping[str, Any],
     peer_snapshot_rows: Sequence[Mapping[str, Any]],
+    start_session_bindings: Sequence[Mapping[str, Any]],
     price_rows: Sequence[Mapping[str, Any]],
     *,
     checked_at: str,
     price_as_of: str,
     peer_snapshot_file_sha256: str,
+    start_session_binding_file_sha256: str,
     price_file_sha256: str,
     contract: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -1021,6 +1151,12 @@ def build_outcome_maturation_check(
         peer_snapshot_file_sha256=peer_snapshot_file_sha256,
         contract=spec,
     )
+    start_sessions, start_session_binding = _normalize_start_session_bindings(
+        start_session_bindings,
+        capture_report=capture_report,
+        start_session_binding_file_sha256=start_session_binding_file_sha256,
+        contract=spec,
+    )
     price_groups, price_binding = _normalize_prices(
         price_rows,
         price_as_of=price_as_of,
@@ -1033,6 +1169,8 @@ def build_outcome_maturation_check(
             claim,
             peer_snapshot=peer_snapshot,
             peer_snapshot_binding=peer_binding,
+            start_sessions=start_sessions,
+            start_session_binding=start_session_binding,
             price_groups=price_groups,
             contract=spec,
         )
@@ -1057,6 +1195,9 @@ def build_outcome_maturation_check(
         "peer_snapshot_binding_hash": peer_binding[
             "peer_snapshot_binding_hash"
         ],
+        "start_session_binding_hash": start_session_binding[
+            "start_session_binding_hash"
+        ],
         "price_binding_hash": price_binding["price_binding_hash"],
         "checked_at": checked,
     }
@@ -1074,6 +1215,7 @@ def build_outcome_maturation_check(
         "l7_capture_id": capture_report["capture_id"],
         "l7_capture_hash": capture_hash,
         "peer_snapshot_binding": peer_binding,
+        "start_session_binding": start_session_binding,
         "price_binding": price_binding,
         "counts": {
             "claim_count": len(evaluations),
