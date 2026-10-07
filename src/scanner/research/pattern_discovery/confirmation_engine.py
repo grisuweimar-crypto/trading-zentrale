@@ -3131,6 +3131,24 @@ def build_confirmation_look(
         raise ConfirmationEngineError(
             "baseline_bundle_generated_after_evaluation"
         )
+    baseline_price_groups, baseline_price_provenance = (
+        canonical_baseline_price_state(
+            repo_root,
+            evaluated,
+            contract=spec,
+        )
+    )
+    expected_price_bindings = {
+        "price_source_path": baseline_price_provenance["price_source_path"],
+        "price_file_sha256": baseline_price_provenance["price_file_sha256"],
+        "price_as_of": baseline_price_provenance["price_as_of"],
+        "price_binding_hash": baseline_price_provenance["price_binding_hash"],
+    }
+    for field, expected in expected_price_bindings.items():
+        if baseline_bundle.get(field) != expected:
+            raise ConfirmationEngineError(
+                f"baseline_bundle_canonical_price_binding_mismatch:{field}"
+            )
     if context_bundle is not None:
         verify_context_bundle(context_bundle, contract=spec)
         if context_bundle["prospective_source_bundle_id"] != prospective_source_bundle[
@@ -3242,15 +3260,17 @@ def build_confirmation_look(
             baseline_record,
             candidate_rows,
             prospective_source_bundle,
+            baseline_price_groups,
+            baseline_price_provenance,
             contract=spec,
         )
         for baseline_row in baseline_rows:
-            if _as_datetime(
-                baseline_row["end_at"],
-                "baseline.end_at",
-            ) > _as_datetime(evaluated, "evaluated_at"):
+            if _session_date_text(
+                baseline_row["target_session_date"],
+                "baseline.target_session_date",
+            ) >= _as_datetime(evaluated, "evaluated_at").date().isoformat():
                 raise ConfirmationEngineError(
-                    "baseline_outcome_after_l9_evaluation"
+                    "baseline_target_session_not_strictly_before_l9_evaluation_date"
                 )
         for row in candidate_rows:
             all_outcome_rows_by_claim[str(row["claim_id"])] = row
