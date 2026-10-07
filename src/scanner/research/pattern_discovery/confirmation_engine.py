@@ -321,6 +321,27 @@ def verify_baseline_bundle(
             raw["baseline_definition"],
             f"pattern_baselines[{index}].baseline_definition",
         )
+        _safe_token(
+            raw["population_source_id"],
+            f"pattern_baselines[{index}].population_source_id",
+        )
+        _sha256_text(
+            raw["population_source_hash"],
+            f"pattern_baselines[{index}].population_source_hash",
+        )
+        _safe_token(
+            raw["selection_rule_id"],
+            f"pattern_baselines[{index}].selection_rule_id",
+        )
+        _sha256_text(
+            raw["selection_rule_hash"],
+            f"pattern_baselines[{index}].selection_rule_hash",
+        )
+        eligible_population_count = int(raw["eligible_population_count"])
+        if eligible_population_count < 0:
+            raise ConfirmationEngineError(
+                f"baseline_eligible_population_count_invalid:{pid}:{pver}"
+            )
         _text(raw["target_id"], f"pattern_baselines[{index}].target_id")
         horizon = int(raw["horizon_sessions"])
         if horizon <= 0:
@@ -329,6 +350,10 @@ def verify_baseline_bundle(
         if not isinstance(observations, list):
             raise ConfirmationEngineError(
                 f"baseline_observations_list_required:{pid}:{pver}"
+            )
+        if len(observations) != eligible_population_count:
+            raise ConfirmationEngineError(
+                f"baseline_eligible_population_not_fully_present:{pid}:{pver}"
             )
         for obs_index, obs in enumerate(observations):
             if not isinstance(obs, Mapping):
@@ -1802,6 +1827,13 @@ def build_confirmation_look(
         raise ConfirmationEngineError(
             f"no_next_l9_look_in_monitoring_state:{monitoring.get('state')}"
         )
+    if (
+        monitoring.get("early_stop_allowed") is True
+        and spec["statistics"].get("automatic_early_stop_supported") is not True
+    ):
+        raise ConfirmationEngineError(
+            "l9_v1_automatic_early_stop_not_supported_without_machine_readable_boundary"
+        )
 
     look_index = len(monitoring["recorded_looks"])
     planned = monitoring["planned_looks"]
@@ -2018,20 +2050,6 @@ def build_confirmation_look(
     result_classes = [row["result_class"] for row in pattern_results]
     if is_final:
         family_decision = spec["sequential_decisions"]["final_required"]
-    elif (
-        monitoring["early_stop_allowed"]
-        and all(value == "SUPPORTED" for value in result_classes)
-    ):
-        family_decision = spec["sequential_decisions"][
-            "interim_positive_if_early_stop_allowed"
-        ]
-    elif (
-        monitoring["early_stop_allowed"]
-        and all(value == "FALSIFIED" for value in result_classes)
-    ):
-        family_decision = spec["sequential_decisions"][
-            "interim_falsified_if_early_stop_allowed"
-        ]
     else:
         family_decision = spec["sequential_decisions"]["interim_default"]
 
