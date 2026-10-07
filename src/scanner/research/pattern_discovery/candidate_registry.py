@@ -19,10 +19,12 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from scanner.research.governance.qm_c import (
+    HypothesisRegistry,
     hypothesis_version_hash,
     load_qm_c_contract,
 )
 from scanner.research.governance.qm_c_analysis_plan import (
+    AnalysisPlanRegistry,
     analysis_plan_hash,
     load_qm_c_analysis_plan_contract,
 )
@@ -519,6 +521,76 @@ def _qm_handoff(
     }
     handoff["handoff_hash"] = _hash(handoff)
     return handoff
+
+
+def validate_applied_qm_handoff(
+    frozen_pattern: Mapping[str, Any],
+    *,
+    hypothesis_registry: HypothesisRegistry,
+    analysis_plan_registry: AnalysisPlanRegistry,
+) -> dict[str, Any]:
+    """Verify that external QM-C application exactly matches the frozen handoff.
+
+    This function is read-only. It does not register, freeze or transition
+    anything and therefore preserves the L0 write boundary.
+    """
+    if not isinstance(frozen_pattern, Mapping):
+        raise CandidateFreezeError("frozen_pattern_must_be_object")
+    handoff = frozen_pattern.get("qm_c_handoff")
+    if not isinstance(handoff, Mapping):
+        raise CandidateFreezeError("qm_c_handoff_missing")
+
+    hypothesis_record = handoff["hypothesis_record"]
+    plan_record = handoff["analysis_plan_record"]
+    hypothesis = hypothesis_registry.get_hypothesis(
+        str(hypothesis_record["hypothesis_id"]),
+        str(hypothesis_record["hypothesis_version"]),
+    )
+    plan = analysis_plan_registry.get_plan(
+        str(plan_record["analysis_plan_id"]),
+        str(plan_record["analysis_plan_version"]),
+    )
+
+    if hypothesis.get("hypothesis_version_hash") != handoff.get(
+        "hypothesis_version_hash"
+    ):
+        raise CandidateFreezeError("qm_c1_applied_hypothesis_hash_mismatch")
+    if hypothesis.get("state") != handoff.get(
+        "requested_hypothesis_target_state"
+    ):
+        raise CandidateFreezeError("qm_c1_applied_hypothesis_state_mismatch")
+    if plan.get("analysis_plan_hash") != handoff.get("analysis_plan_hash"):
+        raise CandidateFreezeError("qm_c2_applied_plan_hash_mismatch")
+    if plan.get("state") != handoff.get("requested_analysis_plan_target_state"):
+        raise CandidateFreezeError("qm_c2_applied_plan_state_mismatch")
+    if plan.get("freeze_context_hash") != handoff.get("freeze_context_hash"):
+        raise CandidateFreezeError("qm_c2_applied_freeze_context_hash_mismatch")
+    if plan.get("freeze_context") != handoff.get("freeze_context"):
+        raise CandidateFreezeError("qm_c2_applied_freeze_context_mismatch")
+
+    actual_qm_a_identity = analysis_plan_registry.build_qm_a_identity(
+        str(plan_record["analysis_plan_id"]),
+        str(plan_record["analysis_plan_version"]),
+    )
+    if actual_qm_a_identity != handoff.get("qm_a_identity"):
+        raise CandidateFreezeError("qm_c2_qm_a_identity_mismatch")
+
+    return {
+        "valid": True,
+        "pattern_id": frozen_pattern.get("pattern_id"),
+        "pattern_version": frozen_pattern.get("pattern_version"),
+        "hypothesis_id": hypothesis["hypothesis_id"],
+        "hypothesis_version": hypothesis["hypothesis_version"],
+        "hypothesis_version_hash": hypothesis["hypothesis_version_hash"],
+        "analysis_plan_id": plan["analysis_plan_id"],
+        "analysis_plan_version": plan["analysis_plan_version"],
+        "analysis_plan_hash": plan["analysis_plan_hash"],
+        "states": {
+            "hypothesis": hypothesis["state"],
+            "analysis_plan": plan["state"],
+            "qm_a": "NOT_VALIDATED_BY_L5",
+        },
+    }
 
 
 def _version_number(version: str) -> int:
