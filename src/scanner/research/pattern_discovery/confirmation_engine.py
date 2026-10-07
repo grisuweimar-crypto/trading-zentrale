@@ -1026,13 +1026,30 @@ def _regime_diagnostics(
     with_context = [
         row for row in rows if str(row["claim_id"]) in contexts
     ]
+    with_regime_context = []
+    for row in rows:
+        context = contexts.get(str(row["claim_id"]))
+        if not context:
+            continue
+        if any(
+            context.get(field) is not None
+            and str(context.get(field)).strip()
+            for field in fields
+        ):
+            with_regime_context.append(row)
     coverage = (
         len(with_context) / len(rows)
         if rows
         else 0.0
     )
+    regime_coverage = (
+        len(with_regime_context) / len(rows)
+        if rows
+        else 0.0
+    )
     result: dict[str, Any] = {
         "context_coverage": coverage,
+        "regime_context_coverage": regime_coverage,
         "fields": {},
         "qualified_sign_reversal": False,
     }
@@ -1491,6 +1508,16 @@ def _data_quality_blockers(
     )
     if context_coverage < required:
         blockers.append("CONTEXT_COVERAGE_INSUFFICIENT")
+    regime_coverage = float(
+        metrics["regime_diagnostics"]["regime_context_coverage"]
+    )
+    regime_required = float(
+        contract["confirmation_gates"][
+            "regime_context_coverage_minimum_for_confirmation"
+        ]
+    )
+    if regime_coverage < regime_required:
+        blockers.append("REGIME_CONTEXT_COVERAGE_INSUFFICIENT")
     temporal = metrics["temporal_stability"]
     if temporal.get("status") != "AVAILABLE":
         blockers.append("TEMPORAL_STABILITY_DIAGNOSTIC_INSUFFICIENT")
