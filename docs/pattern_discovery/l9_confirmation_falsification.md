@@ -432,6 +432,17 @@ Detailed reports are stored under:
 
 `artifacts/research/pattern_discovery/confirmation_reports/{monitoring_plan_id}/{look_id}/{look_hash}.json`
 
+The exact novel confirmation inputs are archived immutably as well:
+
+- baseline bundles:
+  `artifacts/research/pattern_discovery/confirmation_inputs/baselines/{baseline_bundle_hash}.json`
+- PIT context bundles:
+  `artifacts/research/pattern_discovery/confirmation_inputs/contexts/{context_bundle_hash}.json`
+
+This means a terminal negative result does not survive merely as a summary:
+the exact baseline population and diagnostic context used by the look remain
+hash-addressable for later replay.
+
 `UNRESOLVED_NOT_DUE` is deliberately not written as a consumed look.
 
 ## Operational runner
