@@ -17,6 +17,7 @@ from scanner.research.pattern_discovery import (
     ConfirmationLookRegistry,
     build_confirmation_look,
     confirmation_registry_repo_path,
+    maturation_registry_repo_path,
     persist_confirmation_look,
 )
 
@@ -71,11 +72,6 @@ def main() -> int:
     )
     parser.add_argument("--frozen-patterns", required=True)
     parser.add_argument(
-        "--maturation-registry",
-        required=True,
-        help="Complete L8 outcome_maturations.jsonl hash chain.",
-    )
-    parser.add_argument(
         "--prospective-source-bundle",
         required=True,
         help="Hash-verified L7 snapshot/session source bundle for baseline and PIT context proof.",
@@ -115,7 +111,7 @@ def main() -> int:
     root = Path(args.repo_root).resolve()
     patterns = _patterns(_json(_path(root, args.frozen_patterns)))
     maturation_events = _maturation_events(
-        _path(root, args.maturation_registry)
+        _path(root, maturation_registry_repo_path())
     )
     prospective_source = _json(
         _path(root, args.prospective_source_bundle)
@@ -146,6 +142,7 @@ def main() -> int:
         monitoring_registry=SequentialMonitoringRegistry(_path(root, args.qm_c4_registry)),
         qm_a_ledger=GovernanceLedger(_path(root, args.qm_a_registry)),
         evaluated_at=args.evaluated_at,
+        repo_root=root,
         confirmation_registry=local_confirmation_registry,
         context_bundle=context,
     )
