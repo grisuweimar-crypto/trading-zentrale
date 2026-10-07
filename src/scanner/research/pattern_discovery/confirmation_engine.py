@@ -1124,9 +1124,122 @@ def _other_context_splits(
     return result
 
 
+def _verify_l8_maturation_registry_events(
+    events: Sequence[Mapping[str, Any]],
+    *,
+    evaluated_at: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if isinstance(events, (str, bytes, bytearray)) or not isinstance(
+        events, Sequence
+    ):
+        raise ConfirmationEngineError(
+            "l8_maturation_registry_events_sequence_required"
+        )
+    evaluation_time = _as_datetime(evaluated_at, "evaluated_at")
+    previous: str | None = None
+    verified: list[dict[str, Any]] = []
+    seen_claims: set[str] = set()
+    event_hashes: list[str] = []
+    for expected_sequence, raw in enumerate(events, start=1):
+        if not isinstance(raw, Mapping):
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_event_not_object:{expected_sequence}"
+            )
+        if raw.get("schema_version") != "pattern_discovery_l8_maturation_event_v1":
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_schema_invalid:{expected_sequence}"
+            )
+        if raw.get("sequence") != expected_sequence:
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_sequence_invalid:{expected_sequence}"
+            )
+        if raw.get("previous_event_hash") != previous:
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_previous_hash_invalid:{expected_sequence}"
+            )
+        stored = _sha256_text(
+            raw.get("entry_hash"),
+            f"l8_maturation_registry.entry_hash.{expected_sequence}",
+        )
+        body = dict(raw)
+        body.pop("entry_hash", None)
+        if _hash(body) != stored:
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_entry_hash_invalid:{expected_sequence}"
+            )
+        if raw.get("event_type") != "OUTCOME_MATURED":
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_event_type_invalid:{expected_sequence}"
+            )
+        recorded_at = _as_datetime(
+            raw.get("recorded_at"),
+            f"l8_maturation_registry.recorded_at.{expected_sequence}",
+        )
+        if recorded_at > evaluation_time:
+            raise ConfirmationEngineError(
+                f"l8_maturation_event_after_evaluation:{expected_sequence}"
+            )
+        record = raw.get("record")
+        if not isinstance(record, Mapping):
+            raise ConfirmationEngineError(
+                f"l8_maturation_registry_record_missing:{expected_sequence}"
+            )
+        verify_matured_outcome(record)
+        claim_id = _safe_token(
+            record.get("claim", {}).get("claim_id"),
+            f"l8_maturation_registry.claim_id.{expected_sequence}",
+        )
+        if claim_id in seen_claims:
+            raise ConfirmationEngineError(
+                f"l8_maturation_duplicate_claim:{claim_id}"
+            )
+        seen_claims.add(claim_id)
+        target_day = str(
+            record.get("horizon_provenance", {}).get("target_session_date")
+            or ""
+        )
+        try:
+            target_date = datetime.fromisoformat(
+                target_day + "T00:00:00+00:00"
+            ).date()
+        except ValueError as exc:
+            raise ConfirmationEngineError(
+                f"l8_maturation_target_session_date_invalid:{claim_id}"
+            ) from exc
+        if target_date > recorded_at.date():
+            raise ConfirmationEngineError(
+                f"l8_maturation_recorded_before_target_session:{claim_id}"
+            )
+        verified.append(
+            {
+                "record": dict(record),
+                "maturation_recorded_at": recorded_at.isoformat().replace(
+                    "+00:00", "Z"
+                ),
+                "maturation_event_hash": stored,
+            }
+        )
+        event_hashes.append(stored)
+        previous = stored
+
+    return verified, {
+        "schema_version": "pattern_discovery_l9_l8_maturation_binding_v1",
+        "event_count": len(verified),
+        "head_hash": previous,
+        "event_hashes": event_hashes,
+        "binding_hash": _hash(
+            {
+                "event_count": len(verified),
+                "head_hash": previous,
+                "event_hashes": event_hashes,
+            }
+        ),
+    }
+
+
 def _normalize_pattern_outcomes(
     pattern: Mapping[str, Any],
-    matured_outcomes: Sequence[Mapping[str, Any]],
+    maturations: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     _verify_frozen_pattern(pattern)
     forecast = _pattern_forecast(pattern)
@@ -1136,8 +1249,8 @@ def _normalize_pattern_outcomes(
     )
     result: list[dict[str, Any]] = []
     seen_claims: dict[str, str] = {}
-    for raw in matured_outcomes:
-        verify_matured_outcome(raw)
+    for maturation in maturations:
+        raw = maturation["record"]
         claim = raw["claim"]
         if claim["pattern_id"] != pattern["pattern_id"]:
             continue
@@ -1185,6 +1298,12 @@ def _normalize_pattern_outcomes(
             {
                 "claim_id": claim_id,
                 "outcome_hash": outcome_hash,
+                "maturation_recorded_at": maturation[
+                    "maturation_recorded_at"
+                ],
+                "maturation_event_hash": maturation[
+                    "maturation_event_hash"
+                ],
                 "symbol": _text(claim["symbol"], f"claim.symbol:{claim_id}"),
                 "capture_snapshot_id": _safe_token(
                     claim["capture_snapshot_id"],
@@ -1839,7 +1958,7 @@ def _look_identity(
 
 def build_confirmation_look(
     frozen_patterns: Sequence[Mapping[str, Any]],
-    matured_outcomes: Sequence[Mapping[str, Any]],
+    maturation_events: Sequence[Mapping[str, Any]],
     baseline_bundle: Mapping[str, Any],
     *,
     control_plan_id: str,
@@ -1868,13 +1987,36 @@ def build_confirmation_look(
         frozen_patterns, Sequence
     ):
         raise ConfirmationEngineError("frozen_patterns_sequence_required")
-    if isinstance(matured_outcomes, (str, bytes, bytearray)) or not isinstance(
-        matured_outcomes, Sequence
+    if isinstance(maturation_events, (str, bytes, bytearray)) or not isinstance(
+        maturation_events, Sequence
     ):
-        raise ConfirmationEngineError("matured_outcomes_sequence_required")
+        raise ConfirmationEngineError(
+            "l8_maturation_registry_events_sequence_required"
+        )
+    evaluated = _timestamp(evaluated_at, "evaluated_at")
+    verified_maturations, maturation_binding = (
+        _verify_l8_maturation_registry_events(
+            maturation_events,
+            evaluated_at=evaluated,
+        )
+    )
     verify_baseline_bundle(baseline_bundle, contract=spec)
+    if _as_datetime(
+        baseline_bundle["generated_at"],
+        "baseline_bundle.generated_at",
+    ) > _as_datetime(evaluated, "evaluated_at"):
+        raise ConfirmationEngineError(
+            "baseline_bundle_generated_after_evaluation"
+        )
     if context_bundle is not None:
         verify_context_bundle(context_bundle, contract=spec)
+        if _as_datetime(
+            context_bundle["generated_at"],
+            "context_bundle.generated_at",
+        ) > _as_datetime(evaluated, "evaluated_at"):
+            raise ConfirmationEngineError(
+                "context_bundle_generated_after_evaluation"
+            )
 
     control = control_registry.get_control_plan(
         _safe_token(control_plan_id, "control_plan_id"),
@@ -1941,7 +2083,7 @@ def build_confirmation_look(
             )
         candidate_rows = _normalize_pattern_outcomes(
             pattern,
-            matured_outcomes,
+            verified_maturations,
         )
         baseline_rows = _normalize_pattern_baseline(
             pattern,
@@ -1979,7 +2121,6 @@ def build_confirmation_look(
         all_outcome_rows_by_claim,
     )
 
-    evaluated = _timestamp(evaluated_at, "evaluated_at")
     contract_hash = confirmation_contract_hash(spec)
     identity = _look_identity(
         control_plan=control,
@@ -2030,12 +2171,11 @@ def build_confirmation_look(
                     if context_bundle is not None
                     else None
                 ),
+                "l8_maturation_registry": maturation_binding,
                 "matured_outcome_hashes": sorted(
                     {
-                        str(row["outcome_hash"])
-                        for row in matured_outcomes
-                        if isinstance(row, Mapping)
-                        and row.get("outcome_hash")
+                        str(item["record"]["outcome_hash"])
+                        for item in verified_maturations
                     }
                 ),
             },
@@ -2177,6 +2317,7 @@ def build_confirmation_look(
                 if context_bundle is not None
                 else None
             ),
+            "l8_maturation_registry": maturation_binding,
             "matured_outcome_hashes": outcome_hashes,
             "matured_outcome_set_hash": _hash(outcome_hashes),
         },
