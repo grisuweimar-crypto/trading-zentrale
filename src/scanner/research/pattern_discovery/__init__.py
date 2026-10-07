@@ -7,7 +7,8 @@ Statistical Discovery Guard. L5 adds the immutable Candidate Registry and
 QM-C handoff. L6 adds the deterministic Dependency / Redundancy Graph. L7 adds
 immutable prospective PIT claim capture. L8 adds immutable outcome maturation
 after exact forward-session horizons. L9 adds governed prospective
-confirmation/falsification. Later phases add rating and promotion.
+confirmation/falsification. L10 adds the auditable lifecycle Rating Engine.
+Later phases add library presentation and promotion.
 """
 
 from .boundary import (
@@ -128,6 +129,18 @@ from .confirmation_engine import (
     verify_confirmation_look,
     verify_context_bundle,
 )
+from .rating_engine import (
+    RatingEngineError,
+    RatingHistoryRegistry,
+    build_rating_history,
+    load_rating_contract,
+    persist_rating_history,
+    rating_contract_hash,
+    rating_history_repo_path,
+    rating_registry_repo_path,
+    verify_rating_history,
+    verify_rating_transition,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -226,4 +239,14 @@ __all__ = [
     "verify_baseline_bundle",
     "verify_confirmation_look",
     "verify_context_bundle",
+    "RatingEngineError",
+    "RatingHistoryRegistry",
+    "build_rating_history",
+    "load_rating_contract",
+    "persist_rating_history",
+    "rating_contract_hash",
+    "rating_history_repo_path",
+    "rating_registry_repo_path",
+    "verify_rating_history",
+    "verify_rating_transition",
 ]
