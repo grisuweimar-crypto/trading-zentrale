@@ -628,7 +628,14 @@ def _supporting_prior_identity(
         "snapshot_id": row["snapshot_id"],
         "as_of": row["as_of"],
         "generated_at": row["generated_at"],
-        "row_hash": row["_l7_row_hash"],
+        "row_hash": row.get("_l7_row_hash") or _hash(
+            {
+                "symbol": row.get("symbol"),
+                "as_of": row.get("as_of"),
+                "generated_at": row.get("generated_at"),
+                "snapshot_id": row.get("snapshot_id"),
+            }
+        ),
     }
 
 
