@@ -5,8 +5,9 @@ and immutable Discovery Run manifests. L2 adds the versioned PIT-safe Feature
 Library. L3 adds the bounded discovery-only Search Engine. L4 adds the
 Statistical Discovery Guard. L5 adds the immutable Candidate Registry and
 QM-C handoff. L6 adds the deterministic Dependency / Redundancy Graph. L7 adds
-immutable prospective PIT claim capture. Later phases add outcome maturation,
-confirmation, rating and promotion.
+immutable prospective PIT claim capture. L8 adds immutable outcome maturation
+after exact forward-session horizons. Later phases add confirmation, rating and
+promotion.
 """
 
 from .boundary import (
@@ -88,6 +89,19 @@ from .prospective_capture import (
     verify_capture_report,
     verify_prospective_claim,
 )
+from .outcome_maturation import (
+    MaturedOutcomeRegistry,
+    OutcomeMaturationError,
+    build_outcome_maturation_check,
+    evaluate_claim_maturation,
+    load_outcome_maturation_contract,
+    maturation_check_repo_path,
+    maturation_registry_repo_path,
+    outcome_maturation_contract_hash,
+    persist_outcome_maturation,
+    verify_maturation_check,
+    verify_matured_outcome,
+)
 
 __all__ = [
     "BoundaryViolation",
@@ -153,4 +167,15 @@ __all__ = [
     "prospective_claim_registry_repo_path",
     "verify_capture_report",
     "verify_prospective_claim",
+    "MaturedOutcomeRegistry",
+    "OutcomeMaturationError",
+    "build_outcome_maturation_check",
+    "evaluate_claim_maturation",
+    "load_outcome_maturation_contract",
+    "maturation_check_repo_path",
+    "maturation_registry_repo_path",
+    "outcome_maturation_contract_hash",
+    "persist_outcome_maturation",
+    "verify_maturation_check",
+    "verify_matured_outcome",
 ]
