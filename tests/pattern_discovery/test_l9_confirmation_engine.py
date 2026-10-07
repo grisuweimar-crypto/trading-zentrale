@@ -567,6 +567,18 @@ def baseline_record(pattern, *, count=24, negative=False):
         "pattern_version": pattern["pattern_version"],
         "pattern_spec_hash": pattern["pattern_spec_hash"],
         "baseline_definition": forecast["baseline"],
+        "population_source_id": f"POP-{pattern['pattern_id']}",
+        "population_source_hash": digest(
+            {"population": pattern["pattern_id"], "count": count}
+        ),
+        "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_V1",
+        "selection_rule_hash": digest(
+            {
+                "rule": "ALL_ELIGIBLE_POST_FREEZE_PIT_V1",
+                "baseline": forecast["baseline"],
+            }
+        ),
+        "eligible_population_count": len(observations),
         "target_id": forecast["target_id"],
         "horizon_sessions": forecast["horizon_sessions"],
         "observations": observations,
@@ -1017,6 +1029,29 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
     assert second["qm_governance"]["look_id"] == "FINAL"
     assert second["family_decision"] == "FINAL_COMPLETE"
     assert second["qm_c_handoff"]["qm_c5_results"]
+
+
+def test_automatic_early_stop_fails_closed_without_machine_readable_boundary(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(
+        tmp_path,
+        planned_looks=[
+            {"look_id": "LOOK_1", "information_fraction": 0.5},
+            {"look_id": "FINAL", "information_fraction": 1.0},
+        ],
+        early_stop_allowed=True,
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l9_v1_automatic_early_stop_not_supported",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=prospective_rows(pattern, count=12),
+            baseline=baseline_record(pattern, count=12),
+        )
 
 
 def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
