@@ -925,6 +925,7 @@ def write_canonical_price_fixture(
     prospective_source_bundle,
     *,
     horizon=5,
+    session_date_shift_days=0,
 ):
     target = Path(repo_root) / "artifacts/research/price_backfill.csv"
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -932,7 +933,10 @@ def write_canonical_price_fixture(
     for snapshot in prospective_source_bundle["snapshots"]:
         for session in snapshot["market_sessions"]:
             symbol = session["symbol"]
-            start_day = date.fromisoformat(session["start_at"][:10])
+            start_day = (
+                date.fromisoformat(session["start_at"][:10])
+                + timedelta(days=session_date_shift_days)
+            )
             for offset in range(horizon + 1):
                 day = (start_day + timedelta(days=offset)).isoformat()
                 rows[(symbol, day)] = {
@@ -977,11 +981,13 @@ def canonical_price_state_for_test(
     *,
     evaluated_at="2027-01-15T20:00:00Z",
     horizon=5,
+    session_date_shift_days=0,
 ):
     write_canonical_price_fixture(
         repo_root,
         prospective_source_bundle,
         horizon=horizon,
+        session_date_shift_days=session_date_shift_days,
     )
     return canonical_baseline_price_state(
         repo_root,
@@ -995,6 +1001,7 @@ def baseline_record(
     repo_root,
     *,
     evaluated_at="2027-01-15T20:00:00Z",
+    session_date_shift_days=0,
 ):
     forecast = pattern["pattern_spec"]["forecast"]
     price_groups, _ = canonical_price_state_for_test(
@@ -1002,6 +1009,7 @@ def baseline_record(
         prospective_source_bundle,
         evaluated_at=evaluated_at,
         horizon=int(forecast["horizon_sessions"]),
+        session_date_shift_days=session_date_shift_days,
     )
     observations = []
     snapshot_session_bindings = []
@@ -1016,10 +1024,18 @@ def baseline_record(
     for snapshot in prospective_source_bundle["snapshots"]:
         if snapshot["snapshot_id"] not in eligible_snapshot_ids:
             continue
+        session_date_overrides = {
+            item["symbol"]: (
+                date.fromisoformat(item["start_at"][:10])
+                + timedelta(days=session_date_shift_days)
+            ).isoformat()
+            for item in snapshot["market_sessions"]
+        }
         fixture_binding = fixture_start_session_binding(
             snapshot["snapshot_id"],
             snapshot["session_map_hash"],
             snapshot["market_sessions"],
+            session_date_overrides=session_date_overrides,
         )
         snapshot_session_bindings.append(fixture_binding)
         sessions = {
@@ -1160,6 +1176,7 @@ def baseline_bundle_for_test(
     baseline_bundle_id="BASE-L9-TEST",
     generated_at="2027-01-15T20:00:00Z",
     records=None,
+    session_date_shift_days=0,
 ):
     horizons = [
         int(pattern["pattern_spec"]["forecast"]["horizon_sessions"])
@@ -1170,6 +1187,7 @@ def baseline_bundle_for_test(
         prospective_source_bundle,
         evaluated_at=generated_at,
         horizon=max(horizons),
+        session_date_shift_days=session_date_shift_days,
     )
     values = (
         records
@@ -1180,6 +1198,7 @@ def baseline_bundle_for_test(
                 prospective_source_bundle,
                 repo_root,
                 evaluated_at=generated_at,
+                session_date_shift_days=session_date_shift_days,
             )
             for pattern in patterns
         ]
