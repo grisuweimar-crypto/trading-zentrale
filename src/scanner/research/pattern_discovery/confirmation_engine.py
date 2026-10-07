@@ -2469,6 +2469,108 @@ def _look_identity(
     }
 
 
+def _prior_local_confirmation_reports(
+    confirmation_registry: Any,
+    monitoring: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Resolve each consumed QM-C4 look to its exact persisted L9 evidence."""
+    if confirmation_registry is None:
+        if monitoring.get("recorded_looks"):
+            raise ConfirmationEngineError(
+                "subsequent_l9_look_requires_local_confirmation_registry"
+            )
+        return []
+    try:
+        _, looks = confirmation_registry._load()
+    except AttributeError as exc:
+        raise ConfirmationEngineError(
+            "confirmation_registry_interface_invalid"
+        ) from exc
+    relevant = [
+        dict(report)
+        for report in looks.values()
+        if report.get("qm_governance", {}).get("monitoring_plan_id")
+        == monitoring["monitoring_plan_id"]
+        and report.get("qm_governance", {}).get("monitoring_plan_version")
+        == monitoring["monitoring_plan_version"]
+    ]
+    by_look = {
+        str(report["qm_governance"]["look_id"]): report
+        for report in relevant
+    }
+    recorded = monitoring.get("recorded_looks") or []
+    if len(by_look) != len(recorded):
+        raise ConfirmationEngineError(
+            "local_confirmation_history_does_not_cover_consumed_qm_c4_looks"
+        )
+    ordered: list[dict[str, Any]] = []
+    for qm_look in recorded:
+        look_id = str(qm_look["look_id"])
+        report = by_look.get(look_id)
+        if report is None:
+            raise ConfirmationEngineError(
+                f"local_confirmation_report_missing_for_qm_c4_look:{look_id}"
+            )
+        if report.get("confirmation_evidence_hash") != qm_look.get(
+            "artifact_hash"
+        ):
+            raise ConfirmationEngineError(
+                f"local_confirmation_evidence_hash_mismatch_qm_c4:{look_id}"
+            )
+        if report.get("family_decision") != qm_look.get("decision"):
+            raise ConfirmationEngineError(
+                f"local_confirmation_decision_mismatch_qm_c4:{look_id}"
+            )
+        if report.get("evaluated_at") != qm_look.get("observed_at"):
+            raise ConfirmationEngineError(
+                f"local_confirmation_time_mismatch_qm_c4:{look_id}"
+            )
+        ordered.append(report)
+    return ordered
+
+
+def _require_cumulative_evidence(
+    prior_reports: Sequence[Mapping[str, Any]],
+    *,
+    current_maturation_hashes: Sequence[str],
+    current_baseline_hashes: Mapping[str, set[str]],
+) -> None:
+    if not prior_reports:
+        return
+    previous = prior_reports[-1]
+    prior_maturation = list(
+        previous.get("input_bindings", {})
+        .get("l8_maturation_registry", {})
+        .get("eligible_event_hashes")
+        or []
+    )
+    current_maturation = list(current_maturation_hashes)
+    if (
+        len(current_maturation) < len(prior_maturation)
+        or current_maturation[: len(prior_maturation)] != prior_maturation
+    ):
+        raise ConfirmationEngineError(
+            "l8_maturation_evidence_not_cumulative_before_later_look"
+        )
+    for result in previous.get("pattern_results") or []:
+        key = (
+            str(result["pattern_id"])
+            + "::"
+            + str(result["pattern_version"])
+        )
+        prior_hashes = set(
+            result.get("prospective_evidence", {}).get(
+                "baseline_observation_hashes"
+            )
+            or []
+        )
+        current = current_baseline_hashes.get(key)
+        if current is None or not prior_hashes.issubset(current):
+            raise ConfirmationEngineError(
+                f"baseline_evidence_not_cumulative_before_later_look:{key}"
+            )
+
+
 def build_confirmation_look(
     frozen_patterns: Sequence[Mapping[str, Any]],
     maturation_events: Sequence[Mapping[str, Any]],
@@ -2485,6 +2587,7 @@ def build_confirmation_look(
     monitoring_registry: SequentialMonitoringRegistry,
     qm_a_ledger: GovernanceLedger,
     evaluated_at: str,
+    confirmation_registry: Any | None = None,
     context_bundle: Mapping[str, Any] | None = None,
     contract: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -2598,6 +2701,10 @@ def build_confirmation_look(
         )
 
     look_index = len(monitoring["recorded_looks"])
+    prior_local_reports = _prior_local_confirmation_reports(
+        confirmation_registry,
+        monitoring,
+    )
     if monitoring["recorded_looks"]:
         prior_observed_at = _as_datetime(
             monitoring["recorded_looks"][-1]["observed_at"],
@@ -2684,6 +2791,23 @@ def build_confirmation_look(
             "candidate_rows": candidate_rows,
             "baseline_rows": baseline_rows,
         }
+
+    current_baseline_hashes = {
+        str(item["pattern"]["pattern_id"])
+        + "::"
+        + str(item["pattern"]["pattern_version"]): {
+            str(row["source_hash"])
+            for row in item["baseline_rows"]
+        }
+        for item in per_member.values()
+    }
+    _require_cumulative_evidence(
+        prior_local_reports,
+        current_maturation_hashes=maturation_binding[
+            "eligible_event_hashes"
+        ],
+        current_baseline_hashes=current_baseline_hashes,
+    )
 
     _validate_context_against_outcomes(
         contexts,
