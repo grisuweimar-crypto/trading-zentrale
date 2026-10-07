@@ -344,6 +344,10 @@ def build_baseline_bundle(
             price_provenance.get("price_binding_hash"),
             "price_provenance.price_binding_hash",
         ),
+        "normalized_price_hash": _sha256_text(
+            price_provenance.get("normalized_price_hash"),
+            "price_provenance.normalized_price_hash",
+        ),
         "pattern_baselines": [dict(value) for value in pattern_baselines],
     }
     bundle["baseline_bundle_hash"] = _hash(bundle)
@@ -393,6 +397,10 @@ def verify_baseline_bundle(
     _sha256_text(
         bundle.get("price_binding_hash"),
         "baseline_bundle.price_binding_hash",
+    )
+    _sha256_text(
+        bundle.get("normalized_price_hash"),
+        "baseline_bundle.normalized_price_hash",
     )
     stored = _sha256_text(
         bundle.get("baseline_bundle_hash"),
@@ -519,13 +527,13 @@ def verify_baseline_bundle(
                 )
             session_id = obs.get("session_id")
             start_raw = obs.get("start_at")
-            end_raw = obs.get("end_at")
             session_fields = (
                 "session_id",
                 "calendar_id",
                 "session_source",
                 "start_at",
                 "start_session_date",
+                "session_date_binding_hash",
             )
             outcome_fields = (
                 "target_session_date",
@@ -533,7 +541,6 @@ def verify_baseline_bundle(
                 "price_path_hash",
                 "start_adjusted_close",
                 "target_adjusted_close",
-                "end_at",
                 "target_value",
             )
             if status == "START_SESSION_UNAVAILABLE":
@@ -566,10 +573,30 @@ def verify_baseline_bundle(
                     start_raw,
                     f"baseline[{pid}].start_at",
                 )
-                _session_date_text(
+                start_session_date = _session_date_text(
                     obs.get("start_session_date"),
                     f"baseline[{pid}].start_session_date",
                 )
+                session_binding_hash = _sha256_text(
+                    obs.get("session_date_binding_hash"),
+                    f"baseline[{pid}].session_date_binding_hash",
+                )
+                session_binding_body = {
+                    "capture_snapshot_id": obs["capture_snapshot_id"],
+                    "symbol": obs["symbol"],
+                    "session_id": obs["session_id"],
+                    "calendar_id": obs["calendar_id"],
+                    "start_at": _timestamp(
+                        obs["start_at"],
+                        f"baseline[{pid}].start_at",
+                    ),
+                    "session_source": obs["session_source"],
+                    "start_session_date": start_session_date,
+                }
+                if _hash(session_binding_body) != session_binding_hash:
+                    raise ConfirmationEngineError(
+                        f"baseline_session_date_binding_hash_mismatch:{event_id}"
+                    )
             if status == "AVAILABLE":
                 _finite(
                     obs["target_value"],
@@ -602,10 +629,6 @@ def verify_baseline_bundle(
                     obs.get("target_adjusted_close"),
                     f"baseline[{pid}].target_adjusted_close",
                 )
-                _as_datetime(
-                    end_raw,
-                    f"baseline[{pid}].end_at",
-                )
             elif status == "MISSING_OUTCOME":
                 if obs.get("target_value") is not None:
                     raise ConfirmationEngineError(
@@ -619,7 +642,6 @@ def verify_baseline_bundle(
                         "price_path_hash",
                         "start_adjusted_close",
                         "target_adjusted_close",
-                        "end_at",
                     )
                 ):
                     raise ConfirmationEngineError(
