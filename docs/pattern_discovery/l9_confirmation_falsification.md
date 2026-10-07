@@ -168,7 +168,7 @@ Its outcome `end_at` must also be no later than the L9 evaluation time.
 
 Sector, pillar, cluster and market-regime diagnostics are derived directly from the hash-verified L7 capture-time row projections.
 
-A separate hash-protected context bundle may be supplied and archived as an audit mirror, but it is not statistical authority. If supplied, it must cover exactly every eligible confirmation claim and reproduce every non-empty projected diagnostic field. It may not add, alter or omit values.
+A separate hash-protected context bundle may be supplied and archived as an audit mirror, but it is not statistical authority. If supplied, it must cover exactly every claim in the verified prospective L7 source bundle and reproduce every non-empty projected diagnostic field. The statistical diagnostics themselves still use only claims whose L8 outcomes are eligible at the current look. It may not add, alter or omit values.
 
 Today's taxonomy or manually copied labels therefore cannot influence the L9 diagnostics.
 
