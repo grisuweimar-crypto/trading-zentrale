@@ -1819,10 +1819,12 @@ def _normalize_pattern_baseline(
     baseline_record: Mapping[str, Any],
     candidate_rows: Sequence[Mapping[str, Any]],
     prospective_source_bundle: Mapping[str, Any],
+    price_groups: Mapping[str, Sequence[Mapping[str, Any]]],
+    price_provenance: Mapping[str, Any],
     *,
     contract: Mapping[str, Any],
 ) -> list[dict[str, Any]]:
-    """Validate a complete PIT baseline population for the used L7 snapshots."""
+    """Recompute the complete PIT baseline from canonical adjusted prices."""
     forecast = _pattern_forecast(pattern)
     freeze_at = _as_datetime(
         pattern["freeze_timestamp"],
@@ -1838,9 +1840,7 @@ def _normalize_pattern_baseline(
         "pattern_spec_hash": pattern["pattern_spec_hash"],
         "baseline_definition": forecast["baseline"],
         "universe_version": pattern["pattern_spec"]["data"]["universe_version"],
-        "population_source_id": prospective_source_bundle[
-            "source_bundle_id"
-        ],
+        "population_source_id": prospective_source_bundle["source_bundle_id"],
         "population_source_hash": prospective_source_bundle[
             "source_bundle_hash"
         ],
@@ -1880,6 +1880,7 @@ def _normalize_pattern_baseline(
             "candidate_snapshot_missing_from_pattern_source_population:"
             + ",".join(missing)
         )
+
     observed_snapshot_ids = {
         _safe_token(
             raw["capture_snapshot_id"],
@@ -1895,10 +1896,7 @@ def _normalize_pattern_baseline(
     by_snapshot: dict[str, dict[str, Mapping[str, Any]]] = defaultdict(dict)
     seen_events: set[str] = set()
     for raw in observations:
-        event_id = _safe_token(
-            raw["baseline_event_id"],
-            "baseline_event_id",
-        )
+        event_id = _safe_token(raw["baseline_event_id"], "baseline_event_id")
         if event_id in seen_events:
             raise ConfirmationEngineError(
                 f"duplicate_baseline_event_id_for_pattern:{event_id}"
@@ -1908,10 +1906,7 @@ def _normalize_pattern_baseline(
             raw["capture_snapshot_id"],
             f"baseline.capture_snapshot_id:{event_id}",
         )
-        symbol = _text(
-            raw["symbol"],
-            f"baseline.symbol:{event_id}",
-        )
+        symbol = _text(raw["symbol"], f"baseline.symbol:{event_id}")
         if symbol in by_snapshot[snapshot_id]:
             raise ConfirmationEngineError(
                 f"duplicate_baseline_symbol_in_snapshot:{snapshot_id}:{symbol}"
@@ -1919,6 +1914,8 @@ def _normalize_pattern_baseline(
         by_snapshot[snapshot_id][symbol] = raw
 
     available: list[dict[str, Any]] = []
+    horizon = int(forecast["horizon_sessions"])
+
     for snapshot_id in sorted(pattern_snapshot_ids):
         snapshot = snapshots[snapshot_id]
         expected_symbols = {
@@ -1938,6 +1935,7 @@ def _normalize_pattern_baseline(
                 f"baseline_snapshot_population_incomplete:{snapshot_id}:"
                 + ";".join(detail)
             )
+
         sessions = {
             str(item["symbol"]): item
             for item in snapshot["market_sessions"]
@@ -1952,91 +1950,185 @@ def _normalize_pattern_baseline(
                 raise ConfirmationEngineError(
                     f"baseline_target_mismatch:{event_id}"
                 )
-            if int(raw["horizon_sessions"]) != forecast["horizon_sessions"]:
+            if int(raw["horizon_sessions"]) != horizon:
                 raise ConfirmationEngineError(
                     f"baseline_horizon_mismatch:{event_id}"
                 )
-            status = _text(
-                raw["availability_status"],
-                f"baseline.availability_status:{event_id}",
-            )
+
             source_hash = _sha256_text(
                 raw["source_hash"],
                 f"baseline.source_hash:{event_id}",
             )
-            session = sessions.get(symbol)
+            source_body = dict(raw)
+            source_body.pop("source_hash", None)
+            if _hash(source_body) != source_hash:
+                raise ConfirmationEngineError(
+                    f"baseline_observation_source_hash_mismatch:{event_id}"
+                )
 
+            status = _text(
+                raw["availability_status"],
+                f"baseline.availability_status:{event_id}",
+            )
+            session = sessions.get(symbol)
             if session is None:
                 if status != "START_SESSION_UNAVAILABLE":
                     raise ConfirmationEngineError(
                         f"baseline_missing_session_status_invalid:{event_id}"
                     )
-                if raw.get("session_id") not in (None, ""):
-                    raise ConfirmationEngineError(
-                        f"baseline_missing_session_id_must_be_null:{event_id}"
-                    )
-                if raw.get("start_at") not in (None, ""):
-                    raise ConfirmationEngineError(
-                        f"baseline_missing_session_start_must_be_null:{event_id}"
-                    )
-                if raw.get("target_value") is not None:
-                    raise ConfirmationEngineError(
-                        f"baseline_missing_session_target_must_be_null:{event_id}"
-                    )
                 continue
 
-            expected_session_id = str(session["session_id"])
+            expected_session_id = _safe_token(
+                session["session_id"],
+                f"source_session.session_id:{snapshot_id}:{symbol}",
+            )
+            expected_calendar_id = _safe_token(
+                session["calendar_id"],
+                f"source_session.calendar_id:{snapshot_id}:{symbol}",
+            )
             expected_start_at = _timestamp(
                 session["start_at"],
                 f"source_session.start_at:{snapshot_id}:{symbol}",
             )
-            if raw.get("session_id") != expected_session_id:
-                raise ConfirmationEngineError(
-                    f"baseline_session_id_mismatch:{event_id}"
-                )
-            start_at = _timestamp(
-                raw.get("start_at"),
-                f"baseline.start_at:{event_id}",
+            expected_source = _text(
+                session["source"],
+                f"source_session.source:{snapshot_id}:{symbol}",
             )
-            if start_at != expected_start_at:
-                raise ConfirmationEngineError(
-                    f"baseline_start_at_not_from_l7_session_map:{event_id}"
+            exact_session_checks = {
+                "session_id": expected_session_id,
+                "calendar_id": expected_calendar_id,
+                "start_at": expected_start_at,
+                "session_source": expected_source,
+            }
+            for field, expected in exact_session_checks.items():
+                actual = (
+                    _timestamp(raw.get(field), f"baseline.{field}:{event_id}")
+                    if field == "start_at"
+                    else (
+                        _safe_token(raw.get(field), f"baseline.{field}:{event_id}")
+                        if field in {"session_id", "calendar_id"}
+                        else _text(raw.get(field), f"baseline.{field}:{event_id}")
+                    )
                 )
+                if actual != expected:
+                    raise ConfirmationEngineError(
+                        f"baseline_session_binding_mismatch:{event_id}:{field}"
+                    )
+
+            start_at = expected_start_at
             if _as_datetime(start_at, f"baseline.start_at:{event_id}") <= freeze_at:
                 raise ConfirmationEngineError(
                     f"baseline_not_strictly_post_freeze:{event_id}"
                 )
-
-            if status == "START_SESSION_UNAVAILABLE":
-                raise ConfirmationEngineError(
-                    f"baseline_claims_missing_session_but_l7_session_exists:{event_id}"
-                )
-            if status == "MISSING_OUTCOME":
-                if raw.get("target_value") is not None:
-                    raise ConfirmationEngineError(
-                        f"baseline_missing_outcome_target_must_be_null:{event_id}"
-                    )
-                continue
-            if status != "AVAILABLE":
-                raise ConfirmationEngineError(
-                    f"baseline_availability_status_invalid:{event_id}:{status}"
-                )
-
-            end_at = _timestamp(
-                raw.get("end_at"),
-                f"baseline.end_at:{event_id}",
+            start_session_date = _session_date_text(
+                raw.get("start_session_date"),
+                f"baseline.start_session_date:{event_id}",
             )
-            if _as_datetime(end_at, f"baseline.end_at:{event_id}") <= _as_datetime(
-                start_at,
-                f"baseline.start_at:{event_id}",
+
+            series = list(price_groups.get(symbol, ()))
+            positions = {
+                str(row["date"]): index
+                for index, row in enumerate(series)
+            }
+            path: dict[str, Any] | None = None
+            if start_session_date in positions:
+                path = _complete_path(
+                    series,
+                    start_index=positions[start_session_date],
+                    horizon=horizon,
+                    expected_direction="POSITIVE",
+                )
+            expected_status = (
+                "AVAILABLE"
+                if path is not None and path.get("status") == "COMPLETE"
+                else "MISSING_OUTCOME"
+            )
+            if status != expected_status:
+                raise ConfirmationEngineError(
+                    f"baseline_availability_not_from_canonical_price_path:"
+                    f"{event_id}:{status}:{expected_status}"
+                )
+            if expected_status != "AVAILABLE":
+                continue
+
+            assert path is not None
+            canonical_return = float(path["return"])
+            canonical_dates = list(path["session_dates"])
+            canonical_path = list(path["path"])
+            canonical_start_adj = float(canonical_path[0]["adj_close"])
+            canonical_target_adj = float(canonical_path[-1]["adj_close"])
+
+            if raw.get("target_session_date") != path["target_session_date"]:
+                raise ConfirmationEngineError(
+                    f"baseline_target_session_date_mismatch:{event_id}"
+                )
+            if raw.get("session_dates") != canonical_dates:
+                raise ConfirmationEngineError(
+                    f"baseline_session_sequence_mismatch:{event_id}"
+                )
+            if len(canonical_dates) != horizon + 1:
+                raise ConfirmationEngineError(
+                    f"baseline_exact_horizon_session_count_mismatch:{event_id}"
+                )
+            if raw.get("price_path_hash") != path["path_hash"]:
+                raise ConfirmationEngineError(
+                    f"baseline_price_path_hash_mismatch:{event_id}"
+                )
+            if raw.get("currency") != path["currency"]:
+                raise ConfirmationEngineError(
+                    f"baseline_original_currency_mismatch:{event_id}"
+                )
+            if not math.isclose(
+                _finite(
+                    raw.get("start_adjusted_close"),
+                    f"baseline.start_adjusted_close:{event_id}",
+                ),
+                canonical_start_adj,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
             ):
                 raise ConfirmationEngineError(
-                    f"baseline_end_not_after_start:{event_id}"
+                    f"baseline_start_adjusted_close_mismatch:{event_id}"
+                )
+            if not math.isclose(
+                _finite(
+                    raw.get("target_adjusted_close"),
+                    f"baseline.target_adjusted_close:{event_id}",
+                ),
+                canonical_target_adj,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            ):
+                raise ConfirmationEngineError(
+                    f"baseline_target_adjusted_close_mismatch:{event_id}"
                 )
             value = _finite(
                 raw["target_value"],
                 f"baseline.target_value:{event_id}",
             )
+            if not math.isclose(
+                value,
+                canonical_return,
+                rel_tol=1e-12,
+                abs_tol=1e-12,
+            ):
+                raise ConfirmationEngineError(
+                    f"baseline_return_not_reproduced_from_canonical_prices:{event_id}"
+                )
+
+            target_session_date = _session_date_text(
+                raw.get("target_session_date"),
+                f"baseline.target_session_date:{event_id}",
+            )
+            end_at = _timestamp(
+                raw.get("end_at"),
+                f"baseline.end_at:{event_id}",
+            )
+            if end_at[:10] != target_session_date:
+                raise ConfirmationEngineError(
+                    f"baseline_end_at_date_not_target_session_date:{event_id}"
+                )
+
             if snapshot_id not in candidate_snapshot_ids:
                 continue
             available.append(
@@ -2045,11 +2137,20 @@ def _normalize_pattern_baseline(
                     "capture_snapshot_id": snapshot_id,
                     "symbol": symbol,
                     "session_id": expected_session_id,
+                    "calendar_id": expected_calendar_id,
+                    "session_source": expected_source,
                     "start_at": start_at,
+                    "start_session_date": start_session_date,
+                    "target_session_date": target_session_date,
+                    "session_dates": canonical_dates,
+                    "currency": path["currency"],
+                    "price_path_hash": path["path_hash"],
+                    "price_file_sha256": price_provenance["price_file_sha256"],
+                    "price_binding_hash": price_provenance["price_binding_hash"],
                     "end_at": end_at,
-                    "target_value": value,
+                    "target_value": canonical_return,
                     "aligned_value": _aligned(
-                        value,
+                        canonical_return,
                         forecast["expected_direction"],
                     ),
                     "source_hash": source_hash,
@@ -2071,7 +2172,7 @@ def _normalize_pattern_baseline(
 
     available.sort(
         key=lambda row: (
-            row["start_at"],
+            row["start_session_date"],
             row["symbol"],
             row["baseline_event_id"],
         )
