@@ -43,6 +43,10 @@ from scanner.research.governance.qm_c_sequential_monitoring import (
 
 from .boundary import PatternDiscoveryBoundary
 from .candidate_registry import validate_applied_qm_handoff
+from .confirmation_sources import (
+    source_bundle_indexes,
+    verify_prospective_source_bundle,
+)
 from .outcome_maturation import verify_matured_outcome
 
 
@@ -223,6 +227,7 @@ def _verify_frozen_pattern(record: Mapping[str, Any]) -> dict[str, Any]:
 
 def build_baseline_bundle(
     pattern_baselines: Sequence[Mapping[str, Any]],
+    prospective_source_bundle: Mapping[str, Any],
     *,
     baseline_bundle_id: str,
     generated_at: str,
@@ -237,6 +242,7 @@ def build_baseline_bundle(
         pattern_baselines, Sequence
     ):
         raise ConfirmationEngineError("pattern_baselines_sequence_required")
+    verify_prospective_source_bundle(prospective_source_bundle)
     bundle: dict[str, Any] = {
         "schema_version": BASELINE_SCHEMA_VERSION,
         "research_only": True,
@@ -245,6 +251,12 @@ def build_baseline_bundle(
             "baseline_bundle_id",
         ),
         "generated_at": _timestamp(generated_at, "generated_at"),
+        "prospective_source_bundle_id": prospective_source_bundle[
+            "source_bundle_id"
+        ],
+        "prospective_source_bundle_hash": prospective_source_bundle[
+            "source_bundle_hash"
+        ],
         "pattern_baselines": [dict(value) for value in pattern_baselines],
     }
     bundle["baseline_bundle_hash"] = _hash(bundle)
@@ -270,6 +282,14 @@ def verify_baseline_bundle(
         raise ConfirmationEngineError("baseline_bundle_research_only_guard_missing")
     _safe_token(bundle.get("baseline_bundle_id"), "baseline_bundle_id")
     _timestamp(bundle.get("generated_at"), "baseline_bundle.generated_at")
+    _safe_token(
+        bundle.get("prospective_source_bundle_id"),
+        "prospective_source_bundle_id",
+    )
+    _sha256_text(
+        bundle.get("prospective_source_bundle_hash"),
+        "prospective_source_bundle_hash",
+    )
     stored = _sha256_text(
         bundle.get("baseline_bundle_hash"),
         "baseline_bundle_hash",
@@ -377,14 +397,56 @@ def verify_baseline_bundle(
                     f"duplicate_baseline_event_id:{event_id}"
                 )
             event_ids.add(event_id)
+            _safe_token(
+                obs["capture_snapshot_id"],
+                f"baseline[{pid}].capture_snapshot_id",
+            )
             _text(obs["symbol"], f"baseline[{pid}].symbol")
-            start = _as_datetime(obs["start_at"], f"baseline[{pid}].start_at")
-            end = _as_datetime(obs["end_at"], f"baseline[{pid}].end_at")
-            if end <= start:
+            status = _text(
+                obs["availability_status"],
+                f"baseline[{pid}].availability_status",
+            )
+            allowed_statuses = set(
+                spec["baseline_bundle"]["availability_status_values"]
+            )
+            if status not in allowed_statuses:
                 raise ConfirmationEngineError(
-                    f"baseline_end_not_after_start:{event_id}"
+                    f"baseline_availability_status_invalid:{event_id}:{status}"
                 )
-            _finite(obs["target_value"], f"baseline[{pid}].target_value")
+            session_id = obs.get("session_id")
+            start_raw = obs.get("start_at")
+            end_raw = obs.get("end_at")
+            if status == "START_SESSION_UNAVAILABLE":
+                if session_id not in (None, "") or start_raw not in (None, ""):
+                    raise ConfirmationEngineError(
+                        f"baseline_missing_session_must_not_claim_session:{event_id}"
+                    )
+            else:
+                _safe_token(
+                    session_id,
+                    f"baseline[{pid}].session_id",
+                )
+                start = _as_datetime(
+                    start_raw,
+                    f"baseline[{pid}].start_at",
+                )
+                end = _as_datetime(
+                    end_raw,
+                    f"baseline[{pid}].end_at",
+                )
+                if end <= start:
+                    raise ConfirmationEngineError(
+                        f"baseline_end_not_after_start:{event_id}"
+                    )
+            if status == "AVAILABLE":
+                _finite(
+                    obs["target_value"],
+                    f"baseline[{pid}].target_value",
+                )
+            elif obs.get("target_value") is not None:
+                raise ConfirmationEngineError(
+                    f"baseline_unavailable_target_must_be_null:{event_id}"
+                )
             if _text(obs["target_id"], f"baseline[{pid}].target_id") != str(
                 raw["target_id"]
             ):
