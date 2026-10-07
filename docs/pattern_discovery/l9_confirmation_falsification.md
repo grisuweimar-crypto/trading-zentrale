@@ -316,6 +316,11 @@ temporal stability warning and blocks `SUPPORTED`.
 
 Capture-time market-regime contexts are evaluated separately.
 
+L9 distinguishes generic context coverage from actual regime coverage. A row
+that contains only sector/segment metadata does **not** count as regime
+evidence. `SUPPORTED` requires the versioned minimum regime-context coverage;
+otherwise the result remains `INCONCLUSIVE`.
+
 A sufficiently populated regime with a sign reversal blocks `SUPPORTED`.
 
 The subgroup itself never becomes the primary hypothesis.
