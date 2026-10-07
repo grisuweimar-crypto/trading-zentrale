@@ -5,8 +5,14 @@ import shutil
 
 import pytest
 
-from scanner.research.governance.qm_c import hypothesis_version_hash
-from scanner.research.governance.qm_c_analysis_plan import analysis_plan_hash
+from scanner.research.governance.qm_c import (
+    HypothesisRegistry,
+    hypothesis_version_hash,
+)
+from scanner.research.governance.qm_c_analysis_plan import (
+    AnalysisPlanRegistry,
+    analysis_plan_hash,
+)
 from scanner.research.pattern_discovery import (
     FeatureLibrary,
     build_run_manifest,
@@ -19,6 +25,7 @@ from scanner.research.pattern_discovery.candidate_registry import (
     freeze_candidates,
     load_candidate_registry_contract,
     pattern_id_for_candidate,
+    validate_applied_qm_handoff,
     verify_freeze_snapshot,
     write_freeze_snapshot,
 )
@@ -532,3 +539,66 @@ def test_freeze_snapshot_is_hash_protected_and_write_once(tmp_path):
         match="l5_snapshot_already_exists",
     ):
         write_freeze_snapshot(root, snapshot)
+
+
+def test_qm_handoff_is_accepted_by_real_qm_c1_and_qm_c2_registries(tmp_path):
+    root, manifest, l3, l4 = bundle(tmp_path / "bundle")
+    snapshot = freeze_candidates(
+        manifest,
+        l3,
+        l4,
+        repo_root=root,
+        freeze_timestamp="2026-10-06T15:05:00Z",
+        qm_external_context=qm_context(),
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    record = snapshot["frozen_patterns"][0]
+    handoff = record["qm_c_handoff"]
+
+    hypotheses = HypothesisRegistry(tmp_path / "qm" / "hypotheses.jsonl")
+    plans = AnalysisPlanRegistry(tmp_path / "qm" / "plans.jsonl")
+    hypotheses.register_hypothesis(
+        record=handoff["hypothesis_record"],
+        actor_id="governance-tester",
+        actor_role="researcher",
+    )
+    plans.register_plan(
+        record=handoff["analysis_plan_record"],
+        hypothesis_registry=hypotheses,
+        actor_id="governance-tester",
+        actor_role="researcher",
+    )
+    closure = json.loads(
+        Path("configs/qm_b_closure_v1.json").read_text(encoding="utf-8")
+    )
+    plans.freeze_plan(
+        analysis_plan_id=handoff["analysis_plan_record"]["analysis_plan_id"],
+        analysis_plan_version=handoff["analysis_plan_record"][
+            "analysis_plan_version"
+        ],
+        freeze_context=handoff["freeze_context"],
+        hypothesis_registry=hypotheses,
+        qm_b_closure=closure,
+        actor_id="governance-tester",
+        actor_role="researcher",
+        reason="Apply exact L5 handoff for compatibility test.",
+    )
+    hypotheses.transition(
+        hypothesis_id=handoff["hypothesis_record"]["hypothesis_id"],
+        hypothesis_version=handoff["hypothesis_record"]["hypothesis_version"],
+        to_state=handoff["requested_hypothesis_target_state"],
+        actor_id="governance-tester",
+        actor_role="researcher",
+        reason="Freeze only after matching QM-C2 plan freeze.",
+    )
+
+    validated = validate_applied_qm_handoff(
+        record,
+        hypothesis_registry=hypotheses,
+        analysis_plan_registry=plans,
+    )
+    assert validated["valid"] is True
+    assert validated["states"]["hypothesis"] == "FROZEN_FOR_CONFIRMATION"
+    assert validated["states"]["analysis_plan"] == "FROZEN_FOR_CONFIRMATION"
+    assert validated["states"]["qm_a"] == "NOT_VALIDATED_BY_L5"
