@@ -1567,6 +1567,35 @@ def test_declared_baseline_population_must_be_fully_present(tmp_path):
         )
 
 
+def test_cherry_picked_baseline_subset_fails_against_l7_snapshot_population(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    source, _ = prospective_source_for([pattern], outcomes)
+    baseline = baseline_record(pattern, source)
+
+    removed = baseline["observations"].pop(0)
+    baseline["eligible_population_count"] = len(baseline["observations"])
+    assert removed["symbol"] not in {
+        row["symbol"]
+        for row in baseline["observations"]
+        if row["capture_snapshot_id"] == removed["capture_snapshot_id"]
+    }
+
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="baseline_snapshot_population_incomplete",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            prospective_source=source,
+            baseline=baseline,
+        )
+
+
 def test_context_must_match_exact_l8_capture_snapshot(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
@@ -1812,6 +1841,102 @@ def test_predeclared_two_look_schedule_enforces_order_and_spent_qm_a(tmp_path):
     assert second["qm_governance"]["look_id"] == "FINAL"
     assert second["family_decision"] == "FINAL_COMPLETE"
     assert second["qm_c_handoff"]["qm_c5_results"]
+
+
+def test_second_look_cannot_drop_evidence_consumed_by_first_look(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(
+        tmp_path,
+        planned_looks=[
+            {"look_id": "LOOK_1", "information_fraction": 0.5},
+            {"look_id": "FINAL", "information_fraction": 1.0},
+        ],
+        minimum_raw_n=20,
+    )
+    first_outcomes = prospective_rows(pattern, count=12, prefix="KEEP")
+    source1, normalized1 = prospective_source_for([pattern], first_outcomes)
+    first_events = maturation_registry_events(
+        normalized1,
+        recorded_at="2027-01-15T20:00:00Z",
+    )
+    first = build_report(
+        regs,
+        pattern,
+        control,
+        monitor,
+        outcomes=normalized1,
+        prospective_source=source1,
+        maturation_events_override=first_events,
+    )
+    first_baseline = build_baseline_bundle(
+        [baseline_record(pattern, source1)],
+        source1,
+        baseline_bundle_id="BASE-CUMULATIVE-LOOK1",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    first_context = context_bundle_for(
+        [pattern],
+        normalized1,
+        source1,
+    )
+    persisted = persist_confirmation_look(
+        tmp_path,
+        first,
+        source1,
+        first_baseline,
+        context_bundle=first_context,
+        actor_id="tester",
+        actor_role="researcher",
+    )
+    local_registry = ConfirmationLookRegistry(
+        persisted["registry_path"]
+    )
+    regs["c4"].record_monitoring_look(
+        monitoring_plan_id=monitor["monitoring_plan_id"],
+        monitoring_plan_version="v1",
+        look_id="LOOK_1",
+        artifact_hash=first["confirmation_evidence_hash"],
+        decision="CONTINUE",
+        control_registry=regs["c3"],
+        qm_a_ledger=regs["qm_a"],
+        actor_id="tester",
+        actor_role="researcher",
+        observed_at=first["evaluated_at"],
+    )
+    member = control["family_members"][0]
+    regs["qm_a"].transition(
+        analysis_id=member["qm_a_analysis_id"],
+        version_id=member["qm_a_version_id"],
+        to_state="CONFIRMATORY_EVALUATED",
+        actor_id="tester",
+        actor_role="researcher",
+        reason="Consume first L9 look before cumulative-evidence test.",
+    )
+    monitor2 = regs["c4"].get_monitoring_plan(
+        monitor["monitoring_plan_id"],
+        "v1",
+    )
+
+    disjoint = prospective_rows(pattern, count=24, prefix="DROP")
+    source2, normalized2 = prospective_source_for([pattern], disjoint)
+    disjoint_events = maturation_registry_events(
+        normalized2,
+        recorded_at="2027-02-15T20:00:00Z",
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="l8_maturation_evidence_not_cumulative_before_later_look",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor2,
+            outcomes=normalized2,
+            prospective_source=source2,
+            evaluated_at="2027-02-15T20:00:00Z",
+            confirmation_registry=local_registry,
+            maturation_events_override=disjoint_events,
+        )
 
 
 def test_automatic_early_stop_fails_closed_without_machine_readable_boundary(tmp_path):
