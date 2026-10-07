@@ -73,6 +73,11 @@ def main() -> int:
         required=True,
         help="Complete L8 outcome_maturations.jsonl hash chain.",
     )
+    parser.add_argument(
+        "--prospective-source-bundle",
+        required=True,
+        help="Hash-verified L7 snapshot/session source bundle for baseline and PIT context proof.",
+    )
     parser.add_argument("--baseline-bundle", required=True)
     parser.add_argument("--context-bundle")
     parser.add_argument("--control-plan-id", required=True)
@@ -110,6 +115,9 @@ def main() -> int:
     maturation_events = _maturation_events(
         _path(root, args.maturation_registry)
     )
+    prospective_source = _json(
+        _path(root, args.prospective_source_bundle)
+    )
     baseline = _json(_path(root, args.baseline_bundle))
     context = (
         _json(_path(root, args.context_bundle))
@@ -120,6 +128,7 @@ def main() -> int:
     report = build_confirmation_look(
         patterns,
         maturation_events,
+        prospective_source,
         baseline,
         control_plan_id=args.control_plan_id,
         control_plan_version=args.control_plan_version,
@@ -139,6 +148,7 @@ def main() -> int:
         persisted = persist_confirmation_look(
             root,
             report,
+            prospective_source,
             baseline,
             context_bundle=context,
             actor_id=args.actor_id,
