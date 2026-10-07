@@ -1,0 +1,100 @@
+{
+  "schema_version": "pattern_discovery_l6_dependency_graph_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L6",
+  "name": "Dependency Graph",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Measure structural and empirical redundancy between immutable frozen PAT versions without changing Discovery Evidence or creating directional authority.",
+  "principles": {
+    "exact_frozen_pattern_versions_are_graph_nodes": true,
+    "pattern_id_version_and_spec_hash_define_node_identity": true,
+    "l4_discovery_evidence_is_immutable": true,
+    "l5_pattern_versions_are_immutable": true,
+    "missing_context_remains_missing": true,
+    "dependency_is_descriptive_not_directional": true,
+    "directional_authority_created": false,
+    "single_similarity_blackbox_forbidden": true,
+    "component_provenance_required": true,
+    "thresholds_are_versioned_not_result_tuned": true,
+    "same_inputs_produce_same_graph_and_hash": true,
+    "redundant_patterns_are_retained": true
+  },
+  "inputs": {
+    "l5_freeze_snapshots_required": true,
+    "l5_snapshot_hash_verification_required": true,
+    "pattern_spec_hash_verification_required": true,
+    "event_context_schema_version": "pattern_discovery_l6_event_context_v1",
+    "event_context_hash_required": true,
+    "event_context_node_coverage_must_be_explicit": true,
+    "event_context_coverage_states": [
+      "COMPLETE",
+      "UNAVAILABLE"
+    ],
+    "sector_regime_reconstruction_forbidden": true
+  },
+  "metrics": {
+    "feature_overlap": "JACCARD_OVER_FEATURE_IDS",
+    "condition_overlap": "JACCARD_OVER_VERSIONED_ATOMIC_CONDITION_SIGNATURES",
+    "event_overlap": "JACCARD_OVER_EXACT_SYMBOL_AND_AS_OF_EVENT_IDS",
+    "temporal_overlap": "JACCARD_OVER_EXACT_AS_OF_TIMESTAMPS",
+    "symbol_overlap": "JACCARD_OVER_SYMBOL_SETS",
+    "sector_overlap": "CATEGORY_JACCARD_AND_EMPIRICAL_DISTRIBUTION_OVERLAP",
+    "regime_overlap": "CATEGORY_JACCARD_AND_EMPIRICAL_DISTRIBUTION_OVERLAP"
+  },
+  "classification": {
+    "duplicate": "same forecast scope and identical versioned condition set",
+    "nested": "same forecast scope and one condition set is a strict subset of the other",
+    "related": "at least one pre-registered structural or empirical overlap threshold is met",
+    "none": "no relation threshold is met",
+    "duplicate_precedes_nested_precedes_related": true
+  },
+  "thresholds": {
+    "related": {
+      "feature_jaccard_min": 0.75,
+      "condition_jaccard_min": 0.5,
+      "event_jaccard_min": 0.5,
+      "temporal_jaccard_min": 0.6,
+      "symbol_jaccard_min": 0.6,
+      "sector_distribution_overlap_min": 0.8,
+      "regime_distribution_overlap_min": 0.8
+    },
+    "severity": {
+      "duplicate": "CRITICAL",
+      "nested": "HIGH",
+      "high_component_min": 0.8,
+      "related_default": "MEDIUM",
+      "measurable_below_related_threshold": "LOW",
+      "zero_or_unavailable_only": "NONE"
+    }
+  },
+  "identity": {
+    "hash_algorithm": "sha256",
+    "canonical_json": true,
+    "graph_id_prefix": "PDG",
+    "graph_id_digest_chars": 24,
+    "graph_schema_version": "pattern_discovery_l6_graph_v1",
+    "graph_path_template": "artifacts/research/pattern_discovery/dependency_graphs/{graph_id}.json"
+  },
+  "storage": {
+    "graph_is_pairwise_and_machine_readable": true,
+    "all_node_pairs_are_persisted": true,
+    "zero_dependency_pairs_are_explicit": true,
+    "edge_provenance_contains_component_metrics": true,
+    "existing_identical_graph_write_is_idempotent": true,
+    "identity_collision_fails_closed": true
+  },
+  "boundaries": {
+    "l4_discovery_evidence_mutation_performed": false,
+    "l5_pattern_mutation_performed": false,
+    "prospective_capture_started": false,
+    "outcome_maturation_performed": false,
+    "confirmation_evaluation_performed": false,
+    "rating_assigned": false,
+    "promotion_performed": false,
+    "decision_layer_integration_performed": false,
+    "portfolio_or_execution_effect_created": false
+  }
+}
