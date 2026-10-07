@@ -269,9 +269,20 @@ changing the frozen target.
 
 `Direction Probability - Baseline Probability`
 
-### Effect Size
+### Frozen aligned effect
 
-`mean(aligned Pattern outcome) - mean(aligned baseline outcome)`
+The primary effect metric inherited from the frozen QM-C2 plan is:
+
+`mean(aligned Pattern outcome)`
+
+The frozen `minimum_effect_size` threshold applies to this exact metric.
+
+L9 additionally reports the descriptive baseline difference:
+
+`effect_size_vs_baseline = mean(aligned Pattern outcome) - mean(aligned baseline outcome)`
+
+but this additional quantity does not silently replace the frozen primary
+estimand.
 
 ## Dependence and Effective-N
 
@@ -330,7 +341,7 @@ The subgroup itself never becomes the primary hypothesis.
 A Pattern can be `SUPPORTED` only when the full prospective sample passes all
 applicable predeclared gates, including:
 
-- frozen minimum Effect Size;
+- frozen minimum aligned effect;
 - frozen minimum Probability Lift;
 - frozen minimum temporal support;
 - instrument breadth/concentration;
@@ -347,7 +358,7 @@ L9 does not classify every failed confirmation gate as falsification.
 
 Strong falsification in v1 requires both:
 
-- upper bound of the robust Effect Size interval <= 0;
+- upper bound of the robust aligned-effect interval <= 0;
 - upper bound of the robust Probability Lift interval <= 0;
 
 at a final permitted look.
