@@ -1909,6 +1909,143 @@ def _normalize_pattern_baseline(
             )
 
     observations = baseline_record["observations"]
+    snapshot_session_bindings_raw = baseline_record["snapshot_session_bindings"]
+    snapshot_session_bindings: dict[str, dict[str, Any]] = {}
+    for binding_index, raw_binding in enumerate(snapshot_session_bindings_raw):
+        if not isinstance(raw_binding, Mapping):
+            raise ConfirmationEngineError(
+                f"baseline_snapshot_session_binding_must_be_object:{binding_index}"
+            )
+        snapshot_id = _safe_token(
+            raw_binding.get("capture_snapshot_id"),
+            f"baseline.snapshot_session_bindings[{binding_index}].capture_snapshot_id",
+        )
+        if snapshot_id in snapshot_session_bindings:
+            raise ConfirmationEngineError(
+                f"duplicate_baseline_snapshot_session_binding:{snapshot_id}"
+            )
+        snapshot = snapshots.get(snapshot_id)
+        if snapshot is None:
+            raise ConfirmationEngineError(
+                f"baseline_session_binding_snapshot_unknown:{snapshot_id}"
+            )
+        raw_sessions = raw_binding.get("sessions")
+        if not isinstance(raw_sessions, list):
+            raise ConfirmationEngineError(
+                f"baseline_session_binding_sessions_list_required:{snapshot_id}"
+            )
+        normalized_sessions: list[dict[str, Any]] = []
+        seen_session_symbols: set[str] = set()
+        for session_index, raw_session in enumerate(raw_sessions):
+            if not isinstance(raw_session, Mapping):
+                raise ConfirmationEngineError(
+                    f"baseline_session_binding_session_must_be_object:{snapshot_id}:{session_index}"
+                )
+            symbol = _text(
+                raw_session.get("symbol"),
+                f"baseline.session_binding.symbol:{snapshot_id}:{session_index}",
+            )
+            if symbol in seen_session_symbols:
+                raise ConfirmationEngineError(
+                    f"duplicate_baseline_session_binding_symbol:{snapshot_id}:{symbol}"
+                )
+            seen_session_symbols.add(symbol)
+            normalized_sessions.append(
+                {
+                    "symbol": symbol,
+                    "session_id": _safe_token(
+                        raw_session.get("session_id"),
+                        f"baseline.session_binding.session_id:{snapshot_id}:{symbol}",
+                    ),
+                    "calendar_id": _safe_token(
+                        raw_session.get("calendar_id"),
+                        f"baseline.session_binding.calendar_id:{snapshot_id}:{symbol}",
+                    ),
+                    "session_date": _session_date_text(
+                        raw_session.get("session_date"),
+                        f"baseline.session_binding.session_date:{snapshot_id}:{symbol}",
+                    ),
+                    "start_at": _timestamp(
+                        raw_session.get("start_at"),
+                        f"baseline.session_binding.start_at:{snapshot_id}:{symbol}",
+                    ),
+                    "source": _text(
+                        raw_session.get("source"),
+                        f"baseline.session_binding.source:{snapshot_id}:{symbol}",
+                    ),
+                }
+            )
+        normalized_sessions.sort(key=lambda item: item["symbol"])
+        l7_identity = [
+            {
+                "symbol": row["symbol"],
+                "session_id": row["session_id"],
+                "calendar_id": row["calendar_id"],
+                "start_at": row["start_at"],
+                "source": row["source"],
+            }
+            for row in normalized_sessions
+        ]
+        expected_l7_hash = _sha256_text(
+            snapshot["session_map_hash"],
+            f"source_snapshot.session_map_hash:{snapshot_id}",
+        )
+        if _hash(l7_identity) != expected_l7_hash:
+            raise ConfirmationEngineError(
+                f"baseline_session_binding_not_exact_l7_session_map:{snapshot_id}"
+            )
+        binding = raw_binding.get("start_session_binding")
+        if not isinstance(binding, Mapping):
+            raise ConfirmationEngineError(
+                f"baseline_start_session_binding_missing:{snapshot_id}"
+            )
+        binding_body = {
+            "start_session_binding_file_sha256": _sha256_text(
+                binding.get("start_session_binding_file_sha256"),
+                f"baseline.start_session_binding_file_sha256:{snapshot_id}",
+            ),
+            "l7_session_map_hash": _sha256_text(
+                binding.get("l7_session_map_hash"),
+                f"baseline.l7_session_map_hash:{snapshot_id}",
+            ),
+            "row_count": int(binding.get("row_count")),
+            "symbol_count": int(binding.get("symbol_count")),
+            "sessions_hash": _sha256_text(
+                binding.get("sessions_hash"),
+                f"baseline.sessions_hash:{snapshot_id}",
+            ),
+        }
+        if binding_body["l7_session_map_hash"] != expected_l7_hash:
+            raise ConfirmationEngineError(
+                f"baseline_start_session_binding_l7_hash_mismatch:{snapshot_id}"
+            )
+        if binding_body["row_count"] != len(normalized_sessions):
+            raise ConfirmationEngineError(
+                f"baseline_start_session_binding_row_count_mismatch:{snapshot_id}"
+            )
+        if binding_body["symbol_count"] != len(seen_session_symbols):
+            raise ConfirmationEngineError(
+                f"baseline_start_session_binding_symbol_count_mismatch:{snapshot_id}"
+            )
+        if binding_body["sessions_hash"] != _hash(normalized_sessions):
+            raise ConfirmationEngineError(
+                f"baseline_start_session_binding_sessions_hash_mismatch:{snapshot_id}"
+            )
+        binding_hash = _sha256_text(
+            binding.get("start_session_binding_hash"),
+            f"baseline.start_session_binding_hash:{snapshot_id}",
+        )
+        if _hash(binding_body) != binding_hash:
+            raise ConfirmationEngineError(
+                f"baseline_start_session_binding_hash_mismatch:{snapshot_id}"
+            )
+        snapshot_session_bindings[snapshot_id] = {
+            "binding_hash": binding_hash,
+            "sessions": {
+                row["symbol"]: row for row in normalized_sessions
+            },
+        }
+
     pattern_snapshot_ids = {
         str(claim["snapshot_id"])
         for claim in prospective_source_bundle["claims"]
@@ -1922,6 +2059,35 @@ def _normalize_pattern_baseline(
             "candidate_snapshot_missing_from_pattern_source_population:"
             + ",".join(missing)
         )
+    if set(snapshot_session_bindings) != pattern_snapshot_ids:
+        missing = sorted(pattern_snapshot_ids - set(snapshot_session_bindings))
+        extra = sorted(set(snapshot_session_bindings) - pattern_snapshot_ids)
+        detail = []
+        if missing:
+            detail.append("missing=" + ",".join(missing))
+        if extra:
+            detail.append("extra=" + ",".join(extra))
+        raise ConfirmationEngineError(
+            "baseline_snapshot_session_binding_population_mismatch:"
+            + ";".join(detail)
+        )
+
+    candidate_binding_hashes: dict[str, set[str]] = defaultdict(set)
+    for row in candidate_rows:
+        candidate_binding_hashes[str(row["capture_snapshot_id"])].add(
+            str(row["start_session_binding_hash"])
+        )
+    for snapshot_id in sorted(candidate_snapshot_ids):
+        hashes = candidate_binding_hashes.get(snapshot_id, set())
+        if len(hashes) != 1:
+            raise ConfirmationEngineError(
+                f"candidate_l8_start_session_binding_not_unique:{snapshot_id}"
+            )
+        expected_hash = next(iter(hashes))
+        if snapshot_session_bindings[snapshot_id]["binding_hash"] != expected_hash:
+            raise ConfirmationEngineError(
+                f"baseline_session_dates_not_bound_to_l8_start_session_binding:{snapshot_id}"
+            )
 
     observed_snapshot_ids = {
         _safe_token(
@@ -1978,10 +2144,7 @@ def _normalize_pattern_baseline(
                 + ";".join(detail)
             )
 
-        sessions = {
-            str(item["symbol"]): item
-            for item in snapshot["market_sessions"]
-        }
+        sessions = snapshot_session_bindings[snapshot_id]["sessions"]
         for symbol in sorted(expected_symbols):
             raw = by_snapshot[snapshot_id][symbol]
             event_id = _safe_token(
@@ -2036,11 +2199,16 @@ def _normalize_pattern_baseline(
                 session["source"],
                 f"source_session.source:{snapshot_id}:{symbol}",
             )
+            expected_session_date = _session_date_text(
+                session["session_date"],
+                f"bound_session.session_date:{snapshot_id}:{symbol}",
+            )
             exact_session_checks = {
                 "session_id": expected_session_id,
                 "calendar_id": expected_calendar_id,
                 "start_at": expected_start_at,
                 "session_source": expected_source,
+                "start_session_date": expected_session_date,
             }
             for field, expected in exact_session_checks.items():
                 actual = (
@@ -2049,7 +2217,14 @@ def _normalize_pattern_baseline(
                     else (
                         _safe_token(raw.get(field), f"baseline.{field}:{event_id}")
                         if field in {"session_id", "calendar_id"}
-                        else _text(raw.get(field), f"baseline.{field}:{event_id}")
+                        else (
+                            _session_date_text(
+                                raw.get(field),
+                                f"baseline.{field}:{event_id}",
+                            )
+                            if field == "start_session_date"
+                            else _text(raw.get(field), f"baseline.{field}:{event_id}")
+                        )
                     )
                 )
                 if actual != expected:
@@ -2062,10 +2237,7 @@ def _normalize_pattern_baseline(
                 raise ConfirmationEngineError(
                     f"baseline_not_strictly_post_freeze:{event_id}"
                 )
-            start_session_date = _session_date_text(
-                raw.get("start_session_date"),
-                f"baseline.start_session_date:{event_id}",
-            )
+            start_session_date = expected_session_date
 
             series = list(price_groups.get(symbol, ()))
             positions = {
