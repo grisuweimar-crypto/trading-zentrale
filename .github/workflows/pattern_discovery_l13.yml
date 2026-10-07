@@ -1,0 +1,121 @@
+name: Pattern Discovery L13 Decision Challenger
+
+on:
+  push:
+    paths:
+      - "configs/pattern_discovery/**"
+      - "src/scanner/research/pattern_discovery/**"
+      - "src/scanner/research/decision_layer/**"
+      - "src/scanner/research/governance/**"
+      - "tests/pattern_discovery/**"
+      - "tests/test_decision_*.py"
+      - "tests/test_qm_c*.py"
+      - "tests/test_price_pipeline.py"
+      - "tests/test_selection_timing.py"
+      - "tests/test_qm_b_historical_taxonomy_integrity.py"
+      - "scripts/qm_b_historical_taxonomy_*"
+      - "configs/qm_b_historical_taxonomy_*"
+      - "docs/qm_b_historical_taxonomy_*"
+      - "docs/pattern_discovery/**"
+      - "scripts/pattern_discovery/**"
+      - ".github/workflows/pattern_discovery_l13.yml"
+  pull_request:
+    paths:
+      - "configs/pattern_discovery/**"
+      - "src/scanner/research/pattern_discovery/**"
+      - "src/scanner/research/decision_layer/**"
+      - "src/scanner/research/governance/**"
+      - "tests/pattern_discovery/**"
+      - "tests/test_decision_*.py"
+      - "tests/test_qm_c*.py"
+      - "tests/test_price_pipeline.py"
+      - "tests/test_selection_timing.py"
+      - "tests/test_qm_b_historical_taxonomy_integrity.py"
+      - "scripts/qm_b_historical_taxonomy_*"
+      - "configs/qm_b_historical_taxonomy_*"
+      - "docs/qm_b_historical_taxonomy_*"
+      - "docs/pattern_discovery/**"
+      - "scripts/pattern_discovery/**"
+      - ".github/workflows/pattern_discovery_l13.yml"
+  workflow_dispatch:
+
+jobs:
+  l13-decision-challenger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package and test dependencies
+        run: python -m pip install -e ".[test]"
+
+      - name: Run Pattern Discovery L0-L13 tests
+        run: >-
+          python -m pytest -q
+          tests/pattern_discovery/test_l0_boundary.py
+          tests/pattern_discovery/test_l1_run_contract.py
+          tests/pattern_discovery/test_l2_feature_library.py
+          tests/pattern_discovery/test_l3_search_engine.py
+          tests/pattern_discovery/test_l4_statistical_guard.py
+          tests/pattern_discovery/test_l5_candidate_registry.py
+          tests/pattern_discovery/test_l6_dependency_graph.py
+          tests/pattern_discovery/test_l7_prospective_capture.py
+          tests/pattern_discovery/test_l8_outcome_maturation.py
+          tests/pattern_discovery/test_l9_confirmation_engine.py
+          tests/pattern_discovery/test_l10_rating_engine.py
+          tests/pattern_discovery/test_l11_pattern_library.py
+          tests/pattern_discovery/test_l12_promotion_gate.py
+          tests/pattern_discovery/test_l13_decision_challenger.py
+
+      - name: Run frozen Decision-Layer baseline regressions
+        run: >-
+          python -m pytest -q
+          tests/test_decision_layer_input_contract.py
+          tests/test_decision_conflict_research_7c.py
+          tests/test_decision_universal_stance_7d.py
+          tests/test_decision_state_transitions_7e.py
+          tests/test_decision_portfolio_action_7f.py
+          tests/test_decision_reliability_explainability_7g.py
+          tests/test_decision_validation_promotion_7i.py
+
+      - name: Run L12 Promotion seal regression
+        run: python -m pytest -q tests/pattern_discovery/test_l12_promotion_gate.py
+
+      - name: Run L11 Pattern Library seal regression
+        run: python -m pytest -q tests/pattern_discovery/test_l11_pattern_library.py
+
+      - name: Run L10 Rating seal regression
+        run: python -m pytest -q tests/pattern_discovery/test_l10_rating_engine.py
+
+      - name: Run L9 Confirmation seal regression
+        run: python -m pytest -q tests/pattern_discovery/test_l9_confirmation_engine.py
+
+      - name: Run QM-C Confirmation Chain compatibility
+        run: >-
+          PYTHONPATH=src python -m pytest -q
+          tests/test_qm_c_hypothesis_registry.py
+          tests/test_qm_c_analysis_plan.py
+          tests/test_qm_c_six_step_structure.py
+
+      - name: Run Price Session Integrity compatibility
+        run: python -m pytest -q tests/test_price_pipeline.py tests/test_selection_timing.py
+
+      - name: Run QM-B Historical Taxonomy Integrity
+        run: |
+          PYTHONPATH=src python -m pytest -q tests/test_qm_b_historical_taxonomy_integrity.py
+          python scripts/qm_b_historical_taxonomy_scan.py --output /tmp/qm_b_historical_taxonomy_scan.json
+          PYTHONPATH=src python scripts/qm_b_historical_taxonomy_integrity.py \
+            --scan /tmp/qm_b_historical_taxonomy_scan.json \
+            --output /tmp/qm_b_historical_taxonomy_integrity.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/qm_b_historical_taxonomy_integrity.json'))
+          assert p['gate_status'] == 'PASS'
+          assert p['candidate_count'] == p['safe_count']
+          assert p['unreviewed_candidates'] == []
+          assert p['review_required'] == []
+          assert p['confirmed_current_taxonomy_dependencies'] == []
+          assert p['confirmed_current_metadata_retrojections'] == []
+          assert p['historical_retrojection_permitted'] is False
+          PY
