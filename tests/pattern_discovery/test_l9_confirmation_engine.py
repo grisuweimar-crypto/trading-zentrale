@@ -29,9 +29,14 @@ from scanner.research.pattern_discovery.confirmation_engine import (
     build_baseline_bundle,
     build_confirmation_look,
     build_context_bundle,
+    build_context_bundle_from_sources,
     load_confirmation_contract,
     persist_confirmation_look,
     verify_confirmation_look,
+)
+from scanner.research.pattern_discovery.confirmation_sources import (
+    ConfirmationSourceError,
+    build_prospective_source_bundle,
 )
 from scanner.research.pattern_discovery.outcome_maturation import (
     _record_id,
@@ -568,43 +573,311 @@ def maturation_registry_events(
     return events
 
 
-def baseline_record(pattern, *, count=24, negative=False):
-    observations = []
-    base = date(2026, 10, 8)
+def prospective_source_for(patterns, outcomes):
+    """Create hash-consistent synthetic L7 capture proofs for L9 tests."""
+    patterns_by_id = {
+        str(pattern["pattern_id"]): pattern
+        for pattern in patterns
+    }
+    values = deepcopy(outcomes)
+    capture_sources = []
     symbols = ("AAA", "BBB", "CCC", "DDD")
-    for index in range(count):
-        value = (
-            -0.005
-            if negative
-            else (0.005 if index % 2 == 0 else -0.005)
-        )
-        start = base + timedelta(days=index * 2)
-        end = start + timedelta(days=5)
-        observations.append(
-            {
-                "baseline_event_id": f"B-{pattern['pattern_id']}-{index:03d}",
-                "symbol": symbols[index % len(symbols)],
-                "start_at": f"{start.isoformat()}T08:00:00Z",
-                "end_at": f"{end.isoformat()}T08:00:00Z",
-                "target_value": value,
-                "target_id": "return_5t_gt_0",
-                "horizon_sessions": 5,
-                "source_hash": digest(
-                    {"pattern": pattern["pattern_id"], "baseline": index}
+    capture_times = []
+
+    for index, outcome in enumerate(values):
+        claim_stub = outcome["claim"]
+        pattern = patterns_by_id[str(claim_stub["pattern_id"])]
+        claim_id = str(claim_stub["claim_id"])
+        event_id = str(claim_stub["event_id"])
+        symbol = str(claim_stub["symbol"])
+        start_at = outcome["horizon_provenance"]["start_at"]
+        start_day = date.fromisoformat(start_at[:10])
+        observation_day = start_day - timedelta(days=1)
+        observation_as_of = f"{observation_day.isoformat()}T12:00:00Z"
+        generated_at = f"{observation_day.isoformat()}T18:00:00Z"
+        captured_at = f"{observation_day.isoformat()}T18:10:00Z"
+        capture_times.append(captured_at)
+        snapshot_id = f"SNAP-{claim_id}"
+
+        rows = []
+        for rank, row_symbol in enumerate(symbols):
+            row = {
+                "symbol": row_symbol,
+                "as_of": observation_as_of,
+                "generated_at": generated_at,
+                "snapshot_id": snapshot_id,
+                "observation_type": "observed_scanner",
+                "data_source": "scanner_run",
+                "score": 40.0 + rank,
+                "sector": "TECH" if rank % 2 == 0 else "INDUSTRIAL",
+                "pillar_primary": "QUALITY",
+                "cluster_official": "C1" if rank % 2 == 0 else "C2",
+                "market_regime_stock": (
+                    "BULL" if index % 2 == 0 else "NEUTRAL"
                 ),
+                "market_regime_crypto": "N/A",
+            }
+            rows.append(row)
+
+        row_identities = []
+        row_hash_by_symbol = {}
+        for row in sorted(rows, key=lambda value: value["symbol"]):
+            row_hash = digest(row)
+            row_hash_by_symbol[row["symbol"]] = row_hash
+            row_identities.append(
+                {
+                    "symbol": row["symbol"],
+                    "as_of": row["as_of"],
+                    "snapshot_id": row["snapshot_id"],
+                    "row_hash": row_hash,
+                }
+            )
+        projected_rows_hash = digest(row_identities)
+
+        sessions = []
+        for row_symbol in symbols:
+            sessions.append(
+                {
+                    "symbol": row_symbol,
+                    "session_id": f"{snapshot_id}-{row_symbol}",
+                    "calendar_id": f"{row_symbol}-CAL",
+                    "start_at": start_at,
+                    "source": "l9-test-session-map-v1",
+                }
+            )
+        sessions.sort(key=lambda value: value["symbol"])
+        session_map_hash = digest(sessions)
+
+        binding_body = {
+            "snapshot_id": snapshot_id,
+            "snapshot_as_of": observation_as_of,
+            "snapshot_generated_at": generated_at,
+            "snapshot_metadata_schema_version": "research_views_v1",
+            "snapshot_source_file": "fixture://l9",
+            "snapshot_source_sha256": digest(
+                {"snapshot_source": snapshot_id}
+            ),
+            "snapshot_file_sha256": digest(
+                {"snapshot_file": snapshot_id}
+            ),
+            "row_count": len(rows),
+            "symbol_count": len(rows),
+            "projected_rows_hash": projected_rows_hash,
+        }
+        snapshot_binding_hash = digest(binding_body)
+        snapshot_binding = {
+            **binding_body,
+            "snapshot_binding_hash": snapshot_binding_hash,
+        }
+        history_binding_hash = digest(
+            {"history_before": snapshot_id}
+        )
+
+        forecast = pattern["pattern_spec"]["forecast"]
+        l7_claim = {
+            "schema_version": "pattern_discovery_l7_prospective_claim_v1",
+            "research_only": True,
+            "productive_integration_enabled": False,
+            "execution_allowed": False,
+            "capture_state": "CAPTURED_UNMATURED",
+            "claim_id": claim_id,
+            "event_id": event_id,
+            "captured_at": captured_at,
+            "pattern": {
+                "pattern_id": pattern["pattern_id"],
+                "pattern_version": pattern["pattern_version"],
+                "pattern_spec_hash": pattern["pattern_spec_hash"],
+                "frozen_record_hash": pattern["frozen_record_hash"],
+                "freeze_timestamp": pattern["freeze_timestamp"],
+                "discovery_run_id": pattern["discovery_run_id"],
+            },
+            "governance": {
+                "fixture": "l9-source-proof",
+            },
+            "match": {
+                "symbol": symbol,
+                "observation_as_of": observation_as_of,
+                "snapshot_id": snapshot_id,
+                "snapshot_generated_at": generated_at,
+                "snapshot_binding_hash": snapshot_binding_hash,
+                "history_binding_hash": history_binding_hash,
+                "session_map_hash": session_map_hash,
+                "current_row_hash": row_hash_by_symbol[symbol],
+                "condition_evidence": [],
+                "condition_evidence_hash": digest([]),
+            },
+            "forecast": {
+                "target_id": forecast["target_id"],
+                "expected_direction": forecast["expected_direction"],
+                "horizon_sessions": forecast["horizon_sessions"],
+                "baseline": forecast["baseline"],
+                "reference_definition": forecast["reference_definition"],
+            },
+            "start_market_session": {
+                "session_id": f"{snapshot_id}-{symbol}",
+                "calendar_id": f"{symbol}-CAL",
+                "start_at": start_at,
+                "source": "l9-test-session-map-v1",
+            },
+            "outcome_available_at_capture": False,
+            "outcome_maturation_performed": False,
+            "confirmation_evaluation_performed": False,
+            "rating_assigned": False,
+            "promotion_performed": False,
+        }
+        l7_claim["claim_hash"] = digest(l7_claim)
+
+        report = {
+            "schema_version": "pattern_discovery_l7_capture_report_v1",
+            "module": "pattern_discovery_lab",
+            "phase": "L7",
+            "research_only": True,
+            "productive_integration_enabled": False,
+            "execution_allowed": False,
+            "capture_id": f"PCAP-{digest({'claim_id': claim_id})[:24].upper()}",
+            "captured_at": captured_at,
+            "l7_contract_hash": digest({"l7_contract": "fixture"}),
+            "l5_snapshot_hashes": [digest({"l5": pattern["pattern_id"]})],
+            "snapshot_binding": snapshot_binding,
+            "history_binding": {
+                "history_file_sha256": digest(
+                    {"history_file": snapshot_id}
+                ),
+                "row_count": 0,
+                "symbol_count": 0,
+                "projected_rows_hash": digest([]),
+                "max_generated_at": None,
+                "history_binding_hash": history_binding_hash,
+            },
+            "session_map_hash": session_map_hash,
+            "counts": {
+                "frozen_pattern_count": 1,
+                "post_freeze_pattern_count": 1,
+                "current_symbol_count": len(rows),
+                "prospective_claim_count": 1,
+                "excluded_item_count": 0,
+            },
+            "pattern_summaries": [],
+            "exclusions": [],
+            "claims": [l7_claim],
+            "boundaries": {
+                "outcome_information_used": False,
+                "outcome_maturation_performed": False,
+                "confirmation_evaluation_performed": False,
+                "sequential_monitoring_performed": False,
+                "rating_assigned": False,
+                "promotion_performed": False,
+                "decision_layer_integration_performed": False,
+            },
+        }
+        report["capture_hash"] = digest(report)
+        capture_sources.append(
+            {
+                "capture_report": report,
+                "snapshot_rows": rows,
+                "market_sessions": sessions,
             }
         )
+
+        claim_stub.update(
+            {
+                "claim_hash": l7_claim["claim_hash"],
+                "event_id": event_id,
+                "capture_snapshot_id": snapshot_id,
+                "capture_snapshot_binding_hash": snapshot_binding_hash,
+            }
+        )
+        outcome["horizon_provenance"]["start_market_session_id"] = (
+            f"{snapshot_id}-{symbol}"
+        )
+        outcome["outcome_hash"] = digest(
+            {k: v for k, v in outcome.items() if k != "outcome_hash"}
+        )
+
+    bundle = build_prospective_source_bundle(
+        capture_sources,
+        source_bundle_id=(
+            "SRC-"
+            + digest(
+                {
+                    "captures": [
+                        source["capture_report"]["capture_id"]
+                        for source in capture_sources
+                    ]
+                }
+            )[:24].upper()
+        ),
+        generated_at=max(capture_times),
+    )
+    return bundle, values
+
+
+def baseline_record(pattern, prospective_source_bundle, *, negative=False):
     forecast = pattern["pattern_spec"]["forecast"]
+    observations = []
+    counter = 0
+    for snapshot in prospective_source_bundle["snapshots"]:
+        sessions = {
+            item["symbol"]: item
+            for item in snapshot["market_sessions"]
+        }
+        for row in snapshot["rows"]:
+            symbol = row["symbol"]
+            session = sessions.get(symbol)
+            event = {
+                "baseline_event_id": (
+                    f"B-{pattern['pattern_id']}-{counter:04d}"
+                ),
+                "capture_snapshot_id": snapshot["snapshot_id"],
+                "symbol": symbol,
+                "session_id": (
+                    session["session_id"] if session is not None else None
+                ),
+                "start_at": (
+                    session["start_at"] if session is not None else None
+                ),
+                "end_at": (
+                    (
+                        date.fromisoformat(session["start_at"][:10])
+                        + timedelta(days=5)
+                    ).isoformat()
+                    + "T08:00:00Z"
+                    if session is not None
+                    else None
+                ),
+                "availability_status": (
+                    "AVAILABLE"
+                    if session is not None
+                    else "START_SESSION_UNAVAILABLE"
+                ),
+                "target_value": (
+                    (
+                        -0.005
+                        if negative
+                        else (0.005 if counter % 2 == 0 else -0.005)
+                    )
+                    if session is not None
+                    else None
+                ),
+                "target_id": forecast["target_id"],
+                "horizon_sessions": forecast["horizon_sessions"],
+            }
+            event["source_hash"] = digest(event)
+            observations.append(event)
+            counter += 1
+
     return {
         "pattern_id": pattern["pattern_id"],
         "pattern_version": pattern["pattern_version"],
         "pattern_spec_hash": pattern["pattern_spec_hash"],
         "baseline_definition": forecast["baseline"],
         "universe_version": pattern["pattern_spec"]["data"]["universe_version"],
-        "population_source_id": f"POP-{pattern['pattern_id']}",
-        "population_source_hash": digest(
-            {"population": pattern["pattern_id"], "count": count}
-        ),
+        "population_source_id": prospective_source_bundle[
+            "source_bundle_id"
+        ],
+        "population_source_hash": prospective_source_bundle[
+            "source_bundle_hash"
+        ],
         "selection_rule_id": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1",
         "selection_rule_hash": digest(
             {
@@ -624,34 +897,16 @@ def baseline_record(pattern, *, count=24, negative=False):
     }
 
 
-def context_bundle_for(outcomes):
-    contexts = []
-    for index, outcome in enumerate(outcomes):
-        claim = outcome["claim"]
-        start = outcome["horizon_provenance"]["start_at"]
-        observed_day = date.fromisoformat(start[:10]) - timedelta(days=1)
-        contexts.append(
-            {
-                "claim_id": claim["claim_id"],
-                "symbol": claim["symbol"],
-                "observation_as_of": f"{observed_day.isoformat()}T12:00:00Z",
-                "capture_snapshot_id": claim["capture_snapshot_id"],
-                "capture_snapshot_binding_hash": claim[
-                    "capture_snapshot_binding_hash"
-                ],
-                "context_source_hash": digest({"context": claim["claim_id"]}),
-                "sector": "TECH" if index % 2 == 0 else "INDUSTRIAL",
-                "segment": "LARGE" if index % 3 else "MID",
-                "pillar_primary": "QUALITY",
-                "cluster_official": "C1" if index % 2 == 0 else "C2",
-                "market_regime_stock": "BULL" if index % 2 == 0 else "NEUTRAL",
-                "market_regime_crypto": "N/A",
-            }
-        )
-    return build_context_bundle(
-        contexts,
+def context_bundle_for(patterns, outcomes, prospective_source_bundle=None):
+    source = prospective_source_bundle
+    values = outcomes
+    if source is None:
+        source, values = prospective_source_for(patterns, outcomes)
+    return build_context_bundle_from_sources(
+        [row["claim"]["claim_id"] for row in values],
+        source,
         context_bundle_id="CTX-L9-TEST",
-        generated_at="2027-01-15T20:00:00Z",
+        generated_at=source["generated_at"],
     )
 
 
@@ -684,22 +939,61 @@ def build_report(
     outcomes=None,
     baseline=None,
     context=None,
+    prospective_source=None,
     evaluated_at="2027-01-15T20:00:00Z",
+    confirmation_registry=None,
 ):
-    values = outcomes if outcomes is not None else prospective_rows(pattern)
+    raw_values = outcomes if outcomes is not None else prospective_rows(pattern)
+    if prospective_source is None:
+        source, values = prospective_source_for([pattern], raw_values)
+    else:
+        source = prospective_source
+        values = deepcopy(raw_values)
+        source_claims = {
+            row["claim_id"]: row
+            for row in source["claims"]
+        }
+        for outcome in values:
+            claim_id = outcome["claim"]["claim_id"]
+            src = source_claims[claim_id]
+            outcome["claim"]["claim_hash"] = src["claim_hash"]
+            outcome["claim"]["event_id"] = src["event_id"]
+            outcome["claim"]["capture_snapshot_id"] = src["snapshot_id"]
+            outcome["claim"]["capture_snapshot_binding_hash"] = src[
+                "snapshot_binding_hash"
+            ]
+            outcome["outcome_hash"] = digest(
+                {
+                    k: v
+                    for k, v in outcome.items()
+                    if k != "outcome_hash"
+                }
+            )
+
     events = maturation_registry_events(
         values,
         recorded_at=evaluated_at,
     )
+    baseline_value = (
+        baseline
+        if baseline is not None
+        else baseline_record(pattern, source)
+    )
     baseline_bundle = build_baseline_bundle(
-        [baseline if baseline is not None else baseline_record(pattern)],
+        [baseline_value],
+        source,
         baseline_bundle_id="BASE-L9-TEST",
         generated_at=evaluated_at,
     )
-    contexts = context if context is not None else context_bundle_for(values)
+    contexts = (
+        context
+        if context is not None
+        else context_bundle_for([pattern], values, source)
+    )
     return build_confirmation_look(
         [pattern],
         events,
+        source,
         baseline_bundle,
         control_plan_id=control["control_plan_id"],
         control_plan_version=control["control_plan_version"],
@@ -711,6 +1005,7 @@ def build_report(
         monitoring_registry=regs["c4"],
         qm_a_ledger=regs["qm_a"],
         evaluated_at=evaluated_at,
+        confirmation_registry=confirmation_registry,
         context_bundle=contexts,
     )
 
