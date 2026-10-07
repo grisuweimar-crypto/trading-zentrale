@@ -577,7 +577,7 @@ def maturation_registry_events(
     return events
 
 
-def prospective_source_for(patterns, outcomes):
+def prospective_source_for(patterns, outcomes, *, include_regime=True):
     """Create hash-consistent synthetic L7 capture proofs for L9 tests."""
     patterns_by_id = {
         str(pattern["pattern_id"]): pattern
@@ -616,11 +616,12 @@ def prospective_source_for(patterns, outcomes):
                 "sector": "TECH" if rank % 2 == 0 else "INDUSTRIAL",
                 "pillar_primary": "QUALITY",
                 "cluster_official": "C1" if rank % 2 == 0 else "C2",
-                "market_regime_stock": (
-                    "BULL" if index % 2 == 0 else "NEUTRAL"
-                ),
-                "market_regime_crypto": "N/A",
             }
+            if include_regime:
+                row["market_regime_stock"] = (
+                    "BULL" if index % 2 == 0 else "NEUTRAL"
+                )
+                row["market_regime_crypto"] = "N/A"
             rows.append(row)
 
         row_identities = []
@@ -1205,23 +1206,21 @@ def test_context_missing_is_inconclusive_not_falsified(tmp_path):
     ] == "INCONCLUSIVE"
 
 
-def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
+def test_context_rows_without_capture_time_regime_are_inconclusive_not_supported(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    source, normalized = prospective_source_for([pattern], outcomes)
-    contexts = context_bundle_for([pattern], normalized, source)
-    for row in contexts["claim_contexts"]:
-        row.pop("market_regime_stock", None)
-        row.pop("market_regime_crypto", None)
-    contexts["context_bundle_hash"] = digest(
-        {k: v for k, v in contexts.items() if k != "context_bundle_hash"}
+    source, normalized = prospective_source_for(
+        [pattern],
+        outcomes,
+        include_regime=False,
     )
+    contexts = context_bundle_for([pattern], normalized, source)
     report = build_report(
         regs,
         pattern,
         control,
         monitor,
-        outcomes=outcomes,
+        outcomes=normalized,
         prospective_source=source,
         context=contexts,
     )
