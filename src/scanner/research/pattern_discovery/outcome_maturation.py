@@ -292,11 +292,30 @@ def _normalize_start_session_bindings(
         }
 
     normalized = [by_symbol[symbol] for symbol in sorted(by_symbol)]
+    l7_session_identity = [
+        {
+            "symbol": row["symbol"],
+            "session_id": row["session_id"],
+            "calendar_id": row["calendar_id"],
+            "start_at": row["start_at"],
+            "source": row["source"],
+        }
+        for row in normalized
+    ]
+    reconstructed_l7_session_map_hash = _hash(l7_session_identity)
+    expected_l7_session_map_hash = _sha256_text(
+        capture_report.get("session_map_hash"),
+        "capture_report.session_map_hash",
+    )
+    if reconstructed_l7_session_map_hash != expected_l7_session_map_hash:
+        raise OutcomeMaturationError("start_session_map_hash_mismatch_l7")
+
     binding = {
         "start_session_binding_file_sha256": _sha256_text(
             start_session_binding_file_sha256,
             "start_session_binding_file_sha256",
         ),
+        "l7_session_map_hash": expected_l7_session_map_hash,
         "row_count": len(normalized),
         "symbol_count": len(normalized),
         "sessions_hash": _hash(normalized),
