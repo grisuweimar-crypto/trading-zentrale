@@ -86,6 +86,8 @@
       "claim_id",
       "symbol",
       "observation_as_of",
+      "capture_snapshot_id",
+      "capture_snapshot_binding_hash",
       "context_source_hash"
     ],
     "allowed_optional_fields": [
@@ -96,7 +98,9 @@
       "market_regime_stock",
       "market_regime_crypto"
     ],
-    "observation_as_of_must_precede_start_session": true
+    "observation_as_of_must_precede_start_session": true,
+    "capture_snapshot_identity_must_match_l8_claim": true,
+    "current_taxonomy_backfill_forbidden": true
   },
   "statistics": {
     "primary_method": "PROSPECTIVE_CLUSTER_AWARE_CONFIRMATION_V1",
