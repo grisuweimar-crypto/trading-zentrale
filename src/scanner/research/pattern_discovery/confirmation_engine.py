@@ -1043,8 +1043,11 @@ def _aligned(value: float, direction: str) -> float:
     raise ConfirmationEngineError(f"expected_direction_invalid:{direction}")
 
 
-def _date_key(timestamp: str) -> str:
-    return str(timestamp)[:10]
+def _row_session_date(row: Mapping[str, Any]) -> str:
+    return _session_date_text(
+        row.get("start_session_date"),
+        "statistics.start_session_date",
+    )
 
 
 def _support_regions(
@@ -1054,11 +1057,11 @@ def _support_regions(
     block_length: int,
 ) -> tuple[int, dict[str, int], list[str]]:
     baseline_dates = sorted(
-        {_date_key(str(row["start_at"])) for row in baseline_rows}
+        {_row_session_date(row) for row in baseline_rows}
     )
     positions = {day: index for index, day in enumerate(baseline_dates)}
     candidate_dates_all = {
-        _date_key(str(row["start_at"])) for row in candidate_rows
+        _row_session_date(row) for row in candidate_rows
     }
     missing_candidate_dates = sorted(candidate_dates_all - set(positions))
     if missing_candidate_dates:
@@ -1098,11 +1101,11 @@ def _concentration(
     region_by_date: Mapping[str, int],
 ) -> dict[str, Any]:
     symbols = Counter(str(row["symbol"]) for row in rows)
-    dates = Counter(_date_key(str(row["start_at"])) for row in rows)
+    dates = Counter(_row_session_date(row) for row in rows)
     regions = Counter(
-        str(region_by_date[_date_key(str(row["start_at"]))])
+        str(region_by_date[_row_session_date(row)])
         for row in rows
-        if _date_key(str(row["start_at"])) in region_by_date
+        if _row_session_date(row) in region_by_date
     )
 
     def top_share(counter: Counter[str]) -> float | None:
@@ -1130,10 +1133,10 @@ def _effective_n(
     clusters = {
         (
             str(row["symbol"]),
-            int(region_by_date[_date_key(str(row["start_at"]))]),
+            int(region_by_date[_row_session_date(row)]),
         )
         for row in rows
-        if _date_key(str(row["start_at"])) in region_by_date
+        if _row_session_date(row) in region_by_date
     }
     return len(clusters)
 
@@ -1157,7 +1160,7 @@ def _bootstrap_intervals(
         float(value) for value in stats["bootstrap_interval"]
     ]
     date_axis = sorted(
-        {_date_key(str(row["start_at"])) for row in baseline_rows}
+        {_row_session_date(row) for row in baseline_rows}
     )
     diagnostics: dict[str, Any] = {
         "method": stats["bootstrap_method"],
@@ -1184,11 +1187,11 @@ def _bootstrap_intervals(
     candidate_by_day: dict[str, list[float]] = defaultdict(list)
     baseline_by_day: dict[str, list[float]] = defaultdict(list)
     for row in candidate_rows:
-        candidate_by_day[_date_key(str(row["start_at"]))].append(
+        candidate_by_day[_row_session_date(row)].append(
             float(row["aligned_value"])
         )
     for row in baseline_rows:
-        baseline_by_day[_date_key(str(row["start_at"]))].append(
+        baseline_by_day[_row_session_date(row)].append(
             float(row["aligned_value"])
         )
 
@@ -1790,6 +1793,14 @@ def _normalize_pattern_outcomes(
                     f"claim.capture_snapshot_binding_hash:{claim_id}",
                 ),
                 "start_at": raw["horizon_provenance"]["start_at"],
+                "start_session_date": _session_date_text(
+                    raw["horizon_provenance"]["start_session_date"],
+                    f"outcome.start_session_date:{claim_id}",
+                ),
+                "calendar_id": _safe_token(
+                    raw["horizon_provenance"]["calendar_id"],
+                    f"outcome.calendar_id:{claim_id}",
+                ),
                 "target_session_date": raw["horizon_provenance"][
                     "target_session_date"
                 ],
@@ -2285,7 +2296,7 @@ def _pattern_statistics(
         "effective_n_method": contract["statistics"]["effective_n_method"],
         "symbol_count": len({str(row["symbol"]) for row in candidate_rows}),
         "observation_date_count": len(
-            {_date_key(str(row["start_at"])) for row in candidate_rows}
+            {_row_session_date(row) for row in candidate_rows}
         ),
         "support_region_count": support_count,
         "support_region_method": contract["statistics"]["support_region_method"],
