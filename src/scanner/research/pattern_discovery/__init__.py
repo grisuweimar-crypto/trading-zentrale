@@ -182,6 +182,19 @@ from .challenger_integration import (
     verify_incremental_evaluation,
 )
 
+from .continuous_operations import (
+    ContinuousOperationsError,
+    OperationsRegistry,
+    build_operations_cycle,
+    cycle_repo_path,
+    evaluate_discovery_trigger,
+    load_operations_contract,
+    operations_contract_hash,
+    persist_operations_cycle,
+    validate_extraordinary_request,
+    verify_operations_cycle,
+)
+
 __all__ = [
     "BoundaryViolation",
     "PatternDiscoveryBoundary",
@@ -320,4 +333,14 @@ __all__ = [
     "trace_repo_path",
     "verify_challenger_trace",
     "verify_incremental_evaluation",
+    "ContinuousOperationsError",
+    "OperationsRegistry",
+    "build_operations_cycle",
+    "cycle_repo_path",
+    "evaluate_discovery_trigger",
+    "load_operations_contract",
+    "operations_contract_hash",
+    "persist_operations_cycle",
+    "validate_extraordinary_request",
+    "verify_operations_cycle",
 ]

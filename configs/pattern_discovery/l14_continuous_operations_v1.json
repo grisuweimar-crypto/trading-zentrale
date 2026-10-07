@@ -1,0 +1,121 @@
+{
+  "schema_version": "pattern_discovery_l14_continuous_operations_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L14",
+  "name": "Continuous Lab Operations",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Operate the completed Pattern Discovery Lab as a deterministic fail-closed research control plane by scheduling existing L1-L13 capabilities without changing their scientific or productive semantics.",
+  "principles": {
+    "l1_through_l13_are_reused_not_reimplemented": true,
+    "discovery_is_data_triggered_not_calendar_triggered": true,
+    "daily_operations_may_check_without_forcing_discovery": true,
+    "prospective_matching_may_run_daily": true,
+    "outcome_maturation_may_run_daily": true,
+    "formal_confirmation_only_at_qm_c4_permitted_looks": true,
+    "rating_refresh_only_from_existing_l9_evidence": true,
+    "dependency_refresh_only_on_relevant_change": true,
+    "qm_c5_is_the_negative_result_authority": true,
+    "pattern_decay_alerts_do_not_change_rating": true,
+    "manual_statistical_override_forbidden": true,
+    "all_cycles_are_hash_bound": true,
+    "errors_fail_closed": true,
+    "automatic_promotion_forbidden": true,
+    "productive_semantics_must_not_change": true
+  },
+  "regular_discovery_trigger": {
+    "minimum_new_trading_days": 20,
+    "minimum_usable_observation_growth_fraction": 0.20,
+    "support_region_block_sessions": 10,
+    "minimum_new_support_regions": 2,
+    "open_unprocessed_candidate_fraction_max": 0.25,
+    "all_conditions_required": true,
+    "thresholds_are_initial_versioned_research_parameters": true
+  },
+  "extraordinary_discovery": {
+    "requires_explicit_request": true,
+    "requires_evidence_hash": true,
+    "requires_new_l1_preregistration": true,
+    "allowed_reason_codes": [
+      "NEW_PIT_SAFE_FEATURE",
+      "NEW_DATA_PROVIDER_OR_FAMILY",
+      "MATERIAL_UNIVERSE_CHANGE",
+      "MATERIAL_MARKET_REGIME_CHANGE",
+      "NEW_TARGET_METHODOLOGY"
+    ],
+    "automatic_inference_from_market_data_forbidden": true
+  },
+  "candidate_budget": {
+    "authority": "L1_FROZEN_MANIFEST",
+    "unprocessed_definition": "FROZEN_PATTERN_WITHOUT_ANY_L10_RATING_HISTORY",
+    "previous_run_processed_when_unprocessed_count_is_zero": true,
+    "budget_may_not_be_increased_by_l14": true
+  },
+  "scheduler": {
+    "cadence": "DAILY_CHECK",
+    "stage_order": [
+      "DISCOVERY_TRIGGER",
+      "PROSPECTIVE_CAPTURE",
+      "OUTCOME_MATURATION",
+      "SEQUENTIAL_CONFIRMATION",
+      "RATING_UPDATE",
+      "DEPENDENCY_REFRESH",
+      "NEGATIVE_RESULT_AUDIT",
+      "PATTERN_DECAY_AUDIT",
+      "QM_REGRESSION"
+    ],
+    "same_snapshot_capture_is_idempotent": true,
+    "maturation_check_when_unmatured_claims_exist": true,
+    "confirmation_check_when_maturation_registry_changes": true,
+    "rating_check_when_confirmation_registry_changes": true,
+    "dependency_refresh_when_frozen_pattern_set_changes": true
+  },
+  "decay": {
+    "method": "AUDITED_RATING_AND_CONFIRMATION_STATE_CHANGE_V1",
+    "downgrade_transitions": [
+      "A->B", "A->C", "A->U", "A->F",
+      "B->C", "B->U", "B->F",
+      "C->U", "C->F"
+    ],
+    "negative_l9_result_classes": [
+      "FALSIFIED",
+      "NEGATIVE_NOT_CONFIRMED"
+    ],
+    "inconclusive_after_established_rating_is_warning": true,
+    "alert_levels": ["WATCH", "WARNING", "CRITICAL"],
+    "decay_alert_changes_rating": false,
+    "change_point_detection_implemented_here": false
+  },
+  "qm": {
+    "continuous_qm_authority": "BA-QM12",
+    "continuous_qm_module": "scanner.research.governance.ba_qm12_continuous_qm",
+    "negative_result_authority": "QM-C5",
+    "negative_result_registry_path": "artifacts/research/qm/qm_c5_results.jsonl",
+    "qm_failure_blocks_cycle": true
+  },
+  "storage": {
+    "cycle_schema_version": "pattern_discovery_l14_operations_cycle_v1",
+    "event_schema_version": "pattern_discovery_l14_operations_event_v1",
+    "registry_path": "artifacts/research/pattern_discovery/operations/operations_registry.jsonl",
+    "cycle_path_template": "artifacts/research/pattern_discovery/operations/cycles/{cycle_hash}.json",
+    "latest_path": "artifacts/research/pattern_discovery/operations/latest.json",
+    "registry_is_append_only": true,
+    "registry_is_hash_chained": true,
+    "identical_cycle_replay_is_idempotent": true
+  },
+  "boundaries": {
+    "l1_manifest_mutation_performed": false,
+    "l5_pattern_mutation_performed": false,
+    "l7_claim_mutation_performed": false,
+    "l8_outcome_mutation_performed": false,
+    "l9_confirmation_mutation_performed": false,
+    "l10_rating_mutation_performed": false,
+    "l12_promotion_performed": false,
+    "l13_regular_integration_performed": false,
+    "scanner_score_change_performed": false,
+    "productive_decision_change_performed": false,
+    "execution_effect_created": false
+  }
+}
