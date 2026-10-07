@@ -176,6 +176,33 @@ def peer_snapshot():
     ]
 
 
+def session_bindings(claim=None, *, subject_session_date="2026-10-08"):
+    subject = claim or make_claim()
+    subject_symbol = subject["match"]["symbol"]
+    subject_start = subject["start_market_session"]
+    rows = []
+    for symbol in ("AAA", "BBB", "CCC", "DDD"):
+        if symbol == subject_symbol:
+            rows.append({
+                "symbol": symbol,
+                "session_id": subject_start["session_id"],
+                "calendar_id": subject_start["calendar_id"],
+                "session_date": subject_session_date,
+                "start_at": subject_start["start_at"],
+                "source": subject_start["source"],
+            })
+        else:
+            rows.append({
+                "symbol": symbol,
+                "session_id": f"{symbol}-2026-10-08",
+                "calendar_id": f"{symbol}-CAL",
+                "session_date": "2026-10-08",
+                "start_at": "2026-10-08T08:00:00Z",
+                "source": "fixture-session-source-v1",
+            })
+    return rows
+
+
 def price_row(symbol, day, adj, currency="USD", close=None):
     return {
         "date": day,
@@ -220,21 +247,26 @@ def build_check(
     claims=None,
     prices=None,
     peers=None,
+    sessions=None,
     checked_at="2026-10-31T20:00:00Z",
     price_as_of="2026-10-31",
     peer_hash="a" * 64,
+    session_hash="8" * 64,
     price_hash="9" * 64,
 ):
     if claims is None:
         claims = [claim or make_claim()]
     capture = make_capture_report(claims)
+    primary_claim = claims[0] if claims else make_claim()
     return build_outcome_maturation_check(
         capture,
         peers if peers is not None else peer_snapshot(),
+        sessions if sessions is not None else session_bindings(primary_claim),
         prices if prices is not None else complete_prices(),
         checked_at=checked_at,
         price_as_of=price_as_of,
         peer_snapshot_file_sha256=peer_hash,
+        start_session_binding_file_sha256=session_hash,
         price_file_sha256=price_hash,
     )
 
@@ -417,6 +449,51 @@ def test_peer_snapshot_rows_must_share_l7_snapshot_id():
         build_check(peers=peers)
 
 
+def test_subject_start_session_binding_must_match_l7_claim_exactly():
+    claim = make_claim()
+    sessions = session_bindings(claim)
+    sessions[0]["calendar_id"] = "WRONG-CALENDAR"
+    with pytest.raises(
+        OutcomeMaturationError,
+        match="subject_start_session_binding_mismatch:AAA:calendar_id",
+    ):
+        build_check(claim=claim, sessions=sessions)
+
+
+def test_explicit_session_date_can_differ_from_utc_start_date():
+    claim = make_claim(
+        captured_at="2026-10-07T18:10:00Z",
+        start_at="2026-10-07T23:00:00Z",
+    )
+    sessions = session_bindings(
+        claim,
+        subject_session_date="2026-10-08",
+    )
+    report = build_check(claim=claim, sessions=sessions)
+    assert report["counts"]["matured_count"] == 1
+    record = report["matured_outcomes"][0]
+    assert record["horizon_provenance"]["start_at"] == "2026-10-07T23:00:00Z"
+    assert record["horizon_provenance"]["start_session_date"] == "2026-10-08"
+    assert record["horizon_provenance"]["explicit_session_date_source"] == "START_SESSION_BINDING"
+
+
+def test_peer_without_explicit_start_session_is_excluded_not_inferred():
+    claim = make_claim(
+        target_id="peer_excess_5t_gt_0",
+        direction="POSITIVE",
+    )
+    sessions = [
+        row for row in session_bindings(claim)
+        if row["symbol"] != "BBB"
+    ]
+    report = build_check(claim=claim, sessions=sessions)
+    record = report["matured_outcomes"][0]
+    assert record["reference"]["excluded_peer_status_counts"][
+        "START_SESSION_BINDING_UNAVAILABLE"
+    ] == 1
+    assert record["reference"]["peer_count"] == 1
+
+
 def test_relative_alpha_does_not_mature_without_reference():
     claim = make_claim(
         target_id="peer_excess_5t_gt_0",
@@ -488,10 +565,12 @@ def test_build_does_not_mutate_l7_capture_or_claim():
     build_outcome_maturation_check(
         capture,
         peer_snapshot(),
+        session_bindings(claim),
         complete_prices(),
         checked_at="2026-10-31T20:00:00Z",
         price_as_of="2026-10-31",
         peer_snapshot_file_sha256="a" * 64,
+        start_session_binding_file_sha256="8" * 64,
         price_file_sha256="9" * 64,
     )
     assert capture == before
