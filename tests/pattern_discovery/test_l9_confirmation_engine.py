@@ -1155,6 +1155,29 @@ def test_baseline_definition_must_match_frozen_pattern(tmp_path):
         )
 
 
+def test_candidate_date_missing_from_unconditional_baseline_fails_closed(tmp_path):
+    regs, pattern, control, monitor = setup_single_family(tmp_path)
+    outcomes = prospective_rows(pattern)
+    baseline = baseline_record(pattern)
+    baseline["observations"][0]["start_at"] = "2026-10-09T08:00:00Z"
+    baseline["observations"][0]["end_at"] = "2026-10-14T08:00:00Z"
+    baseline["observations"][0]["source_hash"] = digest(
+        {"changed": "baseline-date-axis"}
+    )
+    with pytest.raises(
+        ConfirmationEngineError,
+        match="candidate_date_missing_from_unconditional_baseline_axis",
+    ):
+        build_report(
+            regs,
+            pattern,
+            control,
+            monitor,
+            outcomes=outcomes,
+            baseline=baseline,
+        )
+
+
 def test_baseline_selection_rule_cannot_be_changed_after_freeze(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     baseline = baseline_record(pattern)
