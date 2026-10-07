@@ -1479,13 +1479,16 @@ def _verify_l8_maturation_registry_events(
             raise ConfirmationEngineError(
                 f"l8_maturation_target_session_date_invalid:{claim_id}"
             ) from exc
-        if target_date >= recorded_at.date():
+        if target_date > recorded_at.date():
             raise ConfirmationEngineError(
-                f"l8_maturation_recorded_before_target_session_close_proven:{claim_id}"
+                f"l8_maturation_recorded_before_target_session_date:{claim_id}"
             )
 
         all_event_hashes.append(stored)
-        if recorded_at <= evaluation_time:
+        if (
+            recorded_at <= evaluation_time
+            and target_date < evaluation_time.date()
+        ):
             eligible.append(
                 {
                     "record": dict(record),
