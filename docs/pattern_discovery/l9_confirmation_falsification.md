@@ -303,8 +303,10 @@ Raw N is not treated as independent N.
 L9 v1 reuses the established Pattern Discovery dependence philosophy:
 
 - block length = `2 × horizon`;
-- support regions are non-overlapping temporal regions on the combined
-  prospective candidate/baseline date axis;
+- support regions are non-overlapping temporal regions on the unconditional
+  baseline date axis, matching L4 semantics;
+- every candidate start date must exist on that baseline axis; otherwise the
+  declared baseline population fails closed;
 - Effective-N proxy = unique `symbol × support-region` clusters;
 - robust intervals use deterministic hash-seeded circular moving-block
   bootstrap.
