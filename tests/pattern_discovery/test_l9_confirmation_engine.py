@@ -1211,19 +1211,22 @@ def test_context_rows_without_regime_are_inconclusive_not_supported(tmp_path):
 def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for([pattern], outcomes)
     events = maturation_registry_events(
-        outcomes,
+        normalized,
         recorded_at="2027-01-16T20:00:00Z",
     )
     baseline = build_baseline_bundle(
-        [baseline_record(pattern)],
+        [baseline_record(pattern, source)],
+        source,
         baseline_bundle_id="BASE-FUTURE-MATURATION",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     report = build_confirmation_look(
         [pattern],
         events,
+        source,
         baseline,
         control_plan_id=control["control_plan_id"],
         control_plan_version=control["control_plan_version"],
@@ -1246,8 +1249,9 @@ def test_l8_maturation_events_after_l9_evaluation_are_excluded_by_prefix(tmp_pat
 def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern, count=2)
+    source, normalized = prospective_source_for([pattern], outcomes)
     events = maturation_registry_events(
-        outcomes,
+        normalized,
         recorded_at="2027-01-15T20:00:00Z",
     )
     events[1]["recorded_at"] = "2027-01-14T20:00:00Z"
@@ -1255,11 +1259,12 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
         {k: v for k, v in events[1].items() if k != "entry_hash"}
     )
     baseline = build_baseline_bundle(
-        [baseline_record(pattern, count=2)],
+        [baseline_record(pattern, source)],
+        source,
         baseline_bundle_id="BASE-NONMONOTONIC",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     with pytest.raises(
         ConfirmationEngineError,
         match="l8_maturation_registry_time_not_monotonic",
@@ -1267,6 +1272,7 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
         build_confirmation_look(
             [pattern],
             events,
+            source,
             baseline,
             control_plan_id=control["control_plan_id"],
             control_plan_version=control["control_plan_version"],
@@ -1285,19 +1291,22 @@ def test_l8_maturation_registry_recorded_time_must_be_monotonic(tmp_path):
 def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
+    source, normalized = prospective_source_for([pattern], outcomes)
     prefix = maturation_registry_events(
-        outcomes,
+        normalized,
         recorded_at="2027-01-15T20:00:00Z",
     )
     baseline = build_baseline_bundle(
-        [baseline_record(pattern)],
+        [baseline_record(pattern, source)],
+        source,
         baseline_bundle_id="BASE-SUFFIX-INDEPENDENCE",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     first = build_confirmation_look(
         [pattern],
         prefix,
+        source,
         baseline,
         control_plan_id=control["control_plan_id"],
         control_plan_version=control["control_plan_version"],
@@ -1334,6 +1343,7 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
     second = build_confirmation_look(
         [pattern],
         [*prefix, future_event],
+        source,
         baseline,
         control_plan_id=control["control_plan_id"],
         control_plan_version=control["control_plan_version"],
@@ -1354,14 +1364,16 @@ def test_future_l8_registry_suffix_does_not_change_historical_l9_look(tmp_path):
 def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     outcomes = prospective_rows(pattern)
-    events = maturation_registry_events(outcomes)
+    source, normalized = prospective_source_for([pattern], outcomes)
+    events = maturation_registry_events(normalized)
     events[1]["previous_event_hash"] = "0" * 64
     baseline = build_baseline_bundle(
-        [baseline_record(pattern)],
+        [baseline_record(pattern, source)],
+        source,
         baseline_bundle_id="BASE-BAD-CHAIN",
         generated_at="2027-01-15T20:00:00Z",
     )
-    contexts = context_bundle_for(outcomes)
+    contexts = context_bundle_for([pattern], normalized, source)
     with pytest.raises(
         ConfirmationEngineError,
         match="l8_maturation_registry_previous_hash_invalid",
@@ -1369,6 +1381,7 @@ def test_tampered_l8_maturation_chain_fails_closed(tmp_path):
         build_confirmation_look(
             [pattern],
             events,
+            source,
             baseline,
             control_plan_id=control["control_plan_id"],
             control_plan_version=control["control_plan_version"],
