@@ -25,26 +25,6 @@
   },
   "dispositions": [
     {
-      "path": "configs/qm_b_universe_integrity_v1.json",
-      "status": "SAFE",
-      "reason": "Governance contract names taxonomy fields and current/historical sources but does not create or filter a historical research sample."
-    },
-    {
-      "path": "scripts/run_external_evidence_8c_universe_coverage.py",
-      "status": "SAFE",
-      "reason": "Explicitly current-snapshot feasibility only; scanner_sector is carried as current descriptive metadata and is not used to define historical eligibility."
-    },
-    {
-      "path": "src/scanner/reports/daily_research.py",
-      "status": "SAFE",
-      "reason": "Taxonomy is read from the current published scanner row for current classification/display; HistoricalMatcher consumes stored historical score/rank/r_code/rs3m/trend200 state and is not enriched from current taxonomy."
-    },
-    {
-      "path": "src/scanner/reports/research_views.py",
-      "status": "SAFE",
-      "reason": "Taxonomy fields are copied from the same observed scanner rows into append-only history; the module does not load universe_master to backfill old taxonomy."
-    },
-    {
       "path": ".github/workflows/qm_b_prospective_listing_snapshots.yml",
       "status": "SAFE",
       "reason": "Prospective listing governance workflow; taxonomy-like text is not used to construct historical research groups."
@@ -53,6 +33,11 @@
       "path": ".github/workflows/qm_j_phase1a_lag1_investigation.yml",
       "status": "SAFE",
       "reason": "Post-trigger QM-J diagnostic reads only stored historical scanner observations and price outcomes. The workflow does not load current universe taxonomy or use present-day category/sector/industry metadata to define, enrich, or filter historical samples."
+    },
+    {
+      "path": "configs/ba_qm10_production_operations_qm_v1.json",
+      "status": "SAFE",
+      "reason": "BA-QM10 operational-QM evidence preserves historical F01 capacity evidence and records a separate current F05 recurrence/CAPA. It does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
     },
     {
       "path": "configs/ba_qm4_qm_de_closure_v1.json",
@@ -70,9 +55,24 @@
       "reason": "Schema requires explicit versioned/PIT context assignments rather than present-day sector or industry lookup."
     },
     {
+      "path": "configs/pattern_discovery/feature_library_v1.json",
+      "status": "SAFE",
+      "reason": "Pattern Discovery L2 registry only declares versioned point-in-time features sourced from the observed row at each observation as_of. Its contract explicitly forbids historical reconstruction and leaves missing historical values unavailable; it does not load current taxonomy metadata to define, enrich, filter, or backfill historical samples."
+    },
+    {
+      "path": "configs/qm_b_universe_integrity_v1.json",
+      "status": "SAFE",
+      "reason": "Governance contract names taxonomy fields and current/historical sources but does not create or filter a historical research sample."
+    },
+    {
       "path": "configs/qm_de_dependence_calibration_v1.json",
       "status": "SAFE",
       "reason": "BA-QM4 dependence contract accepts sector only as optional cluster metadata supplied with each audited observation; it contains no lookup or backfill from current taxonomy."
+    },
+    {
+      "path": "scripts/run_external_evidence_8c_universe_coverage.py",
+      "status": "SAFE",
+      "reason": "Explicitly current-snapshot feasibility only; scanner_sector is carried as current descriptive metadata and is not used to define historical eligibility."
     },
     {
       "path": "src/scanner/domain/scoring_engine/quality/snapshots.py",
@@ -80,9 +80,19 @@
       "reason": "Sector is captured contemporaneously from the scored row when the snapshot is written; no current universe lookup is applied to prior rows."
     },
     {
+      "path": "src/scanner/reports/daily_research.py",
+      "status": "SAFE",
+      "reason": "Taxonomy is read from the current published scanner row for current classification/display; HistoricalMatcher consumes stored historical score/rank/r_code/rs3m/trend200 state and is not enriched from current taxonomy."
+    },
+    {
       "path": "src/scanner/reports/history_delta.py",
       "status": "SAFE",
       "reason": "Sector/pillar/bucket values are persisted from each current watchlist snapshot; historical rows retain their stored values and delta ranking is not defined by current taxonomy."
+    },
+    {
+      "path": "src/scanner/reports/research_views.py",
+      "status": "SAFE",
+      "reason": "Taxonomy fields are copied from the same observed scanner rows into append-only history; the module does not load universe_master to backfill old taxonomy."
     },
     {
       "path": "src/scanner/reports/selection_timing.py",
@@ -98,6 +108,11 @@
       "path": "src/scanner/research/elliott_vnext/market_context.py",
       "status": "SAFE",
       "reason": "Historical context requires explicit valid_from/valid_to intervals and PIT-verified assignments; present-day sector/industry is not retrojected."
+    },
+    {
+      "path": "src/scanner/research/governance/ba_qm9_end_application_audit.py",
+      "status": "SAFE",
+      "reason": "BA-QM9 quality-governance code preserves an immutable historical closure receipt while auditing the current Research/W10/runtime boundary separately; it does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
     },
     {
       "path": "src/scanner/research/governance/qm_b_observed_membership.py",
@@ -118,16 +133,6 @@
       "path": "src/scanner/research/query_api.py",
       "status": "SAFE",
       "reason": "Query API only returns taxonomy already stored in history_recent; it performs no current metadata lookup or enrichment."
-    },
-    {
-      "path": "src/scanner/research/governance/ba_qm9_end_application_audit.py",
-      "status": "SAFE",
-      "reason": "BA-QM9 quality-governance code preserves an immutable historical closure receipt while auditing the current Research/W10/runtime boundary separately; it does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
-    },
-    {
-      "path": "configs/ba_qm10_production_operations_qm_v1.json",
-      "status": "SAFE",
-      "reason": "BA-QM10 operational-QM evidence preserves historical F01 capacity evidence and records a separate current F05 recurrence/CAPA. It does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,
