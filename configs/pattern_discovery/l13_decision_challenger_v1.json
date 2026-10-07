@@ -1,0 +1,101 @@
+{
+  "schema_version": "pattern_discovery_l13_decision_challenger_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L13",
+  "name": "Decision-Layer Challenger Integration",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Compare explicitly admitted Pattern Discovery v2 evidence with the frozen existing Decision Layer in a horizon-separated shadow challenger, without changing productive stance, portfolio action or execution.",
+  "principles": {
+    "baseline_decision_layer_is_immutable": true,
+    "shadow_challenger_only": true,
+    "no_immediate_action_change": true,
+    "no_numeric_vote_counting": true,
+    "correlated_patterns_must_not_be_double_counted": true,
+    "dependency_aware_fusion_required": true,
+    "horizons_never_mixed": true,
+    "only_current_l12_admissions_allowed": true,
+    "only_same_snapshot_l7_claims_allowed": true,
+    "existing_timing_is_ablation_baseline": true,
+    "incremental_value_must_be_explicit": true,
+    "regular_integration_requires_separate_positive_review": true
+  },
+  "inputs": {
+    "decision_packet_schema": "decision_layer_input_contract_v1",
+    "l7_claim_schema": "pattern_discovery_l7_prospective_claim_v1",
+    "l8_outcome_schema": "pattern_discovery_l8_matured_outcome_v1",
+    "l12_decision_schema": "pattern_discovery_l12_promotion_decision_v1",
+    "required_l12_status": "ADMITTED",
+    "required_l12_integration_mode": "SHADOW_CHALLENGER",
+    "required_l12_registry_status": "ADMITTED",
+    "required_l12_current_validation_status": "CURRENT",
+    "allowed_horizons_sessions": [5, 20, 40, 60]
+  },
+  "relation_graph": {
+    "baseline_family": "timing",
+    "pattern_family": "pattern_discovery_v2",
+    "collapse_relationships": ["DUPLICATE", "NESTED"],
+    "collapse_severities": ["HIGH", "CRITICAL"],
+    "cluster_is_not_vote": true,
+    "baseline_conflict_cannot_be_resolved_by_pattern_count": true,
+    "pattern_conflict_cannot_be_resolved_by_pattern_count": true
+  },
+  "fusion": {
+    "states": ["positive", "negative", "conflicted", "insufficient_evidence"],
+    "empty_pattern_state": "insufficient_evidence",
+    "baseline_insufficient_plus_single_pattern_direction": "pattern_direction",
+    "baseline_direction_plus_same_pattern_direction": "baseline_direction",
+    "baseline_direction_plus_opposite_pattern_direction": "conflicted",
+    "baseline_conflicted_is_terminal_for_shadow_fusion": true,
+    "weighted_super_score_allowed": false,
+    "probability_weighted_vote_allowed": false
+  },
+  "ablation": {
+    "comparison": "EXISTING_TIMING_VS_EXISTING_TIMING_PLUS_PROMOTED_PATTERNS",
+    "paired_same_snapshot_required": true,
+    "same_horizon_required": true,
+    "same_target_scope_required": true,
+    "outcome_source": "L8_MATURED_OUTCOME",
+    "primary_metrics": [
+      "directional_hit_rate_lift",
+      "mean_aligned_outcome_lift"
+    ],
+    "minimum_paired_n": 30,
+    "minimum_disagreement_n": 10,
+    "minimum_temporal_support_regions": 2,
+    "support_region_method": "GREEDY_NONOVERLAPPING_OCCURRENCE_REGIONS_ON_OBSERVATION_DATE_AXIS",
+    "block_length_sessions_multiplier": 2,
+    "bootstrap_repetitions": 512,
+    "bootstrap_interval": [0.025, 0.975],
+    "random_seed": 20261007,
+    "positive_evidence_requires": [
+      "minimum_paired_n",
+      "minimum_disagreement_n",
+      "minimum_temporal_support_regions",
+      "directional_hit_rate_lift_gt_0",
+      "mean_aligned_outcome_lift_gt_0",
+      "both_bootstrap_lower_bounds_gt_0"
+    ],
+    "statuses": [
+      "INSUFFICIENT_SUPPORT",
+      "NO_INCREMENTAL_VALUE",
+      "INCREMENTAL_VALUE_CANDIDATE"
+    ]
+  },
+  "storage": {
+    "trace_path_template": "artifacts/research/pattern_discovery/challenger/traces/{snapshot_id}/{symbol}/{horizon_sessions}t/{trace_hash}.json",
+    "evaluation_path_template": "artifacts/research/pattern_discovery/challenger/evaluations/{horizon_sessions}t/{evaluation_hash}.json"
+  },
+  "boundaries": {
+    "decision_packet_mutated": false,
+    "existing_relation_graph_mutated": false,
+    "universal_stance_mutated": false,
+    "portfolio_action_mutated": false,
+    "scanner_score_change_performed": false,
+    "productive_decision_change_performed": false,
+    "execution_effect_created": false,
+    "automatic_regular_integration_performed": false
+  }
+}
