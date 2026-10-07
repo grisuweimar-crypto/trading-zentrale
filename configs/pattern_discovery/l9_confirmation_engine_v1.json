@@ -33,6 +33,8 @@
     "l5_frozen_pattern_schema": "pattern_discovery_l5_frozen_pattern_v1",
     "l8_matured_outcome_schema": "pattern_discovery_l8_matured_outcome_v1",
     "l8_maturation_event_schema": "pattern_discovery_l8_maturation_event_v1",
+    "l9_prospective_source_bundle_schema": "pattern_discovery_l9_prospective_source_bundle_v1",
+    "l7_snapshot_projection_and_session_map_must_reproduce_capture_hashes": true,
     "complete_l8_maturation_registry_chain_required": true,
     "l8_maturation_registry_must_be_time_monotonic": true,
     "l8_confirmation_input_is_registry_prefix_asof_evaluation": true,
@@ -55,6 +57,8 @@
     "required_fields": [
       "baseline_bundle_id",
       "generated_at",
+      "prospective_source_bundle_id",
+      "prospective_source_bundle_hash",
       "pattern_baselines"
     ],
     "pattern_baseline_required_fields": [
@@ -74,9 +78,12 @@
     ],
     "observation_required_fields": [
       "baseline_event_id",
+      "capture_snapshot_id",
       "symbol",
+      "session_id",
       "start_at",
       "end_at",
+      "availability_status",
       "target_value",
       "target_id",
       "horizon_sessions",
@@ -86,12 +93,21 @@
     "target_and_horizon_must_match_pattern": true,
     "baseline_definition_must_match_frozen_pattern": true,
     "all_declared_eligible_baseline_observations_must_be_present": true,
+    "population_source_id_must_equal_prospective_source_bundle_id": true,
+    "population_source_hash_must_equal_prospective_source_bundle_hash": true,
+    "for_each_used_capture_snapshot_baseline_rows_must_exactly_cover_all_l7_snapshot_symbols": true,
+    "missing_baseline_outcomes_must_be_explicit_not_dropped": true,
     "candidate_start_dates_must_exist_on_unconditional_baseline_axis": true,
     "baseline_selection_rule_is_auditable_not_posthoc": true,
     "supported_baseline_selection_rules": {
       "same_horizon_unconditional_return_baseline": "ALL_ELIGIBLE_POST_FREEZE_PIT_OBSERVATIONS_IN_FROZEN_UNIVERSE_SAME_TARGET_HORIZON_V1"
     },
-    "unknown_baseline_selection_rule_fails_closed": true
+    "unknown_baseline_selection_rule_fails_closed": true,
+    "availability_status_values": [
+      "AVAILABLE",
+      "MISSING_OUTCOME",
+      "START_SESSION_UNAVAILABLE"
+    ]
   },
   "context_bundle": {
     "schema_version": "pattern_discovery_l9_context_bundle_v1",
@@ -99,6 +115,8 @@
     "required_fields": [
       "context_bundle_id",
       "generated_at",
+      "prospective_source_bundle_id",
+      "prospective_source_bundle_hash",
       "claim_contexts"
     ],
     "claim_context_required_fields": [
@@ -107,11 +125,13 @@
       "observation_as_of",
       "capture_snapshot_id",
       "capture_snapshot_binding_hash",
+      "claim_hash",
+      "current_row_hash",
+      "source_row_projection",
       "context_source_hash"
     ],
     "allowed_optional_fields": [
       "sector",
-      "segment",
       "pillar_primary",
       "cluster_official",
       "market_regime_stock",
@@ -119,6 +139,9 @@
     ],
     "observation_as_of_must_precede_start_session": true,
     "capture_snapshot_identity_must_match_l8_claim": true,
+    "context_source_hash_must_equal_l7_current_row_hash": true,
+    "source_row_projection_must_reproduce_l7_current_row_hash": true,
+    "context_values_must_equal_capture_time_source_row_projection": true,
     "current_taxonomy_backfill_forbidden": true
   },
   "statistics": {
@@ -212,6 +235,7 @@
     "look_registry_event_schema_version": "pattern_discovery_l9_confirmation_registry_event_v1",
     "look_registry_path": "artifacts/research/pattern_discovery/confirmation_looks.jsonl",
     "look_report_path_template": "artifacts/research/pattern_discovery/confirmation_reports/{monitoring_plan_id}/{look_id}/{look_hash}.json",
+    "prospective_source_bundle_path_template": "artifacts/research/pattern_discovery/confirmation_inputs/prospective_sources/{source_bundle_hash}.json",
     "baseline_bundle_path_template": "artifacts/research/pattern_discovery/confirmation_inputs/baselines/{baseline_bundle_hash}.json",
     "context_bundle_path_template": "artifacts/research/pattern_discovery/confirmation_inputs/contexts/{context_bundle_hash}.json",
     "registry_is_append_only": true,
