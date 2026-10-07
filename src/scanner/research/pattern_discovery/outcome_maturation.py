@@ -15,7 +15,7 @@ actions or execution instructions.
 """
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, datetime, timezone
 from hashlib import sha256
 import json
@@ -26,7 +26,7 @@ import re
 from statistics import median
 from typing import Any, Mapping, Sequence
 
-from scanner.data.price_history import number, validated_rows
+from scanner.data.price_history import invalid_reason, number, validated_rows
 
 from .boundary import PatternDiscoveryBoundary
 from .prospective_capture import verify_capture_report, verify_prospective_claim
@@ -324,6 +324,85 @@ def _normalize_start_session_bindings(
     return by_symbol, binding
 
 
+def _price_sessions_preserving_adjusted_missing(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, int]]]:
+    """Validate raw sessions without letting bad adj_close erase a session.
+
+    The shared price validator deliberately rejects a malformed non-empty
+    adjusted close. For horizon arithmetic, however, an otherwise valid raw bar
+    is still an observed market session. L8 therefore validates the raw OHLCV
+    identity with adj_close blanked, then reattaches adjusted close only when its
+    observed value is unambiguous, finite and positive. Invalid/ambiguous
+    adjusted values become explicit missingness so _complete_path fails closed
+    instead of shifting the target session.
+    """
+    raw_only_rows: list[dict[str, Any]] = []
+    candidates: dict[tuple[str, str], list[Mapping[str, Any]]] = defaultdict(list)
+
+    for original in rows:
+        if not isinstance(original, Mapping):
+            continue
+        raw_only = dict(original)
+        raw_only["adj_close"] = ""
+        raw_only_rows.append(raw_only)
+        if invalid_reason(raw_only) is None:
+            symbol = str(raw_only.get("symbol") or "").strip()
+            day = str(raw_only.get("date") or "").strip()
+            candidates[(symbol, day)].append(original)
+
+    raw_valid, raw_issues = validated_rows(raw_only_rows)
+    issue_counts: dict[str, Counter[str]] = defaultdict(Counter)
+    for symbol, counts in raw_issues.items():
+        issue_counts[str(symbol)].update(counts)
+
+    result: list[dict[str, Any]] = []
+    for raw_row in raw_valid:
+        row = dict(raw_row)
+        key = (str(row["symbol"]), str(row["date"]))
+        adjusted_values: list[float] = []
+        adjusted_invalid = False
+        for original in candidates.get(key, []):
+            raw_adjusted = original.get("adj_close")
+            if raw_adjusted in (None, ""):
+                continue
+            parsed = number(raw_adjusted)
+            if parsed is None or parsed <= 0:
+                adjusted_invalid = True
+                continue
+            adjusted_values.append(float(parsed))
+
+        distinct: list[float] = []
+        for value in adjusted_values:
+            if not any(
+                math.isclose(value, prior, rel_tol=1e-12, abs_tol=1e-12)
+                for prior in distinct
+            ):
+                distinct.append(value)
+
+        if adjusted_invalid:
+            row["adj_close"] = ""
+            issue_counts[row["symbol"]][
+                "invalid_adj_close_preserved_as_missing"
+            ] += 1
+        elif len(distinct) > 1:
+            row["adj_close"] = ""
+            issue_counts[row["symbol"]][
+                "ambiguous_adj_close_preserved_as_missing"
+            ] += 1
+        elif distinct:
+            row["adj_close"] = str(distinct[0])
+        else:
+            row["adj_close"] = ""
+        result.append(row)
+
+    return result, {
+        symbol: dict(counts)
+        for symbol, counts in sorted(issue_counts.items())
+        if counts
+    }
+
+
 def _normalize_prices(
     rows: Sequence[Mapping[str, Any]],
     *,
@@ -338,7 +417,7 @@ def _normalize_prices(
     if as_of > checked.date():
         raise OutcomeMaturationError("price_as_of_after_checked_at")
 
-    valid, issues = validated_rows(rows)
+    valid, issues = _price_sessions_preserving_adjusted_missing(rows)
     grouped: dict[str, list[dict[str, Any]]] = {}
     kept = 0
     for raw in valid:
