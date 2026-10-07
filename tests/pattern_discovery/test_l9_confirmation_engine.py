@@ -708,7 +708,10 @@ def test_positive_final_look_uses_only_prospective_l8_evidence(tmp_path):
     assert evidence["baseline_probability"] == pytest.approx(0.5)
     assert evidence["probability_advantage_lift"] == pytest.approx(0.5)
     assert evidence["effect_size_vs_baseline"] > 0.07
-    assert evidence["robust_uncertainty"]["effect_size_interval_95"][0] > 0
+    assert evidence["robust_uncertainty"]["aligned_effect_interval_95"][0] > 0
+    assert evidence["robust_uncertainty"][
+        "effect_size_vs_baseline_interval_95"
+    ][0] > 0
     assert evidence["robust_uncertainty"]["probability_lift_interval_95"][0] > 0
     assert result["multiple_testing"]["passed"] is True
     assert report["qm_c_handoff"]["qm_c5_results"][0][
