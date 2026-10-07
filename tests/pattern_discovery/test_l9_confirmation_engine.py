@@ -752,9 +752,17 @@ def test_strong_negative_final_result_is_falsified_and_retained(tmp_path):
         "outcome_classification"
     ] == "NEGATIVE"
 
+    baseline_bundle = build_baseline_bundle(
+        [baseline_record(pattern)],
+        baseline_bundle_id="BASE-L9-TEST",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(outcomes)
     saved = persist_confirmation_look(
         tmp_path,
         report,
+        baseline_bundle,
+        context_bundle=contexts,
         actor_id="tester",
         actor_role="researcher",
     )
@@ -1063,9 +1071,17 @@ def test_automatic_early_stop_fails_closed_without_machine_readable_boundary(tmp
 def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
     regs, pattern, control, monitor = setup_single_family(tmp_path)
     report = build_report(regs, pattern, control, monitor)
+    baseline_bundle = build_baseline_bundle(
+        [baseline_record(pattern)],
+        baseline_bundle_id="BASE-L9-TEST",
+        generated_at="2027-01-15T20:00:00Z",
+    )
+    contexts = context_bundle_for(prospective_rows(pattern))
     first = persist_confirmation_look(
         tmp_path,
         report,
+        baseline_bundle,
+        context_bundle=contexts,
         actor_id="tester",
         actor_role="researcher",
     )
@@ -1073,6 +1089,8 @@ def test_local_registry_is_append_only_idempotent_and_hash_protected(tmp_path):
     second = persist_confirmation_look(
         tmp_path,
         report,
+        baseline_bundle,
+        context_bundle=contexts,
         actor_id="tester",
         actor_role="researcher",
     )
