@@ -2052,6 +2052,15 @@ def build_confirmation_look(
         )
 
     look_index = len(monitoring["recorded_looks"])
+    if monitoring["recorded_looks"]:
+        prior_observed_at = _as_datetime(
+            monitoring["recorded_looks"][-1]["observed_at"],
+            "prior_monitoring_look.observed_at",
+        )
+        if _as_datetime(evaluated, "evaluated_at") <= prior_observed_at:
+            raise ConfirmationEngineError(
+                "l9_evaluation_must_follow_prior_qm_c4_look"
+            )
     planned = monitoring["planned_looks"]
     if look_index >= len(planned):
         raise ConfirmationEngineError("qm_c4_no_remaining_planned_look")
@@ -2090,6 +2099,14 @@ def build_confirmation_look(
             baseline_record,
             contract=spec,
         )
+        for baseline_row in baseline_rows:
+            if _as_datetime(
+                baseline_row["end_at"],
+                "baseline.end_at",
+            ) > _as_datetime(evaluated, "evaluated_at"):
+                raise ConfirmationEngineError(
+                    "baseline_outcome_after_l9_evaluation"
+                )
         for row in candidate_rows:
             all_outcome_rows_by_claim[str(row["claim_id"])] = row
         minimums = _frozen_minimums(pattern)
@@ -2601,6 +2618,7 @@ class ConfirmationLookRegistry:
         events: Sequence[Mapping[str, Any]],
     ) -> dict[str, dict[str, Any]]:
         looks: dict[str, dict[str, Any]] = {}
+        prior_maturation_hashes: dict[str, list[str]] = {}
         for raw in events:
             if raw.get("event_type") != "CONFIRMATION_LOOK_PERSISTED":
                 raise ConfirmationEngineError(
@@ -2628,6 +2646,29 @@ class ConfirmationLookRegistry:
                 raise ConfirmationEngineError(
                     f"confirmation_look_already_persisted:{key}"
                 )
+            monitor_key = "::".join(
+                [
+                    str(governance["monitoring_plan_id"]),
+                    str(governance["monitoring_plan_version"]),
+                ]
+            )
+            current_hashes = list(
+                report.get("input_bindings", {})
+                .get("l8_maturation_registry", {})
+                .get("event_hashes")
+                or []
+            )
+            previous_hashes = prior_maturation_hashes.get(monitor_key)
+            if previous_hashes is not None:
+                if (
+                    len(current_hashes) < len(previous_hashes)
+                    or current_hashes[: len(previous_hashes)]
+                    != previous_hashes
+                ):
+                    raise ConfirmationEngineError(
+                        f"l8_maturation_registry_not_append_only_across_looks:{monitor_key}"
+                    )
+            prior_maturation_hashes[monitor_key] = current_hashes
             looks[key] = dict(report)
         return looks
 
