@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-08T00:29:17.368548+00:00",
+  "decision_as_of": "2026-10-08T18:29:03.286158+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,24 +27,23 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
+    "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:6503.T:13dfd193091882d7:5T",
-      "timing:6503.T:63001daa7f481bc1:5T",
-      "timing:6503.T:1758b10ff7893792:20T",
-      "timing:6503.T:b5c6f29104b27dae:40T"
+      "timing:6503.T:cce5c47f08a2bf66:60T",
+      "timing:6503.T:b0fb906b9f3e02ec:60T",
+      "timing:6503.T:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
-    "state": "positive",
+    "state": "negative",
     "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -149,6 +148,14 @@
       "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-08T18:29:03.286158+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -163,18 +170,18 @@
     "last_overextension_rs3m": 0.2214304542016283,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 145,
+    "sessions_since_last_overextension": 146,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "6503.T",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "positive",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "negative",
-    "status": "transition_pending"
+    "status": "stable_confirmed"
   }
 }

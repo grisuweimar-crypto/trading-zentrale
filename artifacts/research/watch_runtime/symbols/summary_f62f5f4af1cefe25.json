@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-08T00:29:17.368548+00:00",
+  "decision_as_of": "2026-10-08T18:29:03.286158+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,26 +27,17 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
-    "known_directional_claim_ids": [
-      "timing:1211.HK:a2763d94cd6f82e9:5T",
-      "timing:1211.HK:056cab0d8c42f322:5T",
-      "timing:1211.HK:85b7b4bcb43aeb00:20T",
-      "timing:1211.HK:ae61c82fbb0371fc:20T",
-      "timing:1211.HK:f9714fd629aaf7f2:40T",
-      "timing:1211.HK:677e719dc170acd6:40T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 6
-    },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "direction": null,
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -151,6 +142,14 @@
       "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-08T18:29:03.286158+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -175,8 +174,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_insufficient"
   }
 }

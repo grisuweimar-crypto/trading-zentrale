@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-08T00:29:17.368548+00:00",
+  "decision_as_of": "2026-10-08T18:29:03.286158+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -29,29 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:SYM:ea08718de33a1787:5T",
-      "timing:SYM:c42ca6c1baee697b:20T",
-      "timing:SYM:f483a5247b57affc:20T",
-      "timing:SYM:494a15c3341a0317:20T",
-      "timing:SYM:15f457a0b3a6df9d:20T",
-      "timing:SYM:4ccb45d4ee923f1a:40T",
-      "timing:SYM:e64908cc5e4c18f0:60T",
-      "timing:SYM:5472db56664c10c8:60T",
-      "timing:SYM:6289a7880870e93e:60T",
-      "timing:SYM:fe6ff0aee1bf447a:60T",
-      "timing:SYM:92ad9e5c355866b9:60T"
+      "timing:SYM:32bb40f535b6b527:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 11
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -156,13 +146,21 @@
       "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-08T18:29:03.286158+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
+      "rs3m_falling_5t": true,
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },

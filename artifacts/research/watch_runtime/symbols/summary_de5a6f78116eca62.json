@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-08T00:29:17.368548+00:00",
+  "decision_as_of": "2026-10-08T18:29:03.286158+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,17 +27,29 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "positive",
+    "known_directional_claim_ids": [
+      "timing:V:ea08718de33a1787:5T",
+      "timing:V:0671faf1011640c5:5T",
+      "timing:V:c42ca6c1baee697b:20T",
+      "timing:V:b158fef8cbfb5c55:20T",
+      "timing:V:4ccb45d4ee923f1a:40T",
+      "timing:V:9cb11f4adfc9eb9c:40T",
+      "timing:V:3e260f25164f48ce:40T",
+      "timing:V:5472db56664c10c8:60T",
+      "timing:V:5b62a0aabd2f08fc:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 9
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -142,6 +154,14 @@
       "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-08T18:29:03.286158+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -156,7 +176,7 @@
     "last_overextension_rs3m": 0.1956163179633361,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 35,
+    "sessions_since_last_overextension": 36,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -166,8 +186,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "stable_confirmed"
   }
 }

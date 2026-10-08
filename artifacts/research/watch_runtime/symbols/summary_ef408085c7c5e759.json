@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-08T00:29:17.368548+00:00",
+  "decision_as_of": "2026-10-08T18:29:03.286158+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": "2026-10-05T15:25:47.649662+00:00",
@@ -27,21 +27,26 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "negative",
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:STLA:c672817d91249136:60T"
+      "timing:STLA:ea08718de33a1787:5T",
+      "timing:STLA:c42ca6c1baee697b:20T",
+      "timing:STLA:494a15c3341a0317:20T",
+      "timing:STLA:4ccb45d4ee923f1a:40T",
+      "timing:STLA:32bb40f535b6b527:60T",
+      "timing:STLA:5472db56664c10c8:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 6
     },
-    "relation_state": "single_direction_or_unopposed",
-    "state": "negative",
-    "support_structure": "single_direction_or_unopposed"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
+  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -146,6 +151,14 @@
       "source_snapshot_id": "ed5d54cd-efd2-4189-8782-816ac17dae4e",
       "state": "negative",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-08T18:29:03.286158+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -167,11 +180,11 @@
   "state_history_state": "never_overextended",
   "symbol": "STLA",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "positive",
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "negative",
-    "status": "stable_confirmed"
+    "status": "transition_pending"
   }
 }
