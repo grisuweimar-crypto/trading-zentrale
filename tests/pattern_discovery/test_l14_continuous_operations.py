@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 import json
 
 import pytest
@@ -376,3 +377,25 @@ def test_operations_registry_is_hash_chained_and_idempotent(tmp_path):
         match="operations_registry_hash_invalid",
     ):
         registry.verify_integrity()
+
+
+def test_l14_workflow_stages_first_run_receipts_before_diff():
+    """New L14 cycles are untracked initially and must still be committed."""
+    workflow = Path(".github/workflows/pattern_discovery_l14.yml").read_text(
+        encoding="utf-8"
+    )
+    receipt_step = workflow.split(
+        "- name: Persist operations receipt on main", 1
+    )[1].split("- name: Enforce fail-closed cycle result", 1)[0]
+    stage = "git add -A -- artifacts/research/pattern_discovery/operations/"
+    check = (
+        "git diff --cached --quiet -- "
+        "artifacts/research/pattern_discovery/operations/"
+    )
+    assert stage in receipt_step
+    assert check in receipt_step
+    assert receipt_step.index(stage) < receipt_step.index(check)
+    assert (
+        "git diff --quiet -- artifacts/research/pattern_discovery/operations/"
+        not in receipt_step
+    )
