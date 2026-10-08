@@ -435,6 +435,22 @@ def audit_current_operations(root: str | Path = _ROOT) -> dict[str, Any]:
 
 
 
+def _runtime_capacity_state(max_bytes: int, hard_limit: int = 2_000_000) -> dict[str, Any]:
+    """Distinguish transport failure, low-reserve review, and safe capacity."""
+    if type(max_bytes) is not int or max_bytes < 0 or hard_limit <= 0:
+        raise BAQM10AuditError("runtime_capacity_invalid_measurement")
+    reserve = (hard_limit - max_bytes) / hard_limit
+    return {
+        "transport_status": "PASS" if max_bytes < hard_limit else "FAIL",
+        "health_status": "FAIL" if max_bytes >= hard_limit else (
+            "REVIEW_REQUIRED" if reserve < 0.20 else "PASS"
+        ),
+        "headroom_bytes": hard_limit - max_bytes,
+        "headroom_ratio": reserve,
+        "capacity_review_recommended": reserve < 0.20,
+    }
+
+
 def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
     """Build the current compact runtime in memory and measure transport capacity.
 
@@ -474,21 +490,40 @@ def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
     max_id = max(sizes, key=sizes.get)
     max_size = sizes[max_id]
     hard_limit = 2_000_000
-    headroom_bytes = hard_limit - max_size
-    headroom_ratio = headroom_bytes / hard_limit
+    health = _runtime_capacity_state(max_size, hard_limit)
+    symbol_sizes: dict[str, int] = {}
+    symbol_packets: dict[str, int] = {}
+    for shard in shards.values():
+        for packet in shard["packets"]:
+            symbol = str(packet["symbol"])
+            symbol_sizes[symbol] = symbol_sizes.get(symbol, 0) + len(
+                json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+            )
+            symbol_packets[symbol] = symbol_packets.get(symbol, 0) + 1
+    dominant = max(symbol_sizes, key=symbol_sizes.get)
     return {
         "schema_version": "ba_qm10_runtime_capacity_audit_v1",
-        "status": "PASS" if max_size < hard_limit else "FAIL",
+        "status": health["transport_status"],
+        "health_status": health["health_status"],
+        "partition_strategy": manifest.get("partition_strategy", "legacy_sha256_mod64_v1"),
         "snapshot_id": manifest["snapshot_id"],
         "shard_count": len(shards),
         "configured_shard_count": len(SHARD_IDS),
         "max_shard_id": max_id,
         "max_shard_bytes": max_size,
         "hard_limit_bytes": hard_limit,
-        "headroom_bytes": headroom_bytes,
-        "headroom_ratio": headroom_ratio,
-        "capacity_review_recommended": headroom_ratio < 0.20,
+        "headroom_bytes": health["headroom_bytes"],
+        "headroom_ratio": health["headroom_ratio"],
+        "capacity_review_recommended": health["capacity_review_recommended"],
         "total_shard_bytes": sum(sizes.values()),
+        "shard_sizes_bytes": dict(sorted(sizes.items())),
+        "largest_symbol": dominant,
+        "largest_symbol_bytes": symbol_sizes[dominant],
+        "largest_symbol_packet_count": symbol_packets[dominant],
+        "largest_symbols_by_bytes": [
+            {"symbol": key, "bytes": symbol_sizes[key], "packets": symbol_packets[key]}
+            for key in sorted(symbol_sizes, key=lambda key: (-symbol_sizes[key], key))[:10]
+        ],
         "symbol_count": manifest["symbol_count"],
         "packet_count": manifest["packet_count"],
         "archive_status": metadata.get("status"),
@@ -528,6 +563,8 @@ def evaluate_ba_qm10_closure(root: str | Path = _ROOT) -> dict[str, Any]:
         raise BAQM10AuditError("ba_qm10_symbol_view_projection_mismatch")
     if capacity.get("status") != "PASS":
         raise BAQM10AuditError("ba_qm10_runtime_capacity_not_pass")
+    if capacity.get("health_status") != "PASS":
+        raise BAQM10AuditError("ba_qm10_runtime_capacity_review_required")
     if capacity.get("max_shard_bytes", 2_000_000) >= 2_000_000:
         raise BAQM10AuditError("ba_qm10_runtime_capacity_limit_exceeded")
 
