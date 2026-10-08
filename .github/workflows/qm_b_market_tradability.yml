@@ -41,9 +41,14 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('/tmp/qm_b_market_tradability.json'))
-          assert p['instrument_count'] == 207
+          from pathlib import Path
+          latest=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          membership=json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+          expected=len(membership['claims'])
+          assert expected==membership['stable_instrument_claim_count']
+          assert p['instrument_count'] == expected
           assert p['registered_source_count'] == 0
-          assert p['status_counts'] == {'UNKNOWN': 207}
+          assert p['status_counts'] == {'UNKNOWN': expected}
           assert p['positive_tradability_count'] == 0
           assert p['current_gap_status'] == 'BLOCKED_NO_MARKET_TRADABILITY_EVIDENCE'
           assert p['historical_retrojection_permitted'] is False

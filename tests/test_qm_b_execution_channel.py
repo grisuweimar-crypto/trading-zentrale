@@ -74,13 +74,15 @@ def test_sensitive_account_fields_are_rejected():
 def test_current_repository_has_no_execution_channel_evidence():
     latest=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
     membership=json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+    expected=len(membership['claims'])
+    assert expected==membership['stable_instrument_claim_count']
     result=audit_membership_execution_gap(
         membership,
-        as_of='2026-09-30T08:00:00Z',
+        as_of=latest['observed_at'],
         evidence_records=[],
     )
-    assert result['instrument_count']==207
-    assert result['status_counts']=={'UNKNOWN':207}
+    assert result['instrument_count']==expected
+    assert result['status_counts']=={'UNKNOWN':expected}
     assert result['registered_channel_count']==0
     assert result['current_gap_status']=='BLOCKED_NO_EXECUTION_CHANNEL_EVIDENCE'
     assert result['historical_retrojection_permitted'] is False

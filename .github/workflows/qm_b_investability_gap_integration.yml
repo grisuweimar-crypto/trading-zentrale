@@ -38,25 +38,41 @@ jobs:
           )"
           POLICY_SHA="$(git log -1 --format=%H -- configs/qm_b_project_restrictions_v1.json)"
           POLICY_TIME="$(git show -s --format=%cI "$POLICY_SHA")"
+          AS_OF="$(MEMBERSHIP="$MEMBERSHIP" POLICY_TIME="$POLICY_TIME" python - <<'PY'
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+          snapshot=json.loads(Path(os.environ['MEMBERSHIP']).read_text(encoding='utf-8'))
+          observed=datetime.fromisoformat(snapshot['membership_valid_from'].replace('Z','+00:00'))
+          policy=datetime.fromisoformat(os.environ['POLICY_TIME'].replace('Z','+00:00'))
+          print(max(observed,policy).isoformat())
+          PY
+          )"
           PYTHONPATH=src python scripts/qm_b_current_investability_gap.py \
             --membership "$MEMBERSHIP" \
             --policy-commit-sha "$POLICY_SHA" \
             --policy-observed-at "$POLICY_TIME" \
-            --as-of "$POLICY_TIME" \
+            --as-of "$AS_OF" \
             --output /tmp/qm_b_current_gap.json >/dev/null
           python - <<'PY'
           import json
           p=json.load(open('/tmp/qm_b_current_gap.json'))
-          assert p['instrument_count'] == 207
-          assert p['status_counts'] == {'UNKNOWN': 207}
+          from pathlib import Path
+          latest=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          membership=json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+          expected=len(membership['claims'])
+          assert expected==membership['stable_instrument_claim_count']
+          assert p['instrument_count'] == expected
+          assert p['status_counts'] == {'UNKNOWN': expected}
           assert p['strict_universe_promotion_ready_count'] == 0
-          assert p['project_restriction_status_counts'] == {'CLEAR': 207}
+          assert p['project_restriction_status_counts'] == {'CLEAR': expected}
           assert p['evidence_gap_counts']['stable_identity'] == 0
           assert p['evidence_gap_counts']['project_membership'] == 0
           assert p['evidence_gap_counts']['project_restrictions'] == 0
-          assert p['evidence_gap_counts']['listing_state'] == 207
-          assert p['evidence_gap_counts']['market_tradability'] == 207
-          assert p['evidence_gap_counts']['execution_channel'] == 207
+          assert p['evidence_gap_counts']['listing_state'] == expected
+          assert p['evidence_gap_counts']['market_tradability'] == expected
+          assert p['evidence_gap_counts']['execution_channel'] == expected
           print(json.dumps({
             'instrument_count': p['instrument_count'],
             'status_counts': p['status_counts'],
