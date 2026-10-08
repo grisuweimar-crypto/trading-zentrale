@@ -1,0 +1,133 @@
+{
+  "schema_version": "pattern_discovery_l7_prospective_capture_v2",
+  "module": "pattern_discovery_lab",
+  "phase": "L7",
+  "name": "Prospective Capture",
+  "status": "active_research_contract",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Match immutable frozen PAT versions against genuinely later point-in-time scanner snapshots and append immutable prospective claims without using or storing outcome information.",
+  "principles": {
+    "only_post_freeze_snapshots_can_create_claims": true,
+    "capture_time_is_explicit_input": true,
+    "snapshot_binding_is_hash_protected": true,
+    "history_binding_is_hash_protected": true,
+    "pattern_version_is_exact": true,
+    "qm_c_confirmation_freeze_required": true,
+    "matching_uses_only_registered_l2_feature_semantics": true,
+    "missing_features_or_history_remain_unavailable": true,
+    "start_market_session_is_explicit_not_inferred": true,
+    "claims_are_append_only_and_immutable": true,
+    "outcome_information_is_forbidden_at_claim_creation": true,
+    "prices_are_not_stored_in_claims": true,
+    "same_scientific_inputs_are_deterministic": true,
+    "productive_semantics_must_not_change": true,
+    "prospective_claims_require_future_start_session_at_capture": true,
+    "snapshot_age_does_not_invalidate_recorded_pit_inputs": true
+  },
+  "snapshot": {
+    "metadata_schema_version": "research_views_v1",
+    "required_metadata_fields": [
+      "snapshot_id",
+      "as_of",
+      "generated_at",
+      "latest_run_complete",
+      "source"
+    ],
+    "required_source_fields": [
+      "file",
+      "sha256"
+    ],
+    "required_row_fields": [
+      "symbol",
+      "as_of",
+      "generated_at",
+      "snapshot_id",
+      "observation_type",
+      "data_source"
+    ],
+    "required_observation_type": "observed_scanner",
+    "required_data_source": "scanner_run",
+    "current_rows_must_share_snapshot_identity": true,
+    "current_row_as_of_must_not_exceed_snapshot_generated_at": true,
+    "history_rows_must_precede_current_snapshot": true,
+    "snapshot_file_sha256_required": true,
+    "history_file_sha256_required": true
+  },
+  "matching": {
+    "supported_transformations": [
+      "raw",
+      "regime_context",
+      "change_direction",
+      "threshold_crossing",
+      "state_transition"
+    ],
+    "condition_states_must_match_exactly": true,
+    "all_conditions_required": true,
+    "unavailable_condition_blocks_claim": true,
+    "no_outcome_fields_are_read": true
+  },
+  "governance": {
+    "qm_c1_hypothesis_state_required": "FROZEN_FOR_CONFIRMATION",
+    "qm_c2_analysis_plan_state_required": "FROZEN_FOR_CONFIRMATION",
+    "l5_handoff_exact_identity_required": true,
+    "qm_a_registration_or_evaluation_not_performed_here": true
+  },
+  "market_session": {
+    "required_fields": [
+      "symbol",
+      "session_id",
+      "calendar_id",
+      "start_at",
+      "source"
+    ],
+    "start_at_must_be_strictly_after_capture": true,
+    "session_is_not_inferred_from_symbol_or_exchange": true,
+    "allowed_horizons_sessions": [
+      5,
+      20,
+      40,
+      60
+    ]
+  },
+  "claim": {
+    "schema_version": "pattern_discovery_l7_prospective_claim_v1",
+    "event_id_prefix": "PEV",
+    "claim_id_prefix": "PCL",
+    "id_digest_chars": 24,
+    "capture_state": "CAPTURED_UNMATURED",
+    "forbidden_payload_keys": [
+      "outcome",
+      "outcomes",
+      "return",
+      "peer_excess",
+      "adverse_excursion",
+      "path_max_drawdown",
+      "price",
+      "close",
+      "adjusted_close",
+      "future_return"
+    ]
+  },
+  "storage": {
+    "registry_event_schema_version": "pattern_discovery_l7_claim_event_v1",
+    "registry_path": "artifacts/research/pattern_discovery/prospective_claims.jsonl",
+    "capture_report_schema_version": "pattern_discovery_l7_capture_report_v1",
+    "capture_report_path_template": "artifacts/research/pattern_discovery/prospective_captures/{snapshot_id}/{capture_id}.json",
+    "registry_is_append_only": true,
+    "registry_is_hash_chained": true,
+    "batch_preflight_before_append": true,
+    "identical_claim_replay_is_idempotent": true,
+    "claim_identity_collision_fails_closed": true
+  },
+  "boundaries": {
+    "outcome_maturation_performed": false,
+    "confirmation_evaluation_performed": false,
+    "sequential_monitoring_performed": false,
+    "rating_assigned": false,
+    "promotion_performed": false,
+    "decision_layer_integration_performed": false,
+    "portfolio_or_execution_effect_created": false
+  }
+}

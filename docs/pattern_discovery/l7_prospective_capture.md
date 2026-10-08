@@ -24,33 +24,57 @@ A PAT can create an L7 claim only after all of the following are true:
 4. the exact L5 QM-C handoff has been applied;
 5. QM-C1 reports the hypothesis as FROZEN_FOR_CONFIRMATION;
 6. QM-C2 reports the analysis plan as FROZEN_FOR_CONFIRMATION;
-7. the scanner snapshot is still inside the predeclared capture-freshness
-   window;
+7. the scanner snapshot is immutable and bound to its original PIT
+   provenance; elapsed wall-clock time alone does not invalidate its data;
 8. all required frozen conditions can be evaluated from PIT-safe current and
    prior observations;
-9. an explicit future start market session is available for the matched symbol.
+9. an explicit start market session is available for the matched symbol and
+   begins strictly after the *actual* capture time.
 
 No condition is silently relaxed.
 
-## No retrospective backfill
+## Recorded PIT data do not expire after six hours
 
-Prospective status cannot be manufactured later.
+An immutable scanner snapshot can be read and examined whenever necessary.
+The elapsed time between `generated_at` and `capture_at` is not a measure
+of whether the historical scanner data were valid.
 
-The capture timestamp is an explicit input. The L7 v1 contract allows a
-snapshot to enter prospective capture only when:
+The active **L7 v2** contract removes the arbitrary 360-minute cutoff:
 
-- capture_at is not earlier than snapshot generation, and
-- capture_at is no more than 360 minutes after snapshot generation.
+`configs/pattern_discovery/l7_prospective_capture_v2.json`
 
-The limit is versioned in:
+The original v1 contract remains unchanged and addressable to validate
+historical v1 captures by their exact contract hash. The v2 contract hash
+is distinct; the two research policies are not silently mixed.
 
-configs/pattern_discovery/l7_prospective_capture_v1.json
+**Retrospective research is not necessarily prospective confirmation.**
+For an L7 v2 *prospective claim*, the separately audited ordering still
+requires:
 
-A later methodological change therefore requires a new contract version rather
-than result-dependent tuning.
+- an immutable, hash-bound scanner snapshot generated strictly after the
+  L5/QM-C pattern freeze;
+- a `capture_at` at or after snapshot generation and a verifiable
+  operational receipt establishing that the timestamp was not backdated;
+- a specified start market session beginning **strictly after the actual
+  capture time**;
+- matching based exclusively on information available at the snapshot;
+- no known outcomes in the claim or its match calculation.
 
-A scanner snapshot generated before or at a PAT freeze cannot create a claim
-for that PAT, even if the capture code is run later.
+The L7 API receives `capture_at` from its caller; that value is not, by
+itself, a trusted wall-clock attestation. A workflow receipt or other
+independently timestamped append-only record is still required before treating
+a claim as independently proven live prospective evidence. This operational
+control is **not** added by the v2 contract change.
+
+If the associated start session already began, the historical snapshot can
+still be analyzed, but L7 cannot retroactively label that event as a live
+prospective claim. It must not quietly choose a later unrelated market
+session to manufacture an ex-ante observation. Guaranteeing the correct
+snapshot-to-session correspondence belongs to the operational binding
+and its verification, not to an elapsed-minutes heuristic.
+
+A scanner snapshot generated before or at PAT freeze never becomes valid for
+a new PAT simply because the computation is delayed.
 
 ## Snapshot binding
 
@@ -240,7 +264,7 @@ L7 is complete when:
 - start market session is explicit and future relative to capture;
 - horizon is frozen from the Pattern Spec;
 - claims are append-only and immutable;
-- stale snapshots cannot be backfilled as prospective claims;
+- historical snapshots can be read later; claims cannot be backdated or start before capture;
 - missing feature/history/session information cannot create a fake claim;
 - outcome and price information is absent from claim creation;
 - PIT/future-history leakage fails closed;

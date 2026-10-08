@@ -30,11 +30,18 @@ from .candidate_registry import (
 from .feature_library import FeatureLibrary, FeatureLibraryError
 
 
-SCHEMA_VERSION = "pattern_discovery_l7_prospective_capture_v1"
+SCHEMA_VERSION = "pattern_discovery_l7_prospective_capture_v2"
+LEGACY_SCHEMA_VERSION = "pattern_discovery_l7_prospective_capture_v1"
 CLAIM_SCHEMA_VERSION = "pattern_discovery_l7_prospective_claim_v1"
 EVENT_SCHEMA_VERSION = "pattern_discovery_l7_claim_event_v1"
 CAPTURE_REPORT_SCHEMA_VERSION = "pattern_discovery_l7_capture_report_v1"
 DEFAULT_CONTRACT_PATH = (
+    Path(__file__).resolve().parents[4]
+    / "configs"
+    / "pattern_discovery"
+    / "l7_prospective_capture_v2.json"
+)
+LEGACY_CONTRACT_PATH = (
     Path(__file__).resolve().parents[4]
     / "configs"
     / "pattern_discovery"
@@ -131,7 +138,7 @@ def load_prospective_capture_contract(
         raise ProspectiveCaptureError(
             f"prospective_capture_contract_unreadable:{target}"
         ) from exc
-    if not isinstance(payload, dict) or payload.get("schema_version") != SCHEMA_VERSION:
+    if not isinstance(payload, dict) or payload.get("schema_version") not in {SCHEMA_VERSION, LEGACY_SCHEMA_VERSION}:
         raise ProspectiveCaptureError("prospective_capture_contract_schema_invalid")
     if payload.get("research_only") is not True:
         raise ProspectiveCaptureError("prospective_capture_must_be_research_only")
@@ -1058,6 +1065,8 @@ def verify_prospective_claim(
         raise ProspectiveCaptureError(
             "prospective_claim_snapshot_not_post_freeze"
         )
+    if captured < snapshot_generated:
+        raise ProspectiveCaptureError("prospective_claim_before_snapshot_generation")
     PatternDiscoveryBoundary().assert_research_payload(claim)
     return {
         "valid": True,
@@ -1100,11 +1109,15 @@ def build_prospective_capture(
     )
     if capture_dt < generated_dt:
         raise ProspectiveCaptureError("capture_before_snapshot_generation")
-    max_delay_seconds = (
-        int(spec["snapshot"]["max_capture_delay_minutes"]) * 60
-    )
-    if (capture_dt - generated_dt).total_seconds() > max_delay_seconds:
-        raise ProspectiveCaptureError("stale_snapshot_backfill_forbidden")
+    # Preserve the immutable v1 time window for explicit legacy replays.
+    # V2 does not expire immutable scanner evidence on an elapsed-time clock.
+    # The future-start-session guard in _normalize_sessions remains mandatory.
+    if spec["schema_version"] == LEGACY_SCHEMA_VERSION:
+        max_delay_seconds = (
+            int(spec["snapshot"]["max_capture_delay_minutes"]) * 60
+        )
+        if (capture_dt - generated_dt).total_seconds() > max_delay_seconds:
+            raise ProspectiveCaptureError("stale_snapshot_backfill_forbidden")
 
     current_rows = _normalize_current_rows(
         current_observations,
@@ -1298,13 +1311,27 @@ def verify_capture_report(
     *,
     contract: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    spec = (
-        dict(contract)
-        if contract is not None
-        else load_prospective_capture_contract()
-    )
     if not isinstance(report, Mapping):
         raise ProspectiveCaptureError("capture_report_must_be_object")
+    if contract is not None:
+        spec = dict(contract)
+    else:
+        # Historical v1 captures keep their original, immutable contract hash.
+        # L8/L9 can validate them after v2 becomes the active L7 contract.
+        stored_contract_hash = report.get("l7_contract_hash")
+        candidates = (
+            load_prospective_capture_contract(),
+            load_prospective_capture_contract(LEGACY_CONTRACT_PATH),
+        )
+        spec = next(
+            (
+                item for item in candidates
+                if prospective_capture_contract_hash(item) == stored_contract_hash
+            ),
+            candidates[0],
+        )
+    if report.get("l7_contract_hash") != prospective_capture_contract_hash(spec):
+        raise ProspectiveCaptureError("capture_report_contract_hash_mismatch")
     if report.get("schema_version") != CAPTURE_REPORT_SCHEMA_VERSION:
         raise ProspectiveCaptureError("capture_report_schema_invalid")
     if report.get("research_only") is not True:

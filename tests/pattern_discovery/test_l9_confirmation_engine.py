@@ -9,6 +9,11 @@ from pathlib import Path
 
 import pytest
 
+from scanner.research.pattern_discovery.prospective_capture import (
+    load_prospective_capture_contract,
+    prospective_capture_contract_hash,
+)
+
 from scanner.research.governance.qm_a import GovernanceLedger
 from scanner.research.governance.qm_c import (
     HypothesisRegistry,
@@ -812,7 +817,9 @@ def prospective_source_for(
             "execution_allowed": False,
             "capture_id": f"PCAP-{digest({'claim_id': claim_id})[:24].upper()}",
             "captured_at": captured_at,
-            "l7_contract_hash": digest({"l7_contract": "fixture"}),
+            "l7_contract_hash": prospective_capture_contract_hash(
+                load_prospective_capture_contract()
+            ),
             "l5_snapshot_hashes": [digest({"l5": pattern["pattern_id"]})],
             "snapshot_binding": snapshot_binding,
             "history_binding": {
