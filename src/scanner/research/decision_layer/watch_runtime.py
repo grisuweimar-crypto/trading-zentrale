@@ -29,6 +29,7 @@ SHARD_SCHEMA_VERSION = "decision_watch_runtime_shard_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 DEFAULT_RUNTIME_MANIFEST = f"{DEFAULT_RUNTIME_DIR}/manifest.json"
 SHARD_IDS = tuple(f"{index:02x}" for index in range(64))
+PARTITION_STRATEGY = "size_balanced_v1"
 
 
 class WatchRuntimeError(ValueError):
@@ -178,9 +179,22 @@ def _latest_revision_packets(
     return result
 
 
-def _shard_for_symbol(symbol: str) -> str:
-    bucket = int.from_bytes(sha256(symbol.encode("utf-8")).digest()[:2], "big") % len(SHARD_IDS)
-    return SHARD_IDS[bucket]
+def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, object]]]) -> dict[str, str]:
+    """Deterministic, lossless size-based routing of complete symbol histories."""
+    weights = {
+        symbol: sum(
+            len(json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8"))
+            for packet in packets
+        )
+        for symbol, packets in histories.items()
+    }
+    loads = {shard_id: 0 for shard_id in SHARD_IDS}
+    mapping: dict[str, str] = {}
+    for symbol in sorted(weights, key=lambda name: (-weights[name], name)):
+        shard_id = min(SHARD_IDS, key=lambda name: (loads[name], name))
+        mapping[symbol] = shard_id
+        loads[shard_id] += weights[symbol]
+    return mapping
 
 
 def build_watch_runtime(
@@ -209,8 +223,9 @@ def build_watch_runtime(
 
     shard_packets: dict[str, list[dict[str, object]]] = {key: [] for key in SHARD_IDS}
     symbol_shards: dict[str, str] = {}
+    routing = _size_balanced_symbol_shards(histories)
     for symbol, packets in histories.items():
-        shard_id = _shard_for_symbol(symbol)
+        shard_id = routing[symbol]
         shard_packets[shard_id].extend(packets)
         symbol_shards[symbol] = f"shard_{shard_id}.json"
 
@@ -241,6 +256,7 @@ def build_watch_runtime(
 
     manifest = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
+        "partition_strategy": PARTITION_STRATEGY,
         "snapshot_id": snapshot_id,
         "decision_as_of": decision_as_of,
         "w10_status": "sealed",
@@ -291,6 +307,8 @@ def validate_runtime_manifest(
 ) -> dict[str, object]:
     if manifest.get("schema_version") != MANIFEST_SCHEMA_VERSION:
         raise WatchRuntimeError("unsupported_runtime_manifest_schema")
+    if "partition_strategy" in manifest and manifest["partition_strategy"] != PARTITION_STRATEGY:
+        raise WatchRuntimeError("unsupported_runtime_partition_strategy")
     snapshot_id = str(manifest.get("snapshot_id") or "")
     if not snapshot_id:
         raise WatchRuntimeError("runtime_snapshot_id_required")

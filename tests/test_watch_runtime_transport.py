@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from scanner.research.decision_layer.depot_watch_orchestrator import build_orchestrated_depot_watch
 from scanner.research.decision_layer.input_contract import build_input_packet
 from scanner.research.decision_layer.integrated_evidence import PATH_CONTEXT_TYPE
 from scanner.research.decision_layer.universal_stance import compute_universal_stance
 from scanner.research.decision_layer.watch_runtime import (
     MANIFEST_SCHEMA_VERSION,
+    PARTITION_STRATEGY,
     SHARD_IDS,
+    WatchRuntimeError,
+    _size_balanced_symbol_shards,
+    validate_runtime_manifest,
     SHARD_SCHEMA_VERSION,
     compact_packet,
     load_runtime_packets_for_symbols,
@@ -201,3 +207,31 @@ def test_runtime_shard_contract_uses_64_deterministic_buckets() -> None:
     assert len(set(SHARD_IDS)) == 64
     assert SHARD_IDS[0] == "00"
     assert SHARD_IDS[-1] == "3f"
+
+
+def test_balanced_routing_spreads_large_histories_and_is_order_independent():
+    histories = {
+        name: [{"symbol": name, "payload": "x" * (200_000 + index * 50_000)}]
+        for index, name in enumerate(["ALPHA", "BETA", "GAMMA", "DELTA"])
+    }
+    routing = _size_balanced_symbol_shards(histories)
+    assert set(routing) == set(histories)
+    assert len(set(routing.values())) == len(histories)
+    assert routing == _size_balanced_symbol_shards(dict(reversed(list(histories.items()))))
+
+
+def test_manifest_accepts_legacy_strategy_absence_but_rejects_unknown_strategy():
+    manifest = {
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "partition_strategy": PARTITION_STRATEGY,
+        "snapshot_id": CURRENT_SNAPSHOT,
+        "private_position_data_included": False,
+        "decision_logic_changed": False,
+        "symbol_count": 1,
+        "symbol_shards": {"TEST": "shard_00.json"},
+    }
+    assert validate_runtime_manifest(manifest)["partition_strategy"] == PARTITION_STRATEGY
+    old_manifest = {key: value for key, value in manifest.items() if key != "partition_strategy"}
+    assert validate_runtime_manifest(old_manifest)["snapshot_id"] == CURRENT_SNAPSHOT
+    with pytest.raises(WatchRuntimeError, match="unsupported_runtime_partition_strategy"):
+        validate_runtime_manifest({**manifest, "partition_strategy": "unknown_strategy"})
