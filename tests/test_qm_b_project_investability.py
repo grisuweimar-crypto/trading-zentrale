@@ -114,14 +114,16 @@ def test_invalid_dimension_status_is_rejected():
 def test_current_membership_snapshot_remains_unknown_without_listing_tradability_execution_or_restriction_evidence():
     latest = json.loads(Path("artifacts/research/qm/qm_b_membership/latest.json").read_text(encoding="utf-8"))
     snapshot = json.loads(Path(latest["normalized_snapshot_path"]).read_text(encoding="utf-8"))
+    expected = len(snapshot["claims"])
+    assert expected == snapshot["stable_instrument_claim_count"]
     result = audit_membership_snapshot(snapshot)
-    assert result["instrument_count"] == 207
-    assert result["status_counts"] == {"UNKNOWN": 207}
+    assert result["instrument_count"] == expected
+    assert result["status_counts"] == {"UNKNOWN": expected}
     assert result["strict_universe_promotion_ready_count"] == 0
     assert result["evidence_gap_counts"]["stable_identity"] == 0
     assert result["evidence_gap_counts"]["project_membership"] == 0
-    assert result["evidence_gap_counts"]["listing_state"] == 207
-    assert result["evidence_gap_counts"]["market_tradability"] == 207
-    assert result["evidence_gap_counts"]["execution_channel"] == 207
-    assert result["evidence_gap_counts"]["project_restrictions"] == 207
+    assert result["evidence_gap_counts"]["listing_state"] == expected
+    assert result["evidence_gap_counts"]["market_tradability"] == expected
+    assert result["evidence_gap_counts"]["execution_channel"] == expected
+    assert result["evidence_gap_counts"]["project_restrictions"] == expected
     assert result["historical_retrojection_permitted"] is False
