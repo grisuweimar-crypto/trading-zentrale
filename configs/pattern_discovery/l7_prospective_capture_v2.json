@@ -10,7 +10,6 @@
   "purpose": "Match immutable frozen PAT versions against genuinely later point-in-time scanner snapshots and append immutable prospective claims without using or storing outcome information.",
   "principles": {
     "only_post_freeze_snapshots_can_create_claims": true,
-    "stale_snapshots_cannot_be_backfilled_as_prospective": false,
     "capture_time_is_explicit_input": true,
     "snapshot_binding_is_hash_protected": true,
     "history_binding_is_hash_protected": true,
@@ -54,9 +53,7 @@
     "current_row_as_of_must_not_exceed_snapshot_generated_at": true,
     "history_rows_must_precede_current_snapshot": true,
     "snapshot_file_sha256_required": true,
-    "history_file_sha256_required": true,
-    "snapshot_age_limit_minutes": null,
-    "snapshot_age_limit_applies_to_pit_research": false
+    "history_file_sha256_required": true
   },
   "matching": {
     "supported_transformations": [
