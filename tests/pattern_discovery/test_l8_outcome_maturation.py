@@ -7,6 +7,11 @@ from pathlib import Path
 
 import pytest
 
+from scanner.research.pattern_discovery.prospective_capture import (
+    load_prospective_capture_contract,
+    prospective_capture_contract_hash,
+)
+
 from scanner.research.pattern_discovery.outcome_maturation import (
     MaturedOutcomeRegistry,
     OutcomeMaturationError,
@@ -143,7 +148,9 @@ def make_capture_report(claims, sessions):
         "execution_allowed": False,
         "capture_id": "PCAP-TEST",
         "captured_at": claims[0]["captured_at"] if claims else "2026-10-07T18:10:00Z",
-        "l7_contract_hash": "b" * 64,
+        "l7_contract_hash": prospective_capture_contract_hash(
+            load_prospective_capture_contract()
+        ),
         "l5_snapshot_hashes": ["c" * 64],
         "snapshot_binding": {
             "snapshot_id": "snap-l7",
