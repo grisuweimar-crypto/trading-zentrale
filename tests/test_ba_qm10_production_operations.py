@@ -188,12 +188,42 @@ def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     assert result["max_shard_bytes"] < result["hard_limit_bytes"] == 2_000_000
     assert result["headroom_bytes"] == result["hard_limit_bytes"] - result["max_shard_bytes"]
     assert 0.0 < result["headroom_ratio"] < 1.0
-    assert result["capacity_review_recommended"] is False
+    assert result["capacity_review_recommended"] is (result["headroom_ratio"] < 0.20)
+    assert result["health_status"] == "PASS"
+    assert result["headroom_ratio"] >= 0.20
+    assert result["partition_strategy"] == "size_balanced_v1"
+    assert result["shard_sizes_bytes"][result["max_shard_id"]] == result["max_shard_bytes"]
+    assert result["largest_symbol_packet_count"] > 0
     assert result["symbol_count"] > 0
     assert result["packet_count"] >= result["symbol_count"]
     assert result["private_position_data_included"] is False
     assert result["decision_logic_changed"] is False
     assert result["writes_performed"] is False
+
+
+@pytest.mark.parametrize(
+    ("size", "transport", "health", "review"),
+    [
+        (1_599_999, "PASS", "PASS", False),
+        (1_600_000, "PASS", "PASS", False),
+        (1_600_001, "PASS", "REVIEW_REQUIRED", True),
+        (1_999_999, "PASS", "REVIEW_REQUIRED", True),
+        (2_000_000, "FAIL", "FAIL", True),
+        (2_000_001, "FAIL", "FAIL", True),
+    ],
+)
+def test_runtime_capacity_states(size, transport, health, review):
+    result = qm10._runtime_capacity_state(size)
+    assert result["transport_status"] == transport
+    assert result["health_status"] == health
+    assert result["capacity_review_recommended"] is review
+    assert result["headroom_bytes"] == 2_000_000 - size
+
+
+@pytest.mark.parametrize("size", [-1, 1.2, "100"])
+def test_capacity_monitor_rejects_invalid_measurements(size):
+    with pytest.raises(BAQM10AuditError, match="runtime_capacity_invalid_measurement"):
+        qm10._runtime_capacity_state(size)
 
 
 def test_f04_records_and_repairs_canonical_decision_archive_selection() -> None:
