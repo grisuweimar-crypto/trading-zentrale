@@ -374,6 +374,9 @@ def test_historical_ba_qm10_closure_survives_new_valid_live_snapshot(monkeypatch
         "audit_current_runtime_capacity",
         lambda root: {
             "status": "PASS",
+            "health_status": "PASS",
+            "headroom_ratio": 0.25,
+            "capacity_review_recommended": False,
             "shard_count": 32,
             "max_shard_bytes": 1_500_000,
             "hard_limit_bytes": 2_000_000,
