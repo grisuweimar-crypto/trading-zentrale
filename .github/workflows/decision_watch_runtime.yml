@@ -57,6 +57,81 @@ jobs:
           tests/test_w11_end_to_end_acceptance.py
           tests/test_w12_ferrari_regression.py
 
+
+  capacity-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install project and test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Record original persisted transport size without altering audit baseline
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('artifacts/research/watch_runtime')
+          sizes = {p.name: p.stat().st_size for p in sorted(root.glob('shard_*.json'))}
+          assert len(sizes) == 64
+          largest = max(sizes, key=sizes.get)
+          print({'baseline_persisted_max_shard': largest, 'bytes': sizes[largest], 'reserve': (2_000_000 - sizes[largest]) / 2_000_000})
+          PY
+      - name: Rebuild all compact shards from the unmodified sealed W10 source
+        run: |
+          python scripts/generate_daily_research.py --validate-only
+          python scripts/run_w10_snapshot_orchestration.py validate
+          python scripts/build_watch_runtime_w10.py
+      - name: Verify actual 20 percent reserve, full packet inventory, writer and reader
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.decision_layer.watch_runtime import PARTITION_STRATEGY, load_runtime_packets_for_symbols, validate_runtime_manifest
+          from scanner.research.decision_layer.w10_orchestration import validate_sealed_manifest
+
+          root = Path('artifacts/research/watch_runtime')
+          w10 = validate_sealed_manifest(json.loads(Path('artifacts/research/decision_snapshot_w10.json').read_text(encoding='utf-8')))
+          manifest = validate_runtime_manifest(json.loads((root / 'manifest.json').read_text(encoding='utf-8')), w10_manifest=w10, expected_snapshot_id=w10['snapshot_id'])
+          assert manifest['partition_strategy'] == PARTITION_STRATEGY
+          assert manifest['private_position_data_included'] is False
+          assert manifest['decision_logic_changed'] is False
+          paths = sorted(root.glob('shard_*.json'))
+          assert len(paths) == 64 and manifest['shard_count'] == 64
+          payloads = [json.loads(p.read_text(encoding='utf-8')) for p in paths]
+          assert sum(s['packet_count'] for s in payloads) == manifest['packet_count']
+          assert sum(len(s['symbols']) for s in payloads) == manifest['symbol_count']
+          assert len(manifest['symbol_shards']) == manifest['symbol_count']
+          assert set().union(*(set(s['symbols']) for s in payloads)) == set(manifest['symbol_shards'])
+          for file, shard in zip(paths, payloads, strict=True):
+              assert file.name == f"shard_{shard['shard_id']}.json"
+              assert shard['snapshot_id'] == manifest['snapshot_id']
+              assert shard['private_position_data_included'] is False
+          sizes = {p.name: p.stat().st_size for p in paths}
+          top = sorted(sizes.items(), key=lambda kv: kv[1], reverse=True)[:5]
+          max_bytes = top[0][1]
+          headroom = (2_000_000 - max_bytes) / 2_000_000
+          samples = sorted(manifest['symbol_shards'])
+          for cohort in (samples[:8], samples[-8:], ['NOW', 'HL', 'MRNA', 'ROL', 'RHM.DE']):
+              wanted = [name for name in cohort if name in manifest['symbol_shards']]
+              packets, meta = load_runtime_packets_for_symbols(root, wanted, w10_manifest=w10, expected_snapshot_id=w10['snapshot_id'])
+              assert meta['mapped_symbol_count'] == len(wanted)
+              assert {p['symbol'] for p in packets} == set(wanted)
+          reference_long = json.loads((root / 'public_long_reference.json').read_text(encoding='utf-8'))
+          reference_flat = json.loads((root / 'public_flat_reference.json').read_text(encoding='utf-8'))
+          assert reference_long['snapshot_id'] == reference_flat['snapshot_id'] == manifest['snapshot_id']
+          assert reference_long['row_count'] == reference_flat['row_count'] == manifest['symbol_count']
+          assert reference_long['position_assumption']['actual_holdings_included'] is False
+          assert reference_flat['position_assumption']['actual_holdings_included'] is False
+          print(json.dumps({'capacity_preview': 'PASS' if headroom >= 0.20 else 'REVIEW_REQUIRED', 'snapshot_id': manifest['snapshot_id'], 'symbols': manifest['symbol_count'], 'packets': manifest['packet_count'], 'max_shard_bytes': max_bytes, 'headroom_ratio': headroom, 'largest_shards': top, 'projection_sha256': manifest['runtime_projection_sha256'], 'reader_roundtrip': 'PASS', 'public_references': 'PASS'}, sort_keys=True))
+          assert headroom >= 0.20, f'BA-QM-REPAIR-01 requires >=20% real headroom: {headroom:.4%}'
+          PY
+
   readiness:
     if: >-
       github.event_name == 'workflow_dispatch' ||
