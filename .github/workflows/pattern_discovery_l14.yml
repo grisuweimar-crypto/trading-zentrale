@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: pattern-discovery-l14-${{ github.event.pull_request.number || github.ref }}
@@ -88,6 +88,8 @@ jobs:
           PY
 
   scheduled-cycle:
+    permissions:
+      contents: write
     if: >-
       (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
       && github.ref == 'refs/heads/main'
