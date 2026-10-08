@@ -53,12 +53,18 @@ requires:
 
 - an immutable, hash-bound scanner snapshot generated strictly after the
   L5/QM-C pattern freeze;
-- a real `capture_at` at or after snapshot generation, never invented or
-  backdated;
-- a specified start market session beginning **strictly after the real
+- a `capture_at` at or after snapshot generation and a verifiable
+  operational receipt establishing that the timestamp was not backdated;
+- a specified start market session beginning **strictly after the actual
   capture time**;
 - matching based exclusively on information available at the snapshot;
 - no known outcomes in the claim or its match calculation.
+
+The L7 API receives `capture_at` from its caller; that value is not, by
+itself, a trusted wall-clock attestation. A workflow receipt or other
+independently timestamped append-only record is still required before treating
+a claim as independently proven live prospective evidence. This operational
+control is **not** added by the v2 contract change.
 
 If the associated start session already began, the historical snapshot can
 still be analyzed, but L7 cannot retroactively label that event as a live
