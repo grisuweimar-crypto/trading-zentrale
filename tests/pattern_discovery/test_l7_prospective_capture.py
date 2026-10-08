@@ -401,7 +401,10 @@ def test_l7_contract_is_prospective_research_only():
     assert contract["research_only"] is True
     assert contract["productive_integration_enabled"] is False
     assert contract["execution_allowed"] is False
-    assert contract["principles"]["stale_snapshots_cannot_be_backfilled_as_prospective"] is True
+    assert contract["schema_version"] == "pattern_discovery_l7_prospective_capture_v2"
+    assert contract["principles"]["snapshot_age_does_not_invalidate_recorded_pit_inputs"] is True
+    assert contract["principles"]["prospective_claims_require_future_start_session_at_capture"] is True
+    assert "max_capture_delay_minutes" not in contract["snapshot"]
     assert contract["principles"]["outcome_information_is_forbidden_at_claim_creation"] is True
     assert contract["boundaries"]["outcome_maturation_performed"] is False
 
@@ -464,7 +467,19 @@ def test_claim_requires_real_qm_c1_c2_confirmation_freeze(l7_fixture, tmp_path):
         )
 
 
-def test_stale_snapshot_cannot_be_backfilled_as_prospective(l7_fixture):
+def test_delayed_snapshot_capture_allowed_before_future_session(l7_fixture):
+    # The exact frozen snapshot is still valid more than six hours later.
+    report = build_capture(l7_fixture, capture_at="2026-10-08T01:00:01Z")
+    assert report["counts"]["prospective_claim_count"] >= 1
+    assert report["claims"][0]["captured_at"] == "2026-10-08T01:00:01Z"
+    assert verify_capture_report(report)["valid"] is True
+
+
+def test_historical_v1_contract_still_blocks_legacy_late_capture(l7_fixture):
+    legacy = load_prospective_capture_contract(
+        "configs/pattern_discovery/l7_prospective_capture_v1.json"
+    )
+    assert legacy["schema_version"] == "pattern_discovery_l7_prospective_capture_v1"
     with pytest.raises(
         ProspectiveCaptureError,
         match="stale_snapshot_backfill_forbidden",
@@ -472,7 +487,27 @@ def test_stale_snapshot_cannot_be_backfilled_as_prospective(l7_fixture):
         build_capture(
             l7_fixture,
             capture_at="2026-10-08T01:00:01Z",
+            contract=legacy,
         )
+    old_report = build_capture(l7_fixture, contract=legacy)
+    assert verify_capture_report(old_report)["valid"] is True
+    assert verify_capture_report(old_report, contract=legacy)["valid"] is True
+    assert old_report["l7_contract_hash"] != build_capture(l7_fixture)["l7_contract_hash"]
+    with pytest.raises(
+        ProspectiveCaptureError,
+        match="capture_report_contract_hash_mismatch",
+    ):
+        verify_capture_report(
+            old_report, contract=load_prospective_capture_contract()
+        )
+
+
+def test_l7_rejects_delayed_capture_after_supplied_market_session(l7_fixture):
+    with pytest.raises(
+        ProspectiveCaptureError,
+        match="market_session_not_strictly_after_capture",
+    ):
+        build_capture(l7_fixture, capture_at="2026-10-08T09:00:00Z")
 
 
 def test_pre_freeze_snapshot_creates_no_prospective_claim(l7_fixture):
