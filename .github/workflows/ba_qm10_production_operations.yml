@@ -80,6 +80,9 @@ jobs:
           assert result["closure_eligible"] is True
           capacity = audit_current_runtime_capacity()
           assert capacity["status"] == "PASS"
+          assert capacity["health_status"] == "PASS"
+          assert capacity["headroom_ratio"] >= 0.20
+          assert capacity["capacity_review_recommended"] is False
           assert capacity["configured_shard_count"] == len(SHARD_IDS)
           assert capacity["shard_count"] == capacity["configured_shard_count"]
           assert capacity["max_shard_bytes"] < capacity["hard_limit_bytes"] == 2_000_000
