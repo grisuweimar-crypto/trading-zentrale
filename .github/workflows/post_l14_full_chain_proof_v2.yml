@@ -72,7 +72,6 @@ jobs:
 
       - name: Run real scanner
         env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           TELEGRAM_ENABLED: "0"
           SCANNER_FETCH_YAHOO: "1"
           SCANNER_REQUIRE_PROVENANCE: "1"
