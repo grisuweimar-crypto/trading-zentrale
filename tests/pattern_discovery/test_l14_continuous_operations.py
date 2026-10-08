@@ -399,3 +399,24 @@ def test_l14_workflow_stages_first_run_receipts_before_diff():
         "git diff --quiet -- artifacts/research/pattern_discovery/operations/"
         not in receipt_step
     )
+
+
+def test_l14_main_push_produces_verifiable_first_real_receipt():
+    """After merge the on-main job runs, not only test steps on pull requests."""
+    workflow = Path(".github/workflows/pattern_discovery_l14.yml").read_text(
+        encoding="utf-8"
+    )
+    scheduled = workflow.split("  scheduled-cycle:", 1)[1]
+    assert "github.event_name == 'push'" in scheduled
+    assert "github.ref == 'refs/heads/main'" in scheduled
+    assert "needs: l14-regression" in scheduled
+    assert "run_l14_operations.py cycle" in scheduled
+    assert "run_l14_operations.py verify-registry" in scheduled
+    assert "verify_operations_cycle(cycle)" in scheduled
+    assert scheduled.index("run_l14_operations.py verify-registry") < scheduled.index(
+        "- name: Persist operations receipt on main"
+    )
+    assert "permissions:\n  contents: read\n" in workflow
+    assert "scheduled-cycle:\n    permissions:\n      contents: write" in workflow
+    assert 'schedule:' in workflow
+    assert 'cron: "40 22 * * *"' in workflow

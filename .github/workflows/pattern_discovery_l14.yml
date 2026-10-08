@@ -27,7 +27,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: pattern-discovery-l14-${{ github.event.pull_request.number || github.ref }}
@@ -88,8 +88,10 @@ jobs:
           PY
 
   scheduled-cycle:
+    permissions:
+      contents: write
     if: >-
-      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push')
       && github.ref == 'refs/heads/main'
     needs: l14-regression
     runs-on: ubuntu-latest
@@ -108,6 +110,35 @@ jobs:
           evaluated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           python scripts/pattern_discovery/run_l14_operations.py cycle             --evaluated-at "$evaluated_at"             --persist             --actor-id "github-actions"             --actor-role "research_automation"             > /tmp/l14-cycle.json
           cat /tmp/l14-cycle.json
+      - name: Verify real L14 cycle, pointer and hash chain before publishing
+        run: |
+          python scripts/pattern_discovery/run_l14_operations.py verify-registry
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scanner.research.pattern_discovery import verify_operations_cycle
+          result = json.loads(Path('/tmp/l14-cycle.json').read_text())
+          assert result['persisted']['valid'] is True
+          pointer_path = Path(result['persisted']['latest_path'])
+          pointer = json.loads(pointer_path.read_text())
+          assert pointer['cycle_hash'] == result['cycle_hash']
+          cycle_path = Path(pointer['cycle_path'])
+          assert cycle_path.is_file()
+          cycle = json.loads(cycle_path.read_text())
+          assert verify_operations_cycle(cycle)['valid'] is True
+          assert cycle['cycle_status'] == result['cycle_status']
+          assert cycle['discovery']['manifest_count'] == len(list(Path(
+              'artifacts/research/pattern_discovery/discovery_runs'
+          ).glob('*/manifest.json')))
+          print({
+              'cycle_hash': cycle['cycle_hash'],
+              'status': cycle['cycle_status'],
+              'frozen_patterns': cycle['laboratory_state']['frozen_pattern_count'],
+              'prospective_claims': cycle['laboratory_state']['claim_count'],
+              'matured_outcomes': cycle['laboratory_state']['matured_outcome_count'],
+              'discovery_manifest_count': cycle['discovery']['manifest_count'],
+          })
+          PY
       - name: Persist operations receipt on main
         run: |
           # Stage new immutable cycle artifacts as well as changes to the registry/pointer.
