@@ -39,13 +39,18 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('/tmp/qm_b_investability.json'))
-          assert p['instrument_count'] == 207
-          assert p['status_counts'] == {'UNKNOWN': 207}
+          from pathlib import Path
+          latest=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          membership=json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+          expected=len(membership['claims'])
+          assert expected==membership['stable_instrument_claim_count']
+          assert p['instrument_count'] == expected
+          assert p['status_counts'] == {'UNKNOWN': expected}
           assert p['strict_universe_promotion_ready_count'] == 0
           assert p['evidence_gap_counts']['stable_identity'] == 0
           assert p['evidence_gap_counts']['project_membership'] == 0
           for k in ['listing_state','market_tradability','execution_channel','project_restrictions']:
-              assert p['evidence_gap_counts'][k] == 207
+              assert p['evidence_gap_counts'][k] == expected
           print(json.dumps({
             'instrument_count': p['instrument_count'],
             'status_counts': p['status_counts'],
