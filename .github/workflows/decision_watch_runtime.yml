@@ -246,6 +246,11 @@ jobs:
           assert all(row['availability'] == 'decision_available' for row in public_flat['rows'])
           max_size = max(path.stat().st_size for path in shard_paths)
           assert max_size < 2_000_000, f'runtime shard too large for pragmatic transport: {max_size}'
+          headroom_ratio = (2_000_000 - max_size) / 2_000_000
+          if headroom_ratio < 0.20:
+              print(f'::warning::Watch runtime capacity REVIEW_REQUIRED: headroom={headroom_ratio:.4%}, max_shard_bytes={max_size}')
+          else:
+              print(f'Watch runtime capacity PASS: headroom={headroom_ratio:.4%}')
           public_long_csv = runtime_dir / 'public_long_reference.csv'
           public_flat_csv = runtime_dir / 'public_flat_reference.csv'
           assert public_long_csv.exists() and public_long_csv.stat().st_size < 1_000_000
@@ -257,6 +262,8 @@ jobs:
               'public_long_reference_rows': public_long['row_count'],
               'public_flat_reference_rows': public_flat['row_count'],
               'max_shard_bytes': max_size,
+              'headroom_ratio': headroom_ratio,
+              'capacity_review_recommended': headroom_ratio < 0.20,
               'public_long_csv_bytes': public_long_csv.stat().st_size,
               'public_flat_csv_bytes': public_flat_csv.stat().st_size,
               'private_position_data_included': False,
