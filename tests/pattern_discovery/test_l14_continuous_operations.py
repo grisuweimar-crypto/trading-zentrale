@@ -416,5 +416,7 @@ def test_l14_main_push_produces_verifiable_first_real_receipt():
     assert scheduled.index("run_l14_operations.py verify-registry") < scheduled.index(
         "- name: Persist operations receipt on main"
     )
+    assert "permissions:\\n  contents: read\\n" in workflow
+    assert "scheduled-cycle:\\n    permissions:\\n      contents: write" in workflow
     assert 'schedule:' in workflow
     assert 'cron: "40 22 * * *"' in workflow
