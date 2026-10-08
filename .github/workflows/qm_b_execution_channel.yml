@@ -35,15 +35,26 @@ jobs:
           print(p['normalized_snapshot_path'])
           PY
           )"
+          AS_OF="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          print(json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text())['observed_at'])
+          PY
+          )"
           PYTHONPATH=src python scripts/qm_b_execution_channel.py \
             --membership "$MEMBERSHIP" \
-            --as-of 2026-09-30T08:00:00Z \
+            --as-of "$AS_OF" \
             --output /tmp/qm_b_execution_gap.json >/dev/null
           python - <<'PY'
           import json
           p=json.load(open('/tmp/qm_b_execution_gap.json'))
-          assert p['instrument_count']==207
-          assert p['status_counts']=={'UNKNOWN':207}
+          from pathlib import Path
+          latest=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          membership=json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+          expected=len(membership['claims'])
+          assert expected==membership['stable_instrument_claim_count']
+          assert p['instrument_count']==expected
+          assert p['status_counts']=={'UNKNOWN':expected}
           assert p['registered_channel_count']==0
           assert p['current_gap_status']=='BLOCKED_NO_EXECUTION_CHANNEL_EVIDENCE'
           print(json.dumps({
