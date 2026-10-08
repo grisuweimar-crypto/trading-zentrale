@@ -47,8 +47,13 @@ jobs:
           python - <<'PY'
           import json
           p=json.load(open('/tmp/qm_b_project_restrictions.json'))
-          assert p['instrument_count'] == 207
-          assert p['status_counts'] == {'CLEAR': 207}
+          from pathlib import Path
+          latest=json.loads(Path('artifacts/research/qm/qm_b_membership/latest.json').read_text(encoding='utf-8'))
+          membership=json.loads(Path(latest['normalized_snapshot_path']).read_text(encoding='utf-8'))
+          expected=len(membership['claims'])
+          assert expected==membership['stable_instrument_claim_count']
+          assert p['instrument_count'] == expected
+          assert p['status_counts'] == {'CLEAR': expected}
           assert p['historical_retrojection_permitted'] is False
           assert p['legal_eligibility_evaluated'] is False
           assert p['broker_availability_evaluated'] is False
