@@ -123,9 +123,11 @@ def test_non_pit_record_is_not_positive(tmp_path: Path) -> None:
 def test_current_membership_audit_remains_unknown_without_registered_sources() -> None:
     latest = json.loads(Path("artifacts/research/qm/qm_b_membership/latest.json").read_text(encoding="utf-8"))
     snapshot = json.loads(Path(latest["normalized_snapshot_path"]).read_text(encoding="utf-8"))
+    expected = len(snapshot["claims"])
+    assert expected == snapshot["stable_instrument_claim_count"]
     result = audit_membership_snapshot(snapshot)
-    assert result["instrument_count"] == 207
+    assert result["instrument_count"] == expected
     assert result["registered_source_count"] == 0
-    assert result["status_counts"] == {"UNKNOWN": 207}
+    assert result["status_counts"] == {"UNKNOWN": expected}
     assert result["positive_tradability_count"] == 0
     assert result["current_gap_status"] == "BLOCKED_NO_MARKET_TRADABILITY_EVIDENCE"
