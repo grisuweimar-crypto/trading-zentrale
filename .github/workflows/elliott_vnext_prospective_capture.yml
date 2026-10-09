@@ -322,11 +322,11 @@ jobs:
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
           do
-            if git cat-file -e "origin/elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" 2>/dev/null; then
+            if git cat-file -e "origin/elliott-vnext-shadow-data:$path.gz" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
-              git show "origin/elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" > ".github/workflows/elliott_vnext_prospective_capture.yml.gz"
-              python -m scanner.research.elliott_vnext.shadow_transport unpack ".github/workflows/elliott_vnext_prospective_capture.yml.gz" "$path"
-              rm -f ".github/workflows/elliott_vnext_prospective_capture.yml.gz"
+              git show "origin/elliott-vnext-shadow-data:$path.gz" > "$path.gz"
+              python -m scanner.research.elliott_vnext.shadow_transport unpack "$path.gz" "$path"
+              rm -f "$path.gz"
             elif git cat-file -e "origin/elliott-vnext-shadow-data:$path" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
               git show "origin/elliott-vnext-shadow-data:$path" > "$path"
