@@ -51,12 +51,14 @@ def normalize_cycle_source(frame: pd.DataFrame) -> pd.DataFrame:
     quality.loc[missing] = "MISSING_SOURCE"
     quality.loc[valid] = "VALID"
 
-    # A separately attested upstream status may veto the use of its own value.
-    # Never upgrade STALE/INSUFFICIENT_HISTORY to VALID just because it is numeric.
+    # A separately recorded upstream status may veto its own numeric value.
+    # Unknown nonempty statuses are conservatively invalid, not silently VALID.
     if "cycle_quality" in frame.columns:
-        previous_quality = frame["cycle_quality"].astype("string").str.strip().str.upper()
-        for code in ("STALE", "INSUFFICIENT_HISTORY"):
-            quality.loc[previous_quality.eq(code).fillna(False)] = code
+        prior = frame["cycle_quality"].astype("string").str.strip().str.upper()
+        for code in ("STALE", "INSUFFICIENT_HISTORY", "MISSING_SOURCE", "INVALID_VALUE"):
+            quality.loc[prior.eq(code).fillna(False)] = code
+        unknown = prior.notna() & prior.ne("") & ~prior.isin(QUALITY_CODES)
+        quality.loc[unknown.fillna(False)] = "INVALID_VALUE"
     numeric = numeric.where(quality.eq("VALID"), float("nan")).astype("float64")
 
     source = pd.Series(source_name, index=index, dtype="string")
