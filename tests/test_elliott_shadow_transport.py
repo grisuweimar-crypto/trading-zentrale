@@ -75,7 +75,8 @@ def test_missing_or_empty_source_never_generates_fake_archive(tmp_path):
 def test_shadow_workflow_preserves_legacy_read_and_source_publication_binding():
     workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/elliott_vnext_prospective_capture.yml").read_text(encoding="utf-8")
     assert "zipped_archive = git_bytes(" in workflow
-    assert "gzip.decompress(zipped_archive).decode('utf-8')" in workflow
+    assert "archive_bytes = gzip.decompress(zipped_archive)" in workflow
+    assert "archive = archive_bytes.decode('utf-8')" in workflow
     assert "shadow_transport unpack" in workflow
     assert "shadow_transport pack" in workflow
     assert "git rm -f --ignore-unmatch" in workflow
