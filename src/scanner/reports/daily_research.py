@@ -139,9 +139,20 @@ def generate_daily(root: Path, receipt_path: Path, *, scanner_status="success", 
             + ["r_code", "run_id", "scoring_version", "history_schema_version"]
         )
     )
+    def _publish_value(original: dict, field: str) -> str:
+        if field == "cycle":
+            # The canonical field is authoritative even when empty. Fallback
+            # to the legacy column would resurrect a quarantined/stale value.
+            quality = original.get("cycle_quality", "").strip()
+            if quality and quality != "VALID":
+                return ""
+            if "cycle" in original:
+                return original["cycle"].strip()
+        return next((original[a] for a in ALIASES[field] if original.get(a, "").strip()), "")
+
     rows = []
     for original in source_rows:
-        row = {c: next((original[a] for a in ALIASES[c] if original.get(a, "").strip()), "")
+        row = {c: _publish_value(original, c)
                for c in columns if c in ALIASES}
         row["run_id"] = receipt["run_id"]
         rows.append(row)
