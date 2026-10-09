@@ -12,11 +12,13 @@ on:
     branches: [main]
     paths:
       - "src/scanner/research/elliott_vnext/prospective_capture.py"
+      - "src/scanner/research/elliott_vnext/shadow_transport.py"
       - "src/scanner/research/elliott_vnext/validation_replay.py"
       - "src/scanner/research/elliott_vnext/fibonacci.py"
       - "src/scanner/research/elliott_vnext/stage4_historical.py"
       - "scripts/run_elliott_prospective_capture_6h.py"
       - "tests/test_elliott_vnext_prospective_capture.py"
+      - "tests/test_elliott_shadow_transport.py"
       - "tests/test_elliott_vnext_validation.py"
       - "tests/test_elliott_vnext_fibonacci.py"
       - "docs/elliott_vnext_prospective_capture.md"
@@ -70,6 +72,7 @@ jobs:
           git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
           python - <<'PY'
           import csv
+          import gzip
           import hashlib
           import io
           import json
@@ -162,9 +165,20 @@ jobs:
           CURRENT_CAPTURE_ENGINE = 'prospective_capture_engine_v2_iso_date_replay'
           claimed_run_ids = set()
           repairable_run_ids = set()
-          archive = git_text(
-              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+          # The remote shadow branch may still contain the legacy plain JSONL.
+          # Prefer lossless gzip after migration and reject corrupted new files.
+          zipped_archive = git_bytes(
+              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.gz', allow_fail=True
           )
+          if zipped_archive is not None:
+              try:
+                  archive = gzip.decompress(zipped_archive).decode('utf-8')
+              except (OSError, EOFError, UnicodeDecodeError) as exc:
+                  raise SystemExit(f'elliott_shadow_archive_gzip_invalid:{exc}') from exc
+          else:
+              archive = git_text(
+                  'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+              )
           if archive:
               for line_number, line in enumerate(archive.splitlines(), start=1):
                   if not line.strip():
@@ -284,6 +298,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_elliott_vnext_prospective_capture.py
+          tests/test_elliott_shadow_transport.py
           tests/test_elliott_vnext_stage4_historical.py
           tests/test_elliott_vnext_validation.py
           tests/test_elliott_vnext_pivots.py
@@ -307,7 +322,12 @@ jobs:
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
           do
-            if git cat-file -e "origin/elliott-vnext-shadow-data:$path" 2>/dev/null; then
+            if git cat-file -e "origin/elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" > ".github/workflows/elliott_vnext_prospective_capture.yml.gz"
+              python -m scanner.research.elliott_vnext.shadow_transport unpack ".github/workflows/elliott_vnext_prospective_capture.yml.gz" "$path"
+              rm -f ".github/workflows/elliott_vnext_prospective_capture.yml.gz"
+            elif git cat-file -e "origin/elliott-vnext-shadow-data:$path" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
               git show "origin/elliott-vnext-shadow-data:$path" > "$path"
             else
@@ -392,9 +412,16 @@ jobs:
       - name: Preserve shadow publication payload
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
         run: |
+          set -euo pipefail
           mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
-          cp artifacts/research/elliott_vnext_prospective_history_6h.jsonl "$RUNNER_TEMP/elliott-shadow-payload/"
-          cp artifacts/research/elliott_vnext_prospective_current_6h.json "$RUNNER_TEMP/elliott-shadow-payload/"
+          # Full JSON/JSONL are already validated; now encode the exact bytes.
+          for path in \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
+            artifacts/research/elliott_vnext_prospective_current_6h.json
+          do
+            python -m scanner.research.elliott_vnext.shadow_transport pack \
+              "$path" "$RUNNER_TEMP/elliott-shadow-payload/$(basename "$path").gz"
+          done
 
       - name: Publish isolated Elliott shadow data branch
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
@@ -428,11 +455,16 @@ jobs:
             git checkout -B elliott-vnext-shadow-data origin/main
           fi
           mkdir -p artifacts/research
-          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl" artifacts/research/
-          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json" artifacts/research/
-          git add \
+          # The old branch's raw blobs are preserved in immutable Git history.
+          # Migrate latest full byte streams into deterministic gzip containers.
+          git rm -f --ignore-unmatch -- \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.gz" artifacts/research/
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json.gz" artifacts/research/
+          git add \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl.gz \
+            artifacts/research/elliott_vnext_prospective_current_6h.json.gz
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Elliott vNext prospective shadow [skip ci]'
             git push origin HEAD:refs/heads/elliott-vnext-shadow-data
