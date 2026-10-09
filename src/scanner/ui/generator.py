@@ -2741,9 +2741,18 @@ function perfPct(r) {
 }
 
 function cyclePct(r) {
-  return parsePct(
-    r.cycle ?? r['Zyklus %'] ?? r.cycle_pct ?? r['Zyklus'] ?? r['Cycle']
-  );
+  // An explicit canonical null must not fall through to the legacy/raw field.
+  // STALE and INSUFFICIENT_HISTORY must remain unavailable.
+  if (r.cycle_quality && r.cycle_quality !== 'VALID') return null;
+  if (Object.prototype.hasOwnProperty.call(r, 'cycle')) {
+    return parsePct(r.cycle);
+  }
+  return parsePct(r['Zyklus %'] ?? r.cycle_pct ?? r['Zyklus'] ?? r['Cycle']);
+}
+
+function formatCycle(r) {
+  const value = cyclePct(r);
+  return value === null ? '—' : value.toFixed(0) + '%';
 }
 
 function fmtPct(v) {
@@ -3228,7 +3237,7 @@ function applyHeatFilter(rows) {
           <td>${scoreCell(r)}</td>
           <td class="hide-sm right mono">${dScoreCell(r)}</td>
           <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
-          <td class="hide-sm right mono">${(cyclePct(r) ?? 0).toFixed(0)}%</td>
+          <td class="hide-sm right mono">${formatCycle(r)}</td>
           <td>${trend}</td>
           <td>${liq}</td>
           <td>${chip(status || '', statusKind)}</td>
@@ -3276,7 +3285,9 @@ function applyHeatFilter(rows) {
       const items = [
         ['Score', (asNum(r.score) ?? 0).toFixed(2)],
         ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
-        ['Cycle', `${(cyclePct(r) ?? 0).toFixed(0)}%`],
+        ['Cycle', formatCycle(r)],
+        ['Cycle Quality', r.cycle_quality],
+        ['Cycle Source', r.cycle_source],
         ['ScoreStatus', normStr(r.score_status) || ''],
         ['Trend OK', String(asBool(r.trend_ok))],
         ['Liquidity OK', String(asBool(r.liquidity_ok))],
