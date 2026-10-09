@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,22 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:WDAY:9cb11f4adfc9eb9c:40T",
-      "timing:WDAY:28846bf8f8b491cd:40T",
-      "timing:WDAY:e3563708ab21aab0:60T",
-      "timing:WDAY:92ad9e5c355866b9:60T"
+      "timing:WDAY:5b62a0aabd2f08fc:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -157,6 +154,14 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -165,10 +170,10 @@
       "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
-      "trend200_falling_5t": true
+      "trend200_falling_5t": false
     },
-    "last_overextension_date": "2026-10-08",
-    "last_overextension_rs3m": 0.25215281423553737,
+    "last_overextension_date": "2026-10-09",
+    "last_overextension_rs3m": 0.2945896437660336,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,

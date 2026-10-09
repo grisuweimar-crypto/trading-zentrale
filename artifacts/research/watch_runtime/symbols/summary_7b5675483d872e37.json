@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,27 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:AAGFF:9aace91dab644870:5T",
-      "timing:AAGFF:03f6bed3788ea96b:5T",
-      "timing:AAGFF:2ec83739629fba4d:5T",
-      "timing:AAGFF:42bcd8a34d314c09:5T",
-      "timing:AAGFF:838b819bd450346e:5T",
-      "timing:AAGFF:6267ff2c27f27eb8:20T",
-      "timing:AAGFF:cad5eb04910821c4:20T",
-      "timing:AAGFF:a0bebf08166a0860:60T",
-      "timing:AAGFF:2fbfff31832fc700:60T"
+      "timing:AAGFF:9cb11f4adfc9eb9c:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 9
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -162,6 +154,14 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -176,7 +176,7 @@
     "last_overextension_rs3m": 0.2252788037345261,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 211,
+    "sessions_since_last_overextension": 212,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

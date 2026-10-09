@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,17 +27,32 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "positive",
+    "known_directional_claim_ids": [
+      "timing:UEC:ea08718de33a1787:5T",
+      "timing:UEC:0671faf1011640c5:5T",
+      "timing:UEC:c42ca6c1baee697b:20T",
+      "timing:UEC:f483a5247b57affc:20T",
+      "timing:UEC:b158fef8cbfb5c55:20T",
+      "timing:UEC:4ccb45d4ee923f1a:40T",
+      "timing:UEC:9cb11f4adfc9eb9c:40T",
+      "timing:UEC:3e260f25164f48ce:40T",
+      "timing:UEC:df23cc7f8d9328ee:60T",
+      "timing:UEC:5472db56664c10c8:60T",
+      "timing:UEC:6289a7880870e93e:60T",
+      "timing:UEC:fe6ff0aee1bf447a:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 12
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -150,32 +165,40 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-09-09",
     "last_overextension_rs3m": 0.2033736402904389,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 29,
+    "sessions_since_last_overextension": 30,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "UEC",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "positive",
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "negative",
-    "status": "blocked_insufficient"
+    "status": "transition_pending"
   }
 }

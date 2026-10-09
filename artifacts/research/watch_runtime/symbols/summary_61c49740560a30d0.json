@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,29 +27,21 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
+    "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:AMAT:13dfd193091882d7:5T",
-      "timing:AMAT:d18193c29692a1cb:5T",
-      "timing:AMAT:2ec83739629fba4d:5T",
-      "timing:AMAT:63001daa7f481bc1:5T",
-      "timing:AMAT:1758b10ff7893792:20T",
-      "timing:AMAT:a4278e33701f9d98:20T",
-      "timing:AMAT:1aa807ae1a9556c5:20T",
-      "timing:AMAT:b5c6f29104b27dae:40T",
-      "timing:AMAT:2d034c21b8215d13:40T"
+      "timing:AMAT:9a55520ffefb694c:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 9
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "relation_state": "single_direction_or_unopposed",
+    "state": "negative",
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -162,32 +154,40 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": "negative",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "negative",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
-      "r_code_downgrade": false,
+      "r_code_downgrade": true,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-08-18",
     "last_overextension_rs3m": 0.1862941954507837,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 51,
+    "sessions_since_last_overextension": 52,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "AMAT",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "negative",
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "transition_pending"
   }
 }

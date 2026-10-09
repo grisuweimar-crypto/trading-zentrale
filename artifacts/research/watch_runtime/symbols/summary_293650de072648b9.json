@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,11 +29,12 @@
     "conflicts": [
       {
         "negative_claim_ids": [
+          "timing:PL:6b9ad841e92f8191:60T",
           "timing:PL:8383be481c5c6052:60T",
-          "timing:PL:6c608d2ad71a6396:60T"
+          "timing:PL:312bf577128ab874:60T"
         ],
         "positive_claim_ids": [
-          "timing:PL:32bb40f535b6b527:60T"
+          "timing:PL:1aa807ae1a9556c5:20T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -41,12 +42,13 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:PL:32bb40f535b6b527:60T",
+      "timing:PL:1aa807ae1a9556c5:20T",
+      "timing:PL:6b9ad841e92f8191:60T",
       "timing:PL:8383be481c5c6052:60T",
-      "timing:PL:6c608d2ad71a6396:60T"
+      "timing:PL:312bf577128ab874:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 4
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -55,7 +57,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -168,6 +170,14 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -182,7 +192,7 @@
     "last_overextension_rs3m": 0.1545376555716637,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 115,
+    "sessions_since_last_overextension": 116,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

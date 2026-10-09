@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,34 +26,86 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
-    "direction": "positive",
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:TTK.DE:5df2a86791ff5f88:60T",
+          "timing:TTK.DE:b0fb906b9f3e02ec:60T",
+          "timing:TTK.DE:51a8cac8cfa550aa:60T",
+          "timing:TTK.DE:1691f75766881bca:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:TTK.DE:13dfd193091882d7:5T",
+          "timing:TTK.DE:a2763d94cd6f82e9:5T",
+          "timing:TTK.DE:d18193c29692a1cb:5T",
+          "timing:TTK.DE:9aace91dab644870:5T",
+          "timing:TTK.DE:056cab0d8c42f322:5T",
+          "timing:TTK.DE:03f6bed3788ea96b:5T",
+          "timing:TTK.DE:2ec83739629fba4d:5T",
+          "timing:TTK.DE:42bcd8a34d314c09:5T",
+          "timing:TTK.DE:838b819bd450346e:5T",
+          "timing:TTK.DE:1758b10ff7893792:20T",
+          "timing:TTK.DE:85b7b4bcb43aeb00:20T",
+          "timing:TTK.DE:ae61c82fbb0371fc:20T",
+          "timing:TTK.DE:a4278e33701f9d98:20T",
+          "timing:TTK.DE:6267ff2c27f27eb8:20T",
+          "timing:TTK.DE:cad5eb04910821c4:20T",
+          "timing:TTK.DE:15f457a0b3a6df9d:20T",
+          "timing:TTK.DE:b5c6f29104b27dae:40T",
+          "timing:TTK.DE:f9714fd629aaf7f2:40T",
+          "timing:TTK.DE:677e719dc170acd6:40T",
+          "timing:TTK.DE:2d034c21b8215d13:40T",
+          "timing:TTK.DE:e64908cc5e4c18f0:60T",
+          "timing:TTK.DE:a0bebf08166a0860:60T",
+          "timing:TTK.DE:ff63700b226f41b1:60T",
+          "timing:TTK.DE:2fbfff31832fc700:60T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
+    "direction": null,
     "known_directional_claim_ids": [
-      "timing:TTK.DE:ea08718de33a1787:5T",
-      "timing:TTK.DE:0671faf1011640c5:5T",
-      "timing:TTK.DE:c42ca6c1baee697b:20T",
-      "timing:TTK.DE:f483a5247b57affc:20T",
-      "timing:TTK.DE:b158fef8cbfb5c55:20T",
-      "timing:TTK.DE:4ccb45d4ee923f1a:40T",
-      "timing:TTK.DE:9cb11f4adfc9eb9c:40T",
-      "timing:TTK.DE:8868c70444a4a57f:40T",
-      "timing:TTK.DE:3e260f25164f48ce:40T",
-      "timing:TTK.DE:e3f414dec0e09a39:40T",
-      "timing:TTK.DE:5472db56664c10c8:60T",
-      "timing:TTK.DE:fe6ff0aee1bf447a:60T",
-      "timing:TTK.DE:92ad9e5c355866b9:60T"
+      "timing:TTK.DE:13dfd193091882d7:5T",
+      "timing:TTK.DE:a2763d94cd6f82e9:5T",
+      "timing:TTK.DE:d18193c29692a1cb:5T",
+      "timing:TTK.DE:9aace91dab644870:5T",
+      "timing:TTK.DE:056cab0d8c42f322:5T",
+      "timing:TTK.DE:03f6bed3788ea96b:5T",
+      "timing:TTK.DE:2ec83739629fba4d:5T",
+      "timing:TTK.DE:42bcd8a34d314c09:5T",
+      "timing:TTK.DE:838b819bd450346e:5T",
+      "timing:TTK.DE:1758b10ff7893792:20T",
+      "timing:TTK.DE:85b7b4bcb43aeb00:20T",
+      "timing:TTK.DE:ae61c82fbb0371fc:20T",
+      "timing:TTK.DE:a4278e33701f9d98:20T",
+      "timing:TTK.DE:6267ff2c27f27eb8:20T",
+      "timing:TTK.DE:cad5eb04910821c4:20T",
+      "timing:TTK.DE:15f457a0b3a6df9d:20T",
+      "timing:TTK.DE:b5c6f29104b27dae:40T",
+      "timing:TTK.DE:f9714fd629aaf7f2:40T",
+      "timing:TTK.DE:677e719dc170acd6:40T",
+      "timing:TTK.DE:2d034c21b8215d13:40T",
+      "timing:TTK.DE:e64908cc5e4c18f0:60T",
+      "timing:TTK.DE:a0bebf08166a0860:60T",
+      "timing:TTK.DE:ff63700b226f41b1:60T",
+      "timing:TTK.DE:2fbfff31832fc700:60T",
+      "timing:TTK.DE:5df2a86791ff5f88:60T",
+      "timing:TTK.DE:b0fb906b9f3e02ec:60T",
+      "timing:TTK.DE:51a8cac8cfa550aa:60T",
+      "timing:TTK.DE:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 13
+      "timing": 28
     },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -166,18 +218,26 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
-      "r_code_downgrade": false,
+      "r_code_downgrade": true,
       "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
-    "last_overextension_date": "2026-10-08",
-    "last_overextension_rs3m": 0.2564603276555839,
+    "last_overextension_date": "2026-10-09",
+    "last_overextension_rs3m": 0.26751494891382,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
@@ -190,8 +250,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_conflict"
   }
 }

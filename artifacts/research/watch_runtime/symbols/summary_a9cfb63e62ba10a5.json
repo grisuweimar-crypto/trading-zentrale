@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-09T11:08:02.957563+00:00",
+  "decision_as_of": "2026-10-09T19:40:51.490892+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,10 +29,12 @@
     "conflicts": [
       {
         "negative_claim_ids": [
-          "timing:ZETA:0b9187e88ff3ae83:60T"
+          "timing:ZETA:c672817d91249136:60T",
+          "timing:ZETA:0b9187e88ff3ae83:60T",
+          "timing:ZETA:cce5c47f08a2bf66:60T"
         ],
         "positive_claim_ids": [
-          "timing:ZETA:32bb40f535b6b527:60T"
+          "timing:ZETA:e3f414dec0e09a39:40T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -40,11 +42,13 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:ZETA:32bb40f535b6b527:60T",
-      "timing:ZETA:0b9187e88ff3ae83:60T"
+      "timing:ZETA:e3f414dec0e09a39:40T",
+      "timing:ZETA:c672817d91249136:60T",
+      "timing:ZETA:0b9187e88ff3ae83:60T",
+      "timing:ZETA:cce5c47f08a2bf66:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 2
+      "timing": 4
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -53,7 +57,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
+  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -166,18 +170,26 @@
       "source_snapshot_id": "32739832-2481-491f-b131-f7413c07f6b2",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-09T19:40:51.490892+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": true,
+      "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": false
     },
-    "last_overextension_date": "2026-10-08",
-    "last_overextension_rs3m": 0.4521916716381411,
+    "last_overextension_date": "2026-10-09",
+    "last_overextension_rs3m": 0.44700521896560375,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
