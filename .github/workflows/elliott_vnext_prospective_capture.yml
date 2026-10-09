@@ -89,6 +89,9 @@ jobs:
               'artifacts/research/history_metadata.json',
               'artifacts/research/latest_scanner.csv',
               'artifacts/research/daily_research.json',
+              'artifacts/research/history_recent.csv',
+              'artifacts/research/price_backfill.csv',
+              'artifacts/research/scanner_input_provenance.json',
               'artifacts/market_data/yahoo_ohlcv.csv',
           }
 
@@ -252,6 +255,9 @@ jobs:
             artifacts/research/history_metadata.json \
             artifacts/research/latest_scanner.csv \
             artifacts/research/daily_research.json \
+            artifacts/research/history_recent.csv \
+            artifacts/research/price_backfill.csv \
+            artifacts/research/scanner_input_provenance.json \
             artifacts/market_data/yahoo_ohlcv.csv
           do
             git show "${{ steps.bind.outputs.commit }}:$path" > "$path"
@@ -411,6 +417,9 @@ jobs:
             artifacts/research/history_metadata.json \
             artifacts/research/latest_scanner.csv \
             artifacts/research/daily_research.json \
+            artifacts/research/history_recent.csv \
+            artifacts/research/price_backfill.csv \
+            artifacts/research/scanner_input_provenance.json \
             artifacts/market_data/yahoo_ohlcv.csv
           git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
           if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
