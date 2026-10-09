@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from scanner.research.governance import ba_qm12_continuous_qm as qm12
 from scanner.research.governance.ba_qm12_continuous_qm import (
     BAQM12Error,
     LIFECYCLE,
@@ -11,6 +12,7 @@ from scanner.research.governance.ba_qm12_continuous_qm import (
     REQUIRED_CONTROLS,
     evaluate_continuous_qm,
     validate_contract,
+    validate_masterplan_residual_consistency,
     _snapshot_monitor,
 )
 
@@ -34,24 +36,24 @@ def test_ba_qm12_current_system_is_continuous_qm_active():
     assert receipt["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
     assert receipt["ba_qm12_may_release_lag1_block"] is False
     assert receipt["w8_promotion_eligible"] is False
-    assert receipt["masterplan_end_state_complete"] is False
-    assert receipt["full_masterplan_completion_claim_allowed"] is False
-    monitor = receipt["masterplan_residual_monitor"]
+    monitor = validate_masterplan_residual_consistency(receipt["masterplan_residual_monitor"])
+    assert receipt["masterplan_end_state_complete"] is monitor["masterplan_end_state_complete"]
+    assert receipt["full_masterplan_completion_claim_allowed"] is monitor["full_completion_claim_allowed"]
     assert tuple(monitor["residuals"]) == MASTERPLAN_RESIDUAL_IDS
     assert monitor["residuals"]["W6_ELLIOTT_LINEAGE"]["blocking_masterplan_completion"] is False
     assert monitor["residuals"]["W6_ELLIOTT_LINEAGE"]["status"] == "PROSPECTIVE_RAW_FEATURE_VALIDATION_UNCERTAINTY_LINEAGE_COMPLETE"
     assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["prospective_plan_validated"] is True
     assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["eligible_observation_from"] == "2026-10-06"
     assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["automatic_release_allowed"] is False
-    assert monitor["blocking_residual_count"] == 6
-    assert set(monitor["blocking_residual_ids"]) == {
-        "PHASE1A_LAG1_CAPA",
-        "W8_EMPIRICAL_UTILITY",
-        "BA_QM2_EXTERNAL_HISTORICAL_INTEGRITY",
-        "BA_QM6_EMPIRICAL_VALIDATION",
-        "BA_QM7_EMPIRICAL_VALIDATION",
-        "DECISION_LAYER_EMPIRICAL_PROMOTION",
-    }
+    actual_blockers = [
+        residual_id
+        for residual_id, row in monitor["residuals"].items()
+        if row["blocking_masterplan_completion"] is True
+    ]
+    assert monitor["blocking_residual_ids"] == actual_blockers
+    assert monitor["blocking_residual_count"] == len(actual_blockers)
+    assert monitor["masterplan_end_state_complete"] is (not actual_blockers)
+    assert monitor["full_completion_claim_allowed"] is (not actual_blockers)
     assert monitor["residuals"]["PHASE8_EXTERNAL_EVIDENCE"]["blocking_masterplan_completion"] is False
     assert receipt["snapshot_monitor"]["drift_monitoring"]["threshold_breach_claimed"] is False
 
@@ -213,3 +215,116 @@ def test_f02_current_authoritative_snapshot_coverage_remains_pass():
     assert coverage["min_score_ratio"] == metadata["validation"]["policy"]["min_score_ratio"]
     assert coverage["numeric_score_coverage_status"] == "PASS"
     assert coverage["numeric_score_count"] >= coverage["required_numeric_score_count"]
+
+
+# BA-QM-REPAIR-01 / F04: observable state consistency instead of a fixed
+# blocker count. The tests below never rewrite genuine empirical evidence.
+def _f04_current_residual_monitor():
+    # The full evaluate_continuous_qm end-to-end integration is already covered
+    # once above. Keep each mutation test scoped to the real upstream residual
+    # contracts instead of repeatedly rebuilding the full 64-shard runtime.
+    qmi = qm12._read(ROOT / "configs" / "qm_i_evidence_lineage_v1.json")
+    qmj = qm12._read(ROOT / "configs" / "ba_qm7_qm_j_closure_v1.json")
+    w8 = qm12._read(ROOT / "configs" / "decision_depot_action_policy_v1.json")
+    return deepcopy(qm12._masterplan_residual_monitor(ROOT, qmi=qmi, qmj=qmj, w8=w8))
+
+
+def test_f04_actual_residual_identities_and_current_blocks_are_source_derived():
+    monitor = validate_masterplan_residual_consistency(_f04_current_residual_monitor())
+    assert tuple(monitor["residuals"]) == MASTERPLAN_RESIDUAL_IDS
+    # Current source-derived blocks are still in force. A future evidence-based
+    # reduction must not require this test to be rewritten.
+    assert monitor["blocking_residual_count"] == len(monitor["blocking_residual_ids"])
+    assert all(monitor["residuals"][key]["blocking_masterplan_completion"] is True
+               for key in monitor["blocking_residual_ids"])
+    assert monitor["residuals"]["PHASE1A_LAG1_CAPA"]["automatic_release_allowed"] is False
+
+
+def test_f04_synthetic_upstream_verified_release_recomputes_fewer_blockers(monkeypatch):
+    # Only a nonpersistent test fixture: a hypothetical future BA-QM6 authority
+    # signals ESTABLISHED. This is NOT a real promotion and changes no evidence.
+    read_original = qm12._read
+
+    def read_synthetic(path):
+        value = read_original(path)
+        if path.name == "ba_qm6_qm_g_closure_v1.json":
+            value = deepcopy(value)
+            value["empirical_validation_status"] = "ESTABLISHED"
+        return value
+
+    qmi = read_original(ROOT / "configs" / "qm_i_evidence_lineage_v1.json")
+    qmj = read_original(ROOT / "configs" / "ba_qm7_qm_j_closure_v1.json")
+    w8 = read_original(ROOT / "configs" / "decision_depot_action_policy_v1.json")
+    current = qm12._masterplan_residual_monitor(ROOT, qmi=qmi, qmj=qmj, w8=w8)
+    monkeypatch.setattr(qm12, "_read", read_synthetic)
+    hypothetical = qm12._masterplan_residual_monitor(ROOT, qmi=qmi, qmj=qmj, w8=w8)
+    tested = validate_masterplan_residual_consistency(hypothetical)
+    assert current["residuals"]["BA_QM6_EMPIRICAL_VALIDATION"]["blocking_masterplan_completion"] is True
+    assert tested["residuals"]["BA_QM6_EMPIRICAL_VALIDATION"]["status"] == "ESTABLISHED"
+    assert tested["residuals"]["BA_QM6_EMPIRICAL_VALIDATION"]["blocking_masterplan_completion"] is False
+    assert tested["blocking_residual_count"] == current["blocking_residual_count"] - 1
+    assert tested["masterplan_end_state_complete"] is False
+    assert tested["full_completion_claim_allowed"] is False
+    assert tested["residuals"]["PHASE1A_LAG1_CAPA"]["blocking_masterplan_completion"] is True
+
+
+@pytest.mark.parametrize("mutation,expected_error", [
+    ("count_low", "masterplan_blocking_residual_count_mismatch"),
+    ("count_high", "masterplan_blocking_residual_count_mismatch"),
+    ("count_bool", "masterplan_blocking_residual_count_mismatch"),
+    ("missing_id", "masterplan_blocking_residual_ids_mismatch"),
+    ("duplicate_id", "masterplan_blocking_residual_ids_mismatch"),
+    ("unknown_id", "masterplan_blocking_residual_ids_mismatch"),
+    ("id_as_tuple", "masterplan_blocking_residual_ids_mismatch"),
+    ("completion_too_early", "masterplan_end_state_claim_mismatch"),
+    ("full_claim_too_early", "masterplan_full_completion_claim_mismatch"),
+    ("missing_residual", "masterplan_residual_identity_mismatch"),
+    ("unknown_residual", "masterplan_residual_identity_mismatch"),
+    ("nonboolean_block_flag", "masterplan_residual_block_flag_invalid"),
+])
+def test_f04_inconsistent_blocker_receipt_fails_closed(mutation, expected_error):
+    monitor = _f04_current_residual_monitor()
+    if mutation == "count_low":
+        monitor["blocking_residual_count"] -= 1
+    elif mutation == "count_high":
+        monitor["blocking_residual_count"] += 1
+    elif mutation == "count_bool":
+        monitor["blocking_residual_count"] = True
+    elif mutation == "missing_id":
+        monitor["blocking_residual_ids"].pop()
+    elif mutation == "duplicate_id":
+        monitor["blocking_residual_ids"].append(monitor["blocking_residual_ids"][0])
+    elif mutation == "unknown_id":
+        monitor["blocking_residual_ids"][0] = "UNREGISTERED_RESIDUAL"
+    elif mutation == "id_as_tuple":
+        monitor["blocking_residual_ids"] = tuple(monitor["blocking_residual_ids"])
+    elif mutation == "completion_too_early":
+        monitor["masterplan_end_state_complete"] = True
+    elif mutation == "full_claim_too_early":
+        monitor["full_completion_claim_allowed"] = True
+    elif mutation == "missing_residual":
+        monitor["residuals"].pop("BA_QM6_EMPIRICAL_VALIDATION")
+    elif mutation == "unknown_residual":
+        monitor["residuals"]["FAKE"] = {"blocking_masterplan_completion": False}
+    elif mutation == "nonboolean_block_flag":
+        monitor["residuals"]["BA_QM6_EMPIRICAL_VALIDATION"]["blocking_masterplan_completion"] = 1
+    else:
+        raise AssertionError(mutation)
+    with pytest.raises(BAQM12Error, match=expected_error):
+        validate_masterplan_residual_consistency(monitor)
+
+
+def test_f04_synthetic_zero_blockers_only_allows_claim_with_consistent_receipt():
+    monitor = _f04_current_residual_monitor()
+    # Synthetic summary-only consistency check; the real promotion authorities
+    # and six production blocks remain unchanged on disk and in main.
+    for row in monitor["residuals"].values():
+        row["blocking_masterplan_completion"] = False
+    monitor["blocking_residual_ids"] = []
+    monitor["blocking_residual_count"] = 0
+    monitor["masterplan_end_state_complete"] = True
+    monitor["full_completion_claim_allowed"] = True
+    assert validate_masterplan_residual_consistency(monitor)["masterplan_end_state_complete"] is True
+    monitor["residuals"]["PHASE1A_LAG1_CAPA"]["blocking_masterplan_completion"] = True
+    with pytest.raises(BAQM12Error, match="masterplan_blocking_residual_ids_mismatch"):
+        validate_masterplan_residual_consistency(monitor)

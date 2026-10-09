@@ -278,6 +278,46 @@ def _snapshot_monitor(root: Path) -> dict[str, Any]:
     }
 
 
+def validate_masterplan_residual_consistency(
+    monitor: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Fail closed on inconsistent monitored blocker identities and completion claims.
+
+    This validates observed states from the existing authority-bound monitors.
+    It does not promote a finding or change any upstream research evidence.
+    """
+    residuals = _mapping(monitor.get("residuals"), "masterplan.residuals")
+    if tuple(residuals) != MASTERPLAN_RESIDUAL_IDS:
+        raise BAQM12Error("masterplan_residual_identity_mismatch")
+
+    blocked = []
+    for residual_id, item in residuals.items():
+        row = _mapping(item, f"masterplan.residuals.{residual_id}")
+        flag = row.get("blocking_masterplan_completion")
+        if type(flag) is not bool:
+            raise BAQM12Error(f"masterplan_residual_block_flag_invalid:{residual_id}")
+        if flag:
+            blocked.append(residual_id)
+
+    reported = monitor.get("blocking_residual_ids")
+    if (
+        not isinstance(reported, list)
+        or any(type(item) is not str for item in reported)
+        or reported != blocked
+    ):
+        raise BAQM12Error("masterplan_blocking_residual_ids_mismatch")
+    count = monitor.get("blocking_residual_count")
+    if type(count) is not int or count != len(blocked):
+        raise BAQM12Error("masterplan_blocking_residual_count_mismatch")
+
+    complete = not blocked
+    if monitor.get("masterplan_end_state_complete") is not complete:
+        raise BAQM12Error("masterplan_end_state_claim_mismatch")
+    if monitor.get("full_completion_claim_allowed") is not complete:
+        raise BAQM12Error("masterplan_full_completion_claim_mismatch")
+    return dict(monitor)
+
+
 def _masterplan_residual_monitor(
     root: Path,
     *,
@@ -430,7 +470,9 @@ def evaluate_continuous_qm(root: str | Path = ROOT) -> dict[str, Any]:
     if w8_validation.get("promotion_eligible") is not False:
         raise BAQM12Error("w8_unexpectedly_promotion_eligible")
 
-    masterplan = _masterplan_residual_monitor(root, qmi=qmi, qmj=qmj, w8=w8)
+    masterplan = validate_masterplan_residual_consistency(
+        _masterplan_residual_monitor(root, qmi=qmi, qmj=qmj, w8=w8)
+    )
     snapshot = _snapshot_monitor(root)
     production = audit_current_operations(root)
     if production.get("status") != "BA_QM10_ENGINEERING_COMPLETE":

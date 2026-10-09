@@ -82,7 +82,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          from scanner.research.governance.ba_qm12_continuous_qm import evaluate_continuous_qm
+          from scanner.research.governance.ba_qm12_continuous_qm import evaluate_continuous_qm, validate_masterplan_residual_consistency
           receipt = evaluate_continuous_qm()
           assert receipt["engineering_status"] == "BA_QM12_ENGINEERING_COMPLETE"
           assert receipt["operating_status"] == "ACTIVE_CONTINUOUS_QM"
@@ -90,9 +90,10 @@ jobs:
           assert receipt["lag1_evidence_impact"] == "PROMOTION_BLOCKED"
           assert receipt["ba_qm12_may_release_lag1_block"] is False
           assert receipt["w8_promotion_eligible"] is False
-          assert receipt["masterplan_end_state_complete"] is False
-          assert receipt["full_masterplan_completion_claim_allowed"] is False
-          assert receipt["masterplan_residual_monitor"]["blocking_residual_count"] == 6
+          monitor = validate_masterplan_residual_consistency(receipt["masterplan_residual_monitor"])
+          assert receipt["masterplan_end_state_complete"] is monitor["masterplan_end_state_complete"]
+          assert receipt["full_masterplan_completion_claim_allowed"] is monitor["full_completion_claim_allowed"]
+          assert monitor["blocking_residual_count"] == len(monitor["blocking_residual_ids"])
           assert receipt["masterplan_residual_monitor"]["residuals"]["W6_ELLIOTT_LINEAGE"]["blocking_masterplan_completion"] is False
           assert receipt["masterplan_residual_monitor"]["residuals"]["PHASE1A_LAG1_CAPA"]["prospective_plan_validated"] is True
           print(json.dumps(receipt, sort_keys=True))
