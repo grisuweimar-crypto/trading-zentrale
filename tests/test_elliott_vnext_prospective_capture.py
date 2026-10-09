@@ -295,3 +295,68 @@ def test_capture_passes_supplied_6g_validation_into_6h(monkeypatch):
     assert result["guards"]["changes_universal_stance"] is False
     assert result["guards"]["changes_portfolio_action"] is False
     assert result["guards"]["direct_ordering_allowed"] is False
+
+
+def _load_6h_runner():
+    """Load the CLI script by file path; scripts is not an installed package."""
+    from importlib.util import module_from_spec, spec_from_file_location
+    from pathlib import Path
+
+    source = Path(__file__).resolve().parents[1] / "scripts" / "run_elliott_prospective_capture_6h.py"
+    spec = spec_from_file_location("elliott_6h_cli_for_test", source)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _bound_artifacts_fixture(tmp_path):
+    from hashlib import sha256
+    FROZEN_RESEARCH_SOURCES = _load_6h_runner().FROZEN_RESEARCH_SOURCES
+    metadata = {}
+    for field, relative in FROZEN_RESEARCH_SOURCES.items():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        raw = (field + ":old-source").encode("utf-8")
+        path.write_bytes(raw)
+        metadata[field] = {"path": relative, "sha256": sha256(raw).hexdigest()}
+    return metadata
+
+
+def test_6h_bound_artifact_hashes_pass_when_all_inputs_match(tmp_path):
+    verify_frozen_research_sources = _load_6h_runner().verify_frozen_research_sources
+    metadata = _bound_artifacts_fixture(tmp_path)
+    verify_frozen_research_sources(tmp_path, metadata)
+
+
+@pytest.mark.parametrize("field", [
+    "latest_scanner", "history_recent", "price_backfill",
+    "daily_research", "scanner_input_provenance",
+])
+def test_6h_mixed_current_and_past_inputs_fail_closed(tmp_path, field):
+    verify_frozen_research_sources = _load_6h_runner().verify_frozen_research_sources
+    metadata = _bound_artifacts_fixture(tmp_path)
+    (tmp_path / metadata[field]["path"]).write_bytes(b"newer-scanner-snapshot")
+    with pytest.raises(ValueError, match="elliott_source_hash_mismatch:" + field):
+        verify_frozen_research_sources(tmp_path, metadata)
+
+
+@pytest.mark.parametrize("mutation,expected", [
+    ("no_file", "elliott_source_file_missing:history_recent"),
+    ("no_identity", "elliott_source_identity_missing:history_recent"),
+    ("bad_path", "elliott_source_path_mismatch:history_recent"),
+    ("no_hash", "elliott_source_hash_missing:history_recent"),
+])
+def test_6h_incomplete_historical_bindings_fail_closed(tmp_path, mutation, expected):
+    verify_frozen_research_sources = _load_6h_runner().verify_frozen_research_sources
+    metadata = _bound_artifacts_fixture(tmp_path)
+    if mutation == "no_file":
+        (tmp_path / metadata["history_recent"]["path"]).unlink()
+    elif mutation == "no_identity":
+        del metadata["history_recent"]
+    elif mutation == "bad_path":
+        metadata["history_recent"]["path"] = "invalid.csv"
+    elif mutation == "no_hash":
+        metadata["history_recent"]["sha256"] = ""
+    with pytest.raises(ValueError, match=expected):
+        verify_frozen_research_sources(tmp_path, metadata)
