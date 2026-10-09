@@ -151,3 +151,37 @@ def test_daily_research_does_not_resurrect_canonical_null_from_legacy():
         assert by_symbol["ZERO"]["cycle"] == "0"
         assert by_symbol["ZERO"]["cycle_quality"] == "VALID"
         assert all(item["score"] == "42" for item in latest)
+
+
+def test_conflicting_upstream_status_fails_closed():
+    frame = pd.DataFrame({
+        "Zyklus %": ["25", "25", "25"],
+        "cycle_quality": ["MISSING_SOURCE", "INVALID_VALUE", "UNKNOWN"],
+    })
+    out = normalize_cycle_source(frame)
+    assert out["cycle"].isna().all()
+    assert out["cycle_quality"].tolist() == [
+        "MISSING_SOURCE", "INVALID_VALUE", "INVALID_VALUE",
+    ]
+
+
+def test_score_health_projection_prefers_canonical_and_has_unique_columns():
+    from scanner.app.build_watchlist import _health_projection
+
+    raw = pd.DataFrame({
+        "asset_id": ["AAA", "BBB"],
+        "cycle": [0.0, 0.0],
+        "ScoreError": ["", ""],
+    })
+    canonical = pd.DataFrame({
+        "asset_id": ["AAA", "BBB"],
+        "cycle": [float("nan"), 100.0],
+        "cycle_quality": ["MISSING_SOURCE", "VALID"],
+    })
+    health = _health_projection(
+        raw, canonical, ["asset_id", "cycle", "cycle_quality", "ScoreError"]
+    )
+    assert list(health.columns) == ["asset_id", "cycle", "cycle_quality", "ScoreError"]
+    assert health["cycle"].isna().tolist() == [True, False]
+    assert health["cycle"].iloc[1] == 100.0
+    assert health["ScoreError"].tolist() == ["", ""]
