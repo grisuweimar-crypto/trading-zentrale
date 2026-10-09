@@ -587,6 +587,28 @@ def build_depot_watch(
             "promotion_eligible": False,
         },
     }
+    return seal_depot_watch(output)
+
+
+def seal_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
+    """Seal the *final* 7H payload after all permitted review-only attachments.
+
+    Refresh only the derived attention count, not any stance, action, or
+    decision field. The signed payload is then validated without bypassing
+    any of the existing fail-closed research/privacy/execution controls.
+    """
+    output = deepcopy(dict(value))
+    rows = output.get("rows")
+    if not isinstance(rows, list) or any(not isinstance(row, Mapping) for row in rows):
+        raise DepotWatchError("watch_rows_must_be_list_of_objects")
+    summary = output.get("summary")
+    if not isinstance(summary, Mapping):
+        raise DepotWatchError("watch_summary_required")
+    output["summary"] = {
+        **dict(summary),
+        "attention_required_count": sum(row.get("attention_required") is True for row in rows),
+    }
+    output.pop("watch_id", None)
     output["watch_id"] = _canonical_hash(output)
     return validate_depot_watch(output)
 
@@ -696,4 +718,14 @@ def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
     unsigned.pop("watch_id", None)
     if watch_id != _canonical_hash(unsigned):
         raise DepotWatchError("watch_id_integrity_failure")
+
+    summary = value.get("summary")
+    if not isinstance(summary, Mapping):
+        raise DepotWatchError("watch_summary_required")
+    if any(not isinstance(row.get("attention_required"), bool) for row in rows):
+        raise DepotWatchError("watch_attention_required_must_be_bool")
+    expected_attention = sum(row["attention_required"] for row in rows)
+    if type(summary.get("attention_required_count")) is not int or summary["attention_required_count"] != expected_attention:
+        raise DepotWatchError("watch_attention_required_count_mismatch")
+
     return deepcopy(dict(value))

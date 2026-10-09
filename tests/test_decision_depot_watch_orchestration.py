@@ -1,10 +1,18 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
+from copy import deepcopy
 
 from scanner.research.decision_layer.current_evidence import (
     build_current_packet_set_from_frames,
     merge_packet_set_into_archive,
+)
+from scanner.research.decision_layer.depot_watch import (
+    DepotWatchError,
+    _canonical_hash,
+    seal_depot_watch,
+    validate_depot_watch,
 )
 from scanner.research.decision_layer.depot_watch_orchestrator import (
     _attach_path_reviews,
@@ -267,3 +275,89 @@ def test_post_overextension_monitor_memory_does_not_force_attention():
 
     result = _attach_path_reviews(watch, bundle_set)
     assert result["rows"][0]["attention_required"] is False
+
+
+def test_fully_orchestrated_watch_is_resealed_after_review_contexts():
+    packets = [
+        _timing_packet("TEST", "snapshot-old", "2026-09-28T18:00:00+00:00"),
+        _timing_packet("TEST", CURRENT_SNAPSHOT, CURRENT_TIME),
+    ]
+    watch, diagnostics = build_orchestrated_depot_watch(
+        _daily(), _position_book(), packets,
+    )
+    assert diagnostics["bundle_count"] == 1
+    assert validate_depot_watch(watch) == watch
+    assert seal_depot_watch(watch) == watch  # deterministic, idempotent
+    assert watch["rows"][0]["decision"]["portfolio_action_state"] == "HOLD"
+    assert watch["summary"]["attention_required_count"] == sum(
+        row["attention_required"] for row in watch["rows"]
+    )
+    assert watch["validation"]["execution_allowed"] is False
+    assert watch["validation"]["promotion_eligible"] is False
+
+
+def test_path_review_monitor_in_final_watch_updates_attention_and_integrity(monkeypatch):
+    # Keep the real complete orchestration; inject only a synthetic path
+    # review payload at the already-existing research-only adapter boundary.
+    monkeypatch.setattr(
+        "scanner.research.decision_layer.depot_watch_orchestrator._path_review",
+        lambda packet: {
+            "review_state": "monitor",
+            "sequence_state": "active_overextension",
+        },
+    )
+    packets = [
+        _timing_packet("TEST", "snapshot-old", "2026-09-28T18:00:00+00:00"),
+        _timing_packet("TEST", CURRENT_SNAPSHOT, CURRENT_TIME),
+    ]
+    watch, _ = build_orchestrated_depot_watch(_daily(), _position_book(), packets)
+    row = watch["rows"][0]
+    assert row["decision"]["portfolio_action_state"] == "HOLD"
+    assert row["attention_required"] is True
+    assert row["decision"]["path_review_state"] == "monitor"
+    assert row["path_review"]["sequence_state"] == "active_overextension"
+    assert watch["summary"]["attention_required_count"] == 1
+    assert validate_depot_watch(watch) == watch
+
+
+def test_watch_integrity_rejects_post_seal_mutation_and_stale_attention_summary():
+    packets = [
+        _timing_packet("TEST", "snapshot-old", "2026-09-28T18:00:00+00:00"),
+        _timing_packet("TEST", CURRENT_SNAPSHOT, CURRENT_TIME),
+    ]
+    watch, _ = build_orchestrated_depot_watch(_daily(), _position_book(), packets)
+    assert validate_depot_watch(watch) == watch
+    tampered = deepcopy(watch)
+    tampered["rows"][0]["decision"]["path_review_state"] = "arbitrary"
+    with pytest.raises(DepotWatchError, match="watch_id_integrity_failure"):
+        validate_depot_watch(tampered)
+
+    stale = deepcopy(watch)
+    stale["rows"][0]["attention_required"] = not stale["rows"][0]["attention_required"]
+    # Even a formally recomputed hash must not hide a stale count.
+    unsigned = deepcopy(stale)
+    unsigned.pop("watch_id")
+    stale["watch_id"] = _canonical_hash(unsigned)
+    with pytest.raises(DepotWatchError, match="watch_attention_required_count_mismatch"):
+        validate_depot_watch(stale)
+
+    repaired = seal_depot_watch(stale)
+    assert validate_depot_watch(repaired) == repaired
+    assert repaired["summary"]["attention_required_count"] == 1
+
+
+def test_watch_final_seal_does_not_bypass_forbidden_execution_or_action_controls():
+    packets = [
+        _timing_packet("TEST", "snapshot-old", "2026-09-28T18:00:00+00:00"),
+        _timing_packet("TEST", CURRENT_SNAPSHOT, CURRENT_TIME),
+    ]
+    watch, _ = build_orchestrated_depot_watch(_daily(), _position_book(), packets)
+    forbidden = deepcopy(watch)
+    forbidden["validation"]["execution_allowed"] = True
+    with pytest.raises(DepotWatchError, match="watch_execution_must_remain_disabled"):
+        seal_depot_watch(forbidden)
+
+    changed_action = deepcopy(watch)
+    changed_action["rows"][0]["decision"]["portfolio_action_state"] = "ADD_REVIEW"
+    with pytest.raises(DepotWatchError, match="action_presentation_group_mismatch"):
+        seal_depot_watch(changed_action)
