@@ -470,11 +470,10 @@ jobs:
             git push origin HEAD:refs/heads/elliott-vnext-shadow-data
           fi
 
+      # Temporary emergency pause: prevent backlog recursion until the full
+      # previously verified archive is restored and the monotonicity guard is live.
       - name: Continue prospective queue when backlog remains
-        if: >-
-          github.event_name != 'pull_request' &&
-          steps.bind.outputs.process == 'true' &&
-          steps.bind.outputs.backlog_count != '0'
+        if: false
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run elliott_vnext_prospective_capture.yml --ref main
