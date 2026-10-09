@@ -10,6 +10,7 @@ from scanner.data.io.safe_csv import to_csv_safely
 from scanner.presets.load import load_presets
 from scanner.presets.apply import apply_preset
 from scanner.data.schema.canonical import canonicalize_df
+from scanner.data.schema.cycle_quality import normalize_cycle_source
 from scanner.data.enrich.yahoo_taxonomy import load_mapping as load_yahoo_taxonomy, apply_mapping as apply_yahoo_taxonomy, derive_cluster_official
 from scanner.data.enrich.pillars import load_mapping as load_pillars, apply_mapping as apply_pillars, derive_from_official_taxonomy, derive_from_legacy_categories
 from scanner.app.score_step import apply_scoring
@@ -497,14 +498,14 @@ def build_watchlist_outputs() -> None:
     if "bucket_type" in df.columns:
         df["bucket_type"] = df["bucket_type"].fillna("none")
 
-    # Contract safety: cycle must be numeric.
-    # Source of truth is legacy "Zyklus %"; mirror into canonical "cycle".
-    if "Zyklus %" in df.columns:
-        df["cycle"] = pd.to_numeric(df["Zyklus %"], errors="coerce").fillna(0.0)
-    elif "cycle" in df.columns:
-        df["cycle"] = pd.to_numeric(df["cycle"], errors="coerce").fillna(0.0)
-    else:
-        df["cycle"] = 0.0
+    # CY-01: use the recorded source without converting missing input to
+    # zero. Do not trust the parallel, historically zero-filled 'cycle'
+    # column when the legacy 'Zyklus %' source exists.
+    cycle_fields = normalize_cycle_source(df)
+    for field in cycle_fields.columns:
+        df[field] = cycle_fields[field]
+    if "cycle_status" in df.columns:
+        df.loc[df["cycle"].isna(), "cycle_status"] = pd.NA
 
     # Final identifier hygiene pass for UI/output files.
     # Deliberately non-invasive: only empty/ISIN-like identifier values are repaired.
@@ -512,6 +513,15 @@ def build_watchlist_outputs() -> None:
 
     reports_dir = artifacts_dir() / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
+    # Auditable current-run quality inventory (not a historical repair).
+    cycle_health_columns = [
+        c for c in ("asset_id", "symbol", "YahooSymbol", "Zyklus %", "cycle",
+                    "cycle_quality", "cycle_source") if c in df.columns
+    ]
+    to_csv_safely(df.loc[:, cycle_health_columns],
+                  reports_dir / "cycle_quality.csv", index=False)
+    print("Cycle quality:", df["cycle_quality"].value_counts(dropna=False).to_dict())
+
     id_health_path = reports_dir / "identifier_health.csv"
     to_csv_safely(id_health, id_health_path, index=False)
     id_bad_after = int(pd.to_numeric(id_health["bad_after"], errors="coerce").fillna(0).sum())
@@ -640,6 +650,8 @@ def build_watchlist_outputs() -> None:
         "risk_score",
         "confidence",
         "cycle",
+        "cycle_quality",
+        "cycle_source",
         "trend200",
         "trend_ok",
         "dollar_volume",
