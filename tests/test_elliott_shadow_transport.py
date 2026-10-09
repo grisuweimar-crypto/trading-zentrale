@@ -126,3 +126,32 @@ def test_shadow_workflow_restores_correct_runtime_symbol_paths_and_validates_pri
     assert "shadow_transport verify-append" in workflow
     assert "archive_sha256=" in workflow
     assert "elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" not in workflow
+
+
+@pytest.mark.parametrize("line_ending", (b"\\n", b"\\r\\n", b"\\r"))
+def test_legacy_plain_jsonl_binding_preserves_exact_bytes(tmp_path, line_ending):
+    """Supported historical plaintext JSONL may not use Unix-only newlines."""
+    from hashlib import sha256
+
+    records = [
+        b'{"schema_version":"elliott_vnext_prospective_capture_v1","run_id":"older"}',
+        b'{"schema_version":"elliott_vnext_prospective_capture_v1","run_id":"newer"}',
+    ]
+    original_bytes = line_ending.join(records) + line_ending
+    legacy = tmp_path / "legacy_history.jsonl"
+    legacy.write_bytes(original_bytes)
+    git_blob_bytes = legacy.read_bytes()
+    assert git_blob_bytes.decode("utf-8").encode("utf-8") == original_bytes
+    assert sha256(git_blob_bytes).hexdigest() == sha256(original_bytes).hexdigest()
+
+    # A text=True git read applies universal-newline conversion and would
+    # cause the later raw-byte restored archive check to reject valid history.
+    if line_ending != b"\\n":
+        converted = original_bytes.replace(b"\\r\\n", b"\\n").replace(b"\\r", b"\\n")
+        assert sha256(converted).hexdigest() != sha256(original_bytes).hexdigest()
+
+    workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/elliott_vnext_prospective_capture.yml").read_text(encoding="utf-8")
+    assert "archive_bytes = git_bytes(" in workflow
+    assert "archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None" in workflow
+    assert "hashlib.sha256(archive_bytes or b'').hexdigest()" in workflow
+    assert "elliott_shadow_archive_utf8_invalid" in workflow
