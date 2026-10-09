@@ -1,240 +1,90 @@
-# Trading-Zentrale Operating Playbook
+# Trading-Zentrale — Operating Playbook
 
-*Version 1.0 - Quality & Control Integration*
+*Stand: 09.10.2026 · produktive Scanner-vNext-/Research-Architektur*
 
-## 🎯 System Overview
+Dieses Handbuch beschreibt **vorhandene** Abläufe, Dateiquellen und Prüfungen im Repository. Frühere Anleitungen zu automatischem Rebalancing, festen Kaufquoten oder nicht mehr vorhandenen Skripten sind **keine** gültigen Betriebsanweisungen. Es werden weder Orders ausgeführt noch Forschungsbefunde automatisch zur Handelsfreigabe befördert.
 
-Die Trading-Zentrale ist ein quantitativer Screening-Engine für Aktien und Krypto, der auf einer 15-Faktor-Matrix basiert. Das System kombiniert:
+## 1. Was der Scanner tatsächlich liefert
 
-- **Technische Analyse**: Elliott-Wellen, Relative Strength, Trend-Indikatoren
-- **Fundamentale Daten**: ROE, Marge, Wachstum, Verschuldung
-- **Risiko-Management**: Volatilität, Drawdown, Liquidität
-- **Monte-Carlo-Simulation**: Wahrscheinlichkeitsanalyse für Preisziele
+Der Scanner verfolgt Aktien und Kryptowährungen und veröffentlicht tägliche Research-Artefakte. Analyse, Interpretation, Risiko, Confidence und Portfolioentscheidung sind getrennte Ebenen. Ein hoher Scannerwert ist **kein** alleinstehendes Kauf- oder Nachkaufsignal.
 
----
+- **Score: 0–100** (nicht 0–200): aktuelle Scanner-Kennzahl; historische Score-Skalen und Versionswechsel dürfen nicht nachträglich vereinheitlicht werden.
+- **Opportunity, Risk und Confidence:** getrennt zu interpretierende Kennzahlen. Keine willkürlichen HIGH-/LOW-Grenzen oder garantierten Gewinnwahrscheinlichkeiten aus alten Playbooks ableiten.
+- **RS3M, Trend200, Cycle und weitere Felder:** nur im Rahmen der jeweils dokumentierten Berechnung und gültigen Scanner-Version auswerten.
+- **Originalwährungen und Point-in-Time:** keine stillschweigende Währungsumrechnung oder nachträgliche Ergänzung historischer Scannerzustände mit heutigen Daten.
+- **Fehlende Daten:** explizit als fehlend führen; nicht mit plausibel wirkenden Kursen, Fundamentaldaten oder Scores auffüllen.
 
-## 📊 Score-Komponenten
+## 2. Verantwortliche Workflows
 
-### **Score (0-200)**
-Gesamtbewertung der Attraktivität. Höher ist besser.
-- **≥100**: Sehr attraktiv
-- **80-99**: Attraktiv
-- **50-79**: Neutral
-- **<50**: Nicht attraktiv
+| Zweck | Produktiver Dateipfad |
+| --- | --- |
+| Scanner und gesicherte Tagespublikation | `.github/workflows/run_scanner.yml` |
+| Decision-/W10-Integrationskette | `.github/workflows/decision_watch_pipeline.yml` |
+| Öffentliche Watch-Runtime | `.github/workflows/decision_watch_runtime.yml` |
+| Öffentliche Symbolansichten | `.github/workflows/decision_watch_symbol_views.yml` |
+| Kontinuierliche QM-Kontrolle | `.github/workflows/ba_qm12_continuous_qm.yml` |
+| QM-H-Findings, CAPA und Regressionen | `.github/workflows/qm_h_capa.yml` |
 
-### **Opportunity Score (0-100)**
-Chancen-basierte Komponente (Wachstum, Momentum, Quality).
-- **≥75**: Starke Opportunity-Treiber
-- **50-74**: Moderate Opportunity
-- **<50**: Schwache Opportunity
+Der Scanner-Autopilot besitzt im Workflow nominelle **Europe/Berlin**-Zeitfenster 16:07, 17:07 sowie Nachholtermine 18:37 und 20:37 Uhr. GitHub-Actions-Ausführung und Veröffentlichung können zeitlich verzögert sein. `scripts/autorun_state.py` soll bereits korrekt veröffentlichte Tagesläufe erkennen; mehrfach konfigurierte Trigger sind **keine** Aufforderung zu Mehrfachpublikationen.
 
-### **Risk Score (0-100)**
-Risiko-basierte Komponente (Volatilität, Drawdown, Liquidität).
-- **≤25**: Niedriges Risiko
-- **26-50**: Moderates Risiko
-- **>50**: Hohes Risiko
+Ein manueller `workflow_dispatch` kann bei Bedarf einen Workflow auslösen; die regulären Guards, Snapshot-Kohärenz und bestehenden Produktionssperren gelten unverändert.
 
-### **Confidence Score (0-100)**
-**NEU**: Datenqualität und Verlässlichkeit der Bewertung.
-- **HIGH (≥75)**: Vollständige Daten, starke Signale, gutes Regime-Alignment
-- **MED (50-74)**: Akzeptable Daten, moderate Signale
-- **LOW (<50)**: Unvollständige Daten, schwache Signale
+## 3. Verbindliche produktive Artefakte
 
----
+Unter `artifacts/research/`:
 
-## 🎛️ Filter-Strategien
+| Datei | Bedeutung |
+| --- | --- |
+| `history_metadata.json` | Scanner-Publikationsidentität, Validierung und Datenabdeckung |
+| `latest_scanner.csv` | Vollständige aktuelle Scannerbeobachtungen |
+| `daily_research.json` | Kompakte Research-Auswertung zum veröffentlichten Snapshot |
+| `probability_calibration_2.json` | Phase-2-Ergebnis mit expliziter Quell-Snapshot-Bindung |
+| `decision_snapshot_w10.json` | W10-Abschluss mit `status=sealed` |
+| `watch_runtime/manifest.json` | Identität, Shard-Zuordnung und Projektion der öffentlichen Watch-Runtime |
+| `watch_runtime/public_long_reference.json` | Öffentliche Long-Referenz, ohne private Positionen |
 
-### **Bull Market (Bull-Mode)**
-**Ziel**: Wachstums- und Momentum-Assets priorisieren
-- **Score**: ≥80 (Top-Qualität)
-- **Trend200**: >0 (Aufwärtstrend)
-- **RS3M**: >0 (Relative Strength vs Markt)
-- **Confidence**: ≥75 (verlässliche Daten)
-- **Sektoren**: KI, Chips, Energie, Automation
+**Frische-/Kohärenzregel:** `history_metadata.json`, `daily_research.json`, Phase 2, die versiegelte W10-Entscheidung und die Watch-Runtime müssen sich auf ihren jeweils vorgesehenen, validen Quell-Snapshot beziehen. Ein alter oder nicht kohärenter Stand wird **nicht** durch frühere Daten als „aktuell“ ausgegeben. `history_recent.csv` ist ein historischer Datenträger, aber kein Ersatz für den aktuellen Publikationsmarker.
 
-### **Bear Market (Bear-Mode)**
-**Ziel**: Defensive und Quality-Assets priorisieren
-- **Score**: ≥60 (niedrigere Hürde)
-- **RS3M**: >0 (Relative Strength wichtig)
-- **Trend200**: >0 (trotz Bear-Markt)
-- **Volatilität**: Niedrig (<0.3)
-- **ROE/Marge**: Hoch (>15%)
-- **Confidence**: HIGH (Datenqualität kritisch)
+## 4. Täglicher Betriebscheck
 
-### **All-Weather Core**
-**Ziel**: Stabile Portfolio-Basis
-- **Score**: ≥70
-- **Confidence**: HIGH
-- **Liquidität**: HIGH
-- **Drawdown**: <30%
+1. Im GitHub-Actions-Verlauf prüfen, ob **Scanner_vNext Autopilot** erfolgreich einen gültigen Tagesstand veröffentlicht hat. Bei Fehlstart oder `incomplete` ausdrücklich Ursache und letzte gültige Veröffentlichung unterscheiden.
+2. `artifacts/research/history_metadata.json` prüfen: `snapshot_id`, `as_of`, `latest_run_complete`, `validation.status`, `validation.required_symbol_count`, `validation.symbol_count`, `validation.numeric_score_count` und `validation.policy.min_score_ratio`.
+3. Für Score-Abdeckung kontrollieren, dass `numeric_score_count >= ceil(symbol_count * min_score_ratio)`. Die maßgebliche Mindestquote stammt **aus dem publizierten Snapshot**; BA-QM12 erzwingt diese Prüfung inzwischen selbst. Preisabdeckung davon getrennt ausweisen.
+4. Nach erfolgreicher Kalibrierung und Decision-Kette `decision_snapshot_w10.json` (versiegelt) und `watch_runtime/manifest.json` (passende Identität und Projektion) prüfen. Bei verzögerten Upstream-Läufen nicht von einer bereits aktuellen Watch ausgehen.
+5. Die Watch-Runtime verteilt Symbolhistorien auf Shards. **2.000.000 Bytes pro Shard** sind die Transportobergrenze; bei weniger als **20 % Reserve** besteht ein gesonderter QM-Prüfbedarf. Eine erfolgreiche Veröffentlichung ersetzt nicht die Kapazitätsprüfung.
+6. Wertpapierdepot-Watch und Portfolioempfehlungen erst auf einem kohärenten Scanner-/Decision-Stand betrachten. Private Depotpositionen gehören **nicht** in öffentliche Runtime-Dateien. Entscheidungen und Orderausführung sind eigenständige Schritte.
 
----
+## 5. Kontrollen und sichere Diagnosebefehle
 
-## ⚖️ Rebalancing-Regeln
+Nur auf einem geeigneten Repository-Checkout und mit installierten Projektabhängigkeiten ausführen. Diese Beispiele sind Prüfungen, **keine Trading-Befehle**:
 
-### **Turnover-Limit**
-- **Maximal**: 35% des Portfolio-Wertes
-- **Optimal**: 20-30% für stabile Performance
-
-### **Rebalancing-Trigger**
-1. **Wöchentlich**: Automatisch via `run_daily.py`
-2. **Score-Drift**: >15 Punkte Abweichung
-3. **Regime-Wechsel**: Bull→Bear oder umgekehrt
-4. **Konfigurations-Update**: Neue Gewichte/Faktoren
-
-### **Position-Sizing**
-- **Top-10**: Gleichgewichtet (10% pro Position)
-- **Confidence-Adjustment**: HIGH Confidence +20%, LOW Confidence -20%
-- **Liquidity-Filter**: Mindestens $1M Daily Volume
-
----
-
-## 📋 Daten-Quellen & Quality
-
-### **Source of Truth**
-1. **ISIN**: Primärer Identifier (unique)
-2. **YahooSymbol**: Preis-Daten & Technicals
-3. **Ticker**: Display & Links
-
-### **Quality-Monitoring**
-**NEU**: Automatischer Health Check via `scripts/health_report.py`
-- **Missing Rates**: <10% pro Key-Spalte
-- **Zero Volatility**: <5% (Datenfehler)
-- **Yahoo Coverage**: >98%
-- **Outlier Detection**: Winsorizing auf 1%/99%
-
-### **Winsorizing**
-**NEU**: Ausreißer-Kontrolle für stabile Scores
-- **Quantile**: 1% / 99%
-- **Spalten**: Growth, ROE, Margin, Volatility, RS3M, Trend200
-- **Report**: Outlier-Counts im Log
-
----
-
-## 🔄 Kalibration & Improvement
-
-### **Calibration Light**
-**NEU**: Lernen aus historischer Performance
-- **Snapshot**: Täglich Speichern aller Scores
-- **Forward Returns**: 20T Performance analysieren
-- **Korrelationen**: Score vs Return, Opportunity vs Return, Risk vs Drawdown
-- **Gewichts-Anpassung**: Basierend auf Korrelations-Ergebnissen
-
-**Usage**: `python scripts/calibrate_light.py --days 60`
-
-### **Continuous Improvement**
-1. **Monatlich**: Health Check Report
-2. **Quartalsweise**: Kalibration-Analyse
-3. **Halbjährlich**: Gewichts-Review
-4. **Jährlich**: System-Review & Refaktoring
-
----
-
-## 🚨 Operating Procedures
-
-### **Daily Routine**
-1. **17:00 CEST**: Genau ein automatischer Scan via GitHub Actions (GitHub-Cron: 15:00 UTC waehrend der Sommerzeit)
-2. **Check**: Log-File auf Errors/Warnings
-3. **Health**: `python scripts/health_report.py` bei Problemen
-4. **Review**: Top-10 Liste + Confidence Scores
-5. **Decisions**: Rebalancing basierend auf Regeln
-
-### **Weekly Routine**
-1. **Sunday**: Kalibration-Check der letzten Woche
-2. **Review**: Performance vs Erwartungen
-3. **Adjustments**: Parameter-Tuning bei Bedarf
-4. **Planning**: Nächste Woche Sektoren/Fokus
-
-### **Issue Response**
-1. **Data Quality**: Health Report + Telegram Alert
-2. **System Errors**: Log-Analysis + Fix
-3. **Performance**: Kalibration + Gewichts-Anpassung
-4. **Market Changes**: Regime-Filter anpassen
-
----
-
-## 📁 Key Files & Structure
-
-```
-Scanner/
-├── main.py                 # Haupt-Scan-Engine
-├── rebalance_run.py        # Rebalancing-Logic
-├── scripts/
-│   ├── run_daily.py        # Automatischer Daily Runner
-│   ├── health_report.py    # Data Quality Monitoring
-│   ├── calibrate_light.py  # Performance-Analyse
-│   └── telegram_test.py    # Alert-Testing
-├── scoring_engine/
-│   ├── quality/            # NEU: Quality Control Module
-│   │   ├── winsorize.py    # Ausreißer-Kontrolle
-│   │   ├── confidence.py   # Datenqualitäts-Score
-│   │   └── snapshots.py    # Historische Snapshots
-│   └── engine.py           # Scoring-Engine (mit Confidence)
-├── config.py               # Gewichte & Thresholds
-├── logs/scanner.log        # Zentrales Log-File
-└── data/
-    ├── watchlist.csv       # Source of Truth
-    └── snapshots/
-        └── score_history.csv # Kalibrations-Daten
-```
-
----
-
-## 🎯 Success Metrics
-
-### **System Health**
-- **Uptime**: >95% Daily Scans
-- **Data Quality**: <5% Missing Rate
-- **Alert Response**: <24h bei Issues
-
-### **Performance Targets**
-- **Hit Rate**: >60% (positiver 20D Return)
-- **Score Correlation**: >0.3 mit Forward Returns
-- **Turnover**: 20-35% quartalsweise
-
-### **Quality Metrics**
-- **Confidence HIGH**: >30% der Top-20
-- **Outlier Rate**: <2% nach Winsorizing
-- **Calibration**: Verbessernde Korrelationen über Zeit
-
----
-
-## 📞 Support & Troubleshooting
-
-### **Common Issues**
-1. **Unicode Errors**: Emojis in Logs entfernt
-2. **Missing Data**: Health Report prüfen
-3. **Telegram Alerts**: ENV-Variablen checken
-4. **Performance**: Kalibration laufen lassen
-
-### **Debug Commands**
 ```bash
-# Health Check
-python scripts/health_report.py --alert
+# Vorhandene Research-Publikation gegen ihren Vertrag prüfen
+python scripts/generate_research_views.py --validate-only
 
-# Manual Scan
-python scripts/run_daily.py --skip_rebalance
+# Bestehende Watchlist/Vertragsstruktur prüfen
+python scripts/validate_contract.py
 
-# Calibration Analysis
-python scripts/calibrate_light.py --days 30
+# Produktiven BA-QM12-Stand und dessen Regression prüfen
+python -m pytest -q tests/test_ba_qm12_continuous_qm.py
 
-# Telegram Test
-python scripts/telegram_test.py
+# QM-H-Ledger und CAPA-Kontrollen prüfen
+python -m pytest -q tests/test_qm_h_capa.py
 ```
 
----
+Die früher im Playbook genannten Programme zum Health Report, zur „Calibration Light“, zum automatischen Rebalancing und zum Telegram-Test sind im aktuellen Repository **nicht** als ausführbare Skripte vorhanden. Ihre ehemaligen Beispielbefehle sind daher nicht mehr anzuwenden. Kein manueller Ersatz darf stillschweigend einen produktiven Scannerlauf, eine historische Quelle oder einen Handelsauftrag verändern.
 
-## 🔄 Version History
+## 6. Fehlerbehandlung und Forschungssperren
 
-- **v1.0**: Basis-System mit 15-Faktor-Matrix
-- **v1.1**: Dashboard + Top-10 Zone
-- **v1.2**: Automatisierung + Logging
-- **v1.3**: **NEU** - Quality & Control Integration
-  - Winsorizing für stabile Scores
-  - Confidence Score für Datenqualität
-  - Health Monitoring
-  - Calibration Light
+- **Scanner unvollständig / Daten fehlen:** den `history_metadata.json`-Status, GitHub-Job-Log und die Quell-Snapshot-ID prüfen. Kein Umschalten auf alte Daten unter neuer Identität.
+- **Score-Abdeckung unter Mindestquote:** BA-QM12 muss fail-closed abbrechen; Ursachen in Daten und Validierung suchen, nicht die Schwelle rückwirkend passend machen.
+- **W10/Watch nicht kohärent:** Upstream-Phase, W10-Seal und Runtime-Publikation getrennt prüfen. Die Watch darf nicht aus gemischten Snapshots aufgebaut werden.
+- **Runtime-Shards nahe am 2-MB-Limit:** Kapazitätsstatus und Headroom prüfen; niemals einfach die Transportgrenze umgehen.
+- **QM-/CAPA-Befund:** Findings im hashverketteten QM-H-Ledger mit separatem Nachweis von Umsetzung, Wirksamkeit und Abschluss behandeln. Bestehende Forschungs- und Promotion-Sperren werden nicht durch grüne Engineering-Tests aufgehoben.
+- **Investitionsentscheidung:** Research-Empfehlungen und tatsächliche Depotaktionen voneinander trennen; keine unbelegte Trefferquote, Renditegarantie oder automatische Rebalancing-Regel aus historischen Playbooks übernehmen.
 
----
+## 7. Änderungsdisziplin
 
-*Dieses Playbook ist lebendig und wird mit dem System weiterentwickelt.*
+Änderungen an Score- oder Decision-Logik, Risikodefinitionen, Quellen, historischen Daten, Schwellen und Portfolio-Aktionen benötigen eine jeweils eigenständige fachliche Prüfung und die vorgesehenen Point-in-Time-, Research- und QM-Gates. Ein Dokumentationsfix hat **keine** solche Freigabewirkung.
+
+Dieses Playbook ist eine Betriebsorientierung für den aktuellen Repository-Zustand; die versionierten Workflows, Contracts, Artefakte und deren tatsächliche Prüfresultate bleiben maßgeblich.
