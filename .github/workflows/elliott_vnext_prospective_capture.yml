@@ -242,7 +242,7 @@ jobs:
 
           output = os.environ['GITHUB_OUTPUT']
           with open(output, 'a', encoding='utf-8') as handle:
-              handle.write(f'archive_sha256={hashlib.sha256((archive or "").encode("utf-8")).hexdigest()}\\n')
+              handle.write(f'archive_sha256={hashlib.sha256((archive or "").encode("utf-8")).hexdigest()}\n')
               if not candidates:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
