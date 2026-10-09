@@ -172,13 +172,20 @@ jobs:
           )
           if zipped_archive is not None:
               try:
-                  archive = gzip.decompress(zipped_archive).decode('utf-8')
+                  archive_bytes = gzip.decompress(zipped_archive)
+                  archive = archive_bytes.decode('utf-8')
               except (OSError, EOFError, UnicodeDecodeError) as exc:
                   raise SystemExit(f'elliott_shadow_archive_gzip_invalid:{exc}') from exc
           else:
-              archive = git_text(
+              # Git text mode normalizes CRLF/bare-CR newlines. The restored
+              # legacy JSONL is byte-exact, so hash its raw Git blob bytes.
+              archive_bytes = git_bytes(
                   'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
               )
+              try:
+                  archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None
+              except UnicodeDecodeError as exc:
+                  raise SystemExit(f'elliott_shadow_archive_utf8_invalid:{exc}') from exc
           if archive:
               for line_number, line in enumerate(archive.splitlines(), start=1):
                   if not line.strip():
@@ -242,7 +249,7 @@ jobs:
 
           output = os.environ['GITHUB_OUTPUT']
           with open(output, 'a', encoding='utf-8') as handle:
-              handle.write(f'archive_sha256={hashlib.sha256((archive or "").encode("utf-8")).hexdigest()}\n')
+              handle.write(f'archive_sha256={hashlib.sha256(archive_bytes or b'').hexdigest()}\n')
               if not candidates:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
