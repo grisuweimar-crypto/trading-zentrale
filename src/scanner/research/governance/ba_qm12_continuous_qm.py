@@ -7,6 +7,7 @@ scanner, research, Decision-Layer, portfolio-action or execution semantics.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -166,6 +167,39 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
     return dict(value)
 
 
+def _validated_numeric_score_coverage(
+    validation: Mapping[str, Any], *, symbol_count: int
+) -> dict[str, Any]:
+    """Independently enforce the scanner's observed, published completeness policy.
+
+    An upstream 'ok' flag does not exempt BA-QM12 from checking the numeric
+    score count against that snapshot's authoritative policy threshold.
+    """
+    policy = _mapping(validation.get("policy"), "history_metadata.validation.policy")
+    threshold = policy.get("min_score_ratio")
+    if (
+        type(threshold) not in (int, float)
+        or not math.isfinite(threshold)
+        or not 0 < threshold <= 1
+    ):
+        raise BAQM12Error("scanner_score_ratio_policy_invalid")
+
+    numeric = validation.get("numeric_score_count")
+    if type(numeric) is not int or not 0 <= numeric <= symbol_count:
+        raise BAQM12Error("scanner_numeric_score_count_invalid")
+
+    required_numeric = math.ceil(symbol_count * threshold)
+    if numeric < required_numeric:
+        raise BAQM12Error("scanner_numeric_score_coverage_below_threshold")
+    return {
+        "numeric_score_count": numeric,
+        "numeric_score_ratio": numeric / symbol_count,
+        "min_score_ratio": threshold,
+        "required_numeric_score_count": required_numeric,
+        "numeric_score_coverage_status": "PASS",
+    }
+
+
 def _snapshot_monitor(root: Path) -> dict[str, Any]:
     metadata = _read(root / "artifacts" / "research" / "history_metadata.json")
     calibration = _read(root / "artifacts" / "research" / "probability_calibration_2.json")
@@ -180,9 +214,9 @@ def _snapshot_monitor(root: Path) -> dict[str, Any]:
 
     required = int(validation.get("required_symbol_count") or 0)
     symbols = int(validation.get("symbol_count") or 0)
-    numeric = int(validation.get("numeric_score_count") or 0)
     if required <= 0 or symbols != required:
         raise BAQM12Error("scanner_coverage_incomplete")
+    score_coverage = _validated_numeric_score_coverage(validation, symbol_count=symbols)
 
     price = _mapping(metadata.get("price_coverage"), "price_coverage")
     price_required = int(price.get("required_symbol_count") or 0)
@@ -217,7 +251,7 @@ def _snapshot_monitor(root: Path) -> dict[str, Any]:
         "coverage": {
             "required_symbol_count": required,
             "symbol_count": symbols,
-            "numeric_score_count": numeric,
+            **score_coverage,
             "price_covered_symbol_count": covered,
             "price_unavailable_symbol_count": unavailable,
         },

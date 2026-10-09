@@ -11,6 +11,7 @@ from scanner.research.governance.ba_qm12_continuous_qm import (
     REQUIRED_CONTROLS,
     evaluate_continuous_qm,
     validate_contract,
+    _snapshot_monitor,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,3 +110,106 @@ def test_finding_escalation_cannot_auto_promote():
     value["finding_lifecycle_policy"]["escalation"]["automatic_promotion_allowed"] = True
     with pytest.raises(BAQM12Error, match="finding_escalation_auto_promotion_forbidden"):
         validate_contract(value)
+
+
+# BA-QM-REPAIR-01 / F02: independently mutate published snapshot metadata.
+# Keep upstream validation.status == 'ok' so the BA-QM12 guard is actually exercised.
+def _f02_snapshot_fixture(tmp_path, *, numeric=9, min_score_ratio=0.9):
+    root = tmp_path
+    research = root / "artifacts" / "research"
+    (research / "watch_runtime").mkdir(parents=True, exist_ok=True)
+    metadata = {
+        "snapshot_id": "f02-immutable-snapshot",
+        "as_of": "2026-10-08",
+        "latest_run_complete": True,
+        "validation": {
+            "status": "ok",
+            "required_symbol_count": 10,
+            "symbol_count": 10,
+            "numeric_score_count": numeric,
+            "policy": {"min_score_ratio": min_score_ratio},
+        },
+        "price_coverage": {
+            "required_symbol_count": 10,
+            "covered_symbol_count": 9,
+            "unavailable_symbol_count": 1,
+        },
+    }
+    calibration = {"source": {"snapshot_id": "f02-immutable-snapshot", "as_of": "2026-10-08"}}
+    runtime = {
+        "row_count": 10,
+        "diagnostics": {
+            "snapshot_id": "f02-immutable-snapshot",
+            "bundle_count": 10,
+            "missing_current_packet_symbols": [],
+            "private_position_data_persisted": False,
+            "scanner_scalar_fallback_used": False,
+        },
+    }
+    for relative, value in (
+        ("history_metadata.json", metadata),
+        ("probability_calibration_2.json", calibration),
+        ("watch_runtime/public_long_reference.json", runtime),
+    ):
+        path = research / relative
+        path.write_text(json.dumps(value, allow_nan=True), encoding="utf-8")
+    return root, metadata
+
+
+def test_f02_score_coverage_at_policy_boundary_passes(tmp_path):
+    root, _ = _f02_snapshot_fixture(tmp_path, numeric=9, min_score_ratio=0.9)
+    coverage = _snapshot_monitor(root)["coverage"]
+    assert coverage["numeric_score_count"] == 9
+    assert coverage["required_numeric_score_count"] == 9
+    assert coverage["numeric_score_ratio"] == pytest.approx(0.9)
+    assert coverage["min_score_ratio"] == 0.9
+    assert coverage["numeric_score_coverage_status"] == "PASS"
+
+
+@pytest.mark.parametrize("numeric,min_score_ratio", [
+    (8, 0.9),  # Sub-threshold on a previously 'ok' scanner snapshot
+    (0, 0.9),  # Complete score dropout
+    (9, 0.91),  # Honor actual published policy, not a fixed 90% assumption
+])
+def test_f02_mutated_ok_snapshot_below_policy_fails_closed(tmp_path, numeric, min_score_ratio):
+    root, metadata = _f02_snapshot_fixture(tmp_path, numeric=numeric, min_score_ratio=min_score_ratio)
+    assert metadata["validation"]["status"] == "ok"
+    with pytest.raises(BAQM12Error, match="scanner_numeric_score_coverage_below_threshold"):
+        _snapshot_monitor(root)
+
+
+@pytest.mark.parametrize("numeric", [
+    None, True, "9", 9.0, -1, 11,
+])
+def test_f02_malformed_numeric_score_count_fails_closed(tmp_path, numeric):
+    root, _ = _f02_snapshot_fixture(tmp_path, numeric=numeric)
+    with pytest.raises(BAQM12Error, match="scanner_numeric_score_count_invalid"):
+        _snapshot_monitor(root)
+
+
+@pytest.mark.parametrize("threshold", [
+    None, False, "0.9", 0, -0.1, 1.01, float("nan"), float("inf"),
+])
+def test_f02_missing_or_invalid_snapshot_policy_fails_closed(tmp_path, threshold):
+    root, _ = _f02_snapshot_fixture(tmp_path, min_score_ratio=threshold)
+    with pytest.raises(BAQM12Error, match="scanner_score_ratio_policy_invalid"):
+        _snapshot_monitor(root)
+
+
+def test_f02_missing_policy_is_not_assumed_to_be_ninety_percent(tmp_path):
+    root, metadata = _f02_snapshot_fixture(tmp_path)
+    metadata["validation"].pop("policy")
+    p = root / "artifacts" / "research" / "history_metadata.json"
+    p.write_text(json.dumps(metadata), encoding="utf-8")
+    with pytest.raises(BAQM12Error, match="mapping_required:history_metadata.validation.policy"):
+        _snapshot_monitor(root)
+
+
+def test_f02_current_authoritative_snapshot_coverage_remains_pass():
+    metadata = json.loads((ROOT / "artifacts" / "research" / "history_metadata.json").read_text(encoding="utf-8"))
+    monitor = _snapshot_monitor(ROOT)
+    coverage = monitor["coverage"]
+    assert coverage["numeric_score_count"] == metadata["validation"]["numeric_score_count"]
+    assert coverage["min_score_ratio"] == metadata["validation"]["policy"]["min_score_ratio"]
+    assert coverage["numeric_score_coverage_status"] == "PASS"
+    assert coverage["numeric_score_count"] >= coverage["required_numeric_score_count"]
