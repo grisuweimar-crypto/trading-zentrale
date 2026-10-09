@@ -297,9 +297,22 @@ def test_capture_passes_supplied_6g_validation_into_6h(monkeypatch):
     assert result["guards"]["direct_ordering_allowed"] is False
 
 
+def _load_6h_runner():
+    """Load the CLI script by file path; scripts is not an installed package."""
+    from importlib.util import module_from_spec, spec_from_file_location
+    from pathlib import Path
+
+    source = Path(__file__).resolve().parents[1] / "scripts" / "run_elliott_prospective_capture_6h.py"
+    spec = spec_from_file_location("elliott_6h_cli_for_test", source)
+    assert spec is not None and spec.loader is not None
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _bound_artifacts_fixture(tmp_path):
     from hashlib import sha256
-    from scripts.run_elliott_prospective_capture_6h import FROZEN_RESEARCH_SOURCES
+    FROZEN_RESEARCH_SOURCES = _load_6h_runner().FROZEN_RESEARCH_SOURCES
     metadata = {}
     for field, relative in FROZEN_RESEARCH_SOURCES.items():
         path = tmp_path / relative
@@ -311,7 +324,7 @@ def _bound_artifacts_fixture(tmp_path):
 
 
 def test_6h_bound_artifact_hashes_pass_when_all_inputs_match(tmp_path):
-    from scripts.run_elliott_prospective_capture_6h import verify_frozen_research_sources
+    verify_frozen_research_sources = _load_6h_runner().verify_frozen_research_sources
     metadata = _bound_artifacts_fixture(tmp_path)
     verify_frozen_research_sources(tmp_path, metadata)
 
@@ -321,7 +334,7 @@ def test_6h_bound_artifact_hashes_pass_when_all_inputs_match(tmp_path):
     "daily_research", "scanner_input_provenance",
 ])
 def test_6h_mixed_current_and_past_inputs_fail_closed(tmp_path, field):
-    from scripts.run_elliott_prospective_capture_6h import verify_frozen_research_sources
+    verify_frozen_research_sources = _load_6h_runner().verify_frozen_research_sources
     metadata = _bound_artifacts_fixture(tmp_path)
     (tmp_path / metadata[field]["path"]).write_bytes(b"newer-scanner-snapshot")
     with pytest.raises(ValueError, match="elliott_source_hash_mismatch:" + field):
@@ -335,7 +348,7 @@ def test_6h_mixed_current_and_past_inputs_fail_closed(tmp_path, field):
     ("no_hash", "elliott_source_hash_missing:history_recent"),
 ])
 def test_6h_incomplete_historical_bindings_fail_closed(tmp_path, mutation, expected):
-    from scripts.run_elliott_prospective_capture_6h import verify_frozen_research_sources
+    verify_frozen_research_sources = _load_6h_runner().verify_frozen_research_sources
     metadata = _bound_artifacts_fixture(tmp_path)
     if mutation == "no_file":
         (tmp_path / metadata["history_recent"]["path"]).unlink()
