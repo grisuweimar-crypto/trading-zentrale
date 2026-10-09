@@ -437,6 +437,9 @@ jobs:
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
         run: |
           set -euo pipefail
+          python -m scanner.research.elliott_vnext.shadow_transport verify-append \
+            "$RUNNER_TEMP/elliott-shadow-before.jsonl" \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl
           mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
           # Full JSON/JSONL are already validated; now encode the exact bytes.
           for path in \
