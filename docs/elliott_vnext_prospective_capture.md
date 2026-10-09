@@ -83,3 +83,29 @@ A later read-only Watch presentation is a separate Stage-2 change. Supplying an 
 ## Research use
 
 The accumulated sequence is intended to support the already defined Module-6G prospective validation and QM-G challenger research, including Scenario Stability. Technical capture does not itself establish empirical usefulness and cannot promote Elliott into production.
+
+
+## PIT source-coherence remediation (issue #242; 2026-10-09)
+
+The source-binding workflow may select an older eligible scanner publication while
+executing current, repaired Elliott code. Both parts must remain separate:
+the code stays current, while **every scanner snapshot artifact consumed by the
+capture or `validate_daily_research` is restored from exactly that source commit**.
+
+The bound set now includes:
+`history_metadata.json`, `latest_scanner.csv`, `daily_research.json`,
+`history_recent.csv`, `price_backfill.csv`,
+`scanner_input_provenance.json`, and the published Yahoo OHLCV file.
+The research manifest's recorded SHA-256 hashes are checked independently
+against all five declared research files, before running the existing complete
+`validate_daily_research` PIT validator.
+
+A missing file, modified historical source or mixed old/new snapshot stops the
+capture. Before switching to the isolated Elliott shadow-data branch, tracked
+scanner inputs are restored to current main. This does not rewrite historical
+publication commits, does not fill missing prices, and does not loosen PIT or
+research-only/no-production restrictions.
+
+Prospective 6H capture is still **not** automatically proof of Elliott
+predictive usefulness or eligibility for Decision integration. Independent
+GitHub CI and live backlog processing must succeed before #242 may close.
