@@ -45,6 +45,36 @@ def _resolve(root: Path, value: str) -> Path:
     return path if path.is_absolute() else root / path
 
 
+# All scanner-side sources consumed by validate_daily_research must be from
+# the SAME immutable publication. An older metadata + current history_recent
+# silently mixing snapshots must never be accepted by the prospective sidecar.
+FROZEN_RESEARCH_SOURCES = {
+    "latest_scanner": "artifacts/research/latest_scanner.csv",
+    "history_recent": "artifacts/research/history_recent.csv",
+    "price_backfill": "artifacts/research/price_backfill.csv",
+    "daily_research": "artifacts/research/daily_research.json",
+    "scanner_input_provenance": "artifacts/research/scanner_input_provenance.json",
+}
+
+
+def verify_frozen_research_sources(root: Path, metadata: dict[str, object]) -> None:
+    """Fail closed unless each exact frozen artifact matches its bound SHA-256."""
+    for identity_key, relative in FROZEN_RESEARCH_SOURCES.items():
+        identity = metadata.get(identity_key)
+        if not isinstance(identity, dict):
+            raise ValueError(f"elliott_source_identity_missing:{identity_key}")
+        if identity.get("path") != relative:
+            raise ValueError(f"elliott_source_path_mismatch:{identity_key}")
+        expected = str(identity.get("sha256") or "")
+        if len(expected) != 64 or any(c not in "0123456789abcdef" for c in expected):
+            raise ValueError(f"elliott_source_hash_missing:{identity_key}")
+        path = root / relative
+        if not path.is_file():
+            raise ValueError(f"elliott_source_file_missing:{identity_key}")
+        if _sha(path) != expected:
+            raise ValueError(f"elliott_source_hash_mismatch:{identity_key}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -65,8 +95,9 @@ def main() -> int:
     archive_path = _resolve(root, args.archive)
     validation_path = _resolve(root, args.validation)
 
-    daily = validate_daily_research(root)
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    verify_frozen_research_sources(root, metadata)
+    daily = validate_daily_research(root)
     daily_run = metadata.get("daily_run") or {}
     run_id = str(daily_run.get("run_id") or "").strip()
     if metadata.get("latest_run_complete") is not True:
