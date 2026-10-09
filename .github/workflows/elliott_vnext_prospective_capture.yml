@@ -33,7 +33,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: elliott-vnext-prospective-shadow
+  group: elliott-vnext-prospective-shadow-${{ github.event.pull_request.number || 'live' }}
   cancel-in-progress: false
 
 jobs:
@@ -242,6 +242,7 @@ jobs:
 
           output = os.environ['GITHUB_OUTPUT']
           with open(output, 'a', encoding='utf-8') as handle:
+              handle.write(f'archive_sha256={hashlib.sha256((archive or "").encode("utf-8")).hexdigest()}\n')
               if not candidates:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
@@ -335,6 +336,29 @@ jobs:
             fi
           done
 
+      - name: Freeze restored archive and reject mismatched prior capture
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        env:
+          EXPECTED_ARCHIVE_SHA256: ${{ steps.bind.outputs.archive_sha256 }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          src = Path("artifacts/research/elliott_vnext_prospective_history_6h.jsonl")
+          dst = Path(os.environ["RUNNER_TEMP"]) / "elliott-shadow-before.jsonl"
+          digest = hashlib.sha256()
+          with dst.open("wb") as backup:
+              if src.exists():
+                  with src.open("rb") as stream:
+                      for chunk in iter(lambda: stream.read(1048576), b""):
+                          digest.update(chunk)
+                          backup.write(chunk)
+          if digest.hexdigest() != os.environ["EXPECTED_ARCHIVE_SHA256"]:
+              raise SystemExit("elliott_restored_archive_hash_mismatch")
+          print({"prior_archive_bytes": dst.stat().st_size, "prior_archive_sha256": digest.hexdigest()})
+          PY
+
       - name: Capture frozen Elliott 6A through 6H for bound publication
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
         run: >-
@@ -413,6 +437,9 @@ jobs:
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
         run: |
           set -euo pipefail
+          python -m scanner.research.elliott_vnext.shadow_transport verify-append \
+            "$RUNNER_TEMP/elliott-shadow-before.jsonl" \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl
           mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
           # Full JSON/JSONL are already validated; now encode the exact bytes.
           for path in \
