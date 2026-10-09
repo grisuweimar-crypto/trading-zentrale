@@ -107,3 +107,47 @@ def test_client_ui_missing_cycle_uses_dash_not_zero():
     assert "function formatCycle(r)" in html
     assert "r.cycle_quality && r.cycle_quality !== 'VALID'" in html
     assert "cyclePct(r) ?? 0" not in html
+
+
+def test_daily_research_does_not_resurrect_canonical_null_from_legacy():
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from tempfile import TemporaryDirectory
+    from scanner.reports.daily_research import WATCHLIST, begin_daily, generate_daily
+    from scanner.reports.research_views import ValidationPolicy, encode_csv, parse_csv
+
+    with TemporaryDirectory() as directory:
+        root = Path(directory)
+        receipt = root / "receipt.json"
+        cols = [
+            "market_date", "symbol", "asset_id", "name", "score",
+            "OpportunityScore", "RiskScore", "confidence", "rs3m",
+            "trend200", "Zyklus %", "cycle", "cycle_quality",
+            "cycle_source", "score_status", "trend_ok", "liquidity_ok",
+        ]
+        def row(symbol, legacy, canonical, quality):
+            return dict(zip(cols, [
+                "2026-10-08", symbol, symbol, symbol, "42",
+                "62", "20", "60", "0.1", "0.2", legacy, canonical,
+                quality, "LEGACY_ZYKLUS_PCT", "OK", "True", "True",
+            ]))
+
+        begin_daily(root, receipt, run_id="cycle-test")
+        path = root / WATCHLIST
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(encode_csv(cols, [
+            row("STALE", "19", "", "STALE"),
+            row("ZERO", "0", "0", "VALID"),
+        ]))
+        meta = generate_daily(
+            root, receipt, policy=ValidationPolicy(expected_symbol_count=2),
+            now=datetime(2026, 10, 9, tzinfo=timezone.utc),
+        )
+        assert meta["latest_run_complete"] is True
+        _, latest = parse_csv((root / "artifacts/research/latest_scanner.csv").read_bytes())
+        by_symbol = {entry["symbol"]: entry for entry in latest}
+        assert by_symbol["STALE"]["cycle"] == ""
+        assert by_symbol["STALE"]["cycle_quality"] == "STALE"
+        assert by_symbol["ZERO"]["cycle"] == "0"
+        assert by_symbol["ZERO"]["cycle_quality"] == "VALID"
+        assert all(item["score"] == "42" for item in latest)
