@@ -670,15 +670,6 @@ def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
     if value.get("watch_status") != expected_status:
         raise DepotWatchError("watch_status_count_mismatch")
 
-    summary = value.get("summary")
-    if not isinstance(summary, Mapping):
-        raise DepotWatchError("watch_summary_required")
-    if any(not isinstance(row.get("attention_required"), bool) for row in rows):
-        raise DepotWatchError("watch_attention_required_must_be_bool")
-    expected_attention = sum(row["attention_required"] for row in rows)
-    if type(summary.get("attention_required_count")) is not int or summary["attention_required_count"] != expected_attention:
-        raise DepotWatchError("watch_attention_required_count_mismatch")
-
     forbidden = _forbidden_paths(value)
     if forbidden:
         raise DepotWatchError("forbidden_execution_or_sizing_fields:" + ",".join(forbidden))
@@ -727,4 +718,14 @@ def validate_depot_watch(value: Mapping[str, object]) -> dict[str, object]:
     unsigned.pop("watch_id", None)
     if watch_id != _canonical_hash(unsigned):
         raise DepotWatchError("watch_id_integrity_failure")
+
+    summary = value.get("summary")
+    if not isinstance(summary, Mapping):
+        raise DepotWatchError("watch_summary_required")
+    if any(not isinstance(row.get("attention_required"), bool) for row in rows):
+        raise DepotWatchError("watch_attention_required_must_be_bool")
+    expected_attention = sum(row["attention_required"] for row in rows)
+    if type(summary.get("attention_required_count")) is not int or summary["attention_required_count"] != expected_attention:
+        raise DepotWatchError("watch_attention_required_count_mismatch")
+
     return deepcopy(dict(value))
