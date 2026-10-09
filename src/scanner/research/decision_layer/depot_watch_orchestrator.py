@@ -20,6 +20,7 @@ from .depot_watch import (
     BUNDLE_SCHEMA_VERSION,
     BUNDLE_SET_SCHEMA_VERSION,
     build_depot_watch,
+    seal_depot_watch,
     validate_daily_research_snapshot,
     validate_position_book,
 )
@@ -606,6 +607,9 @@ def build_orchestrated_depot_watch_artifacts(
     watch = _attach_path_reviews(watch, bundle_set)
     watch = _attach_phase5_shadow(watch, bundle_set)
     watch = _attach_elliott_swing_context(watch, bundle_set)
+    # The canonical watch_id and summary must describe the complete output,
+    # not the intermediate 7H view before post-7D review-only contexts.
+    watch = seal_depot_watch(watch)
     return watch, diagnostics, bundle_set
 
 
