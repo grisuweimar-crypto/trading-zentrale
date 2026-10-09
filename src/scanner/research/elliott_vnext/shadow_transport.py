@@ -93,17 +93,44 @@ def unpack_shadow_payload(source: Path, target: Path) -> dict[str, object]:
         pending.unlink(missing_ok=True)
 
 
+
+def verify_shadow_archive_append_only(before: Path, after: Path) -> dict[str, object]:
+    """Reject truncation or mutation of any previously captured byte, including JSONL records.
+
+    The historical capture writer is append-only; gzip migration is a storage
+    change, not permission to silently restart the stream at a new run.
+    """
+    if not before.is_file() or not after.is_file():
+        raise ShadowTransportError("shadow_archive_baseline_or_current_missing")
+    before_sha, before_size = _hash_and_size(before)
+    after_sha, after_size = _hash_and_size(after)
+    if after_size < before_size:
+        raise ShadowTransportError("shadow_archive_truncated")
+    with before.open("rb") as original, after.open("rb") as candidate:
+        for old_chunk in iter(lambda: original.read(1024 * 1024), b""):
+            if candidate.read(len(old_chunk)) != old_chunk:
+                raise ShadowTransportError("shadow_archive_prior_bytes_changed")
+    return {
+        "baseline_bytes": before_size, "current_bytes": after_size,
+        "appended_bytes": after_size - before_size,
+        "baseline_sha256": before_sha, "current_sha256": after_sha,
+        "append_only_verified": True,
+    }
+
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Lossless Elliott 6H shadow-data transport")
-    parser.add_argument("operation", choices=("pack", "unpack"))
+    parser.add_argument("operation", choices=("pack", "unpack", "verify-append"))
     parser.add_argument("source", type=Path)
     parser.add_argument("target", type=Path)
     args = parser.parse_args()
-    result = (
-        pack_shadow_payload(args.source, args.target)
-        if args.operation == "pack"
-        else unpack_shadow_payload(args.source, args.target)
-    )
+    if args.operation == "pack":
+        result = pack_shadow_payload(args.source, args.target)
+    elif args.operation == "unpack":
+        result = unpack_shadow_payload(args.source, args.target)
+    else:
+        result = verify_shadow_archive_append_only(args.source, args.target)
     print(json.dumps(result, sort_keys=True))
     return 0
 
