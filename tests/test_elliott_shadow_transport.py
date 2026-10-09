@@ -128,7 +128,7 @@ def test_shadow_workflow_restores_correct_runtime_symbol_paths_and_validates_pri
     assert "elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" not in workflow
 
 
-@pytest.mark.parametrize("line_ending", (b"\\n", b"\\r\\n", b"\\r"))
+@pytest.mark.parametrize("line_ending", (b"\n", b"\r\n", b"\r"))
 def test_legacy_plain_jsonl_binding_preserves_exact_bytes(tmp_path, line_ending):
     """Supported historical plaintext JSONL may not use Unix-only newlines."""
     from hashlib import sha256
@@ -146,8 +146,8 @@ def test_legacy_plain_jsonl_binding_preserves_exact_bytes(tmp_path, line_ending)
 
     # A text=True git read applies universal-newline conversion and would
     # cause the later raw-byte restored archive check to reject valid history.
-    if line_ending != b"\\n":
-        converted = original_bytes.replace(b"\\r\\n", b"\\n").replace(b"\\r", b"\\n")
+    if line_ending != b"\n":
+        converted = original_bytes.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
         assert sha256(converted).hexdigest() != sha256(original_bytes).hexdigest()
 
     workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/elliott_vnext_prospective_capture.yml").read_text(encoding="utf-8")
