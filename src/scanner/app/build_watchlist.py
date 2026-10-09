@@ -75,6 +75,24 @@ def _normalize_identifier_fields(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Dat
     return out, report
 
 
+def _health_projection(
+    scored_raw: pd.DataFrame, canonical: pd.DataFrame, columns: list[str]
+) -> pd.DataFrame:
+    """Select one value per field, with the corrected canonical source first.
+
+    The source CSV historically contains a stale zero-only 'cycle' column.
+    Concatenating raw and canonical frames by column name duplicated that field
+    in score_health.csv, potentially exposing the old synthetic zero again.
+    """
+    selected = {}
+    for name in columns:
+        if name in canonical.columns:
+            selected[name] = canonical[name]
+        elif name in scored_raw.columns:
+            selected[name] = scored_raw[name]
+    return pd.DataFrame(selected, index=canonical.index)
+
+
 def _truthy(v: object) -> bool:
     s = str(v).strip().lower()
     if s in {"", "nan", "none", "null"}:
@@ -664,8 +682,8 @@ def build_watchlist_outputs() -> None:
         # raw error
         "ScoreError",
     ]
-    present = [c for c in health_cols if c in df_scored_raw.columns] + [c for c in health_cols if c in df.columns and c not in df_scored_raw.columns]
-    health_df = pd.concat([df_scored_raw, df], axis=1)
+    health_df = _health_projection(df_scored_raw, df, health_cols)
+    present = list(health_df.columns)
 
     # add status flag (quickly tells you if 0 is deliberate or if there was an error)
     if "score" in health_df.columns:
