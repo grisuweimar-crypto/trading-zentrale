@@ -20,7 +20,7 @@ class OperatingPlaybookContractTest(unittest.TestCase):
 
     def test_all_referenced_scripts_and_workflows_exist(self):
         cited = set(re.findall(
-            r"(?:scripts/[A-Za-z0-9_./-]+\\.py|\\.github/workflows/[A-Za-z0-9_./-]+\\.yml)",
+            r"(?:scripts/[A-Za-z0-9_./-]+\.py|\.github/workflows/[A-Za-z0-9_./-]+\.yml)",
             self.text,
         ))
         # Must not silently regress into a descriptive but unactionable guide.
