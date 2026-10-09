@@ -138,6 +138,11 @@
       "path": "configs/pattern_discovery/l9_confirmation_engine_v1.json",
       "status": "SAFE",
       "reason": "Pattern Discovery L9 confirmation contract permits only capture-time context derived from hash-verified L7 row projections, forbids current-taxonomy backfill, and uses taxonomy/regime fields only as PIT diagnostics; it does not retroject current metadata into historical samples."
+    },
+    {
+      "path": "src/scanner/app/build_watchlist.py",
+      "status": "SAFE",
+      "reason": "Reviewed in CYCLE-DIR CY-01 / PR #260: the production builder reads current watchlist and current Yahoo-enriched rows only, materializes nullable cycle plus current-run quality, and emits current-run reports. Its taxonomy/pillar assignments are current-snapshot metadata; it does not read previous research history or use present-day classifications to define or enrich historical scanner observations. The cycle/history reference in its comment is descriptive, not a historical backfill."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,
