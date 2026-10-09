@@ -220,7 +220,13 @@ def test_f02_current_authoritative_snapshot_coverage_remains_pass():
 # BA-QM-REPAIR-01 / F04: observable state consistency instead of a fixed
 # blocker count. The tests below never rewrite genuine empirical evidence.
 def _f04_current_residual_monitor():
-    return deepcopy(evaluate_continuous_qm(ROOT)["masterplan_residual_monitor"])
+    # The full evaluate_continuous_qm end-to-end integration is already covered
+    # once above. Keep each mutation test scoped to the real upstream residual
+    # contracts instead of repeatedly rebuilding the full 64-shard runtime.
+    qmi = qm12._read(ROOT / "configs" / "qm_i_evidence_lineage_v1.json")
+    qmj = qm12._read(ROOT / "configs" / "ba_qm7_qm_j_closure_v1.json")
+    w8 = qm12._read(ROOT / "configs" / "decision_depot_action_policy_v1.json")
+    return deepcopy(qm12._masterplan_residual_monitor(ROOT, qmi=qmi, qmj=qmj, w8=w8))
 
 
 def test_f04_actual_residual_identities_and_current_blocks_are_source_derived():
