@@ -83,3 +83,46 @@ def test_shadow_workflow_preserves_legacy_read_and_source_publication_binding():
     assert "elliott_vnext_prospective_current_6h.json.gz" in workflow
     assert 'git show "${{ steps.bind.outputs.commit }}:$path" > "$path"' in workflow
     assert "tests/test_elliott_shadow_transport.py" in workflow
+
+
+@pytest.mark.parametrize("kind", ("no_change", "append"))
+def test_full_history_bytes_preserved_before_archive_transport(tmp_path, kind):
+    before = tmp_path / "previous.jsonl"
+    current = tmp_path / "new.jsonl"
+    legacy = b'{"capture_id":"a","identity":"old"}\\n' * 50
+    before.write_bytes(legacy)
+    current.write_bytes(legacy + (b'{"capture_id":"b","identity":"new"}\\n' if kind == "append" else b""))
+    result = transport.verify_shadow_archive_append_only(before, current)
+    assert result["append_only_verified"] is True
+    assert result["baseline_bytes"] == len(legacy)
+    assert result["appended_bytes"] == current.stat().st_size - len(legacy)
+
+
+@pytest.mark.parametrize("kind,expected", (
+    ("truncate", "shadow_archive_truncated"),
+    ("mutation", "shadow_archive_prior_bytes_changed"),
+    ("empty", "shadow_archive_truncated"),
+))
+def test_history_loss_or_rewrite_rejected_even_if_workflow_would_be_green(tmp_path, kind, expected):
+    old = tmp_path / "previous.jsonl"
+    new = tmp_path / "current.jsonl"
+    raw = b'{"capture_id":"full-archive"}\\n' * 500
+    old.write_bytes(raw)
+    if kind == "truncate":
+        new.write_bytes(raw[:-20])
+    elif kind == "empty":
+        new.write_bytes(b"")
+    else:
+        new.write_bytes(b"X" + raw[1:] + b'{"capture_id":"new"}\\n')
+    with pytest.raises(transport.ShadowTransportError, match=expected):
+        transport.verify_shadow_archive_append_only(old, new)
+
+
+def test_shadow_workflow_restores_correct_runtime_symbol_paths_and_validates_prior_sha():
+    workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/elliott_vnext_prospective_capture.yml").read_text(encoding="utf-8")
+    assert 'origin/elliott-vnext-shadow-data:$path.gz' in workflow
+    assert 'shadow_transport unpack "$path.gz" "$path"' in workflow
+    assert "elliott_restored_archive_hash_mismatch" in workflow
+    assert "shadow_transport verify-append" in workflow
+    assert "archive_sha256=" in workflow
+    assert "elliott-vnext-shadow-data:.github/workflows/elliott_vnext_prospective_capture.yml.gz" not in workflow
