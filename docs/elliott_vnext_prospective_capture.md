@@ -109,3 +109,35 @@ research-only/no-production restrictions.
 Prospective 6H capture is still **not** automatically proof of Elliott
 predictive usefulness or eligibility for Decision integration. Independent
 GitHub CI and live backlog processing must succeed before #242 may close.
+
+## Lossless shadow-transport capacity repair (issue #254; 2026-10-09)
+
+A genuine [2026-10-09 live 6H capture run](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/37908194648)
+successfully validated PIT-bound historical scanner inputs and produced a nonempty
+frozen-core result, but `git push` rejected an uncompressed 125.43-MB JSONL
+history file (GitHub hard per-blob limit 100 MB). Its uncompressed current capture
+was also 52.42 MB, above GitHub's recommended 50 MB size.
+
+The capture engine and append-only semantics still operate on the **original,
+full JSON/JSONL byte streams** in the runner. Only the isolated shadow branch
+persistently stores `elliott_vnext_prospective_history_6h.jsonl.gz` and
+`elliott_vnext_prospective_current_6h.json.gz`. The transport uses deterministic
+gzip (fixed timestamp, filename-independent header), verifies the compressed
+payload by full decompression and SHA-256/byte-count roundtrip before writing to
+the branch, and independently rejects compressed payloads at or above 80,000,000
+bytes. A future larger compressed history must be losslessly sharded by a
+separately reviewed change; **truncation is never permitted**.
+
+The first successful migrated publish deletes the old uncompressed names only
+from the *new shadow-branch tree*, not from Git's immutable historical commits.
+Legacy uncompressed shadow branches remain readable; all later captures
+decompress the previous full archive into the runner before the unchanged
+`archive_capture` deduplication/append step. Missing or corrupted compressed
+sources stop the capture. The oldest-unclaimed scanner publication is still
+selected by its original run identity. Exact source-SHA binding, original
+publication time, no future information, frozen Elliott 6A–6H, research-only
+isolation and all six empirical promotion blocks are untouched.
+
+Live effectiveness requires a successful **production** shadow push, archive
+roundtrip, subsequent incremental capture/backlog run and independent CI. This
+documentation alone does not assert those results.
