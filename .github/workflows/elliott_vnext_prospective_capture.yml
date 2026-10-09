@@ -33,7 +33,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: elliott-vnext-prospective-shadow
+  group: elliott-vnext-prospective-shadow-${{ github.event.pull_request.number || 'live' }}
   cancel-in-progress: false
 
 jobs:
