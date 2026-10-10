@@ -13,6 +13,10 @@ import math
 
 import pandas as pd
 
+from scanner.data.enrich.cycle_exchange_calendar import (
+    POLICY_VERSION, authorized_extended_equity_gap,
+)
+
 FORMULA_VERSION = "cycle_detrended_sma20_range40_v1"
 CYCLE_SOURCE = "YAHOO_PIT_CYCLE_V1"
 PRICE_SOURCE = "yfinance.download"
@@ -128,11 +132,22 @@ def calculate_cycle(
     # For stocks at most one missing weekday between adjacent labels is
     # tolerated (exchange-specific holidays remain unverified); a raw
     # five-calendar-day threshold would silently hide 2-3 missing sessions.
-    if any(((b - a).days != 1 if is_crypto else _weekday_lag(a, b) > 2)
-           for a, b in zip(dates, dates[1:])):
-        record.update(cycle_quality="INSUFFICIENT_HISTORY",
-                      cycle_quality_reason="GAP_IN_DAILY_BARS")
-        return record
+    used_verified_calendar_exception = False
+    for a, b in zip(dates, dates[1:]):
+        if is_crypto:
+            gap_invalid = (b - a).days != 1
+        else:
+            extended_gap = _weekday_lag(a, b) > 2
+            authorized = (extended_gap and authorized_extended_equity_gap(
+                a, b, symbol=symbol, currency=_text(currency)
+            ))
+            if authorized:
+                used_verified_calendar_exception = True
+            gap_invalid = extended_gap and not authorized
+        if gap_invalid:
+            record.update(cycle_quality="INSUFFICIENT_HISTORY",
+                          cycle_quality_reason="GAP_IN_DAILY_BARS")
+            return record
     # Very large unadjusted overnight jumps can indicate uncaught splits.
     # Yahoo auto_adjust=True is necessary, but not a historical split audit.
     if any(b / a > 4 or b / a < 0.25 for a, b in zip(prices, prices[1:])):
@@ -165,7 +180,12 @@ def calculate_cycle(
         "Zyklus %": value,
         "cycle_quality": "VALID",
         "cycle_price_sha256": digest,
-        "cycle_quality_reason": "COMPLETED_DAILY_BARS",
+        # The distinct reason identifies the source-bound exception version
+        # without pretending the unchanged mathematical formula has changed.
+        "cycle_quality_reason": (
+            "COMPLETED_DAILY_BARS_" + POLICY_VERSION
+            if used_verified_calendar_exception else "COMPLETED_DAILY_BARS"
+        ),
         # Transient audit evidence; never persists in the canonical scanner column.
         "_cycle_input_bars": [(day.isoformat(), f"{float(price):.17g}")
                               for day, price in zip(dates, prices)],

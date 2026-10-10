@@ -1,0 +1,41 @@
+name: CY02-B01 JPX KRX Calendar 2026
+on:
+  pull_request:
+    paths:
+      - "src/scanner/data/enrich/cycle_exchange_calendar.py"
+      - "src/scanner/data/enrich/cycle_oscillator.py"
+      - "src/scanner/reports/cycle_history.py"
+      - "tests/test_cycle_exchange_calendar_cy02_b01.py"
+      - "docs/cycle_direction/**"
+      - ".github/workflows/cycle_dir_cy02_calendar_2026.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - name: Compile calendar, oscillator and history
+        run: python -m compileall -q src/scanner/data/enrich src/scanner/reports/cycle_history.py
+      - name: Calendar / CY02 / CY03 strict quality regressions
+        run: |
+          python -m pytest -q \
+            tests/test_cycle_exchange_calendar_cy02_b01.py \
+            tests/test_cycle_oscillator_cy02.py \
+            tests/test_cycle_audit_cy02.py \
+            tests/test_cycle_history_cy03.py \
+            tests/test_cycle_direction_cy04.py
+      - name: Read-only audit of actual published snapshot
+        run: |
+          python scripts/audit_cycle_current.py \
+            --source artifacts/watchlist/watchlist_full.csv \
+            --report artifacts/reports/cycle_quality.csv \
+            --bars artifacts/reports/cycle_input_bars.csv.gz
+          git diff --exit-code -- artifacts/watchlist/ artifacts/research/ artifacts/cycle_history/ artifacts/snapshots/
