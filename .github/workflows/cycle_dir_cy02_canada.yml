@@ -1,0 +1,32 @@
+name: CYCLE-DIR CY02-B01 Canada Listing Lifecycle
+on:
+  pull_request:
+    paths:
+      - "data/inputs/universe_master.csv"
+      - "tests/test_cycle_canada_listing_lifecycle.py"
+      - "docs/cycle_direction/CY-02_B01_CANADA_LISTING_LIFECYCLE.md"
+      - ".github/workflows/cycle_dir_cy02_canada.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canada:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[test]"
+      - name: Verify Canadian listing lifecycle and CY-02 lineage contract
+        run: |
+          python -m pytest -q \
+            tests/test_cycle_canada_listing_lifecycle.py \
+            tests/test_cycle_quote_currencies_cy02_b01.py \
+            tests/test_cycle_issuer_venue_2026.py \
+            tests/test_cycle_oscillator_cy02.py \
+            tests/test_cycle_audit_cy02.py \
+            tests/test_cycle_quality_cy01.py \
+            tests/test_research_views.py
