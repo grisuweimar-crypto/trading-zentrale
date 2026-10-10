@@ -1,0 +1,66 @@
+name: CYCLE-DIR CY-03 Prospective History
+on:
+  pull_request:
+    paths:
+      - "src/scanner/reports/cycle_history.py"
+      - "scripts/record_cycle_history.py"
+      - "tests/test_cycle_history_cy03.py"
+      - ".github/workflows/run_scanner.yml"
+      - ".github/workflows/cycle_dir_cy03.yml"
+      - "docs/cycle_direction/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cy03:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[test]"
+      - name: Compile
+        run: python -m compileall -q src/scanner scripts/record_cycle_history.py
+      - name: CY-03 and adjacent regression suites
+        run: |
+          python -m pytest -q \
+            tests/test_cycle_history_cy03.py \
+            tests/test_cycle_audit_cy02.py \
+            tests/test_cycle_oscillator_cy02.py \
+            tests/test_cycle_quality_cy01.py \
+            tests/test_research_views.py \
+            tests/test_daily_research.py \
+            tests/test_history_delta_completion.py \
+            tests/pattern_discovery/test_l2_feature_library.py \
+            tests/pattern_discovery/test_l3_search_engine.py
+      - name: Read-only dry-run against published real snapshot
+        run: python scripts/record_cycle_history.py --dry-run
+      - name: Capture and replay once in disposable CI workspace
+        run: |
+          python scripts/record_cycle_history.py
+          python scripts/record_cycle_history.py
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+          root = Path("artifacts")
+          manifest = json.loads((root/"cycle_history/manifest.json").read_text())
+          metadata = json.loads((root/"research/history_metadata.json").read_text())
+          with (root/"research/latest_scanner.csv").open(newline="",encoding="utf-8") as f:
+              current = list(csv.DictReader(f))
+          count = len(current)
+          assert count > 0
+          assert metadata["latest_scanner"]["row_count"] == count
+          assert manifest["latest_snapshot_id"] == metadata["snapshot_id"]
+          assert manifest["new_current_valid"] == sum(r["cycle_quality"]=="VALID" for r in current)
+          assert manifest["new_current_excluded"] == sum(r["cycle_quality"]!="VALID" for r in current)
+          assert manifest["observations"] == count
+          assert manifest["snapshots"] == 1
+          assert manifest["research_eligible"] == 0
+          assert all(v == 0 for v in manifest["provisional_lags"].values())
+          print(f"Real snapshot dynamic count: {count}, VALID={manifest['new_current_valid']}, excluded={manifest['new_current_excluded']}")
+          PY
+          git diff --exit-code -- artifacts/research/ artifacts/snapshots/ artifacts/watchlist/
