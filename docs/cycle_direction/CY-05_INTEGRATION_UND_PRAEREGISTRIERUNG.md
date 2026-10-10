@@ -53,21 +53,39 @@ Vier Arme, **gleiches Universe, selbe PIT-Beobachtungen, gleiche Auswertungs- un
 
 | Gate | Aktueller Stand |
 |---|---|
-| L2/L3 opt-in Niveau 25/50/75 versioniert | Im Branch implementiert, PR-CI noch zu prüfen |
-| Existing v1 unverändert | Änderungen nur an Python-Implementierungen und **neuen** Configs; v1-Configbytes unverändert; Regression ausstehend |
+| L2/L3 opt-in Niveau 25/50/75 versioniert | Im Branch implementiert; Regression erfolgreich (siehe CI-Nachweis unten); letzter Vertragspaar-Guard separat erneut zu prüfen |
+| Existing v1 unverändert | v1-Configbytes unverändert; alte L1/L2/L3 und CY-03 Regression im CY-05-CI erfolgreich |
 | Numerische 0, Grenzen 25/50/75, echte UP/DOWN, Missingness | synthetische Unit-Tests angelegt, unabhängige Ausführung ausstehend |
-| 1/5/10 ohne Vorläufer/fremde Währung/Block #269 | Fail-closed Code und Unit-Tests angelegt; externe Verifikation weiterhin offen |
-| Verschlüsselungs-/Hashbindung L1 und Replay-Determinismus v2 | Weitere Integrationstests nötig |
+| 1/5/10 ohne Vorläufer/fremde Währung/Block #269 | synthetische Fail-closed-Tests erfolgreich; echte externe Verifikation weiterhin offen |
+| L1-Hashbindung und Replay-Determinismus v2 | synthetische L1-Identitäts-/Byte-Tests und CY-03-Inventur-Gegenprüfung erfolgreich; neuer synthetischer Full-L3-Fall und Varianten-Mismatch zuletzt ergänzt |
 | Vollständiges L1-Präregistrierungsmanifest mit realen Input-Fingerprints | **NICHT ERSTELLT**; keine freigegebene Datenbasis |
 | Empirisches Niveau+Richtung-Signal / Vorteil gegen Baseline | **NICHT GETESTET**, keine Outcome-Suche ausgeführt |
 | Scoring / Decision / Handelsentscheidung | **NICHT GEÄNDERT** |
 
 **Exakter Wiedereinstieg:** eigene CY-05-L1-Freeze- und Run-Binding-Tests ergänzen; im PR CI/Regression prüfen; danach lesenden CY-03→L3-Rechercheadapter nur bei bestätigter #269- und CY-03-Freigabe verdrahten, Input-Fingerprints und L1-Manifeste *vor* der ersten echten Auswertung versiegeln. CY-06 beginnt erst nach CY-05-Abnahme, nicht bereits nach diesem technischen Start.
 
-## 5. CYCLE-DIR-Übergabe
+## 5. Fortsetzung: CY-03-Archiv-Adapter und überprüfte CI
 
-- **Technisch:** In Arbeit; neue opt-in Implementierung und Unit-Tests auf Branch, noch keine Merge-/CI-Freigabe.
+Der neue read-only Adapter `src/scanner/research/pattern_discovery/cycle_cy05_adapter.py`:
+
+1. liest ausschließlich die **vorhandenen** CY-03-v1-Archivdateien, keine Legacy-Cycle-History;
+2. prüft mit der bestehenden CY-03-Integritätsroutine Manifest-/Ledger-/Bars-Hashes und -Zähler, und rechnet Eligibility-/Coverage-Masken erneut aus;
+3. vergleicht den letzten veröffentlichten Snapshot mit Manifest-`snapshot_id`, `as_of` und `run_id`;
+4. erstellt nur auf expliziten Diagnoseaufruf `diagnostic_only=True` nachweisbar **gesperrte** projektierte L2-Cycle-Reihen;
+5. verweigert produktiven Research-Import mit `cy05:research_gate_not_released` — **CY-03 v1 enthält keinen unabhängigen externen Release-Contract**. Ein bloß nachträglich geändertes Manifestfeld gilt ausdrücklich nicht als Freigabe.
+
+Weder das Prüfen von SHA256 noch die Replay-Validierung beweist eine außerhalb des Archivs unabhängig geprüfte Quellen-/Handelszeit-Herkunft. Für späteren positiven Research-Status ist ein **separat begutachteter und versionierter Release-Vertrag** mit externen Nachweisen notwendig. Der Adapter schreibt **keine** Archivdaten oder Research-Ergebnisse.
+
+Außerdem wurde der direkte L2/L3-`v2`-Vertragspaar-Guard eingeführt: eine opt-in Cycle-v2-Featurebibliothek mit dem alten L3-Suchvertrag oder umgekehrt wird abgewiesen, statt die Niveau-Bedingungen stumm aus der Suche fallen zu lassen.
+
+**Nachgewiesener neuer CI-Lauf vor dem letzten Vertragspaar-Guard:** [CY-05 #38044681423](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38044681423): **SUCCESS, 84 Tests bestanden**, inklusive neuem Archivadapter, CY-03, L1/L2/L3 und synthetischer vollständiger L1→L3-Replay-Suche mit Niveau+Richtung. Voriger Adapter-Zwischenstand: [#38044526230](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38044526230): ebenfalls SUCCESS. Dieser Erfolg gilt nur für den jeweils geprüften Commit, **nicht automatisch für alle späteren Änderungen**. Der neu ergänzte Vertragspaar-Guard benötigt entsprechend einen erneuten erfolgreichen CI-Lauf.
+
+**Keine echten Outcome-Auswertungen durchgeführt.** PR #280 bleibt zunächst **Draft** und CY-05 **IN_ARBEIT**, bis der Gesamtstand grün und die separate reale Präregistrierungs-/Datenqualitätsfreigabe dokumentiert ist.
+
+## 6. CYCLE-DIR-Übergabe
+
+- **Technisch:** In Arbeit; versionierte L2/L3-v2-Implementierung, immutable CY-03-v1-Prüfadapter, L1-Fingerprint- und synthetische L3-Regressionen; CI #38044681423 SUCCESS (84/84), letzte Variantenbindung anschließend erneut im Test.
 - **Fachlich:** Research-Design spezifiziert, Abschlussgate (realer L1-Freeze und verifizierter CY-03-Adapter) offen.
 - **Empirisch:** Nicht validiert; aktuelle Datenbasis 0 research-eligible, 0/0/0 Lags.
 - **Unverändert:** alte L1/L2/L3-Library- und Ergebnisversionen, CY-04-UI, Scannerformel und -Ausgabe, Risk/Confidence/Elliott/Decision/Portfolio/Execution.
-- **Offene Gate-ID:** #269; CY-03 Mehrtageshistorie; zukünftiger CY-05-L1-Freeze und vollwertige Regressionsabnahme.
+- **Offene Gate-ID:** #269; CY-03 Mehrtageshistorie und externe PIT/Quellen-Zertifizierung; zukünftiger CY-05-L1-Freeze mit realer Datenbasis und weitere Vertrags-/Regressionsevidenz.
