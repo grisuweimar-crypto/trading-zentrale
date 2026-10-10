@@ -3,11 +3,15 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 
 from scanner.research.pattern_discovery.feature_library import (
     FeatureLibrary, FeatureLibraryError, load_feature_library,
+)
+from scanner.research.pattern_discovery.run_contract import (
+    build_run_manifest, verify_run_manifest,
 )
 from scanner.research.pattern_discovery.search_engine import (
     _atom_state, _build_atoms, load_search_contract,
@@ -181,3 +185,62 @@ def test_level_transformation_is_fixed_and_observation_pit_is_enforced(tmp_path)
         feature_use(), row(60, day=11), data_cutoff="2026-10-10"
     )
     assert late["status"] == "OBSERVATION_AFTER_CUTOFF"
+
+
+def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
+    """Only a synthetic L1 identity proof, never a market research result."""
+    copied = tmp_path / LIB
+    copied.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(LIB, copied)
+    fixture = tmp_path / "artifacts/research/cy05_fixture.json"
+    fixture.parent.mkdir(parents=True, exist_ok=True)
+    fixture.write_text('{"synthetic":true}\n', encoding="utf-8")
+    prereg = {
+        "declared_start_at": "2026-10-12T00:00:00+00:00",
+        "data_cutoff": "2026-10-11T23:59:00+00:00",
+        "data_sources": [str(LIB), "artifacts/research/cy05_fixture.json"],
+        "pit_rules": ["no_future_features", "missing_remains_missing", "no_retrofit_of_modern_features"],
+        "universe_version": "synthetic-cy05-v1",
+        "feature_library_version": "PDL-FEATURE-LIBRARY-CYCLE-v2",
+        "allowed_transformations": ["level_band", "change_direction", "threshold_crossing"],
+        "pattern_complexity": {"min_atomic_conditions": 1, "max_atomic_conditions": 3},
+        "pattern_types": ["DIRECTIONAL", "RELATIVE_ALPHA"],
+        "targets": ["return_5t_gt_0", "peer_excess_5t_gt_0"],
+        "horizons_sessions": [5],
+        "baselines": {
+            "return_5t_gt_0": "same_horizon_unconditional_return_baseline",
+            "peer_excess_5t_gt_0": "same_horizon_same_currency_peer_baseline",
+        },
+        "minimum_criteria": {
+            "minimum_raw_n": 3,
+            "minimum_temporal_support_regions": 2,
+            "minimum_effect_size": 0.01,
+            "minimum_baseline_lift": 0.01,
+        },
+        "search_budget": {
+            "max_tested_candidates_total": 20,
+            "max_tested_candidates_per_family": 10,
+        },
+        "candidate_budget": {
+            "max_frozen_candidates_total": 5,
+            "max_frozen_candidates_per_horizon": 5,
+        },
+        "multiple_testing": {
+            "primary_method": "BENJAMINI_HOCHBERG_FDR",
+            "parameters": {"fdr_q": 0.05},
+        },
+        "statistical_primary_method": "cluster_aware_effect_and_probability_estimation",
+        "robustness_checks": ["moving_block_bootstrap", "symbol_concentration", "temporal_support"],
+        "exclusion_rules": ["missing_required_feature", "missing_forward_target"],
+        "dependency_rules": ["overlapping_events_not_independent", "duplicate_specs_rejected"],
+        "code_version": "cy05-synthetic-contract-only",
+        "determinism": {"randomness_allowed": False, "seed": None},
+    }
+    first = build_run_manifest(prereg, repo_root=tmp_path)
+    second = build_run_manifest(prereg, repo_root=tmp_path)
+    assert first == second
+    assert verify_run_manifest(first)["valid"] is True
+    assert FeatureLibrary(LIB).validate_run_binding(first, repo_root=tmp_path)["valid"]
+    copied.write_text(copied.read_text(encoding="utf-8") + " ", encoding="utf-8")
+    with pytest.raises(FeatureLibraryError, match="run_repo_feature_library_bytes_mismatch"):
+        FeatureLibrary(LIB).validate_run_binding(first, repo_root=tmp_path)
