@@ -57,7 +57,7 @@ const css=[
 '@media(max-width:900px){#etw .etwMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}',
 '@media(max-width:680px){#etw{padding:14px}#etw .etwTitle h3{font-size:26px}#etw .etwList{grid-template-columns:1fr}#etw .etwTools button{font-size:11px;padding:9px}}'
 ].join('\n');
-const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}";st.id='etwStyles';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}"+"\n#etw .etwWave{font-size:11px;border-top:1px solid #355267;padding:8px 0;line-height:1.6}";st.id='etwStyles';document.head.appendChild(st);
 host.insertAdjacentHTML('afterbegin',
 '<section id="etw" aria-label="Externe Aufnahmekandidaten">'+
 '<div class="etwTitle"><div><div class="etwGold">ARGUS · EXTERNAL THESIS WATCH</div>'+
@@ -182,9 +182,9 @@ function card(item){
  '<div class="etwElliott"><b>Eigene Elliott-Wellenbeobachtung</b> · Kursdatenstand '+esc(formatDate(ew.as_of))+' · '+esc(ew.output_count)+' dokumentierte Analysevarianten. Das sind keine Kauf- oder Verkaufssignale und keine Bestätigung der externen Chartthese.'+
  (ew.outputs.length?'<details><summary>Die einzelnen Wellenmodelle verstehen</summary><p>Mehrere Wellengrade und Szenarien können gleichzeitig vorliegen. Die Reihenfolge ist keine Rangliste nach Gewinnaussicht.</p>'+ew.outputs.map(o=>{
   const p=o.primary_scenario||{};
-  return '<p><b>'+esc(readableTimeframe(o.timeframe))+' · '+esc(readableDegree(o.degree))+'</b>: '+esc(readablePattern(p.pattern_class))+
+  return '<div class="etwWave"><b>'+esc(readableTimeframe(o.timeframe))+' · '+esc(readableDegree(o.degree))+'</b>: '+esc(readablePattern(p.pattern_class))+
    ' · '+esc(readableStage(p.stage))+' · '+esc((o.alternative_scenarios||[]).length)+' weitere mögliche Deutungen'+
-   '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></p>';
+   '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></div>';
  }).join('')+'</details>':'<p>Die Berechnung hat noch keine ausgabefähige Wellenstruktur erfasst. Ein fehlender Zustand ist kein neutrales Signal.</p>')+'</div>'):'';
  const noteHTML=notes.length?notes.map(n=>
  '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+esc(formatDate(n.source_date))+'</small>'+
