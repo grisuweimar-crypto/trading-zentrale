@@ -1,6 +1,16 @@
 name: Phase 8C-J Offline SEC Bulk Import
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "configs/external_evidence_8c_transport_status_v1.json"
+      - "src/scanner/research/external_evidence/sec_bulk_import.py"
+      - "scripts/import_external_evidence_8c_sec_bulk.py"
+      - "tests/test_external_evidence_8c_sec_bulk_import.py"
+      - "docs/external_evidence_8c_j_offline_sec_bulk_import.md"
+      - ".github/workflows/external_evidence_8c_j_offline_sec_bulk_import.yml"
   pull_request:
     paths:
       - "configs/external_evidence_8c_transport_status_v1.json"
