@@ -38,3 +38,9 @@ jobs:
             tests/pattern_discovery/test_l3_search_engine.py
       - name: Read-only dry-run against published real snapshot
         run: python scripts/record_cycle_history.py --dry-run
+      - name: Capture and replay once in disposable CI workspace
+        run: |
+          python scripts/record_cycle_history.py
+          python scripts/record_cycle_history.py
+          python -c 'import json; from pathlib import Path; m=json.loads(Path("artifacts/cycle_history/manifest.json").read_text()); assert m["new_current_valid"]==193 and m["new_current_excluded"]==22 and m["observations"]==215 and m["research_eligible"]==0 and m["snapshots"]==1, m'
+          git diff --exit-code -- artifacts/research/ artifacts/snapshots/ artifacts/watchlist/
