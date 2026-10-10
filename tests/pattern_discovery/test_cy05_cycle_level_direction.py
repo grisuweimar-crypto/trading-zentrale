@@ -351,3 +351,41 @@ def test_cy05_methodology_is_preregistered_without_fake_l1_release():
     assert policy["l1_manifest_required_before_outcome_run"] is True
     assert design["evidence_status"]["frozen_l1_run_manifest_created"] is False
     assert design["evidence_status"]["empirical_results_computed"] is False
+
+
+def test_level_is_not_threshold_crossing_and_direction_is_not_level():
+    library = FeatureLibrary(LIB)
+    from scanner.research.pattern_discovery.search_engine import _atom_state
+
+    initial = row(30.0, day=9)
+    subsequent = row(35.0, day=10)
+    level = library.validate_feature_use(feature_use("level_band"))
+    crossing = library.validate_feature_use(
+        feature_use("threshold_crossing", {"threshold": 25})
+    )
+    direction = library.validate_feature_use(
+        feature_use("change_direction", {"lag_observations": 1})
+    )
+    # 30 -> 35 never crosses 25; 35 still belongs to 25..50.
+    assert _atom_state(level, subsequent, symbol_history=[initial], position=1) == (
+        "LEVEL_25_LT_50", None
+    )
+    assert _atom_state(crossing, subsequent, symbol_history=[initial], position=1) == (
+        None, "NO_THRESHOLD_CROSSING"
+    )
+    assert _atom_state(direction, subsequent, symbol_history=[initial], position=1) == (
+        "UP", None
+    )
+
+    # 35 -> 35 is a true 0-delta (not missing and not UP).
+    unchanged = row(35.0, day=11)
+    assert _atom_state(direction, unchanged, symbol_history=[initial, subsequent],
+                       position=2) == (None, "NO_DIRECTIONAL_CHANGE")
+    fallen = row(25.0, day=11)
+    assert _atom_state(direction, fallen, symbol_history=[initial, subsequent],
+                       position=2) == ("DOWN", None)
+    # An actual 0-cycle is a valid lower-level value; missing is not.
+    assert _atom_state(level, row(0.0), symbol_history=[], position=0) == (
+        "LEVEL_LT_25", None
+    )
+    assert _atom_state(level, row(None), symbol_history=[], position=0)[0] is None
