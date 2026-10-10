@@ -8,7 +8,7 @@ Verbindliche Vorgabe: vom Nutzer bereitgestellter CYCLE-DIR-Masterplan vom 09.10
 |---|---|---|
 | CY-00 | FERTIG_FACHLICH (Inventur) | [PR #259](https://github.com/grisuweimar-crypto/trading-zentrale/pull/259), [Bestandsaufnahme](CY-00_BESTANDSAUFNAHME.md); historische Herkunft teils UNVERIFIZIERT |
 | CY-01 | FERTIG_TECHNISCH (gemergt) | [PR #260](https://github.com/grisuweimar-crypto/trading-zentrale/pull/260), [Qualitätsbericht](CY-01_DATENQUALITAET.md); Frische alter Quellenwerte und globale QM Issue #264 offen |
-| CY-02 | **FERTIG_TECHNISCH / NICHT_FREIGEGEBEN (fachlich)** | [PR #266](https://github.com/grisuweimar-crypto/trading-zentrale/pull/266), [Abnahmeprotokoll](CY-02_BERECHNUNG_UND_FRISCHE.md); [107 bestandene Tests](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38032854774), [BA-QM8 grün](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38032854771). 60-Bar-Belege und Publikations-Gate implementiert; **ein aktueller echter CY-02-Scanner-Publikationslauf fehlt noch**; Provider-/Listingwährung nur Watchlist-deklariert, externe unabhängige Bestätigung offen |
+| CY-02 | **FERTIG_TECHNISCH / BETRIEBSNACHWEIS BESTANDEN / NICHT_FREIGEGEBEN (externe Quellenherkunft/empirisch)** | [PR #266](https://github.com/grisuweimar-crypto/trading-zentrale/pull/266) + [PR #268](https://github.com/grisuweimar-crypto/trading-zentrale/pull/268), [Abnahmeprotokoll](CY-02_BERECHNUNG_UND_FRISCHE.md), [109 grüne CI-Regressionen](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38033583951), [publizierter Autopilot #38033664492](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38033664492): **193/215 VALID, 22 ausgeschlossen, vollständige 60-Bar-Replay- und UI-/Research-/Commit-Gates bestanden**. Offene [CY02-B01 Quellen-/Listing-/Kalenderprüfung #269](https://github.com/grisuweimar-crypto/trading-zentrale/issues/269) |
 | CY-03 | GEPLANT | setzt CY-01/02 und fachlich freigegebene Quellenversion voraus; append-only Historie, Replays und Coverage |
 | CY-04 | GEPLANT | setzt CY-03 voraus |
 | CY-05 | GEPLANT | setzt CY-03 voraus; L1-Präregistrierung vor Outcome-Lauf |
@@ -16,6 +16,6 @@ Verbindliche Vorgabe: vom Nutzer bereitgestellter CYCLE-DIR-Masterplan vom 09.10
 | CY-07 | GEPLANT | setzt CY-06 und Forschungs-Gates voraus |
 | CY-08 | GEPLANT | setzt CY-07 und L12/Reviewer-Freigabe voraus |
 
-**Kein stiller Übergang:** CY-03 erst nach echtem CY-02-Produktionslauf, Replay-Audit, expliziter Einordnung der belegbaren Datenherkunft und gesonderter fachlicher Freigabe. Die offene Cross-QM [Issue #264](https://github.com/grisuweimar-crypto/trading-zentrale/issues/264) bleibt unabhängig nachzuverfolgen.
+**Kein stiller Übergang:** Technischer CY-02-Produktions-/Replay-Nachweis liegt jetzt vor. Vor CY-03 die offene Quellen-/Kalenderprüfung #269 und die Grenzen der externen Währungs-/PIT-Bestätigung fachlich beurteilen; keine implizite empirische Handelssignal-Promotion. Die offene Cross-QM [Issue #264](https://github.com/grisuweimar-crypto/trading-zentrale/issues/264) bleibt unabhängig nachzuverfolgen.
 
 **Unverändert:** produktive Scores/Decision/Portfolio-Aktionen, alte Scanner-Snapshots, ursprüngliche Cycle-Imputationsmasken, Elliott-Logik. CY-02 ist keine empirische Handelsvalidierung.
