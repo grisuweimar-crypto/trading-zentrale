@@ -140,7 +140,8 @@ def lag_mask(rows):
                 elif any(identity(x) != identity(chain[0]) for x in chain):
                     status = "IDENTITY_OR_FORMULA_CHANGED"
                 elif any((date.fromisoformat(b["as_of"])-date.fromisoformat(a["as_of"])).days >
-                         (1 if asset.upper().endswith(("-USD", "-EUR", "-USDT", "-BTC")) else 5)
+                         (1 if asset.upper().startswith("CRYPTO:") or
+                          asset.upper().endswith(("-USD", "-EUR", "-USDT", "-BTC")) else 5)
                          for a,b in zip(chain, chain[1:])):
                     status = "SCAN_GAP"
                 elif any(b["cycle_as_of"] <= a["cycle_as_of"] or b["last_bar"] < a["last_bar"]

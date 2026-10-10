@@ -94,6 +94,39 @@ def test_gap_and_universe_membership_and_invalid_previous():
     assert lag_mask([invalid,end])[1]["lag_1obs"] == "INVALID_CHAIN"
 
 
+def test_crypto_prefixed_asset_has_strict_calendar_daily_gap():
+    """CRYPTO:BTC is the real scanner asset ID, not a -USD Yahoo ticker."""
+    btc = "CRYPTO:BTC"
+    first = row("2026-10-10", asset=btc)
+    next_day = row("2026-10-11", asset=btc)
+    two_days_later = row("2026-10-12", asset=btc)
+    assert lag_mask([first, next_day])[1]["lag_1obs"] == "PROVISIONAL_CHAIN"
+    assert lag_mask([first, two_days_later])[1]["lag_1obs"] == "SCAN_GAP"
+    # Equity observation lags retain their documented five-calendar-day tolerance.
+    assert lag_mask([row("2026-10-10"), row("2026-10-12")])[1]["lag_1obs"] == "PROVISIONAL_CHAIN"
+    # Regardless of technical chain validity, Cycle v1 stays research-quarantined.
+    assert lag_mask([first, next_day])[1]["research_status"] == "BLOCKED_EXTERNAL_VERIFICATION_269"
+
+
+def test_crypto_gap_invalidates_longer_observation_chains_too():
+    btc = "CRYPTO:ADA"
+    start = date(2026, 10, 10)
+    days = [0, 1, 2, 4, 5, 6]  # one missing calendar observation on 13 October
+    rows = [row((start + timedelta(days=n)).isoformat(), asset=btc) for n in days]
+    mask = lag_mask(rows)
+    assert mask[-1]["lag_1obs"] == "PROVISIONAL_CHAIN"
+    assert mask[-1]["lag_5obs"] == "SCAN_GAP"
+    assert mask[-1]["research_status"] == "BLOCKED_EXTERNAL_VERIFICATION_269"
+
+
+def test_existing_yahoo_suffix_gap_policy_is_preserved():
+    """The CY-03 fix must also preserve previously recognized Yahoo crypto IDs."""
+    for asset in ("BTC-USD", "ETH-EUR", "SOL-USDT", "ALT-BTC"):
+        first = row("2026-10-10", asset=asset)
+        late = row("2026-10-12", asset=asset)
+        assert lag_mask([first, late])[1]["lag_1obs"] == "SCAN_GAP"
+
+
 def test_future_timestamp_and_duplicate_snapshot_fail_closed():
     r = row("2026-10-10")
     r["generated_at"] = "2026-10-09T08:00:00+00:00"
