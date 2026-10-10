@@ -119,6 +119,14 @@ def test_crypto_gap_invalidates_longer_observation_chains_too():
     assert mask[-1]["research_status"] == "BLOCKED_EXTERNAL_VERIFICATION_269"
 
 
+def test_existing_yahoo_suffix_gap_policy_is_preserved():
+    """The CY-03 fix must also preserve previously recognized Yahoo crypto IDs."""
+    for asset in ("BTC-USD", "ETH-EUR", "SOL-USDT", "ALT-BTC"):
+        first = row("2026-10-10", asset=asset)
+        late = row("2026-10-12", asset=asset)
+        assert lag_mask([first, late])[1]["lag_1obs"] == "SCAN_GAP"
+
+
 def test_future_timestamp_and_duplicate_snapshot_fail_closed():
     r = row("2026-10-10")
     r["generated_at"] = "2026-10-09T08:00:00+00:00"
