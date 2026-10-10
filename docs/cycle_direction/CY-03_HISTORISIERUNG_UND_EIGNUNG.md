@@ -127,3 +127,27 @@ Ebenfalls korrigiert: Der reale CY-03-CI-Capture prüft die Zählwerte gegen den
 **Zusätzlicher Governance-Beleg:** [BA-QM8 Hauptbranch-Audit #38039156418](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38039156418) und PR-geprüfte [BA-QM8 #38039377433](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38039377433) jeweils **SUCCESS**. Letzteres prüft weiterhin die echte W10-/Scanner-Snapshot-Identität fail-closed, ohne das Vergleichskriterium abzuschwächen.
 
 **Grenze dieser Abnahme:** Die obigen Werte stammen aus dem **isolierten CI-Capture**, nicht aus einem bereits durch `main` veröffentlichten CY-03-Ledger. Die erste wirklich produktive Publikation sowie künftige mehrtägige 1/5/10-Lag-Historie sind noch gesondert nachzuweisen. Eine reine CI- oder Datei-Erzeugung ist **keine** empirische Wertigkeit des Indikators. `research_eligible` bleibt bis nach Review von [#269](https://github.com/grisuweimar-crypto/trading-zentrale/issues/269) technisch unveränderlich bei **0**, auch für numerisch intern valide Werte; CY-04/CY-05 bleiben gesperrt.
+
+
+## 9. Erster vollständiger produktiver CY-03-Publikationsnachweis – 10.10.2026
+
+**Produktiver Ausgangspunkt:** CI-freigegebener CY-03-Code [PR #275](https://github.com/grisuweimar-crypto/trading-zentrale/pull/275) wurde mit `e740e6a0602e5bc9223483fb4ebc88daa4b00836` nach `main` gemergt; die QM8-Auslösefehler-CAPA [PR #276](https://github.com/grisuweimar-crypto/trading-zentrale/pull/276) wurde getrennt mit `295299a8e89fb92e5a2fd0e0e484f1a89acfd2d1` übernommen. Der neue scannernahe Archiv-Schritt ist fail-closed und steht unmittelbar nach vollständig erzeugtem Daily Research.
+
+**Echter Release, nicht CI-Simulation:** [Scanner_vNext Autopilot #38040088358](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38040088358) **SUCCESS, build + Commit/Push SUCCESS**; archivierte Commit-Revision `7ed4597c487a6e0fca8edd30eba78d5ac6f617b7`. Eigenständig bestandene Pipeline-Schritte: `CY-02 Zyklus-Bar-/Quality-Contract`, `Daily Research erzeugen und validieren`, `CY-03 neue Zyklusbeobachtungen unveränderlich historisieren`, nachfolgende Decision-/Research-Kohärenz und `Publication base unveraendert pruefen`. Der Veröffentlichungsgate liegt nach der CY-03-Historisierung und wurde bestanden.
+
+**Quellenidentität:** `as_of=2026-10-10`, `snapshot_id=f409c312-0349-4b29-8dab-3ecdbd9463b3`, `run_id=github-38040088358-1`, `history_metadata.latest_run_complete=true`, `history_metadata.validation.status=ok`, `latest_scanner.row_count=215`.
+
+**Tatsächlich auf `main` verfügbare produktive Dateikette und 64-stellige SHA256-Fingerprints aus `artifacts/cycle_history/manifest.json`:**
+
+| Archiv | Nachweis | SHA256 laut produktivem Manifest |
+|---|---|---|
+| `artifacts/cycle_history/observations.csv` | 215 echte Snapshotzeilen, 209 `PROVISIONAL_REPLAYED`, 6 `EXCLUDED_INSUFFICIENT_HISTORY` | `b094acb37e42b183b3a502c6a8bef73baa4a1cc745e7e7fad6edc4b745c5735e` |
+| `artifacts/cycle_history/eligibility.csv` | 215 `BLOCKED_EXTERNAL_VERIFICATION_269`, 0 Researchzulassungen | `7113bea0bdc6b0275765a61445a35313c0c1e5fd3bc02550af502402ac8e9c70` |
+| `artifacts/cycle_history/coverage.csv` | 215 Asset-/Monatszeilen, alle `research_eligible=0` | `6c08cc34d94dfbf62ea98fb797a88bd1196844b883433ccff40cba1771c97d2e` |
+| `artifacts/cycle_history/bars/f409c312-0349-4b29-8dab-3ecdbd9463b3.csv.gz` | archiviertes aktuelles 60-Bar-Preisfenster, immutabler Quellhash | `0a7674651b35cf02ecac581398fd0d6ac5204fc0f435e3f5764533117eea8007` |
+
+**Watchlist-Quelle:** `source_watchlist_sha256=018cb52025326bd3c2e995bd61ee482f129a473b9a4bff330add025f99e83008`. **PIT-/Quality-Ausnahmen:** ausschließlich `000660.KS`, `005930.KS`, `6503.T`, `6506.T`, `6861.T`, `8035.T` mit `EXCLUDED_INSUFFICIENT_HISTORY`. Kein alter 0/50-Imputationswert wurde zugelassen oder rückwirkend umgeschrieben.
+
+**Lag-/Forschungsgrenze:** `snapshots=1`, `provisional_lags={'1':0,'5':0,'10':0}`, `research_eligible=0`, `research_gate=BLOCKED_EXTERNAL_VERIFICATION_ISSUE_269`. Keine Delta- oder Richtungsbehauptung ohne tatsächlich weitere zukünftige Scannerbeobachtungen. Dass 209 Werte intern als `PROVISIONAL_REPLAYED` gelten, ist **keine** unabhängige Primärbörsen-/historische Close-Publikations-PIT-Bestätigung.
+
+**Abnahmeentscheidung:** `FERTIG_TECHNISCH_PRODUKTIV` für erste append-only Prospektivbeobachtungen, echte durchgängige Publikation und maschinelle Qualitätssperre; `NICHT_FERTIG_FACHLICH` für vollständige 1/5/10-Beobachtungsketten und unabhängige Herkunfts-/Trading-Eignung. Für vollständige CY-03-Abnahme: #269 fachlich schließen und mehrere später real publizierte Tage mit 1/5/10-Lags, deterministischem Replay, Revisions-/Delisting-/Universewechsel-Blockierverhalten und Monat/Coverage auditieren. Bis dahin keine automatische CY-04/CY-05-Freigabe.
