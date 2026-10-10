@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-09T21:21:59.839613+00:00",
+  "decision_as_of": "2026-10-10T00:21:56.038698+00:00",
   "diagnostics": {
     "bundle_count": 215,
-    "decision_as_of": "2026-10-09T21:21:59.839613+00:00",
+    "decision_as_of": "2026-10-10T00:21:56.038698+00:00",
     "elliott_6h_actionable_symbols": [],
     "elliott_6h_source_status": "not_supplied",
     "elliott_6h_symbols": [],
@@ -114,6 +114,7 @@
       "OGN",
       "ON",
       "PATH",
+      "PKX",
       "PM",
       "RACE",
       "SE",
@@ -2169,8 +2170,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "negative",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -2182,11 +2183,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "negative_confirmed_existing_long",
+        "portfolio_action_state": "EXIT_REVIEW",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "positive",
+        "stable_directional_anchor": "negative",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -2194,15 +2195,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "negative",
         "universal_stance_state": "negative",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "f4_confirmed_negative_exit_review",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "review_now",
       "symbol": "APP"
     },
     {
@@ -2690,7 +2691,7 @@
       "symbol": "AXON"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 51.68000030517578,
@@ -2713,8 +2714,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -2726,11 +2727,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "negative",
+        "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -2738,15 +2739,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "BAS.DE"
     },
     {
@@ -9051,7 +9052,7 @@
       "symbol": "PGY"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 57.28499984741211,
@@ -9074,8 +9075,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -9087,11 +9088,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "w8_f3_post_correction_positive_hold_reassess",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": null,
+        "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -9100,15 +9101,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "bootstrap_pending",
+        "transition_status": "bootstrap_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "f3_post_correction_positive_hold_reassess",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
-        "w8_reassessment_required": false
+        "w8_reassessment_required": true
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "PKX"
     },
     {
@@ -9841,7 +9842,7 @@
       "symbol": "RI.PA"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 48.25,
@@ -9864,8 +9865,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -9877,11 +9878,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "negative",
+        "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -9889,15 +9890,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "RIGD.IL"
     },
     {
@@ -10627,7 +10628,7 @@
       "symbol": "SN.L"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 27.21500015258789,
@@ -10650,8 +10651,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -10663,11 +10664,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "negative",
+        "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -10675,15 +10676,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "SNN"
     },
     {
@@ -10747,7 +10748,7 @@
       "symbol": "SNOW"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 24.979999542236328,
@@ -10770,8 +10771,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -10783,11 +10784,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "negative",
+        "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -10795,15 +10796,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "SOLB.BR"
     },
     {
@@ -10928,7 +10929,7 @@
       "symbol": "SPOT"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 4.445000171661377,
@@ -10951,8 +10952,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "positive",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -10964,11 +10965,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "positive_confirmed_existing_long",
+        "portfolio_action_state": "HOLD",
+        "reliability_assessment": "provisional_unopposed_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "negative",
+        "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -10976,15 +10977,15 @@
         ],
         "state_history_state": "never_overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "positive",
         "universal_stance_state": "positive",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "positive_normal_state_existing_swing_policy",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "hold_or_no_action",
       "symbol": "STLA"
     },
     {
@@ -11676,8 +11677,8 @@
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "no_recent_overextension_context",
-        "pending_confirmation_count": 1,
-        "pending_direction": "negative",
+        "pending_confirmation_count": 0,
+        "pending_direction": null,
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -11689,11 +11690,11 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
-        "portfolio_action_state": "WAIT_CONFIRMATION",
-        "reliability_assessment": "pending_confirmation",
+        "portfolio_action_reason_code": "negative_confirmed_existing_long",
+        "portfolio_action_state": "EXIT_REVIEW",
+        "reliability_assessment": "provisional_unopposed_support",
         "required_confirmation_count": 2,
-        "stable_directional_anchor": "positive",
+        "stable_directional_anchor": "negative",
         "state_history_changed_portfolio_action": false,
         "state_history_changed_universal_stance": false,
         "state_history_sequence": [
@@ -11702,15 +11703,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "transition_pending",
+        "transition_status": "transition_confirmed",
         "universal_stance_direction": "negative",
         "universal_stance_state": "negative",
-        "w8_action_policy_case": "negative_or_directional_transition_unconfirmed_wait",
+        "w8_action_policy_case": "f4_confirmed_negative_exit_review",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "waiting_confirmation",
+      "presentation_group": "review_now",
       "symbol": "TTAN"
     },
     {
@@ -13183,28 +13184,28 @@
   "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
   "watch_summary": {
     "action_counts": {
-      "EXIT_REVIEW": 6,
-      "HOLD": 167,
+      "EXIT_REVIEW": 8,
+      "HOLD": 173,
       "REDUCE_REVIEW": 2,
-      "WAIT_CONFIRMATION": 40
+      "WAIT_CONFIRMATION": 32
     },
-    "attention_required_count": 88,
+    "attention_required_count": 82,
     "availability_counts": {
       "decision_available": 215
     },
     "decision_available_count": 215,
     "position_count": 215,
     "presentation_group_counts": {
-      "hold_or_no_action": 167,
-      "review_now": 8,
-      "waiting_confirmation": 40
+      "hold_or_no_action": 173,
+      "review_now": 10,
+      "waiting_confirmation": 32
     },
     "reliability_counts": {
       "blocked_conflict": 27,
       "blocked_insufficient": 65,
-      "pending_confirmation": 40,
-      "provisional_same_family_support": 59,
-      "provisional_unopposed_support": 24
+      "pending_confirmation": 32,
+      "provisional_same_family_support": 65,
+      "provisional_unopposed_support": 26
     },
     "unavailable_count": 0,
     "unused_bundle_symbols": []
