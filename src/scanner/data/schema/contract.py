@@ -117,6 +117,13 @@ def _validate_number(df: pd.DataFrame, col: str, spec: dict[str, Any], *, requir
     if (not allow_null) and is_na.any():
         msg = f"{col}: {is_na.sum()} non-numeric/NA values (sample: {_sample_ids(df, is_na)})"
         (errors if required else warnings).append(msg)
+    elif allow_null:
+        # Nullable means truly absent, not an arbitrary non-numeric token.
+        raw = df[col].astype("string").str.strip()
+        invalid = (raw.notna() & raw.ne("") & is_na).fillna(False)
+        if invalid.any():
+            msg = f"{col}: {invalid.sum()} invalid non-null numeric values (sample: {_sample_ids(df, invalid)})"
+            (errors if required else warnings).append(msg)
 
     if min_v is not None:
         is_bad = (~is_na) & (n < float(min_v))
@@ -214,6 +221,24 @@ def validate_df_against_contract(
         if bad_pos.any():
             errors.append(
                 f"row_rule score_status_matches_score_and_asset_class: {bad_pos.sum()} rows have score>0 but score_status indicates avoid (sample: {_sample_ids(df, bad_pos)})"
+            )
+
+    # CY-01: nullable cycle is valid only when its quality status agrees.
+    # Do not silently accept a fake 0, a stale numeric value, or VALID+NA.
+    # Old files without a quality column still obey the numeric contract.
+    if "cycle" in df.columns and "cycle_quality" in df.columns:
+        cycle = pd.to_numeric(df["cycle"], errors="coerce")
+        quality = df["cycle_quality"].astype("string").str.strip().str.upper()
+        is_valid = quality.eq("VALID").fillna(False)
+        bad_valid = is_valid & cycle.isna()
+        bad_unavailable = (~is_valid) & cycle.notna()
+        if bad_valid.any():
+            errors.append(
+                f"row_rule cycle_quality_consistent_with_value: {bad_valid.sum()} VALID cycle rows have no numeric value (sample: {_sample_ids(df, bad_valid)})"
+            )
+        if bad_unavailable.any():
+            errors.append(
+                f"row_rule cycle_quality_consistent_with_value: {bad_unavailable.sum()} unavailable cycle rows have a numeric value (sample: {_sample_ids(df, bad_unavailable)})"
             )
 
     ok = len(errors) == 0
