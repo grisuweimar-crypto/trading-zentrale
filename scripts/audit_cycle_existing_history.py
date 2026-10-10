@@ -65,6 +65,8 @@ def audit_file(root: Path, relative: str) -> dict:
     value_count = zeros = fifties = unverified_numbers = 0
     candidate_provenance = 0
     timestamp_candidates = 0
+    candidate_by_date: Counter[str] = Counter()
+    candidate_snapshots: set[str] = set()
     dates: set[str] = set()
     assets: set[str] = set()
     snapshot_ids: set[str] = set()
@@ -108,6 +110,8 @@ def audit_file(root: Path, relative: str) -> dict:
                 and SHA.fullmatch(_first(row, ("cycle_price_sha256",)))
                 and sid and when and asset):
                 candidate_provenance += 1
+                candidate_by_date[when[:10]] += 1
+                candidate_snapshots.add(sid)
     return {
         "path": relative, "sha256": digest, "bytes": path.stat().st_size,
         "rows": rows, "columns": columns,
@@ -118,6 +122,8 @@ def audit_file(root: Path, relative: str) -> dict:
         "cycle_nonfinite_or_out_of_range": invalid_cycle_range,
         "numeric_without_complete_verified_claim": unverified_numbers,
         "formula_and_row_sha_candidates_NOT_RELEASED": candidate_provenance,
+        "candidate_dates_NOT_RELEASED": dict(sorted(candidate_by_date.items())),
+        "candidate_snapshot_ids_NOT_RELEASED": len(candidate_snapshots),
         "time_fields_present_NOT_CERTIFIED": timestamp_candidates,
         "cycle_qualities": dict(sorted(qualities.items())),
         "cycle_sources": dict(sorted(sources.items())),
