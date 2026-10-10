@@ -192,6 +192,55 @@ def audit_current(root: Path, source: Path, bars_path: Path):
         raise ValueError("cy03:current_replay_failed:"+errors[0])
 
 
+def verify_existing_history(directory: Path, observations: list[dict]) -> None:
+    """Fail closed if any previously published ledger, mask, or bar evidence drifted.
+
+    Audit before appending and before regenerating derived views; a subsequent
+    scanner run must never legitimize changed old bytes by publishing new hashes.
+    """
+    manifest_path = directory / "manifest.json"
+    historical_files = ("observations.csv", "eligibility.csv", "coverage.csv")
+    found_any = observations or manifest_path.exists() or any(
+        (directory / name).exists() for name in historical_files
+    )
+    if not found_any:
+        return
+    if not manifest_path.is_file() or manifest_path.is_symlink():
+        raise ValueError("cy03:missing_previous_manifest")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError("cy03:invalid_previous_manifest") from exc
+    if manifest.get("schema_version") != VERSION:
+        raise ValueError("cy03:previous_manifest_schema_changed")
+    expected = manifest.get("file_sha256")
+    if not isinstance(expected, dict):
+        raise ValueError("cy03:missing_previous_manifest_hashes")
+    for name in historical_files:
+        path = directory / name
+        if (not path.is_file() or path.is_symlink()
+            or not HASH.fullmatch(str(expected.get(name, "")))
+            or sha(path.read_bytes()) != expected[name]):
+            raise ValueError("cy03:previous_history_integrity_changed:" + name)
+    by_snapshot = {}
+    for row in observations:
+        sid = row.get("snapshot_id", "")
+        bars_hash = row.get("bars_sha256", "")
+        if not UUID.fullmatch(sid) or not HASH.fullmatch(bars_hash):
+            raise ValueError("cy03:previous_snapshot_identity_invalid")
+        if sid in by_snapshot and by_snapshot[sid] != bars_hash:
+            raise ValueError("cy03:previous_bars_hash_conflict")
+        by_snapshot[sid] = bars_hash
+    if (len(observations) != manifest.get("observations")
+        or len(by_snapshot) != manifest.get("snapshots")):
+        raise ValueError("cy03:previous_manifest_counts_changed")
+    for sid, expected_hash in by_snapshot.items():
+        path = directory / "bars" / (sid + ".csv.gz")
+        if (not path.is_file() or path.is_symlink()
+            or sha(path.read_bytes()) != expected_hash):
+            raise ValueError("cy03:previous_bar_archive_changed:" + sid)
+
+
 def record(root: Path, *, write=True):
     """Audit the exact current source and append once; --dry-run does not write."""
     root = Path(root)
@@ -246,6 +295,7 @@ def record(root: Path, *, write=True):
     dest = root/ROOT
     ledger_path = dest/"observations.csv"
     old = read_ledger(ledger_path)
+    verify_existing_history(dest, old)
     found = [r for r in old if r["snapshot_id"] == sid]
     if found and found != records:
         raise ValueError("cy03:immutable_snapshot_changed")
