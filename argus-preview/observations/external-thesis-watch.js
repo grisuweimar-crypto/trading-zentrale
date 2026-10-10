@@ -1,5 +1,9 @@
 /* ARGUS External Thesis Watch – Presentation only, never an admission/scoring engine. */
 (()=>{'use strict';
+// Load the common explanation aid on the main ARGUS preview, without changing navigation.
+const aid=document.createElement('script');
+aid.src=new URL('argus-help.js',document.currentScript?.src||new URL('observations/',document.baseURI)).href;
+aid.defer=true;document.head.appendChild(aid);
 const host=document.getElementById('observations');if(!host)return;
 const RAW='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/';
 const REF='argus-preview/observations/external_thesis_watch_reference.json';
