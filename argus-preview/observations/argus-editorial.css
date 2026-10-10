@@ -126,3 +126,13 @@
  #observations #etw .etwFilters button{flex:1 1 calc(50% - 6px);font-size:11px;padding:7px;min-height:33px}
  #observations #etw #etwQuery{flex:1 1 100%;order:-1;min-height:38px}
 }
+
+#observations #etw .etwOverview>summary{display:none;cursor:pointer;color:#eddbb8;font-size:12px}
+#observations #etw .etwOverview>summary:focus-visible{outline:2px solid #e5bf82}
+@media(max-width:600px){
+ #observations #etw .etwOverview{border:1px solid #385469;border-radius:8px;margin:10px 0}
+ #observations #etw .etwOverview>summary{display:block;padding:10px 12px;list-style:none;line-height:1.5}
+ #observations #etw .etwOverview>summary::before{content:"＋";margin-right:8px;color:#deb97e;font-size:15px}
+ #observations #etw .etwOverview[open]>summary::before{content:"−"}
+ #observations #etw .etwOverview .etwMetrics{margin:0;border-top:1px solid #3c5667;border-bottom:0}
+}
