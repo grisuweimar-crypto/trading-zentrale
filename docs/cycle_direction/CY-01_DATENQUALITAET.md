@@ -41,3 +41,19 @@ Abnahme erst nach **grünem CI-Lauf**, Prüfung weiterer abhängig getesteter Wo
 3. Beim ersten neuen vollständigen Scannerlauf die neu publizierten `cycle_quality`-Counts gegen `artifacts/reports/cycle_quality.csv` und Research-Snapshot prüfen.
 4. Relevante Score-/Risk-/Decision-Verhaltensgleichheit via Regression nachweisen.
 5. Danach CY-01 formal schließen. **CY-02** soll eine echte, versionierte Berechnung einschließlich per-Bar-As-of-Provenance liefern; **CY-03** muss die historische Quarantäne in die Pattern-Research-Eignung integrieren.
+
+## 10.10.2026 — CY-01 Abnahmeprotokoll / unabhängige QM-Triage
+
+**Geprüfter CY-01-Kandidat:** `c5aa666db3e4eba1d056cec81177afb6864c161d`. Die CY-01-CI **cycle-quality** ist erfolgreich (78 Tests, Syntax-Kompilierung). BA-QM8 Scanner E2E, QM-B Historical Taxonomy, QM-B Observed Membership und Pattern Discovery L10–L13 waren auf diesem PR-Head ebenfalls grün.
+
+**Separater globaler Blocker:** Die vollständige Return Integrity Recheck auf demselben CY-01-Head meldete `3 failed, 1607 passed`, Lauf [#38027504183](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38027504183). Nicht als grün verschweigen. Betroffen: Elliott Stage4 Sufficient Stats (1e-17-Mean-Abweichung), QM10 frozen-vs-live Snapshot Assertion und Magma frozen-vs-live rank Assertion.
+
+**Kontrollierter Basistest:** Temporäre PR [#265](https://github.com/grisuweimar-crypto/trading-zentrale/pull/265) verwendete im eigenen Workflow exakt den unveränderten `main`-SHA `5eb1ff9a2962c30b563222328d2f24c986471bec`; Lauf [#38028559730](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38028559730) zeigte `2 failed, 1 passed`:
+- QM10: identischer Fehler auch auf unverändertem main (Proof bindet 06.10., live Metadata 09.10.).
+- Magma: identischer Fehler auch auf unverändertem main (live rank 214 vs frozen 212).
+- Elliott: besteht isoliert auf main; die Ursache der letzten Ziffer im Full-Suite-Kontext ist **nicht** abschließend isoliert und darf nicht als definitiv unabhängig bewiesen bezeichnet werden.
+
+**Governance:** Die drei Cross-QM-Befunde bleiben als eigenständiges [QM-Issue #264](https://github.com/grisuweimar-crypto/trading-zentrale/issues/264) offen. Sie dürfen nicht durch das Umschreiben historischer Verträge, das Loosen von Promotion-Gates oder stilles Verwerfen der Regressionstests beseitigt werden. Ein eventueller CY-01-Merge kann deshalb ausschließlich als **bewusste, eng begrenzte Modulabnahme mit offen dokumentierter globaler Regression** gelten, niemals als Behauptung eines grünen gesamthaften Repository-Gates.
+
+**CY-01-Umfang:** Missingness-/Range-Validierung, Fallback-Verbot, nullable Research/History/UI, QM-Status, Snapshot-spezifische Nullwert-Quarantäne; keine neue Formel, keine rückwirkende Ergänzung alter Daten, kein produktives Scoring-/Decision-Upgrade. Das alte Zyklusfeld beweist keine aktuelle Bar-Provenance und wird erst in CY-02 wieder frisch berechnet; die historienweite Quarantäne gehört CY-03.
+
