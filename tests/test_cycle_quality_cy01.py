@@ -7,6 +7,8 @@ from scanner.reports.daily_research import ALIASES
 from scanner.reports.history_delta import build_snapshot_from_watchlist
 from scanner.reports.research_views import KNOWN_COLUMNS
 from scanner.ui.generator import DEFAULT_COLUMNS, _render_fallback_tbody, _render_html
+from scanner.data.schema.contract import load_contract, validate_csv, validate_df_against_contract
+from scanner.data.io.paths import project_root
 
 
 def test_blank_legacy_never_falls_back_to_fake_canonical_zero():
@@ -222,3 +224,73 @@ def test_default_scanner_ui_retains_cycle_quality_and_source():
     assert [r["cycle_source"] for r in records] == [
         "LEGACY_ZYKLUS_PCT", "LEGACY_ZYKLUS_PCT", "NONE"
     ]
+
+
+def _nullable_cycle_ui_fixture():
+    """Minimal valid UI projection matching the current CY-01 scanner contract."""
+    return pd.DataFrame([
+        {"ticker": "AAA", "name": "Missing", "score": 42.0,
+         "cycle": float("nan"), "cycle_quality": "MISSING_SOURCE",
+         "cycle_source": "NONE", "confidence": 80.0,
+         "trend_ok": True, "liquidity_ok": True, "is_crypto": False,
+         "score_status": "OK"},
+        {"ticker": "BBB", "name": "True zero", "score": 42.0,
+         "cycle": 0.0, "cycle_quality": "VALID",
+         "cycle_source": "LEGACY_ZYKLUS_PCT", "confidence": 80.0,
+         "trend_ok": True, "liquidity_ok": True, "is_crypto": False,
+         "score_status": "OK"},
+        {"ticker": "CCC", "name": "Hundred", "score": 42.0,
+         "cycle": 100.0, "cycle_quality": "VALID",
+         "cycle_source": "LEGACY_ZYKLUS_PCT", "confidence": 80.0,
+         "trend_ok": True, "liquidity_ok": True, "is_crypto": False,
+         "score_status": "OK"},
+    ])
+
+
+def test_cycle_is_required_column_but_nullable_in_ui_contract(tmp_path):
+    contract_path = project_root() / "configs/watchlist_contract.json"
+    contract = load_contract(contract_path)
+    assert contract["required_columns"]["cycle"]["allow_null"] is True
+    frame = _nullable_cycle_ui_fixture()
+    assert validate_df_against_contract(frame, contract).ok
+
+    # Reproduce the real production validation path, not just an in-memory type.
+    csv_path = tmp_path / "watchlist_ALL.csv"
+    frame.to_csv(csv_path, index=False)
+    result = validate_csv(csv_path, contract_path)
+    assert result.ok, result.errors
+    without_column = frame.drop(columns=["cycle"])
+    result = validate_df_against_contract(without_column, contract)
+    assert any("missing required column: cycle" in err for err in result.errors)
+
+
+def test_ui_contract_rejects_malformed_cycle_not_just_missingness():
+    contract = load_contract(project_root() / "configs/watchlist_contract.json")
+    for invalid in ("bad", "-1", "101", "inf"):
+        frame = _nullable_cycle_ui_fixture()
+        frame["cycle"] = frame["cycle"].astype(object)
+        frame.at[0, "cycle"] = invalid
+        result = validate_df_against_contract(frame, contract)
+        assert not result.ok, invalid
+        assert any("cycle" in err for err in result.errors)
+
+
+def test_ui_contract_enforces_quality_consistency():
+    contract = load_contract(project_root() / "configs/watchlist_contract.json")
+    cases = [
+        (0, "VALID"),  # VALID + blank
+        (1, "STALE"),  # numeric 0 with STALE
+        (2, "INVALID_VALUE"),  # numeric 100 with INVALID
+    ]
+    for index, status in cases:
+        frame = _nullable_cycle_ui_fixture()
+        frame.at[index, "cycle_quality"] = status
+        result = validate_df_against_contract(frame, contract)
+        assert not result.ok
+        assert any("cycle_quality_consistent_with_value" in err for err in result.errors)
+
+
+def test_ui_contract_missing_quality_column_keeps_legacy_compatibility():
+    contract = load_contract(project_root() / "configs/watchlist_contract.json")
+    frame = _nullable_cycle_ui_fixture().drop(columns=["cycle_quality"])
+    assert validate_df_against_contract(frame, contract).ok

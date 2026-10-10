@@ -21,18 +21,19 @@
     },
     "score": {
       "type": "number",
-      "min": 0.0,
-      "max": 100.0
+      "min": 0,
+      "max": 100
     },
     "cycle": {
       "type": "number",
-      "min": 0.0,
-      "max": 100.0
+      "min": 0,
+      "max": 100,
+      "allow_null": true
     },
     "confidence": {
       "type": "number",
-      "min": 0.0,
-      "max": 100.0
+      "min": 0,
+      "max": 100
     },
     "trend_ok": {
       "type": "bool"
@@ -183,6 +184,21 @@
     "pillar_tags": {
       "type": "string",
       "allow_null": true
+    },
+    "cycle_quality": {
+      "type": "string",
+      "allow_null": true,
+      "allowed": [
+        "VALID",
+        "MISSING_SOURCE",
+        "INVALID_VALUE",
+        "STALE",
+        "INSUFFICIENT_HISTORY"
+      ]
+    },
+    "cycle_source": {
+      "type": "string",
+      "allow_null": true
     }
   },
   "row_rules": [
@@ -190,6 +206,11 @@
       "name": "score_status_matches_score_and_asset_class",
       "severity": "error",
       "description": "If score==0 then score_status must be AVOID (non-crypto) or AVOID_CRYPTO_BEAR (crypto). If score>0 then score_status must be OK (unless NA/ERROR)."
+    },
+    {
+      "name": "cycle_quality_consistent_with_value",
+      "severity": "error",
+      "description": "A numeric cycle in [0,100] is only permitted with cycle_quality=VALID; unavailable cycle must not claim VALID. Legacy files without cycle_quality remain readable."
     }
   ]
 }
