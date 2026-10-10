@@ -43,7 +43,7 @@ def _stub(monkeypatch, result=None, keep_anchor=True):
 
 
 def test_real_current_archive_is_read_only_and_remains_source_blocked():
-    actual = watch.audit_scientific_readiness(ROOT, observed_at=NOW, issue_269_state="OPEN")
+    actual = watch.audit_scientific_readiness(ROOT, observed_at=datetime.now(timezone.utc), issue_269_state="OPEN")
     assert actual["gates"]["CY03_internal_archive"] == "PASS_INTERNAL_ONLY"
     assert actual["observations"]["original_snapshot_retained"] is True
     assert actual["research_release_performed"] is False
