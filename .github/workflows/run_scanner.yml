@@ -113,6 +113,10 @@ jobs:
         if: steps.research.outputs.complete == 'true'
         run: python scripts/generate_daily_research.py
 
+      - name: CY-03 neue Zyklusbeobachtungen unveränderlich historisieren
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/record_cycle_history.py
+
       - name: Aktuelle Phase-7A Decision-Evidence archivieren
         id: decision_evidence
         if: steps.research.outputs.complete == 'true'
