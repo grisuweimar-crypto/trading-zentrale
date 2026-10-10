@@ -31,7 +31,7 @@ Das aktuelle 215er-Archiv darf weder bei diesem Paket verändert noch rückwirke
 
 Die Regressionen decken ab: echte Cycle-`0` versus Missingness, `UP`, `DOWN`, `UNCHANGED`, die 1/5/10-Observation-Grenzen, fehlende Vorgänger, Quarantänestatus, STALE, unterschiedliche Listings/Währungen/Formeln/Preis-SHA, neueste Snapshot-Identität, superseded same-day Snapshots, unveränderte Score-/dScore-Tabellenspalten und **keinen** produktiven Pfeil ohne Release.
 
-**Formale Ergebnisse, Job-/Run-ID, Anzahl Tests und Merge-SHA** werden erst nach tatsächlich beendeten GitHub-Checks eingetragen. Grün für UI bedeutet **nicht** fachlich freigegebene Richtung und keinen empirischen Trading-Mehrwert.
+**Tatsächlich erfolgreich ausgeführter erster CY-04-CI-Lauf:** [Run #38048844420](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38048844420) / [Job #114203718318](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38048844420/job/114203718318): **56 passed in 0.82s**, produktiver UI-Smoke mit **215 realen Zeilen und 0 nicht zugelassenen Richtungs-Pfeilen**, erzeugtes Dashboard-JavaScript per `node --check` akzeptiert. QM-B-Taxonomie und Cycle-Quality waren auf derselben Code-Revision ebenfalls erfolgreich. Diese Testergebnisse gehören zum damaligen Commit `a35fc534f7f6794c2f6294ef0ab882120cffecc0`; spätere Dokumentations-/Statusänderungen erhalten eigene CI-Checks. Grün für UI bedeutet **nicht** fachlich freigegebene Richtung und keinen empirischen Trading-Mehrwert.
 
 ## 4. Stop-Gates und Wiedereinstieg
 
