@@ -1,0 +1,31 @@
+name: CYCLE-DIR CY02-B01 Vale Identity
+on:
+  pull_request:
+    paths:
+      - "data/inputs/universe_master.csv"
+      - "tests/test_cycle_issuer_venue_2026.py"
+      - "docs/cycle_direction/CY-02_B01_VALE_LISTING_2026-10-10.md"
+      - ".github/workflows/cycle_dir_cy02_vale.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vale-identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - name: Verify real master-to-canonical quote identities and CY-02 regressions
+        run: |
+          python -m pytest -q \
+            tests/test_cycle_issuer_venue_2026.py \
+            tests/test_cycle_oscillator_cy02.py \
+            tests/test_cycle_audit_cy02.py \
+            tests/test_cycle_quality_cy01.py \
+            tests/test_research_views.py \
+            tests/test_daily_research.py

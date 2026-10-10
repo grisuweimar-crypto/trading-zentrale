@@ -37,6 +37,6 @@ jobs:
           from scanner.app.build_watchlist import expected_master_universe_count
           from pathlib import Path
           n = expected_master_universe_count(Path("data/inputs/universe_master.csv"))
-          assert n == 215, f"unexpected universe cardinality {n}; manual review required"
-          print(f"Unchanged canonical universe: {n}")
+          assert n == 216, f"unexpected universe cardinality {n}; manual review required"
+          print(f"CY02-B01 resolved dual-listing universe: {n}")
           PY
