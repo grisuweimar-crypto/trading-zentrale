@@ -27,7 +27,7 @@ const css=String.raw`
 #v7Monitor .v7stage:first-child{border-top:0;padding-top:0}
 #v7Monitor .v7stageHead{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
 #v7Monitor .v7stage b{font-size:12px}#v7Monitor .v7stage code{color:#f0cb84;background:#17374a;border-radius:4px;padding:3px 7px;font-size:11px}
-#v7Monitor .v7stage p{font-size:11px;color:#bed0dc;margin:7px 0 0}
+#v7Monitor .v7stage p{font-size:11px;color:#bed0dc;margin:7px 0 0}#v7Monitor .v7stage .v7stageMeaning{color:#e4ebee}#v7Monitor .v7stage .v7stageCode{color:#b8ccda}
 #v7Monitor .v7statrow{display:flex;justify-content:space-between;gap:12px;border-top:1px solid #334b5c;padding:10px 0;font-size:12px}
 #v7Monitor .v7statrow span{color:#b7c9d4}#v7Monitor .v7statrow b{text-align:right}
 #v7Monitor .v7empty{padding:13px;border:1px solid #42576a;border-left:2px solid #caa969;background:#10293b;font-size:12px}
@@ -55,6 +55,27 @@ const count=x=>Number.isSafeInteger(x)&&x>=0?new Intl.NumberFormat('de-DE').form
 const date=x=>x&&!Number.isNaN(Date.parse(x))?new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Berlin'}).format(new Date(x))+' (Berlin)':'Nicht verfügbar';
 const link=(path,label)=>'<a target="_blank" rel="noopener noreferrer" href="'+GH+encodeURI(path)+'">'+esc(label)+' ↗</a>';
 const stageNames={DISCOVERY_TRIGGER:'Discovery-Trigger',PROSPECTIVE_CAPTURE:'L7 · Prospective Capture',OUTCOME_MATURATION:'L8 · Outcome Maturation',SEQUENTIAL_CONFIRMATION:'L9 · Confirmation',RATING_UPDATE:'L10 · Rating',DEPENDENCY_REFRESH:'L6 · Dependency Graph',NEGATIVE_RESULT_AUDIT:'QM-C5 · Negative Results',PATTERN_DECAY_AUDIT:'Pattern Decay',QM_REGRESSION:'Laufende QM-Regression'};
+/* Erläuterungen folgen den L14-Modulverträgen; kein eigener Forschungsstatus. */
+const stageHelp={
+ DISCOVERY_TRIGGER:'Prüft, ob eine neue Discovery-Runde gemäß L14 zur Vorregistrierung ansteht. L14 startet keine Mustersuche eigenständig.',
+ PROSPECTIVE_CAPTURE:'L7 erfasst neue Prospective-Claims nur für eingefrorene Muster und einen gültigen, noch nicht erfassten Snapshot.',
+ OUTCOME_MATURATION:'L8 prüft ausstehende Beobachtungshorizonte. Ob ein Outcome reif ist, entscheidet ausschließlich L8.',
+ SEQUENTIAL_CONFIRMATION:'L9 und QM-C4 steuern vorab festgelegte Bestätigungsprüfungen. L14 legt keine zusätzlichen Prüfzeitpunkte fest.',
+ RATING_UPDATE:'L10 verarbeitet neue, gültige L9-Ergebnisse. ARGUS vergibt selbst keine Ratings.',
+ DEPENDENCY_REFRESH:'L6 prüft Abhängigkeiten bei relevanter Änderung des eingefrorenen Musterbestands.',
+ NEGATIVE_RESULT_AUDIT:'Prüft die Integrität des QM-C5-Negativergebnisregisters, ohne neue Ergebnisse zu erzeugen.',
+ PATTERN_DECAY_AUDIT:'Prüft dokumentierte Hinweise auf nachlassende Musterstabilität. L14 ändert dadurch keine Ratings.',
+ QM_REGRESSION:'Bindet den bestehenden BA-QM12-Prüfstatus ein; ein PASS ist keine Validierung der Handelsprognose.'
+};
+const statusHelp={
+ DUE_PREREGISTRATION:'Vor einer Mustersuche ist eine neue, unveränderliche L1-Vorregistrierung erforderlich.',
+ NOT_DUE:'Dieser Arbeitsschritt ist laut dem veröffentlichten L14-Zyklus derzeit nicht fällig.',
+ PASS:'Die jeweilige technische oder QM-Kontrolle meldet PASS; das ist keine Bestätigung einer Renditeprognose.',
+ BLOCKED_FAIL_CLOSED:'Der Forschungsbetrieb ist laut Register fail-closed gesperrt; keine stillschweigende Freigabe.',
+ READY_WITH_WORK:'Der L14-Betriebscheck ist bereit; die ausgewiesenen Aufgaben sind noch zu bearbeiten.'
+};
+const help=(stage,status)=>'<p class="v7stageMeaning">'+esc(stageHelp[stage]??'Für diese Station liegt keine freigegebene Kurzbeschreibung vor.')+'</p>'+
+ '<p class="v7stageCode">'+esc(statusHelp[status]??'Für diesen Status liegt keine freigegebene Kurzerläuterung vor. Maßgeblich bleibt der Originalcode.')+'</p>';
 const lbl=(k,v)=>'<div class="v7statrow"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>';
 const summary=(k,n,d)=>'<div class="v7metric"><label>'+esc(k)+'</label><strong>'+count(n)+'</strong><small>'+esc(d)+'</small></div>';
 async function fetchJson(path){
@@ -94,7 +115,7 @@ async function load(){
       summary('L10 · Rating-Ereignisse',q.rating_event_count,'aus L14 laboratory_state');
    el('v7Stages').innerHTML=c.work_items.length?c.work_items.map(s=>
       '<div class="v7stage"><div class="v7stageHead"><b>'+esc(stageNames[s.stage]||s.stage||'Unbekannte Phase')+'</b><code>'+esc(s.status??'UNAVAILABLE')+
-      '</code></div><p>Originalstatus: '+esc(s.status??'Nicht verfügbar')+'</p></div>').join(''):
+      '</code></div>'+help(s.stage,s.status)+'</div>').join(''):
       '<div class="v7empty">Keine Stationen im verifizierten Zyklus enthalten.</div>';
    const trg=c.discovery?.trigger??{}, cand=c.discovery?.candidate_state??{}, head=c.source_heads??{};
    el('v7Lab').innerHTML=lbl('Discovery-Trigger-Status',trg.status??'Nicht verfügbar')+
