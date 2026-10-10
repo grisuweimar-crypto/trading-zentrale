@@ -7,6 +7,7 @@ on:
       - "argus-preview/v7/**"
       - "argus-preview/observations/**"
       - "tests/test_argus_clarity_preview.py"
+      - "tests/test_argus_observation_render.js"
       - ".github/workflows/argus_clarity_preview.yml"
   workflow_dispatch:
 
@@ -31,5 +32,7 @@ jobs:
           node --check argus-preview/v7/qm-monitor.js
           node --check argus-preview/observations/external-thesis-watch.js
           node --check argus-preview/observations/argus-help.js
+      - name: Render historic external-thesis cards with mocked published sources
+        run: node tests/test_argus_observation_render.js
       - name: Verify unchanged research and source boundaries
         run: python -m unittest discover -s tests -p 'test_argus_clarity_preview.py' -v
