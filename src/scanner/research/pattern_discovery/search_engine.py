@@ -349,6 +349,25 @@ def _atom_state(
     if tid in {"raw", "regime_context"}:
         return _state_text(current), None
 
+    if tid == "level_band":
+        # Exactly the preregistered Cycle bands. 25/50/75 belong to the
+        # upper band. No outcome-dependent fitting or arbitrary binning.
+        if isinstance(current, bool):
+            return None, "CYCLE_LEVEL_NOT_FINITE"
+        try:
+            level = float(current)
+        except (TypeError, ValueError):
+            return None, "CYCLE_LEVEL_NOT_FINITE"
+        if not math.isfinite(level) or not 0.0 <= level <= 100.0:
+            return None, "CYCLE_LEVEL_OUT_OF_RANGE"
+        if level < 25.0:
+            return "LEVEL_LT_25", None
+        if level < 50.0:
+            return "LEVEL_25_LT_50", None
+        if level < 75.0:
+            return "LEVEL_50_LT_75", None
+        return "LEVEL_GTE_75", None
+
     if tid == "change_direction":
         lag = int(validated_use["parameters"]["lag_observations"])
         if position < lag:
