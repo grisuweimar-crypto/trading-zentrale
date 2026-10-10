@@ -134,10 +134,10 @@ def test_file_record_is_append_only_idempotent_and_never_rewrites_legacy(tmp_pat
     import hashlib
     import json
     from pathlib import Path
-    from scripts import audit_cycle_current
+    from scanner.reports import cycle_history
     from scanner.reports.cycle_history import record, csv_bytes
 
-    monkeypatch.setattr(audit_cycle_current, "audit_csv", lambda *a, **k: ([], {}))
+    monkeypatch.setattr(cycle_history, "audit_current", lambda *a, **k: None)
     def write(rel, data):
         path = tmp_path/rel
         path.parent.mkdir(parents=True, exist_ok=True)
