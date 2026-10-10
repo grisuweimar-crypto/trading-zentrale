@@ -274,12 +274,12 @@ function card(item){
  // recommendation would fabricate evidence. In particular MIXED has no recorded
  // positive/negative components.
  const historyHTML=item.historical?
-  '<div class="etwHistorical"><span class="etwEyebrow">Älterer Scannervergleich · Prüfkriterien nicht vollständig dokumentiert</span>'+
+  '<details class="etwHistorical"><summary>Früherer Scannervergleich – Gründe nicht vollständig erhalten</summary><div class="etwArchiveDetail"><span class="etwEyebrow">Alte Einordnung · kein aktuelles Urteil</span>'+
   '<strong>'+(item.historical==='MIXED'?'Damals uneinheitlich beurteilt':'Früherer Vergleichsvermerk · keine heutige Bewertung')+'</strong>'+
   '<p>'+(item.historical==='MIXED'?
-   '„MIXED“ stammt aus unserer früheren Gegenüberstellung mit dem Scanner, nicht aus einem Rating des Newsletter-Anbieters. Welche Punkte dafür oder dagegen sprachen, ist im alten Kurzregister nicht vollständig vermerkt. Die externe Trading-Idee und ihre Begründung stehen separat darunter.':
+   '„MIXED“ stammt aus unserer früheren Gegenüberstellung mit dem Scanner, nicht aus einem Rating des Newsletter-Anbieters. Welche Punkte dafür oder dagegen sprachen, ist im alten Kurzregister nicht vollständig vermerkt. Die Begründung der externen Idee findest du oberhalb dieses Archivvermerks.':
    'Das alte Schlagwort beschreibt eine damalige interne Gegenüberstellung. Deren genaue Prüfkriterien stehen nicht vollständig im Archiv. Die ursprüngliche externe Trading-Idee wird, soweit nachvollziehbar, gesondert beschrieben.')+'</p>'+
-  '<details class="etwTech"><summary>Originalen Archivvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur der damals notierte Begriff, kein gültiger Entscheidungsstatus.</details></div>':
+  '<details class="etwTech"><summary>Originalen Archivvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur der damals notierte Begriff, kein gültiger Entscheidungsstatus.</details></div></details>':
   '<p class="etwLead">Externe Aktienidee · getrennt von der eigentlichen Scanneraufnahme und nicht als Handelssignal bestätigt.</p>';
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
  const ew=candidateElliott&&candidateElliott.symbol===item.symbol?candidateElliott:null;
@@ -292,7 +292,7 @@ function card(item){
    '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></div>';
  }).join('')+'</details>':'<p>Die Berechnung hat noch keine ausgabefähige Wellenstruktur erfasst. Ein fehlender Zustand ist kein neutrales Signal.</p>')+'</div>'):'';
  const noteHTML=notes.length?
-  '<div class="etwEvidenceTitle">Warum wurde die Aktie vorgeschlagen?</div>'+notes.map(n=>{
+  '<div class="etwEvidenceTitle"><span class="etwLeadSymbol">DIE EXTERNE IDEE</span><strong>Warum wurde die Aktie vorgeschlagen?</strong></div>'+notes.map((n,idx)=>{
    const historical=n.source_kind==='historical_project_recap';
    const trace=historical?
       'Frühere Projektauswertung vom '+formatDate(n.review_date)+'. Originalnewsletter derzeit nicht erneut geprüft.':
@@ -303,7 +303,7 @@ function card(item){
       '<p class="etwGoal">Im damaligen Newsletter genanntes Kursziel: <strong>'+
       esc(new Intl.NumberFormat('de-DE',{maximumFractionDigits:2}).format(Number(n.source_target.value)))+' '+
       esc(n.source_target.currency)+'</strong>. Kein eigenes ARGUS-Kursziel.</p>':'';
-   return '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
+   return '<div class="etwRationale'+(idx===0?' etwRationalePrimary':'')+'"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
        esc(historical?'Auswertung '+formatDate(n.review_date):formatDate(n.source_date))+'</small>'+
      (n.source_title?'<strong class="etwSourceTitle">'+esc(n.source_title)+'</strong>':'')+
      '<p>'+esc(n.source_rationale??'Zu diesem Hinweis liegt keine ausreichende Begründung vor.')+'</p>'+
@@ -313,11 +313,10 @@ function card(item){
      (safeLink(n.source_link)?'<a href="'+esc(safeLink(n.source_link))+'" target="_blank" rel="noopener noreferrer">Persönliche Quellenmail öffnen ↗</a>':'')+
      '</div>';
    }).join(''):
-  '<p class="etwNote">Für diesen Kandidaten ist noch kein nachvollziehbarer Quellenanlass hinterlegt.</p>';
+  '<div class="etwRationale etwRationaleEmpty"><strong>Keine belegbare Begründung hinterlegt</strong><p>Eine konkrete externe Nachricht oder These liegt für diesen Fall noch nicht vor. Keine Bewertung möglich.</p></div>';
  return '<article class="etwCard" aria-label="'+esc(item.name)+' – '+esc(item.symbol)+'"><div class="etwTop"><div><div class="etwName">'+esc(item.name)+'</div><div class="etwSym">'+esc(item.symbol)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
- historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
- noteHTML+externalTrack(item)+ewHtml+'</article>';
+ noteHTML+externalTrack(item)+historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+ewHtml+'</article>';
 }
 function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
