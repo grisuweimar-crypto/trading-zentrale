@@ -119,6 +119,12 @@ jobs:
         if: steps.research.outputs.complete == 'true'
         run: python scripts/record_cycle_history.py
 
+      # Snapshot-bound client receipt from the *same run's* Yahoo download.
+      # Does not certify independent publisher availability / source currency.
+      - name: CY-03 neue Provider-Empfangszeit und Frame-Fingerprint konservieren
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/record_cycle_provider_receipt.py
+
       - name: Aktuelle Phase-7A Decision-Evidence archivieren
         id: decision_evidence
         if: steps.research.outputs.complete == 'true'
