@@ -5,6 +5,9 @@ const aid=document.createElement('script');
 aid.src=new URL('argus-help.js',document.currentScript?.src||new URL('observations/',document.baseURI)).href;
 aid.defer=true;document.head.appendChild(aid);
 const host=document.getElementById('observations');if(!host)return;
+const MODULE_URL=new URL('./',document.currentScript?.src||document.baseURI);
+const editorial=document.createElement('link');editorial.rel='stylesheet';
+editorial.href=new URL('argus-editorial.css',MODULE_URL).href;document.head.appendChild(editorial);
 const RAW='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/';
 const REF='argus-preview/observations/external_thesis_watch_reference.json';
 const PUBLIC='argus-preview/observations/external_thesis_watch_candidates.json';
@@ -63,10 +66,10 @@ const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplaine
 host.insertAdjacentHTML('afterbegin',
 '<section id="etw" aria-label="Externe Aufnahmekandidaten">'+
 '<div class="etwTitle"><div><div class="etwGold">ARGUS · EXTERNAL THESIS WATCH</div>'+
-'<h3>Kandidatenradar</h3><p>Hier sammeln wir Aktienideen aus externen Quellen, auch wenn sie noch nicht im Scanner stehen. Eine Erwähnung ist weder eine Kaufempfehlung noch eine Entscheidung zur Aufnahme.</p></div>'+
+'<h3>Welche Aktienideen sind einen zweiten Blick wert?</h3><p>Die Begründung der externen Trading-Idee steht bei jeder Aktie zuerst. Darunter siehst du den späteren Kursverlauf und unsere getrennte Beobachtung.</p></div>'+
 '<div class="etwTools"><button type="button" id="etwImportBtn">↑ Private Notizen öffnen</button><input type="file" id="etwFile" accept="application/json,.json" style="display:none" aria-label="Private Kandidaten-Datei auswählen">'+
 '<button type="button" id="etwBackupBtn">↓ Eigene Notizen sichern</button><button type="button" id="etwRefresh">↻ Beobachtungen aktualisieren</button></div></div>'+
-'<div class="etwExplainer"><b>Was gehört hierher?</b> Externe <b>Aktienkandidaten</b>, die wir beobachten möchten. Die <b>Musterkandidaten</b> im Forschungsstand sind etwas anderes: Dort werden statistische Zusammenhänge geprüft. <b>Im Scanner</b> bedeutet nur, dass die Aktie im aktuellen Scannerlauf vorkommt – nicht, dass sie gekauft werden sollte.</div>'+ 
+'<div class="etwExplainer"><b>Was wird hier geprüft?</b> <b>Was wurde behauptet?</b> <b>Was geschah anschließend?</b> Und <b>was wusste unser Scanner damals?</b> Diese Perspektiven bleiben voneinander getrennt. Eine interessante Idee ist noch keine Kaufempfehlung.</div>'+ 
 '<div id="etwMetrics" class="etwMetrics"></div><div class="etwGate" id="etwGate" role="status">Externe Referenz und Scannerstand werden geladen …</div>'+
 '<div class="etwFilters"><button type="button" data-etw-filter="all" aria-pressed="true">Alle Fälle</button><button type="button" data-etw-filter="shadow" aria-pressed="false">Außerhalb Scanner</button>'+
 '<button type="button" data-etw-filter="scanner" aria-pressed="false">Im Scanner enthalten</button><button type="button" data-etw-filter="new" aria-pressed="false">Neue Beobachtungen</button>'+
@@ -80,9 +83,20 @@ let baseline=[],publicCandidates=[],publicEvidence=[],candidateElliott=null,exte
 let scanSymbols=null,scanMeta=null,filter='all',query='',running=false;
 try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(parsed?.schema_version==='argus_external_thesis_private_v1'&&Array.isArray(parsed.new_leads)&&Array.isArray(parsed.source_updates))priv=parsed}}catch(_){}
 async function get(path,format){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
- try{const r=await fetch(RAW+path,{signal:controller.signal,cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status+' '+path);return format==='json'?r.json():r.text()}
- finally{clearTimeout(timer)}
+ // Source notes are part of the public ARGUS site: load from the same origin first.
+ // No reason should disappear when GitHub's raw API is unavailable.
+ const local=path===REF||path===PUBLIC||path===RATIONALES;
+ const urls=local?[new URL(path.split('/').pop(),MODULE_URL).href,RAW+path]:[RAW+path];
+ let lastError=null;
+ for(const url of urls){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  try{
+   const r=await fetch(url,{signal:controller.signal,cache:'no-store'});
+   if(!r.ok)throw Error('HTTP '+r.status+' '+path);
+   return format==='json'?await r.json():await r.text();
+  }catch(e){lastError=e}finally{clearTimeout(timer)}
+ }
+ throw lastError||new Error('Datenquelle nicht erreichbar');
 }
 async function getExternalFollowup(){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
@@ -157,7 +171,8 @@ async function refresh(){
      (!x.source_target||x.source_target.value>0&&['EUR','USD'].includes(x.source_target.currency))))
    throw Error('Quellenbegründungen ungültig');
   publicEvidence=d.items;
- }catch(e){publicEvidence=[];errors.push('Quellenbegründungen: '+e.message)}
+  render(); // display reasons before optional large research downloads
+ }catch(e){publicEvidence=[];render();errors.push('Quellenbegründungen: '+e.message)}
  try{externalFollowup=await getExternalFollowup()}
  catch(e){externalFollowup=null;errors.push('Thesenprüfstand: '+e.message)}
  try{candidateElliott=await getCandidateElliott()}
@@ -259,12 +274,12 @@ function card(item){
  // recommendation would fabricate evidence. In particular MIXED has no recorded
  // positive/negative components.
  const historyHTML=item.historical?
-  '<div class="etwHistorical"><span class="etwEyebrow">Älterer Scannervergleich · Prüfkriterien nicht vollständig dokumentiert</span>'+
+  '<details class="etwHistorical"><summary>Früherer Scannervergleich – Gründe nicht vollständig erhalten</summary><div class="etwArchiveDetail"><span class="etwEyebrow">Alte Einordnung · kein aktuelles Urteil</span>'+
   '<strong>'+(item.historical==='MIXED'?'Damals uneinheitlich beurteilt':'Früherer Vergleichsvermerk · keine heutige Bewertung')+'</strong>'+
   '<p>'+(item.historical==='MIXED'?
-   '„MIXED“ stammt aus unserer früheren Gegenüberstellung mit dem Scanner, nicht aus einem Rating des Newsletter-Anbieters. Welche Punkte dafür oder dagegen sprachen, ist im alten Kurzregister nicht vollständig vermerkt. Die externe Trading-Idee und ihre Begründung stehen separat darunter.':
+   '„MIXED“ stammt aus unserer früheren Gegenüberstellung mit dem Scanner, nicht aus einem Rating des Newsletter-Anbieters. Welche Punkte dafür oder dagegen sprachen, ist im alten Kurzregister nicht vollständig vermerkt. Die Begründung der externen Idee findest du oberhalb dieses Archivvermerks.':
    'Das alte Schlagwort beschreibt eine damalige interne Gegenüberstellung. Deren genaue Prüfkriterien stehen nicht vollständig im Archiv. Die ursprüngliche externe Trading-Idee wird, soweit nachvollziehbar, gesondert beschrieben.')+'</p>'+
-  '<details class="etwTech"><summary>Originalen Archivvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur der damals notierte Begriff, kein gültiger Entscheidungsstatus.</details></div>':
+  '<details class="etwTech"><summary>Originalen Archivvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur der damals notierte Begriff, kein gültiger Entscheidungsstatus.</details></div></details>':
   '<p class="etwLead">Externe Aktienidee · getrennt von der eigentlichen Scanneraufnahme und nicht als Handelssignal bestätigt.</p>';
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
  const ew=candidateElliott&&candidateElliott.symbol===item.symbol?candidateElliott:null;
@@ -277,7 +292,7 @@ function card(item){
    '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></div>';
  }).join('')+'</details>':'<p>Die Berechnung hat noch keine ausgabefähige Wellenstruktur erfasst. Ein fehlender Zustand ist kein neutrales Signal.</p>')+'</div>'):'';
  const noteHTML=notes.length?
-  '<div class="etwEvidenceTitle">Warum wurde die Aktie vorgeschlagen?</div>'+notes.map(n=>{
+  '<div class="etwEvidenceTitle"><span class="etwLeadSymbol">DIE EXTERNE IDEE</span><strong>Warum wurde die Aktie vorgeschlagen?</strong></div>'+notes.map((n,idx)=>{
    const historical=n.source_kind==='historical_project_recap';
    const trace=historical?
       'Frühere Projektauswertung vom '+formatDate(n.review_date)+'. Originalnewsletter derzeit nicht erneut geprüft.':
@@ -288,7 +303,7 @@ function card(item){
       '<p class="etwGoal">Im damaligen Newsletter genanntes Kursziel: <strong>'+
       esc(new Intl.NumberFormat('de-DE',{maximumFractionDigits:2}).format(Number(n.source_target.value)))+' '+
       esc(n.source_target.currency)+'</strong>. Kein eigenes ARGUS-Kursziel.</p>':'';
-   return '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
+   return '<div class="etwRationale'+(idx===0?' etwRationalePrimary':'')+'"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
        esc(historical?'Auswertung '+formatDate(n.review_date):formatDate(n.source_date))+'</small>'+
      (n.source_title?'<strong class="etwSourceTitle">'+esc(n.source_title)+'</strong>':'')+
      '<p>'+esc(n.source_rationale??'Zu diesem Hinweis liegt keine ausreichende Begründung vor.')+'</p>'+
@@ -298,20 +313,19 @@ function card(item){
      (safeLink(n.source_link)?'<a href="'+esc(safeLink(n.source_link))+'" target="_blank" rel="noopener noreferrer">Persönliche Quellenmail öffnen ↗</a>':'')+
      '</div>';
    }).join(''):
-  '<p class="etwNote">Für diesen Kandidaten ist noch kein nachvollziehbarer Quellenanlass hinterlegt.</p>';
+  '<div class="etwRationale etwRationaleEmpty"><strong>Keine belegbare Begründung hinterlegt</strong><p>Eine konkrete externe Nachricht oder These liegt für diesen Fall noch nicht vor. Keine Bewertung möglich.</p></div>';
  return '<article class="etwCard" aria-label="'+esc(item.name)+' – '+esc(item.symbol)+'"><div class="etwTop"><div><div class="etwName">'+esc(item.name)+'</div><div class="etwSym">'+esc(item.symbol)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
- historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
- noteHTML+externalTrack(item)+ewHtml+'</article>';
+ noteHTML+externalTrack(item)+historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+ewHtml+'</article>';
 }
 function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
  const known=all.filter(x=>inScan(x.symbol)===true).length;
  const unknown=all.filter(x=>inScan(x.symbol)===null).length;
- el('etwMetrics').innerHTML=metric('Ältere Beobachtungen',baseline.length,'historische Fallakten, keine heutigen Bewertungen')+
-  metric('Weitere Aktienideen',newOnly.length,'neue Kandidaten und eigene Hinweise')+
+ el('etwMetrics').innerHTML=metric('Aktien im Blick',all.length,'externe Ideen, keine Kaufempfehlung')+
+  metric('Begründungen',all.reduce((n,x)=>n+x.notes.filter(y=>y.source_rationale).length,0),'aus nachprüfbaren oder gekennzeichneten Quellen')+
   metric('Im aktuellen Scanner',unknown?'—':known,'Mitgliedschaft, kein Kaufsignal')+
-  metric('Noch außerhalb',unknown?'—':all.length-known,'zur Beobachtung, nicht aufgenommen');
+  metric('Noch außerhalb',unknown?'—':all.length-known,'separat beobachtet, nicht aufgenommen');
  const visible=all.filter(x=>(filter==='all'||(filter==='new'&&x.isNew)||(filter==='scanner'&&inScan(x.symbol)===true)||
  (filter==='shadow'&&inScan(x.symbol)===false))&&
  (!query||[x.symbol,x.name,...x.notes.map(n=>n.source_rationale||'')].join(' ').toLowerCase().includes(query)));

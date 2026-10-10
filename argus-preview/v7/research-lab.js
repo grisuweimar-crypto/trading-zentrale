@@ -6,6 +6,9 @@ const GH='https://github.com/grisuweimar-crypto/trading-zentrale/blob/main/';
 const M='artifacts/research/history_metadata.json';
 const P='artifacts/research/pattern_discovery/operations/latest.json';
 const section=document.getElementById('science');if(!section)return;
+const uxStyle=document.createElement('link');uxStyle.rel='stylesheet';
+uxStyle.href=new URL('research-editorial.css',document.currentScript?.src||document.baseURI).href;
+document.head.appendChild(uxStyle);
 const css=String.raw`
 /* V7 namespace is intentionally separate from the V4–V6 design system */
 #v7Monitor{margin:28px 0 18px;color:#e6edf3}
