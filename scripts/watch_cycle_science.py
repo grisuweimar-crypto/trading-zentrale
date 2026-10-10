@@ -97,6 +97,22 @@ def audit_scientific_readiness(
     })
     from scanner.reports.cycle_history import ROOT as CYCLE_ROOT, read_ledger
     ledger = read_ledger(repo / CYCLE_ROOT / "observations.csv")
+    # Future client-receipt artifacts add actual runner fetch timestamps and
+    # source-frame fingerprinting. Never confuse them with publisher PIT.
+    from scanner.reports.cycle_provider_receipt import inspect_archived_snapshot_receipts
+    try:
+        receipt_audit = inspect_archived_snapshot_receipts(repo, ledger)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        report["status"] = "INTEGRITY_FAILURE"
+        blockers.append("CY03_PROVIDER_RECEIPT_INTEGRITY_FAILURE")
+        gates["CY03_provider_receipt_integrity"] = "FAIL"
+        report["integrity_error"] = type(exc).__name__ + ": " + str(exc)[:300]
+        return report
+    report["observations"]["provider_receipt_count"] = receipt_audit["provider_receipt_count"]
+    report["observations"]["snapshots_without_client_receipt"] = receipt_audit["snapshots_without_client_receipt"]
+    gates["CY03_provider_receipt_integrity"] = "PASS_CLIENT_CAPTURE_ONLY"
+    if receipt_audit["provider_receipt_count"] < receipt_audit["snapshot_count"]:
+        alerts.append("CY03_SOME_SNAPSHOTS_HAVE_NO_CONTEMPORANEOUS_PROVIDER_RECEIPT")
     snapshot_ids = {row["snapshot_id"] for row in ledger}
     if ORIGINAL_SNAPSHOT not in snapshot_ids:
         report["status"] = "INTEGRITY_FAILURE"
