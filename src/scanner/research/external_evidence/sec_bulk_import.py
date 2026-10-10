@@ -74,37 +74,52 @@ def _load_json_member(archive: zipfile.ZipFile, member: str) -> dict[str, Any]:
 
 def build_bulk_submissions_index(
     archive: zipfile.ZipFile,
+    *,
+    target_symbols: set[str] | None = None,
 ) -> tuple[dict[str, list[dict[str, str]]], dict[str, tuple[str, dict[str, Any]]], dict[str, str]]:
-    """Index primary CIK submissions JSON without relying on company_tickers.json.
+    """Index only scanner-relevant primary submissions payloads.
 
-    The SEC bulk submissions archive contains one current primary submissions JSON per
-    CIK plus historical continuation JSON files. Current ticker metadata in each
-    primary payload is used only to build exact candidates; every selected candidate
-    is re-checked against the same primary payload before export.
+    The submissions bulk archive can be very large. We therefore still inspect each
+    primary CIK JSON once, but retain the decoded payload only when one of its current
+    tickers intersects ``target_symbols``. This bounds memory by the scanner universe
+    instead of the complete SEC issuer universe.
     """
+    normalized_targets = None
+    if target_symbols is not None:
+        normalized_targets = {str(symbol).strip().upper() for symbol in target_symbols if str(symbol).strip()}
+
     ticker_candidates: dict[str, list[dict[str, str]]] = {}
     primary_by_cik: dict[str, tuple[str, dict[str, Any]]] = {}
     by_basename = _zip_member_by_basename(archive)
+    primary_member_count = 0
 
     for base, member in by_basename.items():
         match = _PRIMARY_RE.fullmatch(base)
         if not match:
             continue
+        primary_member_count += 1
         cik = match.group(1)
         payload = _load_json_member(archive, member)
         payload_cik = normalize_cik(payload.get("cik", cik))
         if payload_cik != cik:
             raise SecBulkImportError(f"CIK mismatch inside {member!r}: {payload_cik} != {cik}")
+
+        current_tickers = {
+            str(raw_ticker or "").strip().upper()
+            for raw_ticker in (payload.get("tickers") or [])
+            if str(raw_ticker or "").strip()
+        }
+        relevant_tickers = current_tickers if normalized_targets is None else current_tickers & normalized_targets
+        if not relevant_tickers:
+            continue
+
         primary_by_cik[cik] = (member, payload)
-        for raw_ticker in payload.get("tickers") or []:
-            ticker = str(raw_ticker or "").strip().upper()
-            if not ticker:
-                continue
+        for ticker in sorted(relevant_tickers):
             ticker_candidates.setdefault(ticker, []).append(
                 {"cik": cik, "name": str(payload.get("name") or ""), "member": member}
             )
 
-    if not primary_by_cik:
+    if primary_member_count == 0:
         raise SecBulkImportError("submissions ZIP contains no primary CIK##########.json members")
     return ticker_candidates, primary_by_cik, by_basename
 
@@ -151,6 +166,7 @@ def import_sec_bulk_bundle(
             raise SecBulkImportError("direct SEC bulk mode requires an official SEC companyfacts source URL")
 
     rows = _scanner_rows(scanner_path)
+    target_symbols = {row["symbol"] for row in rows}
     acquired = acquired_at or datetime.now(timezone.utc).isoformat()
     content_files = _content_index(filing_content_dir)
     submissions_sha = sha256_file(submissions_zip)
@@ -160,7 +176,10 @@ def import_sec_bulk_bundle(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with zipfile.ZipFile(submissions_zip) as submissions_archive, zipfile.ZipFile(companyfacts_zip) as facts_archive:
-        ticker_candidates, primary_by_cik, submission_members = build_bulk_submissions_index(submissions_archive)
+        ticker_candidates, primary_by_cik, submission_members = build_bulk_submissions_index(
+            submissions_archive,
+            target_symbols=target_symbols,
+        )
         facts_members = _zip_member_by_basename(facts_archive)
 
         for row in rows:
