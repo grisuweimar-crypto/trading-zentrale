@@ -42,5 +42,25 @@ jobs:
         run: |
           python scripts/record_cycle_history.py
           python scripts/record_cycle_history.py
-          python -c 'import json; from pathlib import Path; m=json.loads(Path("artifacts/cycle_history/manifest.json").read_text()); assert m["new_current_valid"]==193 and m["new_current_excluded"]==22 and m["observations"]==215 and m["research_eligible"]==0 and m["snapshots"]==1, m'
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+          root = Path("artifacts")
+          manifest = json.loads((root/"cycle_history/manifest.json").read_text())
+          metadata = json.loads((root/"research/history_metadata.json").read_text())
+          with (root/"research/latest_scanner.csv").open(newline="",encoding="utf-8") as f:
+              current = list(csv.DictReader(f))
+          count = len(current)
+          assert count > 0
+          assert metadata["latest_scanner"]["row_count"] == count
+          assert manifest["latest_snapshot_id"] == metadata["snapshot_id"]
+          assert manifest["new_current_valid"] == sum(r["cycle_quality"]=="VALID" for r in current)
+          assert manifest["new_current_excluded"] == sum(r["cycle_quality"]!="VALID" for r in current)
+          assert manifest["observations"] == count
+          assert manifest["snapshots"] == 1
+          assert manifest["research_eligible"] == 0
+          assert all(v == 0 for v in manifest["provisional_lags"].values())
+          print(f"Real snapshot dynamic count: {count}, VALID={manifest['new_current_valid']}, excluded={manifest['new_current_excluded']}")
+          PY
           git diff --exit-code -- artifacts/research/ artifacts/snapshots/ artifacts/watchlist/
