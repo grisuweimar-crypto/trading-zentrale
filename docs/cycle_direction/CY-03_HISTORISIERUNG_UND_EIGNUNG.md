@@ -71,3 +71,37 @@ python scripts/record_cycle_history.py --dry-run
 **Explizit nicht geändert:** productive Scoring, Timing, Risk, Confidence, Elliott, Universal Stance, Decision, Portfolio Action, Execution, L1–L14-Statistik und Pattern-Promotion, bestehende historische Original-Snapshots.
 
 **Exakt nächster Gate-Schritt:** PR-CI und Read-only Live-Snapshot-Audit; danach gemäß #269 unabhängig Listing/Währung/Börsenzeit bestätigen; erst nach Freigabe und mindestens einer tatsächlich erfolgreich publizierten neuen CY-03-Beobachtung technischen Betriebsabschluss erwägen, vollständige Lag-Ketten erst bei tatsächlicher historischer Coverage.
+
+
+## 6. Tatsächliche technische Abnahme auf PR #270 — 10.10.2026 MESZ
+
+**Ausgangsstand vor Arbeit:** `main` `3a4061f48d02e1ca35d180bf8148ff907d7bb609`. **Arbeitsbranch:** `feat/cycle-dir-cy03-pit-history-20261010`. **PR:** [#270](https://github.com/grisuweimar-crypto/trading-zentrale/pull/270), Draft, **nicht** nach `main` gemergt. Dieser Abschnitt ergänzt die zum Implementierungsbeginn formulierten, damals noch offenen CI-Gates; die nachfolgenden Resultate wurden tatsächlich unabhängig in GitHub Actions erhoben.
+
+### Unabhängige CI-Nachweise
+
+- **Finaler CI-Stand:** [CYCLE-DIR CY-03 #38035744086](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38035744086), Ergebnis **SUCCESS** auf Commit `fa9953fea89449f471c0cf32cc28c804c7cb2ebd` (PR-Head zum Zeitpunkt des Tests).
+- `python -m compileall -q src/scanner scripts/record_cycle_history.py`: **PASS**.
+- `python -m pytest -q tests/test_cycle_history_cy03.py tests/test_cycle_audit_cy02.py tests/test_cycle_oscillator_cy02.py tests/test_cycle_quality_cy01.py tests/test_research_views.py tests/test_daily_research.py tests/test_history_delta_completion.py tests/pattern_discovery/test_l2_feature_library.py tests/pattern_discovery/test_l3_search_engine.py`: **116 passed**, 0 failed.
+- `python scripts/record_cycle_history.py --dry-run`: **PASS** auf dem im Repository tatsächlich veröffentlichten Scannerstand.
+- CI-Job `Capture and replay once in disposable CI workspace`: `python scripts/record_cycle_history.py` **zweimal PASS**; kontrollierter Ledger-Capture, Replay ohne Duplikat, 215 beobachtete Assets, 193 gültige und 22 ausgeschlossene aktuelle Werte, 1 Snapshot und `research_eligible=0`. `git diff --exit-code -- artifacts/research/ artifacts/snapshots/ artifacts/watchlist/`: **PASS** (keine Änderungen der bisher publizierten Originaldateien).
+- Zwei vorherige Testläufe waren ausdrücklich **nicht** grün: erste falsche Monats-Coverage-Testerwartung, danach ein ungeeigneter Modulimport für den CLI-Dry-Run. Beide Ursachen korrigiert; erst der oben genannte finale Lauf ist der Abnahmebeleg.
+
+### Datenbasis und quantitative Erst-Coverage
+
+- **Live-Eingabe für CI-Dry-Run:** `as_of=2026-10-10`, `snapshot_id=94a23ea7-9a1b-4bf8-9ef0-d97065d3eed2`, `run_id=github-38033664492-1`, ursprünglicher Autopilot [#38033664492](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38033664492).
+- **Quell-Watchlist-SHA256:** `2e822ac1634e03482cb82aae80c5c670fcd5182adb2ac47f77a831f5ed5bb56d`.
+- **60-Bar-Archiv-SHA256:** `96b1bdd116a9c67436deb5d98eddeb43702afd2ed3bf6b96b13f93e0864b91f6`.
+- **Deterministische neue Ledger-SHA256:** `7a89e4e15b20f2d96ad37acd7d98f959cb8399a56ae876a9c3d8a4a26237654f`.
+- **Eignungsmaske-SHA256:** `b5c4d5c95ad46d309b4738b5cede2fbbe87e7b952df3e409ddc2e716ec9fcf97`.
+- **Coverage-SHA256:** `6e0ecf091a5a77ec8faad370e3a4a11cba6c53be46b9650e2da154e04399a359`.
+- **Coverage:** 215 Einträge aus einem einzigen bereits publizierten Snapshot; 193 `PROVISIONAL_REPLAYED`, 22 bewusst nicht verwendet, **0/0/0** Lag-1/5/10-Ketten. Keine bereits vollständige Vergleichshistorie; keine erfundene Rendite- oder Trefferquote; 0 Forschungszulassungen. Asset/Monat-/Lag-Zählungen sind reproduzierbar und wachsen erst mit echten künftigen Snapshots.
+
+**Wichtige Unterscheidung:** Ein erfolgreicher CI-Schreibtest im temporären GitHub-Runner ist **kein** erfolgreicher produktiver CY-03-Publish auf `main`. Der PR bleibt Draft, solange die fachlichen Gates nicht aufgehoben und der erste **nach Merge** publizierte Ledger-Lauf nicht separat geprüft wurden. Auch ein technischer `PROVISIONAL_CHAIN` begründet keine unabhängige historische Preisverfügbarkeit oder Forschungseignung.
+
+### Abnahmestatus und Übergabe
+
+- **Technisch:** `FERTIG_TECHNISCH` **als isolierter, reproduzierbarer Implementierungs- und CI-Kandidat**. Noch keine Behauptung eines auf `main` live betriebenen CY-03-Archivs.
+- **Fachlich:** `NICHT_FREIGEGEBEN`, weil CY-02-B01 [#269](https://github.com/grisuweimar-crypto/trading-zentrale/issues/269) die unabhängige Listing-/Quote-Währung-/Markt-Session-/Publikationsverifikation noch offenhält und die neu gestartete Historie bisher keine vollständigen Lag-Ketten liefern kann.
+- **Empirisch:** `NICHT_VALIDIERT`. Weder Mustererfolg noch Handels-, Score-, Decision-, Portfolio- oder Elliott-Effekt nachgewiesen.
+- **Nicht berührt:** `artifacts/research/history_analysis.csv`, `history_recent.csv`, `latest_scanner.csv`, `artifacts/snapshots/score_history.csv` als bestehende Originale, produktive Score-/Decision-/Portfolio-Logik, L2-/L3-Contracts, Legacy-Null/50-Masken.
+- **Nächster Schritt:** Reviewer-Check der CY-03-PR und CY02-B01 [#269] fachlich klären. Erst nach ausdrücklich geprüfter Freigabe merge- und produktiven Autopilot-Publish des Ledger/Bar-Archivs samt Hash- und Coverage-Nachweis durchführen. Danach Zeitreihe für 1/5/10 wirklich vergleichbare Beobachtungen wachsen lassen und den fachlichen Abschluss erneut separat entscheiden.
