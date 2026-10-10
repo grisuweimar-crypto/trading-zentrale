@@ -1,0 +1,40 @@
+name: CYCLE-DIR CY-05 Pattern Research Contract
+on:
+  pull_request:
+    paths:
+      - "configs/pattern_discovery/feature_library_cycle_v2.json"
+      - "configs/pattern_discovery/l3_search_contract_cycle_v2.json"
+      - "configs/cycle_direction/cy05_preregistered_design_v1.json"
+      - "src/scanner/research/pattern_discovery/feature_library.py"
+      - "src/scanner/research/pattern_discovery/search_engine.py"
+      - "src/scanner/research/pattern_discovery/cycle_cy05_adapter.py"
+      - "tests/pattern_discovery/test_cy05_cycle_level_direction.py"
+      - "tests/pattern_discovery/test_cy05_cycle_archive_adapter.py"
+      - "docs/cycle_direction/CY-05_INTEGRATION_UND_PRAEREGISTRIERUNG.md"
+      - ".github/workflows/cycle_dir_cy05.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cycle-research-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install runtime and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Compile all scanner sources
+        run: python -m compileall -q src/scanner
+      - name: CY-05 opt-in, legacy L1 L2 L3 and CY-03 regression
+        run: |
+          python -m pytest -q \
+            tests/pattern_discovery/test_cy05_cycle_level_direction.py \
+            tests/pattern_discovery/test_cy05_cycle_archive_adapter.py \
+            tests/pattern_discovery/test_l1_run_contract.py \
+            tests/pattern_discovery/test_l2_feature_library.py \
+            tests/pattern_discovery/test_l3_search_engine.py \
+            tests/test_cycle_history_cy03.py
