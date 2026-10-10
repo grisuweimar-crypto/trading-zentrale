@@ -8,6 +8,8 @@ on:
       - "argus-preview/observations/**"
       - "tests/test_argus_clarity_preview.py"
       - "tests/test_argus_observation_render.js"
+      - "tests/argus_real_browser_smoke.py"
+      - "tests/fixtures/argus_editorial_preview.html"
       - ".github/workflows/argus_clarity_preview.yml"
   workflow_dispatch:
 
@@ -17,7 +19,7 @@ permissions:
 jobs:
   preview-clarity:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,3 +39,12 @@ jobs:
         run: node tests/test_argus_observation_render.js
       - name: Verify unchanged research and source boundaries
         run: python -m unittest discover -s tests -p 'test_argus_clarity_preview.py' -v
+      - name: Render actual ARGUS cards in Chrome at desktop and mobile sizes
+        run: python tests/argus_real_browser_smoke.py
+      - name: Upload visual comparison screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-visual-check
+          path: artifacts/ui-visual-check/*.png
+          if-no-files-found: warn
