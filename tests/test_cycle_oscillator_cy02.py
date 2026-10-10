@@ -243,3 +243,42 @@ def test_research_preserves_per_value_provenance_fields():
     for field in fields:
         assert field in ALIASES
         assert field in KNOWN_COLUMNS
+
+
+def test_mixed_crypto_equity_batch_does_not_invalidate_equity_weekend_placeholders(monkeypatch):
+    # yfinance.download with stocks + BTC-USD returns a union daily index.
+    # Sat/Sun close=NaN for AAA is a missing session, not a malformed close.
+    equity = series()
+    days = pd.date_range(end="2026-10-10", periods=130, freq="D")
+    frame = pd.DataFrame({
+        ("Close", "AAA"): equity.reindex(days),
+        ("Volume", "AAA"): pd.Series(1000.0, index=equity.index).reindex(days),
+        ("Close", "BTC-USD"): pd.Series([120 + 0.3 * x for x in range(len(days))], index=days),
+        ("Volume", "BTC-USD"): pd.Series(1000.0, index=days),
+    })
+    frame.columns = pd.MultiIndex.from_tuples(frame.columns)
+    assert frame[("Close", "AAA")].isna().sum() > 0
+    monkeypatch.setitem(sys.modules, "yfinance",
+                        SimpleNamespace(download=lambda **kwargs: frame))
+    raw = pd.DataFrame({"YahooSymbol": ["AAA"], "Currency": ["USD"], "Zyklus %": [0.0]})
+    actual, _ = enrich_watchlist_with_yahoo(raw, enabled=True, as_of=AS_OF)
+    expected = evaluate(equity)
+    assert expected["cycle_quality"] == "VALID"
+    assert actual.loc[0, "cycle_quality"] == "VALID"
+    assert actual.loc[0, "Zyklus %"] == expected["Zyklus %"]
+    assert actual.loc[0, "cycle_price_sha256"] == expected["cycle_price_sha256"]
+    assert len(actual.attrs["cycle_input_bars"]) == 60
+
+
+def test_mixed_market_missing_weekday_still_respects_session_gap_policy(monkeypatch):
+    equity = series().drop(pd.to_datetime(["2026-10-06", "2026-10-07"]))
+    days = pd.date_range(end="2026-10-10", periods=130, freq="D")
+    frame = pd.DataFrame({("Close", "AAA"): equity.reindex(days),
+                          ("Volume", "AAA"): pd.Series(1000.0, index=equity.index).reindex(days)})
+    frame.columns = pd.MultiIndex.from_tuples(frame.columns)
+    monkeypatch.setitem(sys.modules, "yfinance",
+                        SimpleNamespace(download=lambda **kwargs: frame))
+    raw = pd.DataFrame({"YahooSymbol": ["AAA"], "Currency": ["USD"], "Zyklus %": [0.0]})
+    actual, _ = enrich_watchlist_with_yahoo(raw, enabled=True, as_of=AS_OF)
+    assert actual.loc[0, "cycle_quality"] == "INSUFFICIENT_HISTORY"
+    assert actual.loc[0, "cycle_quality_reason"] == "GAP_IN_DAILY_BARS"

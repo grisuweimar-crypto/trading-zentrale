@@ -206,7 +206,13 @@ def _series_from_download(dl: pd.DataFrame, ticker: str) -> tuple[pd.Series | No
         return None, None
     if vol is not None and not isinstance(vol, pd.Series):
         vol = None
-    return close, vol
+    # A mixed yfinance batch contains a union of trading calendars: crypto
+    # weekend rows and foreign-market holidays show up as NaN placeholders
+    # for equities. They are NOT quoted bars for that symbol. Remove these
+    # placeholders at the symbol boundary, but keep 0, negatives and infinities
+    # for the oscillator's explicit invalid-close checks. Session-date gap
+    # validation still runs on the remaining genuine per-symbol observations.
+    return close.dropna(), vol
 
 
 def _compute_features(
