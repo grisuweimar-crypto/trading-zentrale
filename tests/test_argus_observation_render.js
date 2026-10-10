@@ -87,5 +87,14 @@ async function render(privateNotes=null,followup=null){
  assert.match(tested,/\+2,5 %/);
  assert.match(tested,/Noch offen/);
  assert.match(tested,/keine<\/b> bestätigte Trefferquote/);
+ dated.claims[0].scanner_comparison={
+   state:'PRIOR_SNAPSHOT_OBSERVED',scanner_as_of:'2026-10-07',
+   published_at:'2026-10-07T19:00:00+00:00',snapshot_id:'historic-tested',
+   score:'62.5',risk:'31.3',confidence:'68.1'
+ };
+ const withPIT=await render(null,dated);
+ assert.match(withPIT,/Damals gespeicherter Scannerstand/);
+ assert.match(withPIT,/Score 62.5/);
+ assert.doesNotMatch(withPIT,/heutige Werte/);
  console.log('ARGUS cards: newsletter reasons, verified preview dates, prior analyses and private notes remain separate.');
 })().catch(err=>{console.error(err);process.exitCode=1;});
