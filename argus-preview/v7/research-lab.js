@@ -66,6 +66,11 @@ const css=String.raw`
 @media(max-width:1100px){#v7Monitor .v7journey{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){#v7Monitor .v7story{padding:17px 13px}#v7Monitor .v7storyIntro h4{font-size:25px}#v7Monitor .v7journey{grid-template-columns:1fr}#v7Monitor .v7step{padding:12px}#v7Monitor .v7metric{min-height:120px}#v7Monitor .v7sectionHead h4{font-size:22px}}
 
+
+.v7legacy{margin:20px 0 26px;padding:3px 15px 14px;background:#0b263a;border:1px solid #3c5970;border-radius:11px}
+.v7legacy>summary{cursor:pointer;padding:14px 0;font-size:12px;font-weight:600;color:#e6cb9d;list-style:none}
+.v7legacy>summary::-webkit-details-marker{display:none}
+.v7legacy>summary:focus-visible{outline:2px solid #e5c68c}
 `;
 const st=document.createElement('style');st.id='v7Styles';st.textContent=css;document.head.append(st);
 section.insertAdjacentHTML('afterbegin',
@@ -81,6 +86,13 @@ section.insertAdjacentHTML('afterbegin',
 '<div><article class="v7card"><h4>Forschungsgrenzen und Register</h4><div id="v7Lab"></div></article>'+
 '<article class="v7card"><h4>Qualitätsnachweis im L14-Bericht</h4><div id="v7QM"></div></article>'+
 '<article class="v7card v7sources"><h4>Herkunft &amp; Datenstand</h4><div id="v7Sources"></div></article></div></div></div>');
+/* Bestehende V6-Forschungserläuterung erhalten, zur besseren Lesbarkeit zusammenklappen. */
+const legacy=[...section.children].filter(node=>node.id!=='v7Monitor');
+if(legacy.length){
+ const details=document.createElement('details');details.className='v7legacy';details.id='v7LegacyPanel';
+ const summary=document.createElement('summary');summary.textContent='Methodische Hintergründe und Forschungsgrenzen anzeigen';
+ details.appendChild(summary);legacy.forEach(node=>details.appendChild(node));section.appendChild(details);
+}
 const el=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 const count=x=>Number.isSafeInteger(x)&&x>=0?new Intl.NumberFormat('de-DE').format(x):'Nicht verfügbar';
