@@ -155,3 +155,35 @@ def test_workflow_stages_receipt_only_after_cycle_history():
     assert "python scripts/record_cycle_history.py" in text
     assert "python scripts/record_cycle_provider_receipt.py" in text
     assert text.index("python scripts/record_cycle_history.py") < text.index("python scripts/record_cycle_provider_receipt.py")
+
+
+def test_archived_provider_receipt_audit_catches_tampering(tmp_path):
+    from scanner.reports.cycle_provider_receipt import inspect_archived_snapshot_receipts
+    sid = _snapshot(tmp_path)
+    record_snapshot_receipt(tmp_path)
+    ledger = [{
+        "snapshot_id": sid, "as_of": "2026-10-12", "run_id": "github-01",
+        "bars_sha256": sha256(BARS).hexdigest(), "generated_at": "2026-10-12T15:15:00Z",
+    }]
+    audit = inspect_archived_snapshot_receipts(tmp_path, ledger)
+    assert audit["provider_receipt_count"] == 1
+    assert audit["independent_provider_pit_certified"] is False
+    p = tmp_path / "artifacts/cycle_history/provider_receipts" / (sid + ".json")
+    d = json.loads(p.read_text())
+    d["historical_pit_certification"] = True
+    p.write_text(json.dumps(d), encoding="utf-8")
+    with pytest.raises(CycleProviderReceiptError, match="archived_receipt_identity_or_claim_invalid"):
+        inspect_archived_snapshot_receipts(tmp_path, ledger)
+
+
+def test_original_snapshot_without_new_receipt_is_not_recreated(tmp_path):
+    from scanner.reports.cycle_provider_receipt import inspect_archived_snapshot_receipts
+    sid = _snapshot(tmp_path)
+    ledger = [{
+        "snapshot_id": sid, "as_of": "2026-10-12", "run_id": "github-01",
+        "bars_sha256": sha256(BARS).hexdigest(), "generated_at": "2026-10-12T15:15:00Z",
+    }]
+    audit = inspect_archived_snapshot_receipts(tmp_path, ledger)
+    assert audit["provider_receipt_count"] == 0
+    assert audit["snapshots_without_client_receipt"] == 1
+    assert audit["research_released"] is False
