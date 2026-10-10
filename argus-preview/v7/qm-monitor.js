@@ -31,6 +31,23 @@ const css=[
 '#v7Quality .v7qmFoot{color:#a9c0cb;font-size:11px}',
 '#v7Quality a{color:#efce96;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}',
 '@media(max-width:750px){#v7Quality .v7qmGrid{grid-template-columns:1fr}#v7Quality .v7qmFinding summary .v7qmTitle{min-width:130px}#v7Quality .v7qmPanel{padding:12px}}'
+,
+"#v7Quality .v7qmTop{background:linear-gradient(135deg,#142f45,#082133);border:1px solid #476477;border-radius:13px;padding:19px 20px}",
+"#v7Quality .v7qmTop h4{font:normal 25px Georgia,serif;margin:6px 0 4px}",
+"#v7Quality .v7qmHighlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}",
+"#v7Quality .v7qmHighlight{display:flex;flex-direction:column;background:#112d42;border:1px solid #455f72;border-radius:11px;padding:17px;min-height:124px}",
+"#v7Quality .v7qmHighlight span{font-size:12px;color:#b9cbd7}",
+"#v7Quality .v7qmHighlight strong{font:normal 36px Georgia,serif;color:#f3d9a3;line-height:1.4}",
+"#v7Quality .v7qmHighlight small{font-size:10px;color:#acc1cb;margin-top:auto}",
+"#v7Quality .v7qmOpen{border-color:#8a7954}",
+"#v7Quality .v7qmExplanation{font-size:12px;background:#102b3d;border-left:2px solid #d2b27b;padding:12px 14px;max-width:900px}",
+"#v7Quality .v7qmGroupTitle{font-size:12px;font-weight:650;color:#f2dcb8;margin:16px 0 8px}",
+"#v7Quality .v7qmArchived{border:1px solid #496276;border-radius:11px;margin:15px 0;padding:0 14px}",
+"#v7Quality .v7qmArchived>summary{cursor:pointer;display:block;padding:16px 4px;color:#efd3a5;font-size:13px;list-style:none}",
+"#v7Quality .v7qmArchived>summary::-webkit-details-marker{display:none}",
+"#v7Quality .v7qmArchived>summary:focus-visible{outline:2px solid #d2b27b}",
+"#v7Quality .v7qmState{border-radius:9px}",
+"@media(max-width:700px){#v7Quality .v7qmHighlights{grid-template-columns:1fr 1fr}#v7Quality .v7qmHighlight{min-height:100px;padding:11px}#v7Quality .v7qmHighlights .v7qmOpen{grid-column:1/-1}#v7Quality .v7qmTop{padding:14px}}"
 ].join('\n');
 const style=document.createElement('style');style.id='v7QMStyles';style.textContent=css;document.head.append(style);
 parent.insertAdjacentHTML('beforeend',
@@ -40,7 +57,7 @@ parent.insertAdjacentHTML('beforeend',
 '<p>Dokumentierte Befunde mit ihren Originalstatuscodes. Dies ist keine neue QM-Bewertung.</p></div>'+
 '<button type="button" id="v7QMReload">↻ QM-Register aktualisieren</button></div>'+
 '<div class="v7qmState" id="v7QMState" role="status">QM-H-Register wird geladen …</div>'+
-'<div id="v7QMFindings"></div><div class="v7qmGrid">'+
+'<div id="v7QMStory" aria-live="polite"></div><div id="v7QMFindings"></div><div class="v7qmGrid">'+
 '<div class="v7qmPanel"><h5>Unabhängige QM-J-Einzelprüfung</h5><div id="v7QMJ">Prüfbericht wird geladen …</div></div>'+
 '<div class="v7qmPanel"><h5>Abgrenzung und Originalquellen</h5>'+
 '<p>QM-H dokumentiert Befunde und Korrekturmaßnahmen. Es ersetzt weder QM-A-Forschungsfreigaben noch QM-B-External-Evidence-Sperren.</p>'+
@@ -103,19 +120,28 @@ let busy=false;
 async function loadLedger(){
  if(busy)return;busy=true;el('v7QMReload').disabled=true;
  el('v7QMState').textContent='QM-H-Originalregister wird geladen und strukturell geprüft …';
- el('v7QMFindings').replaceChildren();
+ el('v7QMFindings').replaceChildren();el('v7QMStory').replaceChildren();
  try{
   const data=replayLedger(await getText(LEDGER));
   el('v7QMState').innerHTML='<b>QM-H-Registerstand:</b> '+esc(clock(data.lastTime))+
    ' · '+esc(data.events)+' protokollierte Ereignisse · '+esc(data.findings.length)+' registrierte Feststellungen.'+
    '<br>Sequenz, Statusübergänge und Hash-Verweise wurden strukturell geprüft. Das ist keine kryptographische SHA-256-Verifikation und keine wissenschaftliche Gesamtfreigabe.'+
    '<br><b>Wichtig:</b> Der Registerstand ist nicht der aktuelle Gesamtstatus sämtlicher QM-Sperren.';
+  const complete=data.findings.filter(f=>f.status==='CLOSED');
+  const other=data.findings.filter(f=>f.status!=='CLOSED');
+  el('v7QMStory').innerHTML='<div class="v7qmHighlights">'+
+   '<div class="v7qmHighlight"><span>Dokumentierte Befunde</span><strong>'+esc(data.findings.length)+'</strong><small>QM-H · Ereignisregister</small></div>'+
+   '<div class="v7qmHighlight"><span>Formell abgeschlossen</span><strong>'+esc(complete.length)+'</strong><small>Originalstatus CLOSED</small></div>'+
+   '<div class="v7qmHighlight v7qmOpen"><span>Anderer Bearbeitungsstand</span><strong>'+esc(other.length)+'</strong><small>kein eigenständiges QM-Urteil</small></div></div>'+
+   '<p class="v7qmExplanation">Ein abgeschlossener QM-H-Fall dokumentiert einen Bearbeitungsabschluss. Er beweist weder eine höhere Trefferquote noch die Freigabe eines Handelsmusters. Die Originalbefunde stehen unten zur Einsicht bereit.</p>';
   el('v7QMFindings').innerHTML=data.findings.length?
-   data.findings.map(findingCard).join(''):'<p>Keine registrierten Feststellungen im veröffentlichten Ledger.</p>';
+    (other.length?'<div class="v7qmGroup"><div class="v7qmGroupTitle">Nicht als CLOSED dokumentiert</div>'+other.map(findingCard).join('')+'</div>':'')+
+    (complete.length?'<details class="v7qmArchived"><summary>'+esc(complete.length)+' abgeschlossene Fälle anzeigen ▾</summary>'+complete.map(findingCard).join('')+'</details>':'') :
+    '<p>Keine registrierten Feststellungen im veröffentlichten Ledger.</p>';
  }catch(e){
   el('v7QMState').textContent='QM-H nicht verfügbar oder inkonsistent ('+
    (e.name==='AbortError'?'Zeitüberschreitung':e.message)+'). Keine alten Findings werden als aktuell angezeigt.';
-  el('v7QMFindings').replaceChildren();
+  el('v7QMFindings').replaceChildren();el('v7QMStory').replaceChildren();
  }finally{busy=false;el('v7QMReload').disabled=false}
 }
 async function loadJ(){
