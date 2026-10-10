@@ -160,3 +160,48 @@ def load_direction_for_ui(repo_root: Path) -> dict[str, Any]:
         }
     except (OSError, ValueError, KeyError, TypeError, ImportError):
         return unavailable
+
+
+
+def attach_verified_directions(
+    records: list[dict[str, Any]], projection: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Attach only source-identical released lag descriptions to UI rows.
+
+    Asset IDs (not Yahoo aliases), original currency/price symbols, formula,
+    bar hash, quality and the current observed cycle must all match. Nulls
+    remain null; no legacy, ticker guess, synthetic zero or cross-listing join.
+    """
+    by_asset = projection.get("by_asset", {}) if projection.get("state") == "RELEASED" else {}
+    for row in records:
+        for n in LAGS:
+            row[f"cy04_delta_{n}obs"] = None
+            row[f"cy04_direction_{n}obs"] = "UNAVAILABLE"
+        row["cy04_as_of"] = None
+        row["cy04_last_bar"] = None
+        row["cy04_quality"] = "UNAVAILABLE"
+        if row.get("cycle_quality") != "VALID":
+            continue
+        asset_id = row.get("asset_id")
+        rec = by_asset.get(asset_id) if isinstance(by_asset, dict) and isinstance(asset_id, str) else None
+        if not isinstance(rec, dict) or rec.get("snapshot_id") != projection.get("latest_snapshot_id"):
+            continue
+        if (str(row.get("cycle_formula_version", "")) != rec.get("formula")
+            or str(row.get("cycle_currency", "")) != rec.get("currency")
+            or str(row.get("cycle_price_symbol", "")) != rec.get("price_symbol")
+            or str(row.get("cycle_price_sha256", "")) != rec.get("price_sha256")
+            or _number(row.get("cycle")) != _number(rec.get("cycle"))):
+            continue
+        if rec.get("quality") != "VALID":
+            continue
+        row["cy04_as_of"] = rec["as_of"]
+        row["cy04_last_bar"] = rec["last_bar"]
+        row["cy04_quality"] = "ELIGIBLE_DESCRIPTIVE_ONLY"
+        for n in LAGS:
+            delta = rec.get(f"delta_{n}obs")
+            if isinstance(delta, (int, float)) and not isinstance(delta, bool) and math.isfinite(delta):
+                row[f"cy04_delta_{n}obs"] = delta
+                row[f"cy04_direction_{n}obs"] = (
+                    "UP" if delta > 0 else "DOWN" if delta < 0 else "UNCHANGED"
+                )
+    return records
