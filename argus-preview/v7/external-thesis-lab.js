@@ -51,11 +51,17 @@ async function load(){
        (w.return_pct_adjusted>0?'+':'')+fmt(w.return_pct_adjusted)+' %':'offen';
     return '<span>+'+h+' Tage: <b>'+esc(value)+'</b></span>';
    }).join('');
+   const prior=c.scanner_comparison;
+   const compare=prior&&prior.state==='PRIOR_SNAPSHOT_OBSERVED'?
+     'Vorausgehender Scanner-Snapshot vom '+esc(prior.scanner_as_of)+
+     ': Score '+esc(prior.score)+' · Risiko '+esc(prior.risk)+
+     ' · Confidence '+esc(prior.confidence)+'. Kein eigener Prognosebeweis.':
+     'Historischer Scannervergleich: kein vor der These nachweisbar veröffentlichter, passender Scannerstand.';
    return '<article class="row"><h3>'+esc(c.symbol)+'</h3><p>Veröffentlichung: '+esc(c.publication_date)+
      ' · Ausgangskurs: '+(c.baseline?esc(fmt(c.baseline.close))+' '+esc(c.currency):'nicht verfügbar')+'</p>'+
      (c.state==='PRICE_SOURCE_UNAVAILABLE'?'<p>Kursquelle nicht nachprüfbar.</p>':
       '<div class="values">'+list+'</div>')+
-     '<p>Historischer Scannervergleich: noch nicht mit einem passenden damaligen Datenstand belegt.</p></article>';
+     '<p>'+compare+'</p></article>';
   }).join('');
  }catch(e){state.textContent='Externe Vergleichsdaten konnten nicht gültig geladen werden: '+(e.name==='AbortError'?'Zeitüberschreitung':e.message);rows.replaceChildren()}
  finally{clearTimeout(timer)}

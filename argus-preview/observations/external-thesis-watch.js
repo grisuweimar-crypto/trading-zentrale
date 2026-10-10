@@ -236,13 +236,19 @@ function externalTrack(item){
        'In den bisher vollständig geprüften Folgetagen nicht berührt.')+
     ' Das ist <b>keine</b> bestätigte Trefferquote.</p>';
  }
+ const prior=record.scanner_comparison;
+ const scannerBlock=prior&&prior.state==='PRIOR_SNAPSHOT_OBSERVED'?
+  '<p><b>Damals gespeicherter Scannerstand:</b> '+esc(prior.scanner_as_of)+' · Score '+
+  esc(prior.score)+' · Risiko '+esc(prior.risk)+' · Confidence '+esc(prior.confidence)+
+  '. Dokumentierter Zustand, kein nachträglich berechnetes Kaufsignal.</p>':
+  '<p>Vergleich mit dem damaligen Scanner: noch kein vor der Quelle nachweisbar veröffentlichter passender Snapshot. Kein Ersatz durch heutige Werte.</p>';
  return '<div class="etwFollow"><h4>Was ist aus der fremden These geworden?</h4>'+
    '<p><b>Vergleichsstand: '+esc(formatDate(externalFollowup.as_of))+'</b> · Veröffentlichung: '+
    esc(formatDate(record.publication_date))+
    (t0?' · Ausgangskurs vom '+esc(formatDate(t0.date))+': '+num(t0.close)+' '+esc(record.currency):' · Ausgangskurs fehlt')+
-   '</p><div class="etwFollowTrack">'+cards+'</div>'+target+
+   '</p><div class="etwFollowTrack">'+cards+'</div>'+target+scannerBlock+
    '<details><summary>Wie wird das gemessen?</summary><p>Startwert: letzter abgeschlossener Handelstag <b>vor</b> dem Veröffentlichungstag. Gezählt werden nur abgeschlossene Handelstage <b>danach</b>. Die Prozentwerte beruhen auf bereinigten Schlusskursen; eine Kursziel-Berührung auf Kursen der Originalwährung. Fehlende Prüftage bleiben offen.</p>'+
-   '<p>Die ursprünglichen Mails wurden erst später als Datensatz erfasst. Eine verbindliche Kursziel-Frist wurde nicht nachgewiesen. Daher kein Anbieter-Erfolgsurteil. Ein exakt zeitgleicher historischer Scanner-Snapshot wurde hier ebenfalls noch nicht verifiziert.</p></details></div>';
+   '<p>Die ursprünglichen Mails wurden erst später als Datensatz erfasst. Eine verbindliche Kursziel-Frist wurde nicht nachgewiesen. Daher kein Anbieter-Erfolgsurteil. Für den Scannervergleich wird nur ein vor Veröffentlichung der These archivierter Scannerstand verwendet.</p></details></div>';
 }
 function card(item){
  const state=inScan(item.symbol);

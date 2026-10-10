@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - "scripts/argus_external_followup.py"
+      - "scripts/argus_external_scanner_checkpoint.py"
       - "argus-preview/observations/external_thesis_source_notes.json"
       - ".github/workflows/argus_external_thesis_followup.yml"
   pull_request:
@@ -15,6 +16,7 @@ on:
     paths:
       - "scripts/argus_external_followup.py"
       - "tests/test_argus_external_followup.py"
+      - "tests/test_argus_external_scanner_checkpoint.py"
       - ".github/workflows/argus_external_thesis_followup.yml"
 
 permissions:
@@ -38,13 +40,21 @@ jobs:
       - name: Install research dependencies
         run: python -m pip install -e ".[test]"
       - name: Check external thesis evaluation boundaries
-        run: python -m pytest -q tests/test_argus_external_followup.py
+        run: python -m pytest -q tests/test_argus_external_followup.py tests/test_argus_external_scanner_checkpoint.py
       - name: Evaluate completed original-currency sessions
         if: github.event_name != 'pull_request'
         run: |
           python scripts/argus_external_followup.py \
             --notes argus-preview/observations/external_thesis_source_notes.json \
             --output /tmp/external_thesis_latest.json
+      - name: Capture point-in-time scanner evidence without changing production
+        if: github.event_name != 'pull_request'
+        run: |
+          python scripts/argus_external_scanner_checkpoint.py \
+            --metadata artifacts/research/history_metadata.json \
+            --scanner artifacts/research/latest_scanner.csv \
+            --output /tmp/argus_external_scanner_checkpoint.json
+          cp scripts/argus_external_scanner_checkpoint.py /tmp/argus_external_scanner_checkpoint.py
       - name: Publish research-only archive on isolated branch
         if: github.event_name != 'pull_request'
         shell: bash
@@ -60,13 +70,29 @@ jobs:
             git rm -rf . >/dev/null || true
           fi
           python - <<'PY'
-          import json, pathlib, shutil
+          import json, pathlib, shutil, sys
+          sys.path.insert(0,'/tmp')
+          from argus_external_scanner_checkpoint import attach
           data=json.loads(pathlib.Path('/tmp/external_thesis_latest.json').read_text())
           if data.get('schema_version')!='argus_external_thesis_followup_v1' or data.get('research_only') is not True:
               raise RuntimeError('external_thesis_invalid_research_only_schema')
           if data.get('scanner_changed') is not False or data.get('qm_changed') is not False:
               raise RuntimeError('external_thesis_productive_boundary_violation')
           base=pathlib.Path('artifacts/research/external_thesis')
+          checkpoint=json.loads(pathlib.Path('/tmp/argus_external_scanner_checkpoint.json').read_text())
+          if checkpoint['schema_version']!='argus_external_scanner_checkpoint_v1' or checkpoint['research_only'] is not True:
+              raise RuntimeError('scanner_checkpoint_invalid')
+          checkpoints_dir=base/'scanner_snapshots'
+          checkpoints_dir.mkdir(parents=True,exist_ok=True)
+          point=checkpoints_dir/(checkpoint['snapshot_id']+'.json')
+          if point.exists():
+              older=json.loads(point.read_text())
+              if older.get('csv_sha256')!=checkpoint['csv_sha256']:
+                  raise RuntimeError('scanner_checkpoint_immutable_conflict')
+          else:
+              point.write_text(json.dumps(checkpoint,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
+          history=[json.loads(p.read_text()) for p in checkpoints_dir.glob('*.json')]
+          data=attach(data,history)
           archive=base/'snapshots'/f"{data['as_of']}.json"
           if archive.exists():
               old=json.loads(archive.read_text())
@@ -75,7 +101,7 @@ jobs:
               print('Research day already archived; preserving original observation.')
           else:
               archive.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copyfile('/tmp/external_thesis_latest.json',archive)
+              archive.write_text(json.dumps(data,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
               shutil.copyfile(archive,base/'latest.json')
           PY
           git add artifacts/research/external_thesis
