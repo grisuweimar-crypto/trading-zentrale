@@ -27,6 +27,9 @@ h1{font:normal clamp(33px,5vw,58px) Georgia,serif;line-height:1.12;margin:12px 0
 .note{font-size:12px;color:#bbcad3;line-height:1.7;margin:0 0 16px}
 footer{font-size:12px;border-top:1px solid #314b5d;color:#9eb3c1;padding:20px 0 32px;margin-top:40px}
 @media(max-width:550px){.topbar{justify-content:center}.navigation{justify-content:center}.brand strong{font-size:25px}.band{padding-top:20px}}
+.brandTagline{font:normal 10px/1.5 Inter,system-ui,sans-serif;letter-spacing:.065em;color:#b5c9d4;font-style:normal;text-transform:none;margin-top:7px}
+main.wrap{padding-top:16px}
+@media(max-width:550px){.brandTagline{font-size:9px;letter-spacing:.02em}.topbar{padding:13px 0}.navigation{gap:8px}.navigation a{padding:8px 11px;font-size:11px}main.wrap{padding-top:8px}}
 </style>
 <script src="./research-lab.js" defer></script>
 <script src="./qm-monitor.js" defer></script>
@@ -35,14 +38,10 @@ footer{font-size:12px;border-top:1px solid #314b5d;color:#9eb3c1;padding:20px 0 
 </head>
 <body>
 <header class="top"><div class="wrap topbar">
-<a href="../" class="brand" aria-label="Zur ARGUS-V6-Vorschau"><strong>ARGUS</strong><span>PANOPTES</span></a>
-<nav class="navigation" aria-label="Navigation"><a href="../">← ARGUS · V6</a><a href="../">Forschungsoberfläche</a><a href="https://github.com/grisuweimar-crypto/trading-zentrale" target="_blank" rel="noopener noreferrer">Scanner_vNext · Quelle ↗</a></nav>
+<a href="../" class="brand" aria-label="Zur ARGUS-Hauptseite"><strong>ARGUS</strong><span>PANOPTES</span><em class="brandTagline">Research &amp; Decision Intelligence System</em></a>
+<nav class="navigation" aria-label="Navigation"><a href="../">← ARGUS-Hauptseite</a><a href="https://github.com/grisuweimar-crypto/trading-zentrale" target="_blank" rel="noopener noreferrer">Originaldaten ↗</a></nav>
 </div></header>
 <main class="wrap">
-<div class="band"><div class="pretitle">Research &amp; Decision Intelligence System</div>
-<h1>Forschung sichtbar machen.</h1>
-<p class="lead">V7 erweitert ARGUS um eine lesende Ansicht des bestehenden wissenschaftlichen Forschungsbetriebs. Hier werden ausschließlich tatsächlich veröffentlichte Forschungsartefakte präsentiert – ohne eigene Scores, Prognosen, Bewertungen oder Handelsentscheidungen.</p>
-<p class="note">Unabhängige V7-Web-Vorschau innerhalb derselben ARGUS-Internetseite. Die bisherige V6-Version und die produktive Scanneroberfläche bleiben verfügbar.</p></div>
 <section id="science" aria-label="L14 Forschungsmonitor"></section>
 <section id="external-theses" aria-label="Externe Trading-Thesen überprüfen"></section>
 </main>
