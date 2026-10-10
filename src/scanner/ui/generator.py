@@ -83,6 +83,8 @@ DEFAULT_COLUMNS = [
     "mc_chance",
     "elliott_signal",
     "cycle",
+    "cycle_quality",
+    "cycle_source",
     "cycle_status",
     # liquidity / risk
     "dollar_volume",
