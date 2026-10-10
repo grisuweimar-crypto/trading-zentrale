@@ -176,9 +176,24 @@ def coverage_rows(mask):
             for (asset,month),c in sorted(grouped.items())]
 
 
+def audit_current(root: Path, source: Path, bars_path: Path):
+    """Reuse the existing CY-02 CLI auditor without assuming scripts is a package."""
+    from importlib.util import module_from_spec, spec_from_file_location
+    spec = spec_from_file_location("cy03_existing_cycle_audit",
+                                   root/"scripts/audit_cycle_current.py")
+    if spec is None or spec.loader is None:
+        raise ValueError("cy03:cycle_audit_unavailable")
+    audit_module = module_from_spec(spec)
+    spec.loader.exec_module(audit_module)
+    errors, _ = audit_module.audit_csv(
+        source, report_path=root/"artifacts/reports/cycle_quality.csv",
+        bars_path=bars_path)
+    if errors:
+        raise ValueError("cy03:current_replay_failed:"+errors[0])
+
+
 def record(root: Path, *, write=True):
     """Audit the exact current source and append once; --dry-run does not write."""
-    from scripts.audit_cycle_current import audit_csv
     root = Path(root)
     meta = json.loads((root/"artifacts/research/history_metadata.json").read_text(encoding="utf-8"))
     if not meta.get("latest_run_complete") or meta.get("validation",{}).get("status") != "ok":
@@ -193,10 +208,7 @@ def record(root: Path, *, write=True):
     if sha(source.read_bytes()) != meta.get("source",{}).get("sha256"):
         raise ValueError("cy03:source_hash_mismatch")
     bars_path = root/"artifacts/reports/cycle_input_bars.csv.gz"
-    errors, _ = audit_csv(source, report_path=root/"artifacts/reports/cycle_quality.csv",
-                           bars_path=bars_path)
-    if errors:
-        raise ValueError("cy03:current_replay_failed:"+errors[0])
+    audit_current(root, source, bars_path)
     bars = bars_path.read_bytes()
     barhash = sha(bars)
     _, latest = parse_csv(latest_bytes)
