@@ -54,7 +54,7 @@ def test_two_observations_produce_provisional_not_research_delta():
     assert mask[1]["lag_1obs"] == "PROVISIONAL_CHAIN"
     assert mask[1]["lag_5obs"] == "NO_PRIOR"
     assert mask[1]["research_status"] == "BLOCKED_EXTERNAL_VERIFICATION_269"
-    assert coverage_rows(mask)[1]["research_eligible"] == "0"
+    assert coverage_rows(mask)[0]["research_eligible"] == "0"
 
 
 def test_duplicate_same_day_run_selects_later_and_keeps_original():
