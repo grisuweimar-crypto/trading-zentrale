@@ -89,3 +89,24 @@ Außerdem wurde der direkte L2/L3-`v2`-Vertragspaar-Guard eingeführt: eine opt-
 - **Empirisch:** Nicht validiert; aktuelle Datenbasis 0 research-eligible, 0/0/0 Lags.
 - **Unverändert:** alte L1/L2/L3-Library- und Ergebnisversionen, CY-04-UI, Scannerformel und -Ausgabe, Risk/Confidence/Elliott/Decision/Portfolio/Execution.
 - **Offene Gate-ID:** #269; CY-03 Mehrtageshistorie und externe PIT/Quellen-Zertifizierung; zukünftiger CY-05-L1-Freeze mit realer Datenbasis und weitere Vertrags-/Regressionsevidenz.
+
+## 7. Formeller technischer Abschluss / Abnahmebeleg (10.10.2026)
+
+**Entscheidung:** CY-05 **FERTIG_TECHNISCH** in seiner ausdrücklich optionalen, forschungsbeschränkten und gesperrten Implementierung. **NICHT_FREIGEGEBEN** für echte Outcomes/Forschung/Handel; dies ist **kein** formeller L1-Freeze auf Produktions- oder historischen Forschungsdaten und **keine** empirische Mustervalidierung.
+
+**Geprüfter Code-HEAD:** `ce8ca9a2d60759f73f13e14ee8d7a52b80085197` (Branch vor dieser Dokukorrektur).
+**CI-Nachweis:** [CY-05 #38046132023](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38046132023) **SUCCESS, 86 passed**, `python -m compileall -q src/scanner`, `python -m pytest -q tests/pattern_discovery/test_cy05_cycle_level_direction.py tests/pattern_discovery/test_cy05_cycle_archive_adapter.py tests/pattern_discovery/test_l1_run_contract.py tests/pattern_discovery/test_l2_feature_library.py tests/pattern_discovery/test_l3_search_engine.py tests/test_cycle_history_cy03.py`.
+
+**Erfüllte CY-05-Engineering-Kriterien:**
+1. `scanner.cycle::v2`, `level_band` (25/50/75), `change_direction` (1/5/10) und `threshold_crossing` (25/50/75) als explizite separate L2/L3-v2-Verträge; v1-Contractdateien wurden nicht verändert.
+2. Echte Nullwerte, Grenzen, `UP/DOWN`, Gleichstand, fehlende historische Basis, fremde Währung/Listing/Formel und ungeprüfte Qualität werden in synthetischen Positiv-/Negativtests unterschieden. Kein Imputieren und keine kontinuierliche Delta-Bin-Auswahl.
+3. `run_discovery_search` akzeptiert v2 nur mit dem passenden L3-Vertrag. Die L3-Policy muss durch den unveränderlichen L1-Quellfingerprint gebunden sein; **alle** L1-Quelldateien werden vor dem CY-05-Outcome-Einsatz erneut gegen ihren SHA256-Freeze geprüft. Tests verweigern spätere Änderung an L3-Vertrag und Forschungsdesign.
+4. Der read-only CY-03-v1-Adapter prüft unveränderte alte Bars, Ledger-Hashes, deterministische Eligibility und Coverage sowie letzte Manifest-Snapshot-Identität. Eine gefälschte Freigabe im Manifest wird ausdrücklich verworfen.
+5. Das versionierte, **vor jeder Outcome-Analyse** erstellte Methodendesign `configs/cycle_direction/cy05_preregistered_design_v1.json` registriert A/B/C/D, einen einzigen Primärkontrast (C–B), Primärbedingung `LEVEL_LT_25 + UP(5obs)`, Primärtarget `peer_excess_20t_gt_0`, Sessions, Ausschlüsse, Subgruppen, Kosten-/Multiplikitäts- und Testbudgets. Sein eigener Fingerprint wird beim künftigen L1-Freeze verlangt.
+6. Eingefrorene synthetische L1-Manifeste und vollständige synthetische L3-Search-Replays sind reproduzierbar. **Kein** echter Outcome-Lauf, keine Produktionssignale oder Portfolio-Aktionen.
+
+**Nicht erfüllt und ausdrücklich offen:** Die echte produktive CY-03-Chain hat weiterhin nur einen Snapshot (215 Zeilen, 209 provisional, 6 ausgeschlossen), `lag1/5/10 = 0/0/0`, `research_eligible = 0`. [#269](https://github.com/grisuweimar-crypto/trading-zentrale/issues/269) ist offen. Externe Quell-/Quote-Currency-/Exchange-Calendar-/Bar-As-of-Validierung sowie gültige mehrtägige Lags fehlen; folglich **kein** reales L1-`FROZEN_PRE_RUN`-Manifest und keine Forschungspromotion.
+
+**CY-06-Übergaberegel:** CY-06 darf die rein technische Vorbereitung (Analyse-Pipeline, Datenqualitäts- und Eignungsreport, Statistik-/Baselinespezifikation) beginnen. Das Masterplan-Gate bleibt unverändert: ohne nachweislich freigegebene Historie und vorab auf echten Inputs eingefrorenen L1-Run **kein** realer L3/Outcome-Suchlauf, keine Kandidatenfreigabe.
+
+**Abnahmetrennung:** Technischer CY-05-Code/Methodenspezifikation **abgenommen**; fachliche externe PIT-/Source-Eignung und empirischer Nachweis **nicht abgenommen**. Keine stillschweigende Umbenennung dieser Blocker in erfolgreich absolvierte Ergebnisse.
