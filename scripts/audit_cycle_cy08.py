@@ -64,10 +64,20 @@ def audit_cy08(root: Path) -> dict[str, Any]:
                 or l13.get("ablation", {}).get("same_target_scope_required") is not True
                 or l13.get("ablation", {}).get("comparison") != "EXISTING_TIMING_VS_EXISTING_TIMING_PLUS_PROMOTED_PATTERNS"):
         blockers.append("L13_PAIRED_SHADOW_SAFETY_MISMATCH")
-    # The existing generic L13 compares gross aligned outcomes; CY-08
-    # additionally requires a predeclared cost-aware net paired evaluation.
-    if l13 and not (l13.get("ablation", {}).get("net_cost_model_version")
-                    and l13.get("ablation", {}).get("net_paired_evaluation_required") is True):
+    # Generic L13 is gross. The separately versioned CY-08 companion is the
+    # *required* net-cost ablation. Do not silently treat old L13 results as net.
+    net = _read_json(root, "configs/cycle_direction/cy08_net_cost_v1.json")
+    net_file = root / "src/scanner/research/pattern_discovery/cycle_cy08_net_ablation.py"
+    if (net is None or net.get("schema_version") != "cycle_direction_cy08_net_cost_v1"
+            or net.get("research_only") is not True
+            or net.get("productive_integration_enabled") is not False
+            or net.get("execution_allowed") is not False
+            or net.get("no_auto_promotion") is not True
+            or net.get("paired_comparison") != "EXISTING_TIMING_VS_EXISTING_TIMING_PLUS_PROMOTED_PATTERNS"
+            or net.get("costs_bps_roundtrip") != [10, 20, 50]
+            or net.get("primary_cost_bps_roundtrip") != 20
+            or net.get("stress_cost_bps_roundtrip") != 50
+            or not net_file.is_file()):
         blockers.append("L13_NET_COST_ABLATION_NOT_IMPLEMENTED")
 
     l14 = contracts.get("L14", {})
