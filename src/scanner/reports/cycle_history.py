@@ -92,7 +92,7 @@ def eligibility(row):
 def identity(row):
     return tuple(row[k] for k in ("asset_id", "listing_symbol", "price_symbol",
                 "currency", "source", "formula", "price_source", "price_basis",
-                "currency_lineage", "session_time_quality"))
+                "currency_lineage", "session_time_quality", "reason"))
 
 
 def lag_mask(rows):
