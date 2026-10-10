@@ -359,13 +359,48 @@ class FeatureLibrary:
 
     def _history_requirement(self, validated_use: Mapping[str, Any]) -> int:
         tid = str(validated_use["transformation_id"])
-        if tid in {"raw", "regime_context"}:
+        if tid in {"raw", "regime_context", "level_band"}:
             return 0
         if tid in {"state_transition", "threshold_crossing"}:
             return 1
         if tid in {"delta_observations", "change_direction"}:
             return int(validated_use["parameters"]["lag_observations"])
         raise FeatureLibraryError(f"unsupported_transformation_runtime:{tid}")
+
+    @staticmethod
+    def _cy05_research_row_status(row: Mapping[str, Any]) -> str | None:
+        """A CY-05 row must come from an independently released CY-03 ledger.
+
+        This is an additional fail-closed INPUT contract, not a verifier of
+        upstream archive hashes. A future read-only adapter must establish those
+        hashes/eligibility and may then attach these exact provenance fields.
+        """
+        if row.get("cycle_research_status") != "ELIGIBLE":
+            return "CYCLE_RESEARCH_NOT_RELEASED"
+        if row.get("cycle_history_source") != "CY03_VERIFIED_LEDGER":
+            return "CYCLE_VERIFIED_LEDGER_REQUIRED"
+        if row.get("cycle_quality") != "VALID":
+            return "CYCLE_QUALITY_NOT_VALID"
+        if not all(
+            isinstance(row.get(key), str) and row[key].strip()
+            for key in (
+                "cycle_snapshot_id", "cycle_asset_id", "cycle_formula",
+                "cycle_currency", "cycle_listing_symbol", "cycle_price_symbol",
+            )
+        ):
+            return "CYCLE_LINEAGE_MISSING"
+        if row.get("cycle_asset_id") != row.get("symbol"):
+            return "CYCLE_ASSET_ID_MISMATCH"
+        value = row.get("cycle")
+        if isinstance(value, bool):
+            return "CYCLE_VALUE_OUT_OF_RANGE"
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return "CYCLE_VALUE_OUT_OF_RANGE"
+        if not math.isfinite(numeric) or not 0.0 <= numeric <= 100.0:
+            return "CYCLE_VALUE_OUT_OF_RANGE"
+        return None
 
     def pit_availability(
         self,
@@ -404,6 +439,17 @@ class FeatureLibrary:
                 validated, False, "SOURCE_VALUE_MISSING", None
             )
 
+        # The opt-in CY-05 library cannot turn a legacy/imputed/current-only
+        # Cycle into research evidence. V1 remains byte-for-byte unchanged.
+        cy05_cycle = (
+            self.version == "PDL-FEATURE-LIBRARY-CYCLE-v2"
+            and validated["feature_id"] == "scanner.cycle"
+        )
+        if cy05_cycle:
+            refusal = self._cy05_research_row_status(observation)
+            if refusal is not None:
+                return self._availability_result(validated, False, refusal, None)
+
         required_prior = self._history_requirement(validated)
         if required_prior:
             entity = observation.get(self.entity_field)
@@ -428,6 +474,29 @@ class FeatureLibrary:
                     "INSUFFICIENT_PRIOR_OBSERVATIONS",
                     None,
                 )
+            if cy05_cycle:
+                # Eligibility is supplied by the separately verified, hash-
+                # checked CY-03 archive adapter; mere 1/5/10 historical rows
+                # must never be promoted implicitly to a valid comparison.
+                lag_key = f"cycle_lag_{required_prior}obs"
+                if observation.get(lag_key) != "RESEARCH_ELIGIBLE":
+                    return self._availability_result(
+                        validated, False, "CYCLE_LAG_NOT_RESEARCH_ELIGIBLE", None
+                    )
+                same_lineage = (
+                    "cycle_asset_id", "cycle_formula", "cycle_currency",
+                    "cycle_listing_symbol", "cycle_price_symbol",
+                )
+                for _, prior in prior_rows[:required_prior]:
+                    refusal = self._cy05_research_row_status(prior)
+                    if refusal is not None:
+                        return self._availability_result(
+                            validated, False, f"PRIOR_{refusal}", None
+                        )
+                    if any(observation[key] != prior[key] for key in same_lineage):
+                        return self._availability_result(
+                            validated, False, "CYCLE_LAG_LINEAGE_MISMATCH", None
+                        )
             required_row = prior_rows[required_prior - 1][1]
             if field not in required_row:
                 return self._availability_result(
