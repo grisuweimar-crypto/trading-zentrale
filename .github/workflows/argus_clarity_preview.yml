@@ -29,6 +29,7 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check argus-preview/v7/research-lab.js
+          node --check argus-preview/v7/external-thesis-lab.js
           node --check argus-preview/v7/qm-monitor.js
           node --check argus-preview/observations/external-thesis-watch.js
           node --check argus-preview/observations/argus-help.js
