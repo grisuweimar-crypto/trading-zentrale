@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T08:45:36.947727+00:00",
+  "decision_as_of": "2026-10-10T09:22:58.985877+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,33 +26,60 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
-    "direction": "positive",
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:LC0A.MU:5df2a86791ff5f88:60T",
+          "timing:LC0A.MU:b0fb906b9f3e02ec:60T",
+          "timing:LC0A.MU:51a8cac8cfa550aa:60T",
+          "timing:LC0A.MU:1691f75766881bca:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:LC0A.MU:9aace91dab644870:5T",
+          "timing:LC0A.MU:2ec83739629fba4d:5T",
+          "timing:LC0A.MU:42bcd8a34d314c09:5T",
+          "timing:LC0A.MU:1aa807ae1a9556c5:20T",
+          "timing:LC0A.MU:6267ff2c27f27eb8:20T",
+          "timing:LC0A.MU:f483a5247b57affc:20T",
+          "timing:LC0A.MU:cad5eb04910821c4:20T",
+          "timing:LC0A.MU:df23cc7f8d9328ee:60T",
+          "timing:LC0A.MU:a0bebf08166a0860:60T",
+          "timing:LC0A.MU:6289a7880870e93e:60T",
+          "timing:LC0A.MU:fe6ff0aee1bf447a:60T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
+    "direction": null,
     "known_directional_claim_ids": [
-      "timing:LC0A.MU:ea08718de33a1787:5T",
-      "timing:LC0A.MU:0671faf1011640c5:5T",
-      "timing:LC0A.MU:c42ca6c1baee697b:20T",
+      "timing:LC0A.MU:9aace91dab644870:5T",
+      "timing:LC0A.MU:2ec83739629fba4d:5T",
+      "timing:LC0A.MU:42bcd8a34d314c09:5T",
+      "timing:LC0A.MU:1aa807ae1a9556c5:20T",
+      "timing:LC0A.MU:6267ff2c27f27eb8:20T",
       "timing:LC0A.MU:f483a5247b57affc:20T",
-      "timing:LC0A.MU:b158fef8cbfb5c55:20T",
-      "timing:LC0A.MU:4ccb45d4ee923f1a:40T",
-      "timing:LC0A.MU:9cb11f4adfc9eb9c:40T",
-      "timing:LC0A.MU:3e260f25164f48ce:40T",
+      "timing:LC0A.MU:cad5eb04910821c4:20T",
       "timing:LC0A.MU:df23cc7f8d9328ee:60T",
-      "timing:LC0A.MU:5472db56664c10c8:60T",
+      "timing:LC0A.MU:a0bebf08166a0860:60T",
       "timing:LC0A.MU:6289a7880870e93e:60T",
-      "timing:LC0A.MU:fe6ff0aee1bf447a:60T"
+      "timing:LC0A.MU:fe6ff0aee1bf447a:60T",
+      "timing:LC0A.MU:5df2a86791ff5f88:60T",
+      "timing:LC0A.MU:b0fb906b9f3e02ec:60T",
+      "timing:LC0A.MU:51a8cac8cfa550aa:60T",
+      "timing:LC0A.MU:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 12
+      "timing": 15
     },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "f875112c-cbdc-451d-b35c-1b3dea0ddc3f",
+  "snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -205,6 +232,14 @@
       "source_snapshot_id": "f875112c-cbdc-451d-b35c-1b3dea0ddc3f",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-10T09:22:58.985877+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -229,8 +264,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_conflict"
   }
 }

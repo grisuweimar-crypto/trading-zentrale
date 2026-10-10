@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T08:45:36.947727+00:00",
+  "decision_as_of": "2026-10-10T09:22:58.985877+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,15 +29,14 @@
     "conflicts": [
       {
         "negative_claim_ids": [
+          "timing:SN.L:6b9ad841e92f8191:60T",
           "timing:SN.L:b0fb906b9f3e02ec:60T",
-          "timing:SN.L:51a8cac8cfa550aa:60T"
+          "timing:SN.L:8383be481c5c6052:60T",
+          "timing:SN.L:51a8cac8cfa550aa:60T",
+          "timing:SN.L:1691f75766881bca:60T"
         ],
         "positive_claim_ids": [
-          "timing:SN.L:a2763d94cd6f82e9:5T",
-          "timing:SN.L:85b7b4bcb43aeb00:20T",
-          "timing:SN.L:494a15c3341a0317:20T",
-          "timing:SN.L:f9714fd629aaf7f2:40T",
-          "timing:SN.L:32bb40f535b6b527:60T"
+          "timing:SN.L:6289a7880870e93e:60T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -45,16 +44,15 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:SN.L:a2763d94cd6f82e9:5T",
-      "timing:SN.L:85b7b4bcb43aeb00:20T",
-      "timing:SN.L:494a15c3341a0317:20T",
-      "timing:SN.L:f9714fd629aaf7f2:40T",
-      "timing:SN.L:32bb40f535b6b527:60T",
+      "timing:SN.L:6289a7880870e93e:60T",
+      "timing:SN.L:6b9ad841e92f8191:60T",
       "timing:SN.L:b0fb906b9f3e02ec:60T",
-      "timing:SN.L:51a8cac8cfa550aa:60T"
+      "timing:SN.L:8383be481c5c6052:60T",
+      "timing:SN.L:51a8cac8cfa550aa:60T",
+      "timing:SN.L:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 7
+      "timing": 6
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -63,7 +61,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "f875112c-cbdc-451d-b35c-1b3dea0ddc3f",
+  "snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -216,14 +214,22 @@
       "source_snapshot_id": "f875112c-cbdc-451d-b35c-1b3dea0ddc3f",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-10T09:22:58.985877+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": false
     },
     "last_overextension_date": null,
