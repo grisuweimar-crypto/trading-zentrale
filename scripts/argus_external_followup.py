@@ -112,3 +112,40 @@ def build(notes, prices, now):
             "outcome_policy":"completed_sessions_strictly_after_publication_date",
             "scanner_changed":False,"qm_changed":False,"provider_score_produced":False,
             "claims":out,"claim_count":len(out)}
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--notes", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    note_bytes = args.notes.read_bytes()
+    notes = json.loads(note_bytes)
+    now = datetime.now(timezone.utc)
+    currencies = {n["symbol"]:("EUR" if n["symbol"].endswith(".DE") else "USD")
+                  for n in notes["items"] if n.get("source_kind")=="observed_newsletter"}
+    prices, issues = {}, {}
+    for symbol, currency in sorted(currencies.items()):
+        try:
+            prices[symbol] = bars_from_yahoo(symbol, currency, now.date().isoformat())
+        except Exception as exc:
+            # Explicit fail-closed per symbol; never silently substitute another listing.
+            issues[symbol] = type(exc).__name__ + ": " + str(exc)[:140]
+    if not prices:
+        raise RuntimeError("all_candidate_price_sources_unavailable")
+    result = build(notes, prices, now)
+    result["provider_issues"] = issues
+    result["source_notes_sha256"] = hashlib.sha256(note_bytes).hexdigest()
+    result["price_digest_by_symbol"] = {
+        symbol:hashlib.sha256(json.dumps(bars,sort_keys=True).encode()).hexdigest()
+        for symbol,bars in sorted(prices.items())
+    }
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result,ensure_ascii=False,indent=2,sort_keys=True)+"\n")
+    print(json.dumps({"claims":len(result["claims"]),"priced_symbols":len(prices),
+                      "unpriced_symbols":sorted(issues),"as_of":result["as_of"]}))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
