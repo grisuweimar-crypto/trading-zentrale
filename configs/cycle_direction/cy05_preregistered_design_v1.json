@@ -1,0 +1,170 @@
+{
+  "schema_version": "cycle_direction_cy05_research_design_v1",
+  "plan_id": "CYCLE-DIR-2026-10-09-v1",
+  "preregistration_state": "METHODOLOGY_FROZEN_BEFORE_OUTCOME_INSPECTION",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "data_policy": {
+    "cy03_source": "artifacts/cycle_history",
+    "legacy_cycle_backfill_allowed": false,
+    "externally_verified_release_required": true,
+    "observed_asset_lineage_required": [
+      "asset_id",
+      "listing_symbol",
+      "price_symbol",
+      "currency",
+      "formula",
+      "source",
+      "price_basis",
+      "price_source"
+    ],
+    "snapshot_canonicalization": "ONE_PER_AS_OF_DAY_LATEST_COMPLETE",
+    "lag_semantics": "QUALIFIED_SCANNER_OBSERVATIONS_NOT_TRADING_SESSIONS",
+    "allowed_lag_observations": [
+      1,
+      5,
+      10
+    ],
+    "forward_targets_sessions": [
+      5,
+      20,
+      40,
+      60
+    ],
+    "data_cutoff": "TO_BE_FROZEN_WITH_VERIFIED_RESEARCH_DATA_BEFORE_FIRST_OUTCOME_INSPECTION",
+    "discovery_holdout": "TO_BE_DEFINED_PIT_BEFORE_FIRST_OUTCOME_INSPECTION",
+    "missingness_exclusions": [
+      "missing_cycle_or_missing_lag",
+      "unverified_provider_pit_or_quote_currency",
+      "stale_or_imputed",
+      "identity_or_formula_drift",
+      "snapshot_gap",
+      "nonmonotonic_source_time",
+      "unmatured_forward_outcome",
+      "after_l1_cutoff"
+    ],
+    "no_retroactive_snapshot_mutation": true,
+    "independent_release_issue": 269
+  },
+  "l2_l3_contracts": {
+    "feature_library": "configs/pattern_discovery/feature_library_cycle_v2.json",
+    "search_contract": "configs/pattern_discovery/l3_search_contract_cycle_v2.json",
+    "cycle_feature": "scanner.cycle::v2",
+    "cycle_level_thresholds": [
+      25,
+      50,
+      75
+    ],
+    "cycle_level_bands": [
+      "LEVEL_LT_25",
+      "LEVEL_25_LT_50",
+      "LEVEL_50_LT_75",
+      "LEVEL_GTE_75"
+    ],
+    "directional_states": [
+      "UP",
+      "DOWN"
+    ],
+    "continuous_delta_atomization": false,
+    "max_conditions": 3
+  },
+  "registered_comparison": {
+    "A": "baseline_without_cycle_direction_or_level",
+    "B": "A_plus_cycle_level_band_only",
+    "C": "B_plus_cycle_change_direction_at_registered_lag",
+    "D": "C_plus_one_additional_preexisting_noncycle_indicator_max_3_atoms",
+    "same_observations_universe_targets_and_evaluation_for_all_arms": true,
+    "primary_contrast": "C_minus_B",
+    "primary_condition": {
+      "cycle_level_band": "LEVEL_LT_25",
+      "cycle_change_direction": "UP",
+      "lag_observations": 5
+    },
+    "primary_target": "peer_excess_20t_gt_0",
+    "primary_effect_metric": "paired_incremental_relative_alpha_after_costs",
+    "null_hypothesis": "No positive incremental net relative alpha of C over B",
+    "one_sided_direction": "POSITIVE",
+    "secondary_targets": [
+      "return_5t_gt_0",
+      "return_20t_gt_0",
+      "return_40t_gt_0",
+      "return_60t_gt_0",
+      "peer_excess_5t_gt_0",
+      "peer_excess_40t_gt_0",
+      "peer_excess_60t_gt_0"
+    ],
+    "other_lags": [
+      1,
+      10
+    ],
+    "exploratory_family_D": true,
+    "subgroups": [
+      "equities_vs_crypto_separately",
+      "market_regime_where_PIT_available",
+      "venue_or_currency_where_coverage_sufficient"
+    ],
+    "no_ex_post_subgroup_selection": true
+  },
+  "execution_policy": {
+    "l1_manifest_required_before_outcome_run": true,
+    "input_fingerprints_include": [
+      "configs/cycle_direction/cy05_preregistered_design_v1.json",
+      "configs/pattern_discovery/feature_library_cycle_v2.json",
+      "configs/pattern_discovery/l3_search_contract_cycle_v2.json",
+      "verified_cy03_research_input_and_outcomes"
+    ],
+    "preregistration_l1_fields_to_freeze": [
+      "declared_start_at",
+      "data_cutoff",
+      "data_sources",
+      "universe_version",
+      "feature_library_version",
+      "allowed_transformations",
+      "pattern_types",
+      "targets",
+      "horizons_sessions",
+      "baselines",
+      "minimum_criteria",
+      "search_budget",
+      "candidate_budget",
+      "multiple_testing",
+      "statistical_primary_method",
+      "robustness_checks",
+      "exclusion_rules",
+      "dependency_rules",
+      "code_version",
+      "determinism"
+    ],
+    "minimum_raw_n": 40,
+    "minimum_temporal_support_regions": 3,
+    "minimum_effect_size": 0.01,
+    "minimum_baseline_lift": 0.005,
+    "tested_candidates_budget_total": 5000,
+    "tested_candidates_budget_per_family": 1000,
+    "candidate_budget_total": 40,
+    "candidate_budget_per_horizon": 15,
+    "multiple_testing_method": "BENJAMINI_HOCHBERG_FDR",
+    "fdr_q": 0.05,
+    "robustness": [
+      "symbol_cluster",
+      "moving_block_bootstrap",
+      "temporal_support",
+      "overlap_dependence",
+      "negative_controls"
+    ],
+    "turnover_cost_roundtrip_bps": 20,
+    "costs_sensitivity_bps": [
+      10,
+      50
+    ],
+    "outcome_used_for_parameter_selection": false,
+    "data_sufficiency_evaluated_before_outcome_inspection": true
+  },
+  "evidence_status": {
+    "frozen_l1_run_manifest_created": false,
+    "empirical_results_computed": false,
+    "legacy_data_certified": false,
+    "note": "This precommitted methodology is NOT the L1 FROZEN_PRE_RUN manifest; future exact input hashes, cutoff, holdout, full L1 manifest and independent #269 approval are separate non-waivable steps."
+  }
+}
