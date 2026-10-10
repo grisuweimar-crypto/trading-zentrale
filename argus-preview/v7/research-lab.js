@@ -81,7 +81,7 @@ section.insertAdjacentHTML('afterbegin',
 '<h3>Was wissen wir über unsere Handelsmuster?</h3><p class="v7foot">Hier zeigen wir den belegten Stand der Musterforschung. ARGUS liest vorhandene Ergebnisse, erstellt aber selbst keine Tests, Prognosen oder Bewertungen.</p></div>'+
 '<button id="v7Reload" type="button">↻ Forschungsstand laden</button></div>'+
 '<div class="v7status" id="v7Notice" role="status">Veröffentlichte Forschungsdaten werden geprüft …</div>'+
-'<div class="v7how"><h4>So liest du diese Seite</h4><p><strong>Entdecken</strong> sucht nach auffälligen Zusammenhängen. <strong>Beobachten</strong> hält vorher festgelegte Muster für spätere Vergleiche fest. <strong>Überprüfen</strong> wartet auf echte Kursentwicklungen. <strong>Einordnen</strong> zeigt, welche Aussagen tatsächlich belegt sind. Ein bestandener Techniktest beweist noch kein erfolgreiches Handelssignal.</p></div>'+
+'<details class="v7how" id="v7How" open><summary>So liest du diese Seite</summary><p><strong>Entdecken</strong> sucht nach auffälligen Zusammenhängen. <strong>Beobachten</strong> hält vorher festgelegte Muster für spätere Vergleiche fest. <strong>Überprüfen</strong> wartet auf echte Kursentwicklungen. <strong>Einordnen</strong> zeigt, welche Aussagen tatsächlich belegt sind. Ein bestandener Techniktest beweist noch kein erfolgreiches Handelssignal.</p></details>'+
 '<div class="v7story" id="v7Story"></div>'+
 '<div class="v7sectionHead"><div><span class="v7over">FORSCHUNGSERGEBNISSE</span><h4>Was liegt schon vor?</h4></div><p>Zählwerte aus dem veröffentlichten Musterlabor (L14), keine Schätzung.</p></div>'+
 '<div class="v7grid" id="v7Counts"></div><div class="v7cols">'+
@@ -98,6 +98,7 @@ if(legacy.length){
  details.appendChild(summary);legacy.forEach(node=>details.appendChild(node));section.appendChild(details);
 }
 const el=id=>document.getElementById(id);
+if(typeof matchMedia==='function'&&matchMedia('(max-width:700px)').matches)el('v7How').open=false;
 const esc=x=>String(x??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 const count=x=>Number.isSafeInteger(x)&&x>=0?new Intl.NumberFormat('de-DE').format(x):'Nicht verfügbar';
 const date=x=>x&&!Number.isNaN(Date.parse(x))?new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Berlin'}).format(new Date(x))+' (Berlin)':'Nicht verfügbar';
