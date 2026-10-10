@@ -70,7 +70,7 @@ host.insertAdjacentHTML('afterbegin',
 '<div class="etwTools"><button type="button" id="etwImportBtn">↑ Private Notizen öffnen</button><input type="file" id="etwFile" accept="application/json,.json" style="display:none" aria-label="Private Kandidaten-Datei auswählen">'+
 '<button type="button" id="etwBackupBtn">↓ Eigene Notizen sichern</button><button type="button" id="etwRefresh">↻ Beobachtungen aktualisieren</button></div></div>'+
 '<details class="etwExplainer"><summary>So funktioniert diese Beobachtung</summary><p>Hier steht zuerst die <b>externe Behauptung</b>, danach die <b>tatsächlich gemessene Kursentwicklung</b>. Den damaligen Scannerzustand vergleichen wir nur, wenn ein passender früherer Datenstand vorliegt. Keine dieser Angaben ist automatisch eine Kaufempfehlung.</p></details>'+ 
-'<div id="etwMetrics" class="etwMetrics"></div><div class="etwGate" id="etwGate" role="status">Externe Referenz und Scannerstand werden geladen …</div>'+
+'<details id="etwOverview" class="etwOverview" open><summary id="etwOverviewTitle">Kennzahlen und Datenbasis anzeigen</summary><div id="etwMetrics" class="etwMetrics"></div></details><div class="etwGate" id="etwGate" role="status">Externe Referenz und Scannerstand werden geladen …</div>'+
 '<div class="etwFilters"><button type="button" data-etw-filter="all" aria-pressed="true">Alle Fälle</button><button type="button" data-etw-filter="shadow" aria-pressed="false">Außerhalb Scanner</button>'+
 '<button type="button" data-etw-filter="scanner" aria-pressed="false">Im Scanner enthalten</button><button type="button" data-etw-filter="new" aria-pressed="false">Neue Beobachtungen</button>'+
 '<input id="etwQuery" aria-label="Kandidaten durchsuchen" placeholder="Aktie oder Kürzel suchen …"></div>'+
@@ -79,6 +79,9 @@ host.insertAdjacentHTML('afterbegin',
 '<details class="etwSources"><summary>Quellen und Grenzen dieser Darstellung</summary><p id="etwSourcesText">Datenstände werden nach dem Laden angezeigt.</p></details>'+
 '</section>');
 const el=id=>document.getElementById(id);
+if(typeof matchMedia==='function'&&matchMedia('(max-width:600px)').matches){
+ el('etwOverview').open=false;
+}
 let baseline=[],publicCandidates=[],publicEvidence=[],candidateElliott=null,externalFollowup=null,priv={schema_version:'argus_external_thesis_private_v1',new_leads:[],source_updates:[],newsletters:[]};
 let scanSymbols=null,scanMeta=null,filter='all',query='',running=false;
 try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(parsed?.schema_version==='argus_external_thesis_private_v1'&&Array.isArray(parsed.new_leads)&&Array.isArray(parsed.source_updates))priv=parsed}}catch(_){}
@@ -322,6 +325,7 @@ function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
  const known=all.filter(x=>inScan(x.symbol)===true).length;
  const unknown=all.filter(x=>inScan(x.symbol)===null).length;
+ el('etwOverviewTitle').textContent=all.length+' Aktien auf der Liste · Zahlen zur Beobachtung anzeigen';
  el('etwMetrics').innerHTML=metric('Aktien im Blick',all.length,'externe Ideen, keine Kaufempfehlung')+
   metric('Aktien mit Quellenbezug',new Set(publicEvidence.map(x=>x.symbol)).size,'frühere und datierte externe Ideen')+
   metric('Im aktuellen Scanner',unknown?'—':known,'Mitgliedschaft, kein Kaufsignal')+
