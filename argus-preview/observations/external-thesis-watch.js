@@ -322,10 +322,10 @@ function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
  const known=all.filter(x=>inScan(x.symbol)===true).length;
  const unknown=all.filter(x=>inScan(x.symbol)===null).length;
- el('etwMetrics').innerHTML=metric('Ältere Beobachtungen',baseline.length,'historische Fallakten, keine heutigen Bewertungen')+
-  metric('Weitere Aktienideen',newOnly.length,'neue Kandidaten und eigene Hinweise')+
+ el('etwMetrics').innerHTML=metric('Aktien im Blick',all.length,'externe Ideen, keine Kaufempfehlung')+
+  metric('Begründungen',all.reduce((n,x)=>n+x.notes.filter(y=>y.source_rationale).length,0),'aus nachprüfbaren oder gekennzeichneten Quellen')+
   metric('Im aktuellen Scanner',unknown?'—':known,'Mitgliedschaft, kein Kaufsignal')+
-  metric('Noch außerhalb',unknown?'—':all.length-known,'zur Beobachtung, nicht aufgenommen');
+  metric('Noch außerhalb',unknown?'—':all.length-known,'separat beobachtet, nicht aufgenommen');
  const visible=all.filter(x=>(filter==='all'||(filter==='new'&&x.isNew)||(filter==='scanner'&&inScan(x.symbol)===true)||
  (filter==='shadow'&&inScan(x.symbol)===false))&&
  (!query||[x.symbol,x.name,...x.notes.map(n=>n.source_rationale||'')].join(' ').toLowerCase().includes(query)));
