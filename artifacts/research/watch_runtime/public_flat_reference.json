@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-10T09:22:58.985877+00:00",
+  "decision_as_of": "2026-10-10T20:25:59.640546+00:00",
   "diagnostics": {
     "bundle_count": 215,
-    "decision_as_of": "2026-10-10T09:22:58.985877+00:00",
+    "decision_as_of": "2026-10-10T20:25:59.640546+00:00",
     "elliott_6h_actionable_symbols": [],
     "elliott_6h_source_status": "not_supplied",
     "elliott_6h_symbols": [],
@@ -31,7 +31,7 @@
     "phase8_external_evidence_activated": false,
     "private_position_data_persisted": false,
     "scanner_scalar_fallback_used": false,
-    "snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
+    "snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
     "state_history_counts": {
       "never_overextended": 68,
       "overextended": 22,
@@ -65,14 +65,14 @@
         "confidence": 56.3,
         "confidence_label": "MED",
         "currency": "KRW",
-        "cycle": null,
+        "cycle": 34.9865,
         "name": "SK hynix Inc.",
         "r_code": "R2",
         "rank": 146.0,
         "rank_percentile": 0.6790697674418604,
         "rs3m": -0.3150947250420282,
-        "score": 18.07,
-        "trend200": 0.17144874728626425
+        "score": 18.04,
+        "trend200": 0.17144874601071014
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -126,14 +126,14 @@
         "confidence": 63.5,
         "confidence_label": "MED",
         "currency": "KRW",
-        "cycle": null,
+        "cycle": 20.8519,
         "name": "Samsung Electronics Co., Ltd.",
         "r_code": "R2",
         "rank": 128.0,
         "rank_percentile": 0.5953488372093023,
         "rs3m": -0.20880719640389778,
         "score": 19.96,
-        "trend200": 0.145342061287012
+        "trend200": 0.1453420618737582
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -253,8 +253,8 @@
         "rank": 48.0,
         "rank_percentile": 0.22325581395348837,
         "rs3m": 0.052401365197636496,
-        "score": 27.41,
-        "trend200": 0.04670973422720048
+        "score": 27.4,
+        "trend200": 0.04670973847886595
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -421,7 +421,7 @@
       "symbol": "1810.HK"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 32.939998626708984,
@@ -435,7 +435,7 @@
         "rank_percentile": 0.13953488372093023,
         "rs3m": 0.0896596015764981,
         "score": 29.28,
-        "trend200": -0.06295306125941014
+        "trend200": -0.06295306176783777
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -444,8 +444,8 @@
         "path_review_state": "monitor",
         "path_review_suppressed_by_w8": false,
         "path_sequence_state": "post_overextension_memory",
-        "pending_confirmation_count": 0,
-        "pending_direction": null,
+        "pending_confirmation_count": 1,
+        "pending_direction": "negative",
         "phase5_shadow_changes_portfolio_action": false,
         "phase5_shadow_eligible_review_horizons": [],
         "phase5_shadow_insufficient_evidence_horizons": [
@@ -457,9 +457,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_flat",
-        "portfolio_action_state": "NO_ACTION",
-        "reliability_assessment": "blocked_conflict",
+        "portfolio_action_reason_code": "directional_transition_not_yet_confirmed",
+        "portfolio_action_state": "WAIT_CONFIRMATION",
+        "reliability_assessment": "pending_confirmation",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -470,19 +470,19 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_conflict",
-        "universal_stance_direction": null,
-        "universal_stance_state": "conflicted",
+        "transition_status": "transition_pending",
+        "universal_stance_direction": "negative",
+        "universal_stance_state": "negative",
         "w8_action_policy_case": "non_long_position_base_action_preserved",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "waiting_confirmation",
       "symbol": "2899.HK"
     },
     {
-      "attention_required": true,
+      "attention_required": false,
       "availability": "decision_available",
       "current": {
         "close": 491.3999938964844,
@@ -495,12 +495,12 @@
         "rank": 69.0,
         "rank_percentile": 0.3209302325581395,
         "rs3m": -0.22489152593132555,
-        "score": 25.61,
-        "trend200": -0.1703420550716065
+        "score": 25.62,
+        "trend200": -0.17034205336169728
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 14,
+        "evidence_gap_count": 13,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -518,9 +518,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "positive_confirmed_flat",
-        "portfolio_action_state": "ENTER_REVIEW",
-        "reliability_assessment": "provisional_unopposed_support",
+        "portfolio_action_reason_code": "blocking_raw_state_flat",
+        "portfolio_action_state": "NO_ACTION",
+        "reliability_assessment": "blocked_insufficient",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -531,15 +531,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "stable_confirmed",
-        "universal_stance_direction": "positive",
-        "universal_stance_state": "positive",
+        "transition_status": "blocked_insufficient",
+        "universal_stance_direction": null,
+        "universal_stance_state": "insufficient_evidence",
         "w8_action_policy_case": "non_long_position_base_action_preserved",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "review_now",
+      "presentation_group": "hold_or_no_action",
       "symbol": "3750.HK"
     },
     {
@@ -550,7 +550,7 @@
         "confidence": 61.4,
         "confidence_label": "MED",
         "currency": "JPY",
-        "cycle": null,
+        "cycle": 51.5612,
         "name": "MITSUBISHI EL.",
         "r_code": "R4",
         "rank": 45.0,
@@ -611,14 +611,14 @@
         "confidence": 52.3,
         "confidence_label": "MED",
         "currency": "JPY",
-        "cycle": null,
+        "cycle": 78.9202,
         "name": "YASKAWA ELECTRIC CORPORATION",
         "r_code": "R2",
         "rank": 148.0,
         "rank_percentile": 0.6883720930232559,
         "rs3m": -0.3455214688473396,
-        "score": 17.87,
-        "trend200": -0.10224164254264212
+        "score": 17.86,
+        "trend200": -0.10224164213124753
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -672,7 +672,7 @@
         "confidence": 67.5,
         "confidence_label": "MED",
         "currency": "JPY",
-        "cycle": null,
+        "cycle": 51.6663,
         "name": "KEYENCE CORP.",
         "r_code": "R2",
         "rank": 137.0,
@@ -733,14 +733,14 @@
         "confidence": 66.1,
         "confidence_label": "MED",
         "currency": "JPY",
-        "cycle": null,
+        "cycle": 72.5127,
         "name": "Tokyo Electron Limited",
         "r_code": "R3",
         "rank": 96.0,
         "rank_percentile": 0.44651162790697674,
         "rs3m": -0.11653465766352822,
         "score": 23.36,
-        "trend200": 0.2691682178116257
+        "trend200": 0.2691682190756155
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1103,7 +1103,7 @@
         "rank": 28.0,
         "rank_percentile": 0.13023255813953488,
         "rs3m": -0.10645815367667189,
-        "score": 29.41,
+        "score": 29.42,
         "trend200": 0.062124654910663546
       },
       "decision": {
@@ -1161,11 +1161,11 @@
         "cycle": 47.0548,
         "name": "Abbott Laboratories",
         "r_code": "R3",
-        "rank": 76.0,
-        "rank_percentile": 0.35348837209302325,
+        "rank": 77.0,
+        "rank_percentile": 0.3581395348837209,
         "rs3m": 0.08945164464091149,
-        "score": 24.89,
-        "trend200": -0.0285825211981392
+        "score": 24.87,
+        "trend200": -0.02858252083671886
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1225,8 +1225,8 @@
         "rank": 8.0,
         "rank_percentile": 0.037209302325581395,
         "rs3m": 0.11453681830443152,
-        "score": 35.35,
-        "trend200": -0.0033672407940041893
+        "score": 35.3,
+        "trend200": -0.003367239499266317
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1343,8 +1343,8 @@
         "cycle": 53.2986,
         "name": "Adobe Inc.",
         "r_code": "R3",
-        "rank": 89.0,
-        "rank_percentile": 0.413953488372093,
+        "rank": 88.0,
+        "rank_percentile": 0.40930232558139534,
         "rs3m": 0.059198705624532444,
         "score": 23.96,
         "trend200": -0.057235738804096936
@@ -1467,8 +1467,8 @@
         "rank": 2.0,
         "rank_percentile": 0.009302325581395349,
         "rs3m": 0.2736804742539878,
-        "score": 42.38,
-        "trend200": 0.001696376371142616
+        "score": 42.36,
+        "trend200": 0.0016963735361459342
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1518,7 +1518,7 @@
       "availability": "decision_available",
       "current": {
         "close": 24.639999389648438,
-        "confidence": 48.9,
+        "confidence": 49.0,
         "confidence_label": "LOW",
         "currency": "CAD",
         "cycle": 21.188,
@@ -1527,8 +1527,8 @@
         "rank": 19.0,
         "rank_percentile": 0.08837209302325581,
         "rs3m": 0.020639545448360552,
-        "score": 32.55,
-        "trend200": -0.11905133003118173
+        "score": 32.59,
+        "trend200": -0.11905132732782653
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1650,7 +1650,7 @@
         "rank_percentile": 0.9116279069767442,
         "rs3m": -0.24892505759614525,
         "score": 10.92,
-        "trend200": -0.3406916293278712
+        "trend200": -0.34069162998283375
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1768,11 +1768,11 @@
         "cycle": 63.5071,
         "name": "Applied Materials, Inc.",
         "r_code": "R2",
-        "rank": 122.0,
-        "rank_percentile": 0.5674418604651162,
+        "rank": 121.0,
+        "rank_percentile": 0.5627906976744186,
         "rs3m": -0.1860780268135751,
         "score": 21.13,
-        "trend200": 0.16921644574829542
+        "trend200": 0.16921644327982754
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -1884,7 +1884,7 @@
       "availability": "decision_available",
       "current": {
         "close": 262.42999267578125,
-        "confidence": 78.1,
+        "confidence": 78.2,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 100.0,
@@ -1893,7 +1893,7 @@
         "rank": 27.0,
         "rank_percentile": 0.12558139534883722,
         "rs3m": 0.022227987191091314,
-        "score": 29.55,
+        "score": 29.57,
         "trend200": 0.08374277467565472
       },
       "decision": {
@@ -2133,8 +2133,8 @@
         "cycle": 39.7561,
         "name": "AVINO SILVER",
         "r_code": "R4",
-        "rank": 15.0,
-        "rank_percentile": 0.06976744186046512,
+        "rank": 16.0,
+        "rank_percentile": 0.07441860465116279,
         "rs3m": -0.0725366753433021,
         "score": 33.81,
         "trend200": -0.1851614829741024
@@ -2194,10 +2194,10 @@
         "cycle": 61.2751,
         "name": "ASML HOLDING",
         "r_code": "R5",
-        "rank": 14.0,
-        "rank_percentile": 0.06511627906976744,
+        "rank": 15.0,
+        "rank_percentile": 0.06976744186046512,
         "rs3m": -0.03419441324296146,
-        "score": 33.84,
+        "score": 33.83,
         "trend200": 0.14206110160347007
       },
       "decision": {
@@ -2501,7 +2501,7 @@
         "rank_percentile": 0.4558139534883721,
         "rs3m": -0.1073000175424148,
         "score": 23.25,
-        "trend200": -0.015160648521105102
+        "trend200": -0.015160643608908453
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -2611,7 +2611,7 @@
       "availability": "decision_available",
       "current": {
         "close": 51.68000030517578,
-        "confidence": 61.5,
+        "confidence": 61.6,
         "confidence_label": "MED",
         "currency": "EUR",
         "cycle": 70.2596,
@@ -2620,7 +2620,7 @@
         "rank": 51.0,
         "rank_percentile": 0.2372093023255814,
         "rs3m": 0.007592483336358091,
-        "score": 27.32,
+        "score": 27.35,
         "trend200": 0.05470017705606489
       },
       "decision": {
@@ -2671,7 +2671,7 @@
       "availability": "decision_available",
       "current": {
         "close": 43.77000045776367,
-        "confidence": 50.9,
+        "confidence": 51.0,
         "confidence_label": "MED",
         "currency": "EUR",
         "cycle": 20.8955,
@@ -2680,7 +2680,7 @@
         "rank": 157.0,
         "rank_percentile": 0.7302325581395349,
         "rs3m": -0.1470549444913818,
-        "score": 16.64,
+        "score": 16.66,
         "trend200": 0.015003619530565615
       },
       "decision": {
@@ -2801,8 +2801,8 @@
         "rank": 24.0,
         "rank_percentile": 0.11162790697674418,
         "rs3m": 0.022815968595601532,
-        "score": 30.81,
-        "trend200": 0.029434379582774728
+        "score": 30.82,
+        "trend200": 0.029434385558541498
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -2861,8 +2861,8 @@
         "rank": 32.0,
         "rank_percentile": 0.14883720930232558,
         "rs3m": 0.36144294815848177,
-        "score": 29.19,
-        "trend200": 0.1327548311679283
+        "score": 29.2,
+        "trend200": 0.132754827896026
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3043,8 +3043,8 @@
         "rank": 102.0,
         "rank_percentile": 0.4744186046511628,
         "rs3m": -0.06922643330278833,
-        "score": 22.73,
-        "trend200": 0.11720679582153015
+        "score": 22.72,
+        "trend200": 0.11720679430807857
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3105,7 +3105,7 @@
         "rank_percentile": 0.20465116279069767,
         "rs3m": 0.11894517415324946,
         "score": 27.89,
-        "trend200": 0.02114040850281418
+        "trend200": 0.021140401981080137
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3156,7 +3156,7 @@
       "availability": "decision_available",
       "current": {
         "close": 65.36000061035156,
-        "confidence": 66.9,
+        "confidence": 67.0,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 64.2408,
@@ -3165,7 +3165,7 @@
         "rank": 152.0,
         "rank_percentile": 0.7069767441860465,
         "rs3m": -0.08703210595352773,
-        "score": 17.18,
+        "score": 17.21,
         "trend200": 0.22332288058003913
       },
       "decision": {
@@ -3287,8 +3287,8 @@
         "rank": 174.0,
         "rank_percentile": 0.8093023255813954,
         "rs3m": -0.15780888706806162,
-        "score": 14.22,
-        "trend200": -0.1377726519109581
+        "score": 14.19,
+        "trend200": -0.1377726496964995
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3458,18 +3458,18 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 0.25613000988960266,
-        "confidence": 56.5,
+        "close": 0.25203999876976013,
+        "confidence": 55.9,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 18.9046,
         "name": "Cardano",
         "r_code": "R2",
-        "rank": 121.0,
-        "rank_percentile": 0.5627906976744186,
-        "rs3m": 0.039258547072609895,
-        "score": 21.15,
-        "trend200": 0.20328448503757035
+        "rank": 123.0,
+        "rank_percentile": 0.5720930232558139,
+        "rs3m": 0.015703399689749764,
+        "score": 20.81,
+        "trend200": 0.18418360950044232
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3519,8 +3519,8 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 82778.609375,
-        "confidence": 67.9,
+        "close": 82943.5390625,
+        "confidence": 68.0,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 9.0645,
@@ -3530,7 +3530,7 @@
         "rank_percentile": 0.30697674418604654,
         "rs3m": 0.0,
         "score": 25.82,
-        "trend200": 0.1510202079004126
+        "trend200": 0.15330029821543079
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3579,8 +3579,8 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 0.07701999694108963,
-        "confidence": 47.5,
+        "close": 0.0768899992108345,
+        "confidence": 47.3,
         "confidence_label": "LOW",
         "currency": "EUR",
         "cycle": 6.1677,
@@ -3588,9 +3588,9 @@
         "r_code": "R2",
         "rank": 126.0,
         "rank_percentile": 0.586046511627907,
-        "rs3m": 0.008559663645351767,
-        "score": 20.25,
-        "trend200": 0.015411086487926884
+        "rs3m": 0.0038471271539251006,
+        "score": 20.12,
+        "trend200": 0.013705917829539116
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3639,18 +3639,18 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 2494.0,
-        "confidence": 68.8,
+        "close": 2510.239990234375,
+        "confidence": 68.9,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 4.4369,
         "name": "Ethereum",
         "r_code": "R3",
-        "rank": 92.0,
-        "rank_percentile": 0.42790697674418604,
-        "rs3m": 0.03009691577655449,
-        "score": 23.74,
-        "trend200": 0.16980155996806623
+        "rank": 91.0,
+        "rank_percentile": 0.4232558139534884,
+        "rs3m": 0.036061947079754075,
+        "score": 23.82,
+        "trend200": 0.1773740257686922
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3700,8 +3700,8 @@
       "attention_required": true,
       "availability": "decision_available",
       "current": {
-        "close": 98.20999908447266,
-        "confidence": 76.7,
+        "close": 98.47000122070312,
+        "confidence": 76.8,
         "confidence_label": "HIGH",
         "currency": "EUR",
         "cycle": 0.0,
@@ -3709,9 +3709,9 @@
         "r_code": "R3",
         "rank": 73.0,
         "rank_percentile": 0.3395348837209302,
-        "rs3m": 0.21253791127013222,
-        "score": 25.25,
-        "trend200": 0.3073625032255869
+        "rs3m": 0.21393672363516747,
+        "score": 25.28,
+        "trend200": 0.31080094359730426
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3761,8 +3761,8 @@
       "attention_required": false,
       "availability": "decision_available",
       "current": {
-        "close": 1.2574000358581543,
-        "confidence": 67.1,
+        "close": 1.2538000345230103,
+        "confidence": 66.9,
         "confidence_label": "MED",
         "currency": "EUR",
         "cycle": 5.8307,
@@ -3770,9 +3770,9 @@
         "r_code": "R2",
         "rank": 170.0,
         "rank_percentile": 0.7906976744186046,
-        "rs3m": 0.13560461740221297,
-        "score": 14.61,
-        "trend200": 0.13480483776728325
+        "rs3m": 0.12901805792860288,
+        "score": 14.52,
+        "trend200": 0.1315742152759638
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3889,11 +3889,11 @@
         "cycle": 54.769,
         "name": "CHEVRON CORP",
         "r_code": "R3",
-        "rank": 59.0,
-        "rank_percentile": 0.2744186046511628,
+        "rank": 61.0,
+        "rank_percentile": 0.2837209302325581,
         "rs3m": 0.13830334753701767,
-        "score": 26.42,
-        "trend200": 0.14128799801813496
+        "score": 26.4,
+        "trend200": 0.1412880012997204
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -3944,7 +3944,7 @@
       "availability": "decision_available",
       "current": {
         "close": 296.0,
-        "confidence": 85.5,
+        "confidence": 85.6,
         "confidence_label": "HIGH",
         "currency": "EUR",
         "cycle": 86.1502,
@@ -3953,7 +3953,7 @@
         "rank": 25.0,
         "rank_percentile": 0.11627906976744186,
         "rs3m": 0.12264627864894773,
-        "score": 29.81,
+        "score": 29.83,
         "trend200": 0.19004140053471663
       },
       "decision": {
@@ -4011,10 +4011,10 @@
         "cycle": 61.4104,
         "name": "THE WALT DISNEY COMPANY",
         "r_code": "R4",
-        "rank": 40.0,
-        "rank_percentile": 0.18604651162790697,
+        "rank": 39.0,
+        "rank_percentile": 0.1813953488372093,
         "rs3m": 0.08890900733746232,
-        "score": 28.38,
+        "score": 28.39,
         "trend200": 0.047055923806925914
       },
       "decision": {
@@ -4125,7 +4125,7 @@
       "availability": "decision_available",
       "current": {
         "close": 11.710000038146973,
-        "confidence": 61.8,
+        "confidence": 61.9,
         "confidence_label": "MED",
         "currency": "CAD",
         "cycle": 25.5775,
@@ -4134,7 +4134,7 @@
         "rank": 94.0,
         "rank_percentile": 0.4372093023255814,
         "rs3m": 0.4020724026495981,
-        "score": 23.44,
+        "score": 23.46,
         "trend200": 0.1929442122926468
       },
       "decision": {
@@ -4377,8 +4377,8 @@
         "rank": 81.0,
         "rank_percentile": 0.3767441860465116,
         "rs3m": -0.007347862875733746,
-        "score": 24.62,
-        "trend200": -0.05337137247831958
+        "score": 24.63,
+        "trend200": -0.05337136969268452
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -4488,7 +4488,7 @@
       "availability": "decision_available",
       "current": {
         "close": 429.6499938964844,
-        "confidence": 70.2,
+        "confidence": 70.3,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 58.4825,
@@ -4497,8 +4497,8 @@
         "rank": 62.0,
         "rank_percentile": 0.28837209302325584,
         "rs3m": -0.0015883710679596152,
-        "score": 26.36,
-        "trend200": 0.1003699717155806
+        "score": 26.39,
+        "trend200": 0.10036997343563714
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -4619,7 +4619,7 @@
         "rank": 57.0,
         "rank_percentile": 0.2651162790697674,
         "rs3m": 0.1542568411553562,
-        "score": 26.58,
+        "score": 26.6,
         "trend200": 0.15063358697912665
       },
       "decision": {
@@ -4642,9 +4642,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_flat",
-        "portfolio_action_state": "NO_ACTION",
-        "reliability_assessment": "blocked_conflict",
+        "portfolio_action_reason_code": "positive_confirmed_flat",
+        "portfolio_action_state": "ENTER_REVIEW",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -4654,15 +4654,15 @@
         ],
         "state_history_state": "overextended",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_conflict",
-        "universal_stance_direction": null,
-        "universal_stance_state": "conflicted",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
         "w8_action_policy_case": "non_long_position_base_action_preserved",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "review_now",
       "symbol": "FCX"
     },
     {
@@ -4670,7 +4670,7 @@
       "availability": "decision_available",
       "current": {
         "close": 28.540000915527344,
-        "confidence": 45.1,
+        "confidence": 45.2,
         "confidence_label": "LOW",
         "currency": "USD",
         "cycle": 17.6812,
@@ -4679,7 +4679,7 @@
         "rank": 154.0,
         "rank_percentile": 0.7162790697674418,
         "rs3m": -0.08553450411319397,
-        "score": 16.99,
+        "score": 17.02,
         "trend200": -0.21108023370116402
       },
       "decision": {
@@ -4909,7 +4909,7 @@
       "symbol": "FME.DE"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 2756.0,
@@ -4923,11 +4923,11 @@
         "rank_percentile": 0.018604651162790697,
         "rs3m": 0.035273481283100816,
         "score": 37.55,
-        "trend200": -0.15264703883572106
+        "trend200": -0.15264703978979233
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
-        "evidence_gap_count": 13,
+        "evidence_gap_count": 14,
         "path_review_is_trade_decision": false,
         "path_review_state": "none",
         "path_review_suppressed_by_w8": false,
@@ -4945,9 +4945,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_flat",
-        "portfolio_action_state": "NO_ACTION",
-        "reliability_assessment": "blocked_insufficient",
+        "portfolio_action_reason_code": "positive_confirmed_flat",
+        "portfolio_action_state": "ENTER_REVIEW",
+        "reliability_assessment": "provisional_unopposed_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -4958,15 +4958,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_insufficient",
-        "universal_stance_direction": null,
-        "universal_stance_state": "insufficient_evidence",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
         "w8_action_policy_case": "non_long_position_base_action_preserved",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "review_now",
       "symbol": "FRES.L"
     },
     {
@@ -5044,8 +5044,8 @@
         "rank": 93.0,
         "rank_percentile": 0.4325581395348837,
         "rs3m": -0.1655271072492942,
-        "score": 23.56,
-        "trend200": -0.04605929803069697
+        "score": 23.59,
+        "trend200": -0.046059301634990724
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -5164,8 +5164,8 @@
         "rank": 6.0,
         "rank_percentile": 0.027906976744186046,
         "rs3m": -0.0593446122056116,
-        "score": 36.54,
-        "trend200": 0.035303862660083674
+        "score": 36.53,
+        "trend200": 0.03530386172991262
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -5407,7 +5407,7 @@
         "rank_percentile": 0.25116279069767444,
         "rs3m": 0.06336290462617411,
         "score": 26.94,
-        "trend200": -0.10677013249258915
+        "trend200": -0.10677013026383042
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -5647,8 +5647,8 @@
         "cycle": 50.2827,
         "name": "ILLUMINA INC.",
         "r_code": "R4",
-        "rank": 35.0,
-        "rank_percentile": 0.16279069767441862,
+        "rank": 34.0,
+        "rank_percentile": 0.15813953488372093,
         "rs3m": 0.41672607510979254,
         "score": 29.02,
         "trend200": 0.6729822055030781
@@ -5771,8 +5771,8 @@
         "rank": 23.0,
         "rank_percentile": 0.10697674418604651,
         "rs3m": -0.061346140930521376,
-        "score": 30.89,
-        "trend200": -0.09453185519284613
+        "score": 30.9,
+        "trend200": -0.09453185387722274
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6063,7 +6063,7 @@
       "availability": "decision_available",
       "current": {
         "close": 261.44000244140625,
-        "confidence": 81.6,
+        "confidence": 81.5,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 40.5297,
@@ -6072,8 +6072,8 @@
         "rank": 5.0,
         "rank_percentile": 0.023255813953488372,
         "rs3m": -0.0031591396979098185,
-        "score": 36.89,
-        "trend200": 0.08472171279561369
+        "score": 36.86,
+        "trend200": 0.0847217141690697
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6194,8 +6194,8 @@
         "rank": 127.0,
         "rank_percentile": 0.5906976744186047,
         "rs3m": -0.18823979242741784,
-        "score": 19.98,
-        "trend200": 0.09000855562515464
+        "score": 19.97,
+        "trend200": 0.09000855492990789
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6315,8 +6315,8 @@
         "rank": 18.0,
         "rank_percentile": 0.08372093023255814,
         "rs3m": 0.028007892416898716,
-        "score": 32.73,
-        "trend200": 0.10653822896891452
+        "score": 32.75,
+        "trend200": 0.1065382353345945
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6367,7 +6367,7 @@
       "availability": "decision_available",
       "current": {
         "close": 29.200000762939453,
-        "confidence": 67.8,
+        "confidence": 67.9,
         "confidence_label": "MED",
         "currency": "USD",
         "cycle": 49.8499,
@@ -6376,7 +6376,7 @@
         "rank": 46.0,
         "rank_percentile": 0.21395348837209302,
         "rs3m": 0.02755543826175133,
-        "score": 27.63,
+        "score": 27.66,
         "trend200": 0.010870341409679352
       },
       "decision": {
@@ -6498,8 +6498,8 @@
         "rank": 58.0,
         "rank_percentile": 0.26976744186046514,
         "rs3m": -0.10936124879932918,
-        "score": 26.48,
-        "trend200": -0.002922190031352634
+        "score": 26.47,
+        "trend200": -0.00292218877695527
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6558,8 +6558,8 @@
         "rank": 115.0,
         "rank_percentile": 0.5348837209302325,
         "rs3m": -0.11592277631956815,
-        "score": 21.68,
-        "trend200": 0.14395823662020613
+        "score": 21.67,
+        "trend200": 0.14395823348881298
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6680,8 +6680,8 @@
         "rank": 17.0,
         "rank_percentile": 0.07906976744186046,
         "rs3m": 0.05853702667659544,
-        "score": 33.57,
-        "trend200": 0.11050974276177628
+        "score": 33.56,
+        "trend200": 0.1105097446782266
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -6919,8 +6919,8 @@
         "cycle": 88.2787,
         "name": "MercadoLibre Inc.",
         "r_code": "R4",
-        "rank": 49.0,
-        "rank_percentile": 0.22790697674418606,
+        "rank": 50.0,
+        "rank_percentile": 0.23255813953488372,
         "rs3m": -0.029615626671782636,
         "score": 27.37,
         "trend200": 0.029736786985283148
@@ -6984,7 +6984,7 @@
         "rank_percentile": 0.09767441860465116,
         "rs3m": 0.0499008171142572,
         "score": 32.29,
-        "trend200": 0.14223111576780778
+        "trend200": 0.1422311174298796
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -7104,7 +7104,7 @@
         "rank": 143.0,
         "rank_percentile": 0.6651162790697674,
         "rs3m": -0.20552740161593963,
-        "score": 18.32,
+        "score": 18.34,
         "trend200": -0.32362277452806587
       },
       "decision": {
@@ -7221,8 +7221,8 @@
         "cycle": 38.1066,
         "name": "Moderna Inc.",
         "r_code": "R3",
-        "rank": 69.0,
-        "rank_percentile": 0.3209302325581395,
+        "rank": 70.0,
+        "rank_percentile": 0.32558139534883723,
         "rs3m": 2.298160776529911,
         "score": 25.61,
         "trend200": 2.09783903912252
@@ -7275,7 +7275,7 @@
       "availability": "decision_available",
       "current": {
         "close": 535.0700073242188,
-        "confidence": 92.8,
+        "confidence": 92.9,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 60.5309,
@@ -7284,8 +7284,8 @@
         "rank": 7.0,
         "rank_percentile": 0.03255813953488372,
         "rs3m": 0.35452370406452904,
-        "score": 35.62,
-        "trend200": 0.236571217489423
+        "score": 35.63,
+        "trend200": 0.23657121487305433
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -7335,17 +7335,17 @@
       "availability": "decision_available",
       "current": {
         "close": 1029.0,
-        "confidence": 84.0,
+        "confidence": 84.1,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 16.983,
         "name": "MICRON TECHNOLOGY INC",
         "r_code": "R5",
-        "rank": 16.0,
-        "rank_percentile": 0.07441860465116279,
+        "rank": 14.0,
+        "rank_percentile": 0.06511627906976744,
         "rs3m": 0.008529721769704457,
-        "score": 33.8,
-        "trend200": 0.4667112857131499
+        "score": 33.86,
+        "trend200": 0.46671128667015727
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -7527,8 +7527,8 @@
         "rank": 88.0,
         "rank_percentile": 0.40930232558139534,
         "rs3m": -0.16744466108822076,
-        "score": 23.97,
-        "trend200": -0.10312235351438348
+        "score": 23.96,
+        "trend200": -0.1031223515316343
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -7588,7 +7588,7 @@
         "rank": 12.0,
         "rank_percentile": 0.05581395348837209,
         "rs3m": 0.20643864549914892,
-        "score": 34.21,
+        "score": 34.22,
         "trend200": 0.059519110650849916
       },
       "decision": {
@@ -7645,8 +7645,8 @@
         "cycle": 58.7695,
         "name": "NESTLE NAM.",
         "r_code": "R3",
-        "rank": 91.0,
-        "rank_percentile": 0.4232558139534884,
+        "rank": 92.0,
+        "rank_percentile": 0.42790697674418604,
         "rs3m": -0.13160485189348226,
         "score": 23.8,
         "trend200": -0.021523972592476848
@@ -7705,8 +7705,8 @@
         "cycle": 43.9864,
         "name": "NETFLIX INC.",
         "r_code": "R3",
-        "rank": 78.0,
-        "rank_percentile": 0.3627906976744186,
+        "rank": 77.0,
+        "rank_percentile": 0.3581395348837209,
         "rs3m": -0.08206562627961089,
         "score": 24.87,
         "trend200": -0.15762326147497385
@@ -7829,7 +7829,7 @@
         "rank": 168.0,
         "rank_percentile": 0.7813953488372093,
         "rs3m": -0.21970121482907268,
-        "score": 15.28,
+        "score": 15.29,
         "trend200": -0.26469680564305254
       },
       "decision": {
@@ -8007,8 +8007,8 @@
         "cycle": 100.0,
         "name": "NASPERS LIMITED CLASS N",
         "r_code": "R2",
-        "rank": 123.0,
-        "rank_percentile": 0.5720930232558139,
+        "rank": 122.0,
+        "rank_percentile": 0.5674418604651162,
         "rs3m": -0.19458548726677594,
         "score": 20.93,
         "trend200": -0.17971595978654364
@@ -8131,8 +8131,8 @@
         "rank": 3.0,
         "rank_percentile": 0.013953488372093023,
         "rs3m": 0.045603910746652154,
-        "score": 38.43,
-        "trend200": 0.13601176038951657
+        "score": 38.46,
+        "trend200": 0.13601175953066202
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8193,7 +8193,7 @@
         "rank_percentile": 0.4790697674418605,
         "rs3m": -0.12097476364247017,
         "score": 22.61,
-        "trend200": -0.057781628281887265
+        "trend200": -0.057781621828772445
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8435,7 +8435,7 @@
         "rank_percentile": 0.39069767441860465,
         "rs3m": 0.07115506991862763,
         "score": 24.29,
-        "trend200": -0.11908349331772261
+        "trend200": -0.1190834924803087
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8496,7 +8496,7 @@
         "rank_percentile": 0.6186046511627907,
         "rs3m": 0.06843748085564094,
         "score": 19.04,
-        "trend200": 0.11134745368032695
+        "trend200": 0.11134745093697762
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8553,11 +8553,11 @@
         "cycle": 35.8073,
         "name": "PAN AMER. SILVER",
         "r_code": "R3",
-        "rank": 60.0,
-        "rank_percentile": 0.27906976744186046,
+        "rank": 59.0,
+        "rank_percentile": 0.2744186046511628,
         "rs3m": 0.05551842732315837,
-        "score": 26.41,
-        "trend200": -0.09019992272200938
+        "score": 26.43,
+        "trend200": -0.09019992176589631
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8675,11 +8675,11 @@
         "cycle": 39.7325,
         "name": "PepsiCo",
         "r_code": "R4",
-        "rank": 50.0,
-        "rank_percentile": 0.23255813953488372,
+        "rank": 51.0,
+        "rank_percentile": 0.2372093023255814,
         "rs3m": -0.09819173185042096,
         "score": 27.35,
-        "trend200": -0.12573890493155782
+        "trend200": -0.12573890354279993
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8739,8 +8739,8 @@
         "rank": 55.0,
         "rank_percentile": 0.2558139534883721,
         "rs3m": 0.14844868317821236,
-        "score": 26.84,
-        "trend200": 0.09185777538197404
+        "score": 26.82,
+        "trend200": 0.09185777980424659
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -8800,8 +8800,8 @@
         "rank": 31.0,
         "rank_percentile": 0.14418604651162792,
         "rs3m": 0.004844794185713264,
-        "score": 29.23,
-        "trend200": 0.03313596831874066
+        "score": 29.26,
+        "trend200": 0.03313596131854091
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9094,7 +9094,7 @@
       "availability": "decision_available",
       "current": {
         "close": 201.19000244140625,
-        "confidence": 76.5,
+        "confidence": 76.6,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 100.0,
@@ -9103,8 +9103,8 @@
         "rank": 33.0,
         "rank_percentile": 0.15348837209302327,
         "rs3m": 0.11511741387935848,
-        "score": 29.07,
-        "trend200": 0.1430115380523611
+        "score": 29.13,
+        "trend200": 0.14301154300669094
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9225,8 +9225,8 @@
         "rank": 87.0,
         "rank_percentile": 0.4046511627906977,
         "rs3m": 0.13701844141799646,
-        "score": 24.09,
-        "trend200": 0.11296916309369509
+        "score": 24.11,
+        "trend200": 0.11296916224275555
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9405,10 +9405,10 @@
         "cycle": 20.7478,
         "name": "Ferrari N.V.",
         "r_code": "R3",
-        "rank": 61.0,
-        "rank_percentile": 0.2837209302325581,
+        "rank": 60.0,
+        "rank_percentile": 0.27906976744186046,
         "rs3m": 0.018070654364777283,
-        "score": 26.38,
+        "score": 26.41,
         "trend200": 0.0656441928412328
       },
       "decision": {
@@ -9832,8 +9832,8 @@
         "rank": 36.0,
         "rank_percentile": 0.16744186046511628,
         "rs3m": -0.11444655048213193,
-        "score": 28.74,
-        "trend200": 0.022528916020742695
+        "score": 28.77,
+        "trend200": 0.02252891454552941
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9894,7 +9894,7 @@
         "rank_percentile": 0.6837209302325581,
         "rs3m": -0.31256061899942333,
         "score": 17.9,
-        "trend200": -0.3416914726591126
+        "trend200": -0.34169147188370175
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -9953,8 +9953,8 @@
         "rank": 63.0,
         "rank_percentile": 0.2930232558139535,
         "rs3m": -0.06312347083093284,
-        "score": 26.33,
-        "trend200": 0.04078376102330661
+        "score": 26.3,
+        "trend200": 0.04078376054600974
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -10433,11 +10433,11 @@
         "cycle": 100.0,
         "name": "SMITH + NEP. DL",
         "r_code": "R3",
-        "rank": 107.0,
-        "rank_percentile": 0.49767441860465117,
+        "rank": 108.0,
+        "rank_percentile": 0.5023255813953489,
         "rs3m": -0.15775498645391395,
         "score": 22.2,
-        "trend200": -0.12267074527706257
+        "trend200": -0.12267074389599941
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -10919,7 +10919,7 @@
         "rank_percentile": 0.5209302325581395,
         "rs3m": -0.14377918234946396,
         "score": 21.82,
-        "trend200": -0.15035251987733722
+        "trend200": -0.15035251789137583
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -11220,8 +11220,8 @@
         "rank": 20.0,
         "rank_percentile": 0.09302325581395349,
         "rs3m": 0.10229354098045973,
-        "score": 32.4,
-        "trend200": 0.1825727917959905
+        "score": 32.42,
+        "trend200": 0.18257279285584405
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -11243,9 +11243,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_flat",
-        "portfolio_action_state": "NO_ACTION",
-        "reliability_assessment": "blocked_conflict",
+        "portfolio_action_reason_code": "positive_confirmed_flat",
+        "portfolio_action_state": "ENTER_REVIEW",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -11256,15 +11256,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_conflict",
-        "universal_stance_direction": null,
-        "universal_stance_state": "conflicted",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
         "w8_action_policy_case": "non_long_position_base_action_preserved",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "review_now",
       "symbol": "TER"
     },
     {
@@ -11278,10 +11278,10 @@
         "cycle": 100.0,
         "name": "TENCENT MUSIC ENTERTAINMENT GROUP",
         "r_code": "R3",
-        "rank": 108.0,
-        "rank_percentile": 0.5023255813953489,
+        "rank": 107.0,
+        "rank_percentile": 0.49767441860465117,
         "rs3m": -0.08369607957490066,
-        "score": 22.19,
+        "score": 22.22,
         "trend200": -0.22367067662361584
       },
       "decision": {
@@ -11448,7 +11448,7 @@
       "symbol": "TSLA"
     },
     {
-      "attention_required": false,
+      "attention_required": true,
       "availability": "decision_available",
       "current": {
         "close": 8339.990234375,
@@ -11461,8 +11461,8 @@
         "rank": 11.0,
         "rank_percentile": 0.05116279069767442,
         "rs3m": 0.08127205812095073,
-        "score": 34.34,
-        "trend200": 0.21688803185220284
+        "score": 34.36,
+        "trend200": 0.21688803271917623
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -11484,9 +11484,9 @@
         "phase5_shadow_integration_mode": "shadow_only",
         "phase5_shadow_production_change_performed": false,
         "phase5_shadow_status": "phase5_engineering_complete_collecting_evidence",
-        "portfolio_action_reason_code": "blocking_raw_state_flat",
-        "portfolio_action_state": "NO_ACTION",
-        "reliability_assessment": "blocked_conflict",
+        "portfolio_action_reason_code": "positive_confirmed_flat",
+        "portfolio_action_state": "ENTER_REVIEW",
+        "reliability_assessment": "provisional_same_family_support",
         "required_confirmation_count": 2,
         "stable_directional_anchor": "positive",
         "state_history_changed_portfolio_action": false,
@@ -11497,15 +11497,15 @@
         ],
         "state_history_state": "post_overextension_correction",
         "state_history_w8_action_policy_evaluated": true,
-        "transition_status": "blocked_conflict",
-        "universal_stance_direction": null,
-        "universal_stance_state": "conflicted",
+        "transition_status": "stable_confirmed",
+        "universal_stance_direction": "positive",
+        "universal_stance_state": "positive",
         "w8_action_policy_case": "non_long_position_base_action_preserved",
         "w8_action_policy_conflict": false,
         "w8_action_policy_warning_code": null,
         "w8_reassessment_required": false
       },
-      "presentation_group": "hold_or_no_action",
+      "presentation_group": "review_now",
       "symbol": "TSMN.MX"
     },
     {
@@ -11947,7 +11947,7 @@
         "rank": 125.0,
         "rank_percentile": 0.5813953488372093,
         "rs3m": -0.14057330071562468,
-        "score": 20.35,
+        "score": 20.34,
         "trend200": 0.07180629256071835
       },
       "decision": {
@@ -12128,8 +12128,8 @@
         "rank": 26.0,
         "rank_percentile": 0.12093023255813953,
         "rs3m": 0.04653720581758103,
-        "score": 29.73,
-        "trend200": 0.14294334536225994
+        "score": 29.72,
+        "trend200": 0.14294334432799594
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12241,17 +12241,17 @@
       "availability": "decision_available",
       "current": {
         "close": 67.9000015258789,
-        "confidence": 61.2,
+        "confidence": 61.1,
         "confidence_label": "MED",
         "currency": "BRL",
-        "cycle": 18.2608,
+        "cycle": 18.2034,
         "name": "VALE S.A.",
         "r_code": "R4",
-        "rank": 34.0,
-        "rank_percentile": 0.15813953488372093,
-        "rs3m": -0.08361804232280834,
-        "score": 29.03,
-        "trend200": -0.12220772496376175
+        "rank": 35.0,
+        "rank_percentile": 0.16279069767441862,
+        "rs3m": -0.09495053258604458,
+        "score": 28.91,
+        "trend200": -0.12251558090016323
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12301,7 +12301,7 @@
       "availability": "decision_available",
       "current": {
         "close": 68.0,
-        "confidence": 48.6,
+        "confidence": 48.7,
         "confidence_label": "LOW",
         "currency": "EUR",
         "cycle": 24.6953,
@@ -12310,7 +12310,7 @@
         "rank": 152.0,
         "rank_percentile": 0.7069767441860465,
         "rs3m": -0.0921168525734154,
-        "score": 17.18,
+        "score": 17.21,
         "trend200": -0.17472022304847623
       },
       "decision": {
@@ -12431,7 +12431,7 @@
         "rank": 74.0,
         "rank_percentile": 0.34418604651162793,
         "rs3m": 0.29645891504279054,
-        "score": 25.07,
+        "score": 25.09,
         "trend200": 0.19240168663726176
       },
       "decision": {
@@ -12492,7 +12492,7 @@
         "rank_percentile": 0.35348837209302325,
         "rs3m": -0.14279109203930818,
         "score": 24.89,
-        "trend200": -0.06315083573849789
+        "trend200": -0.06315083830372914
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12551,8 +12551,8 @@
         "rank": 1.0,
         "rank_percentile": 0.004651162790697674,
         "rs3m": 0.25457805869779015,
-        "score": 43.14,
-        "trend200": 0.0702339931272975
+        "score": 43.16,
+        "trend200": 0.07023398870621378
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12662,17 +12662,17 @@
       "availability": "decision_available",
       "current": {
         "close": 168.94000244140625,
-        "confidence": 79.8,
+        "confidence": 79.9,
         "confidence_label": "HIGH",
         "currency": "USD",
         "cycle": 69.8752,
         "name": "EXXON MOBIL CORP",
         "r_code": "R4",
-        "rank": 52.0,
-        "rank_percentile": 0.24186046511627907,
+        "rank": 49.0,
+        "rank_percentile": 0.22790697674418606,
         "rs3m": 0.13378232772211485,
-        "score": 27.31,
-        "trend200": 0.13429538564258237
+        "score": 27.38,
+        "trend200": 0.13429539145303448
       },
       "decision": {
         "coverage_admission_state": "admissible_with_gaps",
@@ -12729,8 +12729,8 @@
         "cycle": 91.6667,
         "name": "XPeng Inc.",
         "r_code": "R2",
-        "rank": 171.0,
-        "rank_percentile": 0.7953488372093023,
+        "rank": 170.0,
+        "rank_percentile": 0.7906976744186046,
         "rs3m": -0.2971200805152703,
         "score": 14.52,
         "trend200": -0.35313356954126107
@@ -13096,29 +13096,29 @@
     "private_position_data_included": false,
     "reference_is_trade_instruction": false
   },
-  "snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
+  "snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
   "watch_summary": {
     "action_counts": {
-      "ENTER_REVIEW": 63,
-      "NO_ACTION": 120,
-      "WAIT_CONFIRMATION": 32
+      "ENTER_REVIEW": 66,
+      "NO_ACTION": 116,
+      "WAIT_CONFIRMATION": 33
     },
-    "attention_required_count": 117,
+    "attention_required_count": 119,
     "availability_counts": {
       "decision_available": 215
     },
     "decision_available_count": 215,
     "position_count": 215,
     "presentation_group_counts": {
-      "hold_or_no_action": 120,
-      "review_now": 63,
-      "waiting_confirmation": 32
+      "hold_or_no_action": 116,
+      "review_now": 66,
+      "waiting_confirmation": 33
     },
     "reliability_counts": {
-      "blocked_conflict": 74,
+      "blocked_conflict": 70,
       "blocked_insufficient": 45,
-      "pending_confirmation": 32,
-      "provisional_same_family_support": 30,
+      "pending_confirmation": 33,
+      "provisional_same_family_support": 33,
       "provisional_unopposed_support": 34
     },
     "unavailable_count": 0,
