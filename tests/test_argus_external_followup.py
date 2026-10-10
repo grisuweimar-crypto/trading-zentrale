@@ -36,7 +36,6 @@ def test_source_day_excluded_and_true_sessions_used():
 def test_target_touch_is_not_prediction_success():
     note,market=sample()
     x=follow.evaluate_one(note,market)
-    assert x["windows"]["2"] if False else True
     # The engine only publishes predefined windows; +5 is still pending.
     market.extend([dict(market[-1],date="2026-10-14"),
                    dict(market[-1],date="2026-10-15")])
@@ -67,9 +66,13 @@ def test_original_currency_gate_and_partial_symbol_coverage():
     assert x["provider_score_produced"] is False
 
 
-def test_duplicate_or_partial_prices_never_accepted():
+def test_no_publication_day_lookahead_and_no_fake_external_verdict():
     note,market=sample()
-    rows=[dict(date=x["date"],symbol="IFX.DE",currency="EUR",
-        open=x["close"],high=x["high"],low=x["low"],close=x["close"],
-        **{"Adj Close":x["adjusted_close"]}) for x in market if x["date"]!="2026-10-08"]
-    assert len(rows)==4
+    altered=[dict(row) for row in market]
+    altered[1]["close"]=90000.0
+    altered[1]["adjusted_close"]=90000.0
+    result=follow.evaluate_one(note,altered)
+    base=follow.evaluate_one(note,market)
+    assert result["baseline"]==base["baseline"]
+    assert result["windows"]==base["windows"]
+    assert result["provider_success"]=="NOT_ASSESSABLE_NO_EXPLICIT_TARGET_DEADLINE"
