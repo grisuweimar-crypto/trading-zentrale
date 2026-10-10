@@ -10,6 +10,7 @@ const root=path.resolve(__dirname,'..');
 const code=fs.readFileSync(path.join(root,'argus-preview/observations/external-thesis-watch.js'),'utf8');
 const historical=JSON.parse(fs.readFileSync(path.join(root,'argus-preview/observations/external_thesis_watch_reference.json'),'utf8'));
 const candidates=JSON.parse(fs.readFileSync(path.join(root,'argus-preview/observations/external_thesis_watch_candidates.json'),'utf8'));
+const notes=JSON.parse(fs.readFileSync(path.join(root,'argus-preview/observations/external_thesis_source_notes.json'),'utf8'));
 
 async function render(privateNotes=null){
  const els=new Map();
@@ -27,6 +28,7 @@ async function render(privateNotes=null){
   let value;
   if(url.includes('external_thesis_watch_reference.json'))value=historical;
   else if(url.includes('external_thesis_watch_candidates.json'))value=candidates;
+  else if(url.includes('external_thesis_source_notes.json'))value=notes;
   else if(url.includes('candidate_elliott_current.json'))return {ok:false,status:404};
   else if(url.includes('history_metadata.json'))value=metadata;
   else if(url.includes('latest_scanner.csv'))value=scannerCSV;
@@ -51,15 +53,21 @@ async function render(privateNotes=null){
 (async()=>{
  const html=await render();
  const ix=html.indexOf('Infineon');
- const near=html.slice(ix,ix+1500);
+ const near=html.slice(ix,ix+3600);
  assert.match(near,/Im aktuellen Scanner/,'Infineon should reflect scanner membership only');
- assert.match(near,/Damals als „gemischt“ bezeichnet/,'Historic MIXED must be explained');
- assert.match(near,/Welche Argumente dafür oder dagegen sprachen, wurde nicht dokumentiert/);
+ assert.match(near,/Damals uneinheitlich beurteilt/,'Historic MIXED must be clearly separated from source idea');
+ assert.match(near,/nicht aus einem Rating des Newsletter-Anbieters/);
+ assert.match(near,/Warum wurde die Aktie vorgeschlagen\?/);
+ assert.match(near,/Eaton/);
+ assert.match(near,/Gewinnmitnahmen nach starkem Kursanstieg/);
+ assert.match(near,/65 EUR/);
+ assert.match(near,/Originalnewsletter derzeit nicht erneut geprüft/);
  assert.match(near,/<summary>Originalen Archivvermerk anzeigen<\/summary><code>MIXED<\/code>/);
  assert.doesNotMatch(near,/Historischer Prüfvermerk: MIXED/);
  assert.doesNotMatch(html,/Die damalige externe E-Mail-Begründung ist hier noch nicht hinterlegt/);
- const future=html.slice(html.indexOf('Berkshire Hathaway B'),html.indexOf('Berkshire Hathaway B')+1600);
- assert.match(future,/Bedeutung der früheren Einstufung nicht belegt/);
+ const future=html.slice(html.indexOf('Berkshire Hathaway B'),html.indexOf('Berkshire Hathaway B')+2600);
+ assert.match(future,/Früherer Vergleichsvermerk/);
+ assert.match(future,/Greg Abel/);
  assert.match(future,/<code>PROMOTE_READY<\/code>/);
  assert.doesNotMatch(future,/Freigegeben zum Kauf/);
 
@@ -68,6 +76,9 @@ async function render(privateNotes=null){
    source_rationale:'Datierter, separat dokumentierter Nachtrag.'}],newsletters:[]};
  const withPrivate=await render(privateNotes);
  assert.match(withPrivate,/Datierter, separat dokumentierter Nachtrag/);
- assert.match(withPrivate,/Damals als „gemischt“ bezeichnet/);
- console.log('ARGUS card rendering: historic MIXED explained, original codes retained, private notes separate.');
+ assert.match(withPrivate,/Damals uneinheitlich beurteilt/);
+ assert.match(withPrivate,/Eaton/);
+ assert.match(html,/Siemens/);
+ assert.match(html,/Lululemon Athletica/);
+ console.log('ARGUS cards: newsletter reasons, verified preview dates, prior analyses and private notes remain separate.');
 })().catch(err=>{console.error(err);process.exitCode=1;});
