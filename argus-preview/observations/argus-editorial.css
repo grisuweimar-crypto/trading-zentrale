@@ -1,0 +1,99 @@
+/* ARGUS Editorial – External Thesis Watch
+   Freigegebene Werte: Nachtblau, warmes Gold, ruhige Leseflächen.
+   Keine zweite Bewertungslogik. Styling only. */
+
+#observations #etw{
+  --argus-ink:#eef4f6;--argus-muted:#bdcdda;--argus-gold:#e5c18a;
+  margin:30px 0 34px;padding:clamp(18px,2.7vw,34px);
+  border:1px solid #435b6b;border-radius:18px;
+  background:linear-gradient(139deg,#142f42 0%,#091d2c 38%,#081a28 100%);
+  box-shadow:0 20px 60px rgba(2,12,20,.22);
+  color:var(--argus-ink)
+}
+#observations #etw .etwTitle{display:flex;align-items:start;justify-content:space-between;gap:20px;padding-bottom:24px;border-bottom:1px solid #344c5d}
+#observations #etw .etwTitle h3{font-family:Georgia,"Times New Roman",serif;font-size:clamp(28px,3vw,43px);font-weight:400;letter-spacing:-.025em;line-height:1.14;color:#f5e6c9;margin:10px 0 10px;max-width:680px}
+#observations #etw .etwTitle p{font-size:14px;line-height:1.78;color:#d1dde5;max-width:730px;margin:0}
+#observations #etw .etwGold{font-size:11px;letter-spacing:.19em;color:var(--argus-gold)}
+#observations #etw .etwTools{justify-content:flex-end;gap:7px}
+#observations #etw button{font-size:12px;letter-spacing:0;min-height:40px;padding:9px 12px;border-radius:9px;border-color:#476072;color:#e3eaf0;background:#102d41;transition:border-color .17s,background .17s,transform .17s}
+#observations #etw button:hover{border-color:#b79d74;background:#17384e}
+#observations #etw .etwExplainer{background:none;border:none;border-left:2px solid #c3a674;padding:11px 0 11px 17px;margin:21px 0;color:#c5d5df;border-radius:0;font-size:13px;line-height:1.8}
+#observations #etw .etwExplainer b{color:#f0dcbd;font-weight:650}
+#observations #etw .etwMetrics{grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:24px 0 8px;padding:2px 0;border-top:1px solid #314b5d;border-bottom:1px solid #314b5d;background:none}
+#observations #etw .etwMetric{border:none;border-right:1px solid #354d60;border-radius:0;background:none;min-height:114px;padding:19px 18px}
+#observations #etw .etwMetric:last-child{border-right:none}
+#observations #etw .etwMetric span{color:#b9ceda;min-height:0;font-size:12px;line-height:1.45}
+#observations #etw .etwMetric b{font:normal 38px/1.2 Georgia,serif;color:#f0d8aa;margin:7px 0}
+#observations #etw .etwMetric small{font-size:11px;line-height:1.5;color:#a9bfcc}
+#observations #etw .etwGate{background:#0c293b;color:#bdcdd8;border:1px solid #314f63;border-left:3px solid #967d53;border-radius:8px;margin:18px 0 20px;padding:11px 14px;font-size:12px}
+#observations #etw .etwFilters{margin:22px 0 10px;gap:8px;align-items:center}
+#observations #etw .etwFilters button{background:transparent;color:#bdcedb;border-color:#385368;font-size:12px}
+#observations #etw .etwFilters button[aria-pressed=true]{background:#203d50;border-color:#bfa16e;color:#f5dcb3}
+#observations #etw #etwQuery{font-size:13px;min-height:43px;padding:10px 13px;border-color:#476476;background:#071c2b;color:#f1e7d5}
+#observations #etw .etwList{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:17px 0 24px;align-items:stretch}
+#observations #etw .etwCard{position:relative;display:flex;flex-direction:column;gap:0;min-width:0;padding:23px 23px 21px;overflow:hidden;
+ border:1px solid #385468;border-radius:15px;background:linear-gradient(157deg,#123248 0%,#0c273a 51%,#0a2031 100%);
+ box-shadow:0 9px 26px rgba(0,0,0,.09)}
+#observations #etw .etwCard::before{content:"";position:absolute;left:0;top:25px;bottom:25px;width:2px;background:linear-gradient(#d7b884,#6b725f);opacity:.7}
+#observations #etw .etwTop{gap:16px;align-items:start;padding-bottom:13px}
+#observations #etw .etwName{font:normal 24px/1.25 Georgia,serif;color:#f4e5c9}
+#observations #etw .etwSym{font:600 11px/1.4 Inter,system-ui,sans-serif;color:#d6b87f;letter-spacing:.15em;margin-top:8px}
+#observations #etw .etwPill{font-size:11px;color:#d9e6eb;border:1px solid #4a6e73;background:#163f49;border-radius:20px;padding:7px 10px;text-align:center}
+#observations #etw .etwPill.etwShadow{background:#3b332b;border-color:#a18c61;color:#f5dba6}
+#observations #etw .etwEvidenceTitle{display:flex;align-items:baseline;flex-wrap:wrap;gap:7px 12px;padding:18px 0 5px;margin:0;border-top:1px solid #3b5768;color:#f3dfb7}
+#observations #etw .etwEvidenceTitle strong{font:normal 19px/1.35 Georgia,serif;color:#f1dcba}
+#observations #etw .etwLeadSymbol{font:650 10px/1.6 Inter,system-ui,sans-serif;letter-spacing:.14em;color:#c9b081}
+#observations #etw .etwRationale{border:0;border-radius:0;background:none;padding:10px 0 12px;margin:0;border-bottom:1px solid #304d60}
+#observations #etw .etwRationalePrimary{padding-top:15px}
+#observations #etw .etwRationale small{display:block;font-size:11px;line-height:1.55;color:#b9ccda}
+#observations #etw .etwSourceTitle{font-size:14px;line-height:1.5;color:#f2d5a3;margin:7px 0 6px;font-weight:650}
+#observations #etw .etwRationale p{font-size:14px;line-height:1.72;color:#e2ebee;margin:7px 0}
+#observations #etw .etwRationaleEmpty{border-top:1px solid #345062;border-bottom:1px solid #345062;padding:20px 0;color:#e9d7b3}
+#observations #etw .etwGoal{font-size:12px;color:#c2d6df;margin-top:14px;padding:10px 0 1px}
+#observations #etw .etwGoal strong{color:#f2d4a3}
+#observations #etw .etwFollow{border:none;border-radius:11px;background:#0a2132;margin:18px 0 13px;padding:16px 16px 12px}
+#observations #etw .etwFollow h4{font:normal 18px Georgia,serif;color:#f0dbb4;margin:2px 0 10px}
+#observations #etw .etwFollow p{font-size:12px;line-height:1.7;color:#cadbe4}
+#observations #etw .etwFollowTrack{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+#observations #etw .etwFollowTrack>div{padding:11px 6px;background:#113349;border-color:#375a70}
+#observations #etw .etwFollowTrack b{font-size:10px;color:#eed3a4}
+#observations #etw .etwFollowTrack small{font-size:12px;color:#e3edf1;letter-spacing:-.01em;margin-top:5px}
+#observations #etw .etwHistorical{border:1px solid #355064;border-radius:9px;margin-top:11px;padding:0;background:#0b2638}
+#observations #etw .etwHistorical>summary{cursor:pointer;list-style:none;padding:12px 13px;font-size:12px;color:#d5c6a7;line-height:1.55}
+#observations #etw .etwHistorical>summary::before{content:"＋";font-size:15px;color:#e1ba79;margin-right:8px}
+#observations #etw .etwHistorical[open]>summary::before{content:"−"}
+#observations #etw .etwArchiveDetail{padding:0 14px 13px;border-top:1px solid #375063}
+#observations #etw .etwHistorical strong{font-size:13px;color:#f0dcbc}
+#observations #etw .etwHistorical p{font-size:12px;color:#c8d8e3;line-height:1.7}
+#observations #etw .etwTech{margin:8px 0 2px;padding-top:7px;font-size:11px}
+#observations #etw .etwTech summary{font-size:11px;color:#dabd8b}
+#observations #etw .etwElliott{margin-top:13px;background:#0c283b;border:1px solid #36556a;border-radius:9px;padding:12px;font-size:12px}
+#observations #etw .etwNote{font-size:12px;color:#a9becb;line-height:1.7}
+#observations #etw .etwSources{border-top:1px solid #385267;margin-top:17px;padding-top:18px}
+#observations #etw .etwSources summary{font-size:12px;color:#d9c4a0}
+#observations #etw .etwEmpty{padding:26px;border-color:#567084;border-radius:11px;font-size:13px}
+@media(max-width:1092px){
+ #observations #etw .etwTools{justify-content:flex-start}
+ #observations #etw .etwList{grid-template-columns:1fr}
+ #observations #etw .etwMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #observations #etw .etwMetric:nth-child(2){border-right:none}
+ #observations #etw .etwMetric:nth-child(-n+2){border-bottom:1px solid #354d60}
+}
+@media(max-width:600px){
+ #observations #etw{margin:17px 0;padding:17px 13px;border-radius:14px}
+ #observations #etw .etwTitle{padding-bottom:17px}
+ #observations #etw .etwTitle h3{font-size:29px}
+ #observations #etw .etwTitle p{font-size:13px}
+ #observations #etw .etwTools{width:100%}
+ #observations #etw .etwTools button{flex:1 1 calc(50% - 8px)}
+ #observations #etw .etwMetric{padding:12px 10px;min-height:115px}
+ #observations #etw .etwMetric b{font-size:30px}
+ #observations #etw .etwCard{padding:18px 15px 17px}
+ #observations #etw .etwCard::before{top:21px;bottom:21px}
+ #observations #etw .etwName{font-size:22px}
+ #observations #etw .etwTop{flex-direction:column;gap:9px}
+ #observations #etw .etwEvidenceTitle{padding-top:15px}
+ #observations #etw .etwRationale p{font-size:13px}
+ #observations #etw .etwFollow{padding:13px 10px}
+ #observations #etw .etwFollowTrack{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
