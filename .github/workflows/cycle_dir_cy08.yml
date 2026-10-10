@@ -1,0 +1,44 @@
+name: CYCLE-DIR CY-08 Governance Readiness
+on:
+  pull_request:
+    paths:
+      - "scripts/audit_cycle_cy08.py"
+      - "tests/test_cy08_readiness.py"
+      - "docs/cycle_direction/**"
+      - ".github/workflows/cycle_dir_cy08.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cy08-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Validate read-only CY-08 gate and L12-L14 regressions
+        run: >-
+          python -m pytest -q
+          tests/test_cy08_readiness.py
+          tests/pattern_discovery/test_l12_promotion_gate.py
+          tests/pattern_discovery/test_l13_decision_challenger.py
+          tests/pattern_discovery/test_l14_continuous_operations.py
+      - name: Audit real CY-08 prerequisites without research writes
+        run: |
+          python scripts/audit_cycle_cy08.py > /tmp/cy08-readiness.json
+          cat /tmp/cy08-readiness.json
+          python - <<'PY'
+          import json
+          report = json.load(open('/tmp/cy08-readiness.json', encoding='utf-8'))
+          assert report['read_only'] is True
+          assert report['promotion_performed'] is False
+          assert report['shadow_ablation_performed'] is False
+          assert report['productive_decision_modified'] is False
+          assert report['status'] in ('BLOCKED', 'REVIEW_REQUIRED')
+          PY
