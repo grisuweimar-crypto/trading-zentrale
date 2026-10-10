@@ -1,0 +1,47 @@
+name: CY-01 Independent Main Baseline Probe
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/cy01_independent_main_baseline_probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  confirm-existing-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 5eb1ff9a2962c30b563222328d2f24c986471bec
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - name: Verify three issue 264 regressions on frozen main
+        shell: bash
+        run: |
+          set -o pipefail
+          set +e
+          python -m pytest -q \
+            tests/test_elliott_stage4_sufficient_stats.py::test_daily_sufficient_stats_exactly_match_block_bootstrap_mean \
+            tests/test_qm10_productive_snapshot_proof.py::test_qm10_new_productive_snapshot_identity_and_guards \
+            tests/test_qm5_magma_falsification.py::test_magma_falsification_case_is_bound_to_current_runtime_evidence \
+            2>&1 | tee /tmp/cy01_main_baseline.txt
+          result=${PIPESTATUS[0]}
+          set -e
+          echo "Test exit status on unmodified main: $result"
+          if [ "$result" -eq 0 ]; then
+            echo "All three unexpected baseline PASS: independent failure claim not demonstrated"
+            exit 1
+          fi
+          grep -Eq '^3 failed in |^3 failed,' /tmp/cy01_main_baseline.txt
+          for name in \
+            test_daily_sufficient_stats_exactly_match_block_bootstrap_mean \
+            test_qm10_new_productive_snapshot_identity_and_guards \
+            test_magma_falsification_case_is_bound_to_current_runtime_evidence
+          do
+            grep -q "FAILED .*::$name" /tmp/cy01_main_baseline.txt
+          done
+          echo "CONFIRMED: all three issue 264 tests fail on unmodified main SHA."
