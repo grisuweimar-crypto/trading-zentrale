@@ -38,7 +38,7 @@ const css=String.raw`
 @media(max-width:700px){#v7Monitor .v7grid{grid-template-columns:repeat(2,minmax(0,1fr))}#v7Monitor .v7cols{grid-template-columns:1fr}#v7Monitor .v7card{padding:13px}#v7Monitor h3{font-size:22px}}
 `;
 const st=document.createElement('style');st.id='v7Styles';st.textContent=css;document.head.append(st);
-section.insertAdjacentHTML('beforeend',
+section.insertAdjacentHTML('afterbegin',
 '<div id="v7Monitor"><div class="v7head"><div><div class="v7over">ARGUS / SCIENTIA · Version 7</div>'+
 '<h3>Wissenschaftlicher Prüfstand</h3><p class="v7foot">Originalstatus aus den veröffentlichten L14-Forschungsartefakten. Keine Dashboard-Berechnung oder Bewertung.</p></div>'+
 '<button id="v7Reload" type="button">↻ Forschungsstand laden</button></div>'+
