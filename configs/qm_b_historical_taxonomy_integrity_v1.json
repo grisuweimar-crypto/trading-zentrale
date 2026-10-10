@@ -130,6 +130,11 @@
       "reason": "BA-QM10 operational-QM evidence preserves historical F01 capacity evidence and records a separate current F05 recurrence/CAPA. It does not load current taxonomy metadata, define historical sample membership, enrich historical rows, or retroject present-day classification."
     },
     {
+      "path": "configs/pattern_discovery/feature_library_cycle_v2.json",
+      "status": "SAFE",
+      "reason": "Reviewed CY-05 opt-in L2 library: it declares sector, cluster_official and pillar_primary only as recorded OBSERVED_ROW_FIELD values available at each observation as_of. All have historical_reconstruction_allowed=false; missing historical inputs remain UNAVAILABLE and Cycle v2 requires a separately released CY-03 PIT chain. The JSON contract reads neither current universe_master taxonomy nor present-day classification to define, enrich, backfill or filter historical samples. This review is not a release of Cycle v2 for research."
+    },
+    {
       "path": "configs/pattern_discovery/feature_library_v1.json",
       "status": "SAFE",
       "reason": "Pattern Discovery L2 registry only declares versioned point-in-time features sourced from the observed row at each observation as_of. Its contract explicitly forbids historical reconstruction and leaves missing historical values unavailable; it does not load current taxonomy metadata to define, enrich, filter, or backfill historical samples."
