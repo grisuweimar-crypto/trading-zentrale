@@ -719,6 +719,48 @@ def _apply_shortlist_budget(
     return shortlisted
 
 
+def _verify_cy05_l3_contract_binding(
+    manifest: Mapping[str, Any],
+    contract: Mapping[str, Any],
+    repo_root: str | Path,
+) -> None:
+    """Bind exact opt-in L3 contract bytes to the frozen L1 source fingerprints.
+
+    The old L3 v1 schema and all of its historical run hashes are untouched.
+    CY-05 may not select or edit its research search policy after a run freezes.
+    """
+    source_path = "configs/pattern_discovery/l3_search_contract_cycle_v2.json"
+    if contract.get("identity", {}).get("source_repo_path") != source_path:
+        raise DiscoverySearchError("cy05_l3_contract_source_unregistered")
+    prereg = manifest["preregistration"]
+    if source_path not in prereg["data_sources"]:
+        raise DiscoverySearchError("cy05_l3_contract_not_fingerprinted")
+    matching = [
+        item for item in manifest["input_fingerprints"]
+        if item.get("path") == source_path
+    ]
+    if len(matching) != 1:
+        raise DiscoverySearchError("cy05_l3_contract_fingerprint_missing_or_duplicate")
+    root = Path(repo_root).resolve()
+    file_path = (root / source_path).resolve()
+    try:
+        file_path.relative_to(root)
+    except ValueError as exc:
+        raise DiscoverySearchError("cy05_l3_contract_path_outside_repo") from exc
+    if not file_path.is_file() or file_path.is_symlink():
+        raise DiscoverySearchError("cy05_l3_contract_file_missing")
+    current_bytes = file_path.read_bytes()
+    if sha256(current_bytes).hexdigest() != matching[0]["sha256"]:
+        raise DiscoverySearchError("cy05_l3_contract_bytes_not_frozen")
+    on_disk_contract = load_search_contract(file_path)
+    if search_contract_hash(on_disk_contract) != search_contract_hash(contract):
+        raise DiscoverySearchError("cy05_l3_contract_parameter_mismatch")
+    if "level_band" not in contract.get("atom_generation", {}).get(
+        "included_transformations", []
+    ):
+        raise DiscoverySearchError("cy05_l3_level_band_not_enabled")
+
+
 def run_discovery_search(
     manifest: Mapping[str, Any],
     observations: Sequence[Mapping[str, Any]],
@@ -736,6 +778,8 @@ def run_discovery_search(
     if cy05_variant != cy05_library:
         raise DiscoverySearchError("cy05_l2_l3_variant_binding_mismatch")
     library.validate_run_binding(manifest, repo_root=repo_root)
+    if cy05_variant:
+        _verify_cy05_l3_contract_binding(manifest, run_contract, repo_root)
 
     prereg = manifest["preregistration"]
     requested_pattern_types = set(str(x) for x in prereg["pattern_types"])
