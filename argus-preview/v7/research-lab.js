@@ -36,6 +36,36 @@ const css=String.raw`
 #v7Monitor code{overflow-wrap:anywhere}#v7Monitor .v7sources p{font-size:12px}
 @media(max-width:1000px){#v7Monitor .v7grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){#v7Monitor .v7grid{grid-template-columns:repeat(2,minmax(0,1fr))}#v7Monitor .v7cols{grid-template-columns:1fr}#v7Monitor .v7card{padding:13px}#v7Monitor h3{font-size:22px}}
+
+#v7Monitor .v7story{margin:18px 0 24px;background:linear-gradient(120deg,#16364b,#091f31 76%);border:1px solid #577086;border-radius:15px;padding:24px;box-shadow:0 16px 50px rgba(0,0,0,.13)}
+#v7Monitor .v7storyIntro h4{font-family:Georgia,serif;font-size:29px;font-weight:500;margin:9px 0 7px;color:#f5dfae}
+#v7Monitor .v7storyIntro p{font-size:13px;color:#d5e3eb;max-width:820px;line-height:1.7}
+#v7Monitor .v7cycle{display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:12px;padding:10px 0;margin:2px 0 17px;color:#bcd1dc}
+#v7Monitor .v7cycle b{color:#f2dba7;font-size:13px}#v7Monitor .v7cycle code{background:#1c4055;color:#c9d9e5;padding:4px 8px;border-radius:5px;font-size:10px}
+#v7Monitor .v7journey{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#v7Monitor .v7step{display:flex;align-items:start;gap:12px;background:rgba(4,21,33,.67);border:1px solid #3e5b6f;border-radius:11px;padding:15px 11px;min-width:0}
+#v7Monitor .v7stepNum{font:22px Georgia,serif;color:#ddb978;background:#17384e;border:1px solid #6b715f;border-radius:50%;width:41px;height:41px;display:grid;place-items:center;flex:none}
+#v7Monitor .v7stepText{min-width:0}#v7Monitor .v7stepText b{font-size:14px;color:#f8e7c8}
+#v7Monitor .v7stepText p{font-size:11px;margin:7px 0 14px;line-height:1.5;color:#b9d0df}
+#v7Monitor .v7stepStatus{display:block;color:#f1d09a;font-size:12px;font-weight:600}
+#v7Monitor .v7stepText small{display:block;color:#90adbc;font-size:9px;margin-top:6px;line-height:1.3;overflow-wrap:anywhere}
+#v7Monitor .v7guideFoot{font-size:10px;color:#a7bdca;margin:12px 0 0}
+#v7Monitor .v7sectionHead{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:23px 0 5px}
+#v7Monitor .v7sectionHead h4{font-family:Georgia,serif;font-size:23px;margin:5px 0;font-weight:500}
+#v7Monitor .v7sectionHead p{font-size:11px;color:#a4bfcd;margin:0 0 7px}
+#v7Monitor .v7grid{gap:9px;margin:10px 0 18px}
+#v7Monitor .v7metric{background:linear-gradient(155deg,#123148,#0c2335);border:1px solid #405c71;border-radius:11px;min-height:135px}
+#v7Monitor .v7metric strong{font:37px Georgia,serif;line-height:1.3;color:#f4dba6}
+#v7Monitor .v7ops{padding:0}
+#v7Monitor .v7ops details>summary{cursor:pointer;list-style:none;padding:17px 19px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#v7Monitor .v7ops details>summary::-webkit-details-marker{display:none}
+#v7Monitor .v7ops details>summary:focus-visible{outline:2px solid #d4b47e}
+#v7Monitor .v7ops details>summary strong{font-size:13px;color:#f4dcb0;flex:1}
+#v7Monitor .v7ops details>summary span{color:#afc6d3;font-size:11px}
+#v7Monitor .v7ops #v7Stages{padding:0 18px 12px;border-top:1px solid #354e61}
+@media(max-width:1100px){#v7Monitor .v7journey{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){#v7Monitor .v7story{padding:17px 13px}#v7Monitor .v7storyIntro h4{font-size:25px}#v7Monitor .v7journey{grid-template-columns:1fr}#v7Monitor .v7step{padding:12px}#v7Monitor .v7metric{min-height:120px}#v7Monitor .v7sectionHead h4{font-size:22px}}
+
 `;
 const st=document.createElement('style');st.id='v7Styles';st.textContent=css;document.head.append(st);
 section.insertAdjacentHTML('afterbegin',
@@ -43,8 +73,10 @@ section.insertAdjacentHTML('afterbegin',
 '<h3>Wissenschaftlicher Prüfstand</h3><p class="v7foot">Originalstatus aus den veröffentlichten L14-Forschungsartefakten. Keine Dashboard-Berechnung oder Bewertung.</p></div>'+
 '<button id="v7Reload" type="button">↻ Forschungsstand laden</button></div>'+
 '<div class="v7status" id="v7Notice" role="status">Veröffentlichte Forschungsdaten werden geprüft …</div>'+
+'<div class="v7story" id="v7Story"></div>'+
+'<div class="v7sectionHead"><div><span class="v7over">FORSCHUNGSREGISTER</span><h4>Was ist bereits dokumentiert?</h4></div><p>Diese Zahlen kommen unverändert aus dem Musterlabor L14.</p></div>'+
 '<div class="v7grid" id="v7Counts"></div><div class="v7cols">'+
-'<div><article class="v7card"><h4>L14 · Arbeitsstationen</h4><div id="v7Stages"></div></article>'+
+'<div><article class="v7card v7ops"><details><summary><strong>Technischer Prüfablauf</strong><span id="v7StageCount">Originalstatus der Arbeitsstationen</span><span aria-hidden="true">▾</span></summary><div id="v7Stages"></div></details></article>'+
 '<article class="v7card"><h4>Einzelmuster · L5 bis L10</h4><div id="v7PatternState"></div></article></div>'+
 '<div><article class="v7card"><h4>Forschungsgrenzen und Register</h4><div id="v7Lab"></div></article>'+
 '<article class="v7card"><h4>Qualitätsnachweis im L14-Bericht</h4><div id="v7QM"></div></article>'+
@@ -85,7 +117,7 @@ finally{clearTimeout(timeout)}
 }
 let running=false;
 function fail(msg){
-  el('v7Counts').innerHTML='';el('v7Stages').innerHTML='';el('v7PatternState').innerHTML='';
+  el('v7Counts').innerHTML='';el('v7Stages').innerHTML='';el('v7Story').innerHTML='';el('v7PatternState').innerHTML='';
   el('v7Lab').innerHTML='';el('v7QM').innerHTML='';el('v7Sources').innerHTML='';
   el('v7Notice').textContent='Forschungsdaten nicht verfügbar oder nicht konsistent: '+msg+'. Kein alter Ergebnisstand wird als aktuell gezeigt.';
 }
@@ -108,11 +140,38 @@ async function load(){
      'Quelle: <b>L14, '+esc(date(c.evaluated_at))+'</b> · Statuscode <code>'+esc(c.cycle_status)+'</code> · Snapshot <code>'+esc(meta.snapshot_id)+'</code>. Dies sind Registerdaten, keine Vorhersage.':
      '<b>Unterschiedliche Snapshot-IDs:</b> L14: <code>'+esc(c.current_scanner?.snapshot_id)+'</code>, aktueller Scanner: <code>'+esc(meta.snapshot_id)+'</code>. Die Anzeigen stehen nebeneinander; keine zeitliche Gleichsetzung.';
    const q=c.laboratory_state;
-   el('v7Counts').innerHTML=summary('L5 · Eingefrorene Muster',q.frozen_pattern_count,'aus L14 laboratory_state')+
-      summary('L7 · Claims',q.claim_count,'aus L14 laboratory_state')+
-      summary('L8 · Reife Outcomes',q.matured_outcome_count,'aus L14 laboratory_state')+
-      summary('L9 · Confirmation Looks',q.confirmation_look_count,'aus L14 laboratory_state')+
-      summary('L10 · Rating-Ereignisse',q.rating_event_count,'aus L14 laboratory_state');
+   const statusNames={
+     DUE_PREREGISTRATION:'Vorregistrierung erforderlich',
+     NOT_DUE:'Derzeit nicht fällig',
+     PASS:'Prüfung bestanden',
+     BLOCKED_FAIL_CLOSED:'Gesperrt',
+     READY_WITH_WORK:'Betrieb bereit · Aufgaben offen'
+   };
+   const work=stage=>c.work_items.find(x=>x.stage===stage)?.status??null;
+   const step=(num,title,subtitle,code)=>'<div class="v7step"><div class="v7stepNum">'+esc(num)+'</div>'+
+     '<div class="v7stepText"><b>'+esc(title)+'</b><p>'+esc(subtitle)+'</p>'+
+     '<span class="v7stepStatus">'+esc(code===null?'Nicht verfügbar':statusNames[code]??'Status siehe Original')+
+     '</span><small>Originalstatus: <code>'+esc(code??'Nicht verfügbar')+'</code></small></div></div>';
+   const zero=Number.isSafeInteger(q.frozen_pattern_count)&&q.frozen_pattern_count===0;
+   el('v7Story').innerHTML='<div class="v7storyIntro"><span class="v7over">FORSCHUNG AUF EINEN BLICK</span>'+
+      '<h4>Wie weit sind unsere Musterprüfungen?</h4>'+
+      '<p>'+ (zero?
+       'Im veröffentlichten L14-Musterlabor sind noch keine Muster eingefroren. Die Betriebs- und Qualitätskontrollen laufen; ihre erfolgreichen Tests sind keine statistische Bestätigung eines Handelssignals.':
+       'Hier siehst du die Arbeitsstationen aus dem veröffentlichten L14-Zyklus. Wissenschaftliche Freigaben und Ergebnisse bleiben ausschließlich in den Scanner_vNext-Registern.')+
+      '</p><div class="v7cycle">L14-Betriebsstatus: <b>'+esc(statusNames[c.cycle_status]??c.cycle_status)+'</b>'+
+      '<code>'+esc(c.cycle_status)+'</code></div></div>'+
+      '<div class="v7journey">'+
+       step('01','Entdecken','Forschungsfrage vorregistrieren und Muster einfrieren',work('DISCOVERY_TRIGGER'))+
+       step('02','Beobachten','Eingefrorene Muster prospektiv erfassen',work('PROSPECTIVE_CAPTURE'))+
+       step('03','Überprüfen','Ergebnisse nach Ablauf der festgelegten Horizonte beurteilen',work('OUTCOME_MATURATION'))+
+       step('04','Einordnen','Kontrollierte Bestätigung und anschließend Rating',work('RATING_UPDATE'))+
+      '</div><p class="v7guideFoot">Die vier Schritte sind eine Navigationshilfe. Die angezeigten Stati stammen ausschließlich aus L14; ARGUS leitet daraus keine neue Forschungseinstufung ab.</p>';
+   el('v7StageCount').textContent=c.work_items.length+' Arbeitsstationen · Originaldaten';
+   el('v7Counts').innerHTML=summary('Muster eingefroren',q.frozen_pattern_count,'aus L14 laboratory_state')+
+      summary('Prospektive Beobachtungen',q.claim_count,'aus L14 laboratory_state')+
+      summary('Abgeschlossene Horizonte',q.matured_outcome_count,'aus L14 laboratory_state')+
+      summary('Bestätigungsprüfungen',q.confirmation_look_count,'aus L14 laboratory_state')+
+      summary('Rating-Ereignisse',q.rating_event_count,'aus L14 laboratory_state');
    el('v7Stages').innerHTML=c.work_items.length?c.work_items.map(s=>
       '<div class="v7stage"><div class="v7stageHead"><b>'+esc(stageNames[s.stage]||s.stage||'Unbekannte Phase')+'</b><code>'+esc(s.status??'UNAVAILABLE')+
       '</code></div>'+help(s.stage,s.status)+'</div>').join(''):
