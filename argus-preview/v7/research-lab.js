@@ -72,19 +72,20 @@ const css=String.raw`
 .v7legacy>summary::-webkit-details-marker{display:none}
 .v7legacy>summary:focus-visible{outline:2px solid #e5c68c}
 `;
-const st=document.createElement('style');st.id='v7Styles';st.textContent=css;document.head.append(st);
+const st=document.createElement('style');st.id='v7Styles';st.textContent=css+"\n#v7Monitor .v7how{border:1px solid #526a7b;background:linear-gradient(125deg,#16384c,#0b2538);padding:19px 21px;border-radius:12px;margin:14px 0}\n#v7Monitor .v7how h4{font:normal 22px Georgia,serif;margin:3px 0 8px;color:#f1dfba}\n#v7Monitor .v7how p{font-size:13px;margin:0;color:#d2e1e8}\n#v7Monitor .v7how strong{color:#f4d49b}\n#v7Monitor .v7tech{margin:12px 0;border-top:1px solid #3c586e;padding:10px 0}\n#v7Monitor .v7tech summary{cursor:pointer;color:#efd7a7;font-size:12px;padding:6px 0}\n#v7Monitor .v7tech summary:focus-visible{outline:2px solid #e2bb7b}\n#v7Monitor .v7plain{font-size:12px;color:#d6e3eb;line-height:1.7}\n#v7Monitor .v7plain strong{color:#efd5a6}\n@media(max-width:680px){#v7Monitor .v7how{padding:14px}#v7Monitor .v7metric{min-height:108px}#v7Monitor .v7metric strong{font-size:30px}}";document.head.append(st);
 section.insertAdjacentHTML('afterbegin',
 '<div id="v7Monitor"><div class="v7head"><div><div class="v7over">ARGUS / SCIENTIA · Version 7</div>'+
-'<h3>Wissenschaftlicher Prüfstand</h3><p class="v7foot">Originalstatus aus den veröffentlichten L14-Forschungsartefakten. Keine Dashboard-Berechnung oder Bewertung.</p></div>'+
+'<h3>Was wissen wir über unsere Handelsmuster?</h3><p class="v7foot">Hier zeigen wir den belegten Stand der Musterforschung. ARGUS liest vorhandene Ergebnisse, erstellt aber selbst keine Tests, Prognosen oder Bewertungen.</p></div>'+
 '<button id="v7Reload" type="button">↻ Forschungsstand laden</button></div>'+
 '<div class="v7status" id="v7Notice" role="status">Veröffentlichte Forschungsdaten werden geprüft …</div>'+
+'<div class="v7how"><h4>So liest du diese Seite</h4><p><strong>Entdecken</strong> sucht nach auffälligen Zusammenhängen. <strong>Beobachten</strong> hält vorher festgelegte Muster für spätere Vergleiche fest. <strong>Überprüfen</strong> wartet auf echte Kursentwicklungen. <strong>Einordnen</strong> zeigt, welche Aussagen tatsächlich belegt sind. Ein bestandener Techniktest beweist noch kein erfolgreiches Handelssignal.</p></div>'+
 '<div class="v7story" id="v7Story"></div>'+
-'<div class="v7sectionHead"><div><span class="v7over">FORSCHUNGSREGISTER</span><h4>Was ist bereits dokumentiert?</h4></div><p>Diese Zahlen kommen unverändert aus dem Musterlabor L14.</p></div>'+
+'<div class="v7sectionHead"><div><span class="v7over">FORSCHUNGSERGEBNISSE</span><h4>Was liegt schon vor?</h4></div><p>Zählwerte aus dem veröffentlichten Musterlabor (L14), keine Schätzung.</p></div>'+
 '<div class="v7grid" id="v7Counts"></div><div class="v7cols">'+
-'<div><article class="v7card v7ops"><details><summary><strong>Technischer Prüfablauf</strong><span id="v7StageCount">Originalstatus der Arbeitsstationen</span><span aria-hidden="true">▾</span></summary><div id="v7Stages"></div></details></article>'+
-'<article class="v7card"><h4>Einzelmuster · L5 bis L10</h4><div id="v7PatternState"></div></article></div>'+
-'<div><article class="v7card"><h4>Forschungsgrenzen und Register</h4><div id="v7Lab"></div></article>'+
-'<article class="v7card"><h4>Qualitätsnachweis im L14-Bericht</h4><div id="v7QM"></div></article>'+
+'<div><article class="v7card v7ops"><details><summary><strong>Hinter den Kulissen: technische Kontrollschritte</strong><span id="v7StageCount">Originalstatus der Arbeitsstationen</span><span aria-hidden="true">▾</span></summary><div id="v7Stages"></div></details></article>'+
+'<article class="v7card"><h4>Untersuchte einzelne Muster</h4><div id="v7PatternState"></div></article></div>'+
+'<div><article class="v7card"><h4>Was ist für eine neue Mustersuche nötig?</h4><div id="v7Lab"></div></article>'+
+'<article class="v7card"><h4>Was haben die technischen Kontrollen geprüft?</h4><div id="v7QM"></div></article>'+
 '<article class="v7card v7sources"><h4>Herkunft &amp; Datenstand</h4><div id="v7Sources"></div></article></div></div></div>');
 /* Bestehende V6-Forschungserläuterung erhalten, zur besseren Lesbarkeit zusammenklappen. */
 const legacy=[...section.children].filter(node=>node.id!=='v7Monitor');
@@ -98,7 +99,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&
 const count=x=>Number.isSafeInteger(x)&&x>=0?new Intl.NumberFormat('de-DE').format(x):'Nicht verfügbar';
 const date=x=>x&&!Number.isNaN(Date.parse(x))?new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Berlin'}).format(new Date(x))+' (Berlin)':'Nicht verfügbar';
 const link=(path,label)=>'<a target="_blank" rel="noopener noreferrer" href="'+GH+encodeURI(path)+'">'+esc(label)+' ↗</a>';
-const stageNames={DISCOVERY_TRIGGER:'Discovery-Trigger',PROSPECTIVE_CAPTURE:'L7 · Prospective Capture',OUTCOME_MATURATION:'L8 · Outcome Maturation',SEQUENTIAL_CONFIRMATION:'L9 · Confirmation',RATING_UPDATE:'L10 · Rating',DEPENDENCY_REFRESH:'L6 · Dependency Graph',NEGATIVE_RESULT_AUDIT:'QM-C5 · Negative Results',PATTERN_DECAY_AUDIT:'Pattern Decay',QM_REGRESSION:'Laufende QM-Regression'};
+const stageNames={DISCOVERY_TRIGGER:'Neue Mustersuche vorbereiten',PROSPECTIVE_CAPTURE:'Künftige Beobachtungen erfassen',OUTCOME_MATURATION:'Wartezeiten und Ergebnisse prüfen',SEQUENTIAL_CONFIRMATION:'Muster unabhängig bestätigen',RATING_UPDATE:'Vorhandene Forschungsbewertung aktualisieren',DEPENDENCY_REFRESH:'Abhängigkeiten zwischen Mustern prüfen',NEGATIVE_RESULT_AUDIT:'Negative Ergebnisse vollständig halten',PATTERN_DECAY_AUDIT:'Nachlassende Musterwirkung überprüfen',QM_REGRESSION:'Technische Prüfungen wiederholen'};
 /* Erläuterungen folgen den L14-Modulverträgen; kein eigener Forschungsstatus. */
 const stageHelp={
  DISCOVERY_TRIGGER:'Prüft, ob eine neue Discovery-Runde gemäß L14 zur Vorregistrierung ansteht. L14 startet keine Mustersuche eigenständig.',
@@ -120,6 +121,7 @@ const statusHelp={
 };
 const help=(stage,status)=>'<p class="v7stageMeaning">'+esc(stageHelp[stage]??'Für diese Station liegt keine freigegebene Kurzbeschreibung vor.')+'</p>'+
  '<p class="v7stageCode">'+esc(statusHelp[status]??'Für diesen Status liegt keine freigegebene Kurzerläuterung vor. Maßgeblich bleibt der Originalcode.')+'</p>';
+const bool=x=>x===true?'Ja':x===false?'Nein':'Nicht verfügbar';
 const lbl=(k,v)=>'<div class="v7statrow"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>';
 const summary=(k,n,d)=>'<div class="v7metric"><label>'+esc(k)+'</label><strong>'+count(n)+'</strong><small>'+esc(d)+'</small></div>';
 async function fetchJson(path){
@@ -173,17 +175,17 @@ async function load(){
       '</p><div class="v7cycle">L14-Betriebsstatus: <b>'+esc(statusNames[c.cycle_status]??c.cycle_status)+'</b>'+
       '<code>'+esc(c.cycle_status)+'</code></div></div>'+
       '<div class="v7journey">'+
-       step('01','Entdecken','Forschungsfrage vorregistrieren und Muster einfrieren',work('DISCOVERY_TRIGGER'))+
-       step('02','Beobachten','Eingefrorene Muster prospektiv erfassen',work('PROSPECTIVE_CAPTURE'))+
-       step('03','Überprüfen','Ergebnisse nach Ablauf der festgelegten Horizonte beurteilen',work('OUTCOME_MATURATION'))+
-       step('04','Einordnen','Kontrollierte Bestätigung und anschließend Rating',work('RATING_UPDATE'))+
+       step('01','Entdecken','Vor der Suche festlegen, welche Muster untersucht werden sollen',work('DISCOVERY_TRIGGER'))+
+       step('02','Beobachten','Neue Beobachtungen sammeln, ohne die Regeln nachträglich zu verändern',work('PROSPECTIVE_CAPTURE'))+
+       step('03','Überprüfen','Erst nach festgelegter Wartezeit die Kursentwicklung beurteilen',work('OUTCOME_MATURATION'))+
+       step('04','Einordnen','Die unabhängigen Prüfungen und vorhandenen Bewertungen einordnen',work('RATING_UPDATE'))+
       '</div><p class="v7guideFoot">Die vier Schritte sind eine Navigationshilfe. Die angezeigten Stati stammen ausschließlich aus L14; ARGUS leitet daraus keine neue Forschungseinstufung ab.</p>';
    el('v7StageCount').textContent=c.work_items.length+' Arbeitsstationen · Originaldaten';
-   el('v7Counts').innerHTML=summary('Muster eingefroren',q.frozen_pattern_count,'aus L14 laboratory_state')+
-      summary('Prospektive Beobachtungen',q.claim_count,'aus L14 laboratory_state')+
-      summary('Abgeschlossene Horizonte',q.matured_outcome_count,'aus L14 laboratory_state')+
-      summary('Bestätigungsprüfungen',q.confirmation_look_count,'aus L14 laboratory_state')+
-      summary('Rating-Ereignisse',q.rating_event_count,'aus L14 laboratory_state');
+   el('v7Counts').innerHTML=summary('Festgelegte Muster',q.frozen_pattern_count,'Muster mit vorab fixierten Regeln')+
+      summary('Neue Beobachtungen',q.claim_count,'Nach Festlegung der Muster gesammelt')+
+      summary('Auswertbare Verläufe',q.matured_outcome_count,'Vorgegebene Wartezeit abgelaufen')+
+      summary('Bestätigungsrunden',q.confirmation_look_count,'Vorab festgelegte Prüfzeitpunkte')+
+      summary('Bewertungsänderungen',q.rating_event_count,'Dokumentierte L10-Rating-Ereignisse');
    el('v7Stages').innerHTML=c.work_items.length?c.work_items.map(s=>
       '<div class="v7stage"><div class="v7stageHead"><b>'+esc(stageNames[s.stage]||s.stage||'Unbekannte Phase')+'</b><code>'+esc(s.status??'UNAVAILABLE')+
       '</code></div>'+help(s.stage,s.status)+'</div>').join(''):
