@@ -84,3 +84,11 @@ def test_no_elliott_structure_is_missing_evidence_not_success():
     assert result["output_count"] == 0
     assert result["outputs"] == []
     assert result["coverage"]["status"] == "no_elliott_state_emitted"
+
+
+def test_repeated_identical_market_prices_have_stable_hash_despite_new_retrieval():
+    rows = market_rows()
+    second = [dict(r, retrieved_at="2026-10-11T20:00:00+00:00") for r in rows]
+    assert candidate.encode_prices(rows) == candidate.encode_prices(second)
+    second[-1]["close"] = "100.50"
+    assert candidate.encode_prices(rows) != candidate.encode_prices(second)
