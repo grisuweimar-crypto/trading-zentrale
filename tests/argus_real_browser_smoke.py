@@ -48,7 +48,10 @@ try:
     if missing:
         raise AssertionError("Real browser did not render: "+", ".join(missing)+
                              "\nTail: "+html[-1000:]+ "\nChrome errors: "+dump.stderr[-550:])
-    assert html.index("Gewinnmitnahmen nach starkem Kursanstieg") < html.index("Früherer Scannervergleich"), "Rationale still buried"
+    first=html.index("Infineon")
+    last=html.find('<article class="etwCard"',first)
+    card=html[first:last if last>0 else first+12000]
+    assert card.index("Gewinnmitnahmen nach starkem Kursanstieg") < card.index("Früherer Scannervergleich"), "Infineon rationale still buried"
     assert 'argus-editorial.css' in html, "Editorial style not requested"
 
     for label,url,width,height in (
