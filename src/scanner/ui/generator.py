@@ -86,6 +86,11 @@ DEFAULT_COLUMNS = [
     "cycle_quality",
     "cycle_source",
     "cycle_status",
+    "cycle_formula_version",
+    "cycle_currency",
+    "cycle_price_symbol",
+    "cycle_price_sha256",
+    "asset_id",
     # liquidity / risk
     "dollar_volume",
     "avg_volume",
@@ -303,6 +308,12 @@ def build_ui(
             df[c] = df[c].astype("string").fillna("").str.strip()
 
     data_records = _to_json_records(df)
+    # CY-04 is strictly display-only. The verified CY-03 adapter refuses
+    # research-blocked v1 observations; no provisional direction leaks to UI.
+    from scanner.ui.cycle_direction import (
+        load_direction_for_ui, attach_verified_directions,
+    )
+    attach_verified_directions(data_records, load_direction_for_ui(root))
     fallback_tbody_html = _render_fallback_tbody(df)
     presets = load_presets()
 
@@ -483,7 +494,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
       --w-score: 170px;
       --w-dscore: 96px;
       --w-conf: 70px;
-      --w-cycle: 70px;
+      --w-cycle: 132px;
       --w-trend: 70px;
       --w-liq: 70px;
       --w-status: 104px;
@@ -1492,7 +1503,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
               <th data-k="score" class="right" title="Gesamtscore (höher = besser) · R0–R5 daneben = interner Workflow-Code, kein Handelssignal">Score</th>
               <th data-k="dscore_1d" class="hide-sm right" title="dScore 1D = Veränderung des Scanner-Scores vs. letzter lokaler Tages-Snapshot; keine Kursrendite">dScore 1D</th>
               <th data-k="confidence" class="hide-sm right" title="Confidence/Vertrauen in das Scoring">Konf</th>
-              <th data-k="cycle" class="hide-sm right" title="Zyklus in % (ca. 50 = neutral)">Zyklus</th>
+              <th data-k="cycle" class="right" title="Zyklus-Oszillator (0–100). Pfeil/Δ beziehen sich auf 5 gültige Scannerbeobachtungen, nicht Handelstage. Deltas sind Zykluspunkte, keine Rendite oder Kursprognose.">Zyklus / Δ5</th>
               <th data-k="trend_ok" title="Trend-Filter (z.B. Trend200 > 0)">Trend</th>
               <th data-k="liquidity_ok" title="LiquiditÃ¤ts-Filter (z.B. DollarVolume/AvgVolume)">Liq</th>
               <th data-k="score_status" title="OK / AVOID / AVOID_CRYPTO_BEAR / NA / ERROR">Status</th>
@@ -2754,7 +2765,47 @@ function cyclePct(r) {
 
 function formatCycle(r) {
   const value = cyclePct(r);
-  return value === null ? '—' : value.toFixed(0) + '%';
+  return value === null ? '—' : value.toFixed(1) + '%';
+}
+
+// CY-04: only source-identical, externally released snapshot chains may
+// populate the direction fields. This is a descriptive UI state, not L3's
+// NO_DIRECTIONAL_CHANGE classification and never a trading signal.
+function cycleDelta(r, lag) {
+  if (r.cy04_quality !== 'ELIGIBLE_DESCRIPTIVE_ONLY') return null;
+  const value = r['cy04_delta_' + lag + 'obs'];
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function cycleDeltaLabel(r, lag) {
+  const value = cycleDelta(r, lag);
+  if (value === null) return '— (keine zulässige Vergleichsbasis)';
+  const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→';
+  const sign = value > 0 ? '+' : '';
+  return arrow + ' ' + sign + value.toFixed(1) + ' Zykluspunkte';
+}
+
+function cycleHelp(r) {
+  const basis = 'Scannerbeobachtungen ≠ Handelstage; Zykluspunkte ≠ Prozent-Rendite; Anstieg ≠ Kursprognose.';
+  if (cyclePct(r) === null) return 'Zyklus nicht verfügbar (' + normStr(r.cycle_quality || 'fehlend') + '). ' + basis;
+  if (r.cy04_quality !== 'ELIGIBLE_DESCRIPTIVE_ONLY') {
+    return 'Richtung nicht verfügbar: noch keine extern freigegebene und vergleichbare Historie. ' + basis;
+  }
+  return 'Δ1obs: ' + cycleDeltaLabel(r, 1) + ' | Δ5obs: ' + cycleDeltaLabel(r, 5) +
+    ' | Δ10obs: ' + cycleDeltaLabel(r, 10) +
+    ' | Snapshot: ' + normStr(r.cy04_as_of) +
+    ' | letzte Preisbar: ' + normStr(r.cy04_last_bar) + ' | ' + basis;
+}
+
+function cycleCell(r) {
+  const base = formatCycle(r);
+  const d5 = cycleDelta(r, 5);
+  const extra = d5 === null ? '' : '<span class="cycleDelta">' + esc(
+    (d5 > 0 ? '↑ +' : d5 < 0 ? '↓ ' : '→ ') + d5.toFixed(1) + ' Pkt.'
+  ) + '</span>';
+  return '<span class="cycleVal">' + esc(base) + '</span>' + extra;
 }
 
 function fmtPct(v) {
@@ -3239,7 +3290,7 @@ function applyHeatFilter(rows) {
           <td>${scoreCell(r)}</td>
           <td class="hide-sm right mono">${dScoreCell(r)}</td>
           <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
-          <td class="hide-sm right mono">${formatCycle(r)}</td>
+          <td class="right mono" title="${esc(cycleHelp(r))}">${cycleCell(r)}</td>
           <td>${trend}</td>
           <td>${liq}</td>
           <td>${chip(status || '', statusKind)}</td>
@@ -3289,6 +3340,12 @@ function applyHeatFilter(rows) {
         ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
         ['Cycle', formatCycle(r)],
         ['Cycle Quality', r.cycle_quality],
+        ['Cycle Richtung / Δ1obs', cycleDeltaLabel(r, 1)],
+        ['Cycle Richtung / Δ5obs', cycleDeltaLabel(r, 5)],
+        ['Cycle Richtung / Δ10obs', cycleDeltaLabel(r, 10)],
+        ['Cycle Snapshot (deskriptiv)', r.cy04_as_of || '—'],
+        ['Cycle letzte Preisbar', r.cy04_last_bar || '—'],
+        ['Cycle Hinweis', cycleHelp(r)],
         ['Cycle Source', r.cycle_source],
         ['ScoreStatus', normStr(r.score_status) || ''],
         ['Trend OK', String(asBool(r.trend_ok))],

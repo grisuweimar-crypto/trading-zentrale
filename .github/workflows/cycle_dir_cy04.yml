@@ -1,0 +1,65 @@
+name: CYCLE-DIR CY-04 Descriptive UI
+on:
+  pull_request:
+    paths:
+      - "src/scanner/ui/generator.py"
+      - "src/scanner/ui/cycle_direction.py"
+      - "tests/test_cycle_direction_cy04.py"
+      - "docs/cycle_direction/**"
+      - ".github/workflows/cycle_dir_cy04.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cy04:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Compile modules
+        run: python -m compileall -q src/scanner/ui src/scanner/reports/cycle_history.py
+      - name: CY-04 and adjacent integrity regression suites
+        run: |
+          python -m pytest -q \
+            tests/test_cycle_direction_cy04.py \
+            tests/test_cycle_history_cy03.py \
+            tests/test_cycle_quality_cy01.py \
+            tests/test_research_views.py
+      - name: Smoke-render production UI in disposable workspace
+        run: |
+          python -m scanner.ui.generator \
+            --csv artifacts/watchlist/watchlist_full.csv \
+            --contract configs/watchlist_contract.json \
+            --out /tmp/cycle-cy04-ui/index.html
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+          page = Path("/tmp/cycle-cy04-ui/index.html").read_text(encoding="utf-8-sig")
+          assert "Zyklus / Δ5" in page
+          assert "Scannerbeobachtungen ≠ Handelstage" in page
+          match = re.search(r'<script id="DATA" type="application/json">(.*?)</script>', page, re.S)
+          assert match is not None
+          rows = json.loads(match.group(1))
+          assert len(rows) > 0
+          assert all(r["cy04_delta_5obs"] is None for r in rows)
+          assert all(r["cy04_quality"] == "UNAVAILABLE" for r in rows)
+          assert all("cycle" in r for r in rows)
+          print(f"Production snapshot UI smoke: {len(rows)} rows; zero unverified Cycle arrows")
+          PY
+      - name: Check generated dashboard JavaScript syntax
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("/tmp/cycle-cy04-ui/index.html").read_text(encoding="utf-8-sig")
+          blocks = re.findall(r"<script(?: [^>]*)?>(.*?)</script>", html, flags=re.S)
+          Path("/tmp/cycle-cy04-ui/dashboard.js").write_text(blocks[-1], encoding="utf-8")
+          PY
+          node --check /tmp/cycle-cy04-ui/dashboard.js
