@@ -204,7 +204,7 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
         }}
         for i, value in enumerate(synthetic_cycles)
     ]
-    fixture.write_text(json.dumps(observations, sort_keys=True) + "\\n", encoding="utf-8")
+    fixture.write_text(json.dumps(observations, sort_keys=True) + "\n", encoding="utf-8")
     prereg = {
         "declared_start_at": "2026-11-01T00:00:00+00:00",
         "data_cutoff": "2026-10-31T23:59:00+00:00",
