@@ -1,0 +1,106 @@
+name: CYCLE-DIR Scientific Evidence Watch
+
+on:
+  pull_request:
+    paths:
+      - "scripts/watch_cycle_science.py"
+      - "tests/test_cycle_science_watch.py"
+      - "docs/cycle_direction/CY_SCIENCE_READINESS_PROTOCOL.md"
+      - ".github/workflows/cycle_dir_science_watch.yml"
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Scanner_vNext Autopilot"]
+    types: [completed]
+  schedule:
+    # UTC: after the regular evening scanner runs; not an exact-time guarantee.
+    - cron: "50 22 * * *"
+
+permissions:
+  contents: read
+  issues: read
+  actions: read
+
+concurrency:
+  group: cy-science-watch-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  evidence-watch:
+    # A failed scanner is not evidence that a new snapshot was published.
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # For successful scanner completions, inspect the newly published main.
+          # PRs test their own proposed changes; others always inspect main.
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install research watchdog dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Compile and run watcher regressions
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+        run: |
+          python -m compileall -q scripts/watch_cycle_science.py
+          python -m pytest -q tests/test_cycle_science_watch.py tests/pattern_discovery/test_cy05_cycle_archive_adapter.py
+      - name: Read current issue state (informational, not a research certificate)
+        id: issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          state="$(gh api "/repos/${{ github.repository }}/issues/269" --jq '.state' 2>/dev/null || true)"
+          case "$state" in
+            open|closed) ;;
+            *) state="unknown" ;;
+          esac
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+      - name: Verify real archive and report scientific gates
+        env:
+          ISSUE_STATE: ${{ steps.issue.outputs.state }}
+        run: |
+          python scripts/watch_cycle_science.py \
+            --repo-root . \
+            --issue-269-state "${ISSUE_STATE^^}" \
+            --output /tmp/cycle-science-watch.json
+      - name: Write operator summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          p = Path('/tmp/cycle-science-watch.json')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as out:
+              if not p.is_file():
+                  out.write('## CYCLE-DIR Evidence Watch\n\nAudit failed before report publication: FAIL CLOSED.\n')
+              else:
+                  report = json.loads(p.read_text(encoding='utf-8'))
+                  out.write('## CYCLE-DIR Scientific Readiness\n\n')
+                  out.write(f"**Status: {report['status']}** — no automatic research or promotion.\n\n")
+                  obs = report['observations']
+                  out.write(f"Snapshot count: {obs.get('snapshot_count', 'UNKNOWN')}; ")
+                  out.write(f"distinct scanner days: {obs.get('distinct_scanner_dates', 'UNKNOWN')}; ")
+                  out.write(f"5obs chains (provisional): {obs.get('provisional_lag_5obs', 'UNKNOWN')}; ")
+                  out.write(f"research eligible: {obs.get('research_eligible_count', 'UNKNOWN')}\n\n")
+                  out.write('### Scientific gates\n')
+                  for gate, state in sorted(report['gates'].items()):
+                      out.write(f'- `{gate}`: `{state}`\n')
+                  if report['alerts']:
+                      out.write('\n### Observations requiring attention\n')
+                      for code in report['alerts']:
+                          out.write(f'- `{code}`\n')
+                  if report['status'] == 'INTEGRITY_FAILURE':
+                      out.write('\n**INTEGRITY FAILURE — do not use this archive for research.**\n')
+          PY
+      - name: Retain immutable per-run diagnostics as a CI artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cycle-science-watch-${{ github.run_id }}
+          path: /tmp/cycle-science-watch.json
+          if-no-files-found: warn
+          retention-days: 30

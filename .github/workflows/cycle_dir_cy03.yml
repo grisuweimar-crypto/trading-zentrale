@@ -57,10 +57,20 @@ jobs:
           assert manifest["latest_snapshot_id"] == metadata["snapshot_id"]
           assert manifest["new_current_valid"] == sum(r["cycle_quality"]=="VALID" for r in current)
           assert manifest["new_current_excluded"] == sum(r["cycle_quality"]!="VALID" for r in current)
-          assert manifest["observations"] == count
-          assert manifest["snapshots"] == 1
+          # This job replays the published latest run. Earlier immutable
+          # snapshots must remain in the CY-03 ledger as days accumulate.
+          with (root/"cycle_history/observations.csv").open(newline="",encoding="utf-8") as f:
+              ledger = list(csv.DictReader(f))
+          current_rows = [r for r in ledger if r["snapshot_id"] == metadata["snapshot_id"]]
+          assert len(current_rows) == count
+          assert manifest["observations"] == len(ledger)
+          assert manifest["snapshots"] == len({r["snapshot_id"] for r in ledger})
+          assert manifest["snapshots"] >= 1
+          # V1 remains externally unverified. A future scientific release
+          # requires a separate new contract, not a relaxed assertion here.
           assert manifest["research_eligible"] == 0
-          assert all(v == 0 for v in manifest["provisional_lags"].values())
+          assert manifest["research_gate"] == "BLOCKED_EXTERNAL_VERIFICATION_ISSUE_269"
+          assert all(isinstance(v, int) and v >= 0 for v in manifest["provisional_lags"].values())
           print(f"Real snapshot dynamic count: {count}, VALID={manifest['new_current_valid']}, excluded={manifest['new_current_excluded']}")
           PY
           git diff --exit-code -- artifacts/research/ artifacts/snapshots/ artifacts/watchlist/
