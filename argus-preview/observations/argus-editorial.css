@@ -97,3 +97,32 @@
  #observations #etw .etwFollow{padding:13px 10px}
  #observations #etw .etwFollowTrack{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+/* Above-the-fold improvements after real 390px Chrome review. */
+#observations #etw .etwExplainer{
+ margin:11px 0 14px;padding:0;background:none;
+ border:1px solid #40596b;border-left:2px solid #c5a271;
+ border-radius:8px
+}
+#observations #etw .etwExplainer>summary{list-style:none;cursor:pointer;padding:12px 15px;font-size:12px;line-height:1.5;color:#e8d5b3}
+#observations #etw .etwExplainer>summary::before{content:"＋";margin-right:8px;color:#dfb979;font-size:15px}
+#observations #etw .etwExplainer[open]>summary::before{content:"−"}
+#observations #etw .etwExplainer p{padding:0 15px 14px;margin:0;font-size:12px;line-height:1.7}
+#observations #etw .etwMetrics{margin:15px 0 8px}
+#observations #etw .etwGate{margin:12px 0}
+#observations #etw .etwFilters{margin:12px 0 8px}
+@media(max-width:600px){
+ #observations #etw .etwTitle h3{font-size:27px}
+ #observations #etw .etwTitle p{font-size:13px;line-height:1.55}
+ #observations #etw .etwTitle{gap:13px}
+ #observations #etw .etwTools{gap:6px;margin:0}
+ #observations #etw .etwTools button{font-size:11px;padding:7px 9px;min-height:35px}
+ #observations #etw .etwMetric{min-height:88px;padding:10px 9px}
+ #observations #etw .etwMetric b{font-size:28px;margin:4px 0}
+ #observations #etw .etwMetric small{font-size:10px;line-height:1.35}
+ #observations #etw .etwMetric span{font-size:11px}
+ #observations #etw .etwGate{font-size:11px;padding:9px 10px;line-height:1.5}
+ #observations #etw .etwFilters{gap:6px}
+ #observations #etw .etwFilters button{flex:1 1 calc(50% - 6px);font-size:11px;padding:7px;min-height:33px}
+ #observations #etw #etwQuery{flex:1 1 100%;order:-1;min-height:38px}
+}
