@@ -49,19 +49,19 @@ const css=[
 "#v7Quality .v7qmState{border-radius:9px}",
 "@media(max-width:700px){#v7Quality .v7qmHighlights{grid-template-columns:1fr 1fr}#v7Quality .v7qmHighlight{min-height:100px;padding:11px}#v7Quality .v7qmHighlights .v7qmOpen{grid-column:1/-1}#v7Quality .v7qmTop{padding:14px}}"
 ].join('\n');
-const style=document.createElement('style');style.id='v7QMStyles';style.textContent=css;document.head.append(style);
+const style=document.createElement('style');style.id='v7QMStyles';style.textContent=css+"\n#v7Quality .v7qmTech{border-top:1px solid #345165;margin:9px 0;padding-top:8px}#v7Quality .v7qmTech summary{cursor:pointer;color:#f1d5a5;font-size:12px}#v7Quality .v7qmTech summary:focus-visible{outline:2px solid #d2b27b}";document.head.append(style);
 parent.insertAdjacentHTML('beforeend',
 '<section id="v7Quality" aria-label="Veröffentlichte QM-Befunde">'+
 '<div class="v7qmTop"><div><div class="v7over">ARGUS / V7-B · QUELLENGEBUNDENES QUALITÄTSMANAGEMENT</div>'+
-'<h4>QM-H · Feststellungen und Maßnahmen</h4>'+
-'<p>Dokumentierte Befunde mit ihren Originalstatuscodes. Dies ist keine neue QM-Bewertung.</p></div>'+
-'<button type="button" id="v7QMReload">↻ QM-Register aktualisieren</button></div>'+
+'<h4>Welche Fehler wurden gefunden und behoben?</h4>'+
+'<p>Hier siehst du dokumentierte Probleme, Maßnahmen und ihren Bearbeitungsstand. Das ist keine neue Bewertung durch ARGUS.</p></div>'+
+'<button type="button" id="v7QMReload">↻ Prüfberichte aktualisieren</button></div>'+
 '<div class="v7qmState" id="v7QMState" role="status">QM-H-Register wird geladen …</div>'+
 '<div id="v7QMStory" aria-live="polite"></div><div id="v7QMFindings"></div><div class="v7qmGrid">'+
-'<div class="v7qmPanel"><h5>Unabhängige QM-J-Einzelprüfung</h5><div id="v7QMJ">Prüfbericht wird geladen …</div></div>'+
-'<div class="v7qmPanel"><h5>Abgrenzung und Originalquellen</h5>'+
-'<p>QM-H dokumentiert Befunde und Korrekturmaßnahmen. Es ersetzt weder QM-A-Forschungsfreigaben noch QM-B-External-Evidence-Sperren.</p>'+
-'<p>Der L14-QM-Status weiter oben gehört zum jeweiligen L14-Zyklus; das QM-H-Ledger hat seinen eigenen Datenstand.</p>'+
+'<div class="v7qmPanel"><h5>Zusätzliche Einzelprüfung (QM-J)</h5><div id="v7QMJ">Prüfbericht wird geladen …</div></div>'+
+'<div class="v7qmPanel"><h5>Was diese Prüfungen nicht aussagen</h5>'+
+'<p>Die Fehler- und Maßnahmenliste dokumentiert Korrekturen. Sie ist weder eine Freigabe von Handelsmustern noch ein Beleg für prognostische Treffer.</p>'+
+'<p>Der Forschungsablauf (L14), dieses Fehlerregister (QM-H) und der Einzelprüfbericht (QM-J) können unterschiedliche Datenstände haben. Daraus wird kein gemeinsames Gesamturteil abgeleitet.</p>'+
 '<p>'+link(LEDGER,'QM-H-Originalregister')+'</p>'+
 '<p>'+link('docs/qm_h_defect_near_miss_capa.md','QM-H-Vertrag und Lebenszyklus')+'</p>'+
 '<p>'+link(REPORT,'QM-J-Einzelbericht')+'</p></div></div></section>');
@@ -105,12 +105,12 @@ function findingCard(f){
  const details=f.lastDetails??{};
  const rationale=details.closure_rationale??details.implementation_summary??details.corrective_action??null;
  return '<details class="v7qmFinding"'+(f.status==='IMPLEMENTED'?' open':'')+'>'+
- '<summary><span class="v7qmTitle">'+esc(f.title)+'</span><span class="v7qmCode">'+esc(f.status)+'</span></summary>'+
+ '<summary><span class="v7qmTitle">'+esc(f.title)+'</span><span class="v7qmCode">'+esc(states[f.status]??'Status nicht erläutert')+'</span></summary>'+
  '<div class="v7qmBody"><p><strong>Status im QM-H-Register:</strong> '+esc(states[f.status]??'Nicht übersetzt')+' (<code>'+esc(f.status)+'</code>)</p>'+
- '<p><strong>Finding-ID:</strong> <code>'+esc(f.id)+'</code></p>'+
+ '<details class="v7qmTech"><summary>Technische Kennungen und Originalstatus</summary><p><strong>Finding-ID:</strong> <code>'+esc(f.id)+'</code> · <strong>Originalstatus:</strong> <code>'+esc(f.status)+'</code></p></details>'+
  '<p><strong>Kategorie:</strong> '+esc(categories[f.category]??'Nicht übersetzt')+' (<code>'+esc(f.category??'—')+'</code>)</p>'+
  '<p><strong>Letzter protokollierter Übergang:</strong> '+esc(clock(f.changed_at))+'</p>'+
- '<p><strong>Evidenzwirkung bei Registrierung:</strong> <code>'+esc(f.initialImpact??'Nicht verfügbar')+'</code> – nicht automatisch aktueller Sperrstatus.</p>'+
+ '<details class="v7qmTech"><summary>Damals dokumentierte Wirkung auf die Forschung</summary><p><code>'+esc(f.initialImpact??'Nicht verfügbar')+'</code> – diese ursprüngliche Angabe ist nicht automatisch der heutige Sperrstatus.</p></details>'+
  (f.description?'<p><strong>Ursprünglicher Befund:</strong> '+esc(f.description)+'</p>':'')+
  (rationale?'<p><strong>Letzte dokumentierte Maßnahme oder Abschlussbegründung:</strong> '+esc(rationale)+'</p>':'')+
  (f.initialReference?'<p class="v7qmFoot"><strong>Referenz bei Registrierung:</strong> <code>'+esc(f.initialReference)+'</code></p>':'')+
@@ -124,16 +124,16 @@ async function loadLedger(){
  try{
   const data=replayLedger(await getText(LEDGER));
   el('v7QMState').innerHTML='<b>QM-H-Registerstand:</b> '+esc(clock(data.lastTime))+
-   ' · '+esc(data.events)+' protokollierte Ereignisse · '+esc(data.findings.length)+' registrierte Feststellungen.'+
-   '<br>Sequenz, Statusübergänge und Hash-Verweise wurden strukturell geprüft. Das ist keine kryptographische SHA-256-Verifikation und keine wissenschaftliche Gesamtfreigabe.'+
-   '<br><b>Wichtig:</b> Der Registerstand ist nicht der aktuelle Gesamtstatus sämtlicher QM-Sperren.';
+   ' · '+esc(data.findings.length)+' dokumentierte Probleme oder Befunde.'+
+   '<br>Die Reihenfolge und Verweise der Einträge wurden geprüft. Das ist keine vollständige kryptographische Prüfung und keine Freigabe von Handelssignalen.'+
+   '<br><b>Wichtig:</b> Dieser Bericht beschreibt nur das Fehlerregister, nicht alle laufenden Qualitätsprüfungen.';
   const complete=data.findings.filter(f=>f.status==='CLOSED');
   const other=data.findings.filter(f=>f.status!=='CLOSED');
   el('v7QMStory').innerHTML='<div class="v7qmHighlights">'+
    '<div class="v7qmHighlight"><span>Dokumentierte Befunde</span><strong>'+esc(data.findings.length)+'</strong><small>QM-H · Ereignisregister</small></div>'+
    '<div class="v7qmHighlight"><span>Formell abgeschlossen</span><strong>'+esc(complete.length)+'</strong><small>Originalstatus CLOSED</small></div>'+
-   '<div class="v7qmHighlight v7qmOpen"><span>Anderer Bearbeitungsstand</span><strong>'+esc(other.length)+'</strong><small>kein eigenständiges QM-Urteil</small></div></div>'+
-   '<p class="v7qmExplanation">Ein abgeschlossener QM-H-Fall dokumentiert einen Bearbeitungsabschluss. Er beweist weder eine höhere Trefferquote noch die Freigabe eines Handelsmusters. Die Originalbefunde stehen unten zur Einsicht bereit.</p>';
+   '<div class="v7qmHighlight v7qmOpen"><span>Nicht als abgeschlossen geführt</span><strong>'+esc(other.length)+'</strong><small>einschließlich bereits umgesetzter Maßnahmen</small></div></div>'+
+   '<p class="v7qmExplanation">Wichtig: <b>Maßnahme umgesetzt</b> bedeutet noch nicht <b>formell abgeschlossen</b>. Auch ein abgeschlossener Fehlerfall beweist weder eine höhere Trefferquote noch die Wirksamkeit eines Handelssignals. Details kannst du unten öffnen.</p>';
   el('v7QMFindings').innerHTML=data.findings.length?
     (other.length?'<div class="v7qmGroup"><div class="v7qmGroupTitle">Nicht als CLOSED dokumentiert</div>'+other.map(findingCard).join('')+'</div>':'')+
     (complete.length?'<details class="v7qmArchived"><summary>'+esc(complete.length)+' abgeschlossene Fälle anzeigen ▾</summary>'+complete.map(findingCard).join('')+'</details>':'') :
@@ -149,9 +149,9 @@ async function loadJ(){
  try{
   const d=JSON.parse(await getText(REPORT,250000));
   if(d?.schema_version!=='qm_j_decision_e2e_falsification_result_v1'||d.module!=='QM-J'||typeof d.status!=='string')throw Error('Unbekanntes QM-J-Schema');
-  el('v7QMJ').innerHTML='<p><b>Originaler Prüfstatus:</b><br><code>'+esc(d.status)+'</code></p>'+
+  el('v7QMJ').innerHTML='<p>Dies ist eine <b>einzelne historische Kontrolle</b>, keine aktuelle Gesamtbewertung des Scanners.</p><details class="v7qmTech"><summary>Originalen Prüfstatus und Details lesen</summary><p><b>Prüfstatus:</b> <code>'+esc(d.status)+'</code></p>'+
   '<p><b>Ausdrückliche Ergebnisgrenze:</b><br><code>'+esc(d.w11_acceptance_interpretation??'Nicht verfügbar')+'</code></p>'+
-  '<p><b>Snapshot-ID des Berichts:</b><br><code>'+esc(d.snapshot_id??'Nicht verfügbar')+'</code></p>'+
+  '<p><b>Berichtsstand (Snapshot-ID):</b> <code>'+esc(d.snapshot_id??'Nicht verfügbar')+'</code></p></details>'+
   '<p class="v7qmFoot">Separater historischer Einzelbericht; keine Aussage über den heutigen Scannerlauf, keine Renditevalidierung und kein globales QM-PASS.</p>';
  }catch(e){el('v7QMJ').textContent='QM-J-Einzelbericht nicht verfügbar oder Schema unbekannt. Kein Ersatzwert.'}
 }

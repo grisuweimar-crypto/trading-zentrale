@@ -1,0 +1,35 @@
+name: ARGUS Clarity Preview
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "argus-preview/v7/**"
+      - "argus-preview/observations/**"
+      - "tests/test_argus_clarity_preview.py"
+      - ".github/workflows/argus_clarity_preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview-clarity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate JavaScript syntax
+        run: |
+          node --check argus-preview/v7/research-lab.js
+          node --check argus-preview/v7/qm-monitor.js
+          node --check argus-preview/observations/external-thesis-watch.js
+          node --check argus-preview/observations/argus-help.js
+      - name: Verify unchanged research and source boundaries
+        run: python -m unittest discover -s tests -p 'test_argus_clarity_preview.py' -v

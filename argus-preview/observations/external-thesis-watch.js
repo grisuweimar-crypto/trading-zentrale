@@ -1,5 +1,9 @@
 /* ARGUS External Thesis Watch – Presentation only, never an admission/scoring engine. */
 (()=>{'use strict';
+// Load the common explanation aid on the main ARGUS preview, without changing navigation.
+const aid=document.createElement('script');
+aid.src=new URL('argus-help.js',document.currentScript?.src||new URL('observations/',document.baseURI)).href;
+aid.defer=true;document.head.appendChild(aid);
 const host=document.getElementById('observations');if(!host)return;
 const RAW='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/';
 const REF='argus-preview/observations/external_thesis_watch_reference.json';
@@ -53,19 +57,20 @@ const css=[
 '@media(max-width:900px){#etw .etwMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}',
 '@media(max-width:680px){#etw{padding:14px}#etw .etwTitle h3{font-size:26px}#etw .etwList{grid-template-columns:1fr}#etw .etwTools button{font-size:11px;padding:9px}}'
 ].join('\n');
-const st=document.createElement('style');st.textContent=css;st.id='etwStyles';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}"+"\n#etw .etwWave{font-size:11px;border-top:1px solid #355267;padding:8px 0;line-height:1.6}";st.id='etwStyles';document.head.appendChild(st);
 host.insertAdjacentHTML('afterbegin',
 '<section id="etw" aria-label="Externe Aufnahmekandidaten">'+
 '<div class="etwTitle"><div><div class="etwGold">ARGUS · EXTERNAL THESIS WATCH</div>'+
-'<h3>Kandidatenradar</h3><p>Externe Aktienideen getrennt vom regulären Scanner beobachten. Hier siehst du vorhandene Fallakten, neue Hinweise und die tatsächliche Scannerzugehörigkeit – keine automatische Aufnahme und keine Kaufempfehlung.</p></div>'+
-'<div class="etwTools"><button type="button" id="etwImportBtn">↑ Private Hinweise laden</button><input type="file" id="etwFile" accept="application/json,.json" style="display:none" aria-label="Private Kandidaten-Datei auswählen">'+
-'<button type="button" id="etwBackupBtn">↓ Private Sicherung</button><button type="button" id="etwRefresh">↻ Daten prüfen</button></div></div>'+
+'<h3>Kandidatenradar</h3><p>Hier sammeln wir Aktienideen aus externen Quellen, auch wenn sie noch nicht im Scanner stehen. Eine Erwähnung ist weder eine Kaufempfehlung noch eine Entscheidung zur Aufnahme.</p></div>'+
+'<div class="etwTools"><button type="button" id="etwImportBtn">↑ Private Notizen öffnen</button><input type="file" id="etwFile" accept="application/json,.json" style="display:none" aria-label="Private Kandidaten-Datei auswählen">'+
+'<button type="button" id="etwBackupBtn">↓ Eigene Notizen sichern</button><button type="button" id="etwRefresh">↻ Beobachtungen aktualisieren</button></div></div>'+
+'<div class="etwExplainer"><b>Was gehört hierher?</b> Externe <b>Aktienkandidaten</b>, die wir beobachten möchten. Die <b>Musterkandidaten</b> im Forschungsstand sind etwas anderes: Dort werden statistische Zusammenhänge geprüft. <b>Im Scanner</b> bedeutet nur, dass die Aktie im aktuellen Scannerlauf vorkommt – nicht, dass sie gekauft werden sollte.</div>'+ 
 '<div id="etwMetrics" class="etwMetrics"></div><div class="etwGate" id="etwGate" role="status">Externe Referenz und Scannerstand werden geladen …</div>'+
-'<div class="etwFilters"><button type="button" data-etw-filter="all" aria-pressed="true">Alle Fälle</button><button type="button" data-etw-filter="shadow" aria-pressed="false">Nicht im Scanner</button>'+
-'<button type="button" data-etw-filter="scanner" aria-pressed="false">Im Scanner</button><button type="button" data-etw-filter="new" aria-pressed="false">Neue Hinweise</button>'+
+'<div class="etwFilters"><button type="button" data-etw-filter="all" aria-pressed="true">Alle Fälle</button><button type="button" data-etw-filter="shadow" aria-pressed="false">Außerhalb Scanner</button>'+
+'<button type="button" data-etw-filter="scanner" aria-pressed="false">Im Scanner enthalten</button><button type="button" data-etw-filter="new" aria-pressed="false">Neue Beobachtungen</button>'+
 '<input id="etwQuery" aria-label="Kandidaten durchsuchen" placeholder="Aktie oder Kürzel suchen …"></div>'+
 '<div class="etwList" id="etwList"></div>'+
-'<p class="etwNote">Private Newsletter-Begründungen werden nur nach einem lokalen JSON-Import angezeigt und ausschließlich in diesem Browser gespeichert. Sie werden nicht an GitHub übermittelt oder zwischen Geräten synchronisiert. Die originale Scanneraufnahme erfolgt ausschließlich außerhalb von ARGUS.</p>'+
+'<p class="etwNote">Eigene Notizen bleiben ausschließlich in diesem Browser, sofern sie nicht ausdrücklich als Sicherungsdatei exportiert werden. ARGUS entscheidet nicht über die Aufnahme in den Scanner. Der beobachtete Kursverlauf beweist allein noch nicht die Qualität einer externen These.</p>'+
 '<details class="etwSources"><summary>Quellen und Grenzen dieser Darstellung</summary><p id="etwSourcesText">Datenstände werden nach dem Laden angezeigt.</p></details>'+
 '</section>');
 const el=id=>document.getElementById(id);
@@ -160,21 +165,27 @@ function merge(){
  return [...m.values()];
 }
 const inScan=s=>scanSymbols===null?null:scanSymbols.has(s);
+const readableTimeframe=x=>({daily:'Tageschart',weekly:'Wochenchart'})[x]||'Zeitraum nicht erläutert';
+const readableDegree=x=>({minor:'kleiner Wellengrad',intermediate:'mittlerer Wellengrad',major:'größerer Wellengrad',primary:'übergeordneter Wellengrad'})[x]||'Wellengrad nicht erläutert';
+const readablePattern=x=>({impulse:'Impulsfolge',zigzag:'Zickzack-Korrektur',flat:'Flache Korrektur',triangle:'Dreiecks-Korrektur',double_three:'Mehrteilige Korrektur (W–X–Y)',triple_three:'Komplexe Korrektur (W–X–Y–X–Z)',leading_diagonal:'Einleitende Diagonale',ending_diagonal:'Abschlussdiagonale'})[x]||'Wellenstruktur nicht näher eingeordnet';
+const readableStage=x=>({wave_2_complete:'zweite Welle strukturell abgeschlossen',wave_3_complete:'dritte Welle strukturell abgeschlossen',wave_4_complete:'vierte Welle strukturell abgeschlossen',wave_5_complete:'fünfte Welle strukturell abgeschlossen'})[x]||'Wellenphase nicht allgemein übersetzt';
 const metric=(name,value,hint)=>'<div class="etwMetric"><span>'+esc(name)+'</span><b>'+esc(value)+'</b><small>'+esc(hint)+'</small></div>';
 function card(item){
  const state=inScan(item.symbol);
- const status=state===null?'Scannerabgleich fehlt':state?'Im Scannerlauf':'Nicht im Scannerlauf';
- const manual=(item.oldGroup==='SHADOW')?'Ursprünglich separat geprüft · kein Universe-Eintrag':'';
- const label=item.historical?'Historischer Prüfvermerk: '+item.historical:'Neuer Hinweis · ungeprüft';
+ const status=state===null?'Zugehörigkeit ungeklärt':state?'Im aktuellen Scanner':'Außerhalb des Scanners';
+ const manual=(item.oldGroup==='SHADOW')?'Früher separat beobachtet. Ob die Aktie heute im Scanner steht, zeigt nur der aktuelle Abgleich.':'';
+ const label=item.historical?'Ältere externe Beobachtung · damalige Kennzeichnung, keine heutige Freigabe':'Externe Aktienidee · noch nicht als Handelssignal bestätigt';
+ const oldCode=item.historical?'<details class="etwTech"><summary>Historischen Originalvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur die damalige Bezeichnung, keine neue Aufnahmeentscheidung.</details>':'';
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
  const ew=candidateElliott&&candidateElliott.symbol===item.symbol?candidateElliott:null;
- const ewHtml=item.externalResearch?(!ew?'<div class="etwElliott">Elliott vNext intern: noch kein eigenständiger Kandidatenlauf veröffentlicht.</div>':
- '<div class="etwElliott">Elliott vNext intern · '+esc(ew.as_of)+' · '+esc(ew.output_count)+' Forschungsausgaben · getrennt von externer Chartthese'+
- (ew.outputs.length?'<details><summary>Wellenstrukturen ansehen</summary>'+ew.outputs.map(o=>{
+ const ewHtml=item.externalResearch?(!ew?'<div class="etwElliott">Eigene Elliott-Forschung: Es liegt noch keine auswertbare Beobachtung für diesen Kandidaten vor.</div>':
+ '<div class="etwElliott"><b>Eigene Elliott-Wellenbeobachtung</b> · Kursdatenstand '+esc(formatDate(ew.as_of))+' · '+esc(ew.output_count)+' dokumentierte Analysevarianten. Das sind keine Kauf- oder Verkaufssignale und keine Bestätigung der externen Chartthese.'+
+ (ew.outputs.length?'<details><summary>Die einzelnen Wellenmodelle verstehen</summary><p>Mehrere Wellengrade und Szenarien können gleichzeitig vorliegen. Die Reihenfolge ist keine Rangliste nach Gewinnaussicht.</p>'+ew.outputs.map(o=>{
   const p=o.primary_scenario||{};
-  return '<p>'+esc(o.timeframe)+' / '+esc(o.degree)+': '+esc(p.pattern_class||'nicht klassifiziert')+
-   ' · '+esc(p.stage||'kein aktiver Count')+' · alternative Szenarien: '+esc((o.alternative_scenarios||[]).length)+'</p>';
- }).join('')+'</details>':'<p>Kein belastbarer Elliott-Zustand ausgegeben.</p>')+'</div>'):'';
+  return '<div class="etwWave"><b>'+esc(readableTimeframe(o.timeframe))+' · '+esc(readableDegree(o.degree))+'</b>: '+esc(readablePattern(p.pattern_class))+
+   ' · '+esc(readableStage(p.stage))+' · '+esc((o.alternative_scenarios||[]).length)+' weitere mögliche Deutungen'+
+   '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></div>';
+ }).join('')+'</details>':'<p>Die Berechnung hat noch keine ausgabefähige Wellenstruktur erfasst. Ein fehlender Zustand ist kein neutrales Signal.</p>')+'</div>'):'';
  const noteHTML=notes.length?notes.map(n=>
  '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+esc(formatDate(n.source_date))+'</small>'+
  '<p>'+esc(n.source_rationale??'Keine Quellenbegründung erfasst')+'</p>'+
@@ -182,17 +193,17 @@ function card(item){
  '<p class="etwNote">Die damalige externe E-Mail-Begründung ist hier noch nicht hinterlegt.</p>';
  return '<article class="etwCard"><div class="etwTop"><div><div class="etwSym">'+esc(item.symbol)+'</div><div class="etwName">'+esc(item.name)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
- '<p class="etwTag">'+esc(label)+'</p>'+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
+ '<p class="etwTag">'+esc(label)+'</p>'+oldCode+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
  noteHTML+ewHtml+'</article>';
 }
 function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
  const known=all.filter(x=>inScan(x.symbol)===true).length;
  const unknown=all.filter(x=>inScan(x.symbol)===null).length;
- el('etwMetrics').innerHTML=metric('Frühere Fallakten',baseline.length,'getrennte externe Beobachtung')+
-  metric('Neue Hinweise',newOnly.length,'öffentliche Kandidaten und private Hinweise')+
-  metric('Im Scannerlauf',unknown?'—':known,'aus aktueller Scannerpublikation')+
-  metric('Außerhalb Scanner',unknown?'—':all.length-known,'nicht zur Aufnahme freigegeben');
+ el('etwMetrics').innerHTML=metric('Ältere Beobachtungen',baseline.length,'historische Fallakten, keine heutigen Bewertungen')+
+  metric('Weitere Aktienideen',newOnly.length,'neue Kandidaten und eigene Hinweise')+
+  metric('Im aktuellen Scanner',unknown?'—':known,'Mitgliedschaft, kein Kaufsignal')+
+  metric('Noch außerhalb',unknown?'—':all.length-known,'zur Beobachtung, nicht aufgenommen');
  const visible=all.filter(x=>(filter==='all'||(filter==='new'&&x.isNew)||(filter==='scanner'&&inScan(x.symbol)===true)||
  (filter==='shadow'&&inScan(x.symbol)===false))&&
  (!query||[x.symbol,x.name,...x.notes.map(n=>n.source_rationale||'')].join(' ').toLowerCase().includes(query)));

@@ -72,19 +72,20 @@ const css=String.raw`
 .v7legacy>summary::-webkit-details-marker{display:none}
 .v7legacy>summary:focus-visible{outline:2px solid #e5c68c}
 `;
-const st=document.createElement('style');st.id='v7Styles';st.textContent=css;document.head.append(st);
+const st=document.createElement('style');st.id='v7Styles';st.textContent=css+"\n#v7Monitor .v7how{border:1px solid #526a7b;background:linear-gradient(125deg,#16384c,#0b2538);padding:19px 21px;border-radius:12px;margin:14px 0}\n#v7Monitor .v7how h4{font:normal 22px Georgia,serif;margin:3px 0 8px;color:#f1dfba}\n#v7Monitor .v7how p{font-size:13px;margin:0;color:#d2e1e8}\n#v7Monitor .v7how strong{color:#f4d49b}\n#v7Monitor .v7tech{margin:12px 0;border-top:1px solid #3c586e;padding:10px 0}\n#v7Monitor .v7tech summary{cursor:pointer;color:#efd7a7;font-size:12px;padding:6px 0}\n#v7Monitor .v7tech summary:focus-visible{outline:2px solid #e2bb7b}\n#v7Monitor .v7plain{font-size:12px;color:#d6e3eb;line-height:1.7}\n#v7Monitor .v7plain strong{color:#efd5a6}\n@media(max-width:680px){#v7Monitor .v7how{padding:14px}#v7Monitor .v7metric{min-height:108px}#v7Monitor .v7metric strong{font-size:30px}}";document.head.append(st);
 section.insertAdjacentHTML('afterbegin',
 '<div id="v7Monitor"><div class="v7head"><div><div class="v7over">ARGUS / SCIENTIA · Version 7</div>'+
-'<h3>Wissenschaftlicher Prüfstand</h3><p class="v7foot">Originalstatus aus den veröffentlichten L14-Forschungsartefakten. Keine Dashboard-Berechnung oder Bewertung.</p></div>'+
+'<h3>Was wissen wir über unsere Handelsmuster?</h3><p class="v7foot">Hier zeigen wir den belegten Stand der Musterforschung. ARGUS liest vorhandene Ergebnisse, erstellt aber selbst keine Tests, Prognosen oder Bewertungen.</p></div>'+
 '<button id="v7Reload" type="button">↻ Forschungsstand laden</button></div>'+
 '<div class="v7status" id="v7Notice" role="status">Veröffentlichte Forschungsdaten werden geprüft …</div>'+
+'<div class="v7how"><h4>So liest du diese Seite</h4><p><strong>Entdecken</strong> sucht nach auffälligen Zusammenhängen. <strong>Beobachten</strong> hält vorher festgelegte Muster für spätere Vergleiche fest. <strong>Überprüfen</strong> wartet auf echte Kursentwicklungen. <strong>Einordnen</strong> zeigt, welche Aussagen tatsächlich belegt sind. Ein bestandener Techniktest beweist noch kein erfolgreiches Handelssignal.</p></div>'+
 '<div class="v7story" id="v7Story"></div>'+
-'<div class="v7sectionHead"><div><span class="v7over">FORSCHUNGSREGISTER</span><h4>Was ist bereits dokumentiert?</h4></div><p>Diese Zahlen kommen unverändert aus dem Musterlabor L14.</p></div>'+
+'<div class="v7sectionHead"><div><span class="v7over">FORSCHUNGSERGEBNISSE</span><h4>Was liegt schon vor?</h4></div><p>Zählwerte aus dem veröffentlichten Musterlabor (L14), keine Schätzung.</p></div>'+
 '<div class="v7grid" id="v7Counts"></div><div class="v7cols">'+
-'<div><article class="v7card v7ops"><details><summary><strong>Technischer Prüfablauf</strong><span id="v7StageCount">Originalstatus der Arbeitsstationen</span><span aria-hidden="true">▾</span></summary><div id="v7Stages"></div></details></article>'+
-'<article class="v7card"><h4>Einzelmuster · L5 bis L10</h4><div id="v7PatternState"></div></article></div>'+
-'<div><article class="v7card"><h4>Forschungsgrenzen und Register</h4><div id="v7Lab"></div></article>'+
-'<article class="v7card"><h4>Qualitätsnachweis im L14-Bericht</h4><div id="v7QM"></div></article>'+
+'<div><article class="v7card v7ops"><details><summary><strong>Hinter den Kulissen: technische Kontrollschritte</strong><span id="v7StageCount">Originalstatus der Arbeitsstationen</span><span aria-hidden="true">▾</span></summary><div id="v7Stages"></div></details></article>'+
+'<article class="v7card"><h4>Untersuchte einzelne Muster</h4><div id="v7PatternState"></div></article></div>'+
+'<div><article class="v7card"><h4>Was ist für eine neue Mustersuche nötig?</h4><div id="v7Lab"></div></article>'+
+'<article class="v7card"><h4>Was haben die technischen Kontrollen geprüft?</h4><div id="v7QM"></div></article>'+
 '<article class="v7card v7sources"><h4>Herkunft &amp; Datenstand</h4><div id="v7Sources"></div></article></div></div></div>');
 /* Bestehende V6-Forschungserläuterung erhalten, zur besseren Lesbarkeit zusammenklappen. */
 const legacy=[...section.children].filter(node=>node.id!=='v7Monitor');
@@ -98,7 +99,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&
 const count=x=>Number.isSafeInteger(x)&&x>=0?new Intl.NumberFormat('de-DE').format(x):'Nicht verfügbar';
 const date=x=>x&&!Number.isNaN(Date.parse(x))?new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Berlin'}).format(new Date(x))+' (Berlin)':'Nicht verfügbar';
 const link=(path,label)=>'<a target="_blank" rel="noopener noreferrer" href="'+GH+encodeURI(path)+'">'+esc(label)+' ↗</a>';
-const stageNames={DISCOVERY_TRIGGER:'Discovery-Trigger',PROSPECTIVE_CAPTURE:'L7 · Prospective Capture',OUTCOME_MATURATION:'L8 · Outcome Maturation',SEQUENTIAL_CONFIRMATION:'L9 · Confirmation',RATING_UPDATE:'L10 · Rating',DEPENDENCY_REFRESH:'L6 · Dependency Graph',NEGATIVE_RESULT_AUDIT:'QM-C5 · Negative Results',PATTERN_DECAY_AUDIT:'Pattern Decay',QM_REGRESSION:'Laufende QM-Regression'};
+const stageNames={DISCOVERY_TRIGGER:'Neue Mustersuche vorbereiten',PROSPECTIVE_CAPTURE:'Künftige Beobachtungen erfassen',OUTCOME_MATURATION:'Wartezeiten und Ergebnisse prüfen',SEQUENTIAL_CONFIRMATION:'Muster unabhängig bestätigen',RATING_UPDATE:'Vorhandene Forschungsbewertung aktualisieren',DEPENDENCY_REFRESH:'Abhängigkeiten zwischen Mustern prüfen',NEGATIVE_RESULT_AUDIT:'Negative Ergebnisse vollständig halten',PATTERN_DECAY_AUDIT:'Nachlassende Musterwirkung überprüfen',QM_REGRESSION:'Technische Prüfungen wiederholen'};
 /* Erläuterungen folgen den L14-Modulverträgen; kein eigener Forschungsstatus. */
 const stageHelp={
  DISCOVERY_TRIGGER:'Prüft, ob eine neue Discovery-Runde gemäß L14 zur Vorregistrierung ansteht. L14 startet keine Mustersuche eigenständig.',
@@ -120,6 +121,7 @@ const statusHelp={
 };
 const help=(stage,status)=>'<p class="v7stageMeaning">'+esc(stageHelp[stage]??'Für diese Station liegt keine freigegebene Kurzbeschreibung vor.')+'</p>'+
  '<p class="v7stageCode">'+esc(statusHelp[status]??'Für diesen Status liegt keine freigegebene Kurzerläuterung vor. Maßgeblich bleibt der Originalcode.')+'</p>';
+const bool=x=>x===true?'Ja':x===false?'Nein':'Nicht verfügbar';
 const lbl=(k,v)=>'<div class="v7statrow"><span>'+esc(k)+'</span><b>'+esc(v)+'</b></div>';
 const summary=(k,n,d)=>'<div class="v7metric"><label>'+esc(k)+'</label><strong>'+count(n)+'</strong><small>'+esc(d)+'</small></div>';
 async function fetchJson(path){
@@ -149,8 +151,8 @@ async function load(){
       c.research_only!==true||!Array.isArray(c.work_items)||!c.laboratory_state)throw new Error('L14-Zyklus/Schemaprüfung fehlgeschlagen');
    const same=c.current_scanner?.snapshot_id===meta.snapshot_id&&c.source_heads?.scanner_snapshot_id===meta.snapshot_id;
    el('v7Notice').innerHTML=same?
-     'Quelle: <b>L14, '+esc(date(c.evaluated_at))+'</b> · Statuscode <code>'+esc(c.cycle_status)+'</code> · Snapshot <code>'+esc(meta.snapshot_id)+'</code>. Dies sind Registerdaten, keine Vorhersage.':
-     '<b>Unterschiedliche Snapshot-IDs:</b> L14: <code>'+esc(c.current_scanner?.snapshot_id)+'</code>, aktueller Scanner: <code>'+esc(meta.snapshot_id)+'</code>. Die Anzeigen stehen nebeneinander; keine zeitliche Gleichsetzung.';
+     '<b>Forschungsdaten geladen.</b> Stand: '+esc(date(c.evaluated_at))+'. L14 und Scanner beziehen sich auf dieselbe Datenaufnahme. <details class="v7tech"><summary>Technische Kennungen anzeigen</summary>Status: <code>'+esc(c.cycle_status)+'</code> · Snapshot: <code>'+esc(meta.snapshot_id)+'</code></details>':
+     '<b>Achtung: unterschiedliche Datenstände.</b> Forschung und aktueller Scanner beziehen sich nicht auf dieselbe Datenaufnahme. Bitte nicht als gemeinsamen Auswertungsstand lesen. <details class="v7tech"><summary>Technische Kennungen anzeigen</summary>L14: <code>'+esc(c.current_scanner?.snapshot_id)+'</code>, Scanner: <code>'+esc(meta.snapshot_id)+'</code></details>';
    const q=c.laboratory_state;
    const statusNames={
      DUE_PREREGISTRATION:'Vorregistrierung erforderlich',
@@ -173,44 +175,49 @@ async function load(){
       '</p><div class="v7cycle">L14-Betriebsstatus: <b>'+esc(statusNames[c.cycle_status]??c.cycle_status)+'</b>'+
       '<code>'+esc(c.cycle_status)+'</code></div></div>'+
       '<div class="v7journey">'+
-       step('01','Entdecken','Forschungsfrage vorregistrieren und Muster einfrieren',work('DISCOVERY_TRIGGER'))+
-       step('02','Beobachten','Eingefrorene Muster prospektiv erfassen',work('PROSPECTIVE_CAPTURE'))+
-       step('03','Überprüfen','Ergebnisse nach Ablauf der festgelegten Horizonte beurteilen',work('OUTCOME_MATURATION'))+
-       step('04','Einordnen','Kontrollierte Bestätigung und anschließend Rating',work('RATING_UPDATE'))+
+       step('01','Entdecken','Vor der Suche festlegen, welche Muster untersucht werden sollen',work('DISCOVERY_TRIGGER'))+
+       step('02','Beobachten','Neue Beobachtungen sammeln, ohne die Regeln nachträglich zu verändern',work('PROSPECTIVE_CAPTURE'))+
+       step('03','Überprüfen','Erst nach festgelegter Wartezeit die Kursentwicklung beurteilen',work('OUTCOME_MATURATION'))+
+       step('04','Einordnen','Die unabhängigen Prüfungen und vorhandenen Bewertungen einordnen',work('RATING_UPDATE'))+
       '</div><p class="v7guideFoot">Die vier Schritte sind eine Navigationshilfe. Die angezeigten Stati stammen ausschließlich aus L14; ARGUS leitet daraus keine neue Forschungseinstufung ab.</p>';
    el('v7StageCount').textContent=c.work_items.length+' Arbeitsstationen · Originaldaten';
-   el('v7Counts').innerHTML=summary('Muster eingefroren',q.frozen_pattern_count,'aus L14 laboratory_state')+
-      summary('Prospektive Beobachtungen',q.claim_count,'aus L14 laboratory_state')+
-      summary('Abgeschlossene Horizonte',q.matured_outcome_count,'aus L14 laboratory_state')+
-      summary('Bestätigungsprüfungen',q.confirmation_look_count,'aus L14 laboratory_state')+
-      summary('Rating-Ereignisse',q.rating_event_count,'aus L14 laboratory_state');
+   el('v7Counts').innerHTML=summary('Festgelegte Muster',q.frozen_pattern_count,'Muster mit vorab fixierten Regeln')+
+      summary('Neue Beobachtungen',q.claim_count,'Nach Festlegung der Muster gesammelt')+
+      summary('Auswertbare Verläufe',q.matured_outcome_count,'Vorgegebene Wartezeit abgelaufen')+
+      summary('Bestätigungsrunden',q.confirmation_look_count,'Vorab festgelegte Prüfzeitpunkte')+
+      summary('Bewertungsänderungen',q.rating_event_count,'Dokumentierte L10-Rating-Ereignisse');
    el('v7Stages').innerHTML=c.work_items.length?c.work_items.map(s=>
-      '<div class="v7stage"><div class="v7stageHead"><b>'+esc(stageNames[s.stage]||s.stage||'Unbekannte Phase')+'</b><code>'+esc(s.status??'UNAVAILABLE')+
-      '</code></div>'+help(s.stage,s.status)+'</div>').join(''):
+      '<div class="v7stage"><div class="v7stageHead"><b>'+esc(stageNames[s.stage]||s.stage||'Unbekannte Phase')+
+      '</b><span class="v7plain">'+esc(statusNames[s.status]||'Originalstatus prüfen')+'</span></div>'+
+      help(s.stage,s.status)+'<details class="v7tech"><summary>Originalkennungen</summary>Schritt: <code>'+esc(s.stage)+
+      '</code> · Status: <code>'+esc(s.status??'UNAVAILABLE')+'</code></details></div>').join(''):
       '<div class="v7empty">Keine Stationen im verifizierten Zyklus enthalten.</div>';
    const trg=c.discovery?.trigger??{}, cand=c.discovery?.candidate_state??{}, head=c.source_heads??{};
-   el('v7Lab').innerHTML=lbl('Discovery-Trigger-Status',trg.status??'Nicht verfügbar')+
-      lbl('Discovery-Modus',trg.mode??'Nicht verfügbar')+
-      lbl('L1-Vorregistrierung nötig',trg.new_l1_preregistration_required===true?'true':trg.new_l1_preregistration_required===false?'false':'Nicht verfügbar')+
-      lbl('Automatischer Suchstart erlaubt',trg.automatic_search_start_allowed===true?'true':trg.automatic_search_start_allowed===false?'false':'Nicht verfügbar')+
-      lbl('Discovery-Manifeste',count(c.discovery?.manifest_count))+
-      lbl('Freeze-Snapshot vorhanden',cand.freeze_snapshot_present===true?'true':cand.freeze_snapshot_present===false?'false':'Nicht verfügbar')+
-      '<p class="v7foot">Diese Angaben stammen aus L14. Die Anzeige ändert weder Vorregistrierung noch Forschungsstatus. L5-Set-Hash: <code>'+esc(head.l5_pattern_set_hash??'Nicht verfügbar')+'</code>.</p>';
+   el('v7Lab').innerHTML='<p class="v7plain">Eine neue Mustersuche braucht dokumentierte Regeln, bevor ihre Ergebnisse bekannt sind. L14 zeigt, welche Vorbereitungen im Forschungsregister vorliegen.</p>'+
+       lbl('Neue Vorregistrierung erforderlich?',bool(trg.new_l1_preregistration_required))+
+       lbl('Automatischer Suchstart erlaubt?',bool(trg.automatic_search_start_allowed))+
+       lbl('Festgehaltener Musterstand vorhanden?',bool(cand.freeze_snapshot_present))+
+       '<details class="v7tech"><summary>Originale Forschungskennungen und Nachweise</summary>'+
+       lbl('Auslöser-Status',trg.status??'Nicht verfügbar')+lbl('Suchmodus',trg.mode??'Nicht verfügbar')+
+       lbl('Forschungsmanifeste',count(c.discovery?.manifest_count))+
+       '<p class="v7foot">L5-Muster-Set-Hash: <code>'+esc(head.l5_pattern_set_hash??'Nicht verfügbar')+'</code>. ARGUS verändert diese Angaben nicht.</p></details>';
    el('v7PatternState').innerHTML=Number.isSafeInteger(q.frozen_pattern_count)&&q.frozen_pattern_count===0?
       '<div class="v7empty"><b>Keine L5-Muster registriert.</b><p>Der veröffentlichte L14-Zyklus nennt 0 eingefrorene Muster. Deshalb gibt es hier keine fiktiven Einzelmusterkarten, Quoten oder Ratings.</p></div>':
       '<div class="v7empty">Eine wissenschaftliche Einzelmusterakte benötigt ein veröffentlichtes, schema-geprüftes L5–L10-Register. Der L14-Operationszyklus allein enthält dafür keine vollständigen Pattern-Datensätze.</div>';
    const qm=c.qm_audit??{},negative=qm.negative_result_registry??{};
-   el('v7QM').innerHTML=lbl('L14-QM-Auditstatus',qm.status??'Nicht verfügbar')+
-      lbl('QM-C5 Registry valid',negative.valid===true?'true':negative.valid===false?'false':'Nicht verfügbar')+
-      lbl('QM-C5 negative Events',count(negative.event_count))+
-      lbl('Produktive Integration enabled',c.productive_integration_enabled===true?'true':c.productive_integration_enabled===false?'false':'Nicht verfügbar')+
-      lbl('Execution allowed',c.execution_allowed===true?'true':c.execution_allowed===false?'false':'Nicht verfügbar')+
-      '<p class="v7foot">Nur Statusfelder des aktuellen L14-Zyklus. Keine eigenständige QM-Freigabe und kein statistischer Wirksamkeitsnachweis.</p>';
+   el('v7QM').innerHTML='<p class="v7plain">Qualitätskontrollen prüfen, ob der dokumentierte Ablauf nachvollziehbar bleibt. Das beweist <strong>nicht</strong>, dass ein Handelssignal Gewinne erzielt.</p>'+
+       lbl('Kontrolle im L14-Zyklus',qm.status??'Nicht verfügbar')+
+       lbl('Register negativer Ergebnisse gültig?',bool(negative.valid))+
+       lbl('Erfasste negative Ereignisse',count(negative.event_count))+
+       '<details class="v7tech"><summary>Technische Freigabegrenzen</summary>'+
+       lbl('Produktive Integration eingeschaltet?',bool(c.productive_integration_enabled))+
+       lbl('Handelsausführung erlaubt?',bool(c.execution_allowed))+
+       '<p class="v7foot">Das sind die Originalfelder des L14-Zyklus und keine zusätzliche Freigabe durch ARGUS.</p></details>';
    el('v7Sources').innerHTML='<p><b>L14 bewertet:</b> '+esc(date(c.evaluated_at))+'</p>'+
       '<p><b>L14-Scannerbezug:</b> '+esc(c.current_scanner?.as_of??'Nicht verfügbar')+' · '+count(c.current_scanner?.observed_symbol_count)+
       ' / '+count(c.current_scanner?.required_symbol_count)+' Titel.</p>'+
       '<p><b>Scanner-Publikationsmarker:</b> '+esc(meta.as_of)+' · '+esc(meta.snapshot_id)+'</p>'+
-      '<p>'+link(P,'L14 Latest Pointer')+'</p><p>'+link(cyclePath,'L14 Cycle')+'</p><p>'+link(M,'Scanner Metadata')+'</p>'+
+      '<p>'+link(P,'Aktueller Forschungszeiger')+'</p><p>'+link(cyclePath,'Originalbericht des Forschungszyklus')+'</p><p>'+link(M,'Datenstand des Scanners')+'</p>'+
       '<p>'+link('docs/pattern_discovery/l14_continuous_operations.md','L14-Datenvertrag')+'</p>'+
       '<p class="v7foot">Lesende Darstellung. Die Übereinstimmung von Zeiger und Zyklus wurde anhand der veröffentlichten Metadaten geprüft; keine zusätzliche kryptographische Archivverifikation behauptet.</p>';
  }catch(e){fail(e.name==='AbortError'?'Zeitüberschreitung':(e.message||'Unbekannter Fehler'))}
