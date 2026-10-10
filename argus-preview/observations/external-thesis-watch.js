@@ -3,6 +3,8 @@
 const host=document.getElementById('observations');if(!host)return;
 const RAW='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/';
 const REF='argus-preview/observations/external_thesis_watch_reference.json';
+const PUBLIC='argus-preview/observations/external_thesis_watch_candidates.json';
+const ELLIOTT='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/external-candidate-elliott-data/artifacts/research/candidate_elliott_current.json';
 const META='artifacts/research/history_metadata.json';
 const SCAN='artifacts/research/latest_scanner.csv';
 const KEY='argus_external_thesis_private_v1';
@@ -40,6 +42,8 @@ const css=[
 '#etw .etwRationale{border-left:2px solid #b79c67;padding:7px 10px;background:#102c41;border-radius:0 7px 7px 0;margin-top:10px}',
 '#etw .etwRationale p{font-size:11px;color:#e2eaf0;margin:6px 0}',
 '#etw .etwRationale small{font-size:10px;color:#adc3d1}',
+'#etw .etwElliott{font-size:11px;color:#c9deea;background:#102d42;border-left:2px solid #caab72;padding:9px 11px;margin-top:10px}',
+'#etw .etwElliott details{margin-top:6px}#etw .etwElliott summary{cursor:pointer;color:#f2d5a0}',
 '#etw .etwCard a{color:#f5cf91;text-decoration:underline;font-size:11px;overflow-wrap:anywhere}',
 '#etw .etwNote{font-size:11px;color:#acbeca;line-height:1.7;margin:12px 0}',
 '#etw .etwSources{margin-top:15px;border-top:1px solid #365268;padding-top:15px}',
@@ -65,13 +69,27 @@ host.insertAdjacentHTML('afterbegin',
 '<details class="etwSources"><summary>Quellen und Grenzen dieser Darstellung</summary><p id="etwSourcesText">Datenstände werden nach dem Laden angezeigt.</p></details>'+
 '</section>');
 const el=id=>document.getElementById(id);
-let baseline=[],priv={schema_version:'argus_external_thesis_private_v1',new_leads:[],source_updates:[],newsletters:[]};
+let baseline=[],publicCandidates=[],candidateElliott=null,priv={schema_version:'argus_external_thesis_private_v1',new_leads:[],source_updates:[],newsletters:[]};
 let scanSymbols=null,scanMeta=null,filter='all',query='',running=false;
 try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(parsed?.schema_version==='argus_external_thesis_private_v1'&&Array.isArray(parsed.new_leads)&&Array.isArray(parsed.source_updates))priv=parsed}}catch(_){}
 async function get(path,format){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
  try{const r=await fetch(RAW+path,{signal:controller.signal,cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status+' '+path);return format==='json'?r.json():r.text()}
  finally{clearTimeout(timer)}
+}
+async function getCandidateElliott(){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+ try{
+  const r=await fetch(ELLIOTT,{signal:controller.signal,cache:'no-store'});
+  if(r.status===404)return null;
+  if(!r.ok)throw Error('HTTP '+r.status);
+  const d=await r.json();
+  if(d?.schema_version!=='external_candidate_elliott_shadow_v1'||d?.research_only!==true||
+   d?.scanner_universe_unchanged!==true||d?.symbol!=='LULU'||!/^\d{4}-\d{2}-\d{2}$/.test(d.as_of||'')||
+   !Array.isArray(d.outputs)||d.output_count!==d.outputs.length||
+   !d.outputs.every(o=>o.symbol==='LULU'&&o.research_only===true))throw Error('Ungültiger Elliott-Schattenstand');
+  return d;
+ }finally{clearTimeout(timer)}
 }
 function csvRows(text){
  const rows=[],max=20000;let row=[],field='',q=false;
@@ -96,6 +114,16 @@ async function refresh(){
   baseline=d.items;
  }catch(e){baseline=[];errors.push('Referenz: '+e.message)}
  try{
+  const d=await get(PUBLIC,'json');
+  if(d?.schema_version!=='argus_external_thesis_public_candidates_v1'||!Array.isArray(d.items)||
+   !d.items.every(x=>x&&/^[A-Z0-9.^-]{1,20}$/.test(x.symbol||'')&&typeof x.name==='string'&&x.research_only===true)||
+   new Set(d.items.map(x=>x.symbol)).size!==d.items.length||
+   d.items.some(x=>baseline.some(b=>b.symbol===x.symbol)))throw Error('Kandidatenreferenz ungültig');
+  publicCandidates=d.items;
+ }catch(e){publicCandidates=[];errors.push('Kandidaten: '+e.message)}
+ try{candidateElliott=await getCandidateElliott()}
+ catch(e){candidateElliott=null;errors.push('Elliott-Kandidatenstand: '+e.message)}
+ try{
   const meta=await get(META,'json');
   if(meta?.latest_run_complete!==true||meta?.validation?.status!=='ok'||!meta.snapshot_id)throw Error('Scanner-Publikation nicht vollständig');
   const rows=csvRows(await get(SCAN,'text'));const h=rows.shift();const ix={};
@@ -117,6 +145,10 @@ async function refresh(){
 function merge(){
  const m=new Map();
  for(const item of baseline){m.set(item.symbol,{symbol:item.symbol,name:item.name,historical:item.historical_label,oldGroup:item.original_group,isNew:false,notes:[]})}
+ for(const s of publicCandidates){
+  m.set(s.symbol,{symbol:s.symbol,name:s.name,historical:null,oldGroup:'EXTERNAL_WATCH',
+   isNew:true,notes:[s],externalResearch:true});
+ }
  for(const s of Array.isArray(priv.new_leads)?priv.new_leads:[]){
   if(!s||typeof s.symbol!=='string'||!s.symbol.match(/^[A-Z0-9.^-]{1,20}$/))continue;
   const item=m.get(s.symbol)??{symbol:s.symbol,name:s.name??s.symbol,historical:null,oldGroup:null,isNew:true,notes:[]};
@@ -135,6 +167,14 @@ function card(item){
  const manual=(item.oldGroup==='SHADOW')?'Ursprünglich separat geprüft · kein Universe-Eintrag':'';
  const label=item.historical?'Historischer Prüfvermerk: '+item.historical:'Neuer Hinweis · ungeprüft';
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
+ const ew=candidateElliott&&candidateElliott.symbol===item.symbol?candidateElliott:null;
+ const ewHtml=item.externalResearch?(!ew?'<div class="etwElliott">Elliott vNext intern: noch kein eigenständiger Kandidatenlauf veröffentlicht.</div>':
+ '<div class="etwElliott">Elliott vNext intern · '+esc(ew.as_of)+' · '+esc(ew.output_count)+' Forschungsausgaben · getrennt von HKCM'+
+ (ew.outputs.length?'<details><summary>Wellenstrukturen ansehen</summary>'+ew.outputs.map(o=>{
+  const p=o.primary_scenario||{};
+  return '<p>'+esc(o.timeframe)+' / '+esc(o.degree)+': '+esc(p.pattern_class||'nicht klassifiziert')+
+   ' · '+esc(p.stage||'kein aktiver Count')+' · alternative Szenarien: '+esc((o.alternative_scenarios||[]).length)+'</p>';
+ }).join('')+'</details>':'<p>Kein belastbarer Elliott-Zustand ausgegeben.</p>')+'</div>'):'';
  const noteHTML=notes.length?notes.map(n=>
  '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+esc(formatDate(n.source_date))+'</small>'+
  '<p>'+esc(n.source_rationale??'Keine Quellenbegründung erfasst')+'</p>'+
@@ -143,23 +183,23 @@ function card(item){
  return '<article class="etwCard"><div class="etwTop"><div><div class="etwSym">'+esc(item.symbol)+'</div><div class="etwName">'+esc(item.name)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
  '<p class="etwTag">'+esc(label)+'</p>'+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
- noteHTML+'</article>';
+ noteHTML+ewHtml+'</article>';
 }
 function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
  const known=all.filter(x=>inScan(x.symbol)===true).length;
  const unknown=all.filter(x=>inScan(x.symbol)===null).length;
  el('etwMetrics').innerHTML=metric('Frühere Fallakten',baseline.length,'getrennte externe Beobachtung')+
-  metric('Neue Hinweise',newOnly.length,'nur nach privatem Import')+
+  metric('Neue Hinweise',newOnly.length,'öffentliche Kandidaten und private Hinweise')+
   metric('Im Scannerlauf',unknown?'—':known,'aus aktueller Scannerpublikation')+
   metric('Außerhalb Scanner',unknown?'—':all.length-known,'nicht zur Aufnahme freigegeben');
  const visible=all.filter(x=>(filter==='all'||(filter==='new'&&x.isNew)||(filter==='scanner'&&inScan(x.symbol)===true)||
  (filter==='shadow'&&inScan(x.symbol)===false))&&
  (!query||[x.symbol,x.name,...x.notes.map(n=>n.source_rationale||'')].join(' ').toLowerCase().includes(query)));
- el('etwList').innerHTML=visible.length?visible.map(card).join(''):'<div class="etwEmpty">Keine entsprechenden Fälle im aktuellen Anzeigebestand. Prüfe gegebenenfalls den Filter oder importiere die private Kandidatendatei.</div>';
+ el('etwList').innerHTML=visible.length?visible.map(card).join(''):'<div class="etwEmpty">Keine entsprechenden Fälle im aktuellen Anzeigebestand. Prüfe gegebenenfalls den Filter oder prüfe die verfügbaren Quellen.</div>';
  const sources=Array.isArray(priv.newsletters)?priv.newsletters:[];
  el('etwSourcesText').innerHTML=
-  'Öffentliche Basis: '+esc(REF)+'. Scannerzugehörigkeit: '+esc(META)+' und '+esc(SCAN)+'. '+
+  'Öffentliche Basis: '+esc(REF)+'; '+esc(PUBLIC)+'. Elliott-Kandidatenstand: isolierter Research-Schattenzweig. Scannerzugehörigkeit: '+esc(META)+' und '+esc(SCAN)+'. '+
   'Private Ausgangsthesen werden weder an den Scanner noch an GitHub übertragen. Originalstatuscodes aus der historischen Referenz sind keine neuen Entscheidungen.'+
   (sources.length?'<br><br><b>Geprüfte Newsletter-Typen:</b> '+sources.map(n=>'<p><strong>'+esc(n.family)+'</strong>: '+esc(n.suitability)+'</p>').join(''):'');
 }
