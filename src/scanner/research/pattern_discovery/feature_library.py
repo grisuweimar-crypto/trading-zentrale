@@ -345,6 +345,13 @@ class FeatureLibrary:
                     f"threshold_not_registered_for_feature:{feature['feature_id']}:{threshold}"
                 )
             normalized_params["threshold"] = threshold
+        elif tid == "level_band":
+            # Versioned CY-05 v2 opt-in: exact bands, never post-hoc choices.
+            if (
+                feature["feature_id"] != "scanner.cycle"
+                or feature.get("level_band_boundaries") != [25, 50, 75]
+            ):
+                raise FeatureLibraryError("cycle_level_bands_not_preregistered")
 
         return {
             "feature_id": feature["feature_id"],
