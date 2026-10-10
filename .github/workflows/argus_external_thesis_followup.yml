@@ -1,0 +1,87 @@
+name: ARGUS External Thesis Follow-up
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 7 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/argus_external_followup.py"
+      - "argus-preview/observations/external_thesis_source_notes.json"
+      - ".github/workflows/argus_external_thesis_followup.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/argus_external_followup.py"
+      - "tests/test_argus_external_followup.py"
+      - ".github/workflows/argus_external_thesis_followup.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: argus-external-thesis-observations
+  cancel-in-progress: false
+
+jobs:
+  evaluate-external-theses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Check external thesis evaluation boundaries
+        run: python -m pytest -q tests/test_argus_external_followup.py
+      - name: Evaluate completed original-currency sessions
+        if: github.event_name != 'pull_request'
+        run: |
+          python scripts/argus_external_followup.py \
+            --notes argus-preview/observations/external_thesis_source_notes.json \
+            --output /tmp/external_thesis_latest.json
+      - name: Publish research-only archive on isolated branch
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch=external-thesis-research-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"; then
+            git switch -C "$branch" "origin/$branch"
+          else
+            git switch --orphan "$branch"
+            git rm -rf . >/dev/null || true
+          fi
+          python - <<'PY'
+          import json, pathlib, shutil
+          data=json.loads(pathlib.Path('/tmp/external_thesis_latest.json').read_text())
+          if data.get('schema_version')!='argus_external_thesis_followup_v1' or data.get('research_only') is not True:
+              raise RuntimeError('external_thesis_invalid_research_only_schema')
+          if data.get('scanner_changed') is not False or data.get('qm_changed') is not False:
+              raise RuntimeError('external_thesis_productive_boundary_violation')
+          base=pathlib.Path('artifacts/research/external_thesis')
+          archive=base/'snapshots'/f"{data['as_of']}.json"
+          if archive.exists():
+              old=json.loads(archive.read_text())
+              if old.get('source_notes_sha256')!=data.get('source_notes_sha256'):
+                  raise RuntimeError('same_date_source_note_revision_requires_new_review')
+              print('Research day already archived; preserving original observation.')
+          else:
+              archive.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile('/tmp/external_thesis_latest.json',archive)
+              shutil.copyfile(archive,base/'latest.json')
+          PY
+          git add artifacts/research/external_thesis
+          if git diff --cached --quiet; then
+            echo "No new completed research day."
+            exit 0
+          fi
+          git commit -m "research(external): publish independent dated thesis follow-up"
+          git push origin "HEAD:refs/heads/$branch"

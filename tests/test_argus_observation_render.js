@@ -12,7 +12,7 @@ const historical=JSON.parse(fs.readFileSync(path.join(root,'argus-preview/observ
 const candidates=JSON.parse(fs.readFileSync(path.join(root,'argus-preview/observations/external_thesis_watch_candidates.json'),'utf8'));
 const notes=JSON.parse(fs.readFileSync(path.join(root,'argus-preview/observations/external_thesis_source_notes.json'),'utf8'));
 
-async function render(privateNotes=null){
+async function render(privateNotes=null,followup=null){
  const els=new Map();
  const makeEl=()=>({innerHTML:'',textContent:'',disabled:false,addEventListener(){},appendChild(){},querySelectorAll(){return[];}});
  const host=makeEl();host.insertAdjacentHTML=()=>{};
@@ -29,6 +29,7 @@ async function render(privateNotes=null){
   if(url.includes('external_thesis_watch_reference.json'))value=historical;
   else if(url.includes('external_thesis_watch_candidates.json'))value=candidates;
   else if(url.includes('external_thesis_source_notes.json'))value=notes;
+  else if(url.includes('external_thesis/latest.json')){if(!followup)return {ok:false,status:404};value=followup;}
   else if(url.includes('candidate_elliott_current.json'))return {ok:false,status:404};
   else if(url.includes('history_metadata.json'))value=metadata;
   else if(url.includes('latest_scanner.csv'))value=scannerCSV;
@@ -80,5 +81,11 @@ async function render(privateNotes=null){
  assert.match(withPrivate,/Eaton/);
  assert.match(html,/Siemens/);
  assert.match(html,/Lululemon Athletica/);
+ const dated={schema_version:'argus_external_thesis_followup_v1',research_only:true,scanner_changed:false,provider_score_produced:false,as_of:'2026-10-10',claim_count:1,claims:[{symbol:'IFX.DE',publication_date:'2026-10-08',currency:'EUR',external_target:65,baseline:{date:'2026-10-07',close:60},windows:{'1':{state:'OBSERVED',date:'2026-10-09',return_pct_adjusted:2.5,target_touch:{seen:false,first_date:null,provider_success:null}},'5':{state:'NOT_YET_DUE'}}}]};
+ const tested=await render(null,dated);
+ assert.match(tested,/Was ist aus der fremden These geworden\?/);
+ assert.match(tested,/\+2,5 %/);
+ assert.match(tested,/Noch offen/);
+ assert.match(tested,/keine<\/b> bestätigte Trefferquote/);
  console.log('ARGUS cards: newsletter reasons, verified preview dates, prior analyses and private notes remain separate.');
 })().catch(err=>{console.error(err);process.exitCode=1;});
