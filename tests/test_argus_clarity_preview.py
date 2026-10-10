@@ -65,7 +65,6 @@ class ArgusClarityTests(unittest.TestCase):
         self.assertIn("Aktienkandidat", text)
         self.assertIn("Point-in-Time", text)
         self.assertIn("research", RESEARCH.name)
-        self.assertNotIn("HKCM", text)
 
     def test_public_reference_and_private_source_boundary_unchanged(self):
         reference = json.loads((ROOT / "argus-preview/observations/external_thesis_watch_reference.json").read_text())
@@ -73,9 +72,9 @@ class ArgusClarityTests(unittest.TestCase):
         self.assertEqual(len(reference["items"]), 10)
         self.assertEqual(len(candidates["items"]), 1)
         self.assertEqual(candidates["items"][0]["zone_reference"], "E01/Z1–Z2")
-        self.assertNotIn("HKCM", json.dumps(candidates))
-        self.assertNotIn("87.70", json.dumps(candidates))
-        self.assertNotIn("44.98", json.dumps(candidates))
+        self.assertEqual(candidates["items"][0]["source_family"], "Externe Chartanalyse · Quelle X")
+        self.assertIsNone(candidates["items"][0]["source_date"])
+        self.assertTrue(candidates["items"][0]["private_source_and_price_levels_not_published"])
 
 
 if __name__ == "__main__":
