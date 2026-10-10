@@ -53,10 +53,13 @@ def collect_yahoo(now: datetime) -> list[dict[str, str]]:
 
 def encode_prices(rows: list[dict[str, str]]) -> bytes:
     buf = io.StringIO(newline="")
-    writer = csv.DictWriter(buf, fieldnames=MARKET_COLUMNS, lineterminator="\n")
+    # Hash only economically relevant observed prices. The ingestion timestamp
+    # changes on retries and must not create a false immutable-source conflict.
+    fields = [key for key in MARKET_COLUMNS if key != "retrieved_at"]
+    writer = csv.DictWriter(buf, fieldnames=fields, lineterminator="\n")
     writer.writeheader()
     for row in sorted(rows, key=lambda x: x["date"]):
-        writer.writerow({key: row.get(key, "") for key in MARKET_COLUMNS})
+        writer.writerow({key: row.get(key, "") for key in fields})
     return buf.getvalue().encode("utf-8")
 
 
