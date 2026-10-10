@@ -15,6 +15,7 @@ from scanner.research.pattern_discovery.run_contract import (
 )
 from scanner.research.pattern_discovery.search_engine import (
     _atom_state, _build_atoms, load_search_contract,
+    run_discovery_search, verify_search_result,
 )
 
 LIB = Path("configs/pattern_discovery/feature_library_cycle_v2.json")
@@ -194,10 +195,19 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     shutil.copyfile(LIB, copied)
     fixture = tmp_path / "artifacts/research/cy05_fixture.json"
     fixture.parent.mkdir(parents=True, exist_ok=True)
-    fixture.write_text('{"synthetic":true}\n', encoding="utf-8")
+    # Unit-only input: artificial observations and fully matured outcomes.
+    synthetic_cycles = [10, 12, 14, 16, 18, 20, 22, 24, 10, 12, 14]
+    observations = [
+        {**row(value, day=i + 1), "outcomes": {
+            "return_5t_gt_0": {"value": 0.02, "end_at": "2026-10-20T12:00:00+00:00"},
+            "peer_excess_5t_gt_0": {"value": 0.01, "end_at": "2026-10-20T12:00:00+00:00"},
+        }}
+        for i, value in enumerate(synthetic_cycles)
+    ]
+    fixture.write_text(json.dumps(observations, sort_keys=True) + "\\n", encoding="utf-8")
     prereg = {
-        "declared_start_at": "2026-10-12T00:00:00+00:00",
-        "data_cutoff": "2026-10-11T23:59:00+00:00",
+        "declared_start_at": "2026-11-01T00:00:00+00:00",
+        "data_cutoff": "2026-10-31T23:59:00+00:00",
         "data_sources": [str(LIB), "artifacts/research/cy05_fixture.json"],
         "pit_rules": ["no_future_features", "missing_remains_missing", "no_retrofit_of_modern_features"],
         "universe_version": "synthetic-cy05-v1",
@@ -218,8 +228,8 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
             "minimum_baseline_lift": 0.01,
         },
         "search_budget": {
-            "max_tested_candidates_total": 20,
-            "max_tested_candidates_per_family": 10,
+            "max_tested_candidates_total": 400,
+            "max_tested_candidates_per_family": 200,
         },
         "candidate_budget": {
             "max_frozen_candidates_total": 5,
@@ -241,6 +251,32 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     assert first == second
     assert verify_run_manifest(first)["valid"] is True
     assert FeatureLibrary(LIB).validate_run_binding(first, repo_root=tmp_path)["valid"]
+    cycle_library = FeatureLibrary(LIB)
+    cy05_contract = load_search_contract(CONTRACT)
+    input_rows = json.loads(fixture.read_text(encoding="utf-8"))
+    first_result = run_discovery_search(
+        first, input_rows, repo_root=tmp_path,
+        feature_library=cycle_library, contract=cy05_contract,
+    )
+    repeat_result = run_discovery_search(
+        first, list(reversed(input_rows)), repo_root=tmp_path,
+        feature_library=cycle_library, contract=cy05_contract,
+    )
+    assert first_result == repeat_result
+    assert verify_search_result(first_result)["valid"]
+    assert first_result["feature_library_version"] == "PDL-FEATURE-LIBRARY-CYCLE-v2"
+    combinations = [
+        {(c["transformation_id"], c["state"]) for c in candidate["conditions"]}
+        for candidate in first_result["candidates"]
+        if len(candidate["conditions"]) == 2
+    ]
+    assert any(
+        ("level_band", "LEVEL_LT_25") in states and ("change_direction", "UP") in states
+        for states in combinations
+    )
+    assert first_result["confirmation_data_used"] is False
+    assert first_result["l5_candidate_freeze_applied"] is False
+
     copied.write_text(copied.read_text(encoding="utf-8") + " ", encoding="utf-8")
     with pytest.raises(FeatureLibraryError, match="run_repo_feature_library_bytes_mismatch"):
         FeatureLibrary(LIB).validate_run_binding(first, repo_root=tmp_path)
