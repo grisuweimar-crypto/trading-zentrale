@@ -731,6 +731,10 @@ def run_discovery_search(
     verify_run_manifest(manifest)
     run_contract = dict(contract) if contract is not None else load_search_contract()
     library = feature_library or FeatureLibrary()
+    cy05_variant = run_contract.get("contract_variant") == "CYCLE-DIR-CY05-L3-v2"
+    cy05_library = library.version == "PDL-FEATURE-LIBRARY-CYCLE-v2"
+    if cy05_variant != cy05_library:
+        raise DiscoverySearchError("cy05_l2_l3_variant_binding_mismatch")
     library.validate_run_binding(manifest, repo_root=repo_root)
 
     prereg = manifest["preregistration"]
