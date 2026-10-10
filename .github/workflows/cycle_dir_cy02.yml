@@ -1,0 +1,41 @@
+name: CYCLE-DIR CY-02 PIT Cycle
+on:
+  pull_request:
+    paths:
+      - "src/scanner/data/enrich/cycle_oscillator.py"
+      - "src/scanner/data/enrich/yahoo_prices.py"
+      - "src/scanner/data/schema/cycle_quality.py"
+      - "src/scanner/app/build_watchlist.py"
+      - "src/scanner/reports/daily_research.py"
+      - "src/scanner/reports/research_views.py"
+      - "tests/test_cycle_oscillator_cy02.py"
+      - "docs/cycle_direction/**"
+      - ".github/workflows/cycle_dir_cy02.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cycle-pit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Compile affected scanner sources
+        run: python -m compileall -q src/scanner
+      - name: CY-02 plus CY-01 and research/history regression
+        run: |
+          python -m pytest -q \
+            tests/test_cycle_oscillator_cy02.py \
+            tests/test_cycle_quality_cy01.py \
+            tests/test_history_delta_completion.py \
+            tests/test_daily_research.py \
+            tests/test_research_views.py \
+            tests/test_recent_history.py \
+            tests/pattern_discovery/test_l2_feature_library.py \
+            tests/pattern_discovery/test_l3_search_engine.py

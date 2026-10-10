@@ -1,4 +1,4 @@
-"""CY-01: preserve cycle missingness without changing the oscillator formula.
+"""CY-01/02: preserve nullable cycle and versioned computation provenance.
 
 'VALID' means numeric/range-valid *recorded input*, not proven fresh price-bar
 lineage. The daily scanner does not recalculate this legacy field; CY-02 owns
@@ -63,6 +63,13 @@ def normalize_cycle_source(frame: pd.DataFrame) -> pd.DataFrame:
 
     source = pd.Series(source_name, index=index, dtype="string")
     source.loc[quality.eq("MISSING_SOURCE")] = "NONE"
+    # Keep the CY-02 calculation identity, rather than mislabelling computed
+    # values as legacy simply because the compatible input column is named
+    # 'Zyklus %'. Untrusted arbitrary source strings get no special status.
+    if "cycle_source" in frame.columns:
+        upstream = frame["cycle_source"].astype("string").str.strip()
+        computed = upstream.eq("YAHOO_PIT_CYCLE_V1").fillna(False)
+        source.loc[computed & quality.ne("MISSING_SOURCE")] = "YAHOO_PIT_CYCLE_V1"
     return pd.DataFrame(
         {"cycle": numeric, "cycle_quality": quality, "cycle_source": source},
         index=index,

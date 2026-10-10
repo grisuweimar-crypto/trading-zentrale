@@ -31,6 +31,8 @@ from typing import Any
 
 import pandas as pd
 
+from scanner.data.enrich.cycle_oscillator import calculate_cycle
+
 
 ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
@@ -295,12 +297,26 @@ def _compute_features(
     }
 
 
+def _cycle_currency(row: pd.Series) -> str:
+    for field in ("Currency", "currency", "Währung"):
+        value = row.get(field)
+        if value is not None and not pd.isna(value) and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _write_cycle_row(out: pd.DataFrame, idx: object, evidence: dict) -> None:
+    for field, value in evidence.items():
+        out.at[idx, field] = value
+
+
 def enrich_watchlist_with_yahoo(
     df: pd.DataFrame,
     *,
     benchmark_stock: str = "SPY",
     benchmark_crypto: str = "BTC-USD",
     enabled: bool | None = None,
+    as_of: datetime | None = None,
 ) -> tuple[pd.DataFrame, YahooEnrichReport]:
     """Enrich a watchlist table in-place (copy) using Yahoo Finance.
 
@@ -311,7 +327,9 @@ def enrich_watchlist_with_yahoo(
     if enabled is None:
         enabled = should_fetch_yahoo()
 
-    now = datetime.now(timezone.utc)
+    now = as_of or datetime.now(timezone.utc)
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("as_of must be timezone-aware")
     market_date = now.date().isoformat()
 
     if not enabled:
@@ -331,6 +349,13 @@ def enrich_watchlist_with_yahoo(
             provider_frame_rows=0,
         )
         out = df.copy()
+        # Offline/provider-disabled runs cannot re-label yesterday's oscillator
+        # as a freshly computed value. No legacy 0/50 fallback.
+        for idx, row in out.iterrows():
+            sym = _pick_symbol(row)
+            evidence = calculate_cycle(None, symbol=sym, currency=_cycle_currency(row),
+                                       is_crypto=_looks_like_crypto_pair(sym), as_of=now)
+            _write_cycle_row(out, idx, evidence)
         if "MarketDate" not in out.columns:
             out["MarketDate"] = market_date
         return out, rep
@@ -390,11 +415,16 @@ def enrich_watchlist_with_yahoo(
     fetched = 0
     failed = 0
 
-    # Per-row enrichment (keep previous values on failures)
+    # On missing prices, retain legacy *price* features only. Cycle is always
+    # recomputed or explicitly unavailable; it is never recycled as fresh.
     for idx, sym in zip(out.index, row_symbols):
+        close, vol = _series_from_download(dl, sym) if sym else (None, None)
+        row = out.loc[idx]
+        evidence = calculate_cycle(close, symbol=sym, currency=_cycle_currency(row),
+                                   is_crypto=_looks_like_crypto_pair(sym), as_of=now)
+        _write_cycle_row(out, idx, evidence)
         if not sym:
             continue
-        close, vol = _series_from_download(dl, sym)
         if close is None or close.dropna().empty:
             failed += 1
             continue

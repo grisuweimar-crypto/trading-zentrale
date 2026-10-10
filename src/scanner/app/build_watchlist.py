@@ -466,10 +466,23 @@ def build_watchlist_outputs() -> None:
 
             df_raw = df_y
         else:
-            print("ℹ️ Yahoo Finance: fetch disabled (using existing values from watchlist.csv)")
+            # Keep offline runs deterministic but never advertise a reused
+            # oscillator as fresh research evidence.
+            df_raw, _ = enrich_watchlist_with_yahoo(df_raw, enabled=False)
+            print("ℹ️ Yahoo Finance: fetch disabled (cycle marked unavailable)")
     except Exception as e:
-        # Never break the pipeline on market fetch. Keep existing values.
-        print(f"⚠️ Yahoo Finance enrichment skipped: {e}")
+        # Prices may retain old input features, but cycle must fail closed.
+        # The entire provider operation is untrusted after an exception.
+        df_raw["Zyklus %"] = float("nan")
+        df_raw["cycle_quality"] = "STALE"
+        df_raw["cycle_source"] = "YAHOO_PIT_CYCLE_V1"
+        df_raw["cycle_quality_reason"] = "ENRICHMENT_EXCEPTION"
+        for field in ("cycle_formula_version", "cycle_price_source", "cycle_price_basis",
+                      "cycle_price_symbol", "cycle_currency", "cycle_last_bar",
+                      "cycle_as_of", "cycle_computed_at", "cycle_price_sha256",
+                      "cycle_eligible_bars"):
+            df_raw[field] = ""
+        print(f"⚠️ Yahoo Finance enrichment skipped; cycle STALE: {e}")
 
     # 2) RAW exportieren (ungeändert)
     raw_path = out_dir / "watchlist_full_raw.csv"
@@ -534,7 +547,11 @@ def build_watchlist_outputs() -> None:
     # Auditable current-run quality inventory (not a historical repair).
     cycle_health_columns = [
         c for c in ("asset_id", "symbol", "YahooSymbol", "Zyklus %", "cycle",
-                    "cycle_quality", "cycle_source") if c in df.columns
+                    "cycle_quality", "cycle_source", "cycle_formula_version",
+                    "cycle_price_source", "cycle_price_basis", "cycle_price_symbol",
+                    "cycle_currency", "cycle_last_bar", "cycle_as_of",
+                    "cycle_computed_at", "cycle_price_sha256",
+                    "cycle_eligible_bars", "cycle_quality_reason") if c in df.columns
     ]
     to_csv_safely(df.loc[:, cycle_health_columns],
                   reports_dir / "cycle_quality.csv", index=False)
