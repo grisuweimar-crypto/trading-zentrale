@@ -306,6 +306,10 @@ def _cycle_currency(row: pd.Series) -> str:
 
 
 def _write_cycle_row(out: pd.DataFrame, idx: object, evidence: dict) -> None:
+    # pandas 2.x rejects decimal oscillator values in an int64 source field.
+    # Explicitly widen only the legacy-compatible cycle input, never scores.
+    if "Zyklus %" in out.columns and not pd.api.types.is_float_dtype(out["Zyklus %"]):
+        out["Zyklus %"] = pd.to_numeric(out["Zyklus %"], errors="coerce").astype(float)
     for field, value in evidence.items():
         out.at[idx, field] = value
 
