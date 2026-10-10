@@ -76,6 +76,8 @@ class YahooEnrichReport:
     market_date: str
     provider_frame_sha256: str | None
     provider_frame_rows: int
+    provider_fetch_started_at_utc: str | None = None
+    provider_fetch_completed_at_utc: str | None = None
 
     def to_text(self) -> str:
         lines = []
@@ -94,6 +96,9 @@ class YahooEnrichReport:
         lines.append(f"regime_crypto:    {self.market_regime_crypto} (trend200={_fmt(self.market_trend200_crypto)})")
         lines.append(f"provider_frame_sha256: {self.provider_frame_sha256 or '—'}")
         lines.append(f"provider_frame_rows: {self.provider_frame_rows}")
+        lines.append(f"provider_fetch_started_at_utc: {self.provider_fetch_started_at_utc or '—'}")
+        lines.append(f"provider_fetch_completed_at_utc: {self.provider_fetch_completed_at_utc or '—'}")
+        lines.append("Source receipt: CLIENT CLOCK + DATAFRAME HASH ONLY; NOT PROVIDER-SIGNED OR PIT CERTIFIED")
         lines.append("")
         lines.append("Note: Per-symbol failures keep previous values from watchlist.csv.")
         return "\n".join(lines).strip() + "\n"
@@ -405,6 +410,7 @@ def enrich_watchlist_with_yahoo(
     all_dl = sorted({*symbols_u, benchmark_stock, benchmark_crypto})
 
     # Download 1y daily bars (auto_adjust gives consistent close)
+    provider_fetch_started_at_utc = datetime.now(timezone.utc).isoformat()
     dl = yf.download(
         tickers=all_dl,
         period="1y",
@@ -415,6 +421,7 @@ def enrich_watchlist_with_yahoo(
         progress=False,
     )
 
+    provider_fetch_completed_at_utc = datetime.now(timezone.utc).isoformat()
     provider_frame_sha256 = _frame_digest(dl)
     provider_frame_rows = int(len(dl))
 
@@ -499,6 +506,8 @@ def enrich_watchlist_with_yahoo(
         market_date=market_date,
         provider_frame_sha256=provider_frame_sha256,
         provider_frame_rows=provider_frame_rows,
+        provider_fetch_started_at_utc=provider_fetch_started_at_utc,
+        provider_fetch_completed_at_utc=provider_fetch_completed_at_utc,
     )
     out.attrs["cycle_input_bars"] = cycle_input_bars
     return out, rep
