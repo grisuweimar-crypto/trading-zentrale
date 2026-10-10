@@ -20,6 +20,7 @@ from scanner.research.pattern_discovery.search_engine import (
 
 LIB = Path("configs/pattern_discovery/feature_library_cycle_v2.json")
 CONTRACT = Path("configs/pattern_discovery/l3_search_contract_cycle_v2.json")
+DESIGN = Path("configs/cycle_direction/cy05_preregistered_design_v1.json")
 
 
 def feature_use(transform="level_band", params=None):
@@ -196,6 +197,9 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     copied_contract = tmp_path / CONTRACT
     copied_contract.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(CONTRACT, copied_contract)
+    copied_design = tmp_path / DESIGN
+    copied_design.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(DESIGN, copied_design)
     fixture = tmp_path / "artifacts/research/cy05_fixture.json"
     fixture.parent.mkdir(parents=True, exist_ok=True)
     # Unit-only input: artificial observations and fully matured outcomes.
@@ -211,7 +215,7 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     prereg = {
         "declared_start_at": "2026-11-01T00:00:00+00:00",
         "data_cutoff": "2026-10-31T23:59:00+00:00",
-        "data_sources": [str(LIB), str(CONTRACT), "artifacts/research/cy05_fixture.json"],
+        "data_sources": [str(LIB), str(CONTRACT), str(DESIGN), "artifacts/research/cy05_fixture.json"],
         "pit_rules": ["no_future_features", "missing_remains_missing", "no_retrofit_of_modern_features"],
         "universe_version": "synthetic-cy05-v1",
         "feature_library_version": "PDL-FEATURE-LIBRARY-CYCLE-v2",
@@ -302,6 +306,18 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
             first, input_rows, repo_root=tmp_path,
             feature_library=cycle_library, contract=cy05_contract,
         )
+
+    # Restore the L3 policy and verify that altering just the frozen A-D
+    # design document (without changing its L1 hash) stops the research run.
+    shutil.copyfile(CONTRACT, copied_contract)
+    copied_design.write_text(copied_design.read_text(encoding="utf-8") + " ",
+                             encoding="utf-8")
+    with pytest.raises(DiscoverySearchError, match="cy05_l1_frozen_inputs_changed"):
+        run_discovery_search(
+            first, input_rows, repo_root=tmp_path,
+            feature_library=cycle_library, contract=cy05_contract,
+        )
+    shutil.copyfile(DESIGN, copied_design)
 
     copied.write_text(copied.read_text(encoding="utf-8") + " ", encoding="utf-8")
     with pytest.raises(FeatureLibraryError, match="run_repo_feature_library_bytes_mismatch"):
