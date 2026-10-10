@@ -193,6 +193,9 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     copied = tmp_path / LIB
     copied.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(LIB, copied)
+    copied_contract = tmp_path / CONTRACT
+    copied_contract.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(CONTRACT, copied_contract)
     fixture = tmp_path / "artifacts/research/cy05_fixture.json"
     fixture.parent.mkdir(parents=True, exist_ok=True)
     # Unit-only input: artificial observations and fully matured outcomes.
@@ -208,7 +211,7 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     prereg = {
         "declared_start_at": "2026-11-01T00:00:00+00:00",
         "data_cutoff": "2026-10-31T23:59:00+00:00",
-        "data_sources": [str(LIB), "artifacts/research/cy05_fixture.json"],
+        "data_sources": [str(LIB), str(CONTRACT), "artifacts/research/cy05_fixture.json"],
         "pit_rules": ["no_future_features", "missing_remains_missing", "no_retrofit_of_modern_features"],
         "universe_version": "synthetic-cy05-v1",
         "feature_library_version": "PDL-FEATURE-LIBRARY-CYCLE-v2",
@@ -281,6 +284,24 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     )
     assert first_result["confirmation_data_used"] is False
     assert first_result["l5_candidate_freeze_applied"] is False
+    # Existing frozen L1 fingerprints forbid any post-registration L3
+    # search-policy replacement, including contract-variant substitutions.
+    altered_contract = deepcopy(cy05_contract)
+    altered_contract["atom_generation"]["included_transformations"] = [
+        "level_band"
+    ]
+    with pytest.raises(DiscoverySearchError, match="cy05_l3_contract_parameter_mismatch"):
+        run_discovery_search(
+            first, input_rows, repo_root=tmp_path,
+            feature_library=cycle_library, contract=altered_contract,
+        )
+    copied_contract.write_text(copied_contract.read_text(encoding="utf-8") + " ",
+                               encoding="utf-8")
+    with pytest.raises(DiscoverySearchError, match="cy05_l3_contract_bytes_not_frozen"):
+        run_discovery_search(
+            first, input_rows, repo_root=tmp_path,
+            feature_library=cycle_library, contract=cy05_contract,
+        )
 
     copied.write_text(copied.read_text(encoding="utf-8") + " ", encoding="utf-8")
     with pytest.raises(FeatureLibraryError, match="run_repo_feature_library_bytes_mismatch"):
