@@ -1,0 +1,47 @@
+name: CYCLE-DIR Real History PIT Eligibility Audit
+on:
+  pull_request:
+    paths:
+      - "scripts/audit_cycle_existing_history.py"
+      - "tests/test_cycle_history_eligibility_audit.py"
+      - "docs/cycle_direction/**"
+      - ".github/workflows/cycle_dir_history_eligibility.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile script, regression for proof and corrupted histories
+        run: |
+          python -m compileall -q scripts/audit_cycle_existing_history.py
+          python -m pip install -e ".[test]"
+          python -m pytest -q tests/test_cycle_history_eligibility_audit.py
+      - name: Recalculate hashes and inventory all published historical CSVs
+        run: |
+          python scripts/audit_cycle_existing_history.py \
+            --root . --output /tmp/cycle-dir-history-pit-eligibility.json
+      - name: Require explicit no-research release, preserve originals
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          doc = json.loads(Path("/tmp/cycle-dir-history-pit-eligibility.json").read_text())
+          assert len(doc["files"]) == 4
+          assert all(f["rows"] > 0 for f in doc["files"])
+          assert doc["cy03"]["manifest_verified_sha256"] is True
+          assert doc["cy03"]["research_eligible"] == 0
+          assert doc["global_research_cycle_eligible"] == 0
+          assert doc["positive_alpha_or_trading_validated"] is False
+          assert doc["gate_status"] == "BLOCKED_NO_EXTERNALLY_RELEASED_CYCLE_HISTORY"
+          print("CY-03 source-research gate: BLOCKED, old history untouched")
+          PY
+          git diff --exit-code -- artifacts/
