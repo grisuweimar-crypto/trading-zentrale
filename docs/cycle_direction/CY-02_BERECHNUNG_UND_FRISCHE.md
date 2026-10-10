@@ -3,63 +3,85 @@
 **Plan-ID:** CYCLE-DIR-2026-10-09-v1 · **Paket:** ausschließlich CY-02  
 **Basis:** main e77eb4082d04e9269a0fb5120259ecc9bb76109d, 10.10.2026  
 **Branch:** feat/cycle-dir-cy02-pit-oscillator-20261010  
-**Status:** IN_ARBEIT — Implementierung ist bis zum realen CI- und Veröffentlichungsnachweis ein Kandidat; keine fachliche bzw. empirische Freigabe vorausgesetzt.
+**Status:** **FERTIG_TECHNISCH (PR-Kandidat) / NICHT_FREIGEGEBEN (fachlich)**. 94 Tests grün auf `7d71805c81d0`; echte Preis-/Währungs-/Listing- und Publikationsprüfung nach Merge noch ausstehend. Keine empirische Freigabe.
 
 ## 1. Bestandsaufnahme und Abhängigkeiten
 
-CY-00 (PR #259) hat anhand der Rohdaten vom 08.10.2026 den Pfad von \`Zyklus %\` über \`build_watchlist.py\`, \`cycle\`, die aktuellen Research-Views, History und Pattern-L2/L3 dokumentiert. CY-01 (PR #260; main HEAD e77eb408) beseitigte die Imputation von 80 Nullen und korrigierte Quality/Source und Anzeige. Die 80 imputierten Nullen und drei unbewiesenen expliziten Nullen vom 08.10.2026 liegen in einer separaten Quarantänemaske. CY-03 muss die historische Research-Eignung weiter absichern.
+CY-00 (PR #259) hat anhand der Rohdaten vom 08.10.2026 den Pfad von `Zyklus %` über `build_watchlist.py`, `cycle`, die aktuellen Research-Views, History und Pattern-L2/L3 dokumentiert. CY-01 (PR #260; main HEAD e77eb408) beseitigte die Imputation von 80 Nullen und korrigierte Quality/Source und Anzeige. Die 80 imputierten Nullen und drei unbewiesenen expliziten Nullen vom 08.10.2026 liegen in einer separaten Quarantänemaske. CY-03 muss die historische Research-Eignung weiter absichern.
 
-**Quellenbeweis bisher:** \`src/scanner/data/enrich/yahoo_prices.py\` führte im produktiven \`run_daily\`-Pfad Yahoo-\`1d\`/\`auto_adjust=True\` für Preise, Trend200, RS3M und Risiko aus. \`Zyklus %\` wurde damit **nicht** neu berechnet. Die alte \`legacy/market/cycle.py\`-Funktion (SMA20/detrended/40er Fenster, historische 50-Fallbacks) ist **nicht** als aktiver Quellcode für bestehende Werte nachgewiesen. Frühere numerisch gültige Quellenwerte bleiben unbestätigte **LEGACY_BEOBACHTUNGEN** und werden nicht nachträglich als neue Formel etikettiert.
+**Quellenbeweis bisher:** `src/scanner/data/enrich/yahoo_prices.py` führte im produktiven `run_daily`-Pfad Yahoo-`1d`/`auto_adjust=True` für Preise, Trend200, RS3M und Risiko aus. `Zyklus %` wurde damit **nicht** neu berechnet. Die alte `legacy/market/cycle.py`-Funktion (SMA20/detrended/40er Fenster, historische 50-Fallbacks) ist **nicht** als aktiver Quellcode für bestehende Werte nachgewiesen. Frühere numerisch gültige Quellenwerte bleiben unbestätigte **LEGACY_BEOBACHTUNGEN** und werden nicht nachträglich als neue Formel etikettiert.
 
 ## 2. Neue, eigenständige Spezifikation
 
 | Eigenschaft | Deterministischer CY-02-Vertrag |
 |---|---|
-| Formelversion | \`cycle_detrended_sma20_range40_v1\` |
-| Quellenkennung | \`YAHOO_PIT_CYCLE_V1\` |
-| Preisquelle | \`yfinance.download\`, YahooSymbol/handelbare Original-Notierung |
-| Frequenz/Basis | 1 Tagesbar pro Session, \`auto_adjust=True\`, \`Close\`, **keine Währungsumrechnung** |
-| Formel | \`d[i] = Close[i] - SMA20[i]\`; letzter Wert innerhalb Min/Max der **letzten 40 d[i]** auf 0–100 skaliert |
+| Formelversion | `cycle_detrended_sma20_range40_v1` |
+| Quellenkennung | `YAHOO_PIT_CYCLE_V1` |
+| Preisquelle | `yfinance.download`, YahooSymbol/handelbare Original-Notierung |
+| Frequenz/Basis | 1 Tagesbar pro Session, `auto_adjust=True`, `Close`, **keine Währungsumrechnung** |
+| Formel | `d[i] = Close[i] - SMA20[i]`; letzter Wert innerhalb Min/Max der **letzten 40 d[i]** auf 0–100 skaliert |
 | Mindesthistorie | **60** abgeschlossene Tagesbars (letzte 60, ohne Imputation); damit alle letzten 40 d[i] definiert |
-| Konstantenfall | \`INVALID_VALUE\` / kein numerischer Wert (nicht 50) |
-| Ausfälle | \`STALE\`, \`MISSING_SOURCE\`, \`INSUFFICIENT_HISTORY\`, \`INVALID_VALUE\`, numerisch nur bei \`VALID\` |
+| Konstantenfall | `INVALID_VALUE` / kein numerischer Wert (nicht 50) |
+| Ausfälle | `STALE`, `MISSING_SOURCE`, `INSUFFICIENT_HISTORY`, `INVALID_VALUE`, numerisch nur bei `VALID` |
 | Clamping/Rundung | [0,100], auf vier Nachkommastellen; echte 0/50/100 möglich |
 | Bar-Cutoff | Bar-**Sessiondatum strikt kleiner als UTC-Kalendertag des Scans**; heutige/in Zukunft datierte Bars werden verworfen |
 | Frische Aktien | letzter verwendeter Bar höchstens drei zurückliegende Werktage (Mo–Fr), Wochenende berücksichtigt; unbekannter Feiertagskalender bleibt Einschränkung |
 | Frische Kryptos | letzte vollständig abgelaufene UTC-Tagesbar **gestern**; keine Wochenendpause |
 | Datenlücken | Gap zwischen zwei verwendeten Bars größer als fünf Kalendertage (Aktien) oder ein Tag (Krypto) → blockiert |
-| Split-/Diskontinuitätskontrolle | \`auto_adjust=True\`, zusätzlich 4x-/0,25x-Sprung als Sperre mit Reviewgrund; kein vollständiger Corporate-Actions-PIT-Beweis |
+| Split-/Diskontinuitätskontrolle | `auto_adjust=True`, zusätzlich 4x-/0,25x-Sprung als Sperre mit Reviewgrund; kein vollständiger Corporate-Actions-PIT-Beweis |
 
 Die neue Berechnung kann aus numerischer Sicht ähnlich wie die Legacy-Formel sein. **Sie ist nicht historisch oder semantisch identisch nachgewiesen.** Für CY-03 dürfen alte und neue Werte nicht ohne Formel-/Quellenprüfung zu Deltas verbunden werden.
 
 ## 3. Herkunft pro Wert und Ausgabe
 
-Die Berechnung liefert \`Zyklus %\` und Qualitätsfelder \`cycle_quality\`, \`cycle_source\`, \`cycle_quality_reason\`, dazu:
+Die Berechnung liefert `Zyklus %` und Qualitätsfelder `cycle_quality`, `cycle_source`, `cycle_quality_reason`, dazu:
 
-- \`cycle_formula_version\`, \`cycle_price_source\`, \`cycle_price_basis\`, \`cycle_price_symbol\`, \`cycle_currency\`
-- \`cycle_last_bar\` (Yahoo-Tages-**Sessiondatum**), \`cycle_as_of\` (UTC-Scanzeit), \`cycle_computed_at\` (UTC)
-- \`cycle_price_sha256\` (SHA256 von Formel, Basis, YahooSymbol, angegebener Originalwährung und **genau 60 verwendeten datierten Schlusskursen**), \`cycle_eligible_bars\`.
+- `cycle_formula_version`, `cycle_price_source`, `cycle_price_basis`, `cycle_price_symbol`, `cycle_currency`
+- `cycle_last_bar` (Yahoo-Tages-**Sessiondatum**), `cycle_as_of` (UTC-Scanzeit), `cycle_computed_at` (UTC)
+- `cycle_price_sha256` (SHA256 von Formel, Basis, YahooSymbol, angegebener Originalwährung und **genau 60 verwendeten datierten Schlusskursen**), `cycle_eligible_bars`.
 
-Neue Daten werden im aktuellen Watchlist-Datenfluss weitergereicht und im neu erweiterten **Current-/Research-View-Vertrag** berücksichtigt; der aktuelle \`artifacts/reports/cycle_quality.csv\` bleibt ein Prüfartefakt, dessen Spalten ebenfalls erweitert werden. \`normalize_cycle_source\` erhält die **neue** Quellkennung; aus einer numerisch gültigen Legacy-Spalte wird dadurch nicht ohne Berechnung ein angeblich aktueller Wert.
+Neue Daten werden im aktuellen Watchlist-Datenfluss weitergereicht und im neu erweiterten **Current-/Research-View-Vertrag** berücksichtigt; der aktuelle `artifacts/reports/cycle_quality.csv` bleibt ein Prüfartefakt, dessen Spalten ebenfalls erweitert werden. `normalize_cycle_source` erhält die **neue** Quellkennung; aus einer numerisch gültigen Legacy-Spalte wird dadurch nicht ohne Berechnung ein angeblich aktueller Wert.
 
 **Ausfallverhalten:** Bei ausgeschaltetem Datenabruf, fehlenden Provider-Daten oder Ausnahme wird der alte Cycle **nicht** als frisch weitergereicht. Die restlichen alten Preis-Features bleiben gemäß bestehendem Enrichment-Verhalten unberührt; die Zyklus-Evidence wird ausdrücklich blockiert.
 
 ## 4. Grenzen und verbleibende Prüfungen
 
 1. Yahoo-Tagesindizes bezeichnen Sessions, keine signierten tatsächlichen Börsenschluss- oder Publikationszeitpunkte. Der UTC-Vortags-Cutoff ist **bewusst konservativ**, kann jüngste bereits abgeschlossene europäische Sessions bis zum nächsten UTC-Tag auslassen. Keine heutige Bar wird bloß wegen Download-Verfügbarkeit als vollständig angenommen.
-2. Der Yahoo-Batch liefert keine durchgängig unabhängig bestätigte Handelsplatz-/Quote-Währung im verwendeten Frame. Die originale \`Currency\`/Symbol-Angabe wird mitgeführt, nicht extern verifiziert. Alias-Duplikate werden durch bestehende Canonical-/Dedup-Logik verwaltet; eine unabhängige Listing-/Currency-Provider-Verifikation ist **UNVERIFIZIERT** und darf nicht als Qualitätsbeweis ausgegeben werden.
+2. Der Yahoo-Batch liefert keine durchgängig unabhängig bestätigte Handelsplatz-/Quote-Währung im verwendeten Frame. Die originale `Currency`/Symbol-Angabe wird mitgeführt, nicht extern verifiziert. Alias-Duplikate werden durch bestehende Canonical-/Dedup-Logik verwaltet; eine unabhängige Listing-/Currency-Provider-Verifikation ist **UNVERIFIZIERT** und darf nicht als Qualitätsbeweis ausgegeben werden.
 3. Split-/Dividend-adjustierte aktuelle Yahoo-Preise sind nicht zwangsläufig historische PIT-Preise, die damals schon in dieser Adjustment-Version verfügbar waren. **Keine rückwirkende Rekonstruktion, keine alten Snapshot-Rewrites**.
 4. Ein grün getesteter Algorithmus ist keine profitable Prognose; wissenschaftliche Muster- und Forward-Validierung finden erst in CY-05 bis CY-08 statt. Score, Opportunity, Risk, Confidence, Elliott, Selection, Timing, Decision, Portfolio-Action und Execution werden inhaltlich nicht geändert.
 5. Vor fachlichem Abschluss erforderlich: erfolgreiche CY-02-PR-CI, Review der Feld-/Quelle-Semantik, ein **echter vollständig publizierter Scannerlauf nach Integration** mit numerischen Qualitäts-Counts, SHA-/Bar-/as_of-Nachweis, Regression auf Score/Decision und Nachweis, dass kein Live-Wert als historisch gültige Beobachtung fehlklassifiziert wird. Baseline-Bug #264 bleibt eigenständig und darf nicht als mit CY-02 erledigt bezeichnet werden.
 
 ## 5. Tests und Freigabeprotokoll
 
-Neue Testdatei: \`tests/test_cycle_oscillator_cy02.py\`. Feste Goldenkursreihe (Erwartung 7,2258), doppelte Eingaben, konstante Reihe, zu wenige Bars, NaN/negativ/unendlich, Gap und Duplicate, Splitverdacht, Provider-Ausfall, UTC-Bargrenze, Aktien/7-Tage-Krypto, Ausfall- und Währungskennzeichnung, Yahoo-Pipeline-Integration, Research-Feldfortpflanzung.
+Neue Testdatei: `tests/test_cycle_oscillator_cy02.py`. Feste Goldenkursreihe (Erwartung 7,2258), doppelte Eingaben, konstante Reihe, zu wenige Bars, NaN/negativ/unendlich, Gap und Duplicate, Splitverdacht, Provider-Ausfall, UTC-Bargrenze, Aktien/7-Tage-Krypto, Ausfall- und Währungskennzeichnung, Yahoo-Pipeline-Integration, Research-Feldfortpflanzung.
 
-GitHub-CI: \`.github/workflows/cycle_dir_cy02.yml\`, inklusive CY-01 und bestehender History-/Research-/L2-/L3-Regressionssuiten.
+GitHub-CI: `.github/workflows/cycle_dir_cy02.yml`, inklusive CY-01 und bestehender History-/Research-/L2-/L3-Regressionssuiten.
 
 **Befunde nach PR-CI und Live-Prüfung ergänzen:** konkrete Run-ID, Commit-SHA, Testanzahlen, Probeasset, Cyclequalität/Lastbar/Hash, Ausnahmen, Vergleich der unveränderten Score-/Decision-Outputs.
 
 ## 6. Status / nächstes Paket
 
-Bis die Nachweise unter Abschnitt 5 vollständig vorliegen, **kein \`FERTIG_FACHLICH\`** und kein Merge allein wegen Code oder plausibler Formula. CY-03 darf erst auf der nachgewiesenen Version aufbauen. Das Repository-Paket enthält bewusst weder Historiereparatur noch Delta/UI, L2/L3-Muster-Promotion oder Scoring-Neubewertung.
+Bis die Nachweise unter Abschnitt 5 vollständig vorliegen, **kein `FERTIG_FACHLICH`** und kein Merge allein wegen Code oder plausibler Formula. CY-03 darf erst auf der nachgewiesenen Version aufbauen. Das Repository-Paket enthält bewusst weder Historiereparatur noch Delta/UI, L2/L3-Muster-Promotion oder Scoring-Neubewertung.
+
+## 7. Abnahmebericht 10.10.2026 (MESZ)
+
+**Ausgangs-HEAD:** `e77eb4082d04e9269a0fb5120259ecc9bb76109d` (nach CY-01). **Arbeitsbranch:** `feat/cycle-dir-cy02-pit-oscillator-20261010`. **PR:** [#266](https://github.com/grisuweimar-crypto/trading-zentrale/pull/266) (Draft, kein Merge in main).
+
+**Änderungen:** Neue Berechnungsquelle, Einbau Yahoo-Enrichment und Fail-closed-Ersatz, CY-01-Quellpräzedenz erweitert, neue Provenance in aktuelle Research-Views, CI + Unit-Tests. Erster Kandidat `cbeef70a2f70`; nach echtem Ersttest wurde die bisherige int64-`Zyklus %`-Spalte gegen Dezimalwerte abgesichert (`7d71805c81d0`).
+
+**Belegte Tests:**
+- Erstlauf [#38029547769](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029547769): 93 bestanden, **ein Fehler** durch int64-Quellspalte; nicht als grün umetikettiert.
+- Korrekturlauf [#38029618787](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618787): **94 passed**, 0 failed, Python-Compile erfolgreich. CY-02 + CY-01, History/Research, Pattern-L2/L3.
+- Unabhängige PR-CIs auf `7d71805c81d0`: [CY-01](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618802) erfolgreich, [BA-QM8](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618799) erfolgreich, [QM-B Historical Taxonomy](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618809) erfolgreich, [QM-B Observed Membership](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618810) erfolgreich.
+- Globale [Return Integrity Recheck](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618877): eigener späterer Status zu prüfen; die bekannten Baseline-Fehler aus [Issue #264](https://github.com/grisuweimar-crypto/trading-zentrale/issues/264) bleiben ein separates QM-Thema. Kein globaler Full-Suite-PASS behauptet.
+
+**Datenbasis der Goldentests:** synthetische 90 Tagesbars mit festem Schlusskursvektor `100 + 0.1*i + 3*sin(i*0.27)`; as_of `2026-10-10T07:00:00+00:00`; letzter zulässiger Bar `2026-10-09`; v1-Zyklus `7.2258`; SHA256-Replay geprüft. **Kein echtes Live-Snapshot, keine gehandelte Rendite, kein empirischer Alpha-Nachweis.**
+
+**Abnahmetrennung:** Die deterministische Berechnung und die CY-02-relevante Testkette sind **technisch geprüft**. Fachliche Freigabe **noch nicht erteilt**: Das derzeitige Yahoo-Batch belegt den Börsen-/Währungsstatus nicht unabhängig, verwendet Sessiondatei statt verifiziertem Bar-Schlusszeitpunkt; ein produktiver Post-Merge-Runtimebeleg mit Asset-/Qualitätszählung fehlt.
+
+**Nicht geändert:** altes `latest_scanner.csv`, `score_history.csv`, `history_recent.csv`, `history_analysis.csv`, alte Exclusion-Maske, Scoring-Engine und Decision/Portfolio/Execution; keine L2/L3-Atomisierung oder UI-Richtung.
+
+**Blocker:** CY02-B01: Unabhängige Provider-Handelsplatz-/Währungs-/Sessionbestätigung noch nicht eingeführt; CY02-B02: noch kein echter neuer publizierter Scannerlauf auf dem freizugebenden Stand; globale QM-Baseline #264 separater Blocker für QM-Promotion, nicht zwangsläufig für den CY-02-Code.
+
+**Nächster exakter Schritt:** PR #266 fachlich auf Quellen-/Close-Zeitpunkt und Listing prüfen; ggf. fehlende unabhängige Verifikation ergänzt testen. Anschließend PR erst nach grünem CI mergen und **danach** einen echten Autopilot-Scannerlauf gegen die veröffentlichten Felder (`cycle_quality`, `cycle_formula_version`, `cycle_price_sha256`, `cycle_last_bar`, `cycle_as_of`) auditiert vergleichen. Erst dann Status `FERTIG_FACHLICH` erwägen; CY-03 beginnt danach.
