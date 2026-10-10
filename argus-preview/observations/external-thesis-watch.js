@@ -205,6 +205,45 @@ const readableDegree=x=>({minor:'kleiner Wellengrad',intermediate:'mittlerer Wel
 const readablePattern=x=>({impulse:'Impulsfolge',zigzag:'Zickzack-Korrektur',flat:'Flache Korrektur',triangle:'Dreiecks-Korrektur',double_three:'Mehrteilige Korrektur (W–X–Y)',triple_three:'Komplexe Korrektur (W–X–Y–X–Z)',leading_diagonal:'Einleitende Diagonale',ending_diagonal:'Abschlussdiagonale'})[x]||'Wellenstruktur nicht näher eingeordnet';
 const readableStage=x=>({wave_2_complete:'zweite Welle strukturell abgeschlossen',wave_3_complete:'dritte Welle strukturell abgeschlossen',wave_4_complete:'vierte Welle strukturell abgeschlossen',wave_5_complete:'fünfte Welle strukturell abgeschlossen'})[x]||'Wellenphase nicht allgemein übersetzt';
 const metric=(name,value,hint)=>'<div class="etwMetric"><span>'+esc(name)+'</span><b>'+esc(value)+'</b><small>'+esc(hint)+'</small></div>';
+const num=x=>new Intl.NumberFormat('de-DE',{minimumFractionDigits:1,maximumFractionDigits:2}).format(x);
+function externalTrack(item){
+ const sources=item.notes.filter(n=>n.source_kind==='observed_newsletter');
+ if(!sources.length)return '';
+ const matching=(externalFollowup?.claims||[]).filter(x=>x.symbol===item.symbol);
+ if(!externalFollowup||!matching.length)
+  return '<div class="etwFollow"><h4>Was ist aus der fremden These geworden?</h4>'+
+   '<p>Der eigenständige Kursvergleich liegt noch nicht veröffentlicht vor. Die Quelle ist dokumentiert, aber nicht nachträglich als Treffer bewertet.</p></div>';
+ const record=matching.slice().sort((a,b)=>b.publication_date.localeCompare(a.publication_date))[0];
+ if(record.state==='PRICE_SOURCE_UNAVAILABLE')
+  return '<div class="etwFollow"><h4>Späterer Kursvergleich</h4><p>Für diese Aktie konnten noch keine verlässlichen Kursdaten in der Originalwährung bestätigt werden. Keine Ersatzwerte oder Trefferquote.</p></div>';
+ const windows=record.windows||{};
+ const cards=[1,5,10,20,40].map(h=>{
+  const w=windows[String(h)]||{};
+  const label=w.state==='OBSERVED'&&Number.isFinite(w.return_pct_adjusted)?
+   (w.return_pct_adjusted>0?'+':'')+num(w.return_pct_adjusted)+' %':
+   w.state==='NO_PREPUBLICATION_PRICE'?'Keine Basis':'Noch offen';
+  return '<div><b>+'+h+' Handelstage</b><small>'+esc(label)+'</small></div>';
+ }).join('');
+ const t0=record.baseline;
+ let target='';
+ const seen=[1,5,10,20,40].filter(h=>windows[String(h)]?.state==='OBSERVED');
+ if(record.external_target!=null&&seen.length){
+  const last=windows[String(seen[seen.length-1])];
+  const touch=last.target_touch;
+  target='<p class="etwAccuracy">Kursmarke des Anbieters: <b>'+num(record.external_target)+' '+
+    esc(record.currency)+'</b>. '+(touch?.seen?
+       'Bis zum letzten auswertbaren Prüftag am '+esc(formatDate(last.date))+' mindestens einmal berührt.':
+       'In den bisher vollständig geprüften Folgetagen nicht berührt.')+
+    ' Das ist <b>keine</b> bestätigte Trefferquote.</p>';
+ }
+ return '<div class="etwFollow"><h4>Was ist aus der fremden These geworden?</h4>'+
+   '<p><b>Vergleichsstand: '+esc(formatDate(externalFollowup.as_of))+'</b> · Veröffentlichung: '+
+   esc(formatDate(record.publication_date))+
+   (t0?' · Ausgangskurs vom '+esc(formatDate(t0.date))+': '+num(t0.close)+' '+esc(record.currency):' · Ausgangskurs fehlt')+
+   '</p><div class="etwFollowTrack">'+cards+'</div>'+target+
+   '<details><summary>Wie wird das gemessen?</summary><p>Startwert: letzter abgeschlossener Handelstag <b>vor</b> dem Veröffentlichungstag. Gezählt werden nur abgeschlossene Handelstage <b>danach</b>. Die Prozentwerte beruhen auf bereinigten Schlusskursen; eine Kursziel-Berührung auf Kursen der Originalwährung. Fehlende Prüftage bleiben offen.</p>'+
+   '<p>Die ursprünglichen Mails wurden erst später als Datensatz erfasst. Eine verbindliche Kursziel-Frist wurde nicht nachgewiesen. Daher kein Anbieter-Erfolgsurteil. Ein exakt zeitgleicher historischer Scanner-Snapshot wurde hier ebenfalls noch nicht verifiziert.</p></details></div>';
+}
 function card(item){
  const state=inScan(item.symbol);
  const status=state===null?'Zugehörigkeit ungeklärt':state?'Im aktuellen Scanner':'Außerhalb des Scanners';
@@ -257,7 +296,7 @@ function card(item){
  return '<article class="etwCard" aria-label="'+esc(item.name)+' – '+esc(item.symbol)+'"><div class="etwTop"><div><div class="etwName">'+esc(item.name)+'</div><div class="etwSym">'+esc(item.symbol)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
  historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
- noteHTML+ewHtml+'</article>';
+ noteHTML+externalTrack(item)+ewHtml+'</article>';
 }
 function render(){
  const all=merge();const newOnly=all.filter(x=>x.isNew);
