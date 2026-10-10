@@ -1,0 +1,463 @@
+{
+  "schema_version": "pattern_discovery_feature_library_v1",
+  "module": "pattern_discovery_lab",
+  "phase": "L2",
+  "name": "Feature Library — CY-05 opt-in level/direction",
+  "feature_library_version": "PDL-FEATURE-LIBRARY-CYCLE-v2",
+  "status": "experimental_research_contract_not_promoted",
+  "research_only": true,
+  "productive_integration_enabled": false,
+  "execution_allowed": false,
+  "purpose": "Opt-in CY-05 PIT-eligible cycle level/direction research; original L2 v1 remains immutable and is the default.",
+  "identity": {
+    "hash_algorithm": "sha256",
+    "canonical_json": true,
+    "source_repo_path": "configs/pattern_discovery/feature_library_cycle_v2.json"
+  },
+  "principles": {
+    "only_registered_features_are_usable": true,
+    "only_registered_transformations_are_usable": true,
+    "feature_versions_are_semantically_immutable": true,
+    "missing_historical_values_remain_unavailable": true,
+    "modern_features_may_not_be_retrofit_into_history": true,
+    "availability_is_evaluated_at_observation_as_of": true,
+    "thresholds_are_predeclared": true,
+    "elliott_is_not_registered_until_pit_safe_source_data_exists": true,
+    "cycle_research_release_from_cy03_required": true,
+    "cycle_lag_eligibility_required": true
+  },
+  "observation_contract": {
+    "as_of_field": "as_of",
+    "entity_field": "symbol",
+    "current_source": "artifacts/research/latest_scanner.csv",
+    "historical_source": "artifacts/research/history_analysis.csv",
+    "missing_policy": "UNAVAILABLE",
+    "historical_reconstruction_allowed": false
+  },
+  "transformations": [
+    {
+      "transformation_id": "raw",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "CONTINUOUS",
+        "BOOLEAN",
+        "CATEGORICAL"
+      ],
+      "required_parameters": [],
+      "history_requirement": "NONE",
+      "semantics": "Use the recorded point-in-time feature value without transformation."
+    },
+    {
+      "transformation_id": "delta_observations",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "CONTINUOUS"
+      ],
+      "required_parameters": [
+        "lag_observations"
+      ],
+      "allowed_lag_observations": [
+        1,
+        5,
+        10
+      ],
+      "history_requirement": "LAG_OBSERVATIONS",
+      "semantics": "Current recorded value minus the value from the predeclared prior scanner-observation lag."
+    },
+    {
+      "transformation_id": "change_direction",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "CONTINUOUS"
+      ],
+      "required_parameters": [
+        "lag_observations"
+      ],
+      "allowed_lag_observations": [
+        1,
+        5,
+        10
+      ],
+      "history_requirement": "LAG_OBSERVATIONS",
+      "semantics": "Direction of the point-in-time change over the predeclared scanner-observation lag; no magnitude threshold is tuned post hoc."
+    },
+    {
+      "transformation_id": "threshold_crossing",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "CONTINUOUS"
+      ],
+      "required_parameters": [
+        "threshold"
+      ],
+      "history_requirement": "ONE_PRIOR_OBSERVATION",
+      "semantics": "Crossing of an explicitly feature-registered threshold between the prior and current point-in-time observation."
+    },
+    {
+      "transformation_id": "state_transition",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "BOOLEAN",
+        "CATEGORICAL"
+      ],
+      "required_parameters": [],
+      "history_requirement": "ONE_PRIOR_OBSERVATION",
+      "semantics": "Recorded point-in-time change from the prior categorical or boolean state to the current state."
+    },
+    {
+      "transformation_id": "regime_context",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "CATEGORICAL"
+      ],
+      "required_parameters": [],
+      "history_requirement": "NONE",
+      "semantics": "Use a registered market-regime state only as contemporaneous point-in-time context."
+    },
+    {
+      "transformation_id": "level_band",
+      "transformation_version": "v1",
+      "allowed_semantic_types": [
+        "CONTINUOUS"
+      ],
+      "required_parameters": [],
+      "history_requirement": "NONE",
+      "semantics": "Predeclared 0<=cycle<25;25<=cycle<50;50<=cycle<75;75<=cycle<=100. Requires released CY-03 current observation."
+    }
+  ],
+  "features": [
+    {
+      "feature_id": "scanner.score",
+      "feature_version": "v1",
+      "source_field": "score",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Scanner composite score as recorded in the contemporaneous scanner snapshot; not a buy/sell recommendation.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.opportunity",
+      "feature_version": "v1",
+      "source_field": "opportunity",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Opportunity component recorded in the contemporaneous scanner snapshot.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.risk",
+      "feature_version": "v1",
+      "source_field": "risk",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Risk component recorded in the contemporaneous scanner snapshot.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.confidence",
+      "feature_version": "v1",
+      "source_field": "confidence",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Confidence value recorded in the contemporaneous scanner snapshot; it is not directional attractiveness.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.rs3m",
+      "feature_version": "v1",
+      "source_field": "rs3m",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Three-month relative-strength measure as recorded in the contemporaneous scanner snapshot.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.trend200",
+      "feature_version": "v1",
+      "source_field": "trend200",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Trend200 measure as recorded in the contemporaneous scanner snapshot.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction",
+        "threshold_crossing"
+      ],
+      "allowed_thresholds": [
+        0
+      ]
+    },
+    {
+      "feature_id": "scanner.cycle",
+      "feature_version": "v1",
+      "source_field": "cycle",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "CY-05 Cycle 0-100 from a verified, externally research-released CY-03 snapshot, NOT legacy scanner Cycle imputation.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction",
+        "threshold_crossing",
+        "level_band"
+      ],
+      "allowed_thresholds": [
+        25,
+        50,
+        75
+      ],
+      "level_band_boundaries": [
+        25,
+        50,
+        75
+      ]
+    },
+    {
+      "feature_id": "scanner.volatility",
+      "feature_version": "v1",
+      "source_field": "volatility",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Volatility measure stored in the scanner observation.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.drawdown",
+      "feature_version": "v1",
+      "source_field": "drawdown",
+      "semantic_type": "CONTINUOUS",
+      "semantics": "Drawdown measure stored in the scanner observation.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "delta_observations",
+        "change_direction"
+      ]
+    },
+    {
+      "feature_id": "scanner.r_code",
+      "feature_version": "v1",
+      "source_field": "r_code",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded R0-R5 downstream quality/regime class when historically stored; never reconstructed from modern values.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "state_transition"
+      ]
+    },
+    {
+      "feature_id": "scanner.score_status",
+      "feature_version": "v1",
+      "source_field": "score_status",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded scanner score-status state.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "state_transition"
+      ]
+    },
+    {
+      "feature_id": "scanner.trend_ok",
+      "feature_version": "v1",
+      "source_field": "trend_ok",
+      "semantic_type": "BOOLEAN",
+      "semantics": "Recorded TrendOK gate state.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "state_transition"
+      ]
+    },
+    {
+      "feature_id": "scanner.liquidity_ok",
+      "feature_version": "v1",
+      "source_field": "liquidity_ok",
+      "semantic_type": "BOOLEAN",
+      "semantics": "Recorded LiquidityOK gate state.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "state_transition"
+      ]
+    },
+    {
+      "feature_id": "market.regime_stock",
+      "feature_version": "v1",
+      "source_field": "market_regime_stock",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded contemporaneous stock-market regime.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "state_transition",
+        "regime_context"
+      ]
+    },
+    {
+      "feature_id": "market.regime_crypto",
+      "feature_version": "v1",
+      "source_field": "market_regime_crypto",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded contemporaneous crypto-market regime.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw",
+        "state_transition",
+        "regime_context"
+      ]
+    },
+    {
+      "feature_id": "segment.pillar_primary",
+      "feature_version": "v1",
+      "source_field": "pillar_primary",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded internal primary pillar/segment assignment.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw"
+      ]
+    },
+    {
+      "feature_id": "segment.cluster_official",
+      "feature_version": "v1",
+      "source_field": "cluster_official",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded official cluster assignment.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw"
+      ]
+    },
+    {
+      "feature_id": "segment.sector",
+      "feature_version": "v1",
+      "source_field": "sector",
+      "semantic_type": "CATEGORICAL",
+      "semantics": "Recorded sector classification.",
+      "availability": {
+        "mode": "OBSERVED_ROW_FIELD",
+        "available_from_semantics": "CURRENT_OBSERVATION_AS_OF",
+        "historical_reconstruction_allowed": false
+      },
+      "allowed_transformations": [
+        "raw"
+      ]
+    }
+  ],
+  "explicitly_unregistered": [
+    {
+      "family": "elliott_vnext",
+      "reason": "No PIT-safe Elliott source field is present in the current latest_scanner research view. Registration requires a later reviewed library version."
+    },
+    {
+      "family": "external_evidence",
+      "reason": "External evidence families require their own explicit methodological and PIT approval before admission to Pattern Discovery."
+    },
+    {
+      "family": "arbitrary_thresholds",
+      "reason": "Thresholds not explicitly registered on a feature are forbidden to prevent post-hoc tuning."
+    }
+  ],
+  "boundaries": {
+    "feature_values_reconstructed_here": false,
+    "pattern_conditions_generated_here": false,
+    "pattern_search_executed_here": false,
+    "outcomes_inspected_here": false,
+    "productive_scanner_or_decision_semantics_changed": false
+  }
+}
