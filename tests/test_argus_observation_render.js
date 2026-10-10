@@ -25,6 +25,11 @@ async function render(privateNotes=null,followup=null){
  const metadata={latest_run_complete:true,validation:{status:'ok'},snapshot_id:'snapshot-test',
   as_of:'2026-10-09',latest_scanner:{row_count:1,symbol_count:1}};
  const fetch=async url=>{
+  // Simulate an inaccessible cross-origin raw host for editorial source files.
+  // Same-origin GitHub Pages copies must still render all rationale texts.
+  if(url.startsWith('https://raw.githubusercontent.com/')&&
+     /external_thesis_(watch_reference|watch_candidates|source_notes)\.json/.test(url))
+     return {ok:false,status:503};
   let value;
   if(url.includes('external_thesis_watch_reference.json'))value=historical;
   else if(url.includes('external_thesis_watch_candidates.json'))value=candidates;
@@ -44,17 +49,17 @@ async function render(privateNotes=null,followup=null){
  vm.runInNewContext(code,{document,localStorage,fetch,URL,AbortController,setTimeout,clearTimeout,console},
   {filename:'external-thesis-watch.js',timeout:3000});
  // refresh() fetches four resources sequentially; wait for the actual rendered state.
- for(let i=0;i<40&&!els.get('etwList')?.innerHTML.includes('Infineon');i++){
+ for(let i=0;i<100&&!els.get('etwList')?.innerHTML.includes('Eaton');i++){
    await new Promise(resolve=>setTimeout(resolve,5));
  }
- assert.ok(els.get('etwList')?.innerHTML.includes('Infineon'),'Loaded candidate list missing');
+ assert.ok(els.get('etwList')?.innerHTML.includes('Eaton'),'Original external source rationale not rendered');
  return els.get('etwList').innerHTML;
 }
 
 (async()=>{
  const html=await render();
  const ix=html.indexOf('Infineon');
- const near=html.slice(ix,ix+3600);
+ const next=html.indexOf('<article class="etwCard"',ix);const near=html.slice(ix,next>0?next:ix+8000);
  assert.match(near,/Im aktuellen Scanner/,'Infineon should reflect scanner membership only');
  assert.match(near,/Damals uneinheitlich beurteilt/,'Historic MIXED must be clearly separated from source idea');
  assert.match(near,/nicht aus einem Rating des Newsletter-Anbieters/);
@@ -63,6 +68,9 @@ async function render(privateNotes=null,followup=null){
  assert.match(near,/Gewinnmitnahmen nach starkem Kursanstieg/);
  assert.match(near,/65 EUR/);
  assert.match(near,/Originalnewsletter derzeit nicht erneut geprüft/);
+ assert.ok(near.indexOf('Warum wurde die Aktie vorgeschlagen?')<near.indexOf('Früherer Scannervergleich'),
+  'Actual trading reason must appear above stale scanner labels');
+ assert.match(near,/<details class="etwHistorical">/);
  assert.match(near,/<summary>Originalen Archivvermerk anzeigen<\/summary><code>MIXED<\/code>/);
  assert.doesNotMatch(near,/Historischer Prüfvermerk: MIXED/);
  assert.doesNotMatch(html,/Die damalige externe E-Mail-Begründung ist hier noch nicht hinterlegt/);
