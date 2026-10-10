@@ -144,7 +144,13 @@ def audit_scientific_readiness(
         return report
     gates["CY03_research_release"] = "BLOCKED_BY_VERSIONED_V1_CONTRACT"
 
-    design = _json(repo, PREREG_PATH)
+    try:
+        design = _json(repo, PREREG_PATH)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        report["status"] = "INTEGRITY_FAILURE"
+        blockers.append("CY05_DESIGN_UNREADABLE")
+        report["integrity_error"] = type(exc).__name__ + ": " + str(exc)[:300]
+        return report
     if (design.get("schema_version") != "cycle_direction_cy05_research_design_v1"
             or design.get("execution_allowed") is not False
             or design.get("research_only") is not True):
@@ -167,7 +173,7 @@ def audit_scientific_readiness(
 
     traces = [
         ("CY07_L7_prospective_claims", "prospective_claims.jsonl"),
-        ("CY07_L8_matured_outcomes", "matured_outcomes.jsonl"),
+        ("CY07_L8_matured_outcomes", "outcome_maturations.jsonl"),
         ("CY07_L9_confirmation", "confirmation_looks.jsonl"),
         ("CY07_L10_rating", "pattern_rating_history.jsonl"),
         ("CY08_L12_promotion", "promotion/promotion_registry.jsonl"),
