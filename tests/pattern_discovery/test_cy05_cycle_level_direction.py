@@ -322,3 +322,32 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
     copied.write_text(copied.read_text(encoding="utf-8") + " ", encoding="utf-8")
     with pytest.raises(FeatureLibraryError, match="run_repo_feature_library_bytes_mismatch"):
         FeatureLibrary(LIB).validate_run_binding(first, repo_root=tmp_path)
+
+
+def test_cy05_methodology_is_preregistered_without_fake_l1_release():
+    design = json.loads(DESIGN.read_text(encoding="utf-8"))
+    assert design["schema_version"] == "cycle_direction_cy05_research_design_v1"
+    assert design["preregistration_state"] == "METHODOLOGY_FROZEN_BEFORE_OUTCOME_INSPECTION"
+    assert design["research_only"] is True
+    assert design["productive_integration_enabled"] is False
+    assert design["execution_allowed"] is False
+    assert design["l2_l3_contracts"]["cycle_level_thresholds"] == [25, 50, 75]
+    assert design["data_policy"]["allowed_lag_observations"] == [1, 5, 10]
+    assert design["data_policy"]["forward_targets_sessions"] == [5, 20, 40, 60]
+    arms = design["registered_comparison"]
+    assert set(arms) >= {"A", "B", "C", "D", "primary_contrast", "primary_target"}
+    assert arms["primary_contrast"] == "C_minus_B"
+    assert arms["primary_target"] == "peer_excess_20t_gt_0"
+    assert arms["primary_condition"] == {
+        "cycle_level_band": "LEVEL_LT_25",
+        "cycle_change_direction": "UP",
+        "lag_observations": 5,
+    }
+    policy = design["execution_policy"]
+    assert policy["multiple_testing_method"] == "BENJAMINI_HOCHBERG_FDR"
+    assert policy["fdr_q"] == 0.05
+    assert policy["turnover_cost_roundtrip_bps"] == 20
+    assert policy["costs_sensitivity_bps"] == [10, 50]
+    assert policy["l1_manifest_required_before_outcome_run"] is True
+    assert design["evidence_status"]["frozen_l1_run_manifest_created"] is False
+    assert design["evidence_status"]["empirical_results_computed"] is False
