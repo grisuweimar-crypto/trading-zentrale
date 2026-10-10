@@ -6,7 +6,9 @@ on:
       - "configs/pattern_discovery/l3_search_contract_cycle_v2.json"
       - "src/scanner/research/pattern_discovery/feature_library.py"
       - "src/scanner/research/pattern_discovery/search_engine.py"
+      - "src/scanner/research/pattern_discovery/cycle_cy05_adapter.py"
       - "tests/pattern_discovery/test_cy05_cycle_level_direction.py"
+      - "tests/pattern_discovery/test_cy05_cycle_archive_adapter.py"
       - "docs/cycle_direction/CY-05_INTEGRATION_UND_PRAEREGISTRIERUNG.md"
       - ".github/workflows/cycle_dir_cy05.yml"
   workflow_dispatch:
@@ -30,6 +32,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/pattern_discovery/test_cy05_cycle_level_direction.py \
+            tests/pattern_discovery/test_cy05_cycle_archive_adapter.py \
             tests/pattern_discovery/test_l1_run_contract.py \
             tests/pattern_discovery/test_l2_feature_library.py \
             tests/pattern_discovery/test_l3_search_engine.py \
