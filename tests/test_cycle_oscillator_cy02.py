@@ -41,6 +41,8 @@ def test_fixed_gold_and_deterministic_replay():
     assert a["cycle_last_bar"] == "2026-10-09"
     assert a["cycle_price_symbol"] == "AAA"
     assert a["cycle_currency"] == "USD"
+    assert a["cycle_currency_lineage"] == "WATCHLIST_DECLARED_ONLY"
+    assert a["cycle_session_time_quality"] == "SESSION_DATE_CUTOFF_ONLY"
     assert a["cycle_source"] == CYCLE_SOURCE
 
 
@@ -176,6 +178,46 @@ def test_missing_symbol_and_offline_enrichment_do_not_recycle_old_number():
     assert normalized["cycle_quality"].tolist() == ["STALE", "MISSING_SOURCE"]
 
 
+def test_unknown_quote_currency_never_gains_valid_cycle():
+    result = calculate_cycle(series(), symbol="AAA", currency="", is_crypto=False, as_of=AS_OF)
+    assert result["cycle_quality"] == "MISSING_SOURCE"
+    assert result["cycle_quality_reason"] == "QUOTE_CURRENCY_UNKNOWN"
+    assert math.isnan(result["Zyklus %"])
+    assert result["cycle_currency_lineage"] == "NONE"
+
+
+def test_crypto_symbol_quote_currency_must_match_input_currency():
+    result = calculate_cycle(series(frequency="D"), symbol="BTC-USD",
+                             currency="EUR", is_crypto=True, as_of=AS_OF)
+    assert result["cycle_quality"] == "INVALID_VALUE"
+    assert result["cycle_quality_reason"] == "CURRENCY_SYMBOL_QUOTE_MISMATCH"
+
+
+def test_conflicting_currency_declarations_for_one_yahoo_symbol_are_quarantined(monkeypatch):
+    close = series()
+    frame = pd.DataFrame({
+        ("Close", "AAA"): close,
+        ("Volume", "AAA"): pd.Series([500] * len(close), index=close.index),
+    })
+    frame.columns = pd.MultiIndex.from_tuples(frame.columns)
+    monkeypatch.setitem(sys.modules, "yfinance",
+                        SimpleNamespace(download=lambda **kwargs: frame))
+    raw = pd.DataFrame({"YahooSymbol": ["AAA", "AAA"], "Currency": ["USD", "EUR"],
+                        "Zyklus %": [0.0, 0.0]})
+    result, _ = enrich_watchlist_with_yahoo(raw, enabled=True, as_of=AS_OF)
+    assert result["cycle_quality"].tolist() == ["INVALID_VALUE", "INVALID_VALUE"]
+    assert (result["cycle_quality_reason"] == "CONFLICTING_DECLARED_CURRENCIES").all()
+    assert result["Zyklus %"].isna().all()
+
+
+def test_missing_stock_weekdays_not_mistaken_for_exchange_holidays():
+    close = series().copy()
+    close = close.drop(pd.to_datetime(["2026-10-06", "2026-10-07"]))
+    result = evaluate(close)
+    assert result["cycle_quality"] == "INSUFFICIENT_HISTORY"
+    assert result["cycle_quality_reason"] == "GAP_IN_DAILY_BARS"
+
+
 def test_no_quotes_from_provider_fail_closed(monkeypatch):
     monkeypatch.setitem(sys.modules, "yfinance",
                         SimpleNamespace(download=lambda **kwargs: pd.DataFrame()))
@@ -193,6 +235,7 @@ def test_research_preserves_per_value_provenance_fields():
         "cycle_price_symbol", "cycle_currency", "cycle_last_bar",
         "cycle_as_of", "cycle_computed_at", "cycle_price_sha256",
         "cycle_eligible_bars", "cycle_quality_reason",
+        "cycle_currency_lineage", "cycle_session_time_quality",
     )
     for field in fields:
         assert field in ALIASES

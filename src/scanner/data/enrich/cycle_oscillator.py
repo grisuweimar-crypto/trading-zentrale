@@ -23,6 +23,7 @@ META_FIELDS = (
     "cycle_price_symbol", "cycle_currency", "cycle_last_bar",
     "cycle_as_of", "cycle_computed_at", "cycle_price_sha256",
     "cycle_eligible_bars", "cycle_quality_reason",
+    "cycle_currency_lineage", "cycle_session_time_quality",
 )
 
 
@@ -63,6 +64,10 @@ def calculate_cycle(
         "cycle_price_basis": PRICE_BASIS,
         "cycle_price_symbol": symbol,
         "cycle_currency": _text(currency),
+        # Separate a declared quote unit from independently provider-verified
+        # currency; a symbol's original listing is not proven by this field.
+        "cycle_currency_lineage": "WATCHLIST_DECLARED_ONLY" if _text(currency) else "NONE",
+        "cycle_session_time_quality": "SESSION_DATE_CUTOFF_ONLY",
         "cycle_last_bar": "",
         "cycle_as_of": as_of_utc.isoformat(),
         "cycle_computed_at": datetime.now(timezone.utc).isoformat(),
@@ -106,14 +111,25 @@ def calculate_cycle(
         record.update(cycle_quality="INSUFFICIENT_HISTORY",
                       cycle_quality_reason="NEED_60_DAILY_BARS")
         return record
+    # Cannot support an original-listing/quote-currency claim if the input
+    # universe did not declare one. Never infer USD or apply an FX conversion.
+    if not _text(currency):
+        record.update(cycle_quality="MISSING_SOURCE", cycle_quality_reason="QUOTE_CURRENCY_UNKNOWN")
+        return record
+    if is_crypto and symbol.rsplit("-", 1)[-1].upper() != _text(currency).upper():
+        record.update(cycle_quality="INVALID_VALUE", cycle_quality_reason="CURRENCY_SYMBOL_QUOTE_MISMATCH")
+        return record
     sample = frame.tail(MIN_BARS).copy()
     prices = sample["price"].to_numpy(dtype=float)
     if not all(math.isfinite(v) and v > 0 for v in prices):
         record.update(cycle_quality="INVALID_VALUE", cycle_quality_reason="NAN_OR_NONPOSITIVE_CLOSE")
         return record
     dates = sample["day"].tolist()
-    gap_limit = 1 if is_crypto else 5
-    if any((b - a).days > gap_limit for a, b in zip(dates, dates[1:])):
+    # For stocks at most one missing weekday between adjacent labels is
+    # tolerated (exchange-specific holidays remain unverified); a raw
+    # five-calendar-day threshold would silently hide 2-3 missing sessions.
+    if any(((b - a).days != 1 if is_crypto else _weekday_lag(a, b) > 2)
+           for a, b in zip(dates, dates[1:])):
         record.update(cycle_quality="INSUFFICIENT_HISTORY",
                       cycle_quality_reason="GAP_IN_DAILY_BARS")
         return record

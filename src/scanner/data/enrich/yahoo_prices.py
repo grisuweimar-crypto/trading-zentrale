@@ -377,6 +377,18 @@ def enrich_watchlist_with_yahoo(
         if sym:
             symbols.append(sym)
 
+    # Detect identical quote identifiers carrying contradictory declared
+    # currencies (e.g. currency-converted duplicates of one YahooSymbol).
+    # Neither row may claim a verified original-quote cycle.
+    declared_by_symbol: dict[str, set[str]] = {}
+    for _, row in out.iterrows():
+        sym = _pick_symbol(row)
+        if sym:
+            currency = _cycle_currency(row)
+            if currency:
+                declared_by_symbol.setdefault(sym, set()).add(currency.upper())
+    currency_conflicts = {sym for sym, values in declared_by_symbol.items() if len(values) > 1}
+
     # Deduplicate symbols for download
     symbols_u = sorted({s for s in symbols if s})
     tickers_total = len(symbols_u)
@@ -426,6 +438,10 @@ def enrich_watchlist_with_yahoo(
         row = out.loc[idx]
         evidence = calculate_cycle(close, symbol=sym, currency=_cycle_currency(row),
                                    is_crypto=_looks_like_crypto_pair(sym), as_of=now)
+        if sym in currency_conflicts:
+            evidence.update({"Zyklus %": float("nan"), "cycle_quality": "INVALID_VALUE",
+                             "cycle_quality_reason": "CONFLICTING_DECLARED_CURRENCIES",
+                             "cycle_price_sha256": ""})
         _write_cycle_row(out, idx, evidence)
         if not sym:
             continue

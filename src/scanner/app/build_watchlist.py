@@ -551,7 +551,8 @@ def build_watchlist_outputs() -> None:
                     "cycle_price_source", "cycle_price_basis", "cycle_price_symbol",
                     "cycle_currency", "cycle_last_bar", "cycle_as_of",
                     "cycle_computed_at", "cycle_price_sha256",
-                    "cycle_eligible_bars", "cycle_quality_reason") if c in df.columns
+                    "cycle_eligible_bars", "cycle_quality_reason",
+                    "cycle_currency_lineage", "cycle_session_time_quality") if c in df.columns
     ]
     to_csv_safely(df.loc[:, cycle_health_columns],
                   reports_dir / "cycle_quality.csv", index=False)

@@ -8,7 +8,7 @@ Verbindliche Vorgabe: vom Nutzer bereitgestellter CYCLE-DIR-Masterplan vom 09.10
 |---|---|---|
 | CY-00 | FERTIG_FACHLICH (Inventur) | [PR #259](https://github.com/grisuweimar-crypto/trading-zentrale/pull/259), [Bestandsaufnahme](CY-00_BESTANDSAUFNAHME.md); historische Herkunft teils UNVERIFIZIERT |
 | CY-01 | FERTIG_TECHNISCH (gemergt) | [PR #260](https://github.com/grisuweimar-crypto/trading-zentrale/pull/260), [Qualitätsbericht](CY-01_DATENQUALITAET.md); Frische alter Quellenwerte und globale QM Issue #264 offen |
-| CY-02 | **FERTIG_TECHNISCH / NICHT_FREIGEGEBEN (fachlich)** | [Draft PR #266](https://github.com/grisuweimar-crypto/trading-zentrale/pull/266), [Abnahmeprotokoll](CY-02_BERECHNUNG_UND_FRISCHE.md), [94 grüne CY-02-/Regressionstests](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618787); Live-Preisbar-/Listing-/Quotewährungsbeweis und erster vollständiger Produktionslauf fehlen |
+| CY-02 | **ERWEITERTER PR-KANDIDAT / NICHT_FREIGEGEBEN (fachlich)** | [Draft PR #266](https://github.com/grisuweimar-crypto/trading-zentrale/pull/266), [Abnahmeprotokoll](CY-02_BERECHNUNG_UND_FRISCHE.md), [94 grüne CY-02-/Regressionstests](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/38029618787); Live-Preisbar-/Listing-/Quotewährungsbeweis und erster vollständiger Produktionslauf fehlen |
 | CY-03 | GEPLANT | setzt CY-01/02 und fachlich freigegebene Quellenversion voraus; append-only Historie, Replays und Coverage |
 | CY-04 | GEPLANT | setzt CY-03 voraus |
 | CY-05 | GEPLANT | setzt CY-03 voraus; L1-Präregistrierung vor Outcome-Lauf |

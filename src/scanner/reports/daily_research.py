@@ -46,6 +46,8 @@ ALIASES = {
     "cycle_price_sha256": ("cycle_price_sha256",),
     "cycle_eligible_bars": ("cycle_eligible_bars",),
     "cycle_quality_reason": ("cycle_quality_reason",),
+    "cycle_currency_lineage": ("cycle_currency_lineage",),
+    "cycle_session_time_quality": ("cycle_session_time_quality",),
     "r_code": ("r_code",),
     "close": ("price", "close"), "currency": ("currency", "Currency"),
     "sector": ("sector", "Sector"), "pillar_primary": ("pillar_primary",),
