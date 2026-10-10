@@ -1,0 +1,27 @@
+name: CYCLE-DIR CY02-B01 Exchange Gap Diagnostic
+on:
+  pull_request:
+    paths:
+      - "scripts/diagnose_cycle_exchange_gaps.py"
+      - "docs/cycle_direction/CY-02_B01_JPX_KRX_GAP_AUDIT.md"
+      - ".github/workflows/cycle_dir_cy02_gap_diagnostic.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gaps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install scanner
+        run: python -m pip install -e ".[test]"
+      - name: Compile
+        run: python -m compileall -q scripts/diagnose_cycle_exchange_gaps.py
+      - name: Read-only 6-stock Yahoo gap diagnostics
+        run: python scripts/diagnose_cycle_exchange_gaps.py
