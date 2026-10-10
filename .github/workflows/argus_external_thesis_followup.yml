@@ -90,7 +90,7 @@ jobs:
               if older.get('csv_sha256')!=checkpoint['csv_sha256']:
                   raise RuntimeError('scanner_checkpoint_immutable_conflict')
           else:
-              point.write_text(json.dumps(checkpoint,ensure_ascii=False,sort_keys=True,indent=2)+'\\n')
+              point.write_text(json.dumps(checkpoint,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
           history=[json.loads(p.read_text()) for p in checkpoints_dir.glob('*.json')]
           data=attach(data,history)
           archive=base/'snapshots'/f"{data['as_of']}.json"
@@ -101,7 +101,7 @@ jobs:
               print('Research day already archived; preserving original observation.')
           else:
               archive.parent.mkdir(parents=True, exist_ok=True)
-              archive.write_text(json.dumps(data,ensure_ascii=False,sort_keys=True,indent=2)+'\\n')
+              archive.write_text(json.dumps(data,ensure_ascii=False,sort_keys=True,indent=2)+'\n')
               shutil.copyfile(archive,base/'latest.json')
           PY
           git add artifacts/research/external_thesis
