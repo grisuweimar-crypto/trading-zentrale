@@ -130,3 +130,24 @@ def test_unproven_research_release_fails_closed(monkeypatch, tmp_path):
     result = watch.audit_scientific_readiness(_root(tmp_path), observed_at=NOW)
     assert result["status"] == "INTEGRITY_FAILURE"
     assert "CY03_V1_FALSE_RESEARCH_RELEASE" in result["blockers"]
+
+
+def test_cy03_ci_checks_growing_history_and_keeps_v1_gate():
+    workflow = (ROOT / ".github/workflows/cycle_dir_cy03.yml").read_text(encoding="utf-8")
+    assert 'assert manifest["observations"] == len(ledger)' in workflow
+    assert 'assert manifest["snapshots"] == len({r["snapshot_id"] for r in ledger})' in workflow
+    assert 'assert manifest["snapshots"] == 1' not in workflow
+    assert 'assert all(v == 0 for v in manifest["provisional_lags"].values())' not in workflow
+    assert 'manifest["research_gate"] == "BLOCKED_EXTERNAL_VERIFICATION_ISSUE_269"' in workflow
+
+
+def test_watch_action_is_triggered_by_real_scanner_and_daily_with_readonly_permissions():
+    workflow = (ROOT / ".github/workflows/cycle_dir_science_watch.yml").read_text(encoding="utf-8")
+    assert 'workflows: ["Scanner_vNext Autopilot"]' in workflow
+    assert 'types: [completed]' in workflow
+    assert 'schedule:' in workflow
+    assert 'cron: "50 22 * * *"' in workflow
+    assert 'contents: read' in workflow
+    assert 'issues: read' in workflow
+    assert 'actions/upload-artifact@v4' in workflow
+    assert 'github.event.workflow_run.conclusion == \'success\'' in workflow
