@@ -66,7 +66,14 @@ def test_daily_sufficient_stats_exactly_match_block_bootstrap_mean() -> None:
 
     expected_interval = expected.pop("mean_95")
     actual_interval = actual.pop("mean_95")
+    # The two implementations sum identical inputs in a different order.
+    # Keep all integer/count/lineage diagnostics exactly equal and allow
+    # only last-bit floating-point accumulation noise for the point mean.
+    expected_mean = expected.pop("mean")
+    actual_mean = actual.pop("mean")
     assert actual == expected
+    assert actual_mean is not None and expected_mean is not None
+    assert np.isclose(actual_mean, expected_mean, rtol=0.0, atol=1e-15)
     assert actual_interval is not None
     assert expected_interval is not None
     assert np.allclose(
