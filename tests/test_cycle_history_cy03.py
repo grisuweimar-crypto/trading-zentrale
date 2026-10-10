@@ -203,6 +203,22 @@ def test_file_record_is_append_only_idempotent_and_never_rewrites_legacy(tmp_pat
     assert second["provisional_lags"]["1"] == 1
     assert ledger.read_bytes().startswith(previous)
     assert all((tmp_path/k).read_bytes()==v for k,v in protected.items())
+    # Never allow an older price-window archive to be reblessed by new metadata.
+    first_bars = tmp_path/"artifacts/cycle_history/bars"/(sid+".csv.gz")
+    first_bars.write_bytes(b"tampered historical bars")
+    with pytest.raises(ValueError, match="previous_bar_archive_changed"):
+        record(tmp_path)
+    first_bars.write_bytes(bars)
+    # A changed prior ledger or derived view is equally prohibited.
+    mask_path = tmp_path/"artifacts/cycle_history/eligibility.csv"
+    original_mask = mask_path.read_bytes()
+    mask_path.write_bytes(original_mask+b"corrupt")
+    with pytest.raises(ValueError, match="previous_history_integrity_changed:eligibility.csv"):
+        record(tmp_path)
+    mask_path.write_bytes(original_mask)
+    assert record(tmp_path)["observations"] == 2
+    # Append-only chain never modifies original scanner artifacts.
+    assert all((tmp_path/k).read_bytes()==v for k,v in protected.items())
 
 
 def test_current_snapshot_hash_tampering_is_blocked_before_write(tmp_path):
