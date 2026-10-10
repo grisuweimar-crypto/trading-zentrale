@@ -26,7 +26,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 from .boundary import PatternDiscoveryBoundary
 from .feature_library import FeatureLibrary
-from .run_contract import verify_run_manifest
+from .run_contract import fingerprint_inputs, verify_run_manifest
 
 
 SCHEMA_VERSION = "pattern_discovery_l3_search_contract_v1"
@@ -780,6 +780,14 @@ def run_discovery_search(
     library.validate_run_binding(manifest, repo_root=repo_root)
     if cy05_variant:
         _verify_cy05_l3_contract_binding(manifest, run_contract, repo_root)
+        # A validated L1 hash alone does not prove source files have not
+        # changed since freeze. Re-fingerprint *all* files before CY-05 L3
+        # receives any outcome-bearing observations (data, design, L2, L3).
+        current_inputs = fingerprint_inputs(
+            repo_root, manifest["preregistration"]["data_sources"]
+        )
+        if current_inputs != manifest["input_fingerprints"]:
+            raise DiscoverySearchError("cy05_l1_frozen_inputs_changed")
 
     prereg = manifest["preregistration"]
     requested_pattern_types = set(str(x) for x in prereg["pattern_types"])
