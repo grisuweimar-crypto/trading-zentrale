@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T06:53:58.039641+00:00",
+  "decision_as_of": "2026-10-10T07:33:08.255476+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,22 +27,17 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "negative",
-    "known_directional_claim_ids": [
-      "timing:000660.KS:9a55520ffefb694c:60T",
-      "timing:000660.KS:6c608d2ad71a6396:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 2
-    },
-    "relation_state": "correlated_same_family_support",
-    "state": "negative",
-    "support_structure": "same_family_correlated_support"
+    "direction": null,
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+  "snapshot_id": "94a23ea7-9a1b-4bf8-9ef0-d97065d3eed2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -171,6 +166,14 @@
       "source_snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-10T07:33:08.255476+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "94a23ea7-9a1b-4bf8-9ef0-d97065d3eed2",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -192,11 +195,11 @@
   "state_history_state": "post_overextension_correction",
   "symbol": "000660.KS",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "status": "blocked_insufficient"
   }
 }

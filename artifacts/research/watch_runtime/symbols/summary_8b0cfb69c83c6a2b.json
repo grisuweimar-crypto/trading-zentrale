@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T06:53:58.039641+00:00",
+  "decision_as_of": "2026-10-10T07:33:08.255476+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -33,7 +33,12 @@
           "timing:NEM.AX:51a8cac8cfa550aa:60T"
         ],
         "positive_claim_ids": [
-          "timing:NEM.AX:5b62a0aabd2f08fc:60T"
+          "timing:NEM.AX:a2763d94cd6f82e9:5T",
+          "timing:NEM.AX:056cab0d8c42f322:5T",
+          "timing:NEM.AX:85b7b4bcb43aeb00:20T",
+          "timing:NEM.AX:ae61c82fbb0371fc:20T",
+          "timing:NEM.AX:f9714fd629aaf7f2:40T",
+          "timing:NEM.AX:677e719dc170acd6:40T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -41,12 +46,17 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:NEM.AX:5b62a0aabd2f08fc:60T",
+      "timing:NEM.AX:a2763d94cd6f82e9:5T",
+      "timing:NEM.AX:056cab0d8c42f322:5T",
+      "timing:NEM.AX:85b7b4bcb43aeb00:20T",
+      "timing:NEM.AX:ae61c82fbb0371fc:20T",
+      "timing:NEM.AX:f9714fd629aaf7f2:40T",
+      "timing:NEM.AX:677e719dc170acd6:40T",
       "timing:NEM.AX:b0fb906b9f3e02ec:60T",
       "timing:NEM.AX:51a8cac8cfa550aa:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 8
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -55,7 +65,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+  "snapshot_id": "94a23ea7-9a1b-4bf8-9ef0-d97065d3eed2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -182,6 +192,14 @@
       "direction": null,
       "relation_state": "conflict_present",
       "source_snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-10T07:33:08.255476+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "94a23ea7-9a1b-4bf8-9ef0-d97065d3eed2",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
     }
