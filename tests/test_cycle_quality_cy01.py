@@ -6,7 +6,7 @@ from scanner.data.schema.cycle_quality import normalize_cycle_source
 from scanner.reports.daily_research import ALIASES
 from scanner.reports.history_delta import build_snapshot_from_watchlist
 from scanner.reports.research_views import KNOWN_COLUMNS
-from scanner.ui.generator import _render_fallback_tbody, _render_html
+from scanner.ui.generator import DEFAULT_COLUMNS, _render_fallback_tbody, _render_html
 
 
 def test_blank_legacy_never_falls_back_to_fake_canonical_zero():
@@ -185,3 +185,40 @@ def test_score_health_projection_prefers_canonical_and_has_unique_columns():
     assert health["cycle"].isna().tolist() == [True, False]
     assert health["cycle"].iloc[1] == 100.0
     assert health["ScoreError"].tolist() == ["", ""]
+
+
+def test_default_scanner_ui_retains_cycle_quality_and_source():
+    """Cover the normal build_ui DEFAULT_COLUMNS projection, not only the JS drawer."""
+    assert {"cycle", "cycle_quality", "cycle_source"} <= set(DEFAULT_COLUMNS)
+    incoming = pd.DataFrame([
+        {
+            "ticker": "OLD",
+            "cycle": 37.0,
+            "cycle_quality": "STALE",
+            "cycle_source": "LEGACY_ZYKLUS_PCT",
+        },
+        {
+            "ticker": "GOOD",
+            "cycle": 0.0,
+            "cycle_quality": "VALID",
+            "cycle_source": "LEGACY_ZYKLUS_PCT",
+        },
+        {
+            "ticker": "MISSING",
+            "cycle": float("nan"),
+            "cycle_quality": "MISSING_SOURCE",
+            "cycle_source": "NONE",
+        },
+    ])
+    normal_projection = incoming[
+        [col for col in DEFAULT_COLUMNS if col in incoming.columns]
+    ].copy()
+    records = normal_projection.where(pd.notna(normal_projection), None).to_dict(
+        orient="records"
+    )
+    assert [r["cycle_quality"] for r in records] == [
+        "STALE", "VALID", "MISSING_SOURCE"
+    ]
+    assert [r["cycle_source"] for r in records] == [
+        "LEGACY_ZYKLUS_PCT", "LEGACY_ZYKLUS_PCT", "NONE"
+    ]
