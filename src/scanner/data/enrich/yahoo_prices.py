@@ -311,7 +311,8 @@ def _write_cycle_row(out: pd.DataFrame, idx: object, evidence: dict) -> None:
     if "Zyklus %" in out.columns and not pd.api.types.is_float_dtype(out["Zyklus %"]):
         out["Zyklus %"] = pd.to_numeric(out["Zyklus %"], errors="coerce").astype(float)
     for field, value in evidence.items():
-        out.at[idx, field] = value
+        if not field.startswith("_"):
+            out.at[idx, field] = value
 
 
 def enrich_watchlist_with_yahoo(
@@ -353,6 +354,7 @@ def enrich_watchlist_with_yahoo(
             provider_frame_rows=0,
         )
         out = df.copy()
+        out.attrs["cycle_input_bars"] = []
         # Offline/provider-disabled runs cannot re-label yesterday's oscillator
         # as a freshly computed value. No legacy 0/50 fallback.
         for idx, row in out.iterrows():
@@ -430,6 +432,8 @@ def enrich_watchlist_with_yahoo(
 
     fetched = 0
     failed = 0
+    cycle_input_bars = []
+    seen_cycle_windows = set()
 
     # On missing prices, retain legacy *price* features only. Cycle is always
     # recomputed or explicitly unavailable; it is never recycled as fresh.
@@ -443,6 +447,18 @@ def enrich_watchlist_with_yahoo(
                              "cycle_quality_reason": "CONFLICTING_DECLARED_CURRENCIES",
                              "cycle_price_sha256": ""})
         _write_cycle_row(out, idx, evidence)
+        if evidence.get("cycle_quality") == "VALID":
+            key = (sym, str(evidence["cycle_currency"]), str(evidence["cycle_price_sha256"]))
+            if key not in seen_cycle_windows:
+                seen_cycle_windows.add(key)
+                for session_date, close_repr in evidence.get("_cycle_input_bars", []):
+                    cycle_input_bars.append({
+                        "symbol": sym, "currency": evidence["cycle_currency"],
+                        "formula_version": evidence["cycle_formula_version"],
+                        "price_sha256": evidence["cycle_price_sha256"],
+                        "as_of": evidence["cycle_as_of"],
+                        "session_date": session_date, "close": close_repr,
+                    })
         if not sym:
             continue
         if close is None or close.dropna().empty:
@@ -478,4 +494,5 @@ def enrich_watchlist_with_yahoo(
         provider_frame_sha256=provider_frame_sha256,
         provider_frame_rows=provider_frame_rows,
     )
+    out.attrs["cycle_input_bars"] = cycle_input_bars
     return out, rep

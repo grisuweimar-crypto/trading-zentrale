@@ -435,6 +435,7 @@ def build_watchlist_outputs() -> None:
             print(f"⚠️ Could not persist master-synced DB snapshot: {e}")
 
     yahoo_report = None
+    cycle_input_bars = []  # exact new-run provider evidence, never legacy cache
 
     # 1b) Optional: refresh market data via Yahoo Finance
     # IMPORTANT: This only updates input columns (price/perf/risk/regime). It never touches scores.
@@ -446,6 +447,7 @@ def build_watchlist_outputs() -> None:
             print("🔄 Yahoo Finance: fetch enabled (refreshing market data)")
             df_y, rep = enrich_watchlist_with_yahoo(df_raw, enabled=True)
             yahoo_report = rep
+            cycle_input_bars = list(df_y.attrs.get("cycle_input_bars", []))
             # Persist back to watchlist.csv ONLY if the source is the artifacts DB snapshot.
             # (Never overwrite templates under data/inputs)
             try:
@@ -483,6 +485,22 @@ def build_watchlist_outputs() -> None:
                       "cycle_eligible_bars"):
             df_raw[field] = ""
         print(f"⚠️ Yahoo Finance enrichment skipped; cycle STALE: {e}")
+
+    # CY-02: persist exact 60-bar input windows in a deterministic compressed
+    # sidecar. The hash alone is not an inspectable price series. Empty on
+    # provider-disabled/error runs: never leave yesterday's evidence attached.
+    import csv
+    import gzip
+    import io
+    bar_columns = ("symbol", "currency", "formula_version", "price_sha256",
+                   "as_of", "session_date", "close")
+    bar_buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(bar_buffer, fieldnames=bar_columns, lineterminator="\n")
+    writer.writeheader()
+    writer.writerows(cycle_input_bars)
+    cycle_bars_path = artifacts_dir() / "reports" / "cycle_input_bars.csv.gz"
+    cycle_bars_path.parent.mkdir(parents=True, exist_ok=True)
+    cycle_bars_path.write_bytes(gzip.compress(bar_buffer.getvalue().encode("utf-8"), mtime=0))
 
     # 2) RAW exportieren (ungeändert)
     raw_path = out_dir / "watchlist_full_raw.csv"

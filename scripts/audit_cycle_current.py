@@ -3,6 +3,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
+import pandas as pd
+from scanner.data.enrich.cycle_oscillator import calculate_cycle
+from scanner.data.enrich.yahoo_prices import _looks_like_crypto_pair
 from datetime import datetime, date
 import math
 from pathlib import Path
@@ -77,7 +81,78 @@ def audit_rows(rows: list[dict[str, str]], *, columns: list[str]) -> tuple[list[
     return errors, {"asset_count": len(rows), "quality_counts": dict(sorted(counts.items()))}
 
 
-def audit_csv(path: Path, *, report_path: Path | None = None) -> tuple[list[str], dict]:
+
+def audit_price_windows(rows: list[dict[str, str]], bars_path: Path) -> list[str]:
+    """Recompute every VALID cycle from the precise 60 stored provider closes.
+
+    Current-run only; no claim that a retrospective Yahoo adjustment equals
+    the actual historical provider payload of an old snapshot.
+    """
+    if not bars_path.is_file():
+        return ["missing_cycle_bar_evidence"]
+    try:
+        with gzip.open(bars_path, "rt", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            expected_cols = {"symbol", "currency", "formula_version", "price_sha256",
+                             "as_of", "session_date", "close"}
+            if not expected_cols.issubset(reader.fieldnames or []):
+                return ["cycle_bar_evidence_missing_columns"]
+            evidence = list(reader)
+    except (OSError, UnicodeError, csv.Error):
+        return ["cycle_bar_evidence_unreadable"]
+
+    groups: dict[tuple[str, str, str], list[dict[str, str]]] = {}
+    for bar in evidence:
+        key = (bar["symbol"], bar["currency"], bar["price_sha256"])
+        groups.setdefault(key, []).append(bar)
+
+    errors = []
+    used = set()
+    for row in rows:
+        if row.get("cycle_quality", "").strip().upper() != "VALID":
+            continue
+        symbol = row["cycle_price_symbol"].strip()
+        currency = row["cycle_currency"].strip()
+        sha = row["cycle_price_sha256"].strip()
+        key = (symbol, currency, sha)
+        used.add(key)
+        sample = groups.get(key)
+        ident = row.get("asset_id") or symbol
+        if sample is None or len(sample) != 60:
+            errors.append(f"{ident}:missing_or_incomplete_60_bar_window")
+            continue
+        if any(bar["formula_version"] != row["cycle_formula_version"] or
+               bar["as_of"] != row["cycle_as_of"] for bar in sample):
+            errors.append(f"{ident}:bar_window_formula_or_as_of_mismatch")
+            continue
+        try:
+            dates = pd.to_datetime([bar["session_date"] for bar in sample], errors="raise")
+            closes = pd.Series([float(bar["close"]) for bar in sample], index=dates)
+            actual = calculate_cycle(
+                closes, symbol=symbol, currency=currency,
+                is_crypto=_looks_like_crypto_pair(symbol),
+                as_of=datetime.fromisoformat(row["cycle_as_of"]),
+            )
+        except (ValueError, TypeError, OverflowError) as exc:
+            errors.append(f"{ident}:bar_window_unreplayable:{type(exc).__name__}")
+            continue
+        if (actual.get("cycle_quality") != "VALID"
+                or actual.get("cycle_price_sha256") != sha
+                or actual.get("cycle_last_bar") != row.get("cycle_last_bar")):
+            errors.append(f"{ident}:bar_window_fingerprint_or_date_mismatch")
+            continue
+        try:
+            if float(row["cycle"]) != float(actual["Zyklus %"]):
+                errors.append(f"{ident}:bar_window_cycle_replay_mismatch")
+        except ValueError:
+            errors.append(f"{ident}:bar_window_cycle_not_numeric")
+    for key in set(groups) - used:
+        errors.append(f"orphan_cycle_bars:{key[0]}")
+    return errors
+
+
+def audit_csv(path: Path, *, report_path: Path | None = None,
+              bars_path: Path | None = None) -> tuple[list[str], dict]:
     if not path.is_file():
         return [f"missing_current_scanner:{path}"], {}
     with path.open(encoding="utf-8", newline="") as f:
@@ -98,6 +173,8 @@ def audit_csv(path: Path, *, report_path: Path | None = None) -> tuple[list[str]
                         if str(row.get(k, "")).strip() != str(audit.get(k, "")).strip():
                             errors.append(f"row_{i}:cycle_quality_report_mismatch:{k}")
                             break
+    if bars_path is not None:
+        errors.extend(audit_price_windows(rows, bars_path))
     return errors, summary
 
 
@@ -105,8 +182,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=Path("artifacts/watchlist/watchlist_full.csv"))
     parser.add_argument("--report", type=Path, default=Path("artifacts/reports/cycle_quality.csv"))
+    parser.add_argument("--bars", type=Path, default=Path("artifacts/reports/cycle_input_bars.csv.gz"))
     opts = parser.parse_args()
-    errors, summary = audit_csv(opts.source, report_path=opts.report)
+    errors, summary = audit_csv(opts.source, report_path=opts.report, bars_path=opts.bars)
     print(f"CY-02 audit: {summary}")
     for msg in errors[:30]:
         print("CY-02 BLOCKER: " + msg)

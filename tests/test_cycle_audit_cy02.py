@@ -1,5 +1,12 @@
 """Production-side CY-02 gate must fail closed, without market API access."""
 from pathlib import Path
+from datetime import datetime, timezone
+import csv
+import gzip
+import io
+import math
+
+from scanner.data.enrich.cycle_oscillator import calculate_cycle
 
 import pandas as pd
 from scripts.audit_cycle_current import audit_rows, audit_csv, FIELDS
@@ -67,3 +74,49 @@ def test_audit_file_checks_run_report_coherence(tmp_path):
     altered.to_csv(report, index=False)
     errors, _ = audit_csv(source, report_path=report)
     assert any("cycle_quality_report_mismatch" in err for err in errors)
+
+
+def test_actual_60_price_bars_can_be_replayed_and_tampering_is_detected(tmp_path):
+    dates = pd.date_range(end="2026-10-09", periods=90, freq="B")
+    closes = pd.Series([100 + 0.1 * i + 3 * math.sin(i * 0.27) for i in range(90)], index=dates)
+    calc = calculate_cycle(closes, symbol="AAA", currency="USD", is_crypto=False,
+                           as_of=datetime(2026, 10, 10, 6, 30, tzinfo=timezone.utc))
+    assert calc["cycle_quality"] == "VALID"
+    assert len(calc["_cycle_input_bars"]) == 60
+    row = valid_row()
+    row.update({
+        "cycle": str(calc["Zyklus %"]),
+        "cycle_price_sha256": calc["cycle_price_sha256"],
+        "cycle_last_bar": calc["cycle_last_bar"],
+        "cycle_as_of": calc["cycle_as_of"],
+    })
+    source = tmp_path / "watchlist_full.csv"
+    report = tmp_path / "cycle_quality.csv"
+    bars_file = tmp_path / "cycle_input_bars.csv.gz"
+    pd.DataFrame([row]).to_csv(source, index=False)
+    pd.DataFrame([row]).to_csv(report, index=False)
+
+    bar_rows = [
+        {"symbol": "AAA", "currency": "USD",
+         "formula_version": calc["cycle_formula_version"],
+         "price_sha256": calc["cycle_price_sha256"], "as_of": calc["cycle_as_of"],
+         "session_date": date, "close": price}
+        for date, price in calc["_cycle_input_bars"]
+    ]
+
+    def write_bars(observations):
+        stream = io.StringIO(newline="")
+        writer = csv.DictWriter(stream, fieldnames=list(bar_rows[0]),
+                                lineterminator="\n")
+        writer.writeheader()
+        writer.writerows(observations)
+        bars_file.write_bytes(gzip.compress(stream.getvalue().encode("utf-8"), mtime=0))
+
+    write_bars(bar_rows)
+    errors, _ = audit_csv(source, report_path=report, bars_path=bars_file)
+    assert errors == []
+    modified = [dict(r) for r in bar_rows]
+    modified[40]["close"] = "999.999"
+    write_bars(modified)
+    errors, _ = audit_csv(source, report_path=report, bars_path=bars_file)
+    assert any("bar_window_fingerprint_or_date_mismatch" in error for error in errors)

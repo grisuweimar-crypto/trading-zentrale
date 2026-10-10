@@ -161,6 +161,9 @@ def test_enrichment_refreshes_cycle_and_preserves_quality_and_formula_source(mon
     assert out.loc[0, "cycle_quality"] == "VALID"
     assert out.loc[0, "cycle_price_symbol"] == "AAA"
     assert out.loc[0, "cycle_last_bar"] == "2026-10-09"
+    assert len(out.attrs["cycle_input_bars"]) == 60
+    assert out.attrs["cycle_input_bars"][-1]["session_date"] == "2026-10-09"
+    assert out.attrs["cycle_input_bars"][-1]["price_sha256"] == out.loc[0, "cycle_price_sha256"]
     normalized = normalize_cycle_source(out)
     assert normalized.loc[0, "cycle"] == 7.2258
     assert normalized.loc[0, "cycle_source"] == CYCLE_SOURCE

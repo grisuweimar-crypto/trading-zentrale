@@ -166,5 +166,8 @@ def calculate_cycle(
         "cycle_quality": "VALID",
         "cycle_price_sha256": digest,
         "cycle_quality_reason": "COMPLETED_DAILY_BARS",
+        # Transient audit evidence; never persists in the canonical scanner column.
+        "_cycle_input_bars": [(day.isoformat(), f"{float(price):.17g}")
+                              for day, price in zip(dates, prices)],
     })
     return record
