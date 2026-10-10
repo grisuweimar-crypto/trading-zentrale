@@ -13,12 +13,16 @@ ROOT = Path(__file__).resolve().parents[1]
 def _seed(tmp_path: Path) -> Path:
     paths = [value[0] for value in CONTRACTS.values()] + [
         "configs/cycle_direction/cy05_preregistered_design_v1.json",
+        "configs/cycle_direction/cy08_net_cost_v1.json",
         "artifacts/cycle_history/manifest.json",
     ]
     for item in paths:
         target = tmp_path / item
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text((ROOT / item).read_text(encoding="utf-8"), encoding="utf-8")
+    net = "src/scanner/research/pattern_discovery/cycle_cy08_net_ablation.py"
+    (tmp_path / net).parent.mkdir(parents=True, exist_ok=True)
+    (tmp_path / net).write_text((ROOT / net).read_text(encoding="utf-8"), encoding="utf-8")
     return tmp_path
 
 
@@ -59,7 +63,7 @@ def test_artificial_archive_improvement_cannot_bypass_other_gates(tmp_path):
     assert result["status"] == "BLOCKED"
     assert "CY03_NO_RESEARCH_ELIGIBLE_OBSERVATIONS" not in result["blockers"]
     assert "CY05_L1_RUN_FREEZE_NOT_DOCUMENTED" in result["blockers"]
-    assert "L13_NET_COST_ABLATION_NOT_IMPLEMENTED" in result["blockers"]
+    assert "L13_NET_COST_ABLATION_NOT_IMPLEMENTED" not in result["blockers"]
 
 
 def test_l14_generic_ready_receipt_is_not_cycle_promotion(tmp_path):
@@ -71,3 +75,11 @@ def test_l14_generic_ready_receipt_is_not_cycle_promotion(tmp_path):
     assert result["status"] == "BLOCKED"
     assert result["promotion_performed"] is False
     assert result["shadow_ablation_performed"] is False
+
+
+def test_missing_cost_implementation_blocks_readiness(tmp_path):
+    root = _seed(tmp_path)
+    (root / "src/scanner/research/pattern_discovery/cycle_cy08_net_ablation.py").unlink()
+    result = audit_cy08(root)
+    assert result["status"] == "BLOCKED"
+    assert "L13_NET_COST_ABLATION_NOT_IMPLEMENTED" in result["blockers"]
