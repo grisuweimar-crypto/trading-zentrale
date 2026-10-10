@@ -20,6 +20,8 @@ on:
       - "tests/test_ba_qm8_real_transitions.py"
       - "tests/test_ba_qm8_closure.py"
       - "tests/test_ba_qm8_workflow_trigger.py"
+      - "tests/test_ba_qm8_workflow_gate.py"
+      - "src/scanner/research/governance/ba_qm8_workflow_gate.py"
       - "tests/test_scanner_provenance.py"
       - "tests/test_w10_snapshot_orchestration.py"
       - "artifacts/research/daily_research.json"
@@ -48,14 +50,39 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ${{ github.event_name == 'pull_request' && format('ba-qm8-pr-{0}', github.event.pull_request.number) || 'ba-qm8-main-prospective-audit' }}
   cancel-in-progress: true
 
 jobs:
+  upstream-integration:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.gate.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Distinguish published Decision integration from successful-but-deferred workflow
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: PYTHONPATH=src python -m scanner.research.governance.ba_qm8_workflow_gate
+
   ba-qm8-audit:
-    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    needs: upstream-integration
+    if: >-
+      always() &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main' &&
+        needs.upstream-integration.result == 'success' &&
+        needs.upstream-integration.outputs.ready == 'true'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,6 +104,8 @@ jobs:
             tests/test_ba_qm8_real_stage_bindings.py \
             tests/test_ba_qm8_real_transitions.py \
             tests/test_ba_qm8_closure.py \
+            tests/test_ba_qm8_workflow_trigger.py \
+            tests/test_ba_qm8_workflow_gate.py \
             tests/test_qm_j_closure.py \
             tests/test_qm_j_selection_freshness_gate.py \
             tests/test_w11_end_to_end_acceptance.py \
