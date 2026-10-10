@@ -15,7 +15,7 @@ from scanner.research.pattern_discovery.run_contract import (
 )
 from scanner.research.pattern_discovery.search_engine import (
     _atom_state, _build_atoms, load_search_contract,
-    run_discovery_search, verify_search_result,
+    run_discovery_search, verify_search_result, DiscoverySearchError,
 )
 
 LIB = Path("configs/pattern_discovery/feature_library_cycle_v2.json")
@@ -258,6 +258,11 @@ def test_l1_frozen_manifest_binds_opt_in_cycle_v2_library_bytes(tmp_path):
         first, input_rows, repo_root=tmp_path,
         feature_library=cycle_library, contract=cy05_contract,
     )
+    with pytest.raises(DiscoverySearchError, match="cy05_l2_l3_variant_binding_mismatch"):
+        run_discovery_search(
+            first, input_rows, repo_root=tmp_path,
+            feature_library=cycle_library,
+        )
     repeat_result = run_discovery_search(
         first, list(reversed(input_rows)), repo_root=tmp_path,
         feature_library=cycle_library, contract=cy05_contract,
