@@ -169,7 +169,7 @@ function card(item){
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
  const ew=candidateElliott&&candidateElliott.symbol===item.symbol?candidateElliott:null;
  const ewHtml=item.externalResearch?(!ew?'<div class="etwElliott">Elliott vNext intern: noch kein eigenständiger Kandidatenlauf veröffentlicht.</div>':
- '<div class="etwElliott">Elliott vNext intern · '+esc(ew.as_of)+' · '+esc(ew.output_count)+' Forschungsausgaben · getrennt von HKCM'+
+ '<div class="etwElliott">Elliott vNext intern · '+esc(ew.as_of)+' · '+esc(ew.output_count)+' Forschungsausgaben · getrennt von externer Chartthese'+
  (ew.outputs.length?'<details><summary>Wellenstrukturen ansehen</summary>'+ew.outputs.map(o=>{
   const p=o.primary_scenario||{};
   return '<p>'+esc(o.timeframe)+' / '+esc(o.degree)+': '+esc(p.pattern_class||'nicht klassifiziert')+
