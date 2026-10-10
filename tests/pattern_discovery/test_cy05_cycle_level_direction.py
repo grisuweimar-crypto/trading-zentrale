@@ -20,7 +20,7 @@ CONTRACT = Path("configs/pattern_discovery/l3_search_contract_cycle_v2.json")
 def feature_use(transform="level_band", params=None):
     return {
         "feature_id": "scanner.cycle",
-        "feature_version": "v1",
+        "feature_version": "v2",
         "transformation_id": transform,
         "transformation_version": "v1",
         "parameters": {} if params is None else params,
@@ -55,7 +55,8 @@ def test_cycle_v2_opt_in_does_not_mutate_default_l2_l3():
     assert new.version == "PDL-FEATURE-LIBRARY-CYCLE-v2"
     assert len(new.features) == len(old.features) == 18
     assert len(new.transformations) == len(old.transformations) + 1
-    with pytest.raises(FeatureLibraryError, match="transformation_version_not_registered"):
+    assert new.get_feature("scanner.cycle", "v2")["feature_version"] == "v2"
+    with pytest.raises(FeatureLibraryError, match="feature_version_not_registered"):
         old.validate_feature_use(feature_use())
     validated = new.validate_feature_use(feature_use())
     assert validated["transformation_id"] == "level_band"
