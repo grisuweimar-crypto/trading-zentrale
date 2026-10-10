@@ -3,7 +3,7 @@
 
 The frozen 6A->6D causal replay and 6H assembler are reused without modification.
 Only confirmed daily OHLCV prices from an explicitly identified provider are accepted.
-An external HKCM count is NEVER an input to this evaluator.
+An external EXTERNAL count is NEVER an input to this evaluator.
 """
 from __future__ import annotations
 
@@ -118,7 +118,7 @@ def build_capture(rows: list[dict[str, str]], now: datetime) -> dict:
         "outputs": outputs,
         "research_only": True,
         "scanner_universe_unchanged": True,
-        "hkcm_count_used_as_model_input": False,
+        "external_count_used_as_model_input": False,
         "qm_g_empirical_evidence_eligible": False,
         "decision_effect": "none",
         "direct_ordering_allowed": False,
