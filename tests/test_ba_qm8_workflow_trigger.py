@@ -22,3 +22,10 @@ def test_ba_qm8_runs_after_successful_main_decision_watch_and_is_consolidated() 
     concurrency = workflow["concurrency"]
     assert concurrency["cancel-in-progress"] == "true"
     assert "ba-qm8-main-prospective-audit" in concurrency["group"]
+
+    upstream = workflow["jobs"]["upstream-integration"]
+    assert upstream["outputs"]["ready"] == "${{ steps.gate.outputs.ready }}"
+    assert "ba_qm8_workflow_gate" in upstream["steps"][-1]["run"]
+    assert job["needs"] == "upstream-integration"
+    assert "always()" in condition
+    assert "needs.upstream-integration.outputs.ready == 'true'" in condition
