@@ -5,6 +5,9 @@ const aid=document.createElement('script');
 aid.src=new URL('argus-help.js',document.currentScript?.src||new URL('observations/',document.baseURI)).href;
 aid.defer=true;document.head.appendChild(aid);
 const host=document.getElementById('observations');if(!host)return;
+const MODULE_URL=new URL('./',document.currentScript?.src||document.baseURI);
+const editorial=document.createElement('link');editorial.rel='stylesheet';
+editorial.href=new URL('argus-editorial.css',MODULE_URL).href;document.head.appendChild(editorial);
 const RAW='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/';
 const REF='argus-preview/observations/external_thesis_watch_reference.json';
 const PUBLIC='argus-preview/observations/external_thesis_watch_candidates.json';
@@ -63,10 +66,10 @@ const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplaine
 host.insertAdjacentHTML('afterbegin',
 '<section id="etw" aria-label="Externe Aufnahmekandidaten">'+
 '<div class="etwTitle"><div><div class="etwGold">ARGUS · EXTERNAL THESIS WATCH</div>'+
-'<h3>Kandidatenradar</h3><p>Hier sammeln wir Aktienideen aus externen Quellen, auch wenn sie noch nicht im Scanner stehen. Eine Erwähnung ist weder eine Kaufempfehlung noch eine Entscheidung zur Aufnahme.</p></div>'+
+'<h3>Welche Aktienideen sind einen zweiten Blick wert?</h3><p>Die Begründung der externen Trading-Idee steht bei jeder Aktie zuerst. Darunter siehst du den späteren Kursverlauf und unsere getrennte Beobachtung.</p></div>'+
 '<div class="etwTools"><button type="button" id="etwImportBtn">↑ Private Notizen öffnen</button><input type="file" id="etwFile" accept="application/json,.json" style="display:none" aria-label="Private Kandidaten-Datei auswählen">'+
 '<button type="button" id="etwBackupBtn">↓ Eigene Notizen sichern</button><button type="button" id="etwRefresh">↻ Beobachtungen aktualisieren</button></div></div>'+
-'<div class="etwExplainer"><b>Was gehört hierher?</b> Externe <b>Aktienkandidaten</b>, die wir beobachten möchten. Die <b>Musterkandidaten</b> im Forschungsstand sind etwas anderes: Dort werden statistische Zusammenhänge geprüft. <b>Im Scanner</b> bedeutet nur, dass die Aktie im aktuellen Scannerlauf vorkommt – nicht, dass sie gekauft werden sollte.</div>'+ 
+'<div class="etwExplainer"><b>Was wird hier geprüft?</b> <b>Was wurde behauptet?</b> <b>Was geschah anschließend?</b> Und <b>was wusste unser Scanner damals?</b> Diese Perspektiven bleiben voneinander getrennt. Eine interessante Idee ist noch keine Kaufempfehlung.</div>'+ 
 '<div id="etwMetrics" class="etwMetrics"></div><div class="etwGate" id="etwGate" role="status">Externe Referenz und Scannerstand werden geladen …</div>'+
 '<div class="etwFilters"><button type="button" data-etw-filter="all" aria-pressed="true">Alle Fälle</button><button type="button" data-etw-filter="shadow" aria-pressed="false">Außerhalb Scanner</button>'+
 '<button type="button" data-etw-filter="scanner" aria-pressed="false">Im Scanner enthalten</button><button type="button" data-etw-filter="new" aria-pressed="false">Neue Beobachtungen</button>'+
@@ -80,9 +83,20 @@ let baseline=[],publicCandidates=[],publicEvidence=[],candidateElliott=null,exte
 let scanSymbols=null,scanMeta=null,filter='all',query='',running=false;
 try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(parsed?.schema_version==='argus_external_thesis_private_v1'&&Array.isArray(parsed.new_leads)&&Array.isArray(parsed.source_updates))priv=parsed}}catch(_){}
 async function get(path,format){
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
- try{const r=await fetch(RAW+path,{signal:controller.signal,cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status+' '+path);return format==='json'?r.json():r.text()}
- finally{clearTimeout(timer)}
+ // Source notes are part of the public ARGUS site: load from the same origin first.
+ // No reason should disappear when GitHub's raw API is unavailable.
+ const local=path===REF||path===PUBLIC||path===RATIONALES;
+ const urls=local?[new URL(path.split('/').pop(),MODULE_URL).href,RAW+path]:[RAW+path];
+ let lastError=null;
+ for(const url of urls){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+  try{
+   const r=await fetch(url,{signal:controller.signal,cache:'no-store'});
+   if(!r.ok)throw Error('HTTP '+r.status+' '+path);
+   return format==='json'?await r.json():await r.text();
+  }catch(e){lastError=e}finally{clearTimeout(timer)}
+ }
+ throw lastError||new Error('Datenquelle nicht erreichbar');
 }
 async function getExternalFollowup(){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
@@ -157,7 +171,8 @@ async function refresh(){
      (!x.source_target||x.source_target.value>0&&['EUR','USD'].includes(x.source_target.currency))))
    throw Error('Quellenbegründungen ungültig');
   publicEvidence=d.items;
- }catch(e){publicEvidence=[];errors.push('Quellenbegründungen: '+e.message)}
+  render(); // display reasons before optional large research downloads
+ }catch(e){publicEvidence=[];render();errors.push('Quellenbegründungen: '+e.message)}
  try{externalFollowup=await getExternalFollowup()}
  catch(e){externalFollowup=null;errors.push('Thesenprüfstand: '+e.message)}
  try{candidateElliott=await getCandidateElliott()}
