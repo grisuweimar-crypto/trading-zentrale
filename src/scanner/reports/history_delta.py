@@ -63,6 +63,8 @@ SCORING_VERSION = "v1"
 # were introduced.
 SNAPSHOT_EXTRA_COLUMNS = (
     "cycle",
+    "cycle_quality",
+    "cycle_source",
     "r_code",
     "scoring_version",
     "history_schema_version",
@@ -231,6 +233,8 @@ def build_snapshot_from_watchlist(df_full: pd.DataFrame, date: str | None = None
             "cluster_official": cluster_official.astype(str).replace({"nan": ""}),
             "bucket_type": bucket_type.astype(str).replace({"nan": ""}),
             "cycle": _cycle_series(df_full),
+            "cycle_quality": _col("cycle_quality"),
+            "cycle_source": _col("cycle_source"),
             "r_code": _r_code_series(df_full),
             "scoring_version": SCORING_VERSION,
             "history_schema_version": HISTORY_SCHEMA_VERSION,
