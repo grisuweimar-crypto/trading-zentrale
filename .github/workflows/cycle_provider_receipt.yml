@@ -1,0 +1,51 @@
+name: CYCLE-DIR Provider Fetch Receipt Integrity
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/data/enrich/yahoo_prices.py"
+      - "src/scanner/app/build_watchlist.py"
+      - "src/scanner/reports/cycle_provider_receipt.py"
+      - "scripts/record_cycle_provider_receipt.py"
+      - "scripts/watch_cycle_science.py"
+      - "tests/test_cycle_provider_receipt.py"
+      - ".github/workflows/run_scanner.yml"
+      - ".github/workflows/cycle_provider_receipt.yml"
+      - "docs/cycle_direction/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  receipt-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install scanner and test tools
+        run: python -m pip install -e ".[test]"
+      - name: Compile code and execute new and neighboring regressions
+        run: |
+          python -m compileall -q src/scanner/data/enrich/yahoo_prices.py src/scanner/reports/cycle_provider_receipt.py scripts/record_cycle_provider_receipt.py scripts/watch_cycle_science.py
+          python -m pytest -q \
+            tests/test_cycle_provider_receipt.py \
+            tests/test_cycle_oscillator_cy02.py \
+            tests/test_cycle_history_cy03.py \
+            tests/test_cycle_science_watch.py
+      - name: Confirm pre-existing snapshot stays quarantined
+        run: |
+          python scripts/watch_cycle_science.py --repo-root . --issue-269-state OPEN > /tmp/cycle_receipt_watch.json
+          python - <<'PY'
+          import json
+          p=json.load(open('/tmp/cycle_receipt_watch.json', encoding='utf-8'))
+          assert p['status'] == 'BLOCKED', p
+          assert p['research_release_performed'] is False
+          assert p['production_effect'] is False
+          assert p['gates']['CY03_provider_receipt_integrity'] == 'PASS_CLIENT_CAPTURE_ONLY'
+          assert p['gates']['CY02_external_source_PIT'] == 'NOT_VERIFIED'
+          assert p['observations']['provider_receipt_count'] >= 0
+          PY
