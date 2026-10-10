@@ -24,11 +24,14 @@ def test_currency_per_original_yahoo_listing(master, symbol, currency):
         assert selected.iloc[0]["currency"] == "HKD"
 
 
-def test_vale_ambiguity_remains_explicitly_unresolved_and_not_silently_reclassified(master):
-    vale = master[(master["active"] == "1") & (master["symbol"] == "VALE")]
-    assert len(vale) == 2
-    assert set(vale["currency"]) == {"BRL", "USD"}
-    assert len(set(vale["isin"])) == 1
+def test_vale_original_and_adr_are_separate_and_not_currency_reclassified(master):
+    listed = master[(master["active"] == "1") & (master["symbol"].isin(["VALE", "VALE3.SA"]))]
+    assert len(listed) == 2
+    a = listed.set_index("symbol")
+    assert a.loc["VALE", "currency"] == "USD"
+    assert a.loc["VALE", "isin"] == "US91912E1055"
+    assert a.loc["VALE3.SA", "currency"] == "BRL"
+    assert a.loc["VALE3.SA", "isin"] == "BRVALEACNOR0"
 
 
 def test_no_unexpected_missing_currency_for_13_confirmed_symbols(master):
