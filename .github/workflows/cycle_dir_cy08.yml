@@ -3,7 +3,10 @@ on:
   pull_request:
     paths:
       - "scripts/audit_cycle_cy08.py"
+      - "src/scanner/research/pattern_discovery/cycle_cy08_net_ablation.py"
+      - "configs/cycle_direction/cy08_net_cost_v1.json"
       - "tests/test_cy08_readiness.py"
+      - "tests/test_cy08_net_ablation.py"
       - "docs/cycle_direction/**"
       - ".github/workflows/cycle_dir_cy08.yml"
   workflow_dispatch:
@@ -26,9 +29,12 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_cy08_readiness.py
+          tests/test_cy08_net_ablation.py
           tests/pattern_discovery/test_l12_promotion_gate.py
           tests/pattern_discovery/test_l13_decision_challenger.py
           tests/pattern_discovery/test_l14_continuous_operations.py
+      - name: Compile immutable CY-08 research code
+        run: python -m compileall -q scripts/audit_cycle_cy08.py src/scanner/research/pattern_discovery/cycle_cy08_net_ablation.py
       - name: Audit real CY-08 prerequisites without research writes
         run: |
           python scripts/audit_cycle_cy08.py > /tmp/cy08-readiness.json
