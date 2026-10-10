@@ -8,6 +8,7 @@ const host=document.getElementById('observations');if(!host)return;
 const RAW='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/main/';
 const REF='argus-preview/observations/external_thesis_watch_reference.json';
 const PUBLIC='argus-preview/observations/external_thesis_watch_candidates.json';
+const RATIONALES='argus-preview/observations/external_thesis_source_notes.json';
 const ELLIOTT='https://raw.githubusercontent.com/grisuweimar-crypto/trading-zentrale/refs/heads/external-candidate-elliott-data/artifacts/research/candidate_elliott_current.json';
 const META='artifacts/research/history_metadata.json';
 const SCAN='artifacts/research/latest_scanner.csv';
@@ -57,7 +58,7 @@ const css=[
 '@media(max-width:900px){#etw .etwMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}',
 '@media(max-width:680px){#etw{padding:14px}#etw .etwTitle h3{font-size:26px}#etw .etwList{grid-template-columns:1fr}#etw .etwTools button{font-size:11px;padding:9px}}'
 ].join('\n');
-const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}"+"\n#etw .etwWave{font-size:11px;border-top:1px solid #355267;padding:8px 0;line-height:1.6}";st.textContent+='\n'+"#etw .etwCard{background:linear-gradient(155deg,#123046,#081e30 88%);border:1px solid #415c70;border-radius:14px;padding:19px 20px;box-shadow:0 8px 24px rgba(0,0,0,.11);line-height:1.6}\n#etw .etwCard .etwName{font:normal 20px Georgia,serif;color:#f4e7d0;line-height:1.25}\n#etw .etwCard .etwSym{font:600 11px Inter,system-ui,sans-serif;letter-spacing:.12em;color:#d7b878;margin-top:6px}\n#etw .etwCard .etwPill{font-size:11px;line-height:1.45;padding:6px 10px}\n#etw .etwLead{font-size:12px;color:#c4d5df;line-height:1.55;margin:14px 0 7px}\n#etw .etwHistorical{border-top:1px solid #3b5569;margin-top:14px;padding-top:15px}\n#etw .etwHistorical .etwEyebrow{display:block;font-size:10px;color:#cfb585;letter-spacing:.09em;text-transform:uppercase;margin-bottom:6px}\n#etw .etwHistorical strong{color:#f0dfc3;font-size:14px;line-height:1.4;font-weight:650}\n#etw .etwHistorical p{font-size:12px;color:#cfdee8;line-height:1.65;margin:7px 0 9px}\n#etw .etwEvidenceTitle{margin:15px 0 4px;font-size:11px;font-weight:650;color:#e9d5b0}\n#etw .etwRationale{margin-top:8px;border-left:2px solid #bd9c64}\n#etw .etwRationale p{font-size:12px;line-height:1.6}\n#etw .etwTag{font-size:12px;line-height:1.6;margin:12px 0 5px;color:#d2dfe8}\n#etw .etwTech{margin-top:9px}\n@media(max-width:680px){#etw .etwCard{padding:17px 15px}#etw .etwCard .etwName{font-size:19px}#etw .etwCard .etwPill{font-size:10px}}";st.id='etwStyles';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}"+"\n#etw .etwWave{font-size:11px;border-top:1px solid #355267;padding:8px 0;line-height:1.6}";st.textContent+='\n'+"#etw .etwCard{background:linear-gradient(155deg,#123046,#081e30 88%);border:1px solid #415c70;border-radius:14px;padding:19px 20px;box-shadow:0 8px 24px rgba(0,0,0,.11);line-height:1.6}\n#etw .etwCard .etwName{font:normal 20px Georgia,serif;color:#f4e7d0;line-height:1.25}\n#etw .etwCard .etwSym{font:600 11px Inter,system-ui,sans-serif;letter-spacing:.12em;color:#d7b878;margin-top:6px}\n#etw .etwCard .etwPill{font-size:11px;line-height:1.45;padding:6px 10px}\n#etw .etwLead{font-size:12px;color:#c4d5df;line-height:1.55;margin:14px 0 7px}\n#etw .etwHistorical{border-top:1px solid #3b5569;margin-top:14px;padding-top:15px}\n#etw .etwHistorical .etwEyebrow{display:block;font-size:10px;color:#cfb585;letter-spacing:.09em;text-transform:uppercase;margin-bottom:6px}\n#etw .etwHistorical strong{color:#f0dfc3;font-size:14px;line-height:1.4;font-weight:650}\n#etw .etwHistorical p{font-size:12px;color:#cfdee8;line-height:1.65;margin:7px 0 9px}\n#etw .etwEvidenceTitle{margin:15px 0 4px;font-size:11px;font-weight:650;color:#e9d5b0}\n#etw .etwRationale{margin-top:8px;border-left:2px solid #bd9c64}\n#etw .etwRationale p{font-size:12px;line-height:1.6}\n#etw .etwTag{font-size:12px;line-height:1.6;margin:12px 0 5px;color:#d2dfe8}\n#etw .etwTech{margin-top:9px}\n@media(max-width:680px){#etw .etwCard{padding:17px 15px}#etw .etwCard .etwName{font-size:19px}#etw .etwCard .etwPill{font-size:10px}}";st.textContent+='\n'+"#etw .etwSourceTitle{display:block;font-size:13px;line-height:1.5;color:#f2d8ad;margin:7px 0}#etw .etwGoal{border-top:1px solid #345367;padding-top:9px;margin-top:9px;font-size:12px;color:#dce8ed}#etw .etwGoal strong{color:#f6d49c}";st.id='etwStyles';document.head.appendChild(st);
 host.insertAdjacentHTML('afterbegin',
 '<section id="etw" aria-label="Externe Aufnahmekandidaten">'+
 '<div class="etwTitle"><div><div class="etwGold">ARGUS · EXTERNAL THESIS WATCH</div>'+
@@ -74,7 +75,7 @@ host.insertAdjacentHTML('afterbegin',
 '<details class="etwSources"><summary>Quellen und Grenzen dieser Darstellung</summary><p id="etwSourcesText">Datenstände werden nach dem Laden angezeigt.</p></details>'+
 '</section>');
 const el=id=>document.getElementById(id);
-let baseline=[],publicCandidates=[],candidateElliott=null,priv={schema_version:'argus_external_thesis_private_v1',new_leads:[],source_updates:[],newsletters:[]};
+let baseline=[],publicCandidates=[],publicEvidence=[],candidateElliott=null,priv={schema_version:'argus_external_thesis_private_v1',new_leads:[],source_updates:[],newsletters:[]};
 let scanSymbols=null,scanMeta=null,filter='all',query='',running=false;
 try{const saved=localStorage.getItem(KEY);if(saved){const parsed=JSON.parse(saved);if(parsed?.schema_version==='argus_external_thesis_private_v1'&&Array.isArray(parsed.new_leads)&&Array.isArray(parsed.source_updates))priv=parsed}}catch(_){}
 async function get(path,format){
@@ -126,6 +127,20 @@ async function refresh(){
    d.items.some(x=>baseline.some(b=>b.symbol===x.symbol)))throw Error('Kandidatenreferenz ungültig');
   publicCandidates=d.items;
  }catch(e){publicCandidates=[];errors.push('Kandidaten: '+e.message)}
+ try{
+  const d=await get(RATIONALES,'json');
+  const allSymbols=new Set([...baseline,...publicCandidates].map(x=>x.symbol));
+  if(d?.schema_version!=='argus_external_thesis_source_notes_v1'||!Array.isArray(d.items)||
+   d.items.length>150||
+   !d.items.every(x=>x&&allSymbols.has(x.symbol)&&
+     ['observed_newsletter','historical_project_recap'].includes(x.source_kind)&&
+     typeof x.source_family==='string'&&x.source_family.length<160&&
+     typeof x.source_rationale==='string'&&x.source_rationale.length<1200&&
+     (x.source_date==null||/^\d{4}-\d{2}-\d{2}$/.test(x.source_date))&&
+     (!x.source_target||x.source_target.value>0&&['EUR','USD'].includes(x.source_target.currency))))
+   throw Error('Quellenbegründungen ungültig');
+  publicEvidence=d.items;
+ }catch(e){publicEvidence=[];errors.push('Quellenbegründungen: '+e.message)}
  try{candidateElliott=await getCandidateElliott()}
  catch(e){candidateElliott=null;errors.push('Elliott-Kandidatenstand: '+e.message)}
  try{
@@ -152,8 +167,9 @@ function merge(){
  for(const item of baseline){m.set(item.symbol,{symbol:item.symbol,name:item.name,historical:item.historical_label,oldGroup:item.original_group,isNew:false,notes:[]})}
  for(const s of publicCandidates){
   m.set(s.symbol,{symbol:s.symbol,name:s.name,historical:null,oldGroup:'EXTERNAL_WATCH',
-   isNew:true,notes:[s],externalResearch:true});
+   isNew:true,notes:s.source_rationale?[s]:[],externalResearch:true});
  }
+ for(const s of publicEvidence){const item=m.get(s.symbol);if(item)item.notes.push(s)}
  for(const s of Array.isArray(priv.new_leads)?priv.new_leads:[]){
   if(!s||typeof s.symbol!=='string'||!s.symbol.match(/^[A-Z0-9.^-]{1,20}$/))continue;
   const item=m.get(s.symbol)??{symbol:s.symbol,name:s.name??s.symbol,historical:null,oldGroup:null,isNew:true,notes:[]};
@@ -179,11 +195,11 @@ function card(item){
  // recommendation would fabricate evidence. In particular MIXED has no recorded
  // positive/negative components.
  const historyHTML=item.historical?
-  '<div class="etwHistorical"><span class="etwEyebrow">Ältere externe Einordnung · nicht überprüfbar</span>'+
-  '<strong>'+(item.historical==='MIXED'?'Damals als „gemischt“ bezeichnet':'Bedeutung der früheren Einstufung nicht belegt')+'</strong>'+
+  '<div class="etwHistorical"><span class="etwEyebrow">Älterer Scannervergleich · Prüfkriterien nicht vollständig dokumentiert</span>'+
+  '<strong>'+(item.historical==='MIXED'?'Damals uneinheitlich beurteilt':'Früherer Vergleichsvermerk · keine heutige Bewertung')+'</strong>'+
   '<p>'+(item.historical==='MIXED'?
-   'Das überlieferte englische Stichwort lässt sich als „uneinheitlich“ verstehen. Welche Argumente dafür oder dagegen sprachen, wurde nicht dokumentiert. Daraus folgt keine aktuelle Einschätzung.':
-   'Im historischen Referenzbestand steht lediglich eine Kurzbezeichnung. Gründe, Bewertungskriterien und die ursprüngliche Quelle sind nicht hinterlegt. Daraus lässt sich kein aktuelles Urteil ableiten.')+'</p>'+
+   '„MIXED“ stammt aus unserer früheren Gegenüberstellung mit dem Scanner, nicht aus einem Rating des Newsletter-Anbieters. Welche Punkte dafür oder dagegen sprachen, ist im alten Kurzregister nicht vollständig vermerkt. Die externe Trading-Idee und ihre Begründung stehen separat darunter.':
+   'Das alte Schlagwort beschreibt eine damalige interne Gegenüberstellung. Deren genaue Prüfkriterien stehen nicht vollständig im Archiv. Die ursprüngliche externe Trading-Idee wird, soweit nachvollziehbar, gesondert beschrieben.')+'</p>'+
   '<details class="etwTech"><summary>Originalen Archivvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur der damals notierte Begriff, kein gültiger Entscheidungsstatus.</details></div>':
   '<p class="etwLead">Externe Aktienidee · getrennt von der eigentlichen Scanneraufnahme und nicht als Handelssignal bestätigt.</p>';
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
@@ -197,11 +213,28 @@ function card(item){
    '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></div>';
  }).join('')+'</details>':'<p>Die Berechnung hat noch keine ausgabefähige Wellenstruktur erfasst. Ein fehlender Zustand ist kein neutrales Signal.</p>')+'</div>'):'';
  const noteHTML=notes.length?
-  '<div class="etwEvidenceTitle">Dokumentierte Quellenhinweise</div>'+notes.map(n=>
-  '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+esc(formatDate(n.source_date))+'</small>'+
-  '<p>'+esc(n.source_rationale??'Zu diesem Quellenhinweis liegt keine dokumentierte Begründung vor.')+'</p>'+
-  (safeLink(n.source_link)?'<a href="'+esc(safeLink(n.source_link))+'" target="_blank" rel="noopener noreferrer">Private Original-Mail öffnen ↗</a>':'')+'</div>').join(''):
-  item.historical?'':'<p class="etwNote">Es liegt noch keine konkrete Begründung für diese Aktienidee vor.</p>';
+  '<div class="etwEvidenceTitle">Warum wurde die Aktie vorgeschlagen?</div>'+notes.map(n=>{
+   const historical=n.source_kind==='historical_project_recap';
+   const trace=historical?
+      'Frühere Projektauswertung vom '+formatDate(n.review_date)+'. Originalnewsletter derzeit nicht erneut geprüft.':
+      n.source_kind==='observed_newsletter'?
+      'Newsletter-Betreff und enthaltene Kurzvorschau geprüft; vollständige Artikelargumentation nicht erneut verifiziert.':
+      'Externer Quellenhinweis; getrennt vom Scanner.';
+   const target=n.source_target&&Number.isFinite(Number(n.source_target.value))?
+      '<p class="etwGoal">Im damaligen Newsletter genanntes Kursziel: <strong>'+
+      esc(new Intl.NumberFormat('de-DE',{maximumFractionDigits:2}).format(Number(n.source_target.value)))+' '+
+      esc(n.source_target.currency)+'</strong>. Kein eigenes ARGUS-Kursziel.</p>':'';
+   return '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
+       esc(historical?'Auswertung '+formatDate(n.review_date):formatDate(n.source_date))+'</small>'+
+     (n.source_title?'<strong class="etwSourceTitle">'+esc(n.source_title)+'</strong>':'')+
+     '<p>'+esc(n.source_rationale??'Zu diesem Hinweis liegt keine ausreichende Begründung vor.')+'</p>'+
+     target+
+     (n.source_kind?'<details class="etwTech"><summary>Wie ist die Begründung belegt?</summary>'+
+      esc(trace)+'</details>':'')+
+     (safeLink(n.source_link)?'<a href="'+esc(safeLink(n.source_link))+'" target="_blank" rel="noopener noreferrer">Persönliche Quellenmail öffnen ↗</a>':'')+
+     '</div>';
+   }).join(''):
+  '<p class="etwNote">Für diesen Kandidaten ist noch kein nachvollziehbarer Quellenanlass hinterlegt.</p>';
  return '<article class="etwCard" aria-label="'+esc(item.name)+' – '+esc(item.symbol)+'"><div class="etwTop"><div><div class="etwName">'+esc(item.name)+'</div><div class="etwSym">'+esc(item.symbol)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
  historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
@@ -221,7 +254,7 @@ function render(){
  el('etwList').innerHTML=visible.length?visible.map(card).join(''):'<div class="etwEmpty">Keine entsprechenden Fälle im aktuellen Anzeigebestand. Prüfe gegebenenfalls den Filter oder prüfe die verfügbaren Quellen.</div>';
  const sources=Array.isArray(priv.newsletters)?priv.newsletters:[];
  el('etwSourcesText').innerHTML=
-  'Öffentliche Basis: '+esc(REF)+'; '+esc(PUBLIC)+'. Elliott-Kandidatenstand: isolierter Research-Schattenzweig. Scannerzugehörigkeit: '+esc(META)+' und '+esc(SCAN)+'. '+
+  'Öffentliche Basis: '+esc(REF)+'; '+esc(PUBLIC)+'; '+esc(RATIONALES)+'. Elliott-Kandidatenstand: isolierter Research-Schattenzweig. Scannerzugehörigkeit: '+esc(META)+' und '+esc(SCAN)+'. '+
   'Private Ausgangsthesen werden weder an den Scanner noch an GitHub übertragen. Originalstatuscodes aus der historischen Referenz sind keine neuen Entscheidungen.'+
   (sources.length?'<br><br><b>Geprüfte Newsletter-Typen:</b> '+sources.map(n=>'<p><strong>'+esc(n.family)+'</strong>: '+esc(n.suitability)+'</p>').join(''):'');
 }
