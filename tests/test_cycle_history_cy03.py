@@ -127,3 +127,89 @@ def test_unreliable_or_backdated_source_never_becomes_valid():
          cycle_last_bar="2026-10-10")
     with pytest.raises(ValueError,match="invalid_valid_provenance"):
         eligibility(r)
+
+
+def test_file_record_is_append_only_idempotent_and_never_rewrites_legacy(tmp_path, monkeypatch):
+    """Fixture mocks CY-02 replay only; live CI dry-run uses the real auditor."""
+    import hashlib
+    import json
+    from pathlib import Path
+    from scripts import audit_cycle_current
+    from scanner.reports.cycle_history import record, csv_bytes
+
+    monkeypatch.setattr(audit_cycle_current, "audit_csv", lambda *a, **k: ([], {}))
+    def write(rel, data):
+        path = tmp_path/rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return path
+    source = b"asset_id,cycle\\nAAA,50\\n"
+    bars = b"synthetic-not-a-real-gzip-replay"
+    write("artifacts/watchlist/watchlist_full.csv", source)
+    write("artifacts/reports/cycle_input_bars.csv.gz", bars)
+    protected = {
+        "artifacts/research/history_analysis.csv": b"old research archive\\n",
+        "artifacts/snapshots/score_history.csv": b"old score history\\n",
+        "artifacts/research/history_recent.csv": b"old recent archive\\n",
+    }
+    for rel, data in protected.items():
+        write(rel,data)
+    sid = "11111111-1111-4111-8111-111111111111"
+    def publish(sid, day, run_id, value):
+        generated = day+"T08:00:00+00:00"
+        observation = dict(symbol="AAA", snapshot_id=sid, run_id=run_id,
+            as_of=day, generated_at=generated,
+            cycle=str(value), cycle_quality="VALID", cycle_source=SOURCE,
+            cycle_formula_version=FORMULA, cycle_price_sha256="a"*64,
+            cycle_currency="USD", cycle_price_symbol="AAA",
+            cycle_price_basis="1d_auto_adjust_true_close",
+            cycle_price_source="yfinance.download",
+            cycle_currency_lineage="WATCHLIST_DECLARED_ONLY",
+            cycle_session_time_quality="SESSION_DATE_CUTOFF_ONLY",
+            cycle_as_of=day+"T07:00:00+00:00",
+            cycle_computed_at=day+"T07:01:00+00:00",
+            cycle_last_bar=(date.fromisoformat(day)-timedelta(days=1)).isoformat(),
+            cycle_quality_reason="COMPLETED_DAILY_BARS",
+            observation_type="observed_scanner", data_source="scanner_run")
+        raw = csv_bytes(tuple(observation), [observation])
+        write("artifacts/research/latest_scanner.csv", raw)
+        metadata = {"snapshot_id":sid,"as_of":day,"generated_at":generated,
+            "latest_run_complete":True,"validation":{"status":"ok"},
+            "daily_run":{"run_id":run_id},
+            "latest_scanner":{"sha256":hashlib.sha256(raw).hexdigest()},
+            "source":{"sha256":hashlib.sha256(source).hexdigest()}}
+        write("artifacts/research/history_metadata.json",json.dumps(metadata).encode())
+    publish(sid,"2026-10-10","run1",50)
+    first = record(tmp_path)
+    ledger = tmp_path/"artifacts/cycle_history/observations.csv"
+    previous = ledger.read_bytes()
+    assert first["observations"] == 1
+    assert first["new_current_valid"] == 1
+    assert first["research_eligible"] == 0
+    assert record(tmp_path)["file_sha256"]["observations.csv"] == first["file_sha256"]["observations.csv"]
+    assert ledger.read_bytes() == previous
+    assert (tmp_path/"artifacts/cycle_history/bars"/(sid+".csv.gz")).read_bytes() == bars
+    assert all((tmp_path/k).read_bytes()==v for k,v in protected.items())
+
+    publish(sid,"2026-10-10","run1",60)
+    with pytest.raises(ValueError,match="immutable_snapshot_changed"):
+        record(tmp_path)
+    assert ledger.read_bytes() == previous
+
+    publish("22222222-2222-4222-8222-222222222222","2026-10-11","run2",75)
+    second = record(tmp_path)
+    assert second["observations"] == 2
+    assert second["snapshots"] == 2
+    assert second["provisional_lags"]["1"] == 1
+    assert ledger.read_bytes().startswith(previous)
+    assert all((tmp_path/k).read_bytes()==v for k,v in protected.items())
+
+
+def test_current_snapshot_hash_tampering_is_blocked_before_write(tmp_path):
+    from scanner.reports.cycle_history import record
+    meta = tmp_path/"artifacts/research/history_metadata.json"
+    meta.parent.mkdir(parents=True)
+    meta.write_text('{"latest_run_complete":false,"validation":{"status":"incomplete"}}')
+    with pytest.raises(ValueError,match="incomplete_run"):
+        record(tmp_path)
+    assert not (tmp_path/"artifacts/cycle_history").exists()
