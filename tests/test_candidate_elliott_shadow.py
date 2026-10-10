@@ -54,7 +54,7 @@ def test_duplicate_price_session_fails_closed():
         candidate.validate_prices(rows, NOW)
 
 
-def test_frozen_core_adapter_is_independent_of_hkcm_and_scanner():
+def test_frozen_core_adapter_is_independent_of_external_and_scanner():
     rows = market_rows()
     as_of = rows[-1]["date"]
     routed = [{"symbol": "LULU", "as_of": as_of, "research_only": True}]
@@ -70,7 +70,7 @@ def test_frozen_core_adapter_is_independent_of_hkcm_and_scanner():
     build.assert_called_once_with(routed[0])
     assert result["output_count"] == 1
     assert result["research_only"] is True
-    assert result["hkcm_count_used_as_model_input"] is False
+    assert result["external_count_used_as_model_input"] is False
     assert result["qm_g_empirical_evidence_eligible"] is False
     assert result["scanner_universe_unchanged"] is True
     assert result["decision_effect"] == "none"
