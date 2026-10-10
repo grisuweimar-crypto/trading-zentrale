@@ -97,6 +97,10 @@ jobs:
           SCANNER_REQUIRE_PROVENANCE: '1'
         run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/scanner-run.json" --scanner-status "${{ steps.scan.outcome }}"
 
+      - name: CY-02 Zyklus-Bar-/Quality-Contract vor Publikation prüfen
+        if: steps.research.outputs.complete == 'true'
+        run: python scripts/audit_cycle_current.py
+
       - name: Marktpreise fuer das vollstaendige aktuelle Universum aktualisieren
         if: steps.research.outputs.complete == 'true'
         run: python scripts/prefetch_market_history.py --minimum-sessions 300

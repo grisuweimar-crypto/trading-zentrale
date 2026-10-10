@@ -31,6 +31,8 @@ from typing import Any
 
 import pandas as pd
 
+from scanner.data.enrich.cycle_oscillator import calculate_cycle
+
 
 ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
@@ -295,12 +297,31 @@ def _compute_features(
     }
 
 
+def _cycle_currency(row: pd.Series) -> str:
+    for field in ("Currency", "currency", "Währung"):
+        value = row.get(field)
+        if value is not None and not pd.isna(value) and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
+def _write_cycle_row(out: pd.DataFrame, idx: object, evidence: dict) -> None:
+    # pandas 2.x rejects decimal oscillator values in an int64 source field.
+    # Explicitly widen only the legacy-compatible cycle input, never scores.
+    if "Zyklus %" in out.columns and not pd.api.types.is_float_dtype(out["Zyklus %"]):
+        out["Zyklus %"] = pd.to_numeric(out["Zyklus %"], errors="coerce").astype(float)
+    for field, value in evidence.items():
+        if not field.startswith("_"):
+            out.at[idx, field] = value
+
+
 def enrich_watchlist_with_yahoo(
     df: pd.DataFrame,
     *,
     benchmark_stock: str = "SPY",
     benchmark_crypto: str = "BTC-USD",
     enabled: bool | None = None,
+    as_of: datetime | None = None,
 ) -> tuple[pd.DataFrame, YahooEnrichReport]:
     """Enrich a watchlist table in-place (copy) using Yahoo Finance.
 
@@ -311,7 +332,9 @@ def enrich_watchlist_with_yahoo(
     if enabled is None:
         enabled = should_fetch_yahoo()
 
-    now = datetime.now(timezone.utc)
+    now = as_of or datetime.now(timezone.utc)
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("as_of must be timezone-aware")
     market_date = now.date().isoformat()
 
     if not enabled:
@@ -331,6 +354,14 @@ def enrich_watchlist_with_yahoo(
             provider_frame_rows=0,
         )
         out = df.copy()
+        out.attrs["cycle_input_bars"] = []
+        # Offline/provider-disabled runs cannot re-label yesterday's oscillator
+        # as a freshly computed value. No legacy 0/50 fallback.
+        for idx, row in out.iterrows():
+            sym = _pick_symbol(row)
+            evidence = calculate_cycle(None, symbol=sym, currency=_cycle_currency(row),
+                                       is_crypto=_looks_like_crypto_pair(sym), as_of=now)
+            _write_cycle_row(out, idx, evidence)
         if "MarketDate" not in out.columns:
             out["MarketDate"] = market_date
         return out, rep
@@ -347,6 +378,18 @@ def enrich_watchlist_with_yahoo(
         row_symbols.append(sym)
         if sym:
             symbols.append(sym)
+
+    # Detect identical quote identifiers carrying contradictory declared
+    # currencies (e.g. currency-converted duplicates of one YahooSymbol).
+    # Neither row may claim a verified original-quote cycle.
+    declared_by_symbol: dict[str, set[str]] = {}
+    for _, row in out.iterrows():
+        sym = _pick_symbol(row)
+        if sym:
+            currency = _cycle_currency(row)
+            if currency:
+                declared_by_symbol.setdefault(sym, set()).add(currency.upper())
+    currency_conflicts = {sym for sym, values in declared_by_symbol.items() if len(values) > 1}
 
     # Deduplicate symbols for download
     symbols_u = sorted({s for s in symbols if s})
@@ -389,12 +432,35 @@ def enrich_watchlist_with_yahoo(
 
     fetched = 0
     failed = 0
+    cycle_input_bars = []
+    seen_cycle_windows = set()
 
-    # Per-row enrichment (keep previous values on failures)
+    # On missing prices, retain legacy *price* features only. Cycle is always
+    # recomputed or explicitly unavailable; it is never recycled as fresh.
     for idx, sym in zip(out.index, row_symbols):
+        close, vol = _series_from_download(dl, sym) if sym else (None, None)
+        row = out.loc[idx]
+        evidence = calculate_cycle(close, symbol=sym, currency=_cycle_currency(row),
+                                   is_crypto=_looks_like_crypto_pair(sym), as_of=now)
+        if sym in currency_conflicts:
+            evidence.update({"Zyklus %": float("nan"), "cycle_quality": "INVALID_VALUE",
+                             "cycle_quality_reason": "CONFLICTING_DECLARED_CURRENCIES",
+                             "cycle_price_sha256": ""})
+        _write_cycle_row(out, idx, evidence)
+        if evidence.get("cycle_quality") == "VALID":
+            key = (sym, str(evidence["cycle_currency"]), str(evidence["cycle_price_sha256"]))
+            if key not in seen_cycle_windows:
+                seen_cycle_windows.add(key)
+                for session_date, close_repr in evidence.get("_cycle_input_bars", []):
+                    cycle_input_bars.append({
+                        "symbol": sym, "currency": evidence["cycle_currency"],
+                        "formula_version": evidence["cycle_formula_version"],
+                        "price_sha256": evidence["cycle_price_sha256"],
+                        "as_of": evidence["cycle_as_of"],
+                        "session_date": session_date, "close": close_repr,
+                    })
         if not sym:
             continue
-        close, vol = _series_from_download(dl, sym)
         if close is None or close.dropna().empty:
             failed += 1
             continue
@@ -428,4 +494,5 @@ def enrich_watchlist_with_yahoo(
         provider_frame_sha256=provider_frame_sha256,
         provider_frame_rows=provider_frame_rows,
     )
+    out.attrs["cycle_input_bars"] = cycle_input_bars
     return out, rep

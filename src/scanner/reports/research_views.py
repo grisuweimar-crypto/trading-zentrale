@@ -32,7 +32,7 @@ SOURCE = "artifacts/snapshots/score_history.csv"
 MARKET = "artifacts/market_data/yahoo_ohlcv.csv"
 OUTPUT = "artifacts/research"
 VIEW_COLUMNS = "as_of generated_at snapshot_id schema_version".split()
-KNOWN_COLUMNS = set(("date symbol name score opportunity risk confidence confidence_label rs3m trend200 cycle cycle_quality cycle_source r_code rank universe_size rank_percentile close currency sector pillar_primary cluster_official bucket_type scoring_version history_schema_version trend_ok liquidity_ok score_status run_id universe_version config_version observation_type data_source liquidity_risk volatility drawdown roe growth margin debt_ratio market_regime_stock market_regime_crypto market_trend200_stock market_trend200_crypto scan_status".split()) + VIEW_COLUMNS)
+KNOWN_COLUMNS = set(("date symbol name score opportunity risk confidence confidence_label rs3m trend200 cycle cycle_quality cycle_source cycle_formula_version cycle_price_source cycle_price_basis cycle_price_symbol cycle_currency cycle_last_bar cycle_as_of cycle_computed_at cycle_price_sha256 cycle_eligible_bars cycle_quality_reason cycle_currency_lineage cycle_session_time_quality r_code rank universe_size rank_percentile close currency sector pillar_primary cluster_official bucket_type scoring_version history_schema_version trend_ok liquidity_ok score_status run_id universe_version config_version observation_type data_source liquidity_risk volatility drawdown roe growth margin debt_ratio market_regime_stock market_regime_crypto market_trend200_stock market_trend200_crypto scan_status".split()) + VIEW_COLUMNS)
 
 
 @dataclass(frozen=True)
