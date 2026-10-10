@@ -1,0 +1,101 @@
+name: ARGUS External Candidate Elliott Shadow
+
+on:
+  schedule:
+    # Tuesday–Saturday 05:30 UTC: previous completed US trading session.
+    - cron: "30 5 * * 2-6"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/run_candidate_elliott_shadow.py"
+      - ".github/workflows/argus_external_candidate_elliott.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/run_candidate_elliott_shadow.py"
+      - "tests/test_candidate_elliott_shadow.py"
+      - ".github/workflows/argus_external_candidate_elliott.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: argus-external-candidate-elliott-shadow
+  cancel-in-progress: false
+
+jobs:
+  candidate-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated research dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Test frozen-core adapter
+        run: python -m pytest -q tests/test_candidate_elliott_shadow.py
+      - name: Capture independently fetched LULU daily OHLCV and Elliott 6H
+        if: github.event_name != 'pull_request'
+        run: |
+          python scripts/run_candidate_elliott_shadow.py \
+            --fetch-yahoo \
+            --output /tmp/candidate_elliott_current.json \
+            --source-copy /tmp/candidate_elliott_prices.csv
+      - name: Publish on isolated data branch (never main)
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch=external-candidate-elliott-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"; then
+            git switch -C "$branch" "origin/$branch"
+          else
+            git switch --orphan "$branch"
+            git rm -rf . >/dev/null || true
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import shutil
+
+          base = Path("artifacts/research")
+          current_path = base / "candidate_elliott_current.json"
+          archive = base / "candidate_elliott_archive.jsonl"
+          new = json.loads(Path("/tmp/candidate_elliott_current.json").read_text())
+          if new.get("schema_version") != "external_candidate_elliott_shadow_v1":
+              raise RuntimeError("candidate_schema_not_valid")
+          if new.get("scanner_universe_unchanged") is not True:
+              raise RuntimeError("candidate_scanner_separation_failed")
+          records = []
+          if archive.exists():
+              records = [json.loads(line) for line in archive.read_text().splitlines() if line.strip()]
+          same = [old for old in records if old.get("as_of") == new["as_of"]]
+          if same:
+              if len(same) != 1 or same[0].get("source_price_csv_sha256") != new["source_price_csv_sha256"]:
+                  raise RuntimeError("candidate_immutable_market_session_conflict")
+              print("Already captured market session; no new archival record")
+          else:
+              base.mkdir(parents=True, exist_ok=True)
+              price_copy = base / "prices" / ("LULU_" + new["as_of"] + ".csv")
+              price_copy.parent.mkdir(parents=True, exist_ok=True)
+              if price_copy.exists():
+                  raise RuntimeError("candidate_price_archive_collision")
+              shutil.copyfile("/tmp/candidate_elliott_prices.csv", price_copy)
+              with archive.open("a", encoding="utf-8") as f:
+                  f.write(json.dumps(new, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n")
+              current_path.write_text(json.dumps(new, sort_keys=True, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+          PY
+          git add artifacts/research
+          if git diff --cached --quiet; then
+            echo "No new market session"
+            exit 0
+          fi
+          git commit -m "research(candidate): append prospective LULU Elliott observation"
+          git push origin "HEAD:refs/heads/$branch"
