@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T09:22:58.985877+00:00",
+  "decision_as_of": "2026-10-10T20:25:59.640546+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -32,11 +32,16 @@
           "timing:SN.L:6b9ad841e92f8191:60T",
           "timing:SN.L:b0fb906b9f3e02ec:60T",
           "timing:SN.L:8383be481c5c6052:60T",
+          "timing:SN.L:312bf577128ab874:60T",
           "timing:SN.L:51a8cac8cfa550aa:60T",
           "timing:SN.L:1691f75766881bca:60T"
         ],
         "positive_claim_ids": [
-          "timing:SN.L:6289a7880870e93e:60T"
+          "timing:SN.L:0671faf1011640c5:5T",
+          "timing:SN.L:b158fef8cbfb5c55:20T",
+          "timing:SN.L:3e260f25164f48ce:40T",
+          "timing:SN.L:6289a7880870e93e:60T",
+          "timing:SN.L:5b62a0aabd2f08fc:60T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -44,15 +49,20 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
+      "timing:SN.L:0671faf1011640c5:5T",
+      "timing:SN.L:b158fef8cbfb5c55:20T",
+      "timing:SN.L:3e260f25164f48ce:40T",
       "timing:SN.L:6289a7880870e93e:60T",
+      "timing:SN.L:5b62a0aabd2f08fc:60T",
       "timing:SN.L:6b9ad841e92f8191:60T",
       "timing:SN.L:b0fb906b9f3e02ec:60T",
       "timing:SN.L:8383be481c5c6052:60T",
+      "timing:SN.L:312bf577128ab874:60T",
       "timing:SN.L:51a8cac8cfa550aa:60T",
       "timing:SN.L:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 6
+      "timing": 11
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -61,7 +71,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
+  "snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -220,6 +230,14 @@
       "direction": null,
       "relation_state": "conflict_present",
       "source_snapshot_id": "f409c312-0349-4b29-8dab-3ecdbd9463b3",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-10T20:25:59.640546+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
     }
