@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T00:21:56.038698+00:00",
+  "decision_as_of": "2026-10-10T06:53:58.039641+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,22 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:APLD:03f6bed3788ea96b:5T",
-      "timing:APLD:2ec83739629fba4d:5T",
-      "timing:APLD:838b819bd450346e:5T",
-      "timing:APLD:2fbfff31832fc700:60T"
+      "timing:APLD:838b819bd450346e:5T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+  "snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -165,21 +162,29 @@
       "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-10T06:53:58.039641+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-07-09",
     "last_overextension_rs3m": 0.1855061751258551,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 91,
+    "sessions_since_last_overextension": 92,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

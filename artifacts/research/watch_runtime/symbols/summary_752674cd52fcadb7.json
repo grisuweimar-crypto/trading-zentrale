@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T00:21:56.038698+00:00",
+  "decision_as_of": "2026-10-10T06:53:58.039641+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,19 +29,24 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:MGMA.V:5b62a0aabd2f08fc:60T"
+      "timing:MGMA.V:a2763d94cd6f82e9:5T",
+      "timing:MGMA.V:056cab0d8c42f322:5T",
+      "timing:MGMA.V:85b7b4bcb43aeb00:20T",
+      "timing:MGMA.V:ae61c82fbb0371fc:20T",
+      "timing:MGMA.V:f9714fd629aaf7f2:40T",
+      "timing:MGMA.V:677e719dc170acd6:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 6
     },
-    "relation_state": "single_direction_or_unopposed",
+    "relation_state": "correlated_same_family_support",
     "state": "positive",
-    "support_structure": "single_direction_or_unopposed"
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+  "snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -162,14 +167,22 @@
       "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-10T06:53:58.039641+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": true,
-      "score_falling_5t": true,
+      "rs3m_falling_5t": false,
+      "score_falling_5t": false,
       "trend200_falling_5t": false
     },
     "last_overextension_date": null,

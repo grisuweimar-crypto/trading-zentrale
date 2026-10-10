@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T00:21:56.038698+00:00",
+  "decision_as_of": "2026-10-10T06:53:58.039641+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,28 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:XYZ:42bcd8a34d314c09:5T",
-      "timing:XYZ:0671faf1011640c5:5T",
-      "timing:XYZ:f483a5247b57affc:20T",
-      "timing:XYZ:cad5eb04910821c4:20T",
-      "timing:XYZ:b158fef8cbfb5c55:20T",
-      "timing:XYZ:3e260f25164f48ce:40T",
-      "timing:XYZ:e3f414dec0e09a39:40T",
-      "timing:XYZ:a0bebf08166a0860:60T",
-      "timing:XYZ:fe6ff0aee1bf447a:60T",
-      "timing:XYZ:92ad9e5c355866b9:60T"
+      "timing:XYZ:e3f414dec0e09a39:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 10
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+  "snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -171,6 +162,14 @@
       "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-10T06:53:58.039641+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -185,7 +184,7 @@
     "last_overextension_rs3m": 0.168840950003394,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 36,
+    "sessions_since_last_overextension": 37,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T00:21:56.038698+00:00",
+  "decision_as_of": "2026-10-10T06:53:58.039641+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,17 +27,21 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "positive",
+    "known_directional_claim_ids": [
+      "timing:MELI:e3f414dec0e09a39:40T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 1
+    },
+    "relation_state": "single_direction_or_unopposed",
+    "state": "positive",
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
+  "snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -158,6 +162,14 @@
       "source_snapshot_id": "496e6419-3da5-4b25-ac7f-25e16375a401",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-10T06:53:58.039641+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "4b53a93b-fb9f-4704-b56b-1a714f36e428",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -172,7 +184,7 @@
     "last_overextension_rs3m": 0.1605726818589858,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 26,
+    "sessions_since_last_overextension": 27,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -182,8 +194,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "stable_confirmed"
   }
 }
