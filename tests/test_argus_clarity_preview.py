@@ -44,8 +44,11 @@ class ArgusClarityTests(unittest.TestCase):
 
     def test_external_candidates_are_not_pattern_candidates(self):
         text = OBSERVATIONS.read_text(encoding="utf-8")
-        self.assertIn("Aktienkandidaten", text)
-        self.assertIn("Musterkandidaten", text)
+        glossary = HELP.read_text(encoding="utf-8")
+        self.assertIn("Aktienkandidat", glossary)
+        self.assertIn("Musterkandidat", glossary)
+        self.assertIn("Warum wurde die Aktie vorgeschlagen?", text)
+        self.assertIn("argus-editorial.css", text)
         self.assertIn("originalen archivvermerk", text.lower())
         self.assertNotIn("Die damalige externe E-Mail-Begründung ist hier noch nicht hinterlegt.", text)
         self.assertIn("Eigen", text)
