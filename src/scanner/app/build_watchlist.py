@@ -500,7 +500,14 @@ def build_watchlist_outputs() -> None:
     writer.writerows(cycle_input_bars)
     cycle_bars_path = artifacts_dir() / "reports" / "cycle_input_bars.csv.gz"
     cycle_bars_path.parent.mkdir(parents=True, exist_ok=True)
-    cycle_bars_path.write_bytes(gzip.compress(bar_buffer.getvalue().encode("utf-8"), mtime=0))
+    cycle_bars_bytes = gzip.compress(bar_buffer.getvalue().encode("utf-8"), mtime=0)
+    cycle_bars_path.write_bytes(cycle_bars_bytes)
+    # Contemporaneous CLIENT-side provenance only; never certify quote currency
+    # or publisher availability using the local GitHub Actions runner clock.
+    from scanner.reports.cycle_provider_receipt import persist_current_fetch_receipt
+    persist_current_fetch_receipt(
+        yahoo_report, bars=cycle_bars_bytes, root=project_root()
+    )
 
     # 2) RAW exportieren (ungeändert)
     raw_path = out_dir / "watchlist_full_raw.csv"
