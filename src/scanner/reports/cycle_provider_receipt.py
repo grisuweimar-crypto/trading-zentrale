@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
+import re
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -137,7 +138,7 @@ def record_snapshot_receipt(root: Path) -> dict[str, Any]:
     if not meta.get("latest_run_complete") or meta.get("validation", {}).get("status") != "ok":
         raise CycleProviderReceiptError("incomplete_scanner_snapshot")
     sid = str(manifest.get("latest_snapshot_id") or "")
-    if not sid or sid != meta.get("snapshot_id"):
+    if not re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", sid, re.I) or sid != meta.get("snapshot_id"):
         raise CycleProviderReceiptError("snapshot_identity_mismatch")
     bars_path = root / "artifacts/cycle_history/bars" / (sid + ".csv.gz")
     bars = bars_path.read_bytes()
@@ -173,3 +174,56 @@ def record_snapshot_receipt(root: Path) -> dict[str, Any]:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(serialized)
     return {"status": "CAPTURED_UNVERIFIED_PROVIDER_PIT", "snapshot_id": sid, "snapshot_receipt_sha256": doc["snapshot_receipt_sha256"]}
+
+
+def inspect_archived_snapshot_receipts(root: Path, ledger: list[dict[str, str]]) -> dict[str, Any]:
+    """Check each existing immutable receipt against archived bars and ledger.
+
+    Older snapshots need not have a receipt. That absence can NEVER imply PIT
+    certification; it remains visible to the science watch.
+    """
+    root = Path(root)
+    receipts = root / "artifacts/cycle_history/provider_receipts"
+    by_sid: dict[str, list[dict[str, str]]] = {}
+    for row in ledger:
+        by_sid.setdefault(row["snapshot_id"], []).append(row)
+    verified: list[str] = []
+    if receipts.exists() and (not receipts.is_dir() or receipts.is_symlink()):
+        raise CycleProviderReceiptError("receipt_directory_invalid")
+    for entry in sorted(receipts.glob("*")) if receipts.exists() else []:
+        if not entry.is_file() or entry.is_symlink() or entry.suffix != ".json":
+            raise CycleProviderReceiptError("unexpected_receipt_file")
+        sid = entry.stem
+        records = by_sid.get(sid)
+        if not records:
+            raise CycleProviderReceiptError("receipt_snapshot_not_in_ledger")
+        doc = json.loads(entry.read_text(encoding="utf-8"))
+        if (doc.get("schema_version") != ARCHIVE
+                or doc.get("snapshot_id") != sid
+                or doc.get("scanner_run_id") != records[0]["run_id"]
+                or doc.get("scanner_as_of") != records[0]["as_of"]
+                or doc.get("historical_pit_certification") is not False
+                or doc.get("research_released") is not False
+                or doc.get("recorded_from_current_source_only") is not True
+                or doc.get("observed_source_report") != REPORT):
+            raise CycleProviderReceiptError("archived_receipt_identity_or_claim_invalid")
+        _digest(doc, "snapshot_receipt_sha256")
+        bars_path = root / "artifacts/cycle_history/bars" / (sid + ".csv.gz")
+        if not bars_path.is_file() or bars_path.is_symlink():
+            raise CycleProviderReceiptError("archived_receipt_bars_missing")
+        bars = bars_path.read_bytes()
+        verify_fetch_receipt(doc["fetch_receipt"], bars=bars)
+        if any(row["bars_sha256"] != _sha(bars) for row in records):
+            raise CycleProviderReceiptError("archived_receipt_bars_ledger_mismatch")
+        end = _datetime(doc["fetch_receipt"]["finished_at_utc"], "finished")
+        if any(end > _datetime(row["generated_at"], "generated_at") for row in records):
+            raise CycleProviderReceiptError("archived_receipt_after_scan_publication")
+        verified.append(sid)
+    return {
+        "provider_receipt_count": len(verified),
+        "verified_receipt_snapshot_ids": verified,
+        "snapshot_count": len(by_sid),
+        "snapshots_without_client_receipt": len(by_sid) - len(verified),
+        "independent_provider_pit_certified": False,
+        "research_released": False,
+    }
