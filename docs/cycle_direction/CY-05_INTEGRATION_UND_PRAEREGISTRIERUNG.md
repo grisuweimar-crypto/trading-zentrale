@@ -20,7 +20,7 @@ Bestandsaufnahme L2/L3 auf `main`:
 
 | Datei | Änderung / Schutz |
 |---|---|
-| `configs/pattern_discovery/feature_library_cycle_v2.json` | Separate L2-Version `PDL-FEATURE-LIBRARY-CYCLE-v2`; neuer registrierter Transform `level_band` für `scanner.cycle`, mit **unveränderlichen Grenzen 25/50/75**. |
+| `configs/pattern_discovery/feature_library_cycle_v2.json` | Separate L2-Version `PDL-FEATURE-LIBRARY-CYCLE-v2`; neuer registrierter Transform `level_band` für **`scanner.cycle::v2`** (eigene Feature-Version statt stiller Veränderung von `scanner.cycle::v1`), mit **unveränderlichen Grenzen 25/50/75**. |
 | `configs/pattern_discovery/l3_search_contract_cycle_v2.json` | Separater, explizit zu übergebender L3-Vertrag `CYCLE-DIR-CY05-L3-v2`; die vier Niveauzustände werden atomisierbar. Gleiche strukturelle Schema-Familie `v1`, aber **eigene Vertragsbytes / Hash**. |
 | `src/scanner/research/pattern_discovery/feature_library.py` | Nur bei explizit geladener CY-05-L2-Version gelten zusätzliche Research-Gates für Cycle. Ohne **freigegebenen** CY-03-Ledger-Status, **VALID**-Qualität und Metadaten keine Verfügbarkeit; Lags benötigen gesonderte Eligibility und kohärente Listing-/Währungs-/Formel-Identität. |
 | `src/scanner/research/pattern_discovery/search_engine.py` | Atomisierung `level_band` entlang 0–<25 / 25–<50 / 50–<75 / 75–100; echte numerische 0 und 100 bleiben gültig. Kein Veränderung am aktiven L3-v1-Contract. |
