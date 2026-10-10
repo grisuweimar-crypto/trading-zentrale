@@ -57,7 +57,7 @@ const css=[
 '@media(max-width:900px){#etw .etwMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}}',
 '@media(max-width:680px){#etw{padding:14px}#etw .etwTitle h3{font-size:26px}#etw .etwList{grid-template-columns:1fr}#etw .etwTools button{font-size:11px;padding:9px}}'
 ].join('\n');
-const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}"+"\n#etw .etwWave{font-size:11px;border-top:1px solid #355267;padding:8px 0;line-height:1.6}";st.id='etwStyles';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent=css+"\n#etw .etwExplainer{background:linear-gradient(130deg,#18394c,#0b2537);border:1px solid #4d687b;border-radius:10px;padding:14px 16px;margin:17px 0 9px;font-size:12px;line-height:1.7;color:#d9e4eb}\n#etw .etwExplainer b{color:#f2d9a7}\n#etw .etwTech{margin:8px 0;border-top:1px solid #355267;padding-top:8px}\n#etw .etwTech summary{color:#efd4a4;cursor:pointer;font-size:11px}\n#etw .etwTech summary:focus-visible{outline:2px solid #e0bc77}\n#etw .etwElliott p{margin:8px 0;line-height:1.6}\n#etw .etwMetric small{color:#a9c4d2;line-height:1.4;font-size:10px}"+"\n#etw .etwWave{font-size:11px;border-top:1px solid #355267;padding:8px 0;line-height:1.6}";st.textContent+='\n'+"#etw .etwCard{background:linear-gradient(155deg,#123046,#081e30 88%);border:1px solid #415c70;border-radius:14px;padding:19px 20px;box-shadow:0 8px 24px rgba(0,0,0,.11);line-height:1.6}\n#etw .etwCard .etwName{font:normal 20px Georgia,serif;color:#f4e7d0;line-height:1.25}\n#etw .etwCard .etwSym{font:600 11px Inter,system-ui,sans-serif;letter-spacing:.12em;color:#d7b878;margin-top:6px}\n#etw .etwCard .etwPill{font-size:11px;line-height:1.45;padding:6px 10px}\n#etw .etwLead{font-size:12px;color:#c4d5df;line-height:1.55;margin:14px 0 7px}\n#etw .etwHistorical{border-top:1px solid #3b5569;margin-top:14px;padding-top:15px}\n#etw .etwHistorical .etwEyebrow{display:block;font-size:10px;color:#cfb585;letter-spacing:.09em;text-transform:uppercase;margin-bottom:6px}\n#etw .etwHistorical strong{color:#f0dfc3;font-size:14px;line-height:1.4;font-weight:650}\n#etw .etwHistorical p{font-size:12px;color:#cfdee8;line-height:1.65;margin:7px 0 9px}\n#etw .etwEvidenceTitle{margin:15px 0 4px;font-size:11px;font-weight:650;color:#e9d5b0}\n#etw .etwRationale{margin-top:8px;border-left:2px solid #bd9c64}\n#etw .etwRationale p{font-size:12px;line-height:1.6}\n#etw .etwTag{font-size:12px;line-height:1.6;margin:12px 0 5px;color:#d2dfe8}\n#etw .etwTech{margin-top:9px}\n@media(max-width:680px){#etw .etwCard{padding:17px 15px}#etw .etwCard .etwName{font-size:19px}#etw .etwCard .etwPill{font-size:10px}}";st.id='etwStyles';document.head.appendChild(st);
 host.insertAdjacentHTML('afterbegin',
 '<section id="etw" aria-label="Externe Aufnahmekandidaten">'+
 '<div class="etwTitle"><div><div class="etwGold">ARGUS · EXTERNAL THESIS WATCH</div>'+
@@ -174,8 +174,18 @@ function card(item){
  const state=inScan(item.symbol);
  const status=state===null?'Zugehörigkeit ungeklärt':state?'Im aktuellen Scanner':'Außerhalb des Scanners';
  const manual=(item.oldGroup==='SHADOW')?'Früher separat beobachtet. Ob die Aktie heute im Scanner steht, zeigt nur der aktuelle Abgleich.':'';
- const label=item.historical?'Ältere externe Beobachtung · damalige Kennzeichnung, keine heutige Freigabe':'Externe Aktienidee · noch nicht als Handelssignal bestätigt';
- const oldCode=item.historical?'<details class="etwTech"><summary>Historischen Originalvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur die damalige Bezeichnung, keine neue Aufnahmeentscheidung.</details>':'';
+ // The legacy reference records ONLY the original label. It has no source reason,
+ // criteria or original provider claim. Translating the code into a present-day
+ // recommendation would fabricate evidence. In particular MIXED has no recorded
+ // positive/negative components.
+ const historyHTML=item.historical?
+  '<div class="etwHistorical"><span class="etwEyebrow">Ältere externe Einordnung · nicht überprüfbar</span>'+
+  '<strong>'+(item.historical==='MIXED'?'Damals als „gemischt“ bezeichnet':'Bedeutung der früheren Einstufung nicht belegt')+'</strong>'+
+  '<p>'+(item.historical==='MIXED'?
+   'Das überlieferte englische Stichwort lässt sich als „uneinheitlich“ verstehen. Welche Argumente dafür oder dagegen sprachen, wurde nicht dokumentiert. Daraus folgt keine aktuelle Einschätzung.':
+   'Im historischen Referenzbestand steht lediglich eine Kurzbezeichnung. Gründe, Bewertungskriterien und die ursprüngliche Quelle sind nicht hinterlegt. Daraus lässt sich kein aktuelles Urteil ableiten.')+'</p>'+
+  '<details class="etwTech"><summary>Originalen Archivvermerk anzeigen</summary><code>'+esc(item.historical)+'</code> · Nur der damals notierte Begriff, kein gültiger Entscheidungsstatus.</details></div>':
+  '<p class="etwLead">Externe Aktienidee · getrennt von der eigentlichen Scanneraufnahme und nicht als Handelssignal bestätigt.</p>';
  const notes=item.notes.slice().sort((a,b)=>String(b.source_date??'').localeCompare(String(a.source_date??'')));
  const ew=candidateElliott&&candidateElliott.symbol===item.symbol?candidateElliott:null;
  const ewHtml=item.externalResearch?(!ew?'<div class="etwElliott">Eigene Elliott-Forschung: Es liegt noch keine auswertbare Beobachtung für diesen Kandidaten vor.</div>':
@@ -186,14 +196,15 @@ function card(item){
    ' · '+esc(readableStage(p.stage))+' · '+esc((o.alternative_scenarios||[]).length)+' weitere mögliche Deutungen'+
    '<details class="etwTech"><summary>Originale Wellenkennungen</summary><code>'+esc(o.timeframe)+' / '+esc(o.degree)+' · '+esc(p.pattern_class??'unavailable')+' · '+esc(p.stage??'unavailable')+'</code></details></div>';
  }).join('')+'</details>':'<p>Die Berechnung hat noch keine ausgabefähige Wellenstruktur erfasst. Ein fehlender Zustand ist kein neutrales Signal.</p>')+'</div>'):'';
- const noteHTML=notes.length?notes.map(n=>
- '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+esc(formatDate(n.source_date))+'</small>'+
- '<p>'+esc(n.source_rationale??'Keine Quellenbegründung erfasst')+'</p>'+
- (safeLink(n.source_link)?'<a href="'+esc(safeLink(n.source_link))+'" target="_blank" rel="noopener noreferrer">Private Original-Mail öffnen ↗</a>':'')+'</div>').join(''):
- '<p class="etwNote">Die damalige externe E-Mail-Begründung ist hier noch nicht hinterlegt.</p>';
- return '<article class="etwCard"><div class="etwTop"><div><div class="etwSym">'+esc(item.symbol)+'</div><div class="etwName">'+esc(item.name)+'</div></div>'+
+ const noteHTML=notes.length?
+  '<div class="etwEvidenceTitle">Dokumentierte Quellenhinweise</div>'+notes.map(n=>
+  '<div class="etwRationale"><small>'+esc(n.source_family??'Externe Quelle')+' · '+esc(formatDate(n.source_date))+'</small>'+
+  '<p>'+esc(n.source_rationale??'Zu diesem Quellenhinweis liegt keine dokumentierte Begründung vor.')+'</p>'+
+  (safeLink(n.source_link)?'<a href="'+esc(safeLink(n.source_link))+'" target="_blank" rel="noopener noreferrer">Private Original-Mail öffnen ↗</a>':'')+'</div>').join(''):
+  item.historical?'':'<p class="etwNote">Es liegt noch keine konkrete Begründung für diese Aktienidee vor.</p>';
+ return '<article class="etwCard" aria-label="'+esc(item.name)+' – '+esc(item.symbol)+'"><div class="etwTop"><div><div class="etwName">'+esc(item.name)+'</div><div class="etwSym">'+esc(item.symbol)+'</div></div>'+
  '<span class="etwPill'+(state===false?' etwShadow':'')+'">'+esc(status)+'</span></div>'+
- '<p class="etwTag">'+esc(label)+'</p>'+oldCode+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
+ historyHTML+(manual?'<p class="etwNote">'+esc(manual)+'</p>':'')+
  noteHTML+ewHtml+'</article>';
 }
 function render(){
