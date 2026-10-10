@@ -46,7 +46,7 @@ class ArgusClarityTests(unittest.TestCase):
         text = OBSERVATIONS.read_text(encoding="utf-8")
         self.assertIn("Aktienkandidaten", text)
         self.assertIn("Musterkandidaten", text)
-        self.assertIn("historischen Originalvermerk", text.lower())
+        self.assertIn("historischen originalvermerk", text.lower())
         self.assertIn("Eigen", text)
         self.assertIn("readablePattern", text)
         self.assertIn("checkInput", text)
