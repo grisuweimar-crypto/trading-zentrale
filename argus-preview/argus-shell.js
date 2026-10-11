@@ -74,5 +74,30 @@ if(refresh){
  refresh.setAttribute('aria-label','Scanner-Daten aktualisieren');
  refresh.innerHTML='<span aria-hidden="true">↻</span><span class="argusRefreshText">Aktualisieren</span>';
 }
+// The freigegebene ARGUS-Designrichtlinie prohibits substitute / redrawn owl or
+// temple logos. Show the actual approved Owl Eye artwork already in the brand
+// instead of the later ad-hoc owl/temple illustration.
+const aboutPicture=document.querySelector('#about .aboutPicture');
+const approvedEye=document.querySelector('.topbar .brand img');
+if(aboutPicture&&approvedEye){
+ const panel=document.createElement('div');
+ panel.className='argusApprovedIdentity';
+ panel.setAttribute('role','group');
+ panel.setAttribute('aria-label','ARGUS PANOPTES – verbindliches Originalmotiv und Wortmarke');
+ const original=approvedEye.cloneNode(true);
+ original.removeAttribute('width');original.removeAttribute('height');
+ original.className='argusApprovedEye';
+ original.alt='Originales ARGUS Owl Eye Emblem gemäß freigegebener Designrichtlinie';
+ const caption=document.createElement('div');
+ caption.className='argusApprovedWordmark';
+ const main=document.createElement('strong');main.textContent='ARGUS';
+ const sub=document.createElement('span');sub.textContent='PANOPTES';
+ const divider=document.createElement('i');divider.setAttribute('aria-hidden','true');
+ const title=document.createElement('p');
+ title.textContent='Research & Decision Intelligence System';
+ caption.append(main,sub,divider,title);
+ panel.append(original,caption);
+ aboutPicture.replaceWith(panel);
+}
 // Defensive DOM assertion for the removed duplicate footer: no injected footer.
 })();
