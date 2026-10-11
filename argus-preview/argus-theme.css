@@ -367,3 +367,68 @@ html[data-argus-theme="light"] .top footer{background:#edf4f6!important;color:#4
 @media(max-width:600px){
  html[data-argus-theme="light"] .topbar .nav button.active{background:#f5ecdf!important}
 }
+
+/* Critical Scanner fix, derived from actual 390px Chrome light-mode screenshot.
+   No financial signal colors or chart data are modified. */
+html[data-argus-theme="light"] #research .research-masthead{
+ background:#fffdfa!important;border:1px solid #c3d4dc!important;
+ box-shadow:0 9px 25px #1a415811!important
+}
+html[data-argus-theme="light"] #research .research-masthead::before{
+ background:radial-gradient(circle at 83% 8%,#f7ecd6,#fffdfb 67%)!important;
+ opacity:.55!important
+}
+html[data-argus-theme="light"] #research .research-mastleft h1,
+html[data-argus-theme="light"] #research .research-mastleft h1 span{
+ color:#173c54!important
+}
+html[data-argus-theme="light"] #research .research-kicker,
+html[data-argus-theme="light"] #research .research-toolbar-title .overline,
+html[data-argus-theme="light"] #research .research-sectionheading .overline{color:#96692f!important}
+html[data-argus-theme="light"] #research .research-lead,
+html[data-argus-theme="light"] #research .research-boundary,
+html[data-argus-theme="light"] #research .research-sectionheading p,
+html[data-argus-theme="light"] #research .research-kpi-label{color:#4e6677!important}
+html[data-argus-theme="light"] #research .research-mastright{
+ background:#f1f6f7!important;border:1px solid #c4d3d9!important;backdrop-filter:none!important
+}
+html[data-argus-theme="light"] #research .mastlabel{color:#1c3e54!important}
+html[data-argus-theme="light"] #research .mastfoot{color:#5b7180!important}
+html[data-argus-theme="light"] #research :is(.research-kpi-wrap,.research-toolbar){
+ background:#fffdfa!important;color:#1f4154!important;border:1px solid #bed1da!important;
+ box-shadow:0 8px 20px #2c526010!important
+}
+html[data-argus-theme="light"] #research .research-kpi-label{
+ border-bottom:1px solid #c7d5dc!important
+}
+html[data-argus-theme="light"] #research .research-kpi-label .overline{color:#8e642d!important}
+html[data-argus-theme="light"] #research .research-kpi-wrap .metric{
+ background:#fffdfa!important;color:#1f4254!important;border-color:#c8d6dd!important
+}
+html[data-argus-theme="light"] #research .research-kpi-wrap .metric :is(.label,.fine){
+ color:#506879!important;opacity:1!important
+}
+html[data-argus-theme="light"] #research .research-kpi-wrap .metric strong{
+ color:#1c4056!important
+}
+html[data-argus-theme="light"] #research .research-toolbar-title strong{
+ color:#1e4255!important;opacity:1!important
+}
+html[data-argus-theme="light"] #research .research-toolbar .gold-ring{
+ color:#a87535!important;border-color:#c8a46e!important;background:#fbf3e7!important
+}
+html[data-argus-theme="light"] #research .research-toolbar :is(.search-field span,.research-select span){
+ color:#4e6574!important;opacity:1!important
+}
+html[data-argus-theme="light"] #research .research-toolbar :is(input,select){
+ background:#fff!important;color:#203f51!important;border:1px solid #b8cbd5!important
+}
+html[data-argus-theme="light"] #research .research-sectionheading h2{
+ color:#23465a!important
+}
+html[data-argus-theme="light"] #research :is(.research-panel,.leftPanel,.rightPanel,.v5-panel,.gridResearch>div){
+ background:#fffdfa!important;color:#234557!important;border-color:#c6d6de!important
+}
+html[data-argus-theme="light"] #research .research-v3 .workspaceTools{
+ background:#fffdfa!important
+}
