@@ -21,18 +21,18 @@ class ArgusSiteShellTests(unittest.TestCase):
         self.assertIn("Keine Anlageberatung",self.home)
 
     def test_banner_respects_original_brand_assets(self):
-        self.assertIn('class="aboutBanner" src="./assets/about-argus-artwork.svg"',self.home)
-        self.assertEqual(self.home.count('class="aboutBanner"'),1)
+        self.assertIn('class="argusApprovedAbout"',self.home)
+        self.assertIn('class="argusApprovedEye"',self.home)
+        self.assertEqual(self.home.count('class="argusApprovedAbout"'),1)
+        self.assertIn('alt="Original Owl Eye Emblem"',self.home)
         self.assertIn('alt="Unverändertes Original-Eulenaugenmotiv"',self.home)
         self.assertIn('data:image/png;base64,',self.home)
-        self.assertNotIn("Dies ist nur eine lokale Designprobe",self.home)
-        art=ET.parse(BASE/"assets/about-argus-artwork.svg").getroot()
-        self.assertTrue(art.tag.endswith("svg"))
-        self.assertEqual(art.attrib.get("viewBox"),"0 0 1600 500")
-        self.assertIn("about-argus-artwork-mobile.svg",self.home)
-        mobile=ET.parse(BASE/"assets/about-argus-artwork-mobile.svg").getroot()
-        self.assertEqual(mobile.attrib.get("viewBox"),"0 0 800 460")
-        self.assertGreater(len(list(art.iter())),45)
+        self.assertIn('argusApprovedName">ARGUS</strong>',self.home)
+        self.assertIn('argusApprovedSub">PANOPTES</span>',self.home)
+        self.assertIn('argusApprovedStrap">Research &amp; Decision Intelligence System',self.home)
+        self.assertNotIn("about-argus-artwork",self.home)
+        self.assertFalse((BASE/"assets/about-argus-artwork.svg").exists())
+        self.assertFalse((BASE/"assets/about-argus-artwork-mobile.svg").exists())
 
     def test_about_labels_are_plain_german(self):
         about=self.home.split('<section id="about"',1)[1].split('</section>',1)[0]
@@ -55,7 +55,12 @@ class ArgusSiteShellTests(unittest.TestCase):
         self.assertIn("tab.title=full",self.script)
         self.assertIn("aria-label','Scanner-Daten aktualisieren",self.script)
         self.assertIn('data-argus-theme="light"',self.css)
-        self.assertIn("#about .aboutBanner",self.css)
+        self.assertIn("#about .argusApprovedAbout",self.css)
+        self.assertIn('html[data-argus-theme="light"] .topbar',self.css)
+        self.assertIn('html[data-argus-theme="light"] #start .hero.hero-v2',self.css)
+        self.assertIn('html[data-argus-theme="light"] #observations #etw',self.css)
+        self.assertIn('html[data-argus-theme="light"] #science #v7Monitor',self.css)
+        self.assertIn('html[data-argus-theme="light"] #external-theses',self.css)
         self.assertIn("prefers-reduced-motion",self.css)
 
 
