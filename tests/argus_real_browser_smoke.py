@@ -84,7 +84,7 @@ try:
         url=shell+"?"+mode
         dom=subprocess.run([browser,*opts,"--dump-dom",url],
                            capture_output=True,text=True,timeout=120)
-        if dom.returncode!=0 or "ARGUS_UI_OK" not in dom.stdout:
+        if dom.returncode!=0 or 'id="argus-test-status">ARGUS_UI_OK</div>' not in dom.stdout:
             summary=dom.stdout[-2200:].replace("ARGUS_UI_PENDING","PENDING")
             raise AssertionError(label+" did not complete real-browser theme/asset/footer checks: "+
                                  summary+"; "+dom.stderr[-500:])
