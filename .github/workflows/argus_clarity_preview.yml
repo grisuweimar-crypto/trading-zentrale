@@ -4,9 +4,15 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - "argus-preview/index.html"
+      - "argus-preview/argus-theme.css"
+      - "argus-preview/argus-shell.js"
+      - "argus-preview/assets/**"
       - "argus-preview/v7/**"
       - "argus-preview/observations/**"
       - "tests/test_argus_clarity_preview.py"
+      - "tests/test_argus_site_shell.py"
+      - "tests/fixtures/argus_shell_acceptance.html"
       - "tests/test_argus_observation_render.js"
       - "tests/argus_real_browser_smoke.py"
       - "tests/fixtures/argus_editorial_preview.html"
@@ -19,7 +25,7 @@ permissions:
 jobs:
   preview-clarity:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,6 +36,7 @@ jobs:
           python-version: "3.12"
       - name: Validate JavaScript syntax
         run: |
+          node --check argus-preview/argus-shell.js
           node --check argus-preview/v7/research-lab.js
           node --check argus-preview/v7/external-thesis-lab.js
           node --check argus-preview/v7/qm-monitor.js
@@ -39,6 +46,8 @@ jobs:
         run: node tests/test_argus_observation_render.js
       - name: Verify unchanged research and source boundaries
         run: python -m unittest discover -s tests -p 'test_argus_clarity_preview.py' -v
+      - name: Verify footer, original logo and theme boundaries
+        run: python -m unittest discover -s tests -p 'test_argus_site_shell.py' -v
       - name: Render actual ARGUS cards in Chrome at desktop and mobile sizes
         run: python tests/argus_real_browser_smoke.py
       - name: Upload visual comparison screenshots
