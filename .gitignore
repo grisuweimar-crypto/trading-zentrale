@@ -14,11 +14,18 @@ __pycache__/
 build/
 dist/
 
-# windows noise
+# editor/OS noise and accidental backup copies (applies to untracked files only)
+*.swp
+*.swo
+*.bak
+*.orig
+*~
+.DS_Store
 *.lnk
 *.xlsx
 Thumbs.db
 desktop.ini
+artifacts/watchlist/watchlist ([0-9]*).csv
 
 # artifacts: keep dashboard+watchlist+reports, but never commit logs
 artifacts/logs/
