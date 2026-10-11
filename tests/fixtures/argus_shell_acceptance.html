@@ -50,12 +50,15 @@ const poll=setInterval(()=>{
    const sample=d.querySelector('.topbar');
    const card=d.querySelector('#about .trustcard');
    const refresh=d.querySelector('#reload');
-   const lightOK=theme!=='light'||[sample,card,refresh].every(el=>luminance(el)>190);
+   const startHero=d.querySelector('#start .hero-brand');
+   const startText=d.querySelector('#start .hero-copy');
+   const startOK=theme!=='light'||view!=='start'||[startHero,startText].every(el=>luminance(el)>190);
+   const lightOK=(theme!=='light'||[sample,card,refresh].every(el=>luminance(el)>190))&&startOK;
    const correct=(actualTheme===theme)&&(footers===1)&&(badFooter===0)&&
       !forbidden&&brandOK&&visible&&lightOK;
    status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({
      actualTheme,footers,badFooter,visible,brandOK,hasForbidden:!!forbidden,
-     lightOK,samples:[sample,card,refresh].map(luminance),
+     lightOK,startOK,samples:[sample,card,refresh,startHero,startText].map(luminance),
      logo:logo.naturalWidth,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
   },380);
  }catch(e){status.textContent='ARGUS_UI_FAIL '+e.message}
