@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T23:55:13.886795+00:00",
+  "decision_as_of": "2026-10-11T19:04:30.101393+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -31,11 +31,10 @@
     "known_directional_claim_ids": [
       "timing:NOVO-B.CO:0b9187e88ff3ae83:60T",
       "timing:NOVO-B.CO:cce5c47f08a2bf66:60T",
-      "timing:NOVO-B.CO:b0fb906b9f3e02ec:60T",
       "timing:NOVO-B.CO:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
     "state": "negative",
@@ -44,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
+  "snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -213,6 +212,14 @@
       "source_snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-11T19:04:30.101393+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -227,18 +234,18 @@
     "last_overextension_rs3m": 0.2160335711903296,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 69,
+    "sessions_since_last_overextension": 70,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "NOVO-B.CO",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
-    "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "stable_anchor_is_current_stance": true,
+    "stable_directional_anchor": "negative",
+    "status": "transition_confirmed"
   }
 }

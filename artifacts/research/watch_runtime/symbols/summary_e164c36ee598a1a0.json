@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-10T23:55:13.886795+00:00",
+  "decision_as_of": "2026-10-11T19:04:30.101393+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,12 +29,11 @@
     "conflicts": [
       {
         "negative_claim_ids": [
-          "timing:6506.T:5df2a86791ff5f88:60T",
-          "timing:6506.T:1691f75766881bca:60T"
+          "timing:6506.T:8383be481c5c6052:60T"
         ],
         "positive_claim_ids": [
-          "timing:6506.T:2ec83739629fba4d:5T",
-          "timing:6506.T:1aa807ae1a9556c5:20T"
+          "timing:6506.T:df23cc7f8d9328ee:60T",
+          "timing:6506.T:6289a7880870e93e:60T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -42,13 +41,12 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:6506.T:2ec83739629fba4d:5T",
-      "timing:6506.T:1aa807ae1a9556c5:20T",
-      "timing:6506.T:5df2a86791ff5f88:60T",
-      "timing:6506.T:1691f75766881bca:60T"
+      "timing:6506.T:df23cc7f8d9328ee:60T",
+      "timing:6506.T:6289a7880870e93e:60T",
+      "timing:6506.T:8383be481c5c6052:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 3
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -57,7 +55,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
+  "snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -226,6 +224,14 @@
       "source_snapshot_id": "8da63a1b-a763-430a-baf0-b4fcccac9e6d",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-11T19:04:30.101393+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -240,7 +246,7 @@
     "last_overextension_rs3m": 0.2372943067497057,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 87,
+    "sessions_since_last_overextension": 88,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
