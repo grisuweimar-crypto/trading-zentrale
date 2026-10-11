@@ -46,13 +46,13 @@ apply(stored);
 // Keep active navigation entries fully visible in the horizontal mobile menu.
 const nav=document.querySelector('nav.nav');
 if(nav){
- const labels={observations:'Beobachtungen',science:'Forschungsstand'};
- const smallLabels={observations:'Beobachten',science:'Forschung'};
+ const labels={observations:'Beobachtungen',science:'Forschungsstand',about:'Über ARGUS'};
+ const smallLabels={observations:'Beobachten',science:'Forschung',about:'Über'};
  function responsiveNames(){
   const compact=window.matchMedia?.('(max-width:600px)').matches;
   for(const [view,full] of Object.entries(labels)){
    const tab=nav.querySelector('button[data-view="'+view+'"]');
-   if(tab){tab.textContent=compact?smallLabels[view]:full;tab.setAttribute('aria-label',full)}
+   if(tab){tab.textContent=compact?smallLabels[view]:full;tab.setAttribute('aria-label',full);tab.title=full;}
   }
  }
  responsiveNames();
