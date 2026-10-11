@@ -29,6 +29,9 @@ class ArgusSiteShellTests(unittest.TestCase):
         art=ET.parse(BASE/"assets/about-argus-artwork.svg").getroot()
         self.assertTrue(art.tag.endswith("svg"))
         self.assertEqual(art.attrib.get("viewBox"),"0 0 1600 500")
+        self.assertIn("about-argus-artwork-mobile.svg",self.home)
+        mobile=ET.parse(BASE/"assets/about-argus-artwork-mobile.svg").getroot()
+        self.assertEqual(mobile.attrib.get("viewBox"),"0 0 800 460")
         self.assertGreater(len(list(art.iter())),45)
 
     def test_about_labels_are_plain_german(self):
