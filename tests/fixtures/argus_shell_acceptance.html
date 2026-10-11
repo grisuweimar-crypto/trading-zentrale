@@ -19,7 +19,7 @@ const poll=setInterval(()=>{
  const w=iframe.contentWindow,d=w?.document;
  const selection=d?.getElementById('argusThemeChoice');
  const tab=d?.querySelector('nav.nav button[data-view="'+view+'"]');
- const banner=d?.querySelector('#about .aboutBanner');
+ const banner=d?.querySelector('#about .argusApprovedEye');
  if(!selection||!tab||!banner||!banner.complete||!banner.naturalWidth)return;
  clearInterval(poll);
  try{
@@ -34,11 +34,22 @@ const poll=setInterval(()=>{
    const footers=d.querySelectorAll('footer').length;
    const badFooter=d.querySelectorAll('#start .smallfoot').length;
    const actualTheme=d.documentElement.getAttribute('data-argus-theme');
-   const art=banner.currentSrc||'';
-   const expectedArt=w.innerWidth<=780?'about-argus-artwork-mobile.svg':'about-argus-artwork.svg';
+   const original=d.querySelector('#brandHome img');
+   const art=banner.getAttribute('src')||'';
+   const sameApprovedArt=Boolean(original&&art===original.getAttribute('src'));
+   const rejectedArt=Boolean(d.querySelector('#about picture.aboutPicture'));
+   const stableTitle=(d.querySelector('#about .argusApprovedName')?.textContent==='ARGUS'&&
+    d.querySelector('#about .argusApprovedSub')?.textContent==='PANOPTES');
+   const backgrounds=['.topbar','#reload','#about .argusApprovedAbout'];
+   const lightControls=theme!=='light'||backgrounds.every(sel=>{
+    const el=d.querySelector(sel);
+    if(!el)return false;
+    const color=w.getComputedStyle(el).backgroundColor.match(/[\\d.]+/g);
+    return color&&color.length>=3&&Number(color[0])+Number(color[1])+Number(color[2])>490;
+   });
    const correct=(actualTheme===theme)&&(footers===1)&&(badFooter===0)&&
-     (view!=='about'||banner.naturalWidth>0)&&visible&&art.endsWith(expectedArt);
-   status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({actualTheme,footers,badFooter,visible,banner:banner.naturalWidth,art,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
+     (view!=='about'||banner.naturalWidth>0)&&visible&&sameApprovedArt&&!rejectedArt&&stableTitle&&lightControls;
+   status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({actualTheme,footers,badFooter,visible,banner:banner.naturalWidth,sameApprovedArt,rejectedArt,stableTitle,lightControls,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
   },380);
  }catch(e){status.textContent='ARGUS_UI_FAIL '+e.message}
 },75);
