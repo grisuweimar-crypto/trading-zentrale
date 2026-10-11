@@ -75,6 +75,10 @@ try:
         ("about-dark-desktop","view=about&theme=dark",1440,1000),
         ("about-light-mobile","view=about&theme=light&mobile=1",390,844),
         ("start-dark-mobile","view=start&theme=dark&mobile=1",390,844),
+        ("start-light-mobile","view=start&theme=light&mobile=1",390,844),
+        ("scanner-light-mobile","view=research&theme=light&mobile=1",390,844),
+        ("beobachtungen-light-mobile","view=observations&theme=light&mobile=1",390,844),
+        ("forschung-light-mobile","view=science&theme=light&mobile=1",390,844),
     ):
         url=shell+"?"+mode
         dom=subprocess.run([browser,*opts,"--dump-dom",url],
