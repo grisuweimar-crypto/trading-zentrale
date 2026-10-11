@@ -73,8 +73,8 @@ try:
     shell=base+"/tests/fixtures/argus_shell_acceptance.html"
     for label,mode,width,height in (
         ("about-dark-desktop","view=about&theme=dark",1440,1000),
-        ("about-light-mobile","view=about&theme=light",390,844),
-        ("start-dark-mobile","view=start&theme=dark",390,844),
+        ("about-light-mobile","view=about&theme=light&mobile=1",390,844),
+        ("start-dark-mobile","view=start&theme=dark&mobile=1",390,844),
     ):
         url=shell+"?"+mode
         dom=subprocess.run([browser,*opts,"--dump-dom",url],
