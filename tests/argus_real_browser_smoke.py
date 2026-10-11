@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import shutil
 import socket
+import re
 import subprocess
 import sys
 import threading
@@ -81,10 +82,13 @@ try:
         ("forschung-light-mobile","view=science&theme=light&mobile=1",390,844),
     ):
         url=shell+"?"+mode
-        dom=subprocess.run([browser,*opts,"--dump-dom",url],
+        dom=subprocess.run([browser,*[a for a in opts if not a.startswith("--window-size")],
+                            f"--window-size={width},{height}","--dump-dom",url],
                            capture_output=True,text=True,timeout=120)
-        if dom.returncode!=0 or "ARGUS_UI_OK" not in dom.stdout:
-            summary=dom.stdout[-2200:].replace("ARGUS_UI_PENDING","PENDING")
+        status=re.search(r'<div id="argus-test-status">([^<]+)</div>',dom.stdout)
+        result=(status.group(1) if status else 'NO_TEST_STATUS')
+        if dom.returncode!=0 or result!="ARGUS_UI_OK":
+            summary=result+" "+dom.stdout[-950:].replace("ARGUS_UI_PENDING","PENDING")
             raise AssertionError(label+" did not complete real-browser theme/asset/footer checks: "+
                                  summary+"; "+dom.stderr[-500:])
         output=ARTIFACT/(label+".png")
