@@ -40,7 +40,7 @@ const poll=setInterval(()=>{
    const rejectedArt=Boolean(d.querySelector('#about picture.aboutPicture'));
    const stableTitle=(d.querySelector('#about .argusApprovedName')?.textContent==='ARGUS'&&
     d.querySelector('#about .argusApprovedSub')?.textContent==='PANOPTES');
-   const backgrounds=['.topbar','#reload','#about .argusApprovedAbout'];
+   const backgrounds=['.topbar','#reload'];
    const lightControls=theme!=='light'||backgrounds.every(sel=>{
     const el=d.querySelector(sel);
     if(!el)return false;
