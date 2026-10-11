@@ -432,3 +432,68 @@ html[data-argus-theme="light"] #research :is(.research-panel,.leftPanel,.rightPa
 html[data-argus-theme="light"] #research .research-v3 .workspaceTools{
  background:#fffdfa!important
 }
+
+
+/* Mandatory follow-up: live Chrome screenshot still showed a black/dark
+ * start-page hero after changing to Light. Make the entire opening surface
+ * intentionally ivory, not a dark brand island. Preserve logos unmodified. */
+html[data-argus-theme="light"] #start .hero.hero-v2{
+ background:#fffdfa!important;color:#173d54!important;
+ border:1px solid #c3d4da!important;box-shadow:0 10px 25px #16394d10!important
+}
+html[data-argus-theme="light"] #start .hero-v2 .hero-content{
+ grid-template-columns:minmax(210px,270px) minmax(0,1fr)!important;
+ background:#fffdfa!important
+}
+html[data-argus-theme="light"] #start .hero-brand{
+ background:#fffdfa!important;color:#173c52!important;
+ border-right:1px solid #d3dfe1!important;border-bottom:1px solid #d3dfe1!important;
+ box-shadow:none!important
+}
+html[data-argus-theme="light"] #start .hero-brand :is(.wordmark,.subline){
+ color:#123b57!important;text-shadow:none!important
+}
+html[data-argus-theme="light"] #start .hero-brand .panoptes{
+ color:#926427!important
+}
+html[data-argus-theme="light"] #start .hero-brand .subline{
+ border-color:#c5aa77!important
+}
+html[data-argus-theme="light"] #start .hero-copy{
+ background:#fffdfa!important;color:#173f54!important
+}
+html[data-argus-theme="light"] #start .hero-copy :is(h1,h2,h3,p,span,strong,.overline){
+ color:#24485a!important;text-shadow:none!important
+}
+html[data-argus-theme="light"] #start .hero-copy h1 em{
+ color:#926325!important;text-shadow:none!important
+}
+html[data-argus-theme="light"] #start .hero-copy .ghost-btn{
+ background:#fff!important;color:#24465b!important;border:1px solid #b6c9d2!important
+}
+html[data-argus-theme="light"] #start .hero-visual,
+html[data-argus-theme="light"] #start .hero-visual::before,
+html[data-argus-theme="light"] #start .hero-visual::after{
+ display:none!important;background-image:none!important
+}
+html[data-argus-theme="light"] #start .kpis{
+ background:#fffdfa!important;border-color:#c7d6dc!important
+}
+html[data-argus-theme="light"] #start .kpis .metric{
+ background:#fffdfa!important;border-color:#c7d6dc!important;color:#254759!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwExplainer>summary,.etwOverview>summary){
+ color:#345b6e!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwExplainer>summary,.etwOverview>summary)::before{
+ color:#946323!important
+}
+html[data-argus-theme="light"] #science #v7Monitor .v7how>summary{
+ color:#39546a!important
+}
+@media(max-width:860px){
+ html[data-argus-theme="light"] #start .hero-v2 .hero-content{
+  display:block!important;background:#fffdfa!important
+ }
+ html[data-argus-theme="light"] #start .hero-brand{border-right:0!important}
+}
