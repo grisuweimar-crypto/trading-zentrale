@@ -74,12 +74,17 @@ try:
     for label,mode,width,height in (
         ("about-dark-desktop","view=about&theme=dark",1440,1000),
         ("about-light-mobile","view=about&theme=light&mobile=1",390,844),
+        ("about-light-desktop","view=about&theme=light",1440,1000),
         ("start-dark-mobile","view=start&theme=dark&mobile=1",390,844),
+        ("start-light-mobile","view=start&theme=light&mobile=1",390,844),
+        ("scanner-light-mobile","view=research&theme=light&mobile=1",390,844),
+        ("beobachtungen-light-mobile","view=observations&theme=light&mobile=1",390,844),
+        ("forschungsstand-light-mobile","view=science&theme=light&mobile=1",390,844),
     ):
         url=shell+"?"+mode
         dom=subprocess.run([browser,*opts,"--dump-dom",url],
                            capture_output=True,text=True,timeout=120)
-        if dom.returncode!=0 or "ARGUS_UI_OK" not in dom.stdout:
+        if dom.returncode!=0 or 'id="argus-test-status">ARGUS_UI_OK</div>' not in dom.stdout:
             summary=dom.stdout[-2200:].replace("ARGUS_UI_PENDING","PENDING")
             raise AssertionError(label+" did not complete real-browser theme/asset/footer checks: "+
                                  summary+"; "+dom.stderr[-500:])

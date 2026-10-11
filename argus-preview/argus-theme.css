@@ -254,3 +254,181 @@ html[data-argus-theme="light"] .top footer{background:#edf2f3!important;color:#4
   overflow:visible!important;text-align:center
  }
 }
+
+
+/* 2026-10-11 DESIGN-COMPLIANCE CORRECTION
+   Approved Owl Eye original is reused in About. Never substitute/redraw logos. */
+#about .argusApprovedIdentity{
+ display:flex;align-items:center;justify-content:center;gap:clamp(18px,4vw,58px);
+ padding:clamp(20px,3.5vw,47px);
+ border:1px solid #ac946e;border-radius:16px;
+ background:linear-gradient(120deg,#f8f7f2,#fffdf9 65%,#f1eadf);
+ box-shadow:0 12px 36px #0002;min-height:250px;
+}
+#about .argusApprovedEye{display:block;width:clamp(100px,20%,220px);height:auto;max-height:230px;
+ object-fit:contain;flex:0 1 auto;box-shadow:none!important;background:transparent!important}
+#about .argusApprovedWordmark{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0;max-width:720px}
+#about .argusApprovedWordmark strong{
+ font:normal clamp(42px,7.5vw,97px)/1.08 Georgia,'Times New Roman',serif;
+ color:#0b2d53;letter-spacing:.018em
+}
+#about .argusApprovedWordmark span{
+ color:#a8792c;font:normal clamp(15px,2.4vw,32px)/1.6 Georgia,serif;
+ letter-spacing:.38em;margin-left:3px
+}
+#about .argusApprovedWordmark i{width:100%;height:2px;background:linear-gradient(90deg,#d4a252,#c79b56);margin:10px 0 9px}
+#about .argusApprovedWordmark p{
+ color:#43586a;font:normal clamp(13px,2vw,23px)/1.45 Georgia,serif;
+ margin:0;letter-spacing:0
+}
+@media(max-width:650px){
+ #about .argusApprovedIdentity{padding:20px 15px;gap:12px;min-height:180px}
+ #about .argusApprovedEye{width:30%;max-width:135px}
+ #about .argusApprovedWordmark{width:70%}
+ #about .argusApprovedWordmark strong{font-size:clamp(32px,8.1vw,56px)}
+ #about .argusApprovedWordmark span{letter-spacing:.17em;font-size:clamp(12px,3vw,17px)}
+ #about .argusApprovedWordmark i{margin:6px 0}
+ #about .argusApprovedWordmark p{font-size:clamp(10px,2.4vw,13px)}
+}
+
+/* Light mode is a genuine light reading surface, including its header,
+   interactive controls and research cards; Owl Eye logo retains original colors. */
+html[data-argus-theme="light"] .topbar{
+ background:#fffdfa!important;border-bottom:1px solid #cbd6dc!important;
+ box-shadow:0 5px 18px #24465a13!important
+}
+html[data-argus-theme="light"] .topbar :is(.brand-name,.brandName){color:#123b59!important}
+html[data-argus-theme="light"] .topbar :is(.brand-sub,.brandSub){color:#996b2c!important}
+html[data-argus-theme="light"] .topbar .nav button{
+ background:transparent!important;color:#324f63!important;border-color:transparent!important
+}
+html[data-argus-theme="light"] .topbar .nav button:is(:hover,.active,[aria-current="page"]){
+ color:#78501f!important;border-bottom-color:#b28b56!important;
+ background:#f8f1e6!important
+}
+html[data-argus-theme="light"] .topbar .argusThemeLabel{color:#475f71!important}
+html[data-argus-theme="light"] .topbar #reload,
+html[data-argus-theme="light"] .topbar :is(.ghost-btn,.tiny-btn){
+ background:#f0f5f6!important;color:#214355!important;border:1px solid #adc1cb!important;
+ box-shadow:none!important
+}
+html[data-argus-theme="light"] .topbar #reload:hover,
+html[data-argus-theme="light"] .topbar :is(.ghost-btn,.tiny-btn):hover{
+ background:#e4eef1!important;border-color:#7998a8!important
+}
+html[data-argus-theme="light"] #argusThemeChoice{
+ background-color:#fff!important;color:#1c4257!important;border-color:#a0b6c2!important
+}
+html[data-argus-theme="light"] .topbar .gold-btn{
+ background:#f5e4c8!important;color:#68471f!important;border-color:#c7a26c!important
+}
+html[data-argus-theme="light"] :is(.card,.tile,.metric,.v5-panel,.trustcard,.pane,.panel,.bars,.trendCard,.grid-card,.research-card),
+html[data-argus-theme="light"] :is(.workspace,.workspaceHead,.workspaceTools,.v6-workspace,.v6-panel,.v6-grid,.v6-card,.stat,.statCard){
+ background:#fffdfa!important;color:#244152!important;border-color:#c3d4dd!important;
+ box-shadow:0 7px 23px #24465a10!important
+}
+html[data-argus-theme="light"] :is(.smallfoot,.hint,.muted,.caption,.subtitle,.meta,.intro) {color:#476478!important}
+html[data-argus-theme="light"] :is(button:not(.active),.tiny-btn,.ghost-btn,.export-btn,.filter-btn):not(.topbar button):not(#etw button):not(#argusClarityGlossary>summary){
+ background:#f5f9fa!important;color:#23465b!important;border-color:#aec5d0!important
+}
+html[data-argus-theme="light"] :is(button:not(.active),.tiny-btn,.ghost-btn,.export-btn,.filter-btn):not(.topbar button):not(#etw button):not(#argusClarityGlossary>summary):hover{
+ background:#e6f0f3!important
+}
+html[data-argus-theme="light"] .chip,
+html[data-argus-theme="light"] :is(.tag,.badge,.pill,.statusBadge,.status-chip){
+ background:#f3f6f7!important;border-color:#b9cbd5!important;color:#35596b!important
+}
+html[data-argus-theme="light"] :is(.progress,.chartFrame,.chart-frame,.chartbox,.v6-chart-frame,.v6-chart-box){
+ background:#fffdfa!important;color:#244253!important;border-color:#c5d4dd!important
+}
+html[data-argus-theme="light"] #about .trustcard{
+ background:#fffdfa!important;color:#244152!important;border-color:#c1d1da!important
+}
+html[data-argus-theme="light"] #about .trustcard :is(h3,p,small){color:#314f61!important}
+html[data-argus-theme="light"] #observations #etw :is(.etwExplainer>summary,.etwOverview>summary,.etwHistorical>summary){
+ color:#486276!important
+}
+html[data-argus-theme="light"] #science #v7Monitor :is(.v7how>summary,.v7tech summary,.v7legacy summary){color:#725124!important}
+html[data-argus-theme="light"] #external-theses :is(.row,.meta,.values span,.external-card){
+ background:#fffdfa!important;color:#2b4d5e!important;border-color:#c4d4dd!important
+}
+html[data-argus-theme="light"] #argusClarityGlossary>summary{
+ background:#fffdfa!important;color:#76511f!important;border:1px solid #bda378!important;
+ box-shadow:0 6px 20px #294a601c!important
+}
+html[data-argus-theme="light"] .top{
+ background:#fffdfa!important;color:#1f4255!important;border-bottom:1px solid #cad6dc!important
+}
+html[data-argus-theme="light"] .top .brand,
+html[data-argus-theme="light"] .top .brand :is(strong,span,em){color:#153d56!important}
+html[data-argus-theme="light"] .top .navigation a{color:#31546a!important;border-color:#b7cad5!important}
+html[data-argus-theme="light"] .top .navigation .argusThemeLabel{color:#435c6d!important}
+html[data-argus-theme="light"] .top footer{background:#edf4f6!important;color:#476173!important}
+@media(max-width:600px){
+ html[data-argus-theme="light"] .topbar .nav button.active{background:#f5ecdf!important}
+}
+
+/* Critical Scanner fix, derived from actual 390px Chrome light-mode screenshot.
+   No financial signal colors or chart data are modified. */
+html[data-argus-theme="light"] #research .research-masthead{
+ background:#fffdfa!important;border:1px solid #c3d4dc!important;
+ box-shadow:0 9px 25px #1a415811!important
+}
+html[data-argus-theme="light"] #research .research-masthead::before{
+ background:radial-gradient(circle at 83% 8%,#f7ecd6,#fffdfb 67%)!important;
+ opacity:.55!important
+}
+html[data-argus-theme="light"] #research .research-mastleft h1,
+html[data-argus-theme="light"] #research .research-mastleft h1 span{
+ color:#173c54!important
+}
+html[data-argus-theme="light"] #research .research-kicker,
+html[data-argus-theme="light"] #research .research-toolbar-title .overline,
+html[data-argus-theme="light"] #research .research-sectionheading .overline{color:#96692f!important}
+html[data-argus-theme="light"] #research .research-lead,
+html[data-argus-theme="light"] #research .research-boundary,
+html[data-argus-theme="light"] #research .research-sectionheading p,
+html[data-argus-theme="light"] #research .research-kpi-label{color:#4e6677!important}
+html[data-argus-theme="light"] #research .research-mastright{
+ background:#f1f6f7!important;border:1px solid #c4d3d9!important;backdrop-filter:none!important
+}
+html[data-argus-theme="light"] #research .mastlabel{color:#1c3e54!important}
+html[data-argus-theme="light"] #research .mastfoot{color:#5b7180!important}
+html[data-argus-theme="light"] #research :is(.research-kpi-wrap,.research-toolbar){
+ background:#fffdfa!important;color:#1f4154!important;border:1px solid #bed1da!important;
+ box-shadow:0 8px 20px #2c526010!important
+}
+html[data-argus-theme="light"] #research .research-kpi-label{
+ border-bottom:1px solid #c7d5dc!important
+}
+html[data-argus-theme="light"] #research .research-kpi-label .overline{color:#8e642d!important}
+html[data-argus-theme="light"] #research .research-kpi-wrap .metric{
+ background:#fffdfa!important;color:#1f4254!important;border-color:#c8d6dd!important
+}
+html[data-argus-theme="light"] #research .research-kpi-wrap .metric :is(.label,.fine){
+ color:#506879!important;opacity:1!important
+}
+html[data-argus-theme="light"] #research .research-kpi-wrap .metric strong{
+ color:#1c4056!important
+}
+html[data-argus-theme="light"] #research .research-toolbar-title strong{
+ color:#1e4255!important;opacity:1!important
+}
+html[data-argus-theme="light"] #research .research-toolbar .gold-ring{
+ color:#a87535!important;border-color:#c8a46e!important;background:#fbf3e7!important
+}
+html[data-argus-theme="light"] #research .research-toolbar :is(.search-field span,.research-select span){
+ color:#4e6574!important;opacity:1!important
+}
+html[data-argus-theme="light"] #research .research-toolbar :is(input,select){
+ background:#fff!important;color:#203f51!important;border:1px solid #b8cbd5!important
+}
+html[data-argus-theme="light"] #research .research-sectionheading h2{
+ color:#23465a!important
+}
+html[data-argus-theme="light"] #research :is(.research-panel,.leftPanel,.rightPanel,.v5-panel,.gridResearch>div){
+ background:#fffdfa!important;color:#234557!important;border-color:#c6d6de!important
+}
+html[data-argus-theme="light"] #research .research-v3 .workspaceTools{
+ background:#fffdfa!important
+}

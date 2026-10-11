@@ -19,8 +19,9 @@ const poll=setInterval(()=>{
  const w=iframe.contentWindow,d=w?.document;
  const selection=d?.getElementById('argusThemeChoice');
  const tab=d?.querySelector('nav.nav button[data-view="'+view+'"]');
- const banner=d?.querySelector('#about .aboutBanner');
- if(!selection||!tab||!banner||!banner.complete||!banner.naturalWidth)return;
+ const identity=d?.querySelector('#about .argusApprovedIdentity');
+ const logo=identity?.querySelector('.argusApprovedEye');
+ if(!selection||!tab||!identity||!logo||!logo.complete||!logo.naturalWidth)return;
  clearInterval(poll);
  try{
   tab.click();
@@ -34,11 +35,28 @@ const poll=setInterval(()=>{
    const footers=d.querySelectorAll('footer').length;
    const badFooter=d.querySelectorAll('#start .smallfoot').length;
    const actualTheme=d.documentElement.getAttribute('data-argus-theme');
-   const art=banner.currentSrc||'';
-   const expectedArt=w.innerWidth<=780?'about-argus-artwork-mobile.svg':'about-argus-artwork.svg';
+   const src=d.querySelector('.topbar .brand img')?.src;
+   const brandOK=logo.src===src && logo.naturalWidth>0 &&
+     identity.textContent.includes('PANOPTES') &&
+     identity.textContent.includes('Research & Decision Intelligence System');
+   const forbidden=d.querySelector('#about img[src*="about-argus-artwork"],#about .aboutBanner');
+   function luminance(el){
+     if(!el)return 0;
+     const bg=w.getComputedStyle(el).backgroundColor;
+     const rgb=bg.match(/\d+(?:\.\d+)?/g);
+     if(!rgb||rgb.length<3)return 0;
+     return (Number(rgb[0])*.2126+Number(rgb[1])*.7152+Number(rgb[2])*.0722);
+   }
+   const sample=d.querySelector('.topbar');
+   const card=d.querySelector('#about .trustcard');
+   const refresh=d.querySelector('#reload');
+   const lightOK=theme!=='light'||[sample,card,refresh].every(el=>luminance(el)>190);
    const correct=(actualTheme===theme)&&(footers===1)&&(badFooter===0)&&
-     (view!=='about'||banner.naturalWidth>0)&&visible&&art.endsWith(expectedArt);
-   status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({actualTheme,footers,badFooter,visible,banner:banner.naturalWidth,art,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
+      !forbidden&&brandOK&&visible&&lightOK;
+   status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({
+     actualTheme,footers,badFooter,visible,brandOK,hasForbidden:!!forbidden,
+     lightOK,samples:[sample,card,refresh].map(luminance),
+     logo:logo.naturalWidth,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
   },380);
  }catch(e){status.textContent='ARGUS_UI_FAIL '+e.message}
 },75);
