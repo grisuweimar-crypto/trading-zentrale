@@ -41,15 +41,16 @@ const poll=setInterval(()=>{
    const stableTitle=(d.querySelector('#about .argusApprovedName')?.textContent==='ARGUS'&&
     d.querySelector('#about .argusApprovedSub')?.textContent==='PANOPTES');
    const backgrounds=['.topbar','#reload'];
+   const lightActual=backgrounds.map(sel=>{const el=d.querySelector(sel);return [sel,el?w.getComputedStyle(el).backgroundColor:'MISSING']});
    const lightControls=theme!=='light'||backgrounds.every(sel=>{
     const el=d.querySelector(sel);
     if(!el)return false;
-    const color=w.getComputedStyle(el).backgroundColor.match(/[\\d.]+/g);
+    const color=w.getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
     return color&&color.length>=3&&Number(color[0])+Number(color[1])+Number(color[2])>490;
    });
    const correct=(actualTheme===theme)&&(footers===1)&&(badFooter===0)&&
      (view!=='about'||banner.naturalWidth>0)&&visible&&sameApprovedArt&&!rejectedArt&&stableTitle&&lightControls;
-   status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({actualTheme,footers,badFooter,visible,banner:banner.naturalWidth,sameApprovedArt,rejectedArt,stableTitle,lightControls,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
+   status.textContent=correct?'ARGUS_UI_OK':'ARGUS_UI_FAIL'+JSON.stringify({actualTheme,footers,badFooter,visible,banner:banner.naturalWidth,sameApprovedArt,rejectedArt,stableTitle,lightControls,lightActual,tab:vr?.left+'..'+vr?.right,nav:nr?.left+'..'+nr?.right,width:w.innerWidth});
   },380);
  }catch(e){status.textContent='ARGUS_UI_FAIL '+e.message}
 },75);
