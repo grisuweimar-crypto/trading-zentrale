@@ -1,6 +1,5 @@
 """Presentation-only regressions for ARGUS shell, theme and About illustration."""
 from pathlib import Path
-from xml.etree import ElementTree as ET
 import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -20,19 +19,20 @@ class ArgusSiteShellTests(unittest.TestCase):
         self.assertNotIn('<div class="smallfoot">',self.home)
         self.assertIn("Keine Anlageberatung",self.home)
 
-    def test_banner_respects_original_brand_assets(self):
-        self.assertIn('class="aboutBanner" src="./assets/about-argus-artwork.svg"',self.home)
-        self.assertEqual(self.home.count('class="aboutBanner"'),1)
-        self.assertIn('alt="Unverändertes Original-Eulenaugenmotiv"',self.home)
-        self.assertIn('data:image/png;base64,',self.home)
-        self.assertNotIn("Dies ist nur eine lokale Designprobe",self.home)
-        art=ET.parse(BASE/"assets/about-argus-artwork.svg").getroot()
-        self.assertTrue(art.tag.endswith("svg"))
-        self.assertEqual(art.attrib.get("viewBox"),"0 0 1600 500")
-        self.assertIn("about-argus-artwork-mobile.svg",self.home)
-        mobile=ET.parse(BASE/"assets/about-argus-artwork-mobile.svg").getroot()
-        self.assertEqual(mobile.attrib.get("viewBox"),"0 0 800 460")
-        self.assertGreater(len(list(art.iter())),45)
+    def test_about_uses_only_original_approved_brand(self):
+        # No new owl, temple, or revised icon is an authorized ARGUS logo.
+        self.assertNotIn('about-argus-artwork.svg', self.home)
+        self.assertNotIn('about-argus-artwork-mobile.svg', self.home)
+        self.assertIn('<div class="aboutPicture" aria-hidden="true"></div>', self.home)
+        self.assertIn('alt="Unverändertes Original-Eulenaugenmotiv"', self.home)
+        self.assertIn('data:image/png;base64,', self.home)
+        self.assertIn("approvedEye.cloneNode(true)", self.script)
+        self.assertIn("aboutPicture.replaceWith(panel)", self.script)
+        self.assertIn("ARGUS", self.script)
+        self.assertIn("PANOPTES", self.script)
+        self.assertIn("Research & Decision Intelligence System", self.script)
+        self.assertIn(".argusApprovedIdentity", self.css)
+        self.assertNotIn("Dies ist nur eine lokale Designprobe", self.home)
 
     def test_about_labels_are_plain_german(self):
         about=self.home.split('<section id="about"',1)[1].split('</section>',1)[0]
@@ -55,7 +55,7 @@ class ArgusSiteShellTests(unittest.TestCase):
         self.assertIn("tab.title=full",self.script)
         self.assertIn("aria-label','Scanner-Daten aktualisieren",self.script)
         self.assertIn('data-argus-theme="light"',self.css)
-        self.assertIn("#about .aboutBanner",self.css)
+        self.assertIn("#about .argusApprovedIdentity",self.css)
         self.assertIn("prefers-reduced-motion",self.css)
 
 
