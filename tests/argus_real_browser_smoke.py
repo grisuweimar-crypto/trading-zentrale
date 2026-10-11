@@ -67,6 +67,29 @@ try:
         if shot.returncode!=0 or not output.exists() or output.stat().st_size<2000:
             raise AssertionError(label+" screenshot missing. "+shot.stderr[-600:])
         print(label,output.stat().st_size,"bytes")
+    # The actual 1+ MB main page, not the smaller candidate-only fixture, must work.
+    # The iframe shim switches tabs/modes and checks the visible active nav, exactly
+    # one footer and a loaded replacement image without changing scanner internals.
+    shell=base+"/tests/fixtures/argus_shell_acceptance.html"
+    for label,mode,width,height in (
+        ("about-dark-desktop","view=about&theme=dark",1440,1000),
+        ("about-light-mobile","view=about&theme=light",390,844),
+        ("start-dark-mobile","view=start&theme=dark",390,844),
+    ):
+        url=shell+"?"+mode
+        dom=subprocess.run([browser,*opts,"--dump-dom",url],
+                           capture_output=True,text=True,timeout=120)
+        if dom.returncode!=0 or "ARGUS_UI_OK" not in dom.stdout:
+            summary=dom.stdout[-2200:].replace("ARGUS_UI_PENDING","PENDING")
+            raise AssertionError(label+" did not complete real-browser theme/asset/footer checks: "+
+                                 summary+"; "+dom.stderr[-500:])
+        output=ARTIFACT/(label+".png")
+        shot=subprocess.run([browser,*[a for a in opts if not a.startswith("--window-size")],
+                             f"--window-size={width},{height}",f"--screenshot={output}",url],
+                            capture_output=True,text=True,timeout=120)
+        if shot.returncode!=0 or not output.exists() or output.stat().st_size<2000:
+            raise AssertionError(label+" screenshot missing. "+shot.stderr[-500:])
+        print(label,output.stat().st_size,"bytes; DOM checks passed")
     print("PASS: real Chrome renders historical and dated trading rationales before archive notes.")
 finally:
     server.shutdown()
