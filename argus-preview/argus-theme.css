@@ -382,3 +382,45 @@ html[data-argus-theme="light"] #about .argusApprovedAbout{
  background:linear-gradient(132deg,#fbfaf5,#fff)!important;border-color:#cfbc99!important;box-shadow:0 9px 24px #30495616!important
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+
+/* Reviewed in actual 390px Chrome screenshots: eliminate final dark start-panel.
+   Contrast on explanation summaries and status controls must also meet the
+   light reader palette — there is no dark-on-dark placeholder permitted. */
+html[data-argus-theme="light"] #start .hero-brand{
+ background:#fffdfa!important;color:#0b2d5b!important;
+ border-color:#cbd8dc!important;box-shadow:none!important
+}
+html[data-argus-theme="light"] #start .hero-brand :is(.wordmark,.panoptes,.subline){
+ color:#0b2d5b!important;text-shadow:none!important;
+ border-color:#c6aa77!important
+}
+html[data-argus-theme="light"] #start .hero-brand .panoptes{color:#a1782d!important}
+html[data-argus-theme="light"] #start .hero .hero-copy h1{text-shadow:none!important}
+html[data-argus-theme="light"] #start .hero-copy .ghost-btn{
+ background:#fff!important;color:#214759!important;border-color:#b7c7d0!important
+}
+html[data-argus-theme="light"] #start .hero-mantra{color:#3a5a6b!important}
+html[data-argus-theme="light"] #start .kpis,
+html[data-argus-theme="light"] .research-kpi-wrap,
+html[data-argus-theme="light"] .research-v3 .research-kpi-wrap{
+ background:#fffdf9!important;border-color:#c7d6db!important;color:#26495e!important;
+ box-shadow:none!important
+}
+html[data-argus-theme="light"] #start .metric,
+html[data-argus-theme="light"] .research-kpi-wrap .metric{
+ background:#fffdf9!important;color:#1c4053!important;border-color:#c8d8dc!important
+}
+html[data-argus-theme="light"] :is(.research-kpi-wrap,.research-masthead) :is(.mastlabel,.research-lead,.research-boundary,.research-kpi-label){
+ color:#39596a!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwExplainer>summary,.etwOverview>summary,.etwHistorical>summary,.etwRationale summary),
+html[data-argus-theme="light"] #science #v7Monitor :is(.v7how>summary,.v7tech summary,.v7legacy summary){
+ color:#365468!important;border-color:#b5cbd2!important
+}
+html[data-argus-theme="light"] #observations #etw .etwExplainer>summary::before,
+html[data-argus-theme="light"] #observations #etw .etwOverview>summary::before{
+ color:#885b21!important
+}
+html[data-argus-theme="light"] #science #v7Monitor .v7how>summary::before{color:#906127!important}
+html[data-argus-theme="light"] #observations #etw .etwGoal{color:#395a6b!important}
