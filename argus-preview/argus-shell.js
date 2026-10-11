@@ -46,6 +46,17 @@ apply(stored);
 // Keep active navigation entries fully visible in the horizontal mobile menu.
 const nav=document.querySelector('nav.nav');
 if(nav){
+ const labels={observations:'Beobachtungen',science:'Forschungsstand'};
+ const smallLabels={observations:'Beobachten',science:'Forschung'};
+ function responsiveNames(){
+  const compact=window.matchMedia?.('(max-width:600px)').matches;
+  for(const [view,full] of Object.entries(labels)){
+   const tab=nav.querySelector('button[data-view="'+view+'"]');
+   if(tab){tab.textContent=compact?smallLabels[view]:full;tab.setAttribute('aria-label',full)}
+  }
+ }
+ responsiveNames();
+ window.addEventListener('resize',responsiveNames,{passive:true});
  const focusCurrent=()=>{
   const item=nav.querySelector('button.active');
   if(item&&nav.scrollWidth>nav.clientWidth+4)
