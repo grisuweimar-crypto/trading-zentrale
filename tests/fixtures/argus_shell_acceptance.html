@@ -12,6 +12,7 @@
 const args=new URLSearchParams(location.search);
 const view=args.get('view')||'about',theme=args.get('theme')||'dark';
 const iframe=document.getElementById('argus'),status=document.getElementById('argus-test-status');
+if(args.get('mobile')==='1')iframe.style.width='390px';
 let tries=0;
 const poll=setInterval(()=>{
  if(++tries>160){clearInterval(poll);status.textContent='ARGUS_UI_FAIL: timeout';return}
