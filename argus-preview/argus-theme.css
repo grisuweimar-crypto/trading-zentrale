@@ -202,3 +202,35 @@ html[data-argus-theme="light"] .top .brand{color:#e5c48a!important}
 html[data-argus-theme="light"] .top .navigation a{color:#e0e8eb!important;border-color:#5b7383!important}
 html[data-argus-theme="light"] .top footer{background:#edf2f3!important;color:#466174!important}
 @media(prefers-reduced-motion:reduce){.topbar .nav{scroll-behavior:auto!important}}
+
+/* QA refinement: intrinsic flex sizing could leave the selected mobile tab
+   outside the *screen* even when it was scrolled into the oversized nav. */
+#about .aboutPicture{display:block;width:100%}
+@media(max-width:950px){
+ .topbar .topinner{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"logo tools" "tabs tabs";
+  align-items:center;
+  gap:0 8px;
+  min-width:0;
+  overflow:hidden
+ }
+ .topbar .brand{grid-area:logo;min-width:0}
+ .topbar .nav-right{grid-area:tools;min-width:0;justify-content:flex-end}
+ .topbar nav.nav{
+  grid-area:tabs;min-width:0!important;max-width:100%!important;width:100%!important;
+  overflow-x:auto!important;overflow-y:hidden;
+  justify-content:flex-start!important;
+  -webkit-overflow-scrolling:touch
+ }
+ .topbar nav.nav button{flex:0 0 auto}
+}
+@media(max-width:780px){
+ #about .aboutBanner{
+  min-height:0;aspect-ratio:800/460;height:auto;object-fit:contain;object-position:center
+ }
+}
+@media(max-width:420px){
+ #about .aboutBanner{aspect-ratio:800/460;min-height:0}
+}
