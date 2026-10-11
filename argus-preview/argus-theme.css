@@ -1,0 +1,256 @@
+/* ARGUS PANOPTES – presentation preferences.
+   Default: original midnight blue & warm gold. Optional: deliberately designed
+   warm-white reading surfaces. Original logos, scores and data stay untouched. */
+.argusThemeControl{display:flex;align-items:center;gap:7px;min-width:0}
+.argusThemeLabel{font:600 11px/1.4 Inter,system-ui,sans-serif;color:#c0cfdb}
+#argusThemeChoice{
+  appearance:none;min-width:110px;max-width:140px;
+  color:#f1ddb6;background:#0d293f;border:1px solid #61707e;
+  border-radius:9px;padding:10px 25px 10px 12px;
+  font:600 12px Inter,system-ui,sans-serif;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4 4.5-4' fill='none' stroke='%23e6c78d' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;cursor:pointer
+}
+#argusThemeChoice:focus-visible{outline:2px solid #e9c17b;outline-offset:2px}
+#argusThemeChoice option{color:#152d40;background:#f4f4f2}
+.topbar .nav-right{gap:8px}
+.topbar #reload{display:flex;align-items:center;gap:7px;white-space:nowrap}
+#about .aboutBanner{width:100%;height:auto;aspect-ratio:16/5;object-fit:cover;display:block;
+  border:1px solid #8d7959;border-radius:15px;background:#102639;
+  box-shadow:0 16px 38px #0003}
+#about .explain{margin:22px 0 24px;font-size:15px;line-height:1.8;max-width:940px}
+#about .trustgrid{gap:15px}
+#about .trustcard{min-height:160px;padding:23px 24px}
+#about .trustcard h3{font-size:23px;line-height:1.25}
+#about .trustcard p{font-size:13px;line-height:1.75}
+#about .trustcard .overline{letter-spacing:.16em}
+/* Independently scrollable mobile navigation with active-tab reveal from JS. */
+@media(max-width:1100px){
+  .topbar .nav{gap:0;scrollbar-width:thin;scrollbar-color:#917a53 transparent;
+    overscroll-behavior-x:contain;scroll-padding-inline:15px}
+  .topbar .nav button{flex:none;scroll-snap-align:start}
+}
+@media(max-width:780px){
+ .topbar .topinner{gap:5px}
+ .topbar .nav-right{gap:6px;margin-left:auto}
+ .argusThemeLabel{display:none}
+ #argusThemeChoice{min-width:98px;max-width:98px;padding:8px 21px 8px 7px;font-size:11px;border-radius:8px}
+ .topbar #reload{padding:8px 11px;min-width:40px;justify-content:center;font-size:13px}
+ .argusRefreshText{display:none}
+ .topbar .nav{width:100%;overflow-x:auto;scrollbar-width:thin;height:44px}
+ .topbar .nav button{padding-inline:14px;min-height:43px;font-size:13px}
+ #about .aboutBanner{aspect-ratio:2.15/1;min-height:165px;object-position:50% 50%}
+ #about .trustcard{min-height:135px}
+}
+@media(max-width:420px){
+ .topbar .brand img{width:42px;height:42px}
+ .topbar .brand-name{font-size:21px}
+ #argusThemeChoice{min-width:93px;max-width:93px}
+ .topbar .nav button{padding-inline:12px}
+ #about .aboutBanner{aspect-ratio:1.85/1}
+}
+/* The standalone research preview uses a different, existing topbar. */
+.top .topbar .argusThemeControl,.topbar .navigation .argusThemeControl{align-self:center}
+.navigation .argusThemeControl{margin-left:auto}
+@media(max-width:600px){.navigation .argusThemeControl{margin:4px auto 0}}
+
+/* Reader-selectable light theme. This is intentional pale-paper styling, not
+   inversion. Dark graphic/logo motifs remain unmodified as branded imagery. */
+html[data-argus-theme="light"]{
+ --bg:#f6f7f5;--deep:#ebf0f3;--panel:#fffdf9;--panel2:#f3f7f8;
+ --panel3:#e9f1f5;--line:#bdcdd4;--lineGold:#bea477;
+ --gold:#875b20;--goldBright:#aa752c;--text:#1a3040;
+ --muted:#506879;--good:#08795c;--bad:#a33345;--blue:#12638e;
+ --subtle:#e9f1f4
+}
+html[data-argus-theme="light"] body{
+ background:linear-gradient(155deg,#ffffff 0%,#f7f8f4 36%,#edf3f7 100%)!important;
+ color:#1a3040!important
+}
+html[data-argus-theme="light"] a{color:#7b501a}
+html[data-argus-theme="light"] .topbar{
+ background:rgba(13,38,57,.98)!important;border-color:#a0b0bd!important
+}
+html[data-argus-theme="light"] .topbar .brand-name{color:#fff8e9}
+html[data-argus-theme="light"] .topbar .brand-sub{color:#f1cb89}
+html[data-argus-theme="light"] .topbar .nav button{color:#d8e0e6}
+html[data-argus-theme="light"] .topbar .nav button:hover,
+html[data-argus-theme="light"] .topbar .nav button.active{color:#f5cb8c;border-bottom-color:#dfb16b}
+html[data-argus-theme="light"] #argusThemeChoice{background-color:#f9fbfc;color:#1f3647;border-color:#a7bbc8}
+html[data-argus-theme="light"] .argusThemeLabel{color:#ecdfc5}
+html[data-argus-theme="light"] .statusline{
+ background:#edf2f4!important;border-color:#cbd6de!important
+}
+html[data-argus-theme="light"] .statusinner,
+html[data-argus-theme="light"] .statusleft{color:#435b6b!important}
+html[data-argus-theme="light"] .statusinner .chip{background:#fffdf8;color:#7e5c30;border-color:#c8ab76}
+html[data-argus-theme="light"] .chip{background:#f9fbfc;color:#395668;border-color:#bdcbd1}
+html[data-argus-theme="light"] .chip.gold{background:#fff3dc;color:#80581e;border-color:#cca46d}
+html[data-argus-theme="light"] .chip.good{color:#11705c;border-color:#91b8aa}
+html[data-argus-theme="light"] .chip.bad{color:#9e3a48;border-color:#d6a5ad}
+html[data-argus-theme="light"] :is(.card,.tile,.metric,.v5-panel,.trustcard,.pane,.panel,.bars,.trendCard,.grid-card,.research-card){
+ background:#fffdfb!important;border-color:#cbd7db!important;color:#1a3040!important;
+ box-shadow:0 7px 23px rgba(21,48,65,.055)!important
+}
+html[data-argus-theme="light"] :is(.card,.tile,.metric,.v5-panel,.trustcard,.panel,.pane) :is(h2,h3,h4,strong){color:#223c4c}
+html[data-argus-theme="light"] :is(.card,.tile,.metric,.v5-panel,.trustcard,.panel,.pane) :is(p,small,.hint){color:#526b7b}
+html[data-argus-theme="light"] :is(.heading,.workspaceHead,.previewIntro,.v5-head) :is(h1,h2,h3),
+html[data-argus-theme="light"] #about .heading h2{color:#19394e!important}
+html[data-argus-theme="light"] :is(.hint,.aside,.explain,.smallfoot,.footer,.previewIntro p,.v5-head p){color:#4b6373!important}
+html[data-argus-theme="light"] :is(.overline,.pretitle){color:#96692e!important}
+html[data-argus-theme="light"] .hero.hero-v2{
+ border-color:#aabdc7!important;
+ background:linear-gradient(114deg,#143449,#24485e)!important;
+ color:#f8f2e4!important
+}
+html[data-argus-theme="light"] .hero :is(.hero-copy,.hero-mantra) :is(h1,h2,h3,p,span),
+html[data-argus-theme="light"] .hero .hero-copy p{color:#eaf3f5!important}
+html[data-argus-theme="light"] .hero .hero-copy em{color:#f4d59c!important}
+html[data-argus-theme="light"] :is(.ghost-btn,.tiny-btn,.workspaceTools button){
+ background:#ecf2f4!important;color:#18354a!important;border-color:#aabdc7!important
+}
+html[data-argus-theme="light"] .topbar :is(.ghost-btn,.tiny-btn){background:#18384c!important;color:#eff5f6!important;border-color:#648096!important}
+html[data-argus-theme="light"] .gold-btn{background:linear-gradient(125deg,#e9bf76,#bd8b40)!important;color:#172c3e!important}
+html[data-argus-theme="light"] :is(input,select,textarea){
+ background:#fff!important;color:#1b384a!important;border-color:#adbec9!important
+}
+html[data-argus-theme="light"] :is(.tabbar,.tableFilters,.workspaceTools,.filterBar,.controls,.summaryBand){
+ background:#f0f5f6!important;border-color:#ccdade!important
+}
+html[data-argus-theme="light"] :is(.table,.data-table,table){color:#1f3949}
+html[data-argus-theme="light"] :is(table th,thead th){background:#e8f0f2!important;color:#355365!important;border-color:#c3d2da!important}
+html[data-argus-theme="light"] :is(table td,tbody td){border-color:#d6e0e5!important;color:#2d4858!important}
+html[data-argus-theme="light"] :is(.drawer,.drawerHead,.drawerBody){background:#f9faf8!important;color:#1a3546!important;border-color:#a8bcc8!important}
+html[data-argus-theme="light"] .overlay.show{background:#13233385!important}
+html[data-argus-theme="light"] .footer{
+ background:#edf2f3!important;border-color:#bccdd7!important;color:#3d5667!important
+}
+html[data-argus-theme="light"] .footer a{color:#79521f}
+html[data-argus-theme="light"] #about .aboutBanner{border-color:#b6aa95;box-shadow:0 14px 26px #1c32431c}
+html[data-argus-theme="light"] #about .explain{color:#405d70!important}
+
+/* Third-party observation cards: light surfaces but dark intact chart logos. */
+html[data-argus-theme="light"] #observations #etw{
+ --argus-ink:#183444;--argus-muted:#4e6474;--argus-gold:#9a672d;
+ background:linear-gradient(130deg,#fffdfa,#f2f7f8)!important;
+ color:#193647!important;border-color:#c3d2d9!important;
+ box-shadow:0 14px 30px #173a5114!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwTitle h3,.etwName,.etwEvidenceTitle strong,.etwFollow h4,.etwSourceTitle,.etwHistorical strong){
+ color:#253a49!important
+}
+html[data-argus-theme="light"] #observations #etw :is(p,.etwTitle p,.etwRationale p,.etwExplainer p,.etwFollow p,.etwNote,.etwMetric span,.etwMetric small){color:#4a6170!important}
+html[data-argus-theme="light"] #observations #etw :is(.etwCard,.etwFollow,.etwRationale,.etwHistorical,.etwExplainer,.etwOverview){
+ background:#fff!important;color:#1e394a!important;border-color:#c6d6dc!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwMetric,.etwSources,.etwTop,.etwRationale,.etwEvidenceTitle,.etwFollow,.etwHistorical){
+ border-color:#c8d7dc!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwFollowTrack>div,.etwGate,.etwPill){
+ background:#edf5f6!important;color:#2c5367!important;border-color:#b9cad3!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwFollowTrack b,.etwFollowTrack small,.etwTech summary,.etwTag,.etwMetric b,.etwSym,.etwGold){
+ color:#855e28!important
+}
+html[data-argus-theme="light"] #observations #etw .etwHistorical>summary{color:#3d5668!important}
+html[data-argus-theme="light"] #observations #etw button{
+ background:#f5f8f8!important;color:#315064!important;border-color:#aabfc9!important
+}
+html[data-argus-theme="light"] #observations #etw button[aria-pressed="true"]{
+ background:#eadac1!important;color:#5e441d!important;border-color:#b18d55!important
+}
+html[data-argus-theme="light"] #observations #etw #etwQuery{
+ background:#fff!important;color:#1d3d50!important;border-color:#b5c9d3!important
+}
+
+/* Research and QM on both main site and standalone V7. */
+html[data-argus-theme="light"] #science #v7Monitor{color:#203849!important}
+html[data-argus-theme="light"] #science #v7Monitor :is(.v7head,.v7story,.v7card,.v7how,.v7status,.v7metric,.v7stage,.v7step,.v7legacy){
+ background:#fffdfb!important;color:#193a4e!important;border-color:#c4d2da!important;box-shadow:0 7px 23px #24465a10!important
+}
+html[data-argus-theme="light"] #science #v7Monitor :is(h3,h4,.v7storyIntro h4,.v7sectionHead h4,.v7card h4,.v7stepText b,.v7head h3,.v7statrow b,.v7metric strong){
+ color:#203f51!important
+}
+html[data-argus-theme="light"] #science #v7Monitor :is(p,.v7foot,.v7head .v7foot,.v7how p,.v7storyIntro p,.v7stepText p,.v7statrow span,.v7metric label,.v7metric small){
+ color:#4d6575!important
+}
+html[data-argus-theme="light"] #science #v7Monitor :is(.v7over,.v7stepNum,.v7stepStatus,.v7tech summary){color:#925f22!important}
+html[data-argus-theme="light"] #science #v7Monitor :is(.v7stepNum,.v7tech,.v7statrow){border-color:#cbd8df!important;background:#eef3f5!important}
+html[data-argus-theme="light"] #science #v7Monitor :is(button,.v7legacy summary){
+ background:#f2f5f4!important;color:#355065!important;border-color:#aabec9!important
+}
+html[data-argus-theme="light"] #v7Quality :is(.v7qmCard,.v7qmFinding,.v7qmHighlight,.v7qmPanel,.v7qmTech,.v7qmReport){
+ background:#fffdfb!important;color:#263e4d!important;border-color:#c8d5dd!important
+}
+html[data-argus-theme="light"] #v7Quality :is(p,small,span){color:#4f6777!important}
+html[data-argus-theme="light"] #external-theses{
+ background:#fffdfb!important;border-color:#c4d3da!important;color:#1c3a4c!important
+}
+html[data-argus-theme="light"] #external-theses :is(h2,h3){color:#244153!important}
+html[data-argus-theme="light"] #external-theses :is(p,.head,.meta){color:#4e6677!important}
+html[data-argus-theme="light"] #external-theses :is(.row,.meta,.values span){background:#edf4f6!important;border-color:#bdcdd6!important}
+html[data-argus-theme="light"] #external-theses .values b{color:#7f592d!important}
+html[data-argus-theme="light"] #argusClarityGlossary .argusClarityBody{
+ background:#fffdfa!important;color:#213b4c!important;border-color:#bbcad2!important
+}
+html[data-argus-theme="light"] #argusClarityGlossary :is(h3,h4,dt){color:#715127!important}
+html[data-argus-theme="light"] #argusClarityGlossary :is(p,dd){color:#4e6573!important}
+
+/* Standalone V7 header on both themes. */
+html[data-argus-theme="light"] .top{background:#112d42!important;border-color:#668197!important}
+html[data-argus-theme="light"] .top .brand{color:#e5c48a!important}
+html[data-argus-theme="light"] .top .navigation a{color:#e0e8eb!important;border-color:#5b7383!important}
+html[data-argus-theme="light"] .top footer{background:#edf2f3!important;color:#466174!important}
+@media(prefers-reduced-motion:reduce){.topbar .nav{scroll-behavior:auto!important}}
+
+/* QA refinement: intrinsic flex sizing could leave the selected mobile tab
+   outside the *screen* even when it was scrolled into the oversized nav. */
+#about .aboutPicture{display:block;width:100%}
+@media(max-width:950px){
+ .topbar .topinner{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"logo tools" "tabs tabs";
+  align-items:center;
+  gap:0 8px;
+  min-width:0;
+  overflow:hidden
+ }
+ .topbar .brand{grid-area:logo;min-width:0}
+ .topbar .nav-right{grid-area:tools;min-width:0;justify-content:flex-end}
+ .topbar nav.nav{
+  grid-area:tabs;min-width:0!important;max-width:100%!important;width:100%!important;
+  overflow-x:auto!important;overflow-y:hidden;
+  justify-content:flex-start!important;
+  -webkit-overflow-scrolling:touch
+ }
+ .topbar nav.nav button{flex:0 0 auto}
+}
+@media(max-width:780px){
+ #about .aboutBanner{
+  min-height:0;aspect-ratio:800/460;height:auto;object-fit:contain;object-position:center
+ }
+}
+@media(max-width:420px){
+ #about .aboutBanner{aspect-ratio:800/460;min-height:0}
+}
+
+/* Five genuinely visible mobile tabs – no invisible sixth strip outside screen. */
+@media(max-width:600px){
+ .topbar nav.nav{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  grid-auto-flow:column;
+  gap:0!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  height:45px!important;overflow:visible!important;
+  padding:0!important
+ }
+ .topbar nav.nav button{
+  min-width:0!important;padding:0 2px!important;
+  font-size:clamp(10px,2.55vw,12px)!important;
+  line-height:1.3!important;
+  white-space:nowrap!important;
+  overflow:visible!important;text-align:center
+ }
+}
