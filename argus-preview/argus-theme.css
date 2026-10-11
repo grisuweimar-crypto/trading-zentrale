@@ -254,3 +254,131 @@ html[data-argus-theme="light"] .top footer{background:#edf2f3!important;color:#4
   overflow:visible!important;text-align:center
  }
 }
+
+
+/* CONTRACTUAL DESIGN RECOVERY — approved ARGUS owl-eye and wordmark only.
+ * Both themes have intentionally authored surfaces, never color inversion.
+ * Above all: no unapproved replacement owl/temple art on About ARGUS. */
+#about .aboutPicture{display:none!important}
+#about .argusApprovedAbout{
+ display:flex;align-items:center;justify-content:center;gap:clamp(19px,4vw,68px);
+ width:100%;padding:clamp(20px,4vw,52px);min-height:245px;margin:18px 0 20px;
+ background:linear-gradient(132deg,#fbfaf5,#f5f3ec);
+ border:1px solid #c6ac7a;border-radius:14px;box-shadow:0 14px 32px #03162625;
+ color:#0b2d5b
+}
+#about .argusApprovedEye{
+ width:clamp(98px,19vw,230px);height:auto;max-height:220px;
+ border:0!important;object-fit:contain;flex:none;background:#fbfaf5;
+ border-radius:8px
+}
+#about .argusApprovedType{display:flex;flex-direction:column;gap:clamp(7px,1.1vw,17px);align-items:flex-start;min-width:0}
+#about .argusApprovedName{font:normal clamp(35px,7vw,86px)/1 Georgia,"Times New Roman",serif;letter-spacing:.075em;color:#0b2d5b;white-space:nowrap}
+#about .argusApprovedSub{font:normal clamp(14px,2.2vw,29px)/1.2 Georgia,serif;letter-spacing:.4em;color:#a77c28}
+#about .argusApprovedStrap{font:normal clamp(12px,1.6vw,22px)/1.4 Georgia,serif;border-top:2px solid #bb9555;padding-top:9px;color:#3c5467}
+@media(max-width:600px){
+ #about .argusApprovedAbout{gap:13px;min-height:142px;margin:13px 0 17px;padding:16px 10px}
+ #about .argusApprovedEye{width:min(27vw,110px)}
+ #about .argusApprovedName{font-size:clamp(30px,9vw,45px);letter-spacing:.035em}
+ #about .argusApprovedSub{font-size:clamp(11px,3.7vw,17px);letter-spacing:.19em}
+ #about .argusApprovedStrap{font-size:clamp(10px,2.55vw,13px);padding-top:7px}
+}
+/* Light must extend to *all* page sections, controls and data modules. */
+html[data-argus-theme="light"]{color-scheme:light}
+html[data-argus-theme="light"] body,
+html[data-argus-theme="light"] .view,
+html[data-argus-theme="light"] main.wrap{
+ color:#173549!important
+}
+html[data-argus-theme="light"] .topbar{
+ background:#faf8f2!important;border-bottom:1px solid #c7d2d7!important;box-shadow:0 6px 22px #2840500d!important
+}
+html[data-argus-theme="light"] .topbar .brand-name,
+html[data-argus-theme="light"] .topbar .brand{color:#0b2d5b!important}
+html[data-argus-theme="light"] .topbar .brand-sub{color:#986926!important}
+html[data-argus-theme="light"] .topbar .nav button{color:#314b5d!important;background:transparent!important}
+html[data-argus-theme="light"] .topbar .nav button.active,
+html[data-argus-theme="light"] .topbar .nav button:hover{color:#77521b!important;border-bottom-color:#bd8d3a!important}
+html[data-argus-theme="light"] .argusThemeLabel{color:#355365!important}
+html[data-argus-theme="light"] #argusThemeChoice,
+html[data-argus-theme="light"] .topbar #reload,
+html[data-argus-theme="light"] .topbar .ghost-btn,
+html[data-argus-theme="light"] .topbar .tiny-btn{
+ background:#fff!important;color:#213e52!important;border:1px solid #abc0cb!important;box-shadow:none!important
+}
+html[data-argus-theme="light"] .topbar .gold-btn{background:#e7c17e!important;border-color:#bd9557!important;color:#213544!important}
+html[data-argus-theme="light"] .statusline{background:#f0f4f4!important}
+html[data-argus-theme="light"] .statusleft,
+html[data-argus-theme="light"] .statusinner{color:#486477!important}
+html[data-argus-theme="light"] #start .hero.hero-v2{
+ background:linear-gradient(115deg,#fffdfa,#f0f4f5)!important;
+ color:#16384d!important;border:1px solid #c5d4da!important;box-shadow:0 12px 34px #132d4211!important
+}
+html[data-argus-theme="light"] #start .hero.hero-v2:before,
+html[data-argus-theme="light"] #start .hero.hero-v2:after,
+html[data-argus-theme="light"] #start .hero-visual:before,
+html[data-argus-theme="light"] #start .hero-visual:after{background-image:none!important;background:transparent!important}
+html[data-argus-theme="light"] #start .hero-visual{
+ background:linear-gradient(125deg,#fafaf6,#eaf2f5)!important;
+ border-color:#d2dce0!important;box-shadow:none!important
+}
+html[data-argus-theme="light"] #start .hero :is(.hero-copy,.hero-mantra) :is(h1,h2,h3,p,span,em),
+html[data-argus-theme="light"] #start .hero .hero-copy p,
+html[data-argus-theme="light"] #start .hero h1{color:#173d51!important}
+html[data-argus-theme="light"] #start .hero .hero-copy em{color:#936326!important}
+html[data-argus-theme="light"] :is(.research-masthead,.research-seal,.research-mastleft,.research-mastright,.research-kpi-wrap,
+ .science-card,.research-grid,.research-bottom,.research-toolbar,.research-sectionheading,.v5-head,.v5-panel,
+ .panel,.pane,.panelHead,.panelBody,.leftcol .card,.centercol .card,.rightcol .card,
+ .trendCard,.heatrow,.barrow,.segrow,.grid-card,.trustcard,.start-shell .tile,
+ .workspaceHead,.previewIntro,.v6-chart-frame,.v6-toolbar,.v6-entry-body){
+ background:#fffdfa!important;color:#193b50!important;border-color:#c8d7dd!important;box-shadow:none!important
+}
+html[data-argus-theme="light"] :is(.research-masthead,.research-kpi-wrap,.research-toolbar,.science-card,.v5-panel,.v6-chart-frame,.research-seal)
+ :is(h1,h2,h3,h4,strong,span,p,small,div:not(.bar)){color:inherit}
+html[data-argus-theme="light"] :is(.research-masthead,.research-toolbar,.v5-head,.v5-panel,.panel,.trustcard,.science-card)
+ :is(h1,h2,h3,h4){color:#1b3c50!important}
+html[data-argus-theme="light"] :is(.research-masthead,.v5-head,.v5-panel,.panel,.trustcard,.science-card)
+ :is(p,.hint,small){color:#526979!important}
+html[data-argus-theme="light"] :is(.researchTable,.researchTable th,.researchTable td,.researchTable tr,
+ .v5-drawer-tabs,.v6-tabbar,.v6-chart-title,.segbar,.datagrid,.v5-obsgrid){
+ color:#24445a!important;border-color:#c7d5dd!important
+}
+html[data-argus-theme="light"] .researchTable tbody tr:hover,
+html[data-argus-theme="light"] .researchTable tbody tr.selected{background:#ebf1f4!important;color:#183c50!important}
+html[data-argus-theme="light"] :is(.researchTable th,.v6-tabbar,.v5-drawer-tabs,.v6-toolbar,.researchTable thead,
+ .v5-panel .panelHead,.panelHead){background:#edf3f5!important;color:#294d63!important}
+html[data-argus-theme="light"] :is(.research-toolbar button,.workspaceTools button,.panel-actions button,.tabbar button,
+ .v6-tabbar button,.v5-drawer-tabs button,.v6-toolbar button,.filterBar button,.controls button,
+ .ghost-btn,.tiny-btn){background:#fffdf9!important;color:#2b4b5e!important;border:1px solid #afc4ce!important}
+html[data-argus-theme="light"] :is(.research-toolbar button,.workspaceTools button,.tabbar button,.v6-tabbar button,.filterBar button):hover{
+ background:#e8f0f4!important;border-color:#a37e43!important
+}
+html[data-argus-theme="light"] :is(.v6-toolbar select,.workspaceTools input,.workspaceTools select,
+ .tableFilters input,.tableFilters select,.v5-panel input,.v5-panel select){
+ background:#fff!important;color:#1a3d50!important;border:1px solid #b5c9d3!important
+}
+html[data-argus-theme="light"] #science #v7Monitor :is(.v7stage,.v7ops,.v7empty,.v7status,
+ .v7stageHead,.v7code,.v7statrow){
+ background:#fffdfa!important;color:#25475b!important;border-color:#ccd8de!important
+}
+html[data-argus-theme="light"] #v7Quality :is(.v7qmTitle,.v7qmCode,.v7qmCard,.v7qmFinding){
+ background:#fffdfa!important;color:#294d60!important;border-color:#c6d6de!important
+}
+html[data-argus-theme="light"] #external-theses .row,
+html[data-argus-theme="light"] #external-theses .meta,
+html[data-argus-theme="light"] #external-theses .values span{background:#f8faf9!important;color:#2b4b5b!important}
+html[data-argus-theme="light"] #observations #etw :is(.etwCard,.etwFollow,.etwRationale,.etwHistorical,.etwExplainer,
+ .etwOverview,.etwFollowTrack>div,.etwPill,.etwGate,.etwMetrics){
+ background:#fffdf9!important;color:#254657!important;border-color:#c8d6dd!important
+}
+html[data-argus-theme="light"] #observations #etw :is(.etwElliott,.etwTech,.etwArchiveDetail){
+ background:#f1f6f7!important;color:#345165!important;border-color:#cad9e0!important
+}
+html[data-argus-theme="light"] #argusClarityGlossary>summary{
+ background:#fffdfa!important;color:#6c4a20!important;border-color:#c6a16e!important;box-shadow:0 7px 20px #30455420!important
+}
+html[data-argus-theme="light"] #argusClarityGlossary .argusClarityBody{box-shadow:0 12px 30px #20394b24!important}
+html[data-argus-theme="light"] #about .argusApprovedAbout{
+ background:linear-gradient(132deg,#fbfaf5,#fff)!important;border-color:#cfbc99!important;box-shadow:0 9px 24px #30495616!important
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
