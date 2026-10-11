@@ -72,21 +72,19 @@ try:
     # one footer and a loaded replacement image without changing scanner internals.
     shell=base+"/tests/fixtures/argus_shell_acceptance.html"
     for label,mode,width,height in (
-        ("about-dark-desktop","view=about&theme=dark",1440,1000),
-        ("about-light-mobile","view=about&theme=light&mobile=1",390,844),
-        ("about-light-desktop","view=about&theme=light",1440,1000),
-        ("start-dark-mobile","view=start&theme=dark&mobile=1",390,844),
-        ("start-light-mobile","view=start&theme=light&mobile=1",390,844),
-        ("scanner-light-mobile","view=research&theme=light&mobile=1",390,844),
-        ("beobachtungen-light-mobile","view=observations&theme=light&mobile=1",390,844),
-        ("forschungsstand-light-mobile","view=science&theme=light&mobile=1",390,844),
+        ("about-dark-desktop","view=about",1440,1000),
+        ("about-dark-mobile","view=about&mobile=1",390,844),
+        ("start-dark-mobile","view=start&mobile=1",390,844),
+        ("scanner-dark-mobile","view=research&mobile=1",390,844),
+        ("beobachtungen-dark-mobile","view=observations&mobile=1",390,844),
+        ("forschungsstand-dark-mobile","view=science&mobile=1",390,844),
     ):
         url=shell+"?"+mode
         dom=subprocess.run([browser,*opts,"--dump-dom",url],
                            capture_output=True,text=True,timeout=120)
         if dom.returncode!=0 or 'id="argus-test-status">ARGUS_UI_OK</div>' not in dom.stdout:
             summary=dom.stdout[-2200:].replace("ARGUS_UI_PENDING","PENDING")
-            raise AssertionError(label+" did not complete real-browser theme/asset/footer checks: "+
+            raise AssertionError(label+" did not complete real-browser dark-only/original-art/footer checks: "+
                                  summary+"; "+dom.stderr[-500:])
         output=ARTIFACT/(label+".png")
         shot=subprocess.run([browser,*[a for a in opts if not a.startswith("--window-size")],
