@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-12T22:45:56.882889+00:00",
+  "decision_as_of": "2026-10-12T23:31:03.204686+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,22 +26,34 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
-    "direction": "negative",
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:GMED:c672817d91249136:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:GMED:9d34e7ebabe3e590:40T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
+    "direction": null,
     "known_directional_claim_ids": [
+      "timing:GMED:9d34e7ebabe3e590:40T",
       "timing:GMED:c672817d91249136:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 2
     },
-    "relation_state": "single_direction_or_unopposed",
-    "state": "negative",
-    "support_structure": "single_direction_or_unopposed"
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ac90104e-516a-47be-8165-aff674bc56b9",
+  "snapshot_id": "6373ae65-3161-4f3b-bfa7-37ede50323d9",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -250,6 +262,14 @@
       "source_snapshot_id": "ac90104e-516a-47be-8165-aff674bc56b9",
       "state": "negative",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-12T23:31:03.204686+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "6373ae65-3161-4f3b-bfa7-37ede50323d9",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -271,11 +291,11 @@
   "state_history_state": "never_overextended",
   "symbol": "GMED",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "status": "blocked_conflict"
   }
 }
