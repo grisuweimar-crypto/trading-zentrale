@@ -44,8 +44,8 @@ def test_separate_ticker_price_symbol_isin_quote_after_master_sync():
         assert row["Ticker"] == symbol
     canonical = canonicalize_df(synced)
     kept, _, _ = _dedupe_universe(canonical)
-    assert len(canonical) == 223  # 8 independently existing master aliases remain correctly deduplicated\n    assert len(kept) == 215
-    assert expected_master_universe_count(MASTER) == 215
+    assert len(canonical) == 228  # 8 independently existing master aliases remain correctly deduplicated\n    assert len(kept) == 220
+    assert expected_master_universe_count(MASTER) == 220
     assert len(set(kept["asset_id"])) == len(kept)
 
 
