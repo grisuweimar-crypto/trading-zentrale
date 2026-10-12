@@ -30,9 +30,9 @@ def test_silver_tiger_exchange_migration_retains_cad_and_original_isin():
     assert listed.iloc[0]["currency"] == "CAD"
 
 
-def test_canonical_count_remains_215_after_venue_migration_and_delisting():
+def test_canonical_count_includes_five_new_instruments_after_venue_migration():
     # 216 after separately proved B3/NYSE identities, minus no-longer-tradable DV.V.
-    assert expected_master_universe_count(MASTER) == 215
+    assert expected_master_universe_count(MASTER) == 220
 
 
 def test_sync_excludes_delisted_quote_and_does_not_reuse_old_ticker_symbol():
@@ -54,6 +54,6 @@ def test_sync_excludes_delisted_quote_and_does_not_reuse_old_ticker_symbol():
     assert migrated.iloc[0]["Currency"] == "CAD"
     canon = canonicalize_df(synced)
     kept, _, _ = _dedupe_universe(canon)
-    assert len(kept) == 215
+    assert len(kept) == 220
     assert "SLVR.TO" in set(kept["asset_id"])
     assert "DV.V" not in set(kept["asset_id"])
