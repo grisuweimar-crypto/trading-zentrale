@@ -48,7 +48,7 @@ def parse(entries):
             kind = "debit_other"
         if kind in {"buy", "sell"} and (not isin_match or not units_match):
             raise ValueError(f"unparseable_trade_row:{n}")
-        if kind == "buy" and amount >= 0 or kind == "sell" and amount <= 0:
+        if (kind == "buy" and amount >= 0) or (kind == "sell" and amount < 0):
             raise ValueError(f"unexpected_trade_cash_direction:{n}")
         events.append({
             "row": n, "date": date, "value_date": valuta,
