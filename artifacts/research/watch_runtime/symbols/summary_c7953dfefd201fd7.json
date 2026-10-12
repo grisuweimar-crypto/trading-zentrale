@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-12T00:02:40.046904+00:00",
+  "decision_as_of": "2026-10-12T16:13:00.981464+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,12 +29,20 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:SMX:28846bf8f8b491cd:40T",
-      "timing:SMX:e3563708ab21aab0:60T",
+      "timing:SMX:ea08718de33a1787:5T",
+      "timing:SMX:0671faf1011640c5:5T",
+      "timing:SMX:c42ca6c1baee697b:20T",
+      "timing:SMX:f483a5247b57affc:20T",
+      "timing:SMX:b158fef8cbfb5c55:20T",
+      "timing:SMX:4ccb45d4ee923f1a:40T",
+      "timing:SMX:9cb11f4adfc9eb9c:40T",
+      "timing:SMX:3e260f25164f48ce:40T",
+      "timing:SMX:5472db56664c10c8:60T",
+      "timing:SMX:fe6ff0aee1bf447a:60T",
       "timing:SMX:92ad9e5c355866b9:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 11
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -43,7 +51,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
+  "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -220,6 +228,22 @@
       "source_snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-12T15:44:32.190245+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-12T16:13:00.981464+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -234,7 +258,7 @@
     "last_overextension_rs3m": 0.1520699867213244,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 24,
+    "sessions_since_last_overextension": 25,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

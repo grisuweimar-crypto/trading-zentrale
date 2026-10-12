@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-12T00:02:40.046904+00:00",
+  "decision_as_of": "2026-10-12T16:13:00.981464+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,25 +26,88 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
-    "direction": "positive",
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:SOLB.BR:5df2a86791ff5f88:60T",
+          "timing:SOLB.BR:b0fb906b9f3e02ec:60T",
+          "timing:SOLB.BR:51a8cac8cfa550aa:60T",
+          "timing:SOLB.BR:1691f75766881bca:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:SOLB.BR:13dfd193091882d7:5T",
+          "timing:SOLB.BR:a2763d94cd6f82e9:5T",
+          "timing:SOLB.BR:d18193c29692a1cb:5T",
+          "timing:SOLB.BR:9aace91dab644870:5T",
+          "timing:SOLB.BR:2ec83739629fba4d:5T",
+          "timing:SOLB.BR:42bcd8a34d314c09:5T",
+          "timing:SOLB.BR:1758b10ff7893792:20T",
+          "timing:SOLB.BR:85b7b4bcb43aeb00:20T",
+          "timing:SOLB.BR:a4278e33701f9d98:20T",
+          "timing:SOLB.BR:1aa807ae1a9556c5:20T",
+          "timing:SOLB.BR:6267ff2c27f27eb8:20T",
+          "timing:SOLB.BR:f483a5247b57affc:20T",
+          "timing:SOLB.BR:cad5eb04910821c4:20T",
+          "timing:SOLB.BR:494a15c3341a0317:20T",
+          "timing:SOLB.BR:15f457a0b3a6df9d:20T",
+          "timing:SOLB.BR:b5c6f29104b27dae:40T",
+          "timing:SOLB.BR:f9714fd629aaf7f2:40T",
+          "timing:SOLB.BR:2d034c21b8215d13:40T",
+          "timing:SOLB.BR:df23cc7f8d9328ee:60T",
+          "timing:SOLB.BR:e64908cc5e4c18f0:60T",
+          "timing:SOLB.BR:a0bebf08166a0860:60T",
+          "timing:SOLB.BR:32bb40f535b6b527:60T",
+          "timing:SOLB.BR:6289a7880870e93e:60T",
+          "timing:SOLB.BR:fe6ff0aee1bf447a:60T",
+          "timing:SOLB.BR:ff63700b226f41b1:60T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
+    "direction": null,
     "known_directional_claim_ids": [
+      "timing:SOLB.BR:13dfd193091882d7:5T",
+      "timing:SOLB.BR:a2763d94cd6f82e9:5T",
+      "timing:SOLB.BR:d18193c29692a1cb:5T",
+      "timing:SOLB.BR:9aace91dab644870:5T",
+      "timing:SOLB.BR:2ec83739629fba4d:5T",
+      "timing:SOLB.BR:42bcd8a34d314c09:5T",
+      "timing:SOLB.BR:1758b10ff7893792:20T",
+      "timing:SOLB.BR:85b7b4bcb43aeb00:20T",
+      "timing:SOLB.BR:a4278e33701f9d98:20T",
+      "timing:SOLB.BR:1aa807ae1a9556c5:20T",
+      "timing:SOLB.BR:6267ff2c27f27eb8:20T",
       "timing:SOLB.BR:f483a5247b57affc:20T",
+      "timing:SOLB.BR:cad5eb04910821c4:20T",
+      "timing:SOLB.BR:494a15c3341a0317:20T",
+      "timing:SOLB.BR:15f457a0b3a6df9d:20T",
+      "timing:SOLB.BR:b5c6f29104b27dae:40T",
+      "timing:SOLB.BR:f9714fd629aaf7f2:40T",
+      "timing:SOLB.BR:2d034c21b8215d13:40T",
+      "timing:SOLB.BR:df23cc7f8d9328ee:60T",
+      "timing:SOLB.BR:e64908cc5e4c18f0:60T",
+      "timing:SOLB.BR:a0bebf08166a0860:60T",
+      "timing:SOLB.BR:32bb40f535b6b527:60T",
       "timing:SOLB.BR:6289a7880870e93e:60T",
       "timing:SOLB.BR:fe6ff0aee1bf447a:60T",
-      "timing:SOLB.BR:92ad9e5c355866b9:60T"
+      "timing:SOLB.BR:ff63700b226f41b1:60T",
+      "timing:SOLB.BR:5df2a86791ff5f88:60T",
+      "timing:SOLB.BR:b0fb906b9f3e02ec:60T",
+      "timing:SOLB.BR:51a8cac8cfa550aa:60T",
+      "timing:SOLB.BR:1691f75766881bca:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 29
     },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
+  "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -221,6 +284,22 @@
       "source_snapshot_id": "e0323441-fd99-465f-adbf-4e563e8d8ad1",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-12T15:44:32.190245+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-12T16:13:00.981464+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -245,8 +324,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_conflict"
   }
 }
