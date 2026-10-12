@@ -1,16 +1,16 @@
 {
   "schema_version": "research_views_v1",
-  "snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
-  "attempt_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
+  "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
+  "attempt_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
   "as_of": "2026-10-12",
-  "generated_at": "2026-10-12T15:27:46.256897+00:00",
-  "views_generated_at": "2026-10-12T15:27:46.256897+00:00",
+  "generated_at": "2026-10-12T15:56:20.648088+00:00",
+  "views_generated_at": "2026-10-12T15:56:20.648088+00:00",
   "latest_run_complete": true,
   "last_complete_scan": "2026-10-12",
   "latest_run_error": null,
   "source": {
     "file": "artifacts/watchlist/watchlist_full.csv",
-    "sha256": "d52d96f0aea04776b9d336eb9ff72a1932cfbfdde8130ff98f746d4dffcb385a"
+    "sha256": "accaf12cab6fe61df6f5bccc9b3336a7be4ceb5874590a7e00fb6dbc7b773251"
   },
   "validation": {
     "status": "ok",
@@ -21,7 +21,7 @@
       "price_retrieved_at_unknown_in_legacy_cache; not inferred from export time"
     ],
     "policy": {
-      "expected_symbol_count": 215,
+      "expected_symbol_count": 220,
       "min_symbol_ratio": 1.0,
       "min_score_ratio": 0.9,
       "baseline_runs": 20,
@@ -38,32 +38,32 @@
         "cycle"
       ]
     },
-    "baseline_symbol_count": 215,
-    "required_symbol_count": 215,
-    "symbol_count": 215,
-    "numeric_score_count": 215
+    "baseline_symbol_count": 220,
+    "required_symbol_count": 220,
+    "symbol_count": 220,
+    "numeric_score_count": 220
   },
   "daily_run": {
-    "run_id": "github-38270163959-1",
-    "started_at": "2026-10-12T15:26:32.692890+00:00",
+    "run_id": "github-38273556234-1",
+    "started_at": "2026-10-12T15:54:42.994622+00:00",
     "scanner_status": "success",
     "watchlist_rewritten": true
   },
   "price_coverage": {
-    "required_symbol_count": 215,
-    "covered_symbol_count": 215,
-    "complete_symbol_count": 210,
+    "required_symbol_count": 220,
+    "covered_symbol_count": 220,
+    "complete_symbol_count": 215,
     "partial_symbol_count": 5,
     "unavailable_symbol_count": 0,
     "minimum_sessions_target": 300,
-    "symbols_with_40_or_more_sessions": 215,
-    "symbols_with_300_or_more_sessions": 210,
-    "median_sessions": 517,
+    "symbols_with_40_or_more_sessions": 220,
+    "symbols_with_300_or_more_sessions": 215,
+    "median_sessions": 517.0,
     "min_sessions": 83,
     "max_sessions": 754,
     "as_of": "2026-10-12",
     "status_counts": {
-      "price_data_ok": 210,
+      "price_data_ok": 215,
       "price_data_partial": 5,
       "price_data_unavailable": 0,
       "ticker_mapping_missing": 0,
@@ -78,7 +78,7 @@
         "last_session": "2026-10-08",
         "provider_symbol": "000660.KS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_low": 1
@@ -92,7 +92,7 @@
         "last_session": "2026-10-08",
         "provider_symbol": "005930.KS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_low": 1
@@ -106,7 +106,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "0700.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -118,7 +118,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "0857.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -130,7 +130,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "1211.HK",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -142,7 +142,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "1810.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -154,7 +154,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "2899.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -166,7 +166,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "3750.HK",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -178,7 +178,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "6503.T",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -190,7 +190,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "6506.T",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -202,7 +202,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "6861.T",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -214,7 +214,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "8035.T",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 474
@@ -228,7 +228,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "9880.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -240,7 +240,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "9888.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 491
@@ -254,7 +254,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "9988.HK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 491
@@ -268,7 +268,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AAGFF",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -280,7 +280,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AAPL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -294,7 +294,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ABBN.SW",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -308,7 +308,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ABT",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -322,7 +322,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ABX.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -334,7 +334,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ACB.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 500
@@ -348,7 +348,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ADBE",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -360,7 +360,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ADS.DE",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -372,7 +372,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AEM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -384,7 +384,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AG.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -396,7 +396,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AGI.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -408,7 +408,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ALB",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -420,7 +420,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ALV.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -432,7 +432,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AMAT",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 5
@@ -446,7 +446,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AMKR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -460,7 +460,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AMZN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -474,7 +474,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ANET",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -486,7 +486,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "APLD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -500,7 +500,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "APP",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 3
@@ -514,7 +514,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ASM.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -526,7 +526,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ASML",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -538,7 +538,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ASTS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -552,7 +552,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ASX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -566,7 +566,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AUTO.OL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -578,7 +578,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AVAV",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 190
@@ -592,7 +592,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AVGO",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 3
@@ -606,7 +606,19 @@
         "last_session": "2026-10-09",
         "provider_symbol": "AXON",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
+        "reason": null,
+        "validation_issues": {}
+      },
+      "BABA": {
+        "status": "price_data_ok",
+        "sessions": 499,
+        "adjusted_sessions": 499,
+        "first_session": "2024-10-14",
+        "last_session": "2026-10-09",
+        "provider_symbol": "BABA",
+        "update_mode": "bootstrap",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -618,7 +630,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "BAS.DE",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -630,7 +642,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "BAYN.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -642,7 +654,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "BIDU",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -654,7 +666,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "BLK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -666,7 +678,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "BTO.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -678,7 +690,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CCJ",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -690,7 +702,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CDNL",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": "fewer than target observed sessions; no synthetic prices",
         "validation_issues": {}
       },
@@ -702,7 +714,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CGNX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -716,7 +728,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CME",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -728,7 +740,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CNC",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -740,7 +752,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "COIN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -754,7 +766,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CPB",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -766,7 +778,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CRUS",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -778,7 +790,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CRWV",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -792,7 +804,19 @@
         "last_session": "2026-10-11",
         "provider_symbol": "ADA-USD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
+        "reason": null,
+        "validation_issues": {}
+      },
+      "CRYPTO:AVAX": {
+        "status": "price_data_ok",
+        "sessions": 730,
+        "adjusted_sessions": 730,
+        "first_session": "2024-10-12",
+        "last_session": "2026-10-11",
+        "provider_symbol": "AVAX-USD",
+        "update_mode": "bootstrap",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -804,7 +828,7 @@
         "last_session": "2026-10-11",
         "provider_symbol": "BTC-USD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -816,7 +840,7 @@
         "last_session": "2026-10-11",
         "provider_symbol": "DOGE-EUR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_high": 4,
@@ -831,7 +855,19 @@
         "last_session": "2026-10-11",
         "provider_symbol": "ETH-USD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
+        "reason": null,
+        "validation_issues": {}
+      },
+      "CRYPTO:MANA": {
+        "status": "price_data_ok",
+        "sessions": 730,
+        "adjusted_sessions": 730,
+        "first_session": "2024-10-12",
+        "last_session": "2026-10-11",
+        "provider_symbol": "MANA-USD",
+        "update_mode": "bootstrap",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -843,7 +879,7 @@
         "last_session": "2026-10-11",
         "provider_symbol": "SOL-EUR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_low": 9,
@@ -858,7 +894,7 @@
         "last_session": "2026-10-11",
         "provider_symbol": "XRP-EUR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_high": 8,
@@ -873,7 +909,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CSTM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -885,7 +921,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "CVX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -899,7 +935,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "DB1.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -911,7 +947,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "DIS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -925,7 +961,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "DRO.AX",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -937,7 +973,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "DSV.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -949,7 +985,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "DVLT",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -963,7 +999,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "EDR.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -975,7 +1011,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ENR.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -987,7 +1023,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ENSG",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1001,7 +1037,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "EQX.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1013,7 +1049,19 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ETN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
+        "reason": null,
+        "validation_issues": {}
+      },
+      "EUNL.DE": {
+        "status": "price_data_ok",
+        "sessions": 502,
+        "adjusted_sessions": 502,
+        "first_session": "2024-10-14",
+        "last_session": "2026-10-09",
+        "provider_symbol": "EUNL.DE",
+        "update_mode": "bootstrap",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1025,7 +1073,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FANUY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1037,7 +1085,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FCX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1051,7 +1099,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FIGR",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": "fewer than target observed sessions; no synthetic prices",
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1065,7 +1113,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FISV",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1077,7 +1125,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FLNC",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 8
@@ -1091,7 +1139,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FME.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1103,7 +1151,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FRES.L",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1115,7 +1163,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "FSLR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1129,7 +1177,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "GE",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1141,7 +1189,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "GMED",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1153,7 +1201,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "GOOGL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1167,7 +1215,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "GOT.V",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1179,7 +1227,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "GRAB",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1193,7 +1241,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "HIMS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 10
@@ -1207,7 +1255,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "HL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 5
@@ -1221,7 +1269,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "HMY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1233,7 +1281,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ICE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1245,7 +1293,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "IFX.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1257,7 +1305,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ILMN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1269,7 +1317,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "INCY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1281,7 +1329,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "INGR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1293,7 +1341,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "INOD",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1305,7 +1353,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "IREN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1319,7 +1367,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ISRG",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1331,7 +1379,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "JD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 6
@@ -1345,7 +1393,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "JNJ",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1359,7 +1407,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "KEP",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1371,7 +1419,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "KLAC",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -1385,7 +1433,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "KLAR",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": "fewer than target observed sessions; no synthetic prices",
         "validation_issues": {}
       },
@@ -1397,7 +1445,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "KO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 6
@@ -1411,7 +1459,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "LC0A.MU",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1423,7 +1471,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "LGO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -1437,7 +1485,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "LIN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1449,7 +1497,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "LRCX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -1463,7 +1511,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "LUMN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 5
@@ -1477,7 +1525,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1489,7 +1537,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MBLY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -1503,7 +1551,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MC.PA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1515,7 +1563,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MCD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 5
@@ -1529,7 +1577,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MELI",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1541,7 +1589,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "META",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1555,7 +1603,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MGMA.V",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1567,7 +1615,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MNSO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1579,7 +1627,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MP",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 3
@@ -1593,7 +1641,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MRNA",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -1607,7 +1655,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MSFT",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1621,7 +1669,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "MU",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1635,7 +1683,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NBIS",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -1649,7 +1697,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NDA.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1661,7 +1709,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NEE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1675,7 +1723,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NEM.AX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1689,7 +1737,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NESN.SW",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -1703,7 +1751,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NFLX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1717,7 +1765,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NIO",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -1731,7 +1779,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NKE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1745,7 +1793,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NOVO-B.CO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1757,7 +1805,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NOW",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 11
@@ -1771,7 +1819,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NPN.JO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_low": 27,
@@ -1786,7 +1834,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NRDS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1798,7 +1846,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NVDA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1812,7 +1860,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "NXP",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1824,7 +1872,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "OCGN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 6
@@ -1838,7 +1886,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "OGN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1850,7 +1898,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ON",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -1864,7 +1912,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ORCL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -1878,7 +1926,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "OXY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -1892,7 +1940,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PAAS.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1904,7 +1952,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PATH",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 9
@@ -1918,7 +1966,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PEP",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 5
@@ -1932,7 +1980,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PFE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 9
@@ -1946,7 +1994,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PG",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -1960,7 +2008,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PGY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1972,7 +2020,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PKX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -1984,7 +2032,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -1998,7 +2046,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PLTR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2012,7 +2060,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -2026,7 +2074,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PPTA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2038,7 +2086,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "PYPL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -2052,7 +2100,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "QBTS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -2066,7 +2114,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "QS",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 11
@@ -2080,7 +2128,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RACE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2092,7 +2140,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RCAT",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2106,7 +2154,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RGTI",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -2120,7 +2168,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RHM.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2132,7 +2180,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RI.PA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2144,7 +2192,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RIGD.IL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_high": 1
@@ -2158,7 +2206,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RKLB",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -2172,7 +2220,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ROK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2184,7 +2232,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ROL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 200
@@ -2198,7 +2246,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "RR.L",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2210,7 +2258,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SAP.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2222,7 +2270,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -2236,7 +2284,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SGL.DE",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2248,7 +2296,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SGM.AX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2260,7 +2308,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SHOP",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -2274,7 +2322,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SLVR.TO",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2286,7 +2334,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SMX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -2300,7 +2348,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SN.L",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "inconsistent_high": 1
@@ -2314,7 +2362,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SNN",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2326,7 +2374,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SNOW",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2338,7 +2386,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SOLB.BR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2350,7 +2398,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SPCX",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": "fewer than target observed sessions; no synthetic prices",
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -2364,7 +2412,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SPOT",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2376,7 +2424,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "STLA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 6
@@ -2390,7 +2438,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SU.PA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2402,7 +2450,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SYK",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2414,7 +2462,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "SYM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -2428,7 +2476,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2442,7 +2490,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TEAM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2454,7 +2502,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TEM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 7
@@ -2468,7 +2516,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TER",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2480,7 +2528,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TME",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -2494,7 +2542,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TOM.OL",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2506,7 +2554,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TSLA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2520,7 +2568,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TSMN.MX",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2532,7 +2580,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TTAN",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2544,7 +2592,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TTD",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2558,7 +2606,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "TTK.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2570,7 +2618,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "UAA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 7
@@ -2584,7 +2632,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "UBER",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2598,7 +2646,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "UEC",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 3
@@ -2612,7 +2660,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "UMI.BR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2624,7 +2672,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "UNH",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -2638,7 +2686,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "USAR",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 12
@@ -2652,7 +2700,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "UUUU",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -2666,7 +2714,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "V",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 2
@@ -2680,7 +2728,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "VALE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 499
@@ -2694,7 +2742,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "VALE3.SA",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2706,7 +2754,19 @@
         "last_session": "2026-10-09",
         "provider_symbol": "VOW3.DE",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
+        "reason": null,
+        "validation_issues": {}
+      },
+      "VWCE.DE": {
+        "status": "price_data_ok",
+        "sessions": 502,
+        "adjusted_sessions": 502,
+        "first_session": "2024-10-14",
+        "last_session": "2026-10-09",
+        "provider_symbol": "VWCE.DE",
+        "update_mode": "bootstrap",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2718,7 +2778,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "VZLA.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2730,7 +2790,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "WDAY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2742,7 +2802,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "WM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2754,7 +2814,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "WPM.TO",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2766,7 +2826,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "WYFI",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": "fewer than target observed sessions; no synthetic prices",
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -2780,7 +2840,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "XOM",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 5
@@ -2794,7 +2854,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "XPEV",
         "update_mode": "incremental",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 1
@@ -2808,7 +2868,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "XSDG.F",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2820,7 +2880,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "XYZ",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2832,7 +2892,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "YASKY",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2844,7 +2904,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "YCA.L",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {}
       },
@@ -2856,7 +2916,7 @@
         "last_session": "2026-10-09",
         "provider_symbol": "ZETA",
         "update_mode": "adjusted_close_migration",
-        "last_attempt_at": "2026-10-12T15:28:06.455905+00:00",
+        "last_attempt_at": "2026-10-12T15:56:43.137676+00:00",
         "reason": null,
         "validation_issues": {
           "provider_revision_kept_existing": 4
@@ -2866,57 +2926,57 @@
   },
   "history_analysis": {
     "path": "artifacts/research/history_analysis.csv",
-    "sha256": "1ecd167ad853c1d8c978ce23b3f9dc9b0435628f5cbdcea42eebef5185769339",
-    "row_count": 43039,
-    "symbol_count": 304,
+    "sha256": "837417c4fda4d13267cbfddd49216d4d4c75b9f9e6f3c94c53b63d41afd088dd",
+    "row_count": 43259,
+    "symbol_count": 309,
     "start_date": "2024-09-17",
     "end_date": "2026-10-12"
   },
   "history_recent": {
     "path": "artifacts/research/history_recent.csv",
-    "sha256": "7a1b6b4a298abf8fe0b28ba27e4384e8d8a03544818769bc8c1d23d3bf7946bb",
-    "row_count": 24451,
-    "symbol_count": 217,
+    "sha256": "06be3958127f0bfade70168377244542d726c55c8e484ef301eabbf6b54d72c9",
+    "row_count": 24671,
+    "symbol_count": 222,
     "start_date": "2026-06-14",
     "end_date": "2026-10-12"
   },
   "latest_scanner": {
     "path": "artifacts/research/latest_scanner.csv",
-    "sha256": "b88e996c84a9c6a38f5614153609c4b57c701509616a5a8ae018bf771f5e84bc",
-    "row_count": 215,
-    "symbol_count": 215,
+    "sha256": "1a7a91cecb238832843b94629d83acdfc45ad49f372b478c977e4bc3d4eb1814",
+    "row_count": 220,
+    "symbol_count": 220,
     "start_date": "2026-10-12",
     "end_date": "2026-10-12"
   },
   "price_backfill": {
     "path": "artifacts/research/price_backfill.csv",
-    "sha256": "3a8b460dceab612528c42e84a59214803b3817be15d1c3df76d8eb8ab165868d",
-    "row_count": 110508,
-    "symbol_count": 215,
+    "sha256": "0394a3c6f26611af446d6f486d29f48c70b42bcc0f91f3fd0cad037128afbf44",
+    "row_count": 113471,
+    "symbol_count": 220,
     "start_date": "2024-09-17",
     "end_date": "2026-10-11"
   },
   "scanner_input_provenance": {
     "path": "artifacts/research/scanner_input_provenance.json",
-    "sha256": "ced9735141054d0369828bf7ed5a423df58f5c542c5cb66ca384bb2103f2abe5",
-    "content_hash": "8618886aa0336ac4e5fc0b090caa1ee61311ee1bc54520cd85896020c372abd2",
-    "snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
+    "sha256": "41b48d7e46cecb7a7e6cc3712c6f899a8302cbcb95d513c565dfcd9b8d9a48b8",
+    "content_hash": "8466db14e6202dfefbdc2168514b0bac94cb2efe60506f053924c4745ddd75b9",
+    "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
     "as_of": "2026-10-12",
-    "run_id": "github-38270163959-1",
+    "run_id": "github-38273556234-1",
     "complete": true,
     "historical_backfill": false,
-    "direct_scoring_input_sha256": "93bee5eaaae5172554671a352661cd5f2a468b99ace09a156a3d47b5f53ad0b5",
-    "scoring_universe_sha256": "93bee5eaaae5172554671a352661cd5f2a468b99ace09a156a3d47b5f53ad0b5",
-    "yahoo_provider_frame_sha256": "4a267118e4ad2d4b1e77626092f1c55f1eeb1e25701497dd1ab5cc4959688926",
-    "source_watchlist_full_sha256": "d52d96f0aea04776b9d336eb9ff72a1932cfbfdde8130ff98f746d4dffcb385a",
-    "latest_scanner_sha256": "b88e996c84a9c6a38f5614153609c4b57c701509616a5a8ae018bf771f5e84bc",
-    "code_revision": "e4fa66b99ee92a8f245ea100544cf7daa07412c3"
+    "direct_scoring_input_sha256": "0fea492ce0c0046f01526b904ba4eaf26183ba697221891b21501f0452c57c81",
+    "scoring_universe_sha256": "0fea492ce0c0046f01526b904ba4eaf26183ba697221891b21501f0452c57c81",
+    "yahoo_provider_frame_sha256": "736f4fe2b50577934e86746a233999c2fda2c6660c513b8aaef5a508f2d115e1",
+    "source_watchlist_full_sha256": "accaf12cab6fe61df6f5bccc9b3336a7be4ceb5874590a7e00fb6dbc7b773251",
+    "latest_scanner_sha256": "1a7a91cecb238832843b94629d83acdfc45ad49f372b478c977e4bc3d4eb1814",
+    "code_revision": "6038dacb84377217f4173194b97b9c005bef8fed"
   },
   "daily_research": {
     "path": "artifacts/research/daily_research.json",
-    "sha256": "2c89e11457ba3ca9471936d633820b366d166357738451811a3762533b41f3ed",
-    "symbol_count": 215,
-    "snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
+    "sha256": "6ede0bd9c0b2ad31358eae7cb7a75cb343fd8905a610ef364e448c38444f9c1a",
+    "symbol_count": 220,
+    "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
     "as_of": "2026-10-12"
   }
 }
