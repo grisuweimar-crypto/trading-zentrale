@@ -19,42 +19,42 @@
     "private_position_data_persisted": false,
     "runtime_stage_available_from_is_recorded_not_supplied": true
   },
-  "pre_7a_frozen_at": "2026-10-12T15:44:25.449783+00:00",
+  "pre_7a_frozen_at": "2026-10-12T16:12:51.870192+00:00",
   "schema_version": "decision_snapshot_orchestration_w10_v1",
-  "sealed_at": "2026-10-12T15:46:19.582140+00:00",
+  "sealed_at": "2026-10-12T16:15:26.966362+00:00",
   "snapshot_as_of": "2026-10-12",
-  "snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
+  "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
   "stages": {
     "final_7a": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/current_decision_packets_7a.json",
-      "artifact_sha256": "9b9a76184cb9add710fbf30f564786f004a91c0e9a7d7fa786cfccb4ea966e62",
+      "artifact_sha256": "0d77e43cb970cca341ca958050211fbf7fb46c8c80c12ad9f9a34d266238fa02",
       "availability_source": "current_decision_packets_7a.as_of",
-      "available_from": "2026-10-12T15:44:32.190245+00:00",
+      "available_from": "2026-10-12T16:13:00.981464+00:00",
       "snapshot_identity_state": "verified",
       "status": "available"
     },
     "phase2_probability": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/probability_calibration_2.json",
-      "artifact_sha256": "4e1e584a644fb0a6d58a88fffd44f6057ed5f2470f6d5e74524f53605d7095f5",
+      "artifact_sha256": "43ef610047e27ab784d5ef75ed92f3cd773bddd2e03943c2f3c8ccffb7eeb1f4",
       "availability_source": "git_commit_time",
-      "available_from": "2026-10-12T15:42:07+00:00",
+      "available_from": "2026-10-12T16:09:28+00:00",
       "snapshot_identity_state": "verified",
-      "source_commit": "ed0a139e35a20f3c751e922292f63ba00c41b8fc",
+      "source_commit": "94d729381bc490da296713b8b0f95cc48bb5255d",
       "status": "available"
     },
     "phase3_risk": {
       "artifact_path": "/home/runner/work/_temp/risk_vnext_3.json",
-      "artifact_sha256": "5464287cef78007c9f01d717e71213b7abf44ee1f8418987b0adf3c1557cb975",
+      "artifact_sha256": "b0a3388aea66fd0b58d2073e93ec2bc3d1658efb273040a5fca1d0c2d3673f25",
       "availability_source": "w10_runtime_recorded_after_stage",
-      "available_from": "2026-10-12T15:44:22.280586+00:00",
+      "available_from": "2026-10-12T16:12:47.482279+00:00",
       "snapshot_identity_state": "verified",
       "status": "available"
     },
     "phase4_confidence": {
       "artifact_path": "/home/runner/work/_temp/confidence_vnext_research_4.json",
-      "artifact_sha256": "73756b2da87f7eb6c2aee48fd5fa7e9113a18f0a2470a1fe9d5b5f4ae31f9a6f",
+      "artifact_sha256": "1fab236af5db53924d116f7aeaa14f52d2a4d9dcf838f50d6ec989815f84704f",
       "availability_source": "w10_runtime_recorded_after_stage",
-      "available_from": "2026-10-12T15:44:24.026252+00:00",
+      "available_from": "2026-10-12T16:12:49.919870+00:00",
       "snapshot_identity_state": "not_expressed_by_artifact",
       "status": "available"
     },
@@ -71,41 +71,41 @@
       "availability_source": null,
       "decision_effect": "none",
       "missing_is_neutral_evidence": false,
-      "resolved_at": "2026-10-12T15:44:25.177320+00:00",
+      "resolved_at": "2026-10-12T16:12:51.562120+00:00",
       "snapshot_identity_state": "not_applicable",
       "status": "not_supplied"
     },
     "phase7a_archive": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/decision_evidence_7a.jsonl.gz",
-      "artifact_sha256": "b93ab09389e63fe45ae3c255a76247ab0dc9ad89f74f9ce8de617ccc2d5704f3",
+      "artifact_sha256": "a2ea3aff3cd7070f939844ae17a1d15b0aa513e766e5d97b931311f12c358255",
       "availability_source": "w10_runtime_recorded_after_archive_write",
-      "available_from": "2026-10-12T15:46:19.582140+00:00",
+      "available_from": "2026-10-12T16:15:26.966362+00:00",
       "snapshot_identity_state": "inherits_final_7a",
       "status": "available"
     },
     "scanner_daily_research": {
       "availability_source": "daily_research.generated_at",
-      "available_from": "2026-10-12T15:29:04.781989+00:00",
+      "available_from": "2026-10-12T15:58:00.925580+00:00",
       "scanner_input_provenance": {
         "as_of": "2026-10-12",
-        "code_revision": "e4fa66b99ee92a8f245ea100544cf7daa07412c3",
+        "code_revision": "6038dacb84377217f4173194b97b9c005bef8fed",
         "complete": true,
-        "content_hash": "8618886aa0336ac4e5fc0b090caa1ee61311ee1bc54520cd85896020c372abd2",
-        "direct_scoring_input_sha256": "93bee5eaaae5172554671a352661cd5f2a468b99ace09a156a3d47b5f53ad0b5",
+        "content_hash": "8466db14e6202dfefbdc2168514b0bac94cb2efe60506f053924c4745ddd75b9",
+        "direct_scoring_input_sha256": "0fea492ce0c0046f01526b904ba4eaf26183ba697221891b21501f0452c57c81",
         "historical_backfill": false,
-        "latest_scanner_sha256": "b88e996c84a9c6a38f5614153609c4b57c701509616a5a8ae018bf771f5e84bc",
+        "latest_scanner_sha256": "1a7a91cecb238832843b94629d83acdfc45ad49f372b478c977e4bc3d4eb1814",
         "path": "artifacts/research/scanner_input_provenance.json",
-        "run_id": "github-38270163959-1",
-        "scoring_universe_sha256": "93bee5eaaae5172554671a352661cd5f2a468b99ace09a156a3d47b5f53ad0b5",
-        "sha256": "ced9735141054d0369828bf7ed5a423df58f5c542c5cb66ca384bb2103f2abe5",
-        "snapshot_id": "ea0f7174-dfcc-496a-b9e2-78f821be520f",
-        "source_watchlist_full_sha256": "d52d96f0aea04776b9d336eb9ff72a1932cfbfdde8130ff98f746d4dffcb385a",
-        "yahoo_provider_frame_sha256": "4a267118e4ad2d4b1e77626092f1c55f1eeb1e25701497dd1ab5cc4959688926"
+        "run_id": "github-38273556234-1",
+        "scoring_universe_sha256": "0fea492ce0c0046f01526b904ba4eaf26183ba697221891b21501f0452c57c81",
+        "sha256": "41b48d7e46cecb7a7e6cc3712c6f899a8302cbcb95d513c565dfcd9b8d9a48b8",
+        "snapshot_id": "cfdf72ce-d854-497c-980f-4311ce2e8123",
+        "source_watchlist_full_sha256": "accaf12cab6fe61df6f5bccc9b3336a7be4ceb5874590a7e00fb6dbc7b773251",
+        "yahoo_provider_frame_sha256": "736f4fe2b50577934e86746a233999c2fda2c6660c513b8aaef5a508f2d115e1"
       },
       "snapshot_identity_state": "verified",
       "status": "available"
     }
   },
-  "started_at": "2026-10-12T15:43:19.356456+00:00",
+  "started_at": "2026-10-12T16:11:05.411428+00:00",
   "status": "sealed"
 }
