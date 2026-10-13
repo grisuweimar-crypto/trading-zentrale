@@ -9,6 +9,8 @@ on:
       - 'scripts/check_decision_watch_readiness.py'
       - 'scripts/check_decision_watch_readiness.py'
       - 'scripts/run_w10_snapshot_orchestration.py'
+      - 'scripts/check_decision_watch_readiness.py'
+      - 'tests/test_decision_watch_readiness_gate.py'
       - 'scripts/build_elliott_w6_source.py'
       - 'src/scanner/research/decision_layer/current_evidence.py'
       - 'src/scanner/research/decision_layer/evidence_archive.py'
@@ -25,6 +27,8 @@ on:
       - 'scripts/build_integrated_decision_evidence_7a.py'
       - 'scripts/run_confidence_vnext_research_4.py'
       - 'scripts/run_w10_snapshot_orchestration.py'
+      - 'scripts/check_decision_watch_readiness.py'
+      - 'tests/test_decision_watch_readiness_gate.py'
       - 'scripts/build_elliott_w6_source.py'
       - 'scripts/run_depot_watch_orchestrated.py'
       - 'src/scanner/research/decision_layer/integrated_evidence.py'
@@ -66,7 +70,7 @@ jobs:
         run: python -m pip install -e '.[test]'
       - name: Run Decision integration regressions
         run: >-
-          pytest -q
+          PYTHONPATH=. pytest -q
           tests/test_decision_integrated_evidence.py
           tests/test_w4_confidence_snapshot_identity.py
           tests/test_w5_phase5_shadow_integration.py
@@ -79,6 +83,7 @@ jobs:
           tests/test_decision_depot_watch_7h.py
           tests/test_w6_elliott_6h_to_7f.py
           tests/test_w10_snapshot_orchestration.py
+          tests/test_decision_watch_readiness_gate.py
 
       - name: Validate current isolated Phase 5E shadow report
         run: |

@@ -102,3 +102,24 @@ def test_phase2_readiness_from_paths_missing_phase2_is_deferred(tmp_path: Path) 
     )
     assert result["ready"] is False
     assert result["reason"] == "phase2_artifact_missing"
+
+
+def test_sealed_same_snapshot_does_not_rewrite_w10(tmp_path: Path) -> None:
+    research = tmp_path / "artifacts" / "research"
+    research.mkdir(parents=True)
+    daily = research / "daily_research.json"
+    phase2 = research / "probability_calibration_2.json"
+    w10 = research / "decision_snapshot_w10.json"
+    daily.write_text(json.dumps({"snapshot_id": "new"}), encoding="utf-8")
+    phase2.write_text(json.dumps({"source": {"snapshot_id": "new"}}), encoding="utf-8")
+    w10.write_text(json.dumps({"snapshot_id": "new", "status": "sealed"}), encoding="utf-8")
+    result = evaluate_from_paths(daily_path=daily, phase2_path=phase2, w10_path=w10)
+    assert result["ready"] is False
+    assert result["reason"] == "same_snapshot_already_sealed"
+    w10.write_text(json.dumps({"snapshot_id": "old", "status": "sealed"}), encoding="utf-8")
+    result = evaluate_from_paths(daily_path=daily, phase2_path=phase2, w10_path=w10)
+    assert result["ready"] is True
+    assert result["reason"] == "same_snapshot_ready"
+    w10.write_text(json.dumps({"snapshot_id": "new", "status": "draft"}), encoding="utf-8")
+    result = evaluate_from_paths(daily_path=daily, phase2_path=phase2, w10_path=w10)
+    assert result["ready"] is True

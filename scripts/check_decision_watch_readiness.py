@@ -60,10 +60,17 @@ def evaluate_from_paths(
     *,
     daily_path: Path,
     phase2_path: Path,
+    w10_path: Path | None = None,
 ) -> dict[str, object]:
     daily = _load_object(daily_path)
     phase2 = _load_object(phase2_path) if phase2_path.exists() else None
-    return evaluate_phase2_readiness(daily=daily, phase2=phase2)
+    result = evaluate_phase2_readiness(daily=daily, phase2=phase2)
+    if result["ready"] and w10_path is not None and w10_path.exists():
+        sealed = _load_object(w10_path)
+        if (str(sealed.get("snapshot_id") or "") == result["current_snapshot_id"]
+                and sealed.get("status") == "sealed"):
+            return {**result, "ready": False, "reason": "same_snapshot_already_sealed"}
+    return result
 
 
 def main() -> int:
@@ -78,6 +85,9 @@ def main() -> int:
         default="artifacts/research/probability_calibration_2.json",
     )
     parser.add_argument(
+        "--w10", default="artifacts/research/decision_snapshot_w10.json",
+    )
+    parser.add_argument(
         "--github-output",
         default=os.environ.get("GITHUB_OUTPUT"),
     )
@@ -87,6 +97,7 @@ def main() -> int:
     result = evaluate_from_paths(
         daily_path=root / args.daily,
         phase2_path=root / args.phase2,
+        w10_path=root / args.w10,
     )
 
     if args.github_output:
