@@ -1,9 +1,16 @@
-# Phase 8C status
+# Phase 8C status (as of 2026-10-13)
 
-Architecture through 8C-I is implemented or under final validation. Final Phase 8C completion is intentionally gated on a real SEC snapshot collected from an environment accepted by SEC endpoints. GitHub-hosted Actions and the assistant runtime currently receive HTTP 403 from SEC raw-data endpoints; those transport failures are not treated as missing issuer data.
+Authoritative completion artifact:
+`artifacts/research/external_evidence_8c_completion.json`
 
-Until the real snapshot is supplied and validated, the correct project state is:
+Phase 8C has status `COMPLETE_FROZEN` (completed 2026-09-26).
+- Fundamentals: `REAL_PIT_VALIDATED`, 137 research-ready companies, 42,825 feature observations.
+- Filing-content acquisition: `REAL_COMPLETE`.
+- Semantic event challengers are **not** promoted: BUYBACK and DIVIDEND remain challengers, GUIDANCE and CAPITAL_RAISE are disabled.
+- Earnings beat/miss remains blocked by the consensus-data dependency.
+- Phase-8 external evidence is **not integrated in production** and cannot change Phase-7 decision actions.
 
-`PHASE_8C = BLOCKED_ON_REAL_DATA_ACQUISITION`
+Earlier SEC transport acquisition failures are historical, resolved for 8C completion. Do not mistake completion of the 8C research artifact for proof of production promotion or end-to-end Depot Watch integration.
 
-No market-outcome research, production external-evidence promotion, Phase-7 integration, or portfolio action may be enabled from this state.
+End-to-end acceptance tracked at issue #310:
+https://github.com/grisuweimar-crypto/trading-zentrale/issues/310

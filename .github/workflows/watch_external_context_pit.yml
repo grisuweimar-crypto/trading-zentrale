@@ -1,0 +1,22 @@
+name: Watch External Context PIT Guard
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/scanner/research/decision_layer/external_watch_context.py'
+      - 'scripts/run_depot_watch_orchestrated.py'
+      - 'tests/test_external_watch_context.py'
+      - '.github/workflows/watch_external_context_pit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m pytest -q tests/test_external_watch_context.py tests/test_decision_depot_watch_orchestration.py

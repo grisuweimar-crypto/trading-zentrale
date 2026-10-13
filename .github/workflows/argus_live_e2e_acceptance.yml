@@ -1,0 +1,65 @@
+name: ARGUS Live E2E Acceptance (PR)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/argus_live_e2e_acceptance.yml'
+      - 'src/scanner/research/decision_layer/watch_runtime.py'
+      - 'src/scanner/research/decision_layer/external_watch_context.py'
+      - 'scripts/run_depot_watch_orchestrated.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-live-snapshot:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e '.[test]'
+      - name: Take the exact current main source artifacts (never write them back)
+        run: |
+          git fetch origin main
+          git checkout origin/main -- \
+            artifacts/research/daily_research.json \
+            artifacts/research/current_decision_packets_7a.json \
+            artifacts/research/decision_evidence_7a.jsonl.gz \
+            artifacts/research/decision_snapshot_w10.json
+          python scripts/check_watch_snapshot_pair.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.check_watch_snapshot_pair import status
+          daily=json.loads(Path('artifacts/research/daily_research.json').read_text())
+          w10=json.loads(Path('artifacts/research/decision_snapshot_w10.json').read_text())
+          result=status(daily,w10)
+          assert result['ready'], result
+          print('LIVE_SNAPSHOT_READY',result['daily_snapshot_id'])
+          PY
+      - name: Run actual QM-J falsification, no deferral
+        run: python scripts/run_qm_j_decision_e2e_falsification.py --output /tmp/qm-j-live.json
+      - name: Rebuild 64 shards from the real sealed snapshot using PR algorithm
+        run: python scripts/build_watch_runtime_w10.py --output-dir /tmp/argus-watch-live
+      - name: Verify real 20 percent headroom and completeness
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/argus-watch-live')
+          manifest=json.loads((root/'manifest.json').read_text())
+          files=sorted(root.glob('shard_*.json'))
+          assert len(files)==64
+          sizes=[p.stat().st_size for p in files]
+          reserve=(2000000-max(sizes))/2000000
+          assert manifest['symbol_count']==220,manifest['symbol_count']
+          assert sum(json.loads(p.read_text())['packet_count'] for p in files)==manifest['packet_count']
+          print({'status':'PASS' if reserve>=0.20 else 'FAIL','headroom':reserve,'largest_bytes':max(sizes),'symbol_count':manifest['symbol_count'],'packet_count':manifest['packet_count']})
+          assert reserve>=0.20, f'headroom_below_20_percent:{reserve}'
+          PY
