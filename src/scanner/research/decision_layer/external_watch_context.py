@@ -53,6 +53,7 @@ def attach_external_context(
         if isinstance(row, Mapping) and isinstance(row.get("symbol"), str)
     }
     by_symbol: dict[str, list[dict[str, object]]] = {symbol: [] for symbol in symbols}
+    global_observations: list[dict[str, object]] = []
     seen: set[str] = set()
     for item in records:
         if not isinstance(item, Mapping):
@@ -78,8 +79,9 @@ def attach_external_context(
         if item["status"] == "KNOWN" and not str(item.get("source_url") or "").startswith(("https://", "http://")):
             raise ExternalWatchContextError("external_known_requires_source_url")
         sym = str(item["symbol"])
-        if sym in by_symbol:
-            by_symbol[sym].append({
+        if sym == "__GLOBAL__" or sym in by_symbol:
+            target = global_observations if sym == "__GLOBAL__" else by_symbol[sym]
+            target.append({
                 "id": evidence_id,
                 "source": str(item["source"]),
                 "source_url": item.get("source_url"),
@@ -100,13 +102,19 @@ def attach_external_context(
             "observations": evidence,
             "decision_effect": "none",
         }
+    result["global_external_research_context"] = {
+        "status": "AVAILABLE_RESEARCH_ONLY" if global_observations else "NOT_SUPPLIED",
+        "observations": global_observations,
+        "decision_effect": "none",
+    }
     result["external_research_context_diagnostics"] = {
         "schema_version": "argus_watch_external_context_diagnostics_v1",
         "research_only": True,
         "decision_effect": "none",
         "observation_count": len(records),
         "matched_symbol_count": sum(bool(v) for v in by_symbol.values()),
-        "unmatched_observation_count": sum(1 for o in records if o["symbol"] not in symbols),
+        "global_observation_count": len(global_observations),
+        "unmatched_observation_count": sum(1 for o in records if o["symbol"] not in symbols and o["symbol"] != "__GLOBAL__"),
         "publication_cutoff": decision_as_of,
     }
     return result
