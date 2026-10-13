@@ -1,0 +1,100 @@
+name: ARGUS External Feed Research Intake
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/argus_external_feed_capture.yml'
+      - 'scripts/argus_external_feed_capture.py'
+      - 'tests/test_argus_external_feed_capture.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/argus_external_feed_capture.yml'
+      - 'scripts/argus_external_feed_capture.py'
+  workflow_dispatch:
+  schedule:
+    - cron: '25 17,20 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: argus-external-feed-research
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate unverified-source and PIT guards
+        run: python -m pip install pytest && python -m pytest -q tests/test_argus_external_feed_capture.py
+      - name: Fetch official RSS/Atom metadata (research only)
+        if: github.event_name != 'pull_request'
+        run: python scripts/argus_external_feed_capture.py --output /tmp/argus-feed-candidates.json
+      - name: Archive first-seen observations on isolated research branch
+        if: github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch=external-market-research-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch origin "refs/heads/$branch:refs/remotes/origin/$branch"; then
+            git switch -C "$branch" "origin/$branch"
+          else
+            git switch --orphan "$branch"
+            git rm -rf . >/dev/null || true
+          fi
+          python - <<'PY'
+          import json
+          from datetime import datetime,timezone,timedelta
+          from pathlib import Path
+          r=json.loads(Path('/tmp/argus-feed-candidates.json').read_text(encoding='utf-8'))
+          assert r['schema_version']=='argus_watch_external_context_v1' and r['research_only'] is True
+          base=Path('artifacts/research/external_feeds')
+          items=base/'items'
+          items.mkdir(parents=True,exist_ok=True)
+          for record in r['observations']:
+              assert record['status']=='UNKNOWN' and record['symbol']=='__GLOBAL__'
+              assert record['source_url'].startswith('https://')
+              assert record['ingested_at']>=record['published_at']
+              name=record['id'].replace(':','_')+'.json'
+              dest=items/name
+              if dest.exists():
+                  old=json.loads(dest.read_text(encoding='utf-8'))
+                  if old['source_url']!=record['source_url'] or old['published_at']!=record['published_at']:
+                      raise RuntimeError('immutability_violation_source_metadata')
+              else:
+                  dest.write_text(json.dumps(record,sort_keys=True,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          now=datetime.fromisoformat(r['capture_at'])
+          saved=[]
+          for file in items.glob('*.json'):
+              record=json.loads(file.read_text(encoding='utf-8'))
+              ingested=datetime.fromisoformat(record['ingested_at'])
+              if ingested<=now and ingested>=now-timedelta(days=14):
+                  saved.append(record)
+          latest={
+              'schema_version':'argus_watch_external_context_v1',
+              'research_only':True,
+              'source_status':r['source_status'],
+              'archive_built_at':r['capture_at'],
+              'observations':sorted(saved,key=lambda x:(x['published_at'],x['id']),reverse=True)[:80],
+          }
+          (base/'latest.json').write_text(json.dumps(latest,sort_keys=True,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print({'new_candidates':len(r['observations']),'retained_observations':len(latest['observations']),'research_only':True})
+          PY
+          git add artifacts/research/external_feeds
+          if git diff --cached --quiet; then
+            echo "No new feed metadata."
+            exit 0
+          fi
+          git commit -m "research(8E): archive first-seen external headlines [skip ci]"
+          git push origin "HEAD:refs/heads/$branch"
