@@ -1,0 +1,25 @@
+name: ARGUS Radar Source Notes Contract
+on:
+  pull_request:
+    paths:
+      - 'argus-preview/observations/external-thesis-watch.js'
+      - 'argus-preview/observations/external_thesis_source_notes.json'
+      - 'argus-preview/observations/external_thesis_watch_reference.json'
+      - 'argus-preview/observations/external_thesis_watch_candidates.json'
+      - 'scripts/test_external_thesis_watch_sources.mjs'
+      - '.github/workflows/radar_source_notes_contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sources-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source-note contract on real registry
+        run: |
+          node --check argus-preview/observations/external-thesis-watch.js
+          node scripts/test_external_thesis_watch_sources.mjs
