@@ -56,3 +56,15 @@ def test_timezone_and_duplicates_rejected():
     source["observations"].append(deepcopy(source["observations"][0]))
     with pytest.raises(ExternalWatchContextError):
         attach_external_context(WATCH, source, decision_as_of="2026-10-13T02:19:01Z")
+
+def test_global_macro_context_stays_out_of_actions():
+    source = deepcopy(SOURCE)
+    source["observations"][0]["id"] = "macro-001"
+    source["observations"][0]["symbol"] = "__GLOBAL__"
+    source["observations"][0]["summary"] = "Interest rate scenario, unvalidated"
+    result = attach_external_context(WATCH, source, decision_as_of="2026-10-13T02:19:01Z")
+    assert result["rows"][0]["decision"] == WATCH["rows"][0]["decision"]
+    assert result["rows"][0]["external_research_context"]["status"] == "NOT_SUPPLIED"
+    assert result["global_external_research_context"]["observations"][0]["id"] == "macro-001"
+    assert result["external_research_context_diagnostics"]["global_observation_count"] == 1
+    assert result["external_research_context_diagnostics"]["unmatched_observation_count"] == 0
