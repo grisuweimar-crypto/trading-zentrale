@@ -144,6 +144,33 @@ function csvRows(text){
  row.push(field);if(row.length>1)rows.push(row);
  return rows;
 }
+
+const SOURCE_NOTE_KINDS=new Set(['observed_newsletter','historical_project_recap','user_documented_external_video']);
+function validSourceTarget(target){
+ if(target==null)return true;
+ if(typeof target!=='object'||Array.isArray(target)||!['EUR','USD'].includes(target.currency))return false;
+ const scalar=Object.prototype.hasOwnProperty.call(target,'value');
+ const bounds=Object.prototype.hasOwnProperty.call(target,'lower')||Object.prototype.hasOwnProperty.call(target,'upper');
+ if(scalar===bounds)return false;
+ if(scalar)return typeof target.value==='number'&&Number.isFinite(target.value)&&target.value>0;
+ return typeof target.lower==='number'&&Number.isFinite(target.lower)&&target.lower>0&&
+        typeof target.upper==='number'&&Number.isFinite(target.upper)&&target.upper>=target.lower;
+}
+function validateSourceNotesDocument(doc,allSymbols){
+ if(doc?.schema_version!=='argus_external_thesis_source_notes_v1'||!Array.isArray(doc.items)||doc.items.length>150)
+   throw Error('Quellenregister-Struktur ungültig');
+ const valid=[],quarantined=[];
+ for(const [index,x] of doc.items.entries()){
+  const ok=x&&typeof x.symbol==='string'&&allSymbols.has(x.symbol)&&
+   SOURCE_NOTE_KINDS.has(x.source_kind)&&
+   typeof x.source_family==='string'&&x.source_family.length<160&&
+   typeof x.source_rationale==='string'&&x.source_rationale.length<1200&&
+   (x.source_date==null||/^\d{4}-\d{2}-\d{2}$/.test(x.source_date))&&
+   validSourceTarget(x.source_target);
+  if(ok)valid.push(x);else quarantined.push(index+1);
+ }
+ return {valid,quarantined};
+}
 async function refresh(){
  if(running)return;running=true;el('etwRefresh').disabled=true;
  el('etwGate').textContent='Referenz und Scanner-Mitgliedschaft werden neu geprüft …';
@@ -164,17 +191,12 @@ async function refresh(){
  try{
   const d=await get(RATIONALES,'json');
   const allSymbols=new Set([...baseline,...publicCandidates].map(x=>x.symbol));
-  if(d?.schema_version!=='argus_external_thesis_source_notes_v1'||!Array.isArray(d.items)||
-   d.items.length>150||
-   !d.items.every(x=>x&&allSymbols.has(x.symbol)&&
-     ['observed_newsletter','historical_project_recap'].includes(x.source_kind)&&
-     typeof x.source_family==='string'&&x.source_family.length<160&&
-     typeof x.source_rationale==='string'&&x.source_rationale.length<1200&&
-     (x.source_date==null||/^\d{4}-\d{2}-\d{2}$/.test(x.source_date))&&
-     (!x.source_target||x.source_target.value>0&&['EUR','USD'].includes(x.source_target.currency))))
-   throw Error('Quellenbegründungen ungültig');
-  publicEvidence=d.items;
-  render(); // display reasons before optional large research downloads
+  const validated=validateSourceNotesDocument(d,allSymbols);
+   publicEvidence=validated.valid;
+   if(validated.quarantined.length)
+    errors.push('Quellenbegründungen: '+validated.quarantined.length+
+      ' ungültige Einträge isoliert (Nr. '+validated.quarantined.join(', ')+')');
+   render(); // display reasons before optional large research downloads
  }catch(e){publicEvidence=[];render();errors.push('Quellenbegründungen: '+e.message)}
  try{externalFollowup=await getExternalFollowup()}
  catch(e){externalFollowup=null;errors.push('Thesenprüfstand: '+e.message)}
@@ -301,12 +323,17 @@ function card(item){
       'Frühere Projektauswertung vom '+formatDate(n.review_date)+'. Originalnewsletter derzeit nicht erneut geprüft.':
       n.source_kind==='observed_newsletter'?
       'Newsletter-Betreff und enthaltene Kurzvorschau geprüft; vollständige Artikelargumentation nicht erneut verifiziert.':
-      'Externer Quellenhinweis; getrennt vom Scanner.';
-   const target=n.source_target&&Number.isFinite(Number(n.source_target.value))?
-      '<p class="etwGoal">Im damaligen Newsletter genanntes Kursziel: <strong>'+
-      esc(new Intl.NumberFormat('de-DE',{maximumFractionDigits:2}).format(Number(n.source_target.value)))+' '+
-      esc(n.source_target.currency)+'</strong>. Kein eigenes ARGUS-Kursziel.</p>':'';
-   return '<div class="etwRationale'+(idx===0?' etwRationalePrimary':'')+'"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
+      n.source_kind==='user_documented_external_video'?
+       'Nutzerdokumentiertes Video (Screenshot/KI-Transkript), Originalvideo nicht unabhängig verifiziert. Research-only; kein Decision-Effekt.':
+       'Externer Quellenhinweis; getrennt vom Scanner.';
+   const fmt=x=>new Intl.NumberFormat('de-DE',{maximumFractionDigits:2}).format(x);
+    const target=n.source_target?
+       '<p class="etwGoal">'+
+       (typeof n.source_target.value==='number'?'Extern dokumentiertes Einzelziel: <strong>'+
+        esc(fmt(n.source_target.value)):
+        'Extern dokumentierte Zielzone: <strong>'+esc(fmt(n.source_target.lower))+'–'+esc(fmt(n.source_target.upper)))+
+       ' '+esc(n.source_target.currency)+'</strong>. Research-only; kein eigenes ARGUS-Kursziel.</p>':'';
+    return '<div class="etwRationale'+(idx===0?' etwRationalePrimary':'')+'"><small>'+esc(n.source_family??'Externe Quelle')+' · '+
        esc(historical?'Auswertung '+formatDate(n.review_date):formatDate(n.source_date))+'</small>'+
      (n.source_title?'<strong class="etwSourceTitle">'+esc(n.source_title)+'</strong>':'')+
      '<p>'+esc(n.source_rationale??'Zu diesem Hinweis liegt keine ausreichende Begründung vor.')+'</p>'+
