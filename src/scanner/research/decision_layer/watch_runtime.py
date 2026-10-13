@@ -219,6 +219,8 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
                 if score < best:
                     best, chosen = score, ("move", symbol, old, new, None)
         # Swaps can escape local minima where every full-history move overshoots.
+        highest_three = sorted(loads.items(), key=lambda item: (-item[1], item[0]))[:3]
+        squared_total = sum(v * v for v in loads.values())
         for i, left in enumerate(symbols):
             a = mapping[left]
             for right in symbols[i + 1:]:
@@ -229,9 +231,16 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
                 if diff == 0:
                     continue
                 changed_a, changed_b = loads[a] + diff, loads[b] - diff
+                # Top three suffice: excluding two shards can remove at most
+                # two of the largest loads. Evaluate swaps without scanning
+                # all 64 shards every time.
+                other_max = next(
+                    value for shard, value in highest_three
+                    if shard != a and shard != b
+                )
                 score = (
-                    max(changed_a, changed_b, *(v for k, v in loads.items() if k not in (a, b))),
-                    sum(v * v for k, v in loads.items() if k not in (a, b))
+                    max(changed_a, changed_b, other_max),
+                    squared_total - loads[a] * loads[a] - loads[b] * loads[b]
                     + changed_a * changed_a + changed_b * changed_b,
                 )
                 if score < best:
