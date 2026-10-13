@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T10:40:21.157548+00:00",
+  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,10 +29,10 @@
     "conflicts": [
       {
         "negative_claim_ids": [
-          "timing:XOM:8383be481c5c6052:60T"
+          "timing:XOM:c672817d91249136:60T"
         ],
         "positive_claim_ids": [
-          "timing:XOM:32bb40f535b6b527:60T"
+          "timing:XOM:9d34e7ebabe3e590:40T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -40,8 +40,8 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:XOM:32bb40f535b6b527:60T",
-      "timing:XOM:8383be481c5c6052:60T"
+      "timing:XOM:9d34e7ebabe3e590:40T",
+      "timing:XOM:c672817d91249136:60T"
     ],
     "known_directional_family_counts": {
       "timing": 2
@@ -53,7 +53,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "966fb6ee-96a2-4aa3-973d-75ec464a568d",
+  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -278,6 +278,14 @@
       "source_snapshot_id": "966fb6ee-96a2-4aa3-973d-75ec464a568d",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-13T15:13:49.764990+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -289,7 +297,7 @@
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-10-13",
-    "last_overextension_rs3m": 0.16556544392066574,
+    "last_overextension_rs3m": 0.16430096979947684,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,

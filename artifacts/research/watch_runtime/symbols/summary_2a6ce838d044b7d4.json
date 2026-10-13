@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T10:40:21.157548+00:00",
+  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,18 +26,40 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:TSMN.MX:9a55520ffefb694c:60T",
+          "timing:TSMN.MX:6c608d2ad71a6396:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:TSMN.MX:63001daa7f481bc1:5T",
+          "timing:TSMN.MX:862e678b240083af:40T",
+          "timing:TSMN.MX:9d34e7ebabe3e590:40T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
     "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "known_directional_claim_ids": [
+      "timing:TSMN.MX:63001daa7f481bc1:5T",
+      "timing:TSMN.MX:862e678b240083af:40T",
+      "timing:TSMN.MX:9d34e7ebabe3e590:40T",
+      "timing:TSMN.MX:9a55520ffefb694c:60T",
+      "timing:TSMN.MX:6c608d2ad71a6396:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 5
+    },
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "966fb6ee-96a2-4aa3-973d-75ec464a568d",
+  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -262,6 +284,14 @@
       "source_snapshot_id": "966fb6ee-96a2-4aa3-973d-75ec464a568d",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-13T15:13:49.764990+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -288,6 +318,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "negative",
-    "status": "blocked_insufficient"
+    "status": "blocked_conflict"
   }
 }

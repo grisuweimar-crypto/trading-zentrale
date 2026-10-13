@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T10:40:21.157548+00:00",
+  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -37,7 +37,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "966fb6ee-96a2-4aa3-973d-75ec464a568d",
+  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
   "stance_history": [
     {
       "as_of": "2026-10-08T00:29:17.368548+00:00",
@@ -166,25 +166,33 @@
       "source_snapshot_id": "966fb6ee-96a2-4aa3-973d-75ec464a568d",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-13T15:13:49.764990+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
-      "r_code_downgrade": false,
+      "r_code_downgrade": true,
       "rank_worsening_5t": false,
       "rs3m_falling_5t": false,
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
-    "last_overextension_date": "2026-10-13",
-    "last_overextension_rs3m": 0.19320185006282364,
-    "overextension_active": true,
+    "last_overextension_date": "2026-10-12",
+    "last_overextension_rs3m": 0.1932018500628236,
+    "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 0,
+    "sessions_since_last_overextension": 1,
     "upstream_review_state": "monitor",
-    "upstream_sequence_state": "active_overextension"
+    "upstream_sequence_state": "post_overextension_memory"
   },
-  "state_history_state": "overextended",
+  "state_history_state": "post_overextension_correction",
   "symbol": "ANET",
   "transition_state": {
     "pending_confirmation_count": 0,
