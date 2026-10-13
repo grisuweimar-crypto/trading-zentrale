@@ -14,3 +14,6 @@ User-provided machine summary appears to contain decimal/units errors: '58 Cent'
 
 ## Test design
 Before outcomes: obtain source URL and exact publication time; freeze snapshot, venue, currency, horizon, conditional trigger and invalidation. Track both forecasted correction-first and rebound-first paths, subsequent max favorable/adverse excursions, time-to-trigger, time-to-target, opportunity cost vs hold, fees/spread, and BTC/ETH relative returns. Compare to naive volatility bands and buy-and-hold. No retroactive scoring of unregistered events.
+
+## Monitoring configuration (2026-10-13)
+Existing daily `Krypto-Szenarien beobachten` condition-watch extended to monitor XRP/USD 1.19 (primary correction observation), 0.98 (deeper), 1.70 (upside), and CRO/USD 0.058, 0.050, 0.045 (downside), 0.080 (upside). Use original USD quotes, record venue/time and actual touch/crossing; do not hardcode EUR conversions. CRO not listed in user's ZERO interface. Alerts are observations, not trade signals. Monitoring is periodic (daily), not continuous real-time; an intraday touch may be missed without reliable historical high/low data. Notification delivery settings must be checked by user: automation is enabled, but account notification channels were reported disabled.
