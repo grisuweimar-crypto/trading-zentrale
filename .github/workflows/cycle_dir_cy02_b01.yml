@@ -5,6 +5,7 @@ on:
       - "data/inputs/universe_master.csv"
       - "tests/test_cycle_quote_currencies_cy02_b01.py"
       - "tests/test_argus_instrument_coverage.py"
+      - "tests/test_harmony_jse_identity.py"
       - "src/scanner/data/enrich/yahoo_prices.py"
       - "docs/cycle_direction/CY-02_B01_13_WAEHRUNGEN_2026-10-10.md"
       - ".github/workflows/cycle_dir_cy02_b01.yml"
@@ -27,6 +28,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/test_argus_instrument_coverage.py \
+            tests/test_harmony_jse_identity.py \
             tests/test_cycle_quote_currencies_cy02_b01.py \
             tests/test_cycle_oscillator_cy02.py \
             tests/test_cycle_audit_cy02.py \
@@ -39,6 +41,6 @@ jobs:
           from scanner.app.build_watchlist import expected_master_universe_count
           from pathlib import Path
           n = expected_master_universe_count(Path("data/inputs/universe_master.csv"))
-          assert n == 220, f"unexpected universe cardinality {n}; manual review required"
+          assert n == 221, f"unexpected universe cardinality {n}; manual review required"
           print(f"CY02-B01 expanded active venue universe: {n}")
           PY
