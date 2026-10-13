@@ -1,0 +1,52 @@
+name: ARGUS Runtime Capacity Fast Acceptance
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/scanner/research/decision_layer/watch_runtime.py'
+      - '.github/workflows/argus_runtime_capacity_fast.yml'
+permissions:
+  contents: read
+jobs:
+  capacity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install project
+        run: python -m pip install -e '.[test]'
+      - name: Verify production scanner and sealed W10 are identical
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path('artifacts/research/daily_research.json').read_text())
+          b=json.loads(Path('artifacts/research/decision_snapshot_w10.json').read_text())
+          assert a['snapshot_id']==b['snapshot_id']
+          assert b['status']=='sealed'
+          print('same_snapshot',a['snapshot_id'])
+          PY
+      - name: Rebuild real compact runtime on optimized implementation
+        run: python scripts/build_watch_runtime_w10.py --output-dir /tmp/argus-fast-capacity
+      - name: Confirm headroom, full coverage and no private data
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/argus-fast-capacity')
+          files=sorted(root.glob('shard_*.json'))
+          m=json.loads((root/'manifest.json').read_text())
+          assert len(files)==64 and m['symbol_count']==220
+          assert m['private_position_data_included'] is False
+          records=[json.loads(p.read_text()) for p in files]
+          assert sum(x['packet_count'] for x in records)==m['packet_count']
+          assert all(x['private_position_data_included'] is False for x in records)
+          reserve=(2_000_000-max(p.stat().st_size for p in files))/2_000_000
+          print({'reserve':reserve,'packets':m['packet_count'],'symbols':m['symbol_count']})
+          assert reserve>=0.20
+          PY
