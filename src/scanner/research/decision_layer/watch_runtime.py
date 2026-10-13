@@ -180,10 +180,14 @@ def _latest_revision_packets(
 
 
 def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, object]]]) -> dict[str, str]:
-    """Deterministic, lossless size-based routing of complete symbol histories."""
+    """Deterministic lossless balancing, with local search for discrete symbol weights.
+
+    Entire symbol histories stay on one shard. The previous greedy-only placement
+    could strand four large histories together despite spare room elsewhere.
+    """
     weights = {
         symbol: sum(
-            len(json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8"))
+            len(json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")) + 1
             for packet in packets
         )
         for symbol, packets in histories.items()
@@ -194,6 +198,57 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
         shard_id = min(SHARD_IDS, key=lambda name: (loads[name], name))
         mapping[symbol] = shard_id
         loads[shard_id] += weights[symbol]
+
+    # Full symbol moves and pairwise swaps must strictly improve load imbalance.
+    # Never remove or change a packet, shard count, or source snapshot.
+    symbols = sorted(weights)
+    for _ in range(150):
+        before = (max(loads.values()), sum(load * load for load in loads.values()))
+        best = before
+        chosen = None
+        for symbol in symbols:
+            old = mapping[symbol]
+            weight = weights[symbol]
+            for new in SHARD_IDS:
+                if new == old:
+                    continue
+                changed = dict(loads)
+                changed[old] -= weight
+                changed[new] += weight
+                score = (max(changed.values()), sum(load * load for load in changed.values()))
+                if score < best:
+                    best, chosen = score, ("move", symbol, old, new, None)
+        # Swaps can escape local minima where every full-history move overshoots.
+        for i, left in enumerate(symbols):
+            a = mapping[left]
+            for right in symbols[i + 1:]:
+                b = mapping[right]
+                if a == b:
+                    continue
+                diff = weights[right] - weights[left]
+                if diff == 0:
+                    continue
+                changed_a, changed_b = loads[a] + diff, loads[b] - diff
+                score = (
+                    max(changed_a, changed_b, *(v for k, v in loads.items() if k not in (a, b))),
+                    sum(v * v for k, v in loads.items() if k not in (a, b))
+                    + changed_a * changed_a + changed_b * changed_b,
+                )
+                if score < best:
+                    best, chosen = score, ("swap", left, a, b, right)
+        if chosen is None:
+            break
+        kind, left, a, b, right = chosen
+        if kind == "move":
+            mapping[left] = b
+            loads[a] -= weights[left]
+            loads[b] += weights[left]
+        else:
+            assert right is not None
+            mapping[left], mapping[right] = b, a
+            delta = weights[right] - weights[left]
+            loads[a] += delta
+            loads[b] -= delta
     return mapping
 
 
