@@ -9,6 +9,7 @@ import sys
 
 from scanner.reports.daily_research import validate_daily_research
 from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
+from scanner.research.decision_layer.external_watch_context import attach_external_context
 from scanner.research.decision_layer.depot_watch_orchestrator import (
     build_orchestrated_depot_watch_artifacts,
 )
@@ -92,6 +93,11 @@ def main() -> int:
             "When W10 froze Phase 6 as available, reconstruct the exact W6 source "
             "from the manifest provenance without selecting a wave degree."
         ),
+    )
+    parser.add_argument(
+        "--external-research-context",
+        type=Path,
+        help="Optional local PIT-stamped research observations JSON; never changes decisions.",
     )
     parser.add_argument(
         "--output",
@@ -186,6 +192,20 @@ def main() -> int:
         packets,
         elliott_6h_source=elliott_6h_source,
     )
+
+    if args.external_research_context is not None:
+        context_path = args.external_research_context
+        if not context_path.is_absolute():
+            context_path = args.root / context_path
+        watch = attach_external_context(
+            watch,
+            _load(context_path),
+            decision_as_of=str(manifest["stages"]["final_7a"]["available_from"]),
+        )
+        diagnostics["external_research_context_attached"] = True
+        diagnostics["external_research_context_decision_effect"] = "none"
+    else:
+        diagnostics["external_research_context_attached"] = False
 
     w8_shadow = None
     if args.w8_shadow_trace is not None:
