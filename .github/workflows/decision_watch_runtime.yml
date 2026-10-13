@@ -79,8 +79,7 @@ jobs:
 
   capacity-preview:
     needs: snapshot-readiness
-    if: needs.snapshot-readiness.outputs.ready == 'true'
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && needs.snapshot-readiness.outputs.ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
