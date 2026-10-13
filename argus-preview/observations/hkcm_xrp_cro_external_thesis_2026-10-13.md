@@ -1,7 +1,7 @@
 # External thesis observation: HKCM XRP and Cronos (CRO)
 
 Registered 2026-10-13 Europe/Berlin. Research only. No production signal or trading instruction.
-Source: user-provided four screenshots of HKCM/Philip Hopf charts and summary. Original video publication date and URL not provided; timestamp of forecast remains unverified. Do not label this as validated prospective forecast before publication timestamp verification. Screenshots reflect chart projections, not executable quotes.
+Source: user-provided four screenshots of HKCM/Philip Hopf charts and summary. Original video URL supplied by user: https://www.youtube.com/watch?v=wZS0_qr6xgU . Direct retrieval of YouTube metadata failed on 2026-10-13; publication timestamp remains unverified. Do not label this as validated prospective forecast before publication timestamp verification. Screenshots reflect chart projections, not executable quotes.
 
 ## XRP/USD Kraken
 Weekly screenshot indicative current quote 1.40289 USD; historical chart and projected green path. Horizontal resistance 3.34 USD; long-term speculative projection near 8.00 USD; deeper downside 0.38 USD. 4h screenshot indicative 1.40 USD; projected corrective low near 1.19 USD, resistance 1.70 USD, upside projection near 2.50 USD; downside levels 0.98 USD and 0.38 USD. Distinguish support/test levels from formal Elliott invalidation, which is not explicitly established.
