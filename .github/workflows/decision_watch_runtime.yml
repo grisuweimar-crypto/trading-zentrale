@@ -10,6 +10,8 @@ on:
     paths:
       - '.github/workflows/decision_watch_runtime.yml'
       - 'scripts/build_watch_runtime_w10.py'
+      - 'scripts/check_watch_snapshot_pair.py'
+      - 'tests/test_check_watch_snapshot_pair.py'
       - 'scripts/build_elliott_w6_source.py'
       - 'scripts/run_depot_watch_orchestrated.py'
       - 'scripts/run_depot_watch_e2e_w11.py'
@@ -58,7 +60,26 @@ jobs:
           tests/test_w12_ferrari_regression.py
 
 
+  snapshot-readiness:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.snapshot.outputs.ready }}
+      reason: ${{ steps.snapshot.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Require matching real W10 and scanner snapshot
+        id: snapshot
+        run: python scripts/check_watch_snapshot_pair.py --github-output "$GITHUB_OUTPUT"
+      - name: Explicitly report deferred acceptance
+        if: steps.snapshot.outputs.ready != 'true'
+        run: echo "::warning::W10 capacity acceptance DEFERRED; ${{ steps.snapshot.outputs.reason }}. No capacity pass claimed."
+
   capacity-preview:
+    needs: snapshot-readiness
+    if: needs.snapshot-readiness.outputs.ready == 'true'
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
