@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -52,7 +52,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -285,6 +285,14 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -292,7 +300,7 @@
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
-      "score_falling_5t": false,
+      "score_falling_5t": true,
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-09-27",
@@ -300,8 +308,8 @@
     "overextension_active": false,
     "recent_overextension": true,
     "sessions_since_last_overextension": 16,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "post_overextension_memory"
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "post_overextension_decay"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "AAPL",

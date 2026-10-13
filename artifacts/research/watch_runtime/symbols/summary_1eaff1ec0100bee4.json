@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,33 +26,38 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [],
-    "direction": "positive",
+    "conflicts": [
+      {
+        "negative_claim_ids": [
+          "timing:NEE:cce5c47f08a2bf66:60T",
+          "timing:NEE:8383be481c5c6052:60T",
+          "timing:NEE:6c608d2ad71a6396:60T"
+        ],
+        "positive_claim_ids": [
+          "timing:NEE:32bb40f535b6b527:60T"
+        ],
+        "relation_type": "within_family_conflict",
+        "resolved": false
+      }
+    ],
+    "direction": null,
     "known_directional_claim_ids": [
-      "timing:NEE:ea08718de33a1787:5T",
-      "timing:NEE:c42ca6c1baee697b:20T",
-      "timing:NEE:f483a5247b57affc:20T",
-      "timing:NEE:494a15c3341a0317:20T",
-      "timing:NEE:15f457a0b3a6df9d:20T",
-      "timing:NEE:4ccb45d4ee923f1a:40T",
-      "timing:NEE:e64908cc5e4c18f0:60T",
       "timing:NEE:32bb40f535b6b527:60T",
-      "timing:NEE:5472db56664c10c8:60T",
-      "timing:NEE:6289a7880870e93e:60T",
-      "timing:NEE:fe6ff0aee1bf447a:60T",
-      "timing:NEE:92ad9e5c355866b9:60T"
+      "timing:NEE:cce5c47f08a2bf66:60T",
+      "timing:NEE:8383be481c5c6052:60T",
+      "timing:NEE:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 12
+      "timing": 4
     },
-    "relation_state": "correlated_same_family_support",
-    "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "relation_state": "conflict_present",
+    "state": "conflicted",
+    "support_structure": "unresolved_conflict"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -285,6 +290,14 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -306,11 +319,11 @@
   "state_history_state": "post_overextension_correction",
   "symbol": "NEE",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "positive",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "negative",
-    "status": "transition_pending"
+    "status": "blocked_conflict"
   }
 }

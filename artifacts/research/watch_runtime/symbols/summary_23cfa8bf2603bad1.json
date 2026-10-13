@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -32,14 +32,12 @@
       "timing:BIDU:ea08718de33a1787:5T",
       "timing:BIDU:c42ca6c1baee697b:20T",
       "timing:BIDU:494a15c3341a0317:20T",
-      "timing:BIDU:862e678b240083af:40T",
       "timing:BIDU:4ccb45d4ee923f1a:40T",
-      "timing:BIDU:8868c70444a4a57f:40T",
-      "timing:BIDU:9d34e7ebabe3e590:40T",
+      "timing:BIDU:32bb40f535b6b527:60T",
       "timing:BIDU:5472db56664c10c8:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 8
+      "timing": 6
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -48,7 +46,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -281,6 +279,14 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -288,7 +294,7 @@
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
       "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": null,

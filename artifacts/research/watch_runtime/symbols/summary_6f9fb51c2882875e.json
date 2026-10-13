@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,31 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:TEM:a2763d94cd6f82e9:5T",
-      "timing:TEM:d18193c29692a1cb:5T",
-      "timing:TEM:9aace91dab644870:5T",
-      "timing:TEM:056cab0d8c42f322:5T",
-      "timing:TEM:838b819bd450346e:5T",
-      "timing:TEM:85b7b4bcb43aeb00:20T",
-      "timing:TEM:ae61c82fbb0371fc:20T",
-      "timing:TEM:a4278e33701f9d98:20T",
-      "timing:TEM:6267ff2c27f27eb8:20T",
-      "timing:TEM:f9714fd629aaf7f2:40T",
-      "timing:TEM:677e719dc170acd6:40T",
-      "timing:TEM:2d034c21b8215d13:40T",
-      "timing:TEM:ff63700b226f41b1:60T"
+      "timing:TEM:5b62a0aabd2f08fc:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 13
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -286,6 +274,14 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -297,7 +293,7 @@
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-10-13",
-    "last_overextension_rs3m": 0.22069419616273822,
+    "last_overextension_rs3m": 0.23255996299988868,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,

@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,23 +27,32 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "negative",
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:NOVO-B.CO:c672817d91249136:60T",
-      "timing:NOVO-B.CO:8383be481c5c6052:60T",
-      "timing:NOVO-B.CO:312bf577128ab874:60T"
+      "timing:NOVO-B.CO:ea08718de33a1787:5T",
+      "timing:NOVO-B.CO:0671faf1011640c5:5T",
+      "timing:NOVO-B.CO:c42ca6c1baee697b:20T",
+      "timing:NOVO-B.CO:f483a5247b57affc:20T",
+      "timing:NOVO-B.CO:b158fef8cbfb5c55:20T",
+      "timing:NOVO-B.CO:4ccb45d4ee923f1a:40T",
+      "timing:NOVO-B.CO:9cb11f4adfc9eb9c:40T",
+      "timing:NOVO-B.CO:3e260f25164f48ce:40T",
+      "timing:NOVO-B.CO:5472db56664c10c8:60T",
+      "timing:NOVO-B.CO:6289a7880870e93e:60T",
+      "timing:NOVO-B.CO:fe6ff0aee1bf447a:60T",
+      "timing:NOVO-B.CO:92ad9e5c355866b9:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 12
     },
     "relation_state": "correlated_same_family_support",
-    "state": "negative",
+    "state": "positive",
     "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -276,13 +285,21 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": false,
+      "rs3m_falling_5t": true,
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
@@ -297,11 +314,11 @@
   "state_history_state": "post_overextension_correction",
   "symbol": "NOVO-B.CO",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "positive",
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "negative",
-    "status": "stable_confirmed"
+    "status": "transition_pending"
   }
 }

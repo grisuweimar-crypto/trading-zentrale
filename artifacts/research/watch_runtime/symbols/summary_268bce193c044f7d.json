@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,21 +27,32 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "negative",
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:MC.PA:c672817d91249136:60T"
+      "timing:MC.PA:ea08718de33a1787:5T",
+      "timing:MC.PA:0671faf1011640c5:5T",
+      "timing:MC.PA:c42ca6c1baee697b:20T",
+      "timing:MC.PA:f483a5247b57affc:20T",
+      "timing:MC.PA:b158fef8cbfb5c55:20T",
+      "timing:MC.PA:4ccb45d4ee923f1a:40T",
+      "timing:MC.PA:9cb11f4adfc9eb9c:40T",
+      "timing:MC.PA:3e260f25164f48ce:40T",
+      "timing:MC.PA:5472db56664c10c8:60T",
+      "timing:MC.PA:6289a7880870e93e:60T",
+      "timing:MC.PA:fe6ff0aee1bf447a:60T",
+      "timing:MC.PA:92ad9e5c355866b9:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 12
     },
-    "relation_state": "single_direction_or_unopposed",
-    "state": "negative",
-    "support_structure": "single_direction_or_unopposed"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -274,13 +285,21 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "negative",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
-      "rs3m_falling_5t": false,
+      "rs3m_falling_5t": true,
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
@@ -295,11 +314,11 @@
   "state_history_state": "never_overextended",
   "symbol": "MC.PA",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "status": "stable_confirmed"
   }
 }

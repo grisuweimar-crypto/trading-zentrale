@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T15:13:49.764990+00:00",
+  "decision_as_of": "2026-10-13T19:48:17.127152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -37,7 +37,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
+  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
   "stance_history": [
     {
       "as_of": "2026-10-12T16:13:00.981464+00:00",
@@ -86,6 +86,14 @@
       "source_snapshot_id": "a28a6333-5e52-43a4-9c1a-c0f6087f43a2",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-13T19:48:17.127152+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -96,15 +104,15 @@
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
-    "last_overextension_date": null,
-    "last_overextension_rs3m": null,
-    "overextension_active": false,
-    "recent_overextension": false,
-    "sessions_since_last_overextension": null,
-    "upstream_review_state": "none",
-    "upstream_sequence_state": "no_recent_overextension_context"
+    "last_overextension_date": "2026-10-13",
+    "last_overextension_rs3m": 0.15026198375168676,
+    "overextension_active": true,
+    "recent_overextension": true,
+    "sessions_since_last_overextension": 0,
+    "upstream_review_state": "monitor",
+    "upstream_sequence_state": "active_overextension"
   },
-  "state_history_state": "never_overextended",
+  "state_history_state": "overextended",
   "symbol": "CRYPTO:MANA",
   "transition_state": {
     "pending_confirmation_count": 0,
