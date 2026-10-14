@@ -366,7 +366,7 @@ def write_watch_runtime(
     output_dir.mkdir(parents=True, exist_ok=True)
     for old in output_dir.glob("shard_*.json"):
         old.unlink()
-    for shard_id in SHARD_IDS:
+    for shard_id in sorted(shards):
         shard = shards.get(shard_id)
         if not isinstance(shard, Mapping):
             raise WatchRuntimeError(f"runtime_shard_missing:{shard_id}")
