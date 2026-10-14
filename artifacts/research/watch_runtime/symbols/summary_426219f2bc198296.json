@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-13T20:14:42.633065+00:00",
+  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,27 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:NVDA:9aace91dab644870:5T",
-      "timing:NVDA:03f6bed3788ea96b:5T",
-      "timing:NVDA:2ec83739629fba4d:5T",
-      "timing:NVDA:42bcd8a34d314c09:5T",
-      "timing:NVDA:838b819bd450346e:5T",
-      "timing:NVDA:6267ff2c27f27eb8:20T",
-      "timing:NVDA:cad5eb04910821c4:20T",
-      "timing:NVDA:a0bebf08166a0860:60T",
-      "timing:NVDA:2fbfff31832fc700:60T"
+      "timing:NVDA:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 9
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
+  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -290,6 +282,14 @@
       "source_snapshot_id": "ff86b0b4-8b91-444d-a80f-2ad2ff40547a",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-14T18:57:50.686343+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -304,7 +304,7 @@
     "last_overextension_rs3m": 0.1574293309860222,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 9,
+    "sessions_since_last_overextension": 10,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },
