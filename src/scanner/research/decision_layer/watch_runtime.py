@@ -315,7 +315,7 @@ def build_watch_runtime(
                 "private_position_data_included": False,
             }
         sizes = {
-            key: len((json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\\n").encode("utf-8"))
+            key: len((json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n").encode("utf-8"))
             for key, value in shards.items()
         }
         if max(sizes.values()) <= RUNTIME_TARGET_BYTES:
