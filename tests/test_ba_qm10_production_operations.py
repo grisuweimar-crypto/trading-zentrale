@@ -191,7 +191,7 @@ def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     assert result["capacity_review_recommended"] is (result["headroom_ratio"] < 0.20)
     assert result["health_status"] == "PASS"
     assert result["headroom_ratio"] >= 0.20
-    assert result["partition_strategy"] == "size_balanced_v1"
+    assert result["partition_strategy"] == "size_balanced_v2_auto_expand"
     assert result["shard_sizes_bytes"][result["max_shard_id"]] == result["max_shard_bytes"]
     assert result["largest_symbol_packet_count"] > 0
     assert result["symbol_count"] > 0
