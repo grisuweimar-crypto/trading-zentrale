@@ -2,7 +2,7 @@ name: Uran A/B Shadow Capture
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7 * * * *"
+    - cron: "7 2,17,20,23 * * *"
   push:
     branches: [main]
     paths:
