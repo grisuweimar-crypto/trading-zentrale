@@ -9,6 +9,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
+import re
 from pathlib import Path
 
 STUDY_ID = "URAN-REBOUND-U1-v1"
@@ -143,7 +144,7 @@ def run(root, captured_at):
     if record is None:
         return {"status": status}
     snap = str(record["snapshot_id"])
-    if not snap or "/" in snap or "\\\\" in snap or ".." in snap:
+    if not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", snap):
         raise ValueError("invalid_snapshot_path")
     target = (root / "artifacts/research/uran_shadow/captures"
               / str(record["scanner_as_of"]) / (snap + ".json"))
