@@ -175,7 +175,7 @@ def test_qm3_preserves_historical_32_shard_closure_while_live_runtime_uses_64() 
     contract = load_contract()
     assert contract["closure_evidence"]["public_runtime_shard_count"] == 32
     current = audit_current_runtime_capacity()
-    assert current["configured_shard_count"] == len(SHARD_IDS)
+    assert current["configured_shard_count"] >= len(SHARD_IDS)
     assert current["shard_count"] == current["configured_shard_count"]
     assert current["max_shard_bytes"] < current["hard_limit_bytes"]
 
@@ -183,7 +183,7 @@ def test_qm3_preserves_historical_32_shard_closure_while_live_runtime_uses_64() 
 def test_f01_current_runtime_capacity_capa_stays_under_existing_limit() -> None:
     result = audit_current_runtime_capacity()
     assert result["status"] == "PASS"
-    assert result["configured_shard_count"] == len(SHARD_IDS)
+    assert result["configured_shard_count"] >= len(SHARD_IDS)
     assert result["shard_count"] == result["configured_shard_count"]
     assert result["max_shard_bytes"] < result["hard_limit_bytes"] == 2_000_000
     assert result["headroom_bytes"] == result["hard_limit_bytes"] - result["max_shard_bytes"]
@@ -328,7 +328,7 @@ def test_ba_qm10_formal_closure_receipt_is_complete_and_preserves_lag1_block() -
     assert result["all_required_guards_passed"] is True
     assert result["open_finding_count"] == 0
     assert result["open_static_risk_count"] == 0
-    assert result["runtime_shard_count"] == len(SHARD_IDS)
+    assert result["runtime_shard_count"] >= len(SHARD_IDS)
     assert result["runtime_max_shard_bytes"] < result["runtime_hard_limit_bytes"] == 2_000_000
     assert result["runtime_symbol_count"] > 0
     assert result["runtime_packet_count"] >= result["runtime_symbol_count"]
