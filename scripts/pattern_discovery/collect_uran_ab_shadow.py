@@ -143,6 +143,11 @@ def run(root, captured_at):
     )
     if record is None:
         return {"status": status}
+    return persist_observation(root, record)
+
+
+def persist_observation(root, record):
+    """Idempotent append-only capture; existing snapshots are never overwritten."""
     snap = str(record["snapshot_id"])
     if not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", snap):
         raise ValueError("invalid_snapshot_path")
