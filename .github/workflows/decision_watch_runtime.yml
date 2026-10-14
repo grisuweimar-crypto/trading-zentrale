@@ -95,8 +95,10 @@ jobs:
       - name: Record original persisted transport size without altering audit baseline
         run: |
           python - <<'PY'
+          import json
           from pathlib import Path
           root = Path('artifacts/research/watch_runtime')
+          manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
           sizes = {p.name: p.stat().st_size for p in sorted(root.glob('shard_*.json'))}
           assert len(sizes) == manifest['shard_count'] and manifest['shard_count'] >= 64
           largest = max(sizes, key=sizes.get)
