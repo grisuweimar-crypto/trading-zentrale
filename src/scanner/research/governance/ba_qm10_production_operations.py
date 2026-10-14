@@ -508,7 +508,7 @@ def audit_current_runtime_capacity(root: str | Path = _ROOT) -> dict[str, Any]:
         "partition_strategy": manifest.get("partition_strategy", "legacy_sha256_mod64_v1"),
         "snapshot_id": manifest["snapshot_id"],
         "shard_count": len(shards),
-        "configured_shard_count": len(SHARD_IDS),
+        "configured_shard_count": manifest["shard_count"],
         "max_shard_id": max_id,
         "max_shard_bytes": max_size,
         "hard_limit_bytes": hard_limit,
