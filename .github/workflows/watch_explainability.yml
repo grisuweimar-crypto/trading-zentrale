@@ -26,4 +26,9 @@ jobs:
       - name: Audit current uranium A/B readiness
         env:
           PYTHONPATH: src
-        run: python scripts/audit_uran_ab_readiness.py --output /tmp/uran_ab_readiness.json
+        run: python scripts/audit_uran_ab_readiness.py --output uran_ab_readiness.json
+      - name: Attach uranium audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: uranium-ab-readiness
+          path: uran_ab_readiness.json
