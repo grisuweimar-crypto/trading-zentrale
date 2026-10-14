@@ -1,10 +1,10 @@
-from scripts.pattern_discovery.collect_uran_ab_shadow import build_observation
+from scripts.pattern_discovery.collect_uran_ab_shadow import build_observation, persist_observation
 import pytest
 
 
 def fixture():
     daily = {
-        "snapshot_id": "new-1", "source_snapshot_id": "new-1",
+        "snapshot_id": "snapshot-new-0001", "source_snapshot_id": "snapshot-new-0001",
         "as_of": "2026-10-15",
         "generated_at": "2026-10-15T19:00:00Z",
         "symbols": {
@@ -12,9 +12,9 @@ def fixture():
             "UUUU": {"current": {"r_code": "R1", "rs3m": -0.23, "trend200": -0.44, "close": 9.4}},
         },
     }
-    w10 = {"snapshot_id": "new-1", "status": "sealed", "sealed_at": "2026-10-15T19:20:00Z"}
+    w10 = {"snapshot_id": "snapshot-new-0001", "status": "sealed", "sealed_at": "2026-10-15T19:20:00Z"}
     packets = {
-        s: {"source_snapshot_id": "new-1", "universal_stance": {"state": "insufficient_evidence"}}
+        s: {"source_snapshot_id": "snapshot-new-0001", "universal_stance": {"state": "insufficient_evidence"}}
         for s in ("UEC", "UUUU")
     }
     return daily, w10, packets
@@ -68,3 +68,19 @@ def test_missing_features_produce_unknown_not_negative_label():
     daily["symbols"]["UEC"]["current"].pop("rs3m")
     report, _ = build_observation(daily, w10, packets, "2026-10-15T19:21:00Z", {})
     assert report["paired_symbols"][0]["B_hypothesis_condition"] is None
+
+
+def test_persist_is_idempotent_and_never_overwrites(tmp_path):
+    report, _ = build_observation(*fixture(), "2026-10-15T19:21:00Z", {"daily": "hash"})
+    first = persist_observation(tmp_path, report)
+    assert first["status"] == "CAPTURED"
+    target = tmp_path / first["path"]
+    before = target.read_bytes()
+    second = persist_observation(tmp_path, report)
+    assert second["status"] == "ALREADY_CAPTURED"
+    assert target.read_bytes() == before
+    other = dict(report)
+    other["source_sha256"] = {"daily": "tampered"}
+    with pytest.raises(ValueError, match="immutable_capture_collision"):
+        persist_observation(tmp_path, other)
+    assert target.read_bytes() == before
