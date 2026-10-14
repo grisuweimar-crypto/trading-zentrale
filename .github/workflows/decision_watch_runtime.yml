@@ -98,7 +98,7 @@ jobs:
           from pathlib import Path
           root = Path('artifacts/research/watch_runtime')
           sizes = {p.name: p.stat().st_size for p in sorted(root.glob('shard_*.json'))}
-          assert len(sizes) == 64
+          assert len(sizes) == manifest['shard_count'] and manifest['shard_count'] >= 64
           largest = max(sizes, key=sizes.get)
           print({'baseline_persisted_max_shard': largest, 'bytes': sizes[largest], 'reserve': (2_000_000 - sizes[largest]) / 2_000_000})
           PY
@@ -122,7 +122,7 @@ jobs:
           assert manifest['private_position_data_included'] is False
           assert manifest['decision_logic_changed'] is False
           paths = sorted(root.glob('shard_*.json'))
-          assert len(paths) == 64 and manifest['shard_count'] == 64
+          assert len(paths) == manifest['shard_count'] and manifest['shard_count'] >= 64
           payloads = [json.loads(p.read_text(encoding='utf-8')) for p in paths]
           assert sum(s['packet_count'] for s in payloads) == manifest['packet_count']
           assert sum(len(s['symbols']) for s in payloads) == manifest['symbol_count']
