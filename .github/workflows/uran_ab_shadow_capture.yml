@@ -1,0 +1,68 @@
+name: Uran A/B Shadow Capture
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/pattern_discovery/collect_uran_ab_shadow.py"
+      - "tests/test_uran_shadow_capture.py"
+      - "artifacts/research/decision_snapshot_w10.json"
+      - ".github/workflows/uran_ab_shadow_capture.yml"
+  pull_request:
+    paths:
+      - "scripts/pattern_discovery/collect_uran_ab_shadow.py"
+      - "tests/test_uran_shadow_capture.py"
+      - ".github/workflows/uran_ab_shadow_capture.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uran-ab-shadow-main
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run strict prospective shadow tests
+        run: python -m pip install pytest && PYTHONPATH=.:src python -m pytest -q tests/test_uran_shadow_capture.py
+
+  capture:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install decision baseline dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Capture latest sealed W10 paired baseline and hypothesis
+        run: python scripts/pattern_discovery/collect_uran_ab_shadow.py
+      - name: Commit new immutable capture only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/research/uran_shadow/captures/
+          if git diff --cached --quiet; then
+            echo "No new prospective capture; keeping previous evidence immutable."
+            exit 0
+          fi
+          git commit -m "research(uran): append snapshot-bound A/B shadow observation"
+          git pull --rebase origin main
+          git push origin HEAD:main
