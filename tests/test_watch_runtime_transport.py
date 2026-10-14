@@ -235,3 +235,35 @@ def test_manifest_accepts_legacy_strategy_absence_but_rejects_unknown_strategy()
     assert validate_runtime_manifest(old_manifest)["snapshot_id"] == CURRENT_SNAPSHOT
     with pytest.raises(WatchRuntimeError, match="unsupported_runtime_partition_strategy"):
         validate_runtime_manifest({**manifest, "partition_strategy": "unknown_strategy"})
+
+
+def test_expanded_shards_writer_preserves_nonlegacy_ids(tmp_path):
+    """A 128-shard manifest must not be written through the old 64-ID loop."""
+    shards = {
+        f"{index:03x}": {
+            "schema_version": SHARD_SCHEMA_VERSION,
+            "snapshot_id": CURRENT_SNAPSHOT,
+            "decision_as_of": CURRENT_TIME,
+            "shard_id": f"{index:03x}",
+            "symbols": [],
+            "packet_count": 0,
+            "packets": [],
+            "private_position_data_included": False,
+        }
+        for index in range(128)
+    }
+    manifest = {
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "partition_strategy": PARTITION_STRATEGY,
+        "snapshot_id": CURRENT_SNAPSHOT,
+        "symbol_count": 1,
+        "symbol_shards": {"TEST": "shard_07f.json"},
+        "shard_count": 128,
+        "private_position_data_included": False,
+        "decision_logic_changed": False,
+    }
+    write_watch_runtime(tmp_path, manifest=manifest, shards=shards)
+    assert len(list(tmp_path.glob("shard_*.json"))) == 128
+    assert (tmp_path / "shard_07f.json").exists()
+    assert not (tmp_path / "shard_00.json").exists()
+    assert validate_runtime_manifest(json.loads((tmp_path / "manifest.json").read_text()))["shard_count"] == 128
