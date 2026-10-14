@@ -29,7 +29,11 @@ SHARD_SCHEMA_VERSION = "decision_watch_runtime_shard_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 DEFAULT_RUNTIME_MANIFEST = f"{DEFAULT_RUNTIME_DIR}/manifest.json"
 SHARD_IDS = tuple(f"{index:02x}" for index in range(64))
-PARTITION_STRATEGY = "size_balanced_v2_auto_expand"\nLEGACY_PARTITION_STRATEGY = "size_balanced_v1"\nRUNTIME_HARD_LIMIT_BYTES = 2_000_000\nRUNTIME_TARGET_BYTES = 1_600_000\nMAX_AUTO_SHARDS = 1024
+PARTITION_STRATEGY = "size_balanced_v2_auto_expand"
+LEGACY_PARTITION_STRATEGY = "size_balanced_v1"
+RUNTIME_HARD_LIMIT_BYTES = 2_000_000
+RUNTIME_TARGET_BYTES = 1_600_000
+MAX_AUTO_SHARDS = 1024
 
 
 class WatchRuntimeError(ValueError):
