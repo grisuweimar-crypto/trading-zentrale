@@ -6,6 +6,8 @@ on:
       - "tests/test_watch_explainability.py"
       - "scripts/render_depot_watch_explainability.py"
       - ".github/workflows/watch_explainability.yml"
+      - "scripts/audit_uran_ab_readiness.py"
+      - "tests/test_uran_ab_readiness.py"
   workflow_dispatch:
 jobs:
   explanation-tests:
@@ -20,4 +22,8 @@ jobs:
       - name: Test snapshot-bound read-only explanation
         env:
           PYTHONPATH: src
-        run: python -m pytest -q tests/test_watch_explainability.py
+        run: python -m pytest -q tests/test_watch_explainability.py tests/test_uran_ab_readiness.py
+      - name: Audit current uranium A/B readiness
+        env:
+          PYTHONPATH: src
+        run: python scripts/audit_uran_ab_readiness.py --output /tmp/uran_ab_readiness.json
