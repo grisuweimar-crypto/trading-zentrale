@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
+  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,13 +29,20 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
+      "timing:SMX:ea08718de33a1787:5T",
       "timing:SMX:0671faf1011640c5:5T",
+      "timing:SMX:c42ca6c1baee697b:20T",
+      "timing:SMX:f483a5247b57affc:20T",
       "timing:SMX:b158fef8cbfb5c55:20T",
+      "timing:SMX:4ccb45d4ee923f1a:40T",
+      "timing:SMX:9cb11f4adfc9eb9c:40T",
       "timing:SMX:3e260f25164f48ce:40T",
-      "timing:SMX:5b62a0aabd2f08fc:60T"
+      "timing:SMX:5472db56664c10c8:60T",
+      "timing:SMX:fe6ff0aee1bf447a:60T",
+      "timing:SMX:92ad9e5c355866b9:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 11
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -44,7 +51,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -293,6 +300,14 @@
       "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-15T18:31:52.229858+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -307,7 +322,7 @@
     "last_overextension_rs3m": 0.1520699867213244,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 27,
+    "sessions_since_last_overextension": 28,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
+  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -37,7 +37,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
   "stance_history": [
     {
       "as_of": "2026-10-08T00:29:17.368548+00:00",
@@ -190,23 +190,31 @@
       "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-15T18:31:52.229858+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "rank_worsening_5t": true,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
+      "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-10-13",
     "last_overextension_rs3m": 0.1749961967852211,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 1,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "post_overextension_memory"
+    "sessions_since_last_overextension": 2,
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "post_overextension_decay"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "ANET",

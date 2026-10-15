@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
+  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,22 +27,56 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
+    "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:NRDS:63001daa7f481bc1:5T",
-      "timing:NRDS:862e678b240083af:40T"
+      "timing:NRDS:7ab4476ed5a235ac:5T",
+      "timing:NRDS:e4f8c33d470c0e2f:5T",
+      "timing:NRDS:66d94c2cea42792c:5T",
+      "timing:NRDS:2ed3249c1c56577f:5T",
+      "timing:NRDS:9800f91be0712c70:5T",
+      "timing:NRDS:401cca5a7c173601:5T",
+      "timing:NRDS:1e430f9cea7b7f13:5T",
+      "timing:NRDS:283554fb98246319:5T",
+      "timing:NRDS:03870b806b6eca6d:5T",
+      "timing:NRDS:5f83639c2a489191:5T",
+      "timing:NRDS:de6f9e876313f22e:5T",
+      "timing:NRDS:ef7f3870ca002abb:5T",
+      "timing:NRDS:bdcecff3727fc9bd:20T",
+      "timing:NRDS:dfdda8982133a796:20T",
+      "timing:NRDS:9ded9b32e0bc8942:20T",
+      "timing:NRDS:494c50d063b91cd4:20T",
+      "timing:NRDS:d47ac29f6efaa46d:20T",
+      "timing:NRDS:11940d7ea1f0f388:20T",
+      "timing:NRDS:eefa168ef78d755e:20T",
+      "timing:NRDS:c3fe1ba2fba5156b:20T",
+      "timing:NRDS:487ac8cc07de8323:20T",
+      "timing:NRDS:c5c42af2647d5f95:20T",
+      "timing:NRDS:e205699319458e1e:20T",
+      "timing:NRDS:9f8c45116d8eb363:20T",
+      "timing:NRDS:153913eb77a6fd4e:40T",
+      "timing:NRDS:b5ad69e9c49b4283:40T",
+      "timing:NRDS:ba1546185d8440ab:40T",
+      "timing:NRDS:8aad3655cfd70cc5:40T",
+      "timing:NRDS:40a0ee3503943b7d:40T",
+      "timing:NRDS:2447db533437437f:40T",
+      "timing:NRDS:81e555089a6cf423:40T",
+      "timing:NRDS:089d1930a0f04204:40T",
+      "timing:NRDS:6eab277f58068de7:40T",
+      "timing:NRDS:0c9ee67b0531915a:40T",
+      "timing:NRDS:696f56e402c4c294:40T",
+      "timing:NRDS:d1d231d5f510ed40:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 2
+      "timing": 36
     },
     "relation_state": "correlated_same_family_support",
-    "state": "positive",
+    "state": "negative",
     "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -291,6 +325,14 @@
       "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-15T18:31:52.229858+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -305,18 +347,18 @@
     "last_overextension_rs3m": 0.1935154896738149,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 37,
+    "sessions_since_last_overextension": 38,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "NRDS",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "positive",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "negative",
-    "status": "transition_pending"
+    "status": "stable_confirmed"
   }
 }

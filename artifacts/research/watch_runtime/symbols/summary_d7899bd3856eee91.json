@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
+  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -41,7 +41,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -290,6 +290,14 @@
       "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-15T18:31:52.229858+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -298,24 +306,24 @@
       "rank_worsening_5t": false,
       "rs3m_falling_5t": false,
       "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-06-25",
     "last_overextension_rs3m": 0.1982147748165812,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 110,
+    "sessions_since_last_overextension": 111,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "FSLR",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "positive",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
-    "stable_directional_anchor": "negative",
-    "status": "transition_pending"
+    "stable_anchor_is_current_stance": true,
+    "stable_directional_anchor": "positive",
+    "status": "transition_confirmed"
   }
 }

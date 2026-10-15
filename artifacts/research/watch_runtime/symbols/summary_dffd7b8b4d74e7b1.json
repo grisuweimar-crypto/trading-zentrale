@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
+  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,19 +29,21 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
+      "timing:ASX:15f457a0b3a6df9d:20T",
+      "timing:ASX:e64908cc5e4c18f0:60T",
       "timing:ASX:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 3
     },
-    "relation_state": "single_direction_or_unopposed",
+    "relation_state": "correlated_same_family_support",
     "state": "positive",
-    "support_structure": "single_direction_or_unopposed"
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -290,12 +292,20 @@
       "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-15T18:31:52.229858+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
+      "rank_worsening_5t": true,
       "rs3m_falling_5t": false,
       "score_falling_5t": false,
       "trend200_falling_5t": true
@@ -304,7 +314,7 @@
     "last_overextension_rs3m": 0.1584789123786145,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 1,
+    "sessions_since_last_overextension": 2,
     "upstream_review_state": "monitor",
     "upstream_sequence_state": "post_overextension_memory"
   },

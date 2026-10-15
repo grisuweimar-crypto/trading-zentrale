@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-14T18:57:50.686343+00:00",
+  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,18 +29,13 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:WDAY:42bcd8a34d314c09:5T",
       "timing:WDAY:0671faf1011640c5:5T",
-      "timing:WDAY:f483a5247b57affc:20T",
-      "timing:WDAY:cad5eb04910821c4:20T",
       "timing:WDAY:b158fef8cbfb5c55:20T",
       "timing:WDAY:3e260f25164f48ce:40T",
-      "timing:WDAY:a0bebf08166a0860:60T",
-      "timing:WDAY:fe6ff0aee1bf447a:60T",
-      "timing:WDAY:92ad9e5c355866b9:60T"
+      "timing:WDAY:5b62a0aabd2f08fc:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 9
+      "timing": 4
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -49,7 +44,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
+  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -298,25 +293,33 @@
       "source_snapshot_id": "4448568e-a4f1-4958-8484-3e92e6dca8c3",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-15T18:31:52.229858+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": true,
+      "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
-    "last_overextension_date": "2026-10-14",
-    "last_overextension_rs3m": 0.26193916874587253,
+    "last_overextension_date": "2026-10-15",
+    "last_overextension_rs3m": 0.2967643346885527,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
-    "upstream_review_state": "profit_protection_review",
-    "upstream_sequence_state": "overextension_with_fading_dynamics"
+    "upstream_review_state": "monitor",
+    "upstream_sequence_state": "active_overextension"
   },
-  "state_history_state": "overextension_with_momentum_loss",
+  "state_history_state": "overextended",
   "symbol": "WDAY",
   "transition_state": {
     "pending_confirmation_count": 0,
@@ -324,6 +327,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "transition_confirmed"
+    "status": "stable_confirmed"
   }
 }
