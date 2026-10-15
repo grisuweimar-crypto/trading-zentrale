@@ -27,6 +27,8 @@ on:
     workflows: ["Scanner_vNext Autopilot"]
     types: [completed]
   workflow_dispatch:
+  schedule:
+    - cron: '23 3,15 * * *'  # Drain older uncaptured publications without delaying current scans
 
 permissions:
   contents: write
@@ -42,6 +44,7 @@ jobs:
       github.event_name == 'pull_request' ||
       github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.conclusion == 'success')
@@ -254,7 +257,11 @@ jobs:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
               else:
-                  sha, run_id, published_at = candidates[0]
+                  # The Autopilot completion must capture the newest publication,
+                  # so W10 can bind same-snapshot Elliott evidence. Scheduled
+                  # runs drain older uncaptured publications without starvation.
+                  prefer_latest = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_run'
+                  sha, run_id, published_at = candidates[-1] if prefer_latest else candidates[0]
                   handle.write('process=true\n')
                   handle.write(f'commit={sha}\n')
                   handle.write(f'run_id={run_id}\n')
@@ -264,7 +271,7 @@ jobs:
               'claimed_or_rejected_runs': len(claimed_run_ids),
               'repairable_legacy_empty_runs': len(repairable_run_ids),
               'uncaptured_publications': len(candidates),
-              'selected': candidates[0] if candidates else None,
+              'selected': (candidates[-1] if os.environ.get('GITHUB_EVENT_NAME') == 'workflow_run' else candidates[0]) if candidates else None,
           }, indent=2))
           PY
 
