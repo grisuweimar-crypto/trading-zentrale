@@ -19,42 +19,42 @@
     "private_position_data_persisted": false,
     "runtime_stage_available_from_is_recorded_not_supplied": true
   },
-  "pre_7a_frozen_at": "2026-10-15T18:31:42.321385+00:00",
+  "pre_7a_frozen_at": "2026-10-16T18:12:35.310983+00:00",
   "schema_version": "decision_snapshot_orchestration_w10_v1",
-  "sealed_at": "2026-10-15T18:34:59.280274+00:00",
-  "snapshot_as_of": "2026-10-15",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "sealed_at": "2026-10-16T18:15:00.381913+00:00",
+  "snapshot_as_of": "2026-10-16",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stages": {
     "final_7a": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/current_decision_packets_7a.json",
-      "artifact_sha256": "bce844dfd5166fcebbc49ed5f69f3a0547750857069593394aff500e8250f7fb",
+      "artifact_sha256": "c9592f5938fa7dd45067bb9255c6f41eb6fb22f89a1adfdaa64cc1fd3066d5a5",
       "availability_source": "current_decision_packets_7a.as_of",
-      "available_from": "2026-10-15T18:31:52.229858+00:00",
+      "available_from": "2026-10-16T18:12:41.906923+00:00",
       "snapshot_identity_state": "verified",
       "status": "available"
     },
     "phase2_probability": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/probability_calibration_2.json",
-      "artifact_sha256": "6edcbd1de1263eeac6694312dd7e69ef7a38e2265feda518ce966ef0780d9e77",
+      "artifact_sha256": "f5942ffbfe3809e2dded0c4d0d6a203f93fecee9c61b93961f5de152b6278b90",
       "availability_source": "git_commit_time",
-      "available_from": "2026-10-15T18:27:49+00:00",
+      "available_from": "2026-10-16T18:10:09+00:00",
       "snapshot_identity_state": "verified",
-      "source_commit": "d59708294e6efb9fd4ab0d4e638c8740eef8533b",
+      "source_commit": "8b86d24f11af14bfffeac577f8c63b95a89d27a5",
       "status": "available"
     },
     "phase3_risk": {
       "artifact_path": "/home/runner/work/_temp/risk_vnext_3.json",
-      "artifact_sha256": "768516160ffc401f29c68e6ea595ba3a2472155201c2f83e288cee960ea9057f",
+      "artifact_sha256": "aa2eac25c88d1180a14e4641618454a0bdc1a425430e601f464715551de0b903",
       "availability_source": "w10_runtime_recorded_after_stage",
-      "available_from": "2026-10-15T18:31:36.779190+00:00",
+      "available_from": "2026-10-16T18:12:31.768530+00:00",
       "snapshot_identity_state": "verified",
       "status": "available"
     },
     "phase4_confidence": {
       "artifact_path": "/home/runner/work/_temp/confidence_vnext_research_4.json",
-      "artifact_sha256": "da0f0eec08106e8bc065dc4f728b2c18d3c3ef3ff28a775423213e3da4cc0bd0",
+      "artifact_sha256": "19540bebebf74ff2e7da2076dd9dfc879a9738cda4896dabcbb9998c900e2192",
       "availability_source": "w10_runtime_recorded_after_stage",
-      "available_from": "2026-10-15T18:31:39.511259+00:00",
+      "available_from": "2026-10-16T18:12:33.579903+00:00",
       "snapshot_identity_state": "not_expressed_by_artifact",
       "status": "available"
     },
@@ -71,41 +71,41 @@
       "availability_source": null,
       "decision_effect": "none",
       "missing_is_neutral_evidence": false,
-      "resolved_at": "2026-10-15T18:31:41.981370+00:00",
+      "resolved_at": "2026-10-16T18:12:35.041377+00:00",
       "snapshot_identity_state": "not_applicable",
       "status": "not_supplied"
     },
     "phase7a_archive": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/decision_evidence_7a.jsonl.gz",
-      "artifact_sha256": "461a9718c78006fde10b615987f42ffc07c3902ea8c721aa0cd31b78c2d6dd7b",
+      "artifact_sha256": "a23ca07323109a55fcd02f5ed1ea816d047daa32627d1394c181790edf47efbf",
       "availability_source": "w10_runtime_recorded_after_archive_write",
-      "available_from": "2026-10-15T18:34:59.280274+00:00",
+      "available_from": "2026-10-16T18:15:00.381913+00:00",
       "snapshot_identity_state": "inherits_final_7a",
       "status": "available"
     },
     "scanner_daily_research": {
       "availability_source": "daily_research.generated_at",
-      "available_from": "2026-10-15T18:14:50.224661+00:00",
+      "available_from": "2026-10-16T17:58:35.479993+00:00",
       "scanner_input_provenance": {
-        "as_of": "2026-10-15",
-        "code_revision": "9e04e3269c59084301a6fccef6b1e765b649129e",
+        "as_of": "2026-10-16",
+        "code_revision": "5032289db4cb16a50c674cbbcd67143636a2c3c1",
         "complete": true,
-        "content_hash": "535811ab45f300688595a65a088fc47cfbc1ad3e110faa6898c81004638e2494",
-        "direct_scoring_input_sha256": "021299ac8373dd7b1d2618868a4f6b74b37009f4f7823dfb6713bd09f7f8ebc3",
+        "content_hash": "3b8eed88fbf7676bf0d14ec58ced364d81aeb3d24115c515220018bdbd2fcc94",
+        "direct_scoring_input_sha256": "0262554959e38f16b39ce8cb50effa2df3b12e2f6987cb04ba99484aa0e0cd7e",
         "historical_backfill": false,
-        "latest_scanner_sha256": "fd27f79329f97b8590caa119e9d6ccf6c8a1f5b277fb68ab708c044dcd1a8ab8",
+        "latest_scanner_sha256": "5cb782d94bda5ff38c449506f171eb559bf77f9fa64e56f50421e96ab8fa48b3",
         "path": "artifacts/research/scanner_input_provenance.json",
-        "run_id": "github-38783504196-1",
-        "scoring_universe_sha256": "021299ac8373dd7b1d2618868a4f6b74b37009f4f7823dfb6713bd09f7f8ebc3",
-        "sha256": "9ba15a720cfed4ea8d84ec1fc84cfff2688b927e30f3d86df25f01391c8d3d00",
-        "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
-        "source_watchlist_full_sha256": "9e8b76c9634d750608d0e6323d96f388cd2c652acb2bb0efbdc96d85e320952c",
-        "yahoo_provider_frame_sha256": "28c7766359c498763a36040f20ceafb086a81b64f74137222d05ff3891b2476b"
+        "run_id": "github-38943447127-1",
+        "scoring_universe_sha256": "0262554959e38f16b39ce8cb50effa2df3b12e2f6987cb04ba99484aa0e0cd7e",
+        "sha256": "2f55c0ecf662e71bbf87f5732f7d5f989b059fa3e0333e8867067151b2ed18e0",
+        "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+        "source_watchlist_full_sha256": "f7d18d331b01a0fcf5e1961c1d12fb37e67e3546c14992444290c26d9aa3a31f",
+        "yahoo_provider_frame_sha256": "59f0141adb1c21d7690504ba123773029199d7c085c67ed6ffa4743493fc034f"
       },
       "snapshot_identity_state": "verified",
       "status": "available"
     }
   },
-  "started_at": "2026-10-15T18:29:40.194066+00:00",
+  "started_at": "2026-10-16T18:11:23.070521+00:00",
   "status": "sealed"
 }
