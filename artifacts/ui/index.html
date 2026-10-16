@@ -1765,6 +1765,20 @@ function applyPillarFilter(rows) {
     }
 
 
+    // Use German decimal and grouping separators for visible dashboard numbers.
+    function fmtFixed(n, digits) {
+      const value = Number(n);
+      if (n === null || n === undefined || !Number.isFinite(value)) return '';
+      try {
+        return value.toLocaleString('de-DE', {
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits
+        });
+      } catch (e) {
+        return fmtFixed(value, digits);
+      }
+    }
+
     function fmtPrice(n) {
       if (n === null || n === undefined) return '';
       const ax = Math.abs(n);
@@ -1774,7 +1788,7 @@ function applyPillarFilter(rows) {
       try {
         return n.toLocaleString('de-DE', { maximumFractionDigits: maxFrac });
       } catch (e) {
-        return n.toFixed(maxFrac);
+        return fmtFixed(n, maxFrac);
       }
     }
 
@@ -1782,7 +1796,7 @@ function applyPillarFilter(rows) {
       if (p === null || p === undefined) return '<div class="sub muted"></div>';
       const dir = (p > 0) ? 'pos' : (p < 0) ? 'neg' : 'flat';
       const arrow = (p > 0) ? '' : (p < 0) ? '' : '';
-      return `<div class="sub chg ${dir}">${arrow} ${p.toFixed(2)}%</div>`;
+      return `<div class="sub chg ${dir}">${arrow} ${fmtFixed(p, 2)}%</div>`;
     }
 
     function looksLikeISIN(s) {
@@ -1905,7 +1919,7 @@ function applyPillarFilter(rows) {
       const rec = recFor(r);
       const title = rec ? rec.code + ' · ' + rec.label + ' · kein Handelssignal' : '';
       const sig = rec ? `<span class="sig ${rec.cls}" title="${esc(title)}">${esc(rec.code)}</span>` : '';
-      return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${s.toFixed(2)}</span>${sig}</div>`;
+      return `<div class="scorecell"><div class="scorebar"><div style="width:${s}%;"></div></div><span class="mono">${fmtFixed(s, 2)}</span>${sig}</div>`;
     }
 
     function dScoreCell(r) {
@@ -1913,7 +1927,7 @@ function applyPillarFilter(rows) {
       if (d === null) return '<span class="muted"></span>';
       const sign = d > 0 ? '+' : '';
       const cls = d > 0 ? 'deltaUp' : (d < 0 ? 'deltaDown' : 'deltaFlat');
-      return `<span class="mono ${cls}">${sign}${d.toFixed(2)}</span>`;
+      return `<span class="mono ${cls}">${sign}${fmtFixed(d, 2)}</span>`;
     }
 
     // ---- preset logic (mirrors scanner.presets.apply) ----
@@ -2302,7 +2316,7 @@ function cyclePct(r) {
 
 function formatCycle(r) {
   const value = cyclePct(r);
-  return value === null ? '—' : value.toFixed(1) + '%';
+  return value === null ? '—' : fmtFixed(value, 1) + '%';
 }
 
 // CY-04: only source-identical, externally released snapshot chains may
@@ -2321,7 +2335,7 @@ function cycleDeltaLabel(r, lag) {
   if (value === null) return '— (keine zulässige Vergleichsbasis)';
   const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→';
   const sign = value > 0 ? '+' : '';
-  return arrow + ' ' + sign + value.toFixed(1) + ' Zykluspunkte';
+  return arrow + ' ' + sign + fmtFixed(value, 1) + ' Zykluspunkte';
 }
 
 function cycleHelp(r) {
@@ -2340,14 +2354,14 @@ function cycleCell(r) {
   const base = formatCycle(r);
   const d5 = cycleDelta(r, 5);
   const extra = d5 === null ? '' : '<span class="cycleDelta">' + esc(
-    (d5 > 0 ? '↑ +' : d5 < 0 ? '↓ ' : '→ ') + d5.toFixed(1) + ' Pkt.'
+    (d5 > 0 ? '↑ +' : d5 < 0 ? '↓ ' : '→ ') + fmtFixed(d5, 1) + ' Pkt.'
   ) + '</span>';
   return '<span class="cycleVal">' + esc(base) + '</span>' + extra;
 }
 
 function fmtPct(v) {
   if (v === null || v === undefined || !Number.isFinite(v)) return '';
-  const s = (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  const s = (v >= 0 ? '+' : '') + fmtFixed(v, 2) + '%';
   return s;
 }
 
@@ -2439,7 +2453,7 @@ function renderBreadth(rows) {
       <div class="breadthHeadline">
         <span class="ampel ${regimeClass}" aria-hidden="true"></span>
         <span>${esc(regime)}</span>
-        <span class="breadthPct">Adv ${tot ? advPct.toFixed(2) : '0.00'}%</span>
+        <span class="breadthPct">Adv ${tot ? fmtFixed(advPct, 2) : '0.00'}%</span>
       </div>
       <div class="breadthRow">
         ${chip(`Gewinner ${adv}`, adv ? 'good' : 'blue')}
@@ -2464,8 +2478,8 @@ function renderBreadth(rows) {
         <div>
           <div class="muted small">Handelbarkeit</div>
           <div class="breadthRow">
-            ${chip(`Trend OK ${pct(trendOk, n).toFixed(2)}%`, 'blue')}
-            ${chip(`Liq OK ${pct(liqOk, n).toFixed(2)}%`, 'blue')}
+            ${chip(`Trend OK ${fmtFixed(pct(trendOk, n), 2)}%`, 'blue')}
+            ${chip(`Liq OK ${fmtFixed(pct(liqOk, n), 2)}%`, 'blue')}
             ${chip(`N ${n}`, 'blue')}
           </div>
         </div>
@@ -2473,7 +2487,7 @@ function renderBreadth(rows) {
         <div>
           <div class="muted small">Kandidaten</div>
           <div class="breadthRow">
-            ${chip(`Top-Anteil ${pct(topPctl, n).toFixed(2)}%`, 'blue')}
+            ${chip(`Top-Anteil ${fmtFixed(pct(topPctl, n), 2)}%`, 'blue')}
             ${chip(`Basis Perf% ${basisPerfPct}/${n}`, 'blue')}
           </div>
         </div>
@@ -2481,10 +2495,10 @@ function renderBreadth(rows) {
         <div>
           <div class="muted small">Qualitt</div>
           <div class="breadthRow">
-            ${chip(`Typische Qualitt ${sm.med !== null ? sm.med.toFixed(1) : ''}`, 'blue')}
-            ${chip(`Streuung ${sm.iqr !== null ? sm.iqr.toFixed(1) : ''}`, 'blue')}
-            ${chip(`Daten-Vertrauen typisch ${cm.med !== null ? cm.med.toFixed(1) : ''}`, 'blue')}
-            ${chip(`Vertrauen Streuung ${cm.iqr !== null ? cm.iqr.toFixed(1) : ''}`, 'blue')}
+            ${chip(`Typische Qualitt ${sm.med !== null ? fmtFixed(sm.med, 1) : ''}`, 'blue')}
+            ${chip(`Streuung ${sm.iqr !== null ? fmtFixed(sm.iqr, 1) : ''}`, 'blue')}
+            ${chip(`Daten-Vertrauen typisch ${cm.med !== null ? fmtFixed(cm.med, 1) : ''}`, 'blue')}
+            ${chip(`Vertrauen Streuung ${cm.iqr !== null ? fmtFixed(cm.iqr, 1) : ''}`, 'blue')}
           </div>
         </div>
       </div>
@@ -2826,7 +2840,7 @@ function applyHeatFilter(rows) {
           <td class="right">${pCell}</td>
           <td>${scoreCell(r)}</td>
           <td class="hide-sm right mono">${dScoreCell(r)}</td>
-          <td class="hide-sm right mono">${(asNum(r.confidence) ?? 0).toFixed(1)}</td>
+          <td class="hide-sm right mono">${fmtFixed((asNum(r.confidence) ?? 0), 1)}</td>
           <td class="right mono" title="${esc(cycleHelp(r))}">${cycleCell(r)}</td>
           <td>${trend}</td>
           <td>${liq}</td>
@@ -2873,8 +2887,8 @@ function applyHeatFilter(rows) {
       }
 
       const items = [
-        ['Score', (asNum(r.score) ?? 0).toFixed(2)],
-        ['Confidence', (asNum(r.confidence) ?? 0).toFixed(1)],
+        ['Score', fmtFixed((asNum(r.score) ?? 0), 2)],
+        ['Confidence', fmtFixed((asNum(r.confidence) ?? 0), 1)],
         ['Cycle', formatCycle(r)],
         ['Cycle Quality', r.cycle_quality],
         ['Cycle Richtung / Δ1obs', cycleDeltaLabel(r, 1)],
@@ -2919,10 +2933,10 @@ function applyHeatFilter(rows) {
       const conf = asNum(r.confidence);
       if (rec) why.push(`${rec.code}: ${rec.label}.`);
       if (scoreValue !== null) {
-        why.push(`Score ${scoreValue.toFixed(2)}${scorePctl !== null ? ' · Perzentil ' + scorePctl.toFixed(1) : ''}.`);
+        why.push(`Score ${fmtFixed(scoreValue, 2)}${scorePctl !== null ? ' · Perzentil ' + fmtFixed(scorePctl, 1) : ''}.`);
       }
-      if (dscore !== null) why.push(`Score-Veränderung 1D: ${dscore >= 0 ? '+' : ''}${dscore.toFixed(2)}.`);
-      if (conf !== null) why.push(`Confidence: ${conf.toFixed(1)}.`);
+      if (dscore !== null) why.push(`Score-Veränderung 1D: ${dscore >= 0 ? '+' : ''}${fmtFixed(dscore, 2)}.`);
+      if (conf !== null) why.push(`Confidence: ${fmtFixed(conf, 1)}.`);
       why.push(`Trend: ${asBool(r.trend_ok) === true ? 'OK' : 'nicht OK'} · Liquidität: ${asBool(r.liquidity_ok) === true ? 'OK' : 'nicht OK'}.`);
       if (status === 'NA') why.push('Vergleich/Scoring nicht belastbar: Status NA.');
       if (status === 'ERROR') why.push('Scoring hat einen Fehlerstatus gemeldet.');
@@ -3351,8 +3365,8 @@ function applyHeatFilter(rows) {
         const picksHtml = top.slice(0, 3).map((pick, idx) => {
           const symbol = pick.symbol || pick.isin || '?';
           const name = pick.name || '?';
-          const score = pick.score ? pick.score.toFixed(2) : '?';
-          const scorePctl = pick.score_pctl ? (pick.score_pctl).toFixed(1) + '%' : '?';
+          const score = pick.score ? fmtFixed(pick.score, 2) : '?';
+          const scorePctl = pick.score_pctl ? fmtFixed(pick.score_pctl, 1) + '%' : '?';
           const riskBucket = pick.risk_bucket != null ? 'R' + pick.risk_bucket : '?';
           const trendOk = pick.trend_ok ? 'OK' : 'Nein';
           const liqOk = pick.liq_ok ? 'OK' : 'Nein';
@@ -3545,7 +3559,7 @@ function applyHeatFilter(rows) {
         function fmtDelta(n, digits) {
           if (n === null || n === undefined || !Number.isFinite(n)) return '–';
           const sign = n > 0 ? '+' : '';
-          return sign + n.toFixed(digits);
+          return sign + fmtFixed(n, digits);
         }
 
         const pos = (Array.isArray(d.movers_up) ? d.movers_up : [])
@@ -3669,7 +3683,7 @@ function applyHeatFilter(rows) {
         function fmtD(value) {
           const n = asNum(value);
           if (n === null) return '–';
-          return (n > 0 ? '+' : '') + n.toFixed(2);
+          return (n > 0 ? '+' : '') + fmtFixed(n, 2);
         }
         function signalClass(verdict) {
           verdict = normStr(verdict);
@@ -3680,7 +3694,7 @@ function applyHeatFilter(rows) {
 
         const body = rows.slice(0, 14).map(row => {
           const verdict = normStr(row.verdict);
-          const basis = `n=${esc(row.n_valid ?? 0)}/${esc(row.n ?? 0)} · Cov ${esc(((asNum(row.coverage) ?? 0) * 100).toFixed(0))}%`;
+          const basis = `n=${esc(row.n_valid ?? 0)}/${esc(row.n ?? 0)} · Cov ${esc(fmtFixed((asNum(row.coverage) ?? 0) * 100, 0))}%`;
           const rowClass = verdict === 'unclear' ? 'sampleUnclear' : '';
           return '<tr class="' + rowClass + '">' +
             '<td>' + esc(row.intern || '–') + '</td>' +
@@ -3697,10 +3711,10 @@ function applyHeatFilter(rows) {
         const minN = Number(rules.min_pair_valid || 0);
         const minCov = asNum(rules.min_pair_coverage);
         const ruleText = 'Regel: Gegenläufige Vorzeichen = Kontra Markt; |Differenz| ≤ ' +
-          (tol === null ? '–' : tol.toFixed(2)) +
+          (tol === null ? '–' : fmtFixed(tol, 2)) +
           ' = gleichgerichtet; sonst relative Stärke. Belastbare Aussage erst ab n≥' +
           (minN || '–') + ' und Coverage≥' +
-          (minCov === null ? '–' : (minCov * 100).toFixed(0) + '%') + '.';
+          (minCov === null ? '–' : fmtFixed(minCov * 100, 0) + '%') + '.';
 
         const basisMeta = '<div class="muted small" style="margin-bottom:6px;">Datenbasis: History ' +
           esc(r.history_latest_date || '–') + ' · Segmente ' + esc(r.segment_latest_date || '–') +
@@ -3794,11 +3808,11 @@ function applyHeatFilter(rows) {
 
         function fmtAvg(x) {
           const n = asNum(x);
-          return n === null ? '–' : (n >= 0 ? '+' : '') + n.toFixed(2);
+          return n === null ? '–' : (n >= 0 ? '+' : '') + fmtFixed(n, 2);
         }
         function fmtPct(x) {
           const n = asNum(x);
-          return n === null ? '–' : (n * 100).toFixed(1) + '%';
+          return n === null ? '–' : fmtFixed(n * 100, 1) + '%';
         }
         function stableBadge(state) {
           state = normStr(state);
