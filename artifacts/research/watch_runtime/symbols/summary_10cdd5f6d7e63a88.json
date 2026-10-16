@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,64 +26,23 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:FME.DE:9800f91be0712c70:5T",
-          "timing:FME.DE:1e430f9cea7b7f13:5T",
-          "timing:FME.DE:283554fb98246319:5T",
-          "timing:FME.DE:03870b806b6eca6d:5T",
-          "timing:FME.DE:bdcecff3727fc9bd:20T",
-          "timing:FME.DE:dfdda8982133a796:20T",
-          "timing:FME.DE:494c50d063b91cd4:20T",
-          "timing:FME.DE:eefa168ef78d755e:20T",
-          "timing:FME.DE:c3fe1ba2fba5156b:20T",
-          "timing:FME.DE:153913eb77a6fd4e:40T",
-          "timing:FME.DE:b5ad69e9c49b4283:40T",
-          "timing:FME.DE:ba1546185d8440ab:40T",
-          "timing:FME.DE:8aad3655cfd70cc5:40T",
-          "timing:FME.DE:40a0ee3503943b7d:40T",
-          "timing:FME.DE:2447db533437437f:40T",
-          "timing:FME.DE:81e555089a6cf423:40T"
-        ],
-        "positive_claim_ids": [
-          "timing:FME.DE:5b62a0aabd2f08fc:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
-    "direction": null,
+    "conflicts": [],
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:FME.DE:9800f91be0712c70:5T",
-      "timing:FME.DE:1e430f9cea7b7f13:5T",
-      "timing:FME.DE:283554fb98246319:5T",
-      "timing:FME.DE:03870b806b6eca6d:5T",
-      "timing:FME.DE:bdcecff3727fc9bd:20T",
-      "timing:FME.DE:dfdda8982133a796:20T",
-      "timing:FME.DE:494c50d063b91cd4:20T",
-      "timing:FME.DE:eefa168ef78d755e:20T",
-      "timing:FME.DE:c3fe1ba2fba5156b:20T",
-      "timing:FME.DE:153913eb77a6fd4e:40T",
-      "timing:FME.DE:b5ad69e9c49b4283:40T",
-      "timing:FME.DE:ba1546185d8440ab:40T",
-      "timing:FME.DE:8aad3655cfd70cc5:40T",
-      "timing:FME.DE:40a0ee3503943b7d:40T",
-      "timing:FME.DE:2447db533437437f:40T",
-      "timing:FME.DE:81e555089a6cf423:40T",
+      "timing:FME.DE:9cb11f4adfc9eb9c:40T",
       "timing:FME.DE:5b62a0aabd2f08fc:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 17
+      "timing": 2
     },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -340,6 +299,14 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -354,7 +321,7 @@
     "last_overextension_rs3m": 0.1775356507070806,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 71,
+    "sessions_since_last_overextension": 72,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -364,8 +331,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "stable_confirmed"
   }
 }

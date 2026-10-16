@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,13 +29,13 @@
     "conflicts": [
       {
         "negative_claim_ids": [
-          "timing:ASM.TO:9a55520ffefb694c:60T"
+          "timing:ASM.TO:6b9ad841e92f8191:60T",
+          "timing:ASM.TO:9a55520ffefb694c:60T",
+          "timing:ASM.TO:312bf577128ab874:60T",
+          "timing:ASM.TO:6c608d2ad71a6396:60T"
         ],
         "positive_claim_ids": [
-          "timing:ASM.TO:03f6bed3788ea96b:5T",
-          "timing:ASM.TO:2ec83739629fba4d:5T",
-          "timing:ASM.TO:838b819bd450346e:5T",
-          "timing:ASM.TO:2fbfff31832fc700:60T"
+          "timing:ASM.TO:838b819bd450346e:5T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -43,11 +43,11 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:ASM.TO:03f6bed3788ea96b:5T",
-      "timing:ASM.TO:2ec83739629fba4d:5T",
       "timing:ASM.TO:838b819bd450346e:5T",
-      "timing:ASM.TO:2fbfff31832fc700:60T",
-      "timing:ASM.TO:9a55520ffefb694c:60T"
+      "timing:ASM.TO:6b9ad841e92f8191:60T",
+      "timing:ASM.TO:9a55520ffefb694c:60T",
+      "timing:ASM.TO:312bf577128ab874:60T",
+      "timing:ASM.TO:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
       "timing": 5
@@ -59,7 +59,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -316,6 +316,14 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -330,7 +338,7 @@
     "last_overextension_rs3m": 0.219462896795529,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 35,
+    "sessions_since_last_overextension": 36,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

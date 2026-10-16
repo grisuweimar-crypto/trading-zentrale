@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,68 +26,25 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:AAPL:51a8cac8cfa550aa:60T",
-          "timing:AAPL:1691f75766881bca:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:AAPL:13dfd193091882d7:5T",
-          "timing:AAPL:a2763d94cd6f82e9:5T",
-          "timing:AAPL:42bcd8a34d314c09:5T",
-          "timing:AAPL:1758b10ff7893792:20T",
-          "timing:AAPL:85b7b4bcb43aeb00:20T",
-          "timing:AAPL:f483a5247b57affc:20T",
-          "timing:AAPL:cad5eb04910821c4:20T",
-          "timing:AAPL:494a15c3341a0317:20T",
-          "timing:AAPL:15f457a0b3a6df9d:20T",
-          "timing:AAPL:b5c6f29104b27dae:40T",
-          "timing:AAPL:f9714fd629aaf7f2:40T",
-          "timing:AAPL:e64908cc5e4c18f0:60T",
-          "timing:AAPL:a0bebf08166a0860:60T",
-          "timing:AAPL:32bb40f535b6b527:60T",
-          "timing:AAPL:6289a7880870e93e:60T",
-          "timing:AAPL:fe6ff0aee1bf447a:60T",
-          "timing:AAPL:92ad9e5c355866b9:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
-    "direction": null,
+    "conflicts": [],
+    "direction": "positive",
     "known_directional_claim_ids": [
       "timing:AAPL:13dfd193091882d7:5T",
-      "timing:AAPL:a2763d94cd6f82e9:5T",
-      "timing:AAPL:42bcd8a34d314c09:5T",
       "timing:AAPL:1758b10ff7893792:20T",
-      "timing:AAPL:85b7b4bcb43aeb00:20T",
-      "timing:AAPL:f483a5247b57affc:20T",
-      "timing:AAPL:cad5eb04910821c4:20T",
-      "timing:AAPL:494a15c3341a0317:20T",
-      "timing:AAPL:15f457a0b3a6df9d:20T",
       "timing:AAPL:b5c6f29104b27dae:40T",
-      "timing:AAPL:f9714fd629aaf7f2:40T",
-      "timing:AAPL:e64908cc5e4c18f0:60T",
-      "timing:AAPL:a0bebf08166a0860:60T",
-      "timing:AAPL:32bb40f535b6b527:60T",
-      "timing:AAPL:6289a7880870e93e:60T",
-      "timing:AAPL:fe6ff0aee1bf447a:60T",
-      "timing:AAPL:92ad9e5c355866b9:60T",
-      "timing:AAPL:51a8cac8cfa550aa:60T",
-      "timing:AAPL:1691f75766881bca:60T"
+      "timing:AAPL:e3f414dec0e09a39:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 19
+      "timing": 4
     },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -344,6 +301,14 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -358,7 +323,7 @@
     "last_overextension_rs3m": 0.1680852573430318,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 18,
+    "sessions_since_last_overextension": 19,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },
@@ -368,8 +333,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "stable_confirmed"
   }
 }

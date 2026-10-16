@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,28 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:ABT:42bcd8a34d314c09:5T",
-      "timing:ABT:0671faf1011640c5:5T",
-      "timing:ABT:f483a5247b57affc:20T",
-      "timing:ABT:cad5eb04910821c4:20T",
-      "timing:ABT:b158fef8cbfb5c55:20T",
-      "timing:ABT:3e260f25164f48ce:40T",
-      "timing:ABT:a0bebf08166a0860:60T",
-      "timing:ABT:6289a7880870e93e:60T",
-      "timing:ABT:fe6ff0aee1bf447a:60T",
-      "timing:ABT:92ad9e5c355866b9:60T"
+      "timing:ABT:e3f414dec0e09a39:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 10
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -307,6 +298,14 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -314,14 +313,14 @@
       "r_code_downgrade": false,
       "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
-      "score_falling_5t": true,
+      "score_falling_5t": false,
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-09-20",
     "last_overextension_rs3m": 0.1508307649355211,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 25,
+    "sessions_since_last_overextension": 26,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },

@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -43,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -300,11 +300,19 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
-      "r_code_downgrade": true,
+      "r_code_downgrade": false,
       "rank_worsening_5t": true,
       "rs3m_falling_5t": true,
       "score_falling_5t": true,
@@ -314,7 +322,7 @@
     "last_overextension_rs3m": 0.2228361581566889,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 10,
+    "sessions_since_last_overextension": 11,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },

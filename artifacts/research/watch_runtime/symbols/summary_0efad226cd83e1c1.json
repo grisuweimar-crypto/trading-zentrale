@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,17 +27,56 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "negative",
+    "known_directional_claim_ids": [
+      "timing:WM:7ab4476ed5a235ac:5T",
+      "timing:WM:e4f8c33d470c0e2f:5T",
+      "timing:WM:66d94c2cea42792c:5T",
+      "timing:WM:2ed3249c1c56577f:5T",
+      "timing:WM:9800f91be0712c70:5T",
+      "timing:WM:401cca5a7c173601:5T",
+      "timing:WM:1e430f9cea7b7f13:5T",
+      "timing:WM:283554fb98246319:5T",
+      "timing:WM:03870b806b6eca6d:5T",
+      "timing:WM:5f83639c2a489191:5T",
+      "timing:WM:de6f9e876313f22e:5T",
+      "timing:WM:ef7f3870ca002abb:5T",
+      "timing:WM:bdcecff3727fc9bd:20T",
+      "timing:WM:dfdda8982133a796:20T",
+      "timing:WM:9ded9b32e0bc8942:20T",
+      "timing:WM:494c50d063b91cd4:20T",
+      "timing:WM:d47ac29f6efaa46d:20T",
+      "timing:WM:11940d7ea1f0f388:20T",
+      "timing:WM:eefa168ef78d755e:20T",
+      "timing:WM:c3fe1ba2fba5156b:20T",
+      "timing:WM:487ac8cc07de8323:20T",
+      "timing:WM:c5c42af2647d5f95:20T",
+      "timing:WM:e205699319458e1e:20T",
+      "timing:WM:9f8c45116d8eb363:20T",
+      "timing:WM:153913eb77a6fd4e:40T",
+      "timing:WM:b5ad69e9c49b4283:40T",
+      "timing:WM:ba1546185d8440ab:40T",
+      "timing:WM:8aad3655cfd70cc5:40T",
+      "timing:WM:40a0ee3503943b7d:40T",
+      "timing:WM:2447db533437437f:40T",
+      "timing:WM:81e555089a6cf423:40T",
+      "timing:WM:089d1930a0f04204:40T",
+      "timing:WM:6eab277f58068de7:40T",
+      "timing:WM:0c9ee67b0531915a:40T",
+      "timing:WM:696f56e402c4c294:40T",
+      "timing:WM:d1d231d5f510ed40:40T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 36
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "negative",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -294,6 +333,14 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -318,8 +365,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "negative",
-    "status": "blocked_insufficient"
+    "status": "stable_confirmed"
   }
 }

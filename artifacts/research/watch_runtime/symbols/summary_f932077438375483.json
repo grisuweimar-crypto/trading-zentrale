@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-15T18:31:52.229858+00:00",
+  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,14 +29,13 @@
     "conflicts": [
       {
         "negative_claim_ids": [
-          "timing:WPM.TO:ef7f3870ca002abb:5T",
-          "timing:WPM.TO:9a55520ffefb694c:60T"
+          "timing:WPM.TO:6b9ad841e92f8191:60T",
+          "timing:WPM.TO:9a55520ffefb694c:60T",
+          "timing:WPM.TO:312bf577128ab874:60T",
+          "timing:WPM.TO:6c608d2ad71a6396:60T"
         ],
         "positive_claim_ids": [
-          "timing:WPM.TO:03f6bed3788ea96b:5T",
-          "timing:WPM.TO:2ec83739629fba4d:5T",
-          "timing:WPM.TO:838b819bd450346e:5T",
-          "timing:WPM.TO:2fbfff31832fc700:60T"
+          "timing:WPM.TO:838b819bd450346e:5T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -44,15 +43,14 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:WPM.TO:03f6bed3788ea96b:5T",
-      "timing:WPM.TO:2ec83739629fba4d:5T",
       "timing:WPM.TO:838b819bd450346e:5T",
-      "timing:WPM.TO:ef7f3870ca002abb:5T",
-      "timing:WPM.TO:2fbfff31832fc700:60T",
-      "timing:WPM.TO:9a55520ffefb694c:60T"
+      "timing:WPM.TO:6b9ad841e92f8191:60T",
+      "timing:WPM.TO:9a55520ffefb694c:60T",
+      "timing:WPM.TO:312bf577128ab874:60T",
+      "timing:WPM.TO:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 6
+      "timing": 5
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -61,7 +59,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
+  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -318,6 +316,14 @@
       "source_snapshot_id": "699ea073-9d63-471f-ba89-4292da494a26",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-16T18:12:41.906923+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
@@ -328,8 +334,8 @@
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
-    "last_overextension_date": "2026-10-15",
-    "last_overextension_rs3m": 0.24937275536063375,
+    "last_overextension_date": "2026-10-16",
+    "last_overextension_rs3m": 0.2606514216197213,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
