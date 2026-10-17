@@ -25,3 +25,11 @@ def test_unsupported_exchange_is_not_guessed():
     c=pd.Series([1.,2.],index=pd.to_datetime(["2026-10-16","2026-10-17"]))
     x,_=_completed_daily_series_for_venue(c,None,as_of=datetime(2026,10,17,23,tzinfo=timezone.utc),symbol="XYZ.UNKNOWN")
     assert x.empty
+
+
+def test_real_universe_additional_listings_are_recognized():
+    c = pd.Series([10.0, 11.0], index=pd.to_datetime(["2026-10-15", "2026-10-16"]))
+    asof = datetime(2026, 10, 17, 14, tzinfo=timezone.utc)
+    for ticker in ("AUTO.OL", "TSMN.MX", "SOLB.BR", "TOM.OL", "UMI.BR", "LC0A.MU", "NOVO-B.CO", "RIGD.IL"):
+        x, _ = _completed_daily_series_for_venue(c, None, as_of=asof, symbol=ticker)
+        assert len(x) == 2, ticker
