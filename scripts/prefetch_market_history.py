@@ -227,9 +227,14 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
         checked = prior.get("bootstrap_checked_at")
         exhausted = (prior.get("history_exhausted") and prior.get("minimum_sessions_target") == minimum_days
                      and checked and (now.date() - date.fromisoformat(checked)).days < 30)
-        missing_adjusted = bool(grouped[symbol]) and any(
+        # Only the current research window needs complete adjusted closes.
+        # Historical gaps older than the most recent N observed sessions must
+        # not force a full two-year migration download on EVERY daily run.
+        # Those legacy gaps remain preserved as missing for old research.
+        recent_window = sorted(grouped[symbol], key=lambda item: item["date"])[-minimum_days:]
+        missing_adjusted = bool(recent_window) and any(
             number(item.get("adj_close")) is None or number(item.get("adj_close")) <= 0
-            for item in grouped[symbol]
+            for item in recent_window
         )
         if missing_adjusted:
             # One-time migration of the historical research window. Two years is
