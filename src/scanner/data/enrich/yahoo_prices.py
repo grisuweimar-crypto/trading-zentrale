@@ -389,6 +389,7 @@ def enrich_watchlist_with_yahoo(
     benchmark_crypto: str = "BTC-USD",
     enabled: bool | None = None,
     as_of: datetime | None = None,
+    downloaded_frame: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, YahooEnrichReport]:
     """Enrich a watchlist table in-place (copy) using Yahoo Finance.
 
@@ -467,7 +468,7 @@ def enrich_watchlist_with_yahoo(
 
     # Download 1y daily bars (auto_adjust gives consistent close)
     provider_fetch_started_at_utc = datetime.now(timezone.utc).isoformat()
-    dl = yf.download(
+    dl = downloaded_frame if downloaded_frame is not None else yf.download(
         tickers=all_dl,
         period="1y",
         interval="1d",
