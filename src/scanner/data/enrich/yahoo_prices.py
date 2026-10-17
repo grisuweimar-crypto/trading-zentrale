@@ -530,7 +530,14 @@ def enrich_watchlist_with_yahoo(
             continue
         if close is None or close.dropna().empty:
             failed += 1
+            if closed_daily_only:
+                for field in ("Akt. Kurs", "Perf %", "Perf 1D %", "Perf 1Y %", "SMA200", "Trend200", "RS3M", "Volatility", "DownsideDev", "MaxDrawdown", "AvgVolume", "DollarVolume"):
+                    out.at[idx, field] = float("nan")
+                out.at[idx, "price_bar_status"] = "NO_ELIGIBLE_CLOSED_BAR"
             continue
+        if closed_daily_only:
+            out.at[idx, "price_bar_date"] = str(pd.Timestamp(close.index[-1]).date())
+            out.at[idx, "price_bar_status"] = "CLOSED_PREVIOUS_SESSION"
 
         # Choose benchmark for RS: stocks vs crypto pairs
         bench = b_crypto_close if _looks_like_crypto_pair(sym) else b_stock_close
