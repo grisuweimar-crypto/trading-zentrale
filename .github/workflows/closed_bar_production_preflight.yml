@@ -9,6 +9,9 @@ on:
       - 'src/scanner/app/build_watchlist.py'
       - 'src/scanner/data/enrich/yahoo_prices.py'
       - 'tests/test_closed_bar_production_cutover.py'
+      - 'tests/test_cycle_provider_receipt.py'
+      - 'src/scanner/data/closed_market_bridge.py'
+      - 'src/scanner/data/closed_market_cache.py'
 permissions:
   contents: read
 jobs:
