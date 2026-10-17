@@ -1,5 +1,5 @@
 {
-  "run_at_utc": "2026-10-17T16:38:04.666314+00:00",
+  "run_at_utc": "2026-10-17T16:43:04.030438+00:00",
   "universe_rows": 228,
   "identity_col": "YahooSymbol",
   "reports": {
@@ -11,20 +11,20 @@
       "benchmark_stock": "SPY",
       "benchmark_crypto": "BTC-USD",
       "market_regime_stock": "bull",
-      "market_trend200_stock": 0.05731240300828144,
+      "market_trend200_stock": 0.057312404796208805,
       "market_regime_crypto": "bull",
-      "market_trend200_crypto": 0.12028750343356798,
+      "market_trend200_crypto": 0.12076151420648373,
       "market_date": "2026-10-17",
-      "provider_frame_sha256": "d7ae40678eb11085971b9fb997ca0c67f24b13fe1026e343beaa66b8bacfa457",
+      "provider_frame_sha256": "fdccb93f47411eaeac858945d87dc489bbcef66bff579fbdb6b1626dcaab3a6e",
       "provider_frame_rows": 367,
-      "provider_fetch_started_at_utc": "2026-10-17T16:37:01.443548+00:00",
-      "provider_fetch_completed_at_utc": "2026-10-17T16:37:12.459486+00:00"
+      "provider_fetch_started_at_utc": "2026-10-17T16:42:32.031679+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:42:32.031687+00:00"
     },
     "closed": {
       "enabled": true,
       "tickers_total": 220,
-      "tickers_fetched": 227,
-      "tickers_failed": 1,
+      "tickers_fetched": 228,
+      "tickers_failed": 0,
       "benchmark_stock": "SPY",
       "benchmark_crypto": "BTC-USD",
       "market_regime_stock": "bull",
@@ -32,75 +32,65 @@
       "market_regime_crypto": "bull",
       "market_trend200_crypto": 0.1263248318336947,
       "market_date": "2026-10-17",
-      "provider_frame_sha256": "781ac755876e8d0ad44aec4dbf5a20cf963258102f8b06fe7dff81917f22693b",
+      "provider_frame_sha256": "fdccb93f47411eaeac858945d87dc489bbcef66bff579fbdb6b1626dcaab3a6e",
       "provider_frame_rows": 367,
-      "provider_fetch_started_at_utc": "2026-10-17T16:37:31.988495+00:00",
-      "provider_fetch_completed_at_utc": "2026-10-17T16:37:43.402642+00:00",
+      "provider_fetch_started_at_utc": "2026-10-17T16:42:47.317964+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:42:47.317974+00:00",
       "bar_status_counts": {
-        "CLOSED_PREVIOUS_SESSION": 227,
-        "NO_ELIGIBLE_CLOSED_BAR": 1
+        "CLOSED_PREVIOUS_SESSION": 228
       },
       "bar_dates": {
-        "2026-10-16": 225,
-        "2026-10-15": 2,
-        "": 1
+        "2026-10-16": 226,
+        "2026-10-15": 2
       },
-      "error_counts": {
-        "PRICE_BAR_NOT_VERIFIED": 1
-      },
-      "blocked_symbols": [
-        {
-          "symbol": "MC.PA",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        }
-      ]
+      "error_counts": {},
+      "blocked_symbols": []
     }
   },
   "metrics": {
     "Score": {
-      "comparable": 227,
-      "changed": 32,
+      "comparable": 228,
+      "changed": 9,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.6400000000000006
+      "max_abs_change": 0.6000000000000014
     },
     "OpportunityScore": {
-      "comparable": 227,
-      "changed": 11,
+      "comparable": 228,
+      "changed": 8,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.990000000000002
+      "max_abs_change": 0.9200000000000017
     },
     "RiskScore": {
-      "comparable": 227,
-      "changed": 31,
-      "median_abs_change": 0.0,
-      "max_abs_change": 0.15000000000000213
-    },
-    "ConfidenceScore": {
-      "comparable": 227,
-      "changed": 10,
-      "median_abs_change": 0.0,
-      "max_abs_change": 6.299999999999997
-    },
-    "Akt. Kurs": {
-      "comparable": 227,
-      "changed": 8,
-      "median_abs_change": 0.0,
-      "max_abs_change": 364.5859375
-    },
-    "Trend200": {
-      "comparable": 226,
-      "changed": 8,
-      "median_abs_change": 0.0,
-      "max_abs_change": 0.0279711121041994
-    },
-    "RS3M": {
-      "comparable": 227,
+      "comparable": 228,
       "changed": 7,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.0313631011437899
+      "max_abs_change": 0.10000000000000142
+    },
+    "ConfidenceScore": {
+      "comparable": 228,
+      "changed": 9,
+      "median_abs_change": 0.0,
+      "max_abs_change": 6.200000000000003
+    },
+    "Akt. Kurs": {
+      "comparable": 228,
+      "changed": 8,
+      "median_abs_change": 0.0,
+      "max_abs_change": 330.0625
+    },
+    "Trend200": {
+      "comparable": 227,
+      "changed": 8,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.026002504562911997
+    },
+    "RS3M": {
+      "comparable": 228,
+      "changed": 7,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.03081352810756681
     }
   },
-  "original_legacy_snapshot_reused": false,
-  "note": "Two provider fetches at different times; exploratory shadow comparison, NOT strictly same-download paired test. No productive outputs modified."
+  "original_legacy_snapshot_reused": true,
+  "note": "Same frozen provider DataFrame and as_of used for both scenarios; exploratory paired test. No productive outputs modified."
 }
