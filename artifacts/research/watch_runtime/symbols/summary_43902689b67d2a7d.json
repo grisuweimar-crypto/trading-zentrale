@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
+  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,10 +29,10 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:HIMS:03f6bed3788ea96b:5T",
-      "timing:HIMS:2ec83739629fba4d:5T",
-      "timing:HIMS:838b819bd450346e:5T",
-      "timing:HIMS:2fbfff31832fc700:60T"
+      "timing:HIMS:862e678b240083af:40T",
+      "timing:HIMS:8868c70444a4a57f:40T",
+      "timing:HIMS:9d34e7ebabe3e590:40T",
+      "timing:HIMS:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
       "timing": 4
@@ -44,7 +44,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -309,15 +309,23 @@
       "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-17T17:20:08.556002+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "rank_worsening_5t": true,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
+      "trend200_falling_5t": true
     },
     "last_overextension_date": null,
     "last_overextension_rs3m": null,

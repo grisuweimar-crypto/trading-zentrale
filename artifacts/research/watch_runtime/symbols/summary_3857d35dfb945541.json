@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
+  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,16 +29,12 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:NIO:d18193c29692a1cb:5T",
-      "timing:NIO:056cab0d8c42f322:5T",
+      "timing:NIO:9aace91dab644870:5T",
       "timing:NIO:838b819bd450346e:5T",
-      "timing:NIO:ae61c82fbb0371fc:20T",
-      "timing:NIO:a4278e33701f9d98:20T",
-      "timing:NIO:677e719dc170acd6:40T",
-      "timing:NIO:2d034c21b8215d13:40T"
+      "timing:NIO:6267ff2c27f27eb8:20T"
     ],
     "known_directional_family_counts": {
-      "timing": 7
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -47,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -312,15 +308,23 @@
       "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-17T17:20:08.556002+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
+      "rank_worsening_5t": true,
       "rs3m_falling_5t": false,
       "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "trend200_falling_5t": true
     },
     "last_overextension_date": null,
     "last_overextension_rs3m": null,

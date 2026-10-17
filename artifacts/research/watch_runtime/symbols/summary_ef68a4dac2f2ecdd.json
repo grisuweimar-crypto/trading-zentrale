@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
+  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,7 +29,7 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:ABX.TO:838b819bd450346e:5T"
+      "timing:ABX.TO:1aa807ae1a9556c5:20T"
     ],
     "known_directional_family_counts": {
       "timing": 1
@@ -41,7 +41,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -306,6 +306,14 @@
       "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-17T17:20:08.556002+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -314,17 +322,17 @@
       "rank_worsening_5t": false,
       "rs3m_falling_5t": false,
       "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "trend200_falling_5t": true
     },
-    "last_overextension_date": "2026-08-25",
-    "last_overextension_rs3m": 0.1687113799173385,
-    "overextension_active": false,
-    "recent_overextension": false,
-    "sessions_since_last_overextension": 52,
-    "upstream_review_state": "none",
-    "upstream_sequence_state": "no_recent_overextension_context"
+    "last_overextension_date": "2026-10-17",
+    "last_overextension_rs3m": 0.15542211881658408,
+    "overextension_active": true,
+    "recent_overextension": true,
+    "sessions_since_last_overextension": 0,
+    "upstream_review_state": "monitor",
+    "upstream_sequence_state": "active_overextension"
   },
-  "state_history_state": "post_overextension_correction",
+  "state_history_state": "overextended",
   "symbol": "ABX.TO",
   "transition_state": {
     "pending_confirmation_count": 0,

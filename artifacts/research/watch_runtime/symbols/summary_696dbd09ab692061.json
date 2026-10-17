@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
+  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -37,7 +37,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -302,23 +302,31 @@
       "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-17T17:20:08.556002+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rank_worsening_5t": true,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-09-29",
     "last_overextension_rs3m": 0.192674240596901,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 17,
-    "upstream_review_state": "monitor",
-    "upstream_sequence_state": "post_overextension_memory"
+    "sessions_since_last_overextension": 18,
+    "upstream_review_state": "profit_protection_review",
+    "upstream_sequence_state": "post_overextension_decay"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "CRYPTO:ADA",

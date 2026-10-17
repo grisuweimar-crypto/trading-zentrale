@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-16T18:12:41.906923+00:00",
+  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -29,26 +29,19 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:SPOT:13dfd193091882d7:5T",
-      "timing:SPOT:d18193c29692a1cb:5T",
-      "timing:SPOT:2ec83739629fba4d:5T",
-      "timing:SPOT:1758b10ff7893792:20T",
-      "timing:SPOT:a4278e33701f9d98:20T",
-      "timing:SPOT:1aa807ae1a9556c5:20T",
-      "timing:SPOT:b5c6f29104b27dae:40T",
-      "timing:SPOT:2d034c21b8215d13:40T"
+      "timing:SPOT:e3f414dec0e09a39:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 8
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "positive",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
+  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -313,21 +306,29 @@
       "source_snapshot_id": "41aab262-2765-4404-ab38-06c122bbf6ef",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-17T17:20:08.556002+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": true,
+      "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
-      "score_falling_5t": true,
+      "score_falling_5t": false,
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-09-16",
     "last_overextension_rs3m": 0.1859427251884222,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 30,
+    "sessions_since_last_overextension": 31,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
