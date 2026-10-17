@@ -507,6 +507,17 @@ def enrich_watchlist_with_yahoo(
     out["MarketTrend200Crypto"] = crypto_trend200
     out["MarketDate"] = market_date
 
+    if closed_daily_only:
+        # A missing or not-yet-defined historical indicator must NOT retain
+        # yesterday's watchlist feature. Crucial for recent IPOs with <200 bars.
+        price_fields=("Akt. Kurs", "Perf %", "Perf 1D %", "Perf 1Y %",
+                      "SMA200", "Trend200", "RS3M", "Volatility",
+                      "DownsideDev", "MaxDrawdown", "AvgVolume", "DollarVolume")
+        for field in price_fields:
+            out[field] = float("nan")
+        out["price_bar_status"] = "NO_ELIGIBLE_CLOSED_BAR"
+        out["price_bar_date"] = ""
+
     fetched = 0
     failed = 0
     cycle_input_bars = []
