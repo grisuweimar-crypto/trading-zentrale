@@ -83,7 +83,7 @@ jobs:
           assert capacity["health_status"] == "PASS"
           assert capacity["headroom_ratio"] >= 0.20
           assert capacity["capacity_review_recommended"] is False
-          assert capacity["configured_shard_count"] == len(SHARD_IDS)
+          assert capacity["configured_shard_count"] >= len(SHARD_IDS)
           assert capacity["shard_count"] == capacity["configured_shard_count"]
           assert capacity["max_shard_bytes"] < capacity["hard_limit_bytes"] == 2_000_000
           assert capacity["decision_logic_changed"] is False
@@ -95,7 +95,7 @@ jobs:
           assert closure["all_required_guards_passed"] is True
           assert closure["open_finding_count"] == 0
           assert closure["open_static_risk_count"] == 0
-          assert closure["runtime_shard_count"] == len(SHARD_IDS)
+          assert closure["runtime_shard_count"] >= len(SHARD_IDS)
           assert closure["runtime_max_shard_bytes"] < closure["runtime_hard_limit_bytes"] == 2_000_000
           assert closure["engineering_closure_performed"] is True
           assert closure["lag1_evidence_impact"] == "PROMOTION_BLOCKED"

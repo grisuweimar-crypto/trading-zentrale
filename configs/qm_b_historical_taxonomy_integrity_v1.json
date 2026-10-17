@@ -148,6 +148,11 @@
       "path": "src/scanner/app/build_watchlist.py",
       "status": "SAFE",
       "reason": "Reviewed in CYCLE-DIR CY-01 / PR #260: the production builder reads current watchlist and current Yahoo-enriched rows only, materializes nullable cycle plus current-run quality, and emits current-run reports. Its taxonomy/pillar assignments are current-snapshot metadata; it does not read previous research history or use present-day classifications to define or enrich historical scanner observations. The cycle/history reference in its comment is descriptive, not a historical backfill."
+    },
+    {
+      "path": "scripts/audit_uran_ab_readiness.py",
+      "status": "SAFE",
+      "reason": "Reviewed A/B readiness report: current cluster_official is returned only as descriptive contemporaneous current-snapshot metadata; historical matches are read verbatim from daily_research precomputed stored-feature filters, without using the current cluster to select or retrospectively enrich historical samples. No historical taxonomy backfill or universe_master lookup. It explicitly labels noncomparable cohorts and refuses to estimate an A/B performance advantage."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,

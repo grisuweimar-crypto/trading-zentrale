@@ -29,7 +29,11 @@ SHARD_SCHEMA_VERSION = "decision_watch_runtime_shard_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 DEFAULT_RUNTIME_MANIFEST = f"{DEFAULT_RUNTIME_DIR}/manifest.json"
 SHARD_IDS = tuple(f"{index:02x}" for index in range(64))
-PARTITION_STRATEGY = "size_balanced_v1"
+PARTITION_STRATEGY = "size_balanced_v2_auto_expand"
+LEGACY_PARTITION_STRATEGY = "size_balanced_v1"
+RUNTIME_HARD_LIMIT_BYTES = 2_000_000
+RUNTIME_TARGET_BYTES = 1_600_000
+MAX_AUTO_SHARDS = 1024
 
 
 class WatchRuntimeError(ValueError):
@@ -179,7 +183,7 @@ def _latest_revision_packets(
     return result
 
 
-def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, object]]]) -> dict[str, str]:
+def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, object]]], shard_ids: Sequence[str] = SHARD_IDS) -> dict[str, str]:
     """Deterministic lossless balancing, with local search for discrete symbol weights.
 
     Entire symbol histories stay on one shard. The previous greedy-only placement
@@ -192,10 +196,10 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
         )
         for symbol, packets in histories.items()
     }
-    loads = {shard_id: 0 for shard_id in SHARD_IDS}
+    loads = {shard_id: 0 for shard_id in shard_ids}
     mapping: dict[str, str] = {}
     for symbol in sorted(weights, key=lambda name: (-weights[name], name)):
-        shard_id = min(SHARD_IDS, key=lambda name: (loads[name], name))
+        shard_id = min(shard_ids, key=lambda name: (loads[name], name))
         mapping[symbol] = shard_id
         loads[shard_id] += weights[symbol]
 
@@ -209,7 +213,7 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
         for symbol in symbols:
             old = mapping[symbol]
             weight = weights[symbol]
-            for new in SHARD_IDS:
+            for new in shard_ids:
                 if new == old:
                     continue
                 changed = dict(loads)
@@ -285,31 +289,44 @@ def build_watch_runtime(
         decision_as_of=decision_as_of,
     )
 
-    shard_packets: dict[str, list[dict[str, object]]] = {key: [] for key in SHARD_IDS}
-    symbol_shards: dict[str, str] = {}
-    routing = _size_balanced_symbol_shards(histories)
-    for symbol, packets in histories.items():
-        shard_id = routing[symbol]
-        shard_packets[shard_id].extend(packets)
-        symbol_shards[symbol] = f"shard_{shard_id}.json"
+    # The 20% headroom is a preventive expansion trigger, never a second
+    # reason to abort while a lossless repartition is possible.
+    shard_ids = SHARD_IDS
+    while True:
+        shard_packets: dict[str, list[dict[str, object]]] = {key: [] for key in shard_ids}
+        symbol_shards: dict[str, str] = {}
+        routing = _size_balanced_symbol_shards(histories, shard_ids)
+        for symbol, packets in histories.items():
+            shard_id = routing[symbol]
+            shard_packets[shard_id].extend(packets)
+            symbol_shards[symbol] = f"shard_{shard_id}.json"
 
-    shards: dict[str, dict[str, object]] = {}
-    for shard_id in SHARD_IDS:
-        packets = sorted(
-            shard_packets[shard_id],
-            key=lambda item: (str(item["symbol"]), _utc(item["as_of"], "packet_as_of")),
-        )
-        symbols = sorted({str(packet["symbol"]) for packet in packets})
-        shards[shard_id] = {
-            "schema_version": SHARD_SCHEMA_VERSION,
-            "snapshot_id": snapshot_id,
-            "decision_as_of": decision_as_of,
-            "shard_id": shard_id,
-            "symbols": symbols,
-            "packet_count": len(packets),
-            "packets": packets,
-            "private_position_data_included": False,
+        shards: dict[str, dict[str, object]] = {}
+        for shard_id in shard_ids:
+            packets = sorted(
+                shard_packets[shard_id],
+                key=lambda item: (str(item["symbol"]), _utc(item["as_of"], "packet_as_of")),
+            )
+            symbols = sorted({str(packet["symbol"]) for packet in packets})
+            shards[shard_id] = {
+                "schema_version": SHARD_SCHEMA_VERSION,
+                "snapshot_id": snapshot_id,
+                "decision_as_of": decision_as_of,
+                "shard_id": shard_id,
+                "symbols": symbols,
+                "packet_count": len(packets),
+                "packets": packets,
+                "private_position_data_included": False,
+            }
+        sizes = {
+            key: len((json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n").encode("utf-8"))
+            for key, value in shards.items()
         }
+        if max(sizes.values()) <= RUNTIME_TARGET_BYTES:
+            break
+        if len(shard_ids) >= MAX_AUTO_SHARDS:
+            raise WatchRuntimeError("runtime_auto_expansion_exhausted")
+        shard_ids = tuple(f"{index:03x}" for index in range(len(shard_ids) * 2))
 
     stages = sealed.get("stages")
     assert isinstance(stages, Mapping)
@@ -329,12 +346,12 @@ def build_watch_runtime(
         "source_archive_7a_sha256": str(archive.get("artifact_sha256") or ""),
         "symbol_count": len(histories),
         "packet_count": sum(len(value) for value in histories.values()),
-        "shard_count": len(SHARD_IDS),
+        "shard_count": len(shard_ids),
         "symbol_shards": dict(sorted(symbol_shards.items())),
         "private_position_data_included": False,
         "decision_logic_changed": False,
         "runtime_projection_sha256": _canonical_sha256({
-            key: _canonical_sha256(shards[key]) for key in SHARD_IDS
+            key: _canonical_sha256(shards[key]) for key in shard_ids
         }),
     }
     return manifest, shards
@@ -349,7 +366,7 @@ def write_watch_runtime(
     output_dir.mkdir(parents=True, exist_ok=True)
     for old in output_dir.glob("shard_*.json"):
         old.unlink()
-    for shard_id in SHARD_IDS:
+    for shard_id in sorted(shards):
         shard = shards.get(shard_id)
         if not isinstance(shard, Mapping):
             raise WatchRuntimeError(f"runtime_shard_missing:{shard_id}")
@@ -371,7 +388,7 @@ def validate_runtime_manifest(
 ) -> dict[str, object]:
     if manifest.get("schema_version") != MANIFEST_SCHEMA_VERSION:
         raise WatchRuntimeError("unsupported_runtime_manifest_schema")
-    if "partition_strategy" in manifest and manifest["partition_strategy"] != PARTITION_STRATEGY:
+    if "partition_strategy" in manifest and manifest["partition_strategy"] not in (PARTITION_STRATEGY, LEGACY_PARTITION_STRATEGY):
         raise WatchRuntimeError("unsupported_runtime_partition_strategy")
     snapshot_id = str(manifest.get("snapshot_id") or "")
     if not snapshot_id:

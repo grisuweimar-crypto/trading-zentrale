@@ -41,7 +41,7 @@ jobs:
           root=Path('/tmp/argus-fast-capacity')
           files=sorted(root.glob('shard_*.json'))
           m=json.loads((root/'manifest.json').read_text())
-          assert len(files)==64 and m['symbol_count']==220
+          assert len(files) == m['shard_count'] and m['shard_count'] >= 64 and m['symbol_count'] == 220
           assert m['private_position_data_included'] is False
           records=[json.loads(p.read_text()) for p in files]
           assert sum(x['packet_count'] for x in records)==m['packet_count']
