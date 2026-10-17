@@ -5,7 +5,7 @@ from scanner.data.enrich.yahoo_prices import enrich_watchlist_with_yahoo
 def test_newly_listed_security_does_not_keep_stale_sma200(monkeypatch):
     monkeypatch.setenv("SCANNER_CLOSED_DAILY_ONLY","1")
     # 87 genuine observations, deliberately fewer than 200
-    dates=pd.bdate_range("2026-06-01",periods=87)
+    dates=pd.bdate_range(end="2026-10-16",periods=87)
     dates=dates[dates<pd.Timestamp("2026-10-17")]
     frame=pd.DataFrame({("Close","SPCX"):range(1,len(dates)+1),
                         ("Volume","SPCX"):[1_000_000]*len(dates),
