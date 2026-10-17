@@ -1,0 +1,76 @@
+name: Live W10 to private synthetic W11 acceptance (read-only)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/closed_bar_live_w11_probe.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Checkout immutable current main inputs (not shadow branch artifacts)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: live
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -e './live[test]'
+      - name: Validate deployed W10 identity and run private synthetic W11
+        run: |
+          python - <<'PY'
+          import json,subprocess,sys,os
+          from pathlib import Path
+          root=Path("live").resolve()
+          tmp=Path(os.environ["RUNNER_TEMP"])
+          daily=json.loads((root/"artifacts/research/daily_research.json").read_text())
+          w10=json.loads((root/"artifacts/research/decision_snapshot_w10.json").read_text())
+          runtime=json.loads((root/"artifacts/research/watch_runtime/manifest.json").read_text())
+          sid=daily["snapshot_id"]
+          assert w10["status"]=="sealed"
+          assert sid==w10["snapshot_id"]==runtime["snapshot_id"],"W10 and runtime different snapshots"
+          symbols=daily.get("symbols",{})
+          sym="UEC" if "UEC" in symbols else sorted(symbols)[0]
+          item=symbols[sym]["current"]
+          price=float(item["close"])
+          assert price>0
+          stamp=daily["generated_at"]
+          book={"schema_version":"decision_depot_position_book_v1",
+                "source_snapshot_id":"SYNTHETIC-W11-ONLY",
+                "as_of":stamp,
+                "positions":[{"schema_version":"decision_position_snapshot_v1",
+                  "symbol":sym,"source_snapshot_id":"SYNTHETIC-W11-ONLY",
+                  "as_of":stamp,"position_state":"long","quantity":1,
+                  "currency":str(item.get("currency") or "USD"),
+                  "average_entry_price":round(price*.95,6),"current_price":price}]}
+          path=tmp/"synthetic_private_position.json"
+          path.write_text(json.dumps(book))
+          out=tmp/"w11_private"
+          subprocess.run([sys.executable,str(root/"scripts/run_depot_watch_e2e_w11.py"),
+                    "--root",str(root),"--positions",str(path),
+                    "--private-output-dir",str(out)],check=True)
+          receipt=json.loads((out/"w11_acceptance_receipt.json").read_text())
+          assert receipt.get("status")=="passed",receipt.get("status")
+          assert receipt.get("snapshot_id")==sid
+          assert receipt.get("receipt_contains_position_rows") is False
+          safe={"status":"passed","current_main_snapshot_id":sid,
+                "w10_status":w10["status"],"runtime_symbol_count":runtime["symbol_count"],
+                "w11_status":receipt["status"],
+                "fixture":"synthetic_only_no_real_position_data",
+                "production_change_performed":False}
+          Path("w11_safe_receipt.json").write_text(json.dumps(safe,indent=2))
+          print(json.dumps(safe))
+          PY
+      - name: Archive privacy-safe proof only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: read-only-live-w10-w11-synthetic-receipt
+          path: w11_safe_receipt.json
+          if-no-files-found: warn
