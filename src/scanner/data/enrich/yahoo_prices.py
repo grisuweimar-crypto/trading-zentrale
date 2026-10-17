@@ -220,6 +220,30 @@ def _series_from_download(dl: pd.DataFrame, ticker: str) -> tuple[pd.Series | No
     return close.dropna(), vol
 
 
+
+
+def _completed_daily_series(
+    close: pd.Series | None,
+    volume: pd.Series | None,
+    *,
+    as_of: datetime,
+) -> tuple[pd.Series | None, pd.Series | None]:
+    """Conservative closed-day gate for the staged research cutover.
+
+    Never consume the current UTC calendar day's still possibly open session.
+    This is deliberately conservative for Asian/European exchanges: today's
+    already-closed session is deferred until the next UTC day. A future
+    exchange-calendar-specific gate should supersede this function.
+    """
+    if close is None:
+        return None, None
+    cutoff = as_of.astimezone(timezone.utc).date()
+    dates = pd.to_datetime(close.index, utc=True, errors="coerce")
+    mask = dates.date < cutoff
+    filtered_close = close.loc[mask]
+    filtered_volume = None if volume is None else volume.loc[volume.index.intersection(filtered_close.index)]
+    return filtered_close, filtered_volume
+
 def _compute_features(
     close: pd.Series,
     volume: pd.Series | None,
@@ -425,9 +449,16 @@ def enrich_watchlist_with_yahoo(
     provider_frame_sha256 = _frame_digest(dl)
     provider_frame_rows = int(len(dl))
 
+    closed_daily_only = os.getenv("SCANNER_CLOSED_DAILY_ONLY", "0").strip().lower() in {"1", "true", "yes"}
+    # In the opt-in closed-day mode the entire benchmark and symbol universe
+    # uses the same conservative time boundary before feature calculation.
+    # We do not modify the original provider frame or its receipt hash.
     # Benchmark features
     b_stock_close, _ = _series_from_download(dl, benchmark_stock)
     b_crypto_close, _ = _series_from_download(dl, benchmark_crypto)
+    if closed_daily_only:
+        b_stock_close, _ = _completed_daily_series(b_stock_close, None, as_of=now)
+        b_crypto_close, _ = _completed_daily_series(b_crypto_close, None, as_of=now)
     b_stock = _compute_features(b_stock_close, None) if b_stock_close is not None else {}
     b_crypto = _compute_features(b_crypto_close, None) if b_crypto_close is not None else {}
 
@@ -452,6 +483,8 @@ def enrich_watchlist_with_yahoo(
     # recomputed or explicitly unavailable; it is never recycled as fresh.
     for idx, sym in zip(out.index, row_symbols):
         close, vol = _series_from_download(dl, sym) if sym else (None, None)
+        if closed_daily_only:
+            close, vol = _completed_daily_series(close, vol, as_of=now)
         row = out.loc[idx]
         evidence = calculate_cycle(close, symbol=sym, currency=_cycle_currency(row),
                                    is_crypto=_looks_like_crypto_pair(sym), as_of=now)
