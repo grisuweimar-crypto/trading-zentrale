@@ -11,10 +11,17 @@ base=pd.read_csv(src,low_memory=False)
 assert len(base)>=100, "unexpectedly small watchlist"
 out=root/"artifacts/research/closed_bar_shadow"
 out.mkdir(parents=True,exist_ok=True)
+import yfinance as yf
+from scanner.data.enrich.yahoo_prices import _pick_symbol
+symbols=sorted({_pick_symbol(row) for _,row in base.iterrows() if _pick_symbol(row)} | {"SPY","BTC-USD"})
+frozen=yf.download(tickers=symbols,period="1y",interval="1d",auto_adjust=True,group_by="column",threads=True,progress=False)
+assert frozen is not None and not frozen.empty
+frozen.to_pickle(out/"frozen_provider_frame.pkl")
+fixed_asof=datetime.datetime.now(datetime.timezone.utc)
 reports={}
 for name,closed in [("legacy",False),("closed",True)]:
  os.environ["SCANNER_CLOSED_DAILY_ONLY"]="1" if closed else "0"
- enriched,rep=enrich_watchlist_with_yahoo(base.copy(),enabled=True)
+ enriched,rep=enrich_watchlist_with_yahoo(base.copy(),enabled=True,as_of=fixed_asof,downloaded_frame=frozen)
  scored=apply_scoring(enriched,universe_csv_path=str(src))
  scored.to_csv(out/(name+"_scored.csv"),index=False)
  reports[name]=rep.__dict__
@@ -42,7 +49,7 @@ for c in ["Score","OpportunityScore","RiskScore","ConfidenceScore","Akt. Kurs","
            "max_abs_change":float(change.max()) if len(change) else None}
 summary={"run_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
  "universe_rows":len(base),"identity_col":key,"reports":reports,"metrics":delta,
- "original_legacy_snapshot_reused":False,
- "note":"Two provider fetches at different times; exploratory shadow comparison, NOT strictly same-download paired test. No productive outputs modified."}
+ "original_legacy_snapshot_reused":True,
+ "note":"Same frozen provider DataFrame and as_of used for both scenarios; exploratory paired test. No productive outputs modified."}
 (out/"comparison.json").write_text(json.dumps(summary,indent=2,default=str))
 print(json.dumps({"universe_rows":len(base),"bar_status":reports["closed"].get("bar_status_counts"),"metric_deltas":delta},default=str))
