@@ -235,3 +235,22 @@ def test_manifest_accepts_legacy_strategy_absence_but_rejects_unknown_strategy()
     assert validate_runtime_manifest(old_manifest)["snapshot_id"] == CURRENT_SNAPSHOT
     with pytest.raises(WatchRuntimeError, match="unsupported_runtime_partition_strategy"):
         validate_runtime_manifest({**manifest, "partition_strategy": "unknown_strategy"})
+
+
+def test_existing_published_runtime_is_still_loadable_after_shard_fanout() -> None:
+    """Old 64-shard W10 stays readable even when NEW W10 uses 128 shards."""
+    import json
+    from pathlib import Path
+    from scanner.research.decision_layer.watch_runtime import load_runtime_packets_for_symbols
+
+    runtime_dir = Path(__file__).resolve().parents[1] / "artifacts/research/watch_runtime"
+    manifest = json.loads((runtime_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["shard_count"] <= len(SHARD_IDS)
+    symbol = sorted(manifest["symbol_shards"])[0]
+    packets, meta = load_runtime_packets_for_symbols(
+        runtime_dir, [symbol], expected_snapshot_id=manifest["snapshot_id"]
+    )
+    assert packets
+    assert all(packet["symbol"] == symbol for packet in packets)
+    assert meta["mapped_symbol_count"] == 1
+    assert meta["private_position_data_included"] is False
