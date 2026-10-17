@@ -105,9 +105,24 @@ def apply_scoring(df_raw: pd.DataFrame, *, universe_csv_path: Optional[str] = No
     opp_factors_list = []
     risk_factors_list = []
 
+    require_closed = os.getenv("SCANNER_CLOSED_DAILY_ONLY", "0").strip().lower() in {"1", "true", "yes"}
+
     for _, row in out.iterrows():
         ident = _pick_identifier(row)
-        res = calculate_scores_v6_from_row(row, universe, identifier=ident)
+        # Do not turn a missing, stale or unverified source bar into a plausible
+        # numerical Score. This also covers an enrichment exception that leaves
+        # no price_bar_status column at all.
+        bar_status = str(row.get("price_bar_status", "")).strip()
+        bar_date = str(row.get("price_bar_date", "")).strip()
+        if require_closed and (
+            bar_status != "CLOSED_PREVIOUS_SESSION"
+            or not bar_date
+            or bar_date.lower() in {"nan", "nat", "none"}
+            or pd.isna(pd.to_numeric(row.get("Akt. Kurs"), errors="coerce"))
+        ):
+            res = {"error": "PRICE_BAR_NOT_VERIFIED"}
+        else:
+            res = calculate_scores_v6_from_row(row, universe, identifier=ident)
 
         if "error" in res:
             score_list.append(pd.NA)
