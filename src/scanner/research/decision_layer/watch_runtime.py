@@ -199,6 +199,14 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
         mapping[symbol] = shard_id
         loads[shard_id] += weights[symbol]
 
+    # Do not spend many minutes rebalancing an already comfortably safe
+    # lossless routing.  The 1.4 MB trigger is deliberately stricter than the
+    # unchanged 1.6 MB (20% headroom) operational review boundary.  The
+    # publish gate still enforces the absolute 2 MB limit independently.
+    # Packet contents, historical retention and Decision stance never change.
+    if max(loads.values()) < 1_400_000:
+        return mapping
+
     # Full symbol moves and pairwise swaps must strictly improve load imbalance.
     # Never remove or change a packet, shard count, or source snapshot.
     symbols = sorted(weights)
