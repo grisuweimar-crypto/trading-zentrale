@@ -157,24 +157,33 @@ class DailyResearchTests(unittest.TestCase):
         steps = workflow["jobs"]["build"]["steps"]
         def index(text):
             return next(i for i, step in enumerate(steps) if text in step.get("run", ""))
-        self.assertLess(index("pytest tests"), index("prefetch_market_history"))
         install = index('pip install -e ".[test]"')
+        prefetch = index("prefetch_closed_bar_inputs.py")
+        scanner = index("python -m scanner.app.run_daily")
         self.assertLess(install, index("pytest tests"))
-        self.assertLess(index("--scanner-status"), index("prefetch_market_history"))
-        self.assertLess(index("prefetch_market_history"), index("--refresh-prices"))
+        self.assertLess(index("pytest tests"), prefetch)
+        # The identical canonical OHLCV window MUST be fetched before the
+        # scanner performs any scoring; never fetch new prices afterward.
+        self.assertLess(prefetch, index("--begin-run"))
+        self.assertLess(index("--begin-run"), scanner)
+        self.assertLess(scanner, index("--scanner-status"))
+        self.assertLess(index("--scanner-status"), index("audit_closed_market_archive.py"))
+        self.assertLess(index("audit_closed_market_archive.py"), index("--refresh-prices"))
         self.assertLess(index("--refresh-prices"), index("generate_daily_research.py"))
-        self.assertNotIn("AVAV ROL", steps[index("prefetch_market_history")]["run"])
-        for command in ("prefetch_market_history", "--refresh-prices"):
-            self.assertEqual(steps[index(command)]["if"], "steps.research.outputs.complete == 'true'")
-        self.assertLess(index("--begin-run"), index("python -m scanner.app.run_daily"))
-        self.assertLess(index("python -m scanner.app.run_daily"), index("--scanner-status"))
+        self.assertNotIn("AVAV ROL", steps[prefetch]["run"])
+        self.assertNotIn("prefetch_market_history.py", "\n".join(s.get("run", "") for s in steps))
+        self.assertNotIn("record_cycle_provider_receipt.py", "\n".join(s.get("run", "") for s in steps))
+        self.assertEqual(steps[index("audit_closed_market_archive.py")]["if"], "steps.research.outputs.complete == 'true'")
+        self.assertEqual(steps[index("--refresh-prices")]["if"], "steps.research.outputs.complete == 'true'")
+        self.assertEqual(steps[scanner]["env"]["SCANNER_CLOSED_DAILY_ONLY"], "1")
+        self.assertEqual(steps[scanner]["env"]["SCANNER_PRICE_SOURCE"], "archive")
         self.assertLess(index("--scanner-status"), index("generate_history_delta.py --report-only"))
         self.assertLess(index("--scanner-status"), index("generate_daily_research.py"))
         self.assertEqual(steps[index("generate_daily_research.py")]["if"], "steps.research.outputs.complete == 'true'")
         self.assertLess(index("--validate-only"), index("git add artifacts/"))
         self.assertLess(index("git add artifacts/"), index("exit 1"))
         self.assertNotIn("publish_history_analysis.py", "\n".join(s.get("run", "") for s in steps))
-        self.assertEqual(steps[index("python -m scanner.app.run_daily")]["continue-on-error"], "true")
+        self.assertEqual(steps[scanner]["continue-on-error"], "true")
         for step in steps[index("generate_history_delta.py --report-only"):index("--validate-only")]:
             self.assertEqual(step["if"], "steps.research.outputs.complete == 'true'")
 
