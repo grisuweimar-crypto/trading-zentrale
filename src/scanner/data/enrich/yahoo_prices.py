@@ -261,6 +261,14 @@ def _completed_daily_series_for_venue(
     else:
         session_dates = idx.date
     filtered = close.loc[session_dates < today]
+    # A valid prior-session observation is not necessarily fresh. Avoid
+    # reviving a multiweek-old close if the provider silently stopped updating.
+    if not filtered.empty:
+        latest = pd.Timestamp(filtered.index[-1]).date()
+        days_old = (today - latest).days
+        age_limit = 3 if _looks_like_crypto_pair(ticker) else 7
+        if days_old > age_limit:
+            filtered = filtered.iloc[:0]
     vol = None if volume is None else volume.reindex(filtered.index)
     return filtered, vol
 
