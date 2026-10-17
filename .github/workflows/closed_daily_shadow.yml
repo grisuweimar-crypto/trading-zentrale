@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'scripts/compare_closed_daily_scanner.py'
+      - 'src/scanner/data/enrich/yahoo_prices.py'
+      - 'src/scanner/app/score_step.py'
       - '.github/workflows/closed_daily_shadow.yml'
 permissions:
   contents: write
