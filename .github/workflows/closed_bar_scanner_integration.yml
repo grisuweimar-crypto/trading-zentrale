@@ -19,6 +19,24 @@ jobs:
         with:
           python-version: '3.10'
       - run: pip install -e ".[test]"
+      - name: Prefetch same canonical OHLCV for full current universe and benchmarks
+        id: price
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          from scanner.data.enrich.yahoo_prices import _pick_symbol
+          from scripts.prefetch_market_history import prefetch_history
+          src=Path("artifacts/watchlist/watchlist.csv")
+          if not src.exists():src=Path("data/inputs/watchlist.csv")
+          d=pd.read_csv(src,low_memory=False)
+          symbols={_pick_symbol(row) for _,row in d.iterrows()}
+          symbols.discard("")
+          symbols.update(("SPY","BTC-USD"))
+          result=prefetch_history(Path.cwd(),tuple(sorted(symbols)),300)
+          print("Archived rows:",len(result),"universe:",len(symbols))
+          PY
       - name: Begin isolated run receipt
         id: begin
         continue-on-error: true
@@ -50,6 +68,7 @@ jobs:
       - name: Write bounded research receipt
         if: always()
         env:
+          PRICE: ${{ steps.price.outcome }}
           BEGIN: ${{ steps.begin.outcome }}
           SCAN: ${{ steps.scanner.outcome }}
           DAILY: ${{ steps.daily.outcome }}
@@ -60,7 +79,7 @@ jobs:
           import json,os,pathlib
           root=pathlib.Path("artifacts/research/closed_bar_shadow")
           root.mkdir(parents=True,exist_ok=True)
-          values={k:os.getenv(k) for k in ("BEGIN","SCAN","DAILY","DECISION","WATCH")}
+          values={k:os.getenv(k) for k in ("PRICE","BEGIN","SCAN","DAILY","DECISION","WATCH")}
           for k,file in (("daily","artifacts/research/daily_research.json"),("metadata","artifacts/research/history_metadata.json")):
               p=pathlib.Path(file)
               if p.exists():
@@ -78,6 +97,17 @@ jobs:
           name: closed-bars-isolated-integration
           path: artifacts/research/closed_bar_shadow/isolated_integration.json
           if-no-files-found: warn
-      - name: Require scanner and daily snapshot
-        if: steps.scanner.outcome != 'success' || steps.daily.outcome != 'success'
-        run: exit 1
+      - name: Require complete new scan not a cached old W10
+        run: |
+          python - <<'PY'
+          import json,os
+          r=json.load(open("artifacts/research/closed_bar_shadow/isolated_integration.json"))
+          assert r["PRICE"]=="success",r
+          assert r["SCAN"]=="success",r
+          assert r["DAILY"]=="success",r
+          assert r["metadata_complete"] is True,r
+          assert r["metadata_as_of"]=="2026-10-17",r
+          assert r["DECISION"]=="success",r
+          assert r["WATCH"]=="success",r
+          assert r["daily_snapshot_id"]==r["metadata_snapshot_id"],r
+          PY
