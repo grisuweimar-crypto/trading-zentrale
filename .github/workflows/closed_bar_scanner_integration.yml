@@ -5,6 +5,8 @@ on:
     paths:
       - 'src/scanner/app/build_watchlist.py'
       - 'src/scanner/data/closed_market_cache.py'
+      - 'src/scanner/data/enrich/yahoo_prices.py'
+      - 'tests/test_closed_short_history.py'
       - 'src/scanner/data/closed_market_bridge.py'
       - '.github/workflows/closed_bar_scanner_integration.yml'
 permissions:
@@ -109,5 +111,8 @@ jobs:
           assert r["metadata_as_of"]=="2026-10-17",r
           assert r["DECISION"]=="success",r
           assert r["WATCH"]=="success",r
+          # Existing W10 from yesterday is never proof that today's
+          # scanner+decision watch was built or sealed.
+          assert r["metadata_snapshot_id"],r
           assert r["daily_snapshot_id"]==r["metadata_snapshot_id"],r
           PY
