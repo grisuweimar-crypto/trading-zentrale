@@ -28,7 +28,7 @@ MANIFEST_SCHEMA_VERSION = "decision_watch_runtime_manifest_v1"
 SHARD_SCHEMA_VERSION = "decision_watch_runtime_shard_v1"
 DEFAULT_RUNTIME_DIR = "artifacts/research/watch_runtime"
 DEFAULT_RUNTIME_MANIFEST = f"{DEFAULT_RUNTIME_DIR}/manifest.json"
-SHARD_IDS = tuple(f"{index:02x}" for index in range(64))
+SHARD_IDS = tuple(f"{index:02x}" for index in range(128))
 PARTITION_STRATEGY = "size_balanced_v1"
 
 
@@ -233,7 +233,7 @@ def _size_balanced_symbol_shards(histories: Mapping[str, Sequence[Mapping[str, o
                 changed_a, changed_b = loads[a] + diff, loads[b] - diff
                 # Top three suffice: excluding two shards can remove at most
                 # two of the largest loads. Evaluate swaps without scanning
-                # all 64 shards every time.
+                # all configured shards every time.
                 other_max = next(
                     value for shard, value in highest_three
                     if shard != a and shard != b
