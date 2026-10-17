@@ -220,6 +220,62 @@ def _series_from_download(dl: pd.DataFrame, ticker: str) -> tuple[pd.Series | No
     return close.dropna(), vol
 
 
+
+
+def _completed_daily_series_for_venue(
+    close: pd.Series | None,
+    volume: pd.Series | None,
+    *,
+    as_of: datetime,
+    symbol: str,
+) -> tuple[pd.Series | None, pd.Series | None]:
+    from zoneinfo import ZoneInfo
+
+    if close is None:
+        return None, None
+    suffix_tz = {
+        ".HK": "Asia/Hong_Kong", ".T": "Asia/Tokyo",
+        ".AX": "Australia/Sydney", ".L": "Europe/London",
+        ".PA": "Europe/Paris", ".DE": "Europe/Berlin",
+        ".F": "Europe/Berlin", ".MI": "Europe/Rome",
+        ".AS": "Europe/Amsterdam", ".SW": "Europe/Zurich",
+        ".TO": "America/Toronto", ".V": "America/Toronto",
+        ".SA": "America/Sao_Paulo", ".JO": "Africa/Johannesburg",
+        ".OL": "Europe/Oslo", ".MX": "America/Mexico_City",
+        ".BR": "Europe/Brussels", ".MU": "Europe/Berlin",
+        ".CO": "Europe/Copenhagen", ".IL": "Europe/London",
+        ".KS": "Asia/Seoul", ".KQ": "Asia/Seoul",
+        ".SS": "Asia/Shanghai", ".SZ": "Asia/Shanghai",
+    }
+    ticker = str(symbol).upper()
+    if _looks_like_crypto_pair(ticker):
+        timezone_name = "UTC"
+    else:
+        timezone_name = next((tz for suffix,tz in suffix_tz.items() if ticker.endswith(suffix)), None)
+        if timezone_name is None:
+            if "." in ticker or ticker.startswith("^"):
+                # Unknown listing / index calendar cannot be assumed.
+                return close.iloc[0:0], (volume.iloc[0:0] if volume is not None else None)
+            timezone_name = "America/New_York"
+    today = as_of.astimezone(ZoneInfo(timezone_name)).date()
+    idx = pd.to_datetime(close.index, errors="coerce")
+    if idx.tz is not None:
+        session_dates = idx.tz_convert(ZoneInfo(timezone_name)).date
+    else:
+        session_dates = idx.date
+    filtered = close.loc[session_dates < today]
+    # A valid prior-session observation is not necessarily fresh. Avoid
+    # reviving a multiweek-old close if the provider silently stopped updating.
+    if not filtered.empty:
+        latest = pd.Timestamp(filtered.index[-1]).date()
+        days_old = (today - latest).days
+        age_limit = 3 if _looks_like_crypto_pair(ticker) else 7
+        if days_old > age_limit:
+            filtered = filtered.iloc[:0]
+    vol = None if volume is None else volume.reindex(filtered.index)
+    return filtered, vol
+
+
 def _compute_features(
     close: pd.Series,
     volume: pd.Series | None,
@@ -333,6 +389,7 @@ def enrich_watchlist_with_yahoo(
     benchmark_crypto: str = "BTC-USD",
     enabled: bool | None = None,
     as_of: datetime | None = None,
+    downloaded_frame: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, YahooEnrichReport]:
     """Enrich a watchlist table in-place (copy) using Yahoo Finance.
 
@@ -411,7 +468,7 @@ def enrich_watchlist_with_yahoo(
 
     # Download 1y daily bars (auto_adjust gives consistent close)
     provider_fetch_started_at_utc = datetime.now(timezone.utc).isoformat()
-    dl = yf.download(
+    dl = downloaded_frame if downloaded_frame is not None else yf.download(
         tickers=all_dl,
         period="1y",
         interval="1d",
@@ -425,9 +482,16 @@ def enrich_watchlist_with_yahoo(
     provider_frame_sha256 = _frame_digest(dl)
     provider_frame_rows = int(len(dl))
 
+    closed_daily_only = os.getenv("SCANNER_CLOSED_DAILY_ONLY", "0").strip().lower() in {"1", "true", "yes"}
+    # In the opt-in closed-day mode the entire benchmark and symbol universe
+    # uses the same conservative time boundary before feature calculation.
+    # We do not modify the original provider frame or its receipt hash.
     # Benchmark features
     b_stock_close, _ = _series_from_download(dl, benchmark_stock)
     b_crypto_close, _ = _series_from_download(dl, benchmark_crypto)
+    if closed_daily_only:
+        b_stock_close, _ = _completed_daily_series_for_venue(b_stock_close, None, as_of=now, symbol=benchmark_stock)
+        b_crypto_close, _ = _completed_daily_series_for_venue(b_crypto_close, None, as_of=now, symbol=benchmark_crypto)
     b_stock = _compute_features(b_stock_close, None) if b_stock_close is not None else {}
     b_crypto = _compute_features(b_crypto_close, None) if b_crypto_close is not None else {}
 
@@ -443,6 +507,17 @@ def enrich_watchlist_with_yahoo(
     out["MarketTrend200Crypto"] = crypto_trend200
     out["MarketDate"] = market_date
 
+    if closed_daily_only:
+        # A missing or not-yet-defined historical indicator must NOT retain
+        # yesterday's watchlist feature. Crucial for recent IPOs with <200 bars.
+        price_fields=("Akt. Kurs", "Perf %", "Perf 1D %", "Perf 1Y %",
+                      "SMA200", "Trend200", "RS3M", "Volatility",
+                      "DownsideDev", "MaxDrawdown", "AvgVolume", "DollarVolume")
+        for field in price_fields:
+            out[field] = float("nan")
+        out["price_bar_status"] = "NO_ELIGIBLE_CLOSED_BAR"
+        out["price_bar_date"] = ""
+
     fetched = 0
     failed = 0
     cycle_input_bars = []
@@ -452,6 +527,8 @@ def enrich_watchlist_with_yahoo(
     # recomputed or explicitly unavailable; it is never recycled as fresh.
     for idx, sym in zip(out.index, row_symbols):
         close, vol = _series_from_download(dl, sym) if sym else (None, None)
+        if closed_daily_only:
+            close, vol = _completed_daily_series_for_venue(close, vol, as_of=now, symbol=sym)
         row = out.loc[idx]
         evidence = calculate_cycle(close, symbol=sym, currency=_cycle_currency(row),
                                    is_crypto=_looks_like_crypto_pair(sym), as_of=now)
@@ -476,10 +553,23 @@ def enrich_watchlist_with_yahoo(
             continue
         if close is None or close.dropna().empty:
             failed += 1
+            if closed_daily_only:
+                for field in ("Akt. Kurs", "Perf %", "Perf 1D %", "Perf 1Y %", "SMA200", "Trend200", "RS3M", "Volatility", "DownsideDev", "MaxDrawdown", "AvgVolume", "DollarVolume"):
+                    out.at[idx, field] = float("nan")
+                out.at[idx, "price_bar_status"] = "NO_ELIGIBLE_CLOSED_BAR"
             continue
+        if closed_daily_only:
+            out.at[idx, "price_bar_date"] = str(pd.Timestamp(close.index[-1]).date())
+            out.at[idx, "price_bar_status"] = "CLOSED_PREVIOUS_SESSION"
 
-        # Choose benchmark for RS: stocks vs crypto pairs
+        # Choose benchmark for RS: stocks vs crypto pairs.
         bench = b_crypto_close if _looks_like_crypto_pair(sym) else b_stock_close
+        if closed_daily_only and (bench is None or bench.dropna().empty):
+            for field in ("Akt. Kurs", "Perf %", "Perf 1D %", "Perf 1Y %", "SMA200", "Trend200", "RS3M", "Volatility", "DownsideDev", "MaxDrawdown", "AvgVolume", "DollarVolume"):
+                out.at[idx, field] = float("nan")
+            out.at[idx, "price_bar_status"] = "BENCHMARK_CLOSED_BAR_UNAVAILABLE"
+            failed += 1
+            continue
         feats = _compute_features(close, vol, benchmark_close=bench)
         if not feats:
             failed += 1

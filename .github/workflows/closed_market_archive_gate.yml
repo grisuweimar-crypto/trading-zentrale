@@ -1,0 +1,43 @@
+name: Closed market archive and watch preflight
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/scanner/data/closed_market_cache.py'
+      - 'scripts/audit_closed_market_archive.py'
+      - '.github/workflows/closed_market_archive_gate.yml'
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install -e ".[test]"
+      - name: Read and validate canonical archive
+        id: audit
+        continue-on-error: true
+        run: python scripts/audit_closed_market_archive.py
+      - name: Check Decision-Watch snapshot linkage
+        id: watch
+        continue-on-error: true
+        run: python -m pytest tests/test_check_watch_snapshot_pair.py tests/test_daily_research.py tests/test_history_query_and_daily_research.py -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: closed-market-archive-gate
+          path: artifacts/research/closed_bar_shadow/archive_gate.json
+          if-no-files-found: warn
+      - name: Publish research evidence on branch
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/research/closed_bar_shadow/archive_gate.json || true
+          git diff --cached --quiet || (git commit -m "research: archive closed-session OHLCV coverage" && git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}")
+      - if: steps.audit.outcome != 'success' || steps.watch.outcome != 'success'
+        run: exit 1
