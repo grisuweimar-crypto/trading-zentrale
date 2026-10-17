@@ -202,11 +202,11 @@ def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
     assert json.loads((runtime_dir / "manifest.json").read_text())["symbol_count"] == 1
 
 
-def test_runtime_shard_contract_uses_64_deterministic_buckets() -> None:
-    assert len(SHARD_IDS) == 64
-    assert len(set(SHARD_IDS)) == 64
+def test_runtime_shard_contract_uses_128_deterministic_buckets() -> None:
+    assert len(SHARD_IDS) == 128
+    assert len(set(SHARD_IDS)) == 128
     assert SHARD_IDS[0] == "00"
-    assert SHARD_IDS[-1] == "3f"
+    assert SHARD_IDS[-1] == "7f"
 
 
 def test_balanced_routing_spreads_large_histories_and_is_order_independent():
