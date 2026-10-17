@@ -19,7 +19,7 @@ def load_closed_market_cache(path: str | Path, *, as_of, symbols: set[str] | Non
     valid, issues=validated_rows(raw)
     if issues:
         raise ValueError(f"invalid_or_conflicting_market_rows:{issues}")
-    if any(key not in raw[0] for key in MARKET_COLUMNS) if raw else True:
+    if not raw or any(key not in raw[0] for key in MARKET_COLUMNS):
         raise ValueError("missing_canonical_market_columns")
     grouped={}
     for row in valid:
@@ -42,12 +42,15 @@ def load_closed_market_cache(path: str | Path, *, as_of, symbols: set[str] | Non
         last=str(eligible.index[-1].date())
         # Archive is not known PIT final from local clock; only an observed
         # closed-session candidate. Provider-published finality is separate.
-        used=d.loc[d.date.le(last)].copy()
+        used=d.loc[d.date.le(last)].tail(300).copy()
         ohlc=["open","high","low","close","adj_close","volume"]
         for col in ohlc:
             used[col]=pd.to_numeric(used[col],errors="coerce")
         if used[["open","high","low","close"]].isna().any().any():
             raise ValueError(f"incomplete_ohlc:{sym}")
+        if len(used)<200:
+            coverage[sym]={"status":"INSUFFICIENT_OBSERVED_SESSIONS","latest_session":last,"bars":len(used)}
+            continue
         if used.adj_close.isna().any():
             coverage[sym]={"status":"ADJUSTED_HISTORY_INCOMPLETE","latest_session":last}
             continue
