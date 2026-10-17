@@ -24,6 +24,9 @@ for name,closed in [("legacy",False),("closed",True)]:
   reports[name]["bar_dates"]=scored.get("price_bar_date",pd.Series(dtype=str)).fillna("").astype(str).value_counts().head(15).to_dict()
   bad=scored.loc[scored["ScoreError"].fillna("").astype(str).ne(""),["ScoreError"]]
   reports[name]["error_counts"]=bad["ScoreError"].value_counts().to_dict()
+  id_field=next((x for x in ["YahooSymbol","Yahoo","Symbol","Ticker","symbol"] if x in scored.columns),None)
+  reports[name]["blocked_symbols"]=[{"symbol":str(row.get(id_field,"")) if id_field else "", "bar_status":str(row.get("price_bar_status","")), "score_error":str(row.get("ScoreError",""))} for _,row in scored.loc[scored["ScoreError"].fillna("").astype(str).ne("")].iterrows()]
+
 key=next((x for x in ["YahooSymbol","Symbol","Ticker","symbol"] if x in base.columns),None)
 a=pd.read_csv(out/"legacy_scored.csv",low_memory=False)
 b=pd.read_csv(out/"closed_scored.csv",low_memory=False)
