@@ -241,6 +241,9 @@ def _completed_daily_series_for_venue(
         ".AS": "Europe/Amsterdam", ".SW": "Europe/Zurich",
         ".TO": "America/Toronto", ".V": "America/Toronto",
         ".SA": "America/Sao_Paulo", ".JO": "Africa/Johannesburg",
+        ".OL": "Europe/Oslo", ".MX": "America/Mexico_City",
+        ".BR": "Europe/Brussels", ".MU": "Europe/Berlin",
+        ".CO": "Europe/Copenhagen", ".IL": "Europe/London",
         ".KS": "Asia/Seoul", ".KQ": "Asia/Seoul",
         ".SS": "Asia/Shanghai", ".SZ": "Asia/Shanghai",
     }
