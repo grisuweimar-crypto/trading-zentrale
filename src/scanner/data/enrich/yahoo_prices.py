@@ -222,27 +222,48 @@ def _series_from_download(dl: pd.DataFrame, ticker: str) -> tuple[pd.Series | No
 
 
 
-def _completed_daily_series(
+def _completed_daily_series_for_venue(
     close: pd.Series | None,
     volume: pd.Series | None,
     *,
     as_of: datetime,
+    symbol: str,
 ) -> tuple[pd.Series | None, pd.Series | None]:
-    """Conservative closed-day gate for the staged research cutover.
+    from zoneinfo import ZoneInfo
 
-    Never consume the current UTC calendar day's still possibly open session.
-    This is deliberately conservative for Asian/European exchanges: today's
-    already-closed session is deferred until the next UTC day. A future
-    exchange-calendar-specific gate should supersede this function.
-    """
     if close is None:
         return None, None
-    cutoff = as_of.astimezone(timezone.utc).date()
-    dates = pd.to_datetime(close.index, utc=True, errors="coerce")
-    mask = dates.date < cutoff
-    filtered_close = close.loc[mask]
-    filtered_volume = None if volume is None else volume.loc[volume.index.intersection(filtered_close.index)]
-    return filtered_close, filtered_volume
+    suffix_tz = {
+        ".HK": "Asia/Hong_Kong", ".T": "Asia/Tokyo",
+        ".AX": "Australia/Sydney", ".L": "Europe/London",
+        ".PA": "Europe/Paris", ".DE": "Europe/Berlin",
+        ".F": "Europe/Berlin", ".MI": "Europe/Rome",
+        ".AS": "Europe/Amsterdam", ".SW": "Europe/Zurich",
+        ".TO": "America/Toronto", ".V": "America/Toronto",
+        ".SA": "America/Sao_Paulo", ".JO": "Africa/Johannesburg",
+        ".KS": "Asia/Seoul", ".KQ": "Asia/Seoul",
+        ".SS": "Asia/Shanghai", ".SZ": "Asia/Shanghai",
+    }
+    ticker = str(symbol).upper()
+    if _looks_like_crypto_pair(ticker):
+        timezone_name = "UTC"
+    else:
+        timezone_name = next((tz for suffix,tz in suffix_tz.items() if ticker.endswith(suffix)), None)
+        if timezone_name is None:
+            if "." in ticker or ticker.startswith("^"):
+                # Unknown listing / index calendar cannot be assumed.
+                return close.iloc[0:0], (volume.iloc[0:0] if volume is not None else None)
+            timezone_name = "America/New_York"
+    today = as_of.astimezone(ZoneInfo(timezone_name)).date()
+    idx = pd.to_datetime(close.index, errors="coerce")
+    if idx.tz is not None:
+        session_dates = idx.tz_convert(ZoneInfo(timezone_name)).date
+    else:
+        session_dates = idx.date
+    filtered = close.loc[session_dates < today]
+    vol = None if volume is None else volume.reindex(filtered.index)
+    return filtered, vol
+
 
 def _compute_features(
     close: pd.Series,
@@ -457,8 +478,8 @@ def enrich_watchlist_with_yahoo(
     b_stock_close, _ = _series_from_download(dl, benchmark_stock)
     b_crypto_close, _ = _series_from_download(dl, benchmark_crypto)
     if closed_daily_only:
-        b_stock_close, _ = _completed_daily_series(b_stock_close, None, as_of=now)
-        b_crypto_close, _ = _completed_daily_series(b_crypto_close, None, as_of=now)
+        b_stock_close, _ = _completed_daily_series_for_venue(b_stock_close, None, as_of=now, symbol=benchmark_stock)
+        b_crypto_close, _ = _completed_daily_series_for_venue(b_crypto_close, None, as_of=now, symbol=benchmark_crypto)
     b_stock = _compute_features(b_stock_close, None) if b_stock_close is not None else {}
     b_crypto = _compute_features(b_crypto_close, None) if b_crypto_close is not None else {}
 
@@ -484,7 +505,7 @@ def enrich_watchlist_with_yahoo(
     for idx, sym in zip(out.index, row_symbols):
         close, vol = _series_from_download(dl, sym) if sym else (None, None)
         if closed_daily_only:
-            close, vol = _completed_daily_series(close, vol, as_of=now)
+            close, vol = _completed_daily_series_for_venue(close, vol, as_of=now, symbol=sym)
         row = out.loc[idx]
         evidence = calculate_cycle(close, symbol=sym, currency=_cycle_currency(row),
                                    is_crypto=_looks_like_crypto_pair(sym), as_of=now)
