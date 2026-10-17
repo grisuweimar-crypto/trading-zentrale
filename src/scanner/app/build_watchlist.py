@@ -445,7 +445,27 @@ def build_watchlist_outputs() -> None:
 
         if should_fetch_yahoo():
             print("🔄 Yahoo Finance: fetch enabled (refreshing market data)")
-            df_y, rep = enrich_watchlist_with_yahoo(df_raw, enabled=True)
+            if os.getenv("SCANNER_PRICE_SOURCE", "").strip().lower() == "archive":
+                from datetime import datetime, timezone
+                from scanner.data.closed_market_bridge import market_archive_as_enrichment_frame
+                from scanner.data.enrich.yahoo_prices import _pick_symbol
+                symbols = {_pick_symbol(row) for _, row in df_raw.iterrows()}
+                symbols.update(("SPY", "BTC-USD"))
+                frame, cache_coverage = market_archive_as_enrichment_frame(
+                    project_root() / "artifacts" / "market_data" / "yahoo_ohlcv.csv",
+                    as_of=datetime.now(timezone.utc),
+                    symbols=symbols,
+                )
+                df_y, rep = enrich_watchlist_with_yahoo(
+                    df_raw, enabled=True, downloaded_frame=frame
+                )
+                # Score gate must verify the exact venue's observed bar, and
+                # cannot silently accept an absent benchmark or archive row.
+                print("Archive closed-session coverage:",
+                      {k: sum(v["status"] == k for v in cache_coverage.values())
+                       for k in {v["status"] for v in cache_coverage.values()}})
+            else:
+                df_y, rep = enrich_watchlist_with_yahoo(df_raw, enabled=True)
             yahoo_report = rep
             cycle_input_bars = list(df_y.attrs.get("cycle_input_bars", []))
             # Persist back to watchlist.csv ONLY if the source is the artifacts DB snapshot.
