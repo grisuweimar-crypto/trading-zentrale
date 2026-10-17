@@ -1,0 +1,99 @@
+{
+  "run_at_utc": "2026-10-17T16:33:00.026625+00:00",
+  "universe_rows": 228,
+  "identity_col": "YahooSymbol",
+  "reports": {
+    "legacy": {
+      "enabled": true,
+      "tickers_total": 220,
+      "tickers_fetched": 228,
+      "tickers_failed": 0,
+      "benchmark_stock": "SPY",
+      "benchmark_crypto": "BTC-USD",
+      "market_regime_stock": "bull",
+      "market_trend200_stock": 0.05731240345526323,
+      "market_regime_crypto": "bull",
+      "market_trend200_crypto": 0.12059825481089326,
+      "market_date": "2026-10-17",
+      "provider_frame_sha256": "76b58a7e17c712d6cc46912e04f2dc7c800eba4f14aafc138de1223be7e5d296",
+      "provider_frame_rows": 367,
+      "provider_fetch_started_at_utc": "2026-10-17T16:32:07.602382+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:32:16.992578+00:00"
+    },
+    "closed": {
+      "enabled": true,
+      "tickers_total": 220,
+      "tickers_fetched": 220,
+      "tickers_failed": 8,
+      "benchmark_stock": "SPY",
+      "benchmark_crypto": "BTC-USD",
+      "market_regime_stock": "bull",
+      "market_trend200_stock": 0.05731240747810018,
+      "market_regime_crypto": "bull",
+      "market_trend200_crypto": 0.1263248318336947,
+      "market_date": "2026-10-17",
+      "provider_frame_sha256": "19590527c7410db8ebd28cf3914be9f6a470ea66b196469f4124df82bdd92843",
+      "provider_frame_rows": 367,
+      "provider_fetch_started_at_utc": "2026-10-17T16:32:35.511709+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:32:40.864641+00:00",
+      "bar_status_counts": {
+        "CLOSED_PREVIOUS_SESSION": 220,
+        "NO_ELIGIBLE_CLOSED_BAR": 8
+      },
+      "bar_dates": {
+        "2026-10-16": 218,
+        "": 8,
+        "2026-10-15": 2
+      },
+      "error_counts": {
+        "PRICE_BAR_NOT_VERIFIED": 8
+      }
+    }
+  },
+  "metrics": {
+    "Score": {
+      "comparable": 220,
+      "changed": 24,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.7300000000000004
+    },
+    "OpportunityScore": {
+      "comparable": 220,
+      "changed": 9,
+      "median_abs_change": 0.0,
+      "max_abs_change": 1.1200000000000045
+    },
+    "RiskScore": {
+      "comparable": 220,
+      "changed": 23,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.14000000000000057
+    },
+    "ConfidenceScore": {
+      "comparable": 220,
+      "changed": 10,
+      "median_abs_change": 0.0,
+      "max_abs_change": 6.399999999999999
+    },
+    "Akt. Kurs": {
+      "comparable": 220,
+      "changed": 8,
+      "median_abs_change": 0.0,
+      "max_abs_change": 341.953125
+    },
+    "Trend200": {
+      "comparable": 219,
+      "changed": 8,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.0289553606385657
+    },
+    "RS3M": {
+      "comparable": 220,
+      "changed": 7,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.03100281305011751
+    }
+  },
+  "original_legacy_snapshot_reused": false,
+  "note": "Two provider fetches at different times; exploratory shadow comparison, NOT strictly same-download paired test. No productive outputs modified."
+}
