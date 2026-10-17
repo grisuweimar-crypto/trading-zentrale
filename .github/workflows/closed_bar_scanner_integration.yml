@@ -1,0 +1,83 @@
+name: Closed bars isolated scanner integration
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/scanner/app/build_watchlist.py'
+      - 'src/scanner/data/closed_market_cache.py'
+      - 'src/scanner/data/closed_market_bridge.py'
+      - '.github/workflows/closed_bar_scanner_integration.yml'
+permissions:
+  contents: read
+jobs:
+  scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install -e ".[test]"
+      - name: Begin isolated run receipt
+        id: begin
+        continue-on-error: true
+        run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/closed_bar_receipt.json"
+      - name: Run full scanner with canonical archive
+        id: scanner
+        continue-on-error: true
+        env:
+          SCANNER_FETCH_YAHOO: '1'
+          SCANNER_CLOSED_DAILY_ONLY: '1'
+          SCANNER_PRICE_SOURCE: archive
+          SCANNER_REQUIRE_PROVENANCE: '1'
+          TELEGRAM_ENABLED: '0'
+        run: python -m scanner.app.run_daily
+      - name: Generate daily research snapshot
+        id: daily
+        continue-on-error: true
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+        run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/closed_bar_receipt.json" --scanner-status "${{ steps.scanner.outcome }}"
+      - name: Build fresh Decision evidence
+        id: decision
+        continue-on-error: true
+        run: python scripts/build_current_decision_evidence_7a.py
+      - name: Check original W10 snapshot boundary
+        id: watch
+        continue-on-error: true
+        run: python scripts/check_watch_snapshot_pair.py
+      - name: Write bounded research receipt
+        if: always()
+        env:
+          BEGIN: ${{ steps.begin.outcome }}
+          SCAN: ${{ steps.scanner.outcome }}
+          DAILY: ${{ steps.daily.outcome }}
+          DECISION: ${{ steps.decision.outcome }}
+          WATCH: ${{ steps.watch.outcome }}
+        run: |
+          python - <<'PY'
+          import json,os,pathlib
+          root=pathlib.Path("artifacts/research/closed_bar_shadow")
+          root.mkdir(parents=True,exist_ok=True)
+          values={k:os.getenv(k) for k in ("BEGIN","SCAN","DAILY","DECISION","WATCH")}
+          for k,file in (("daily","artifacts/research/daily_research.json"),("metadata","artifacts/research/history_metadata.json")):
+              p=pathlib.Path(file)
+              if p.exists():
+                  data=json.loads(p.read_text())
+                  values[k+"_snapshot_id"]=data.get("snapshot_id")
+                  values[k+"_as_of"]=data.get("as_of")
+                  values[k+"_complete"]=data.get("latest_run_complete")
+          values["publication"]="runner_only_no_push"
+          (root/"isolated_integration.json").write_text(json.dumps(values,indent=2))
+          print(json.dumps(values))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: closed-bars-isolated-integration
+          path: artifacts/research/closed_bar_shadow/isolated_integration.json
+          if-no-files-found: warn
+      - name: Require scanner and daily snapshot
+        if: steps.scanner.outcome != 'success' || steps.daily.outcome != 'success'
+        run: exit 1
