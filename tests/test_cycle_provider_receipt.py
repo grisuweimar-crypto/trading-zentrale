@@ -153,8 +153,14 @@ def test_workflow_stages_receipt_only_after_cycle_history():
     from pathlib import Path
     text = (Path(__file__).resolve().parents[1] / ".github/workflows/run_scanner.yml").read_text(encoding="utf-8")
     assert "python scripts/record_cycle_history.py" in text
-    assert "python scripts/record_cycle_provider_receipt.py" in text
-    assert text.index("python scripts/record_cycle_history.py") < text.index("python scripts/record_cycle_provider_receipt.py")
+    if "SCANNER_PRICE_SOURCE: archive" in text:
+        # Re-used historical cache is not a new provider download: no forged
+        # receipt may be made for this evaluation.
+        assert "python scripts/record_cycle_provider_receipt.py" not in text
+        assert "test ! -e artifacts/reports/cycle_provider_fetch_receipt_v1.json" in text
+    else:
+        assert "python scripts/record_cycle_provider_receipt.py" in text
+        assert text.index("python scripts/record_cycle_history.py") < text.index("python scripts/record_cycle_provider_receipt.py")
 
 
 def test_archived_provider_receipt_audit_catches_tampering(tmp_path):
