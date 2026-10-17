@@ -162,7 +162,7 @@ def main() -> int:
                "--positions", str(book_path),
                "--private-output-dir", str(output))
         receipt = load(output / "w11_acceptance_receipt.json")
-        if receipt.get("snapshot_id") != sid or receipt.get("status") not in ("accepted", "complete", "ok"):
+        if receipt.get("snapshot_id") != sid or receipt.get("status") not in ("passed",):
             raise ValueError("W11_receipt_not_valid:" + repr({k:receipt.get(k) for k in ("status","snapshot_id")}))
         result["w11"] = str(receipt.get("status"))
         result["w11_evidence_transport"] = "compact_watch_runtime"
