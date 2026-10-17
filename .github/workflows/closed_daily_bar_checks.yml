@@ -7,6 +7,8 @@ on:
       - 'tests/test_closed_daily_score_gate.py'
       - 'tests/test_closed_short_history.py'
       - 'tests/test_closed_bar_production_cutover.py'
+      - 'tests/test_price_pipeline.py'
+      - 'scripts/prefetch_market_history.py'
       - '.github/workflows/run_scanner.yml'
       - 'scripts/prefetch_closed_bar_inputs.py'
       - 'src/scanner/app/score_step.py'
@@ -23,4 +25,4 @@ jobs:
         with:
           python-version: '3.10'
       - run: python -m pip install -e ".[test]"
-      - run: python -m pytest tests/test_closed_daily_bar_gate.py tests/test_closed_daily_score_gate.py tests/test_closed_short_history.py tests/test_closed_bar_production_cutover.py -q
+      - run: python -m pytest tests/test_closed_daily_bar_gate.py tests/test_closed_daily_score_gate.py tests/test_closed_short_history.py tests/test_closed_bar_production_cutover.py tests/test_price_pipeline.py -q
