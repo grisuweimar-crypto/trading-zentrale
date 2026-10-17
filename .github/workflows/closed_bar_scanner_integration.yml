@@ -59,6 +59,14 @@ jobs:
         env:
           SCANNER_REQUIRE_PROVENANCE: '1'
         run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/closed_bar_receipt.json" --scanner-status "${{ steps.scanner.outcome }}"
+      - name: Refresh canonical price-backed research views
+        id: prices
+        continue-on-error: true
+        run: python scripts/generate_research_views.py --refresh-prices
+      - name: Generate daily research for new snapshot
+        id: daily_research
+        continue-on-error: true
+        run: python scripts/generate_daily_research.py
       - name: Build fresh Decision evidence
         id: decision
         continue-on-error: true
@@ -74,6 +82,8 @@ jobs:
           BEGIN: ${{ steps.begin.outcome }}
           SCAN: ${{ steps.scanner.outcome }}
           DAILY: ${{ steps.daily.outcome }}
+          PRICES: ${{ steps.prices.outcome }}
+          DAILY_RESEARCH: ${{ steps.daily_research.outcome }}
           DECISION: ${{ steps.decision.outcome }}
           WATCH: ${{ steps.watch.outcome }}
         run: |
@@ -81,7 +91,7 @@ jobs:
           import json,os,pathlib
           root=pathlib.Path("artifacts/research/closed_bar_shadow")
           root.mkdir(parents=True,exist_ok=True)
-          values={k:os.getenv(k) for k in ("PRICE","BEGIN","SCAN","DAILY","DECISION","WATCH")}
+          values={k:os.getenv(k) for k in ("PRICE","BEGIN","SCAN","DAILY","PRICES","DAILY_RESEARCH","DECISION","WATCH")}
           for k,file in (("daily","artifacts/research/daily_research.json"),("metadata","artifacts/research/history_metadata.json")):
               p=pathlib.Path(file)
               if p.exists():
@@ -109,6 +119,8 @@ jobs:
           assert r["DAILY"]=="success",r
           assert r["metadata_complete"] is True,r
           assert r["metadata_as_of"]=="2026-10-17",r
+          assert r["PRICES"]=="success",r
+          assert r["DAILY_RESEARCH"]=="success",r
           assert r["DECISION"]=="success",r
           assert r["WATCH"]=="success",r
           # Existing W10 from yesterday is never proof that today's
