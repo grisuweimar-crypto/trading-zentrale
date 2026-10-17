@@ -7,6 +7,7 @@ on:
       - 'src/scanner/data/closed_market_cache.py'
       - 'src/scanner/data/enrich/yahoo_prices.py'
       - 'tests/test_closed_short_history.py'
+      - 'scripts/verify_closed_bar_w10_w11_shadow.py'
       - 'src/scanner/data/closed_market_bridge.py'
       - '.github/workflows/closed_bar_scanner_integration.yml'
 permissions:
@@ -14,9 +15,11 @@ permissions:
 jobs:
   scanner:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -135,4 +138,26 @@ jobs:
           assert r["daily_snapshot_id"]==r["metadata_snapshot_id"],r
           assert r["watch_ready"] is False,r
           assert r["watch_reason"]=="awaiting_w10_for_latest_scanner",r
+          PY
+      - name: Real W10 seal and synthetic private W11 test
+        id: w10w11
+        run: python scripts/verify_closed_bar_w10_w11_shadow.py
+      - name: Archive only non-private W10/W11 acceptance status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: closed-bars-w10-w11-safe-receipt
+          path: artifacts/research/closed_bar_shadow/w10_w11_status.json
+          if-no-files-found: warn
+      - name: Require same-snapshot W10 and W11
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/research/closed_bar_shadow/w10_w11_status.json")
+          d=json.loads(p.read_text())
+          assert d["status"]=="passed",d
+          assert d["w10"]=="sealed_same_snapshot",d
+          assert d["w11_fixture"]=="synthetic_one_share_not_real_depot",d
+          assert d["production_changed"] is False,d
           PY
