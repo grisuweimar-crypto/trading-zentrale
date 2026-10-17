@@ -98,7 +98,7 @@ class YahooEnrichReport:
         lines.append(f"provider_frame_rows: {self.provider_frame_rows}")
         lines.append(f"provider_fetch_started_at_utc: {self.provider_fetch_started_at_utc or '—'}")
         lines.append(f"provider_fetch_completed_at_utc: {self.provider_fetch_completed_at_utc or '—'}")
-        lines.append("Source receipt: CLIENT CLOCK + DATAFRAME HASH ONLY; NOT PROVIDER-SIGNED OR PIT CERTIFIED")
+        lines.append("Source: cached projection, NO new provider download" if self.provider_fetch_started_at_utc is None else "Source receipt: CLIENT CLOCK + DATAFRAME HASH ONLY; NOT PROVIDER-SIGNED OR PIT CERTIFIED")
         lines.append("")
         lines.append("Note: Per-symbol failures keep previous values from watchlist.csv.")
         return "\n".join(lines).strip() + "\n"
@@ -466,19 +466,24 @@ def enrich_watchlist_with_yahoo(
     # Always include benchmarks
     all_dl = sorted({*symbols_u, benchmark_stock, benchmark_crypto})
 
-    # Download 1y daily bars (auto_adjust gives consistent close)
-    provider_fetch_started_at_utc = datetime.now(timezone.utc).isoformat()
-    dl = downloaded_frame if downloaded_frame is not None else yf.download(
-        tickers=all_dl,
-        period="1y",
-        interval="1d",
-        auto_adjust=True,
-        group_by="column",
-        threads=True,
-        progress=False,
-    )
-
-    provider_fetch_completed_at_utc = datetime.now(timezone.utc).isoformat()
+    # A caller-provided canonical archive is NOT a new Yahoo download.
+    # Never fabricate a fresh provider-fetch receipt from cache evaluation.
+    if downloaded_frame is not None:
+        provider_fetch_started_at_utc = None
+        provider_fetch_completed_at_utc = None
+        dl = downloaded_frame
+    else:
+        provider_fetch_started_at_utc = datetime.now(timezone.utc).isoformat()
+        dl = yf.download(
+            tickers=all_dl,
+            period="1y",
+            interval="1d",
+            auto_adjust=True,
+            group_by="column",
+            threads=True,
+            progress=False,
+        )
+        provider_fetch_completed_at_utc = datetime.now(timezone.utc).isoformat()
     provider_frame_sha256 = _frame_digest(dl)
     provider_frame_rows = int(len(dl))
 
