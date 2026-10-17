@@ -74,7 +74,7 @@ jobs:
       - name: Check original W10 snapshot boundary
         id: watch
         continue-on-error: true
-        run: python scripts/check_watch_snapshot_pair.py
+        run: python scripts/check_watch_snapshot_pair.py > "$RUNNER_TEMP/closed_watch_readiness.json"
       - name: Write bounded research receipt
         if: always()
         env:
@@ -99,6 +99,12 @@ jobs:
                   values[k+"_snapshot_id"]=data.get("snapshot_id")
                   values[k+"_as_of"]=data.get("as_of")
                   values[k+"_complete"]=data.get("latest_run_complete")
+          w=pathlib.Path(os.environ["RUNNER_TEMP"])/"closed_watch_readiness.json"
+          if w.exists():
+              watch=json.loads(w.read_text())
+              values["watch_ready"]=watch.get("ready")
+              values["watch_reason"]=watch.get("reason")
+              values["watch_snapshot_id"]=watch.get("w10_snapshot_id")
           values["publication"]="runner_only_no_push"
           (root/"isolated_integration.json").write_text(json.dumps(values,indent=2))
           print(json.dumps(values))
@@ -127,4 +133,6 @@ jobs:
           # scanner+decision watch was built or sealed.
           assert r["metadata_snapshot_id"],r
           assert r["daily_snapshot_id"]==r["metadata_snapshot_id"],r
+          assert r["watch_ready"] is False,r
+          assert r["watch_reason"]=="awaiting_w10_for_latest_scanner",r
           PY
