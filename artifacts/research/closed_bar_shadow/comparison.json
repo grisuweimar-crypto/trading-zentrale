@@ -1,24 +1,24 @@
 {
-  "run_at_utc": "2026-10-17T16:33:00.026625+00:00",
+  "run_at_utc": "2026-10-17T16:35:23.979828+00:00",
   "universe_rows": 228,
   "identity_col": "YahooSymbol",
   "reports": {
     "legacy": {
       "enabled": true,
       "tickers_total": 220,
-      "tickers_fetched": 228,
-      "tickers_failed": 0,
+      "tickers_fetched": 227,
+      "tickers_failed": 1,
       "benchmark_stock": "SPY",
       "benchmark_crypto": "BTC-USD",
       "market_regime_stock": "bull",
-      "market_trend200_stock": 0.05731240345526323,
+      "market_trend200_stock": 0.05731240747810018,
       "market_regime_crypto": "bull",
-      "market_trend200_crypto": 0.12059825481089326,
+      "market_trend200_crypto": 0.12112407353509291,
       "market_date": "2026-10-17",
-      "provider_frame_sha256": "76b58a7e17c712d6cc46912e04f2dc7c800eba4f14aafc138de1223be7e5d296",
+      "provider_frame_sha256": "25367b6277c6ca26afa7e0d52f7a3c3fdf523d143bf283afcb8795849d3fa772",
       "provider_frame_rows": 367,
-      "provider_fetch_started_at_utc": "2026-10-17T16:32:07.602382+00:00",
-      "provider_fetch_completed_at_utc": "2026-10-17T16:32:16.992578+00:00"
+      "provider_fetch_started_at_utc": "2026-10-17T16:34:14.380095+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:34:33.382798+00:00"
     },
     "closed": {
       "enabled": true,
@@ -32,10 +32,10 @@
       "market_regime_crypto": "bull",
       "market_trend200_crypto": 0.1263248318336947,
       "market_date": "2026-10-17",
-      "provider_frame_sha256": "19590527c7410db8ebd28cf3914be9f6a470ea66b196469f4124df82bdd92843",
+      "provider_frame_sha256": "0cbd07c8582420f68c21317343855a7d5c2eaec3e7e9d61aae454e123c1c9ee9",
       "provider_frame_rows": 367,
-      "provider_fetch_started_at_utc": "2026-10-17T16:32:35.511709+00:00",
-      "provider_fetch_completed_at_utc": "2026-10-17T16:32:40.864641+00:00",
+      "provider_fetch_started_at_utc": "2026-10-17T16:34:52.292593+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:35:03.607574+00:00",
       "bar_status_counts": {
         "CLOSED_PREVIOUS_SESSION": 220,
         "NO_ELIGIBLE_CLOSED_BAR": 8
@@ -47,51 +47,93 @@
       },
       "error_counts": {
         "PRICE_BAR_NOT_VERIFIED": 8
-      }
+      },
+      "blocked_symbols": [
+        {
+          "symbol": "AUTO.OL",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "TSMN.MX",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "SOLB.BR",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "TOM.OL",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "UMI.BR",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "LC0A.MU",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "NOVO-B.CO",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        },
+        {
+          "symbol": "RIGD.IL",
+          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
+          "score_error": "PRICE_BAR_NOT_VERIFIED"
+        }
+      ]
     }
   },
   "metrics": {
     "Score": {
       "comparable": 220,
-      "changed": 24,
+      "changed": 34,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.7300000000000004
+      "max_abs_change": 0.620000000000001
     },
     "OpportunityScore": {
       "comparable": 220,
-      "changed": 9,
+      "changed": 12,
       "median_abs_change": 0.0,
-      "max_abs_change": 1.1200000000000045
+      "max_abs_change": 0.9600000000000009
     },
     "RiskScore": {
       "comparable": 220,
-      "changed": 23,
+      "changed": 34,
       "median_abs_change": 0.0,
       "max_abs_change": 0.14000000000000057
     },
     "ConfidenceScore": {
       "comparable": 220,
-      "changed": 10,
+      "changed": 11,
       "median_abs_change": 0.0,
-      "max_abs_change": 6.399999999999999
+      "max_abs_change": 6.200000000000003
     },
     "Akt. Kurs": {
       "comparable": 220,
-      "changed": 8,
+      "changed": 9,
       "median_abs_change": 0.0,
-      "max_abs_change": 341.953125
+      "max_abs_change": 303.65625
     },
     "Trend200": {
       "comparable": 219,
-      "changed": 8,
+      "changed": 9,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.0289553606385657
+      "max_abs_change": 0.026283691916366897
     },
     "RS3M": {
       "comparable": 220,
-      "changed": 7,
+      "changed": 9,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.03100281305011751
+      "max_abs_change": 0.0303931712706276
     }
   },
   "original_legacy_snapshot_reused": false,
