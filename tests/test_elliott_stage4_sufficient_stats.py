@@ -66,7 +66,13 @@ def test_daily_sufficient_stats_exactly_match_block_bootstrap_mean() -> None:
 
     expected_interval = expected.pop("mean_95")
     actual_interval = actual.pop("mean_95")
+    expected_mean = expected.pop("mean")
+    actual_mean = actual.pop("mean")
+    # Daily sum/count aggregation can differ from numpy.mean by a few ULPs;
+    # retain exact diagnostics and a strict absolute tolerance for the mean.
     assert actual == expected
+    assert actual_mean is not None and expected_mean is not None
+    assert np.isclose(actual_mean, expected_mean, rtol=0.0, atol=1e-15)
     assert actual_interval is not None
     assert expected_interval is not None
     assert np.allclose(

@@ -121,7 +121,13 @@ def test_current_membership_snapshot_remains_unknown_without_listing_tradability
     assert result["status_counts"] == {"UNKNOWN": expected}
     assert result["strict_universe_promotion_ready_count"] == 0
     assert result["evidence_gap_counts"]["stable_identity"] == 0
-    assert result["evidence_gap_counts"]["project_membership"] == 0
+    # An archived claim with only inactive source rows is not a verified
+    # positive project membership and must stay UNKNOWN (fail-closed).
+    missing_membership = sum(
+        claim["membership_observation_status"] != "OBSERVED_IN_PROJECT_UNIVERSE"
+        for claim in snapshot["claims"]
+    )
+    assert result["evidence_gap_counts"]["project_membership"] == missing_membership
     assert result["evidence_gap_counts"]["listing_state"] == expected
     assert result["evidence_gap_counts"]["market_tradability"] == expected
     assert result["evidence_gap_counts"]["execution_channel"] == expected
