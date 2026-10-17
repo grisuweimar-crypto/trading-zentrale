@@ -45,17 +45,18 @@ jobs:
           PY
       - name: Run actual QM-J falsification, no deferral
         run: python scripts/run_qm_j_decision_e2e_falsification.py --output /tmp/qm-j-live.json
-      - name: Rebuild 64 shards from the real sealed snapshot using PR algorithm
+      - name: Rebuild configured shards from the real sealed snapshot using PR algorithm
         run: python scripts/build_watch_runtime_w10.py --output-dir /tmp/argus-watch-live
       - name: Verify real 20 percent headroom and completeness
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
+          from scanner.research.decision_layer.watch_runtime import SHARD_IDS
           root=Path('/tmp/argus-watch-live')
           manifest=json.loads((root/'manifest.json').read_text())
           files=sorted(root.glob('shard_*.json'))
-          assert len(files)==64
+          assert len(files)==len(SHARD_IDS)==128
           sizes=[p.stat().st_size for p in files]
           reserve=(2000000-max(sizes))/2000000
           assert manifest['symbol_count']==220,manifest['symbol_count']
