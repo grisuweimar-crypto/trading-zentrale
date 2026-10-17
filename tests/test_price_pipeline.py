@@ -95,6 +95,26 @@ class PricePipelineTests(unittest.TestCase):
         self.assertEqual(len(result), 41)
         self.assertEqual(result.attrs["coverage"]["complete_symbol_count"], 1)
 
+    def test_legacy_adjusted_gap_does_not_force_daily_full_redownload(self):
+        self.universe(("AAA",))
+        rows = market_rows("AAA", 400, date(2025, 6, 1))
+        rows[0]["adj_close"] = ""
+        self.write(fetch.CACHE, MARKET_COLUMNS, rows)
+        result, download = self.run_fetch(
+            market_rows("AAA", 2, date(2026, 7, 1)), minimum_days=300)
+        self.assertIsNone(download.call_args.kwargs["period"])
+        self.assertEqual(result.attrs["coverage"]["symbols"]["AAA"]["update_mode"], "incremental")
+
+    def test_adjusted_gap_inside_latest_300_still_migrates(self):
+        self.universe(("AAA",))
+        rows = market_rows("AAA", 400, date(2025, 6, 1))
+        rows[-10]["adj_close"] = ""
+        self.write(fetch.CACHE, MARKET_COLUMNS, rows)
+        result, download = self.run_fetch(
+            market_rows("AAA", 2, date(2026, 7, 1)), minimum_days=300)
+        self.assertEqual(download.call_args.kwargs["period"], "2y")
+        self.assertEqual(result.attrs["coverage"]["symbols"]["AAA"]["update_mode"], "adjusted_close_migration")
+
     def test_provider_failure_isolated_and_retry_only_failed_ticker(self):
         self.universe()
         calls = []
