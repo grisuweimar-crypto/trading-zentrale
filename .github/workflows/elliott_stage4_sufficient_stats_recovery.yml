@@ -47,12 +47,36 @@ jobs:
       - name: Install project and test dependencies
         run: python -m pip install -e ".[test]"
 
-      - name: Verify frozen replay inputs are unchanged
+      - name: Verify frozen Stage 4 replay code and historical price provenance
         shell: bash
         run: |
           set -euo pipefail
           git cat-file -e "${SOURCE_REPLAY_COMMIT}^{commit}"
-          git diff --exit-code "${SOURCE_REPLAY_COMMIT}..HEAD" --             artifacts/market_data/yahoo_ohlcv.csv             src/scanner/research/elliott_vnext/pivots.py             src/scanner/research/elliott_vnext/scenarios.py             src/scanner/research/elliott_vnext/fibonacci.py             src/scanner/research/elliott_vnext/swing_routing.py             src/scanner/research/elliott_vnext/validation.py             src/scanner/research/elliott_vnext/validation_replay.py
+          # Freeze the Elliott implementation, not the productive daily price
+          # archive. Later market sessions are expected and do not invalidate
+          # a prior, point-in-time Stage 4 replay.
+          git diff --exit-code "${SOURCE_REPLAY_COMMIT}..HEAD" -- \
+            src/scanner/research/elliott_vnext/pivots.py \
+            src/scanner/research/elliott_vnext/scenarios.py \
+            src/scanner/research/elliott_vnext/fibonacci.py \
+            src/scanner/research/elliott_vnext/swing_routing.py \
+            src/scanner/research/elliott_vnext/validation.py \
+            src/scanner/research/elliott_vnext/validation_replay.py
+          FROZEN_PRICES="$RUNNER_TEMP/stage4_frozen_yahoo_ohlcv.csv"
+          git show "${SOURCE_REPLAY_COMMIT}:artifacts/market_data/yahoo_ohlcv.csv" > "$FROZEN_PRICES"
+          FROZEN_PRICES="$FROZEN_PRICES" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          source = json.loads(Path("artifacts/research/elliott_vnext_stage4_historical_validation.json").read_text(encoding="utf-8"))["source"]
+          data = Path(os.environ["FROZEN_PRICES"]).read_bytes()
+          actual = hashlib.sha256(data).hexdigest()
+          assert source["source_commit"] == os.environ["SOURCE_REPLAY_COMMIT"]
+          assert actual == source["price_source_sha256"], "historical_stage4_price_provenance_changed"
+          assert len(data.splitlines()) - 1 == source["price_row_count"], "historical_stage4_price_rows_changed"
+          print("Frozen Stage 4 provenance PASS; newer productive price sessions are permitted")
+          PY
 
       - name: Verify sufficient-statistics equivalence
         run: >-
@@ -134,9 +158,16 @@ jobs:
           path: ${{ runner.temp }}/stage4_stats
           merge-multiple: true
 
+      - name: Materialize original Stage 4 price basis
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show "${SOURCE_REPLAY_COMMIT}:artifacts/market_data/yahoo_ohlcv.csv" > "$RUNNER_TEMP/stage4_frozen_yahoo_ohlcv.csv"
+
       - name: Aggregate canonical Stage 4 result
         run: >-
           python scripts/aggregate_elliott_stage4_sufficient_stats.py
+          --prices "$RUNNER_TEMP/stage4_frozen_yahoo_ohlcv.csv"
           --stats-dir "$RUNNER_TEMP/stage4_stats"
           --chunk-count ${{ env.STAGE4_CHUNK_COUNT }}
           --source-commit ${{ env.SOURCE_REPLAY_COMMIT }}
