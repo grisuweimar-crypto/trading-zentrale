@@ -48,7 +48,7 @@ def load_closed_market_cache(path: str | Path, *, as_of, symbols: set[str] | Non
             used[col]=pd.to_numeric(used[col],errors="coerce")
         if used[["open","high","low","close"]].isna().any().any():
             raise ValueError(f"incomplete_ohlc:{sym}")
-        if len(used)<200:
+        if len(used)<60:
             coverage[sym]={"status":"INSUFFICIENT_OBSERVED_SESSIONS","latest_session":last,"bars":len(used)}
             continue
         if used.adj_close.isna().any():
@@ -56,7 +56,7 @@ def load_closed_market_cache(path: str | Path, *, as_of, symbols: set[str] | Non
             continue
         used.index=pd.to_datetime(used.date)
         frames[sym]=used
-        coverage[sym]={"status":"CLOSED_ARCHIVED_SESSION","latest_session":last,"bars":len(used)}
+        coverage[sym]={"status":"CLOSED_ARCHIVED_SESSION" if len(used)>=200 else "CLOSED_ARCHIVED_SHORT_HISTORY","latest_session":last,"bars":len(used)}
     if symbols:
         for sym in symbols:
             coverage.setdefault(sym,{"status":"SYMBOL_NOT_IN_ARCHIVE","latest_session":None})
