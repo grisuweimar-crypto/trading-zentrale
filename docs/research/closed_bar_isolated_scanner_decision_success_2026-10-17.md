@@ -1,5 +1,8 @@
 # Abgeschlossene Tageskerzen – echter isolierter Scanner- und Decision-Integrationslauf (17.10.2026)
 
+## Finale Bestätigung des verschärften Gates
+[GitHub Actions 39052750471](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/39052750471): **success** mit expliziter Prüfung `watch_ready=false`, `watch_reason=awaiting_w10_for_latest_scanner`. Neuer isolierter Snapshot `0d1feacd-6020-4fb0-9278-116d483c2ecc` (2026-10-17). Full scanner: 220/220, keine Score-Fehler; 220 Decision-Evidence-Pakete; Metadata `latest_run_complete=true`. Keine private W10-Versiegelung. Dies ist der verbindliche, jüngste Testlauf; die folgenden älteren IDs dienen als Entwicklungshistorie.
+
 ## Beweismittel
 [GitHub Actions 39052351500](https://github.com/grisuweimar-crypto/trading-zentrale/actions/runs/39052351500): **success**, Entwicklungsbranch, keine Commits/Publikation der berechneten Scannerergebnisse.
 
