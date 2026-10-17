@@ -1,0 +1,32 @@
+name: Closed OHLCV production cutover preflight
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/run_scanner.yml'
+      - '.github/workflows/closed_bar_production_preflight.yml'
+      - 'scripts/prefetch_closed_bar_inputs.py'
+      - 'src/scanner/app/build_watchlist.py'
+      - 'src/scanner/data/enrich/yahoo_prices.py'
+      - 'tests/test_closed_bar_production_cutover.py'
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install -e ".[test]"
+      - name: Strict production data-source and score tests
+        run: >-
+          python -m pytest -q
+          tests/test_closed_daily_bar_gate.py
+          tests/test_closed_daily_score_gate.py
+          tests/test_closed_short_history.py
+          tests/test_closed_bar_production_cutover.py
+          tests/test_cycle_provider_receipt.py
+          tests/test_cycle_current_audit.py
