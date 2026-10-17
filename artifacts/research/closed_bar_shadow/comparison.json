@@ -1,9 +1,26 @@
 {
-  "run_at_utc": "2026-10-17T16:35:23.979828+00:00",
+  "run_at_utc": "2026-10-17T16:38:04.666314+00:00",
   "universe_rows": 228,
   "identity_col": "YahooSymbol",
   "reports": {
     "legacy": {
+      "enabled": true,
+      "tickers_total": 220,
+      "tickers_fetched": 228,
+      "tickers_failed": 0,
+      "benchmark_stock": "SPY",
+      "benchmark_crypto": "BTC-USD",
+      "market_regime_stock": "bull",
+      "market_trend200_stock": 0.05731240300828144,
+      "market_regime_crypto": "bull",
+      "market_trend200_crypto": 0.12028750343356798,
+      "market_date": "2026-10-17",
+      "provider_frame_sha256": "d7ae40678eb11085971b9fb997ca0c67f24b13fe1026e343beaa66b8bacfa457",
+      "provider_frame_rows": 367,
+      "provider_fetch_started_at_utc": "2026-10-17T16:37:01.443548+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:37:12.459486+00:00"
+    },
+    "closed": {
       "enabled": true,
       "tickers_total": 220,
       "tickers_fetched": 227,
@@ -11,81 +28,29 @@
       "benchmark_stock": "SPY",
       "benchmark_crypto": "BTC-USD",
       "market_regime_stock": "bull",
-      "market_trend200_stock": 0.05731240747810018,
-      "market_regime_crypto": "bull",
-      "market_trend200_crypto": 0.12112407353509291,
-      "market_date": "2026-10-17",
-      "provider_frame_sha256": "25367b6277c6ca26afa7e0d52f7a3c3fdf523d143bf283afcb8795849d3fa772",
-      "provider_frame_rows": 367,
-      "provider_fetch_started_at_utc": "2026-10-17T16:34:14.380095+00:00",
-      "provider_fetch_completed_at_utc": "2026-10-17T16:34:33.382798+00:00"
-    },
-    "closed": {
-      "enabled": true,
-      "tickers_total": 220,
-      "tickers_fetched": 220,
-      "tickers_failed": 8,
-      "benchmark_stock": "SPY",
-      "benchmark_crypto": "BTC-USD",
-      "market_regime_stock": "bull",
-      "market_trend200_stock": 0.05731240747810018,
+      "market_trend200_stock": 0.057312404796208805,
       "market_regime_crypto": "bull",
       "market_trend200_crypto": 0.1263248318336947,
       "market_date": "2026-10-17",
-      "provider_frame_sha256": "0cbd07c8582420f68c21317343855a7d5c2eaec3e7e9d61aae454e123c1c9ee9",
+      "provider_frame_sha256": "781ac755876e8d0ad44aec4dbf5a20cf963258102f8b06fe7dff81917f22693b",
       "provider_frame_rows": 367,
-      "provider_fetch_started_at_utc": "2026-10-17T16:34:52.292593+00:00",
-      "provider_fetch_completed_at_utc": "2026-10-17T16:35:03.607574+00:00",
+      "provider_fetch_started_at_utc": "2026-10-17T16:37:31.988495+00:00",
+      "provider_fetch_completed_at_utc": "2026-10-17T16:37:43.402642+00:00",
       "bar_status_counts": {
-        "CLOSED_PREVIOUS_SESSION": 220,
-        "NO_ELIGIBLE_CLOSED_BAR": 8
+        "CLOSED_PREVIOUS_SESSION": 227,
+        "NO_ELIGIBLE_CLOSED_BAR": 1
       },
       "bar_dates": {
-        "2026-10-16": 218,
-        "": 8,
-        "2026-10-15": 2
+        "2026-10-16": 225,
+        "2026-10-15": 2,
+        "": 1
       },
       "error_counts": {
-        "PRICE_BAR_NOT_VERIFIED": 8
+        "PRICE_BAR_NOT_VERIFIED": 1
       },
       "blocked_symbols": [
         {
-          "symbol": "AUTO.OL",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "TSMN.MX",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "SOLB.BR",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "TOM.OL",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "UMI.BR",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "LC0A.MU",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "NOVO-B.CO",
-          "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
-          "score_error": "PRICE_BAR_NOT_VERIFIED"
-        },
-        {
-          "symbol": "RIGD.IL",
+          "symbol": "MC.PA",
           "bar_status": "NO_ELIGIBLE_CLOSED_BAR",
           "score_error": "PRICE_BAR_NOT_VERIFIED"
         }
@@ -94,46 +59,46 @@
   },
   "metrics": {
     "Score": {
-      "comparable": 220,
-      "changed": 34,
+      "comparable": 227,
+      "changed": 32,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.620000000000001
+      "max_abs_change": 0.6400000000000006
     },
     "OpportunityScore": {
-      "comparable": 220,
-      "changed": 12,
-      "median_abs_change": 0.0,
-      "max_abs_change": 0.9600000000000009
-    },
-    "RiskScore": {
-      "comparable": 220,
-      "changed": 34,
-      "median_abs_change": 0.0,
-      "max_abs_change": 0.14000000000000057
-    },
-    "ConfidenceScore": {
-      "comparable": 220,
+      "comparable": 227,
       "changed": 11,
       "median_abs_change": 0.0,
-      "max_abs_change": 6.200000000000003
+      "max_abs_change": 0.990000000000002
+    },
+    "RiskScore": {
+      "comparable": 227,
+      "changed": 31,
+      "median_abs_change": 0.0,
+      "max_abs_change": 0.15000000000000213
+    },
+    "ConfidenceScore": {
+      "comparable": 227,
+      "changed": 10,
+      "median_abs_change": 0.0,
+      "max_abs_change": 6.299999999999997
     },
     "Akt. Kurs": {
-      "comparable": 220,
-      "changed": 9,
+      "comparable": 227,
+      "changed": 8,
       "median_abs_change": 0.0,
-      "max_abs_change": 303.65625
+      "max_abs_change": 364.5859375
     },
     "Trend200": {
-      "comparable": 219,
-      "changed": 9,
+      "comparable": 226,
+      "changed": 8,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.026283691916366897
+      "max_abs_change": 0.0279711121041994
     },
     "RS3M": {
-      "comparable": 220,
-      "changed": 9,
+      "comparable": 227,
+      "changed": 7,
       "median_abs_change": 0.0,
-      "max_abs_change": 0.0303931712706276
+      "max_abs_change": 0.0313631011437899
     }
   },
   "original_legacy_snapshot_reused": false,
