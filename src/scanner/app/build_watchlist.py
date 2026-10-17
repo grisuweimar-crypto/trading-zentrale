@@ -524,10 +524,19 @@ def build_watchlist_outputs() -> None:
     cycle_bars_path.write_bytes(cycle_bars_bytes)
     # Contemporaneous CLIENT-side provenance only; never certify quote currency
     # or publisher availability using the local GitHub Actions runner clock.
-    from scanner.reports.cycle_provider_receipt import persist_current_fetch_receipt
-    persist_current_fetch_receipt(
-        yahoo_report, bars=cycle_bars_bytes, root=project_root()
+    from scanner.reports.cycle_provider_receipt import (
+        REPORT as PROVIDER_RECEIPT_PATH, persist_current_fetch_receipt
     )
+    if os.getenv("SCANNER_PRICE_SOURCE", "").strip().lower() == "archive":
+        # Existing archive candles are observed historical data, NOT an
+        # actual new single-frame yfinance download. Never mint a false
+        # contemporaneous provider receipt for this derived projection.
+        (project_root() / PROVIDER_RECEIPT_PATH).unlink(missing_ok=True)
+        print("CY-03 client download receipt: not supplied (canonical archive reuse)")
+    else:
+        persist_current_fetch_receipt(
+            yahoo_report, bars=cycle_bars_bytes, root=project_root()
+        )
 
     # 2) RAW exportieren (ungeändert)
     raw_path = out_dir / "watchlist_full_raw.csv"
