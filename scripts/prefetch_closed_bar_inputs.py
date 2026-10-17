@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from scanner.data.enrich.yahoo_prices import _pick_symbol, ISIN_RE
-from scripts.prefetch_market_history import prefetch_history
+from prefetch_market_history import prefetch_history
 
 
 def symbols_before_scanner(root: Path) -> tuple[str, ...]:
