@@ -123,3 +123,72 @@ def test_sealed_same_snapshot_does_not_rewrite_w10(tmp_path: Path) -> None:
     w10.write_text(json.dumps({"snapshot_id": "new", "status": "draft"}), encoding="utf-8")
     result = evaluate_from_paths(daily_path=daily, phase2_path=phase2, w10_path=w10)
     assert result["ready"] is True
+
+
+def test_exact_snapshot_late_elliott_reseals_once_and_not_backdated(tmp_path: Path) -> None:
+    research = tmp_path / "artifacts" / "research"
+    research.mkdir(parents=True)
+    daily = research / "daily_research.json"
+    phase2 = research / "probability_calibration_2.json"
+    w10 = research / "decision_snapshot_w10.json"
+    capture_file = research / "late-elliott.json"
+    daily.write_text(json.dumps({"snapshot_id": "UEC-snap", "as_of": "2026-10-18"}), encoding="utf-8")
+    phase2.write_text(json.dumps({"source": {"snapshot_id": "UEC-snap"}}), encoding="utf-8")
+    w10.write_text(json.dumps({
+        "snapshot_id": "UEC-snap", "status": "sealed", "sealed_at": "2026-10-18T04:37:00Z",
+        "stages": {"phase6_elliott": {"status": "not_supplied"}},
+    }), encoding="utf-8")
+    prospective = {
+        "snapshot_id": "UEC-snap", "as_of": "2026-10-18",
+        "output_count": 1, "outputs": [{"symbol": "UEC", "timeframe": "1d"}],
+    }
+    capture_file.write_text(json.dumps(prospective), encoding="utf-8")
+    paths = dict(daily_path=daily, phase2_path=phase2, w10_path=w10,
+                 late_elliott_capture_path=capture_file)
+    result = evaluate_from_paths(**paths)
+    assert result["ready"] is True
+    assert result["reason"] == "exact_snapshot_late_elliott_requires_new_w10_seal"
+    assert json.loads(w10.read_text())["sealed_at"] == "2026-10-18T04:37:00Z"
+
+    # Once admitted, completion events cannot infinitely replay this snapshot.
+    w10.write_text(json.dumps({
+        "snapshot_id": "UEC-snap", "status": "sealed",
+        "stages": {"phase6_elliott": {"status": "available"}},
+    }), encoding="utf-8")
+    assert evaluate_from_paths(**paths)["reason"] == "same_snapshot_already_sealed"
+
+    # An earlier capture, another symbol run or incomplete capture is not evidence.
+    w10.write_text(json.dumps({
+        "snapshot_id": "UEC-snap", "status": "sealed",
+        "stages": {"phase6_elliott": {"status": "not_supplied"}},
+    }), encoding="utf-8")
+    for changed in (
+        {"snapshot_id": "other-snapshot"},
+        {"as_of": "2026-10-17"},
+        {"output_count": 0, "outputs": []},
+        {"output_count": 2},
+    ):
+        capture_file.write_text(json.dumps({**prospective, **changed}), encoding="utf-8")
+        assert evaluate_from_paths(**paths)["reason"] == "same_snapshot_already_sealed"
+
+    capture_file.unlink()
+    assert evaluate_from_paths(**paths)["reason"] == "same_snapshot_already_sealed"
+
+
+def test_late_capture_never_bypasses_stale_phase2_gate(tmp_path: Path) -> None:
+    research = tmp_path / "artifacts" / "research"
+    research.mkdir(parents=True)
+    daily = research / "daily_research.json"
+    p2 = research / "probability_calibration_2.json"
+    w10 = research / "decision_snapshot_w10.json"
+    late = research / "late.json"
+    daily.write_text(json.dumps({"snapshot_id": "UEC-snap", "as_of": "2026-10-18"}))
+    p2.write_text(json.dumps({"source": {"snapshot_id": "old-snap"}}))
+    w10.write_text(json.dumps({"snapshot_id": "UEC-snap", "status": "sealed",
+                               "stages": {"phase6_elliott": {"status": "not_supplied"}}}))
+    late.write_text(json.dumps({"snapshot_id": "UEC-snap", "as_of": "2026-10-18",
+                                "output_count": 1, "outputs": [{"symbol": "UEC"}]}))
+    result = evaluate_from_paths(daily_path=daily, phase2_path=p2, w10_path=w10,
+                                 late_elliott_capture_path=late)
+    assert result["ready"] is False
+    assert result["reason"].startswith("phase2_snapshot_not_ready:")
