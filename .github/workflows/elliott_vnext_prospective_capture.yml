@@ -170,27 +170,71 @@ jobs:
           repairable_run_ids = set()
           # The remote shadow branch may still contain the legacy plain JSONL.
           # Prefer lossless gzip after migration and reject corrupted new files.
-          zipped_archive = git_bytes(
-              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.gz', allow_fail=True
+          # Prefer verified shard transport; preserve gzip/plain legacy readers.
+          manifest_raw = git_bytes(
+              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.manifest.json',
+              allow_fail=True,
           )
-          if zipped_archive is not None:
+          archive_path = None
+          archive_sha256 = None
+          if manifest_raw is not None:
+              from pathlib import Path
+              import runpy
+              unpack_sharded = runpy.run_path(
+                  'src/scanner/research/elliott_vnext/shadow_shards.py'
+              )['unpack_sharded']
+              tmp = Path(os.environ['RUNNER_TEMP']) / 'elliott-bind-shards'
+              tmp.mkdir(parents=True, exist_ok=True)
+              stem = ARCHIVE_PATH.rsplit('/', 1)[-1]
+              parent = ARCHIVE_PATH.rsplit('/', 1)[0]
+              manifest_file = tmp / (stem + '.manifest.json')
+              manifest_file.write_bytes(manifest_raw)
               try:
-                  archive_bytes = gzip.decompress(zipped_archive)
-                  archive = archive_bytes.decode('utf-8')
-              except (OSError, EOFError, UnicodeDecodeError) as exc:
-                  raise SystemExit(f'elliott_shadow_archive_gzip_invalid:{exc}') from exc
+                  part_list = json.loads(manifest_raw)['parts']
+              except (ValueError, KeyError, TypeError) as exc:
+                  raise SystemExit('elliott_shadow_shard_manifest_invalid') from exc
+              if not isinstance(part_list, list) or not 1 <= len(part_list) <= 10000:
+                  raise SystemExit('elliott_shadow_shard_manifest_invalid')
+              for index in range(len(part_list)):
+                  filename = f'{stem}.part-{index:05d}.gz'
+                  blob = git_bytes('show',
+                      f'origin/elliott-vnext-shadow-data:{parent}/{filename}',
+                      allow_fail=True)
+                  if blob is None:
+                      raise SystemExit(f'elliott_shadow_shard_missing:{filename}')
+                  (tmp / filename).write_bytes(blob)
+              archive_path = tmp / 'restored_history.jsonl'
+              verified = unpack_sharded(manifest_file, archive_path)
+              archive_sha256 = verified['original_sha256']
+              archive_bytes = None
+              archive = None
           else:
-              # Git text mode normalizes CRLF/bare-CR newlines. The restored
-              # legacy JSONL is byte-exact, so hash its raw Git blob bytes.
-              archive_bytes = git_bytes(
-                  'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+            zipped_archive = git_bytes(
+                'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.gz', allow_fail=True
+            )
+            if zipped_archive is not None:
+                try:
+                    archive_bytes = gzip.decompress(zipped_archive)
+                    archive = archive_bytes.decode('utf-8')
+                except (OSError, EOFError, UnicodeDecodeError) as exc:
+                    raise SystemExit(f'elliott_shadow_archive_gzip_invalid:{exc}') from exc
+            else:
+                # Git text mode normalizes CRLF/bare-CR newlines. The restored
+                # legacy JSONL is byte-exact, so hash its raw Git blob bytes.
+                archive_bytes = git_bytes(
+                    'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+                )
+                try:
+                    archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None
+                except UnicodeDecodeError as exc:
+                    raise SystemExit(f'elliott_shadow_archive_utf8_invalid:{exc}') from exc
+            archive_sha256 = hashlib.sha256(archive_bytes or b'').hexdigest()
+          if archive or archive_path is not None:
+              archive_lines = (
+                  archive_path.open('r', encoding='utf-8', newline='')
+                  if archive_path is not None else archive.splitlines()
               )
-              try:
-                  archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None
-              except UnicodeDecodeError as exc:
-                  raise SystemExit(f'elliott_shadow_archive_utf8_invalid:{exc}') from exc
-          if archive:
-              for line_number, line in enumerate(archive.splitlines(), start=1):
+              for line_number, line in enumerate(archive_lines, start=1):
                   if not line.strip():
                       continue
                   try:
@@ -252,7 +296,7 @@ jobs:
 
           output = os.environ['GITHUB_OUTPUT']
           with open(output, 'a', encoding='utf-8') as handle:
-              handle.write(f'archive_sha256={hashlib.sha256(archive_bytes or b'').hexdigest()}\n')
+              handle.write(f'archive_sha256={archive_sha256}\n')
               if not candidates:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
@@ -314,6 +358,7 @@ jobs:
           pytest -q
           tests/test_elliott_vnext_prospective_capture.py
           tests/test_elliott_shadow_transport.py
+          tests/test_elliott_shadow_shards.py
           tests/test_elliott_vnext_stage4_historical.py
           tests/test_elliott_vnext_validation.py
           tests/test_elliott_vnext_pivots.py
@@ -337,7 +382,30 @@ jobs:
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
           do
-            if git cat-file -e "origin/elliott-vnext-shadow-data:$path.gz" 2>/dev/null; then
+            if [[ "$path" == "artifacts/research/elliott_vnext_prospective_history_6h.jsonl" ]] && \
+               git cat-file -e "origin/elliott-vnext-shadow-data:$path.manifest.json" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/elliott-vnext-shadow-data:$path.manifest.json" > "$path.manifest.json"
+              ARCHIVE_PATH="$path" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          path = Path(os.environ['ARCHIVE_PATH'])
+          manifest = json.loads(Path(str(path) + '.manifest.json').read_text(encoding='utf-8'))
+          parts = manifest.get('parts')
+          if not isinstance(parts, list) or not 1 <= len(parts) <= 10000:
+              raise SystemExit('invalid_elliott_shadow_manifest_part_list')
+          for i in range(len(parts)):
+              name = path.name + f'.part-{i:05d}.gz'
+              with (path.parent / name).open('wb') as stream:
+                  subprocess.run(
+                      ['git', 'show', f'origin/elliott-vnext-shadow-data:{path.parent}/{name}'],
+                      stdout=stream, check=True)
+          PY
+              python -m scanner.research.elliott_vnext.shadow_shards unpack "$path.manifest.json" "$path"
+              rm -f "$path.manifest.json" "$path".part-*.gz
+            elif git cat-file -e "origin/elliott-vnext-shadow-data:$path.gz" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
               git show "origin/elliott-vnext-shadow-data:$path.gz" > "$path.gz"
               python -m scanner.research.elliott_vnext.shadow_transport unpack "$path.gz" "$path"
@@ -455,14 +523,14 @@ jobs:
             "$RUNNER_TEMP/elliott-shadow-before.jsonl" \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl
           mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
-          # Full JSON/JSONL are already validated; now encode the exact bytes.
-          for path in \
+          # Transport only: preserve the original append-only JSONL bytes.
+          # Each bounded gzip shard remains below the hard 80 MB review limit.
+          python -m scanner.research.elliott_vnext.shadow_shards pack \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
-          do
-            python -m scanner.research.elliott_vnext.shadow_transport pack \
-              "$path" "$RUNNER_TEMP/elliott-shadow-payload/$(basename "$path").gz"
-          done
+            "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.manifest.json"
+          python -m scanner.research.elliott_vnext.shadow_transport pack \
+            artifacts/research/elliott_vnext_prospective_current_6h.json \
+            "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json.gz"
 
       - name: Publish isolated Elliott shadow data branch
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
@@ -501,10 +569,20 @@ jobs:
           git rm -f --ignore-unmatch -- \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
-          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.gz" artifacts/research/
+          # Stage the manifest last after round-trip verification; retain
+          # immutable prior Git commits, but replace oversized current gzip.
+          git rm -f --ignore-unmatch -- artifacts/research/elliott_vnext_prospective_history_6h.jsonl.gz
+          git ls-files -z -- 'artifacts/research/elliott_vnext_prospective_history_6h.jsonl.part-*.gz' |
+            xargs -0 -r git rm -f --
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.manifest.json" artifacts/research/
+          for part in "$RUNNER_TEMP"/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.part-*.gz; do
+            test -f "$part"
+            cp "$part" artifacts/research/
+          done
           cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json.gz" artifacts/research/
-          git add \
-            artifacts/research/elliott_vnext_prospective_history_6h.jsonl.gz \
+          git add -A -- \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl.manifest.json \
+            'artifacts/research/elliott_vnext_prospective_history_6h.jsonl.part-*.gz' \
             artifacts/research/elliott_vnext_prospective_current_6h.json.gz
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Elliott vNext prospective shadow [skip ci]'
