@@ -19,17 +19,17 @@
     "private_position_data_persisted": false,
     "runtime_stage_available_from_is_recorded_not_supplied": true
   },
-  "pre_7a_frozen_at": "2026-10-18T04:33:38.958616+00:00",
+  "pre_7a_frozen_at": "2026-10-18T09:44:36.831166+00:00",
   "schema_version": "decision_snapshot_orchestration_w10_v1",
-  "sealed_at": "2026-10-18T04:37:38.655844+00:00",
+  "sealed_at": "2026-10-18T09:48:01.572310+00:00",
   "snapshot_as_of": "2026-10-18",
   "snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
   "stages": {
     "final_7a": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/current_decision_packets_7a.json",
-      "artifact_sha256": "dcae30e70fc6191a12abe00aa609903db360be1e6114a30e4f70af9573345ebd",
+      "artifact_sha256": "ab8ac4cba4a524eb675adae4156ddfd3ddcc96de96f86f91cbb124a9340d0127",
       "availability_source": "current_decision_packets_7a.as_of",
-      "available_from": "2026-10-18T04:33:50.259516+00:00",
+      "available_from": "2026-10-18T09:44:46.531583+00:00",
       "snapshot_identity_state": "verified",
       "status": "available"
     },
@@ -46,7 +46,7 @@
       "artifact_path": "/home/runner/work/_temp/risk_vnext_3.json",
       "artifact_sha256": "c93d886a3b4af7850562d8434eccb1efaa25b084c49128e4b5765053b8d4018e",
       "availability_source": "w10_runtime_recorded_after_stage",
-      "available_from": "2026-10-18T04:33:34.308548+00:00",
+      "available_from": "2026-10-18T09:44:20.460187+00:00",
       "snapshot_identity_state": "verified",
       "status": "available"
     },
@@ -54,32 +54,40 @@
       "artifact_path": "/home/runner/work/_temp/confidence_vnext_research_4.json",
       "artifact_sha256": "22007b0d60e332ba5266c75da11ec7a1621ecefc96cb33c1a27d552dc2fc7f24",
       "availability_source": "w10_runtime_recorded_after_stage",
-      "available_from": "2026-10-18T04:33:37.288044+00:00",
+      "available_from": "2026-10-18T09:44:23.102860+00:00",
       "snapshot_identity_state": "not_expressed_by_artifact",
       "status": "available"
     },
     "phase5_governance": {
       "artifact_path": "/home/runner/work/_temp/confidence_vnext_promotion_5e.json",
-      "artifact_sha256": "f029992111c4181a366a511f121f061ddf46294f833c1c7d759292a850dd0bfc",
+      "artifact_sha256": "b4d70c38854186cda758df10ce52c0454a779a55d3c3728daca96026f55d007f",
       "availability_source": "git_commit_time",
-      "available_from": "2026-09-30T10:13:28+00:00",
+      "available_from": "2026-10-18T08:15:14+00:00",
       "snapshot_identity_state": "not_market_snapshot_evidence",
-      "source_commit": "5cfee12c79188dc7758d9434a3894b8827c96349",
+      "source_commit": "1b1f85dc399795a2ae4ee9a6cf331650bce8d9ee",
       "status": "available"
     },
     "phase6_elliott": {
-      "availability_source": null,
-      "decision_effect": "none",
-      "missing_is_neutral_evidence": false,
-      "resolved_at": "2026-10-18T04:33:38.538584+00:00",
-      "snapshot_identity_state": "not_applicable",
-      "status": "not_supplied"
+      "artifact_path": "/home/runner/work/_temp/decision_elliott_6h_source_v1.json",
+      "artifact_sha256": "b417a293f96d119fcaea3f93ba25ee3d6691bf005f285f2cd2031c5323c797b9",
+      "availability_source": "decision_elliott_6h_source_v1.available_from",
+      "available_from": "2026-10-18T09:44:29.325350+00:00",
+      "decision_effect": "review_only_downstream_of_7d_7e",
+      "elliott_direction_used_as_vote": false,
+      "multi_degree_reducer_used": false,
+      "output_count": 131,
+      "resolved_at": "2026-10-18T09:44:35.805186+00:00",
+      "snapshot_identity_state": "verified",
+      "source_capture_id": "b819a7a6a811ca6a09ca26621a4a7622f1dc4249ee5e0517f67470b36cef0733",
+      "source_commit": "f1337e98609efaa72e2430535450b6462fc8ebfb",
+      "status": "available",
+      "symbol_count": 33
     },
     "phase7a_archive": {
       "artifact_path": "/home/runner/work/trading-zentrale/trading-zentrale/artifacts/research/decision_evidence_7a.jsonl.gz",
-      "artifact_sha256": "33fff51b9d7ac406941196125d19ea3b7c6c325a3a83dd7fb878ba109bfbe9b5",
+      "artifact_sha256": "e96a25a5c8be836ff3463837d01665418780a8471f8f9017ecfac117d156d1dd",
       "availability_source": "w10_runtime_recorded_after_archive_write",
-      "available_from": "2026-10-18T04:37:38.655844+00:00",
+      "available_from": "2026-10-18T09:48:01.572310+00:00",
       "snapshot_identity_state": "inherits_final_7a",
       "status": "available"
     },
@@ -106,6 +114,6 @@
       "status": "available"
     }
   },
-  "started_at": "2026-10-18T04:31:02.578554+00:00",
+  "started_at": "2026-10-18T09:42:22.716000+00:00",
   "status": "sealed"
 }
