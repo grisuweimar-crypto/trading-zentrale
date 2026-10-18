@@ -174,7 +174,16 @@ jobs:
                   v1_run_ids.append(run_id)
 
           claimed = set()
-          raw_v2 = text('show', f'origin/phase4e-shadow-data:{V2}', allow_fail=True)
+          # Read compressed v2 first; retain old plaintext branch format.
+          compressed_v2 = raw_bytes('show', f'origin/phase4e-shadow-data:{V2}.gz', allow_fail=True)
+          if compressed_v2 is not None:
+              import gzip
+              try:
+                  raw_v2 = gzip.decompress(compressed_v2).decode('utf-8')
+              except (OSError, EOFError, UnicodeDecodeError) as exc:
+                  raise SystemExit('phase5b_v2_compressed_archive_corrupt') from exc
+          else:
+              raw_v2 = text('show', f'origin/phase4e-shadow-data:{V2}', allow_fail=True)
           if raw_v2:
               for row in csv.DictReader(io.StringIO(raw_v2)):
                   run_id = str(row.get('run_id') or '').strip()
@@ -275,7 +284,13 @@ jobs:
             artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv \
             artifacts/research/confidence_vnext_frozen_baseline_5b.json
           do
-            if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
+            if [[ "$path" == *.csv ]] && git cat-file -e "origin/phase4e-shadow-data:$path.gz" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/phase4e-shadow-data:$path.gz" > "$path.gz"
+              gzip -t "$path.gz"
+              gzip -cd "$path.gz" > "$path"
+              rm -f "$path.gz"
+            elif git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
               git show "origin/phase4e-shadow-data:$path" > "$path"
             else
@@ -464,9 +479,29 @@ jobs:
         run: |
           git config --local user.email 'action@github.com'
           git config --local user.name 'GitHub Action Bot'
-          git add \
+          # Lossless deterministic gzip transport. Never upload raw CSV
+          # files beyond GitHub's 100 MB blob limit; never truncate claims.
+          for path in \
             artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv \
-            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv \
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv
+          do
+            test -s "$path"
+            gzip -n -6 -c "$path" > "$path.gz"
+            gzip -t "$path.gz"
+            cmp -s "$path" <(gzip -cd "$path.gz") || {
+              echo "::error::Phase 5B lossless gzip roundtrip mismatch: $path"
+              exit 1
+            }
+            if [ "$(stat -c %s "$path.gz")" -ge 80000000 ]; then
+              echo "::error::Phase 5B compressed payload exceeds the 80 MB review limit: $path"
+              exit 1
+            fi
+            git rm -f --ignore-unmatch -- "$path"
+            rm -f "$path"
+          done
+          git add -A -- \
+            artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv.gz \
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv.gz \
             artifacts/research/confidence_vnext_frozen_baseline_5b.json
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Phase 5B v2 shadow update [skip ci]'
@@ -477,6 +512,8 @@ jobs:
             V2_PATHS=(
               artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv
               artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv
+              artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv.gz
+              artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv.gz
               artifacts/research/confidence_vnext_frozen_baseline_5b.json
             )
             for attempt in 1 2 3 4 5; do
@@ -580,11 +617,23 @@ jobs:
               'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_4e.csv',
               allow_fail=True,
           ) or ''
-          v2_raw = text(
+          compressed = raw_bytes(
               'show',
-              'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv',
+              'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv.gz',
               allow_fail=True,
-          ) or ''
+          )
+          if compressed is not None:
+              import gzip
+              try:
+                  v2_raw = gzip.decompress(compressed).decode('utf-8')
+              except (OSError, EOFError, UnicodeDecodeError) as exc:
+                  raise SystemExit('phase5b_queue_compressed_archive_corrupt') from exc
+          else:
+              v2_raw = text(
+                  'show',
+                  'origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv',
+                  allow_fail=True,
+              ) or ''
           v1 = []
           for row in csv.DictReader(io.StringIO(v1_raw)):
               run_id = str(row.get('run_id') or '').strip()
