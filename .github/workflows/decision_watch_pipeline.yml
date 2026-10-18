@@ -129,9 +129,29 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: main
-      - name: Check current Phase 2 snapshot readiness
+      - name: Resolve optional exact-snapshot Elliott capture for late W10 reseal
+        id: elliott_probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "capture=" >> "$GITHUB_OUTPUT"
+          source='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          target="$RUNNER_TEMP/late_elliott_capture.json"
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          if git cat-file -e "origin/elliott-vnext-shadow-data:$source.gz" 2>/dev/null; then
+            git show "origin/elliott-vnext-shadow-data:$source.gz" > "$target.gz"
+            gzip -t "$target.gz"
+            gzip -cd "$target.gz" > "$target"
+            echo "capture=$target" >> "$GITHUB_OUTPUT"
+          elif git cat-file -e "origin/elliott-vnext-shadow-data:$source" 2>/dev/null; then
+            git show "origin/elliott-vnext-shadow-data:$source" > "$target"
+            echo "capture=$target" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check current Phase 2 snapshot readiness and eligible late Phase 6
         id: check
-        run: python scripts/check_decision_watch_readiness.py
+        run: >-
+          python scripts/check_decision_watch_readiness.py
+          --late-elliott-capture "${{ steps.elliott_probe.outputs.capture }}"
       - name: Report deferred integration trigger
         if: steps.check.outputs.ready != 'true'
         run: echo "Decision integration deferred safely; ${{ steps.check.outputs.reason }}"

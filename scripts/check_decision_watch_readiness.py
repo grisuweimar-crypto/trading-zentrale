@@ -61,6 +61,7 @@ def evaluate_from_paths(
     daily_path: Path,
     phase2_path: Path,
     w10_path: Path | None = None,
+    late_elliott_capture_path: Path | None = None,
 ) -> dict[str, object]:
     daily = _load_object(daily_path)
     phase2 = _load_object(phase2_path) if phase2_path.exists() else None
@@ -69,6 +70,27 @@ def evaluate_from_paths(
         sealed = _load_object(w10_path)
         if (str(sealed.get("snapshot_id") or "") == result["current_snapshot_id"]
                 and sealed.get("status") == "sealed"):
+            # Only a newly available, exact-snapshot prospective Elliott capture
+            # may justify redoing the complete W10 freeze/7A/seal for the same
+            # scanner snapshot. The previous seal remains intact in Git history.
+            # Do not re-run if Phase 6 has already been admitted; this avoids
+            # repeatedly revising the same W10 on every workflow completion.
+            stages = sealed.get("stages")
+            phase6 = stages.get("phase6_elliott", {}) if isinstance(stages, Mapping) else {}
+            if (isinstance(phase6, Mapping)
+                    and phase6.get("status") == "not_supplied"
+                    and late_elliott_capture_path is not None
+                    and late_elliott_capture_path.is_file()):
+                capture = _load_object(late_elliott_capture_path)
+                exact = (str(capture.get("snapshot_id") or "") == result["current_snapshot_id"]
+                         and str(capture.get("as_of") or "") == str(daily.get("as_of") or "")
+                         and bool(str(daily.get("as_of") or ""))
+                         and isinstance(capture.get("outputs"), list)
+                         and int(capture.get("output_count") or 0) > 0
+                         and len(capture["outputs"]) == int(capture["output_count"]))
+                if exact:
+                    return {**result, "ready": True,
+                            "reason": "exact_snapshot_late_elliott_requires_new_w10_seal"}
             return {**result, "ready": False, "reason": "same_snapshot_already_sealed"}
     return result
 
@@ -88,6 +110,10 @@ def main() -> int:
         "--w10", default="artifacts/research/decision_snapshot_w10.json",
     )
     parser.add_argument(
+        "--late-elliott-capture", default=None,
+        help="Optional verified and decompressed prospective capture for a new W10 revision",
+    )
+    parser.add_argument(
         "--github-output",
         default=os.environ.get("GITHUB_OUTPUT"),
     )
@@ -98,6 +124,7 @@ def main() -> int:
         daily_path=root / args.daily,
         phase2_path=root / args.phase2,
         w10_path=root / args.w10,
+        late_elliott_capture_path=Path(args.late_elliott_capture) if args.late_elliott_capture else None,
     )
 
     if args.github_output:
