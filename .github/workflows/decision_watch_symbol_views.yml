@@ -54,6 +54,7 @@ jobs:
           tests/test_elliott_vnext_watch_display.py
           tests/test_watch_runtime_transport.py
           tests/test_decision_depot_watch_orchestration.py
+          tests/test_uec_closed_bar_e2e_acceptance.py
       - name: Build current runtime fixture from sealed W10 for symbol-view regression
         run: python scripts/build_watch_runtime_w10.py
 
