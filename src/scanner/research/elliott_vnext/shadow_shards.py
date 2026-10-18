@@ -14,7 +14,13 @@ from pathlib import Path
 import shutil
 import tempfile
 
-from .shadow_transport import MAX_GIT_PAYLOAD_BYTES, ShadowTransportError
+# Self-contained so a capture binder can verify the archived payload before
+# the project dependency installation step (and without importing Elliott core).
+MAX_GIT_PAYLOAD_BYTES = 80_000_000
+
+
+class ShadowTransportError(ValueError):
+    """Fail-closed, byte-preserving shadow archive transport error."""
 
 SHARD_BYTES = 48 * 1024 * 1024
 SCHEMA = "elliott_shadow_shards_v1"
