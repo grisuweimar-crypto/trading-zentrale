@@ -122,12 +122,17 @@ jobs:
         run: |
           python - <<'PY'
           import json,os
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
           r=json.load(open("artifacts/research/closed_bar_shadow/isolated_integration.json"))
           assert r["PRICE"]=="success",r
           assert r["SCAN"]=="success",r
           assert r["DAILY"]=="success",r
           assert r["metadata_complete"] is True,r
-          assert r["metadata_as_of"]=="2026-10-17",r
+          # Verify the actual fresh scanner day, rather than freezing this
+          # workflow to the day on which the integration test was authored.
+          today=datetime.now(ZoneInfo("Europe/Berlin")).date().isoformat()
+          assert r["metadata_as_of"]==r["daily_as_of"]==today,r
           assert r["PRICES"]=="success",r
           assert r["DAILY_RESEARCH"]=="success",r
           assert r["DECISION"]=="success",r
