@@ -14,13 +14,21 @@ on:
     workflows: ['Phase 5D Walk-forward Evaluation']
     types: [completed]
   workflow_dispatch:
+  # Validate the corrected publication workflow immediately after deployment.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/confidence_vnext_5e.yml'
 
 permissions:
   contents: read
   actions: read
 
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('phase5e-pr-{0}', github.event.pull_request.number) || 'phase4e-shadow-publication' }}
+  # Shared Phase-4E/5B/5C/5D group caused newer pending workflows to
+  # cancel Phase 5E without even starting its analysis job. Keep 5E
+  # independent, then enforce snapshot lineage at its publishing boundary.
+  group: ${{ github.event_name == 'pull_request' && format('phase5e-pr-{0}', github.event.pull_request.number) || 'phase5e-live' }}
   cancel-in-progress: false
 
 jobs:
@@ -29,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       shadow_available: ${{ steps.restore.outputs.shadow_available }}
+      source_sha: ${{ steps.restore.outputs.source_sha }}
 
     steps:
       - name: Checkout source
@@ -97,6 +106,8 @@ jobs:
         id: restore
         run: |
           git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force || true
+          SOURCE_SHA=$(git rev-parse --verify refs/remotes/origin/phase4e-shadow-data 2>/dev/null || true)
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
           SHADOW_AVAILABLE=false
           if git show-ref --verify --quiet refs/remotes/origin/phase4e-shadow-data; then
             for path in \
@@ -210,11 +221,56 @@ jobs:
           path: artifacts/research
 
       - name: Publish Phase 5E without touching main or prior Phase 5 archives
+        env:
+          EVIDENCE_SOURCE_SHA: ${{ needs.analyze.outputs.source_sha }}
+        shell: bash
         run: |
+          set -euo pipefail
           git config --local user.email 'action@github.com'
           git config --local user.name 'GitHub Action Bot'
-          git add artifacts/research/confidence_vnext_promotion_5e.json
-          if ! git diff --cached --quiet; then
-            git commit -m '🧭 Phase 5E adaptive shadow promotion update [skip ci]'
-            git push origin HEAD:refs/heads/phase4e-shadow-data
+          INPUT_PATHS=(
+            artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv
+            artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv.gz
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv
+            artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv.gz
+            artifacts/research/confidence_vnext_model_versions_5c.jsonl
+            artifacts/research/confidence_vnext_walkforward_evaluations_5d.jsonl
+          )
+          OUTPUT_PATH=artifacts/research/confidence_vnext_promotion_5e.json
+          test -n "$EVIDENCE_SOURCE_SHA"
+          git cat-file -e "$EVIDENCE_SOURCE_SHA^{commit}"
+          # A 5E evaluation is valid only for the exact Phase-5 input
+          # evidence that analysis read. Never publish a stale report.
+          check_publication_basis() {
+            git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+            git merge-base --is-ancestor "$EVIDENCE_SOURCE_SHA" origin/phase4e-shadow-data || {
+              echo "::error::Phase 5E shadow lineage diverged; refuse publication"
+              exit 1
+            }
+            git diff --quiet "$EVIDENCE_SOURCE_SHA" origin/phase4e-shadow-data -- "${INPUT_PATHS[@]}" || {
+              echo "::error::Phase 5E input evidence advanced since analysis; refuse stale publication"
+              exit 1
+            }
+            git diff --quiet "$EVIDENCE_SOURCE_SHA" origin/phase4e-shadow-data -- "$OUTPUT_PATH" || {
+              echo "::error::Phase 5E report changed concurrently; refuse stale overwrite"
+              exit 1
+            }
+          }
+          check_publication_basis
+          git add "$OUTPUT_PATH"
+          if git diff --cached --quiet; then
+            echo "Phase 5E publication already identical; no new commit"
+            exit 0
           fi
+          git commit -m '🧭 Phase 5E adaptive shadow promotion update [skip ci]'
+          for attempt in 1 2 3 4 5; do
+            check_publication_basis
+            if git push origin HEAD:refs/heads/phase4e-shadow-data; then
+              echo "Phase 5E research-only publication complete on attempt $attempt"
+              exit 0
+            fi
+            check_publication_basis
+            git rebase origin/phase4e-shadow-data
+          done
+          echo "::error::Phase 5E publication unavailable after five safe attempts"
+          exit 1
