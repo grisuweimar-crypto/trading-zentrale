@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
+  "decision_as_of": "2026-10-18T04:33:50.259516+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,56 +26,22 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:AVAV:5df2a86791ff5f88:60T",
-          "timing:AVAV:b0fb906b9f3e02ec:60T",
-          "timing:AVAV:51a8cac8cfa550aa:60T",
-          "timing:AVAV:1691f75766881bca:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:AVAV:9aace91dab644870:5T",
-          "timing:AVAV:03f6bed3788ea96b:5T",
-          "timing:AVAV:2ec83739629fba4d:5T",
-          "timing:AVAV:42bcd8a34d314c09:5T",
-          "timing:AVAV:838b819bd450346e:5T",
-          "timing:AVAV:6267ff2c27f27eb8:20T",
-          "timing:AVAV:cad5eb04910821c4:20T",
-          "timing:AVAV:a0bebf08166a0860:60T",
-          "timing:AVAV:2fbfff31832fc700:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
-    "direction": null,
+    "conflicts": [],
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:AVAV:9aace91dab644870:5T",
-      "timing:AVAV:03f6bed3788ea96b:5T",
-      "timing:AVAV:2ec83739629fba4d:5T",
-      "timing:AVAV:42bcd8a34d314c09:5T",
-      "timing:AVAV:838b819bd450346e:5T",
-      "timing:AVAV:6267ff2c27f27eb8:20T",
-      "timing:AVAV:cad5eb04910821c4:20T",
-      "timing:AVAV:a0bebf08166a0860:60T",
-      "timing:AVAV:2fbfff31832fc700:60T",
-      "timing:AVAV:5df2a86791ff5f88:60T",
-      "timing:AVAV:b0fb906b9f3e02ec:60T",
-      "timing:AVAV:51a8cac8cfa550aa:60T",
-      "timing:AVAV:1691f75766881bca:60T"
+      "timing:AVAV:e3f414dec0e09a39:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 13
+      "timing": 1
     },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "relation_state": "single_direction_or_unopposed",
+    "state": "positive",
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+  "snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -348,6 +314,14 @@
       "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-18T04:33:50.259516+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -372,8 +346,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "stable_confirmed"
   }
 }

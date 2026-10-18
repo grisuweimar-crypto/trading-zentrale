@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
+  "decision_as_of": "2026-10-18T04:33:50.259516+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -27,21 +27,21 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "negative",
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:OXY:1691f75766881bca:60T"
+      "timing:OXY:63001daa7f481bc1:5T"
     ],
     "known_directional_family_counts": {
       "timing": 1
     },
     "relation_state": "single_direction_or_unopposed",
-    "state": "negative",
+    "state": "positive",
     "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+  "snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -314,6 +314,14 @@
       "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
       "state": "negative",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-18T04:33:50.259516+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -328,18 +336,18 @@
     "last_overextension_rs3m": 0.167327688876484,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 16,
+    "sessions_since_last_overextension": 17,
     "upstream_review_state": "monitor",
     "upstream_sequence_state": "post_overextension_memory"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "OXY",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "status": "stable_confirmed"
   }
 }

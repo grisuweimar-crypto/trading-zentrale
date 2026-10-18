@@ -1,5 +1,5 @@
 {
-  "decision_as_of": "2026-10-17T17:20:08.556002+00:00",
+  "decision_as_of": "2026-10-18T04:33:50.259516+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
     "captured_at": null,
@@ -26,42 +26,18 @@
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:AMZN:6b9ad841e92f8191:60T",
-          "timing:AMZN:312bf577128ab874:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:AMZN:9aace91dab644870:5T",
-          "timing:AMZN:838b819bd450346e:5T",
-          "timing:AMZN:6267ff2c27f27eb8:20T",
-          "timing:AMZN:5b62a0aabd2f08fc:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
+    "conflicts": [],
     "direction": null,
-    "known_directional_claim_ids": [
-      "timing:AMZN:9aace91dab644870:5T",
-      "timing:AMZN:838b819bd450346e:5T",
-      "timing:AMZN:6267ff2c27f27eb8:20T",
-      "timing:AMZN:5b62a0aabd2f08fc:60T",
-      "timing:AMZN:6b9ad841e92f8191:60T",
-      "timing:AMZN:312bf577128ab874:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 6
-    },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
+  "snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -334,6 +310,14 @@
       "source_snapshot_id": "6575ff0f-33b4-4fd9-8fdd-1d40c9dbefdd",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-18T04:33:50.259516+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "c910d88d-4482-47fc-977e-d75a6a31100e",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -348,7 +332,7 @@
     "last_overextension_rs3m": 0.1935789485964549,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 138,
+    "sessions_since_last_overextension": 139,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -360,6 +344,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "blocked_insufficient"
   }
 }
