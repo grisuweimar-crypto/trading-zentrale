@@ -261,8 +261,18 @@ jobs:
 
           CAPTURE_PATH='artifacts/research/elliott_vnext_prospective_current_6h.json'
           git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force
-          git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH"
-          git show "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" > "$CAPTURE_FILE"
+          # Rebuild from the exact W10-frozen source commit, never from
+          # a later capture on the moving branch. Both formats are lossless.
+          if git cat-file -e "$SOURCE_COMMIT:$CAPTURE_PATH.gz" 2>/dev/null; then
+            git show "$SOURCE_COMMIT:$CAPTURE_PATH.gz" > "$CAPTURE_FILE.gz"
+            gzip -t "$CAPTURE_FILE.gz"
+            gzip -cd "$CAPTURE_FILE.gz" > "$CAPTURE_FILE"
+          elif git cat-file -e "$SOURCE_COMMIT:$CAPTURE_PATH" 2>/dev/null; then
+            git show "$SOURCE_COMMIT:$CAPTURE_PATH" > "$CAPTURE_FILE"
+          else
+            echo "::error::W10-frozen Elliott capture missing at source commit"
+            exit 1
+          fi
 
           CAPTURE_FILE="$CAPTURE_FILE" SOURCE_CAPTURE_ID="$SOURCE_CAPTURE_ID" python - <<'PY'
           import json
