@@ -78,3 +78,33 @@ def verify_chain(root: Path, snapshot_id: str, *, observed_at: datetime | None =
     return {"snapshot_id": snapshot_id, "status": "CLIENT_CACHE_CHAIN_VERIFIED_ONLY",
             "acquisition_record_sha256": acquisition_hash, "provider_pit_verified": False,
             "research_eligible": False}
+
+
+def verify_prefetch_receipt(root: Path) -> dict:
+    """Verify the actual pre-scoring cache bytes against the latest receipt.
+
+    A receipt may contain legacy rows; that condition is explicitly reported
+    and cannot imply full PIT coverage or research eligibility.
+    """
+    receipt_path = root / "artifacts/market_data/latest_cache_provenance.json"
+    record = _read(receipt_path)
+    if record.get("schema_version") != "cycle_cache_prefetch_v1":
+        raise ProvenanceError("unexpected_prefetch_schema")
+    cache = root / "artifacts/market_data/yahoo_ohlcv.csv"
+    if cache.is_symlink() or not cache.is_file():
+        raise ProvenanceError("missing_market_cache")
+    digest = hashlib.sha256(cache.read_bytes()).hexdigest()
+    if record.get("cache_sha256") != digest:
+        raise ProvenanceError("market_cache_modified")
+    recorded = _utc(record["recorded_at_utc"])
+    if recorded > datetime.now(timezone.utc):
+        raise ProvenanceError("future_record")
+    for batch in record.get("fetch_batches", []):
+        if batch.get("record_sha256") != canonical_hash(batch):
+            raise ProvenanceError("invalid_batch_hash")
+        if not _utc(batch["started_at_utc"]) <= _utc(batch["finished_at_utc"]) <= recorded:
+            raise ProvenanceError("invalid_batch_times")
+    return {"status": "CLIENT_CACHE_BYTES_VERIFIED_ONLY",
+            "cache_sha256": digest,
+            "legacy_cache_rows_unattested": bool(record.get("legacy_cache_rows_unattested", True)),
+            "provider_pit_verified": False, "research_eligible": False}
