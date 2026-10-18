@@ -160,3 +160,43 @@ def test_append_only_claims_and_outcomes_reject_conflicts():
     changed_outcome["outcome_id"] = _sha_payload({key: value for key, value in changed_outcome.items() if key != "outcome_id"})
     with pytest.raises(ValueError, match="immutable v2 outcome conflict"):
         append_outcomes_v2(outcomes, pd.DataFrame([changed_outcome], columns=OUTCOME_COLUMNS_V2))
+
+
+
+def test_phase5b_transport_is_deterministic_lossless_and_cross_stage(tmp_path):
+    """The large v2 archive must roundtrip without truncation or new predictions."""
+    import gzip
+    import hashlib
+    import subprocess
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    original = (b'run_id,claim_id,outcome_eligibility\r\n'
+                + b'github-1-1,unchanged,eligible\r\n' * 14000)
+    path = tmp_path / 'claims.csv'
+    zipped = tmp_path / 'claims.csv.gz'
+    path.write_bytes(original)
+    with zipped.open('wb') as dst:
+        subprocess.run(['gzip', '-n', '-6', '-c', str(path)], stdout=dst, check=True)
+    subprocess.run(['gzip', '-t', str(zipped)], check=True)
+    assert gzip.decompress(zipped.read_bytes()) == original
+    first = hashlib.sha256(zipped.read_bytes()).hexdigest()
+    with zipped.open('wb') as dst:
+        subprocess.run(['gzip', '-n', '-6', '-c', str(path)], stdout=dst, check=True)
+    assert hashlib.sha256(zipped.read_bytes()).hexdigest() == first
+
+    b = (root / '.github/workflows/confidence_vnext_5b.yml').read_text()
+    assert 'gzip -n -6 -c "$path" > "$path.gz"' in b
+    assert 'cmp -s "$path" <(gzip -cd "$path.gz")' in b
+    assert 'phase5b_v2_compressed_archive_corrupt' in b
+    assert 'phase5b_queue_compressed_archive_corrupt' in b
+    assert '80000000' in b
+    assert 'V2_PATHS=(' in b
+    assert 'git rm -f --ignore-unmatch -- "$path"' in b
+
+    for suffix in ('5c', '5d', '5e'):
+        flow = (root / '.github/workflows' / f'confidence_vnext_{suffix}.yml').read_text()
+        assert 'origin/phase4e-shadow-data:$path.gz' in flow
+        assert 'gzip -t "$path.gz"' in flow
+        assert 'gzip -cd "$path.gz" > "$path"' in flow
+        assert 'SHADOW_AVAILABLE=true' in flow
