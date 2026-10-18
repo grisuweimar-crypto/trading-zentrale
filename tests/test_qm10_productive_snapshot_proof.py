@@ -2,18 +2,29 @@ import json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
-def test_qm10_new_productive_snapshot_identity_and_guards():
+def test_qm10_historical_proof_is_frozen_and_current_snapshot_identity_is_coherent():
     p=json.loads((ROOT/"configs/qm10_productive_snapshot_proof_v1.json").read_text())
     meta=json.loads((ROOT/"artifacts/research/history_metadata.json").read_text())
     daily=json.loads((ROOT/"artifacts/research/daily_research.json").read_text())
     w10=json.loads((ROOT/"artifacts/research/decision_snapshot_w10.json").read_text())
     runtime=json.loads((ROOT/"artifacts/research/watch_runtime/public_long_reference.json").read_text())
     manifest=json.loads((ROOT/"artifacts/research/watch_runtime/manifest.json").read_text())
-    sid=p["snapshot_id"]
-    assert sid==meta["snapshot_id"]==daily["snapshot_id"]==w10["snapshot_id"]==runtime["diagnostics"]["snapshot_id"]==manifest["snapshot_id"]
+
+    # Historical QM10 acceptance evidence belongs to 2026-10-06 (213
+    # instruments). Do not rewrite it to follow the changing live scanner.
+    assert p["as_of"] == "2026-10-06"
+    assert p["scanner_symbol_count"] == p["decision_symbol_count"] == 213
+    assert p["runtime_shard_count"] == 64
+
+    # The actual current scanner/W10/runtime must agree with one another,
+    # independently of the immutable earlier quality-management receipt.
+    sid=meta["snapshot_id"]
+    assert sid==daily["snapshot_id"]==w10["snapshot_id"]==runtime["diagnostics"]["snapshot_id"]==manifest["snapshot_id"]
+    assert p["as_of"] <= daily["as_of"]
+    if p["as_of"] < daily["as_of"]:
+        assert sid != p["snapshot_id"]
     assert meta["latest_run_complete"] is True and meta["validation"]["status"]=="ok"
-    assert meta["validation"]["symbol_count"]==p["scanner_symbol_count"]==213
-    assert runtime["row_count"]==p["decision_symbol_count"]==213
+    assert meta["validation"]["symbol_count"]==daily["universe_size"]==runtime["row_count"]==manifest["symbol_count"]
     assert runtime["diagnostics"]["scanner_scalar_fallback_used"] is False
     assert runtime["diagnostics"]["private_position_data_persisted"] is False
     assert runtime["diagnostics"]["missing_current_packet_symbols"]==[]

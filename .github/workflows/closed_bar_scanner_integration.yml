@@ -1,0 +1,163 @@
+name: Closed bars isolated scanner integration
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'src/scanner/app/build_watchlist.py'
+      - 'src/scanner/data/closed_market_cache.py'
+      - 'src/scanner/data/enrich/yahoo_prices.py'
+      - 'tests/test_closed_short_history.py'
+      - 'scripts/verify_closed_bar_w10_w11_shadow.py'
+      - 'src/scanner/data/closed_market_bridge.py'
+      - '.github/workflows/closed_bar_scanner_integration.yml'
+permissions:
+  contents: read
+jobs:
+  scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install -e ".[test]"
+      - name: Prefetch same canonical OHLCV for full current universe and benchmarks
+        id: price
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          from scanner.data.enrich.yahoo_prices import _pick_symbol
+          from scripts.prefetch_market_history import prefetch_history
+          src=Path("artifacts/watchlist/watchlist.csv")
+          if not src.exists():src=Path("data/inputs/watchlist.csv")
+          d=pd.read_csv(src,low_memory=False)
+          symbols={_pick_symbol(row) for _,row in d.iterrows()}
+          symbols.discard("")
+          symbols.update(("SPY","BTC-USD"))
+          result=prefetch_history(Path.cwd(),tuple(sorted(symbols)),300)
+          print("Archived rows:",len(result),"universe:",len(symbols))
+          PY
+      - name: Begin isolated run receipt
+        id: begin
+        continue-on-error: true
+        run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/closed_bar_receipt.json"
+      - name: Run full scanner with canonical archive
+        id: scanner
+        continue-on-error: true
+        env:
+          SCANNER_FETCH_YAHOO: '1'
+          SCANNER_CLOSED_DAILY_ONLY: '1'
+          SCANNER_PRICE_SOURCE: archive
+          SCANNER_REQUIRE_PROVENANCE: '1'
+          TELEGRAM_ENABLED: '0'
+        run: python -m scanner.app.run_daily
+      - name: Generate daily research snapshot
+        id: daily
+        continue-on-error: true
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+        run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/closed_bar_receipt.json" --scanner-status "${{ steps.scanner.outcome }}"
+      - name: Refresh canonical price-backed research views
+        id: prices
+        continue-on-error: true
+        run: python scripts/generate_research_views.py --refresh-prices
+      - name: Generate daily research for new snapshot
+        id: daily_research
+        continue-on-error: true
+        run: python scripts/generate_daily_research.py
+      - name: Build fresh Decision evidence
+        id: decision
+        continue-on-error: true
+        run: python scripts/build_current_decision_evidence_7a.py
+      - name: Check original W10 snapshot boundary
+        id: watch
+        continue-on-error: true
+        run: python scripts/check_watch_snapshot_pair.py > "$RUNNER_TEMP/closed_watch_readiness.json"
+      - name: Write bounded research receipt
+        if: always()
+        env:
+          PRICE: ${{ steps.price.outcome }}
+          BEGIN: ${{ steps.begin.outcome }}
+          SCAN: ${{ steps.scanner.outcome }}
+          DAILY: ${{ steps.daily.outcome }}
+          PRICES: ${{ steps.prices.outcome }}
+          DAILY_RESEARCH: ${{ steps.daily_research.outcome }}
+          DECISION: ${{ steps.decision.outcome }}
+          WATCH: ${{ steps.watch.outcome }}
+        run: |
+          python - <<'PY'
+          import json,os,pathlib
+          root=pathlib.Path("artifacts/research/closed_bar_shadow")
+          root.mkdir(parents=True,exist_ok=True)
+          values={k:os.getenv(k) for k in ("PRICE","BEGIN","SCAN","DAILY","PRICES","DAILY_RESEARCH","DECISION","WATCH")}
+          for k,file in (("daily","artifacts/research/daily_research.json"),("metadata","artifacts/research/history_metadata.json")):
+              p=pathlib.Path(file)
+              if p.exists():
+                  data=json.loads(p.read_text())
+                  values[k+"_snapshot_id"]=data.get("snapshot_id")
+                  values[k+"_as_of"]=data.get("as_of")
+                  values[k+"_complete"]=data.get("latest_run_complete")
+          w=pathlib.Path(os.environ["RUNNER_TEMP"])/"closed_watch_readiness.json"
+          if w.exists():
+              watch=json.loads(w.read_text())
+              values["watch_ready"]=watch.get("ready")
+              values["watch_reason"]=watch.get("reason")
+              values["watch_snapshot_id"]=watch.get("w10_snapshot_id")
+          values["publication"]="runner_only_no_push"
+          (root/"isolated_integration.json").write_text(json.dumps(values,indent=2))
+          print(json.dumps(values))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: closed-bars-isolated-integration
+          path: artifacts/research/closed_bar_shadow/isolated_integration.json
+          if-no-files-found: warn
+      - name: Require complete new scan not a cached old W10
+        run: |
+          python - <<'PY'
+          import json,os
+          r=json.load(open("artifacts/research/closed_bar_shadow/isolated_integration.json"))
+          assert r["PRICE"]=="success",r
+          assert r["SCAN"]=="success",r
+          assert r["DAILY"]=="success",r
+          assert r["metadata_complete"] is True,r
+          assert r["metadata_as_of"]=="2026-10-17",r
+          assert r["PRICES"]=="success",r
+          assert r["DAILY_RESEARCH"]=="success",r
+          assert r["DECISION"]=="success",r
+          assert r["WATCH"]=="success",r
+          # Existing W10 from yesterday is never proof that today's
+          # scanner+decision watch was built or sealed.
+          assert r["metadata_snapshot_id"],r
+          assert r["daily_snapshot_id"]==r["metadata_snapshot_id"],r
+          assert r["watch_ready"] is False,r
+          assert r["watch_reason"]=="awaiting_w10_for_latest_scanner",r
+          PY
+      - name: Real W10 seal and synthetic private W11 test
+        id: w10w11
+        run: python scripts/verify_closed_bar_w10_w11_shadow.py
+      - name: Archive only non-private W10/W11 acceptance status
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: closed-bars-w10-w11-safe-receipt
+          path: artifacts/research/closed_bar_shadow/w10_w11_status.json
+          if-no-files-found: warn
+      - name: Require same-snapshot W10 and W11
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/research/closed_bar_shadow/w10_w11_status.json")
+          d=json.loads(p.read_text())
+          assert d["status"]=="passed",d
+          assert d["w10"]=="sealed_same_snapshot",d
+          assert d["w11_fixture"]=="synthetic_one_share_not_real_depot",d
+          assert d["production_changed"] is False,d
+          PY

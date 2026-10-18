@@ -1,0 +1,88 @@
+name: Closed-bar production sequence prepublication
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/closed_bar_prepublication.yml'
+      - '.github/workflows/run_scanner.yml'
+      - 'scripts/prefetch_closed_bar_inputs.py'
+      - 'src/scanner/app/build_watchlist.py'
+      - 'src/scanner/data/closed_market_bridge.py'
+      - 'src/scanner/data/closed_market_cache.py'
+      - 'src/scanner/data/enrich/yahoo_prices.py'
+permissions:
+  contents: read
+jobs:
+  prepublication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: python -m pip install -e ".[test]"
+      - name: Contract and regression checks
+        run: |
+          python -m pytest -q tests/test_closed_daily_bar_gate.py tests/test_closed_daily_score_gate.py tests/test_closed_short_history.py tests/test_closed_bar_production_cutover.py
+      - name: Update canonical archive before run
+        run: python scripts/prefetch_closed_bar_inputs.py
+      - name: Begin isolated scanner
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+          SCANNER_FETCH_YAHOO: '1'
+        run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/closedbar_production.json"
+      - name: Score from completed daily cache
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+          SCANNER_FETCH_YAHOO: '1'
+          SCANNER_CLOSED_DAILY_ONLY: '1'
+          SCANNER_PRICE_SOURCE: archive
+          TELEGRAM_ENABLED: '0'
+        run: python -m scanner.app.run_daily
+      - name: Validate exact new research snapshot
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+        run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/closedbar_production.json" --scanner-status success
+      - name: Cycle and source checks
+        run: |
+          python scripts/audit_cycle_current.py
+          python - <<'PY'
+          from pathlib import Path
+          assert not Path("artifacts/reports/cycle_provider_fetch_receipt_v1.json").exists(), "fabricated_provider_receipt"
+          PY
+          python scripts/record_cycle_history.py
+      - name: Refresh prices and research for this snapshot
+        run: |
+          python scripts/audit_closed_market_archive.py
+          python scripts/generate_research_views.py --refresh-prices
+          python scripts/generate_daily_research.py
+          python scripts/build_current_decision_evidence_7a.py
+      - name: Verify final scanner identity and 7A
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("artifacts/research")
+          meta=json.loads((root/"history_metadata.json").read_text())
+          daily=json.loads((root/"daily_research.json").read_text())
+          evidence=json.loads((root/"current_decision_packets_7a.json").read_text())
+          assert meta["latest_run_complete"] is True,meta
+          assert meta["validation"]["status"]=="ok",meta["validation"]
+          assert meta["snapshot_id"]==daily["snapshot_id"]==evidence["snapshot_id"]
+          assert evidence["packet_count"]>=daily["universe_size"]
+          assert not Path("artifacts/reports/cycle_provider_fetch_receipt_v1.json").exists()
+          out={"status":"passed","snapshot_id":meta["snapshot_id"],"as_of":meta["as_of"],
+             "universe_size":daily["universe_size"],"evidence_packets":evidence["packet_count"],
+             "no_forged_provider_receipt":True,"production_publication":False,
+             "source":"canonical_market_archive_prior_completed_sessions"}
+          Path("closed_bar_prepublication_receipt.json").write_text(json.dumps(out,indent=2)+"\n")
+          print(json.dumps(out))
+          PY
+      - name: Upload nonprivate receipt only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: closed-bar-prepublication-safety-receipt
+          path: closed_bar_prepublication_receipt.json
+          if-no-files-found: warn

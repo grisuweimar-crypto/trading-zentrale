@@ -1,0 +1,79 @@
+name: Closed OHLCV scanner-cycle handoff rehearsal
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/closed_bar_cycle_handoff.yml'
+      - '.github/workflows/run_scanner.yml'
+      - 'scripts/prefetch_closed_bar_inputs.py'
+      - 'src/scanner/app/build_watchlist.py'
+      - 'src/scanner/data/enrich/yahoo_prices.py'
+permissions:
+  contents: read
+jobs:
+  dry_run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install -e ".[test]"
+      - name: Canonical pre-scoring price fetch
+        run: python scripts/prefetch_closed_bar_inputs.py
+      - name: Start new isolated scanner receipt
+        run: python scripts/generate_research_views.py --begin-run --receipt "$RUNNER_TEMP/cycle_closed_receipt.json"
+      - name: Actual scanner against completed archive bars
+        env:
+          SCANNER_CLOSED_DAILY_ONLY: '1'
+          SCANNER_PRICE_SOURCE: archive
+          SCANNER_FETCH_YAHOO: '1'
+          SCANNER_REQUIRE_PROVENANCE: '1'
+          TELEGRAM_ENABLED: '0'
+        run: python -m scanner.app.run_daily
+      - name: Validate scanner and write research snapshot
+        env:
+          SCANNER_REQUIRE_PROVENANCE: '1'
+        run: python scripts/generate_research_views.py --receipt "$RUNNER_TEMP/cycle_closed_receipt.json" --scanner-status success
+      - name: CY-02 audit of real current snapshot cycle and bars
+        run: python scripts/audit_cycle_current.py
+      - name: Validate canonical price coverage
+        run: python scripts/audit_closed_market_archive.py
+      - name: Update research price/backfill views without another provider fetch
+        run: python scripts/generate_research_views.py --refresh-prices
+      - name: Refresh daily research with identical snapshot
+        run: python scripts/generate_daily_research.py
+      - name: Record original CY-03 prospective history from actual current bars
+        run: python scripts/record_cycle_history.py
+      - name: Forbid an invented fresh Yahoo fetch receipt
+        run: test ! -e artifacts/reports/cycle_provider_fetch_receipt_v1.json
+      - name: Generate ARGUS Decision evidence
+        run: python scripts/build_current_decision_evidence_7a.py
+      - name: Verify same-snapshot and quality; no production push
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("artifacts/research")
+          daily=json.loads((root/"daily_research.json").read_text())
+          meta=json.loads((root/"history_metadata.json").read_text())
+          packet=json.loads((root/"current_decision_packets_7a.json").read_text())
+          assert meta["latest_run_complete"] is True
+          assert daily["snapshot_id"]==meta["snapshot_id"]==packet["snapshot_id"]
+          assert packet["packet_count"]==daily["universe_size"]
+          result={"status":"passed","snapshot_id":daily["snapshot_id"],
+                  "universe_size":daily["universe_size"],
+                  "closed_bar_price_source":"canonical_existing_cache",
+                  "CY02":"passed","CY03":"captured",
+                  "direct_provider_fetch_receipt":"not_fabricated",
+                  "production_changed":False}
+          Path("closed_bar_cycle_handoff_safe.json").write_text(json.dumps(result,indent=2))
+          print(json.dumps(result))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: closed-bar-cycle-handoff-safe
+          path: closed_bar_cycle_handoff_safe.json
+          if-no-files-found: warn

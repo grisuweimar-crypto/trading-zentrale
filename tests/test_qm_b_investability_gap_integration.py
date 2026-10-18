@@ -28,7 +28,12 @@ def test_project_restrictions_close_exactly_one_current_gap_without_retrojection
     assert result['status_counts'] == {'UNKNOWN': expected}
     assert result['strict_universe_promotion_ready_count'] == 0
     assert result['evidence_gap_counts']['stable_identity'] == 0
-    assert result['evidence_gap_counts']['project_membership'] == 0
+    # Explicitly inactive instruments remain UNKNOWN, not automatically promoted.
+    missing_membership = sum(
+        claim['membership_observation_status'] != 'OBSERVED_IN_PROJECT_UNIVERSE'
+        for claim in membership['claims']
+    )
+    assert result['evidence_gap_counts']['project_membership'] == missing_membership
     assert result['evidence_gap_counts']['project_restrictions'] == 0
     assert result['evidence_gap_counts']['listing_state'] == expected
     assert result['evidence_gap_counts']['market_tradability'] == expected

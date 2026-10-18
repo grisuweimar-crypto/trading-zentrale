@@ -68,7 +68,13 @@ jobs:
           assert p['strict_universe_promotion_ready_count'] == 0
           assert p['project_restriction_status_counts'] == {'CLEAR': expected}
           assert p['evidence_gap_counts']['stable_identity'] == 0
-          assert p['evidence_gap_counts']['project_membership'] == 0
+          # Explicitly inactive source rows cannot establish positive
+          # project membership; preserve their UNKNOWN gap (fail-closed).
+          missing_membership=sum(
+              claim['membership_observation_status'] != 'OBSERVED_IN_PROJECT_UNIVERSE'
+              for claim in membership['claims']
+          )
+          assert p['evidence_gap_counts']['project_membership'] == missing_membership
           assert p['evidence_gap_counts']['project_restrictions'] == 0
           assert p['evidence_gap_counts']['listing_state'] == expected
           assert p['evidence_gap_counts']['market_tradability'] == expected
