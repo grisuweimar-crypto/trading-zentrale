@@ -470,7 +470,30 @@ jobs:
             artifacts/research/confidence_vnext_frozen_baseline_5b.json
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Phase 5B v2 shadow update [skip ci]'
-            git push origin HEAD:refs/heads/phase4e-shadow-data
+            # Phase 4E publishes to the same shadow branch independently.
+            # Retain the exact validated v2 payload, retry only when the
+            # concurrent change did not touch any v2 artifact. If it did,
+            # refuse stale publication; the next bound run must regenerate.
+            V2_PATHS=(
+              artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv
+              artifacts/research/confidence_vnext_shadow_outcomes_5b_v2.csv
+              artifacts/research/confidence_vnext_frozen_baseline_5b.json
+            )
+            for attempt in 1 2 3 4 5; do
+              if git push origin HEAD:refs/heads/phase4e-shadow-data; then
+                echo "Phase 5B v2 shadow published on attempt $attempt"
+                exit 0
+              fi
+              OLD_BASE=$(git merge-base HEAD origin/phase4e-shadow-data)
+              git fetch origin phase4e-shadow-data:refs/remotes/origin/phase4e-shadow-data --force
+              if ! git diff --quiet "$OLD_BASE" origin/phase4e-shadow-data -- "${V2_PATHS[@]}"; then
+                echo "::error::Phase 5B v2 remote evidence changed concurrently; refusing stale overwrite"
+                exit 1
+              fi
+              git rebase origin/phase4e-shadow-data
+            done
+            echo "::error::Phase 5B shadow publication still racing after five safe attempts"
+            exit 1
           fi
 
       - name: Continue v2 catch-up queue when needed
