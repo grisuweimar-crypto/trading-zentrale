@@ -92,15 +92,16 @@ jobs:
           cache: pip
       - name: Install project and test dependencies
         run: python -m pip install -e '.[test]'
-      - name: Record original persisted transport size without altering audit baseline
+      - name: Record actual persisted transport size without rewriting historical audit baselines
         run: |
           python - <<'PY'
           from pathlib import Path
+          from scanner.research.decision_layer.watch_runtime import SHARD_IDS
           root = Path('artifacts/research/watch_runtime')
           sizes = {p.name: p.stat().st_size for p in sorted(root.glob('shard_*.json'))}
-          assert len(sizes) == 64
+          assert len(sizes) == len(SHARD_IDS) == 128
           largest = max(sizes, key=sizes.get)
-          print({'baseline_persisted_max_shard': largest, 'bytes': sizes[largest], 'reserve': (2_000_000 - sizes[largest]) / 2_000_000})
+          print({'current_persisted_max_shard': largest, 'bytes': sizes[largest], 'reserve': (2_000_000 - sizes[largest]) / 2_000_000})
           PY
       - name: Rebuild all compact shards from the unmodified sealed W10 source
         run: |
