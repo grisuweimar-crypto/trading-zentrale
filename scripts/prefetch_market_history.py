@@ -346,7 +346,7 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     evidence = root / "artifacts/market_data/cache_provenance"
     evidence.mkdir(parents=True, exist_ok=True)
     receipt = evidence / (record["record_sha256"] + ".json")
-    payload = (json.dumps(record, sort_keys=True, indent=2) + "\\n").encode()
+    payload = (json.dumps(record, sort_keys=True, indent=2) + "\n").encode()
     if receipt.exists() and receipt.read_bytes() != payload:
         raise ValueError("immutable_cache_provenance_changed")
     if not receipt.exists():
