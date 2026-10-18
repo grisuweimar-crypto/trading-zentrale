@@ -56,6 +56,15 @@ jobs:
               'src/scanner/reports/confidence_vnext_progressive.py',
               'tests/test_confidence_vnext_progressive.py',
           }
+          # These four phases share one lossless v2 evidence transport; allow
+          # tightly-scoped cross-phase reader/writer compatibility changes.
+          allowed.update({
+              '.github/workflows/confidence_vnext_5b.yml',
+              '.github/workflows/confidence_vnext_5c.yml',
+              '.github/workflows/confidence_vnext_5d.yml',
+              '.github/workflows/confidence_vnext_5e.yml',
+              'tests/test_confidence_vnext_prospective_v2.py',
+          })
           changed = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
