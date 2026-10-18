@@ -381,7 +381,30 @@ jobs:
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
           do
-            if git cat-file -e "origin/elliott-vnext-shadow-data:$path.gz" 2>/dev/null; then
+            if [[ "$path" == "artifacts/research/elliott_vnext_prospective_history_6h.jsonl" ]] && \
+               git cat-file -e "origin/elliott-vnext-shadow-data:$path.manifest.json" 2>/dev/null; then
+              mkdir -p "$(dirname "$path")"
+              git show "origin/elliott-vnext-shadow-data:$path.manifest.json" > "$path.manifest.json"
+              ARCHIVE_PATH="$path" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          path = Path(os.environ['ARCHIVE_PATH'])
+          manifest = json.loads(Path(str(path) + '.manifest.json').read_text(encoding='utf-8'))
+          parts = manifest.get('parts')
+          if not isinstance(parts, list) or not 1 <= len(parts) <= 10000:
+              raise SystemExit('invalid_elliott_shadow_manifest_part_list')
+          for i in range(len(parts)):
+              name = path.name + f'.part-{i:05d}.gz'
+              with (path.parent / name).open('wb') as stream:
+                  subprocess.run(
+                      ['git', 'show', f'origin/elliott-vnext-shadow-data:{path.parent}/{name}'],
+                      stdout=stream, check=True)
+          PY
+              python -m scanner.research.elliott_vnext.shadow_shards unpack "$path.manifest.json" "$path"
+              rm -f "$path.manifest.json" "$path".part-*.gz
+            elif git cat-file -e "origin/elliott-vnext-shadow-data:$path.gz" 2>/dev/null; then
               mkdir -p "$(dirname "$path")"
               git show "origin/elliott-vnext-shadow-data:$path.gz" > "$path.gz"
               python -m scanner.research.elliott_vnext.shadow_transport unpack "$path.gz" "$path"
@@ -499,14 +522,14 @@ jobs:
             "$RUNNER_TEMP/elliott-shadow-before.jsonl" \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl
           mkdir -p "$RUNNER_TEMP/elliott-shadow-payload"
-          # Full JSON/JSONL are already validated; now encode the exact bytes.
-          for path in \
+          # Transport only: preserve the original append-only JSONL bytes.
+          # Each bounded gzip shard remains below the hard 80 MB review limit.
+          python -m scanner.research.elliott_vnext.shadow_shards pack \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
-          do
-            python -m scanner.research.elliott_vnext.shadow_transport pack \
-              "$path" "$RUNNER_TEMP/elliott-shadow-payload/$(basename "$path").gz"
-          done
+            "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.manifest.json"
+          python -m scanner.research.elliott_vnext.shadow_transport pack \
+            artifacts/research/elliott_vnext_prospective_current_6h.json \
+            "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json.gz"
 
       - name: Publish isolated Elliott shadow data branch
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
@@ -545,10 +568,20 @@ jobs:
           git rm -f --ignore-unmatch -- \
             artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
             artifacts/research/elliott_vnext_prospective_current_6h.json
-          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.gz" artifacts/research/
+          # Stage the manifest last after round-trip verification; retain
+          # immutable prior Git commits, but replace oversized current gzip.
+          git rm -f --ignore-unmatch -- artifacts/research/elliott_vnext_prospective_history_6h.jsonl.gz
+          git ls-files -z -- 'artifacts/research/elliott_vnext_prospective_history_6h.jsonl.part-*.gz' |
+            xargs -0 -r git rm -f --
+          cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.manifest.json" artifacts/research/
+          for part in "$RUNNER_TEMP"/elliott-shadow-payload/elliott_vnext_prospective_history_6h.jsonl.part-*.gz; do
+            test -f "$part"
+            cp "$part" artifacts/research/
+          done
           cp "$RUNNER_TEMP/elliott-shadow-payload/elliott_vnext_prospective_current_6h.json.gz" artifacts/research/
-          git add \
-            artifacts/research/elliott_vnext_prospective_history_6h.jsonl.gz \
+          git add -A -- \
+            artifacts/research/elliott_vnext_prospective_history_6h.jsonl.manifest.json \
+            'artifacts/research/elliott_vnext_prospective_history_6h.jsonl.part-*.gz' \
             artifacts/research/elliott_vnext_prospective_current_6h.json.gz
           if ! git diff --cached --quiet; then
             git commit -m '🧪 Elliott vNext prospective shadow [skip ci]'
