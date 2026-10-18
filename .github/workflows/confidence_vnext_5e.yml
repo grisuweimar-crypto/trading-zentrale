@@ -52,6 +52,15 @@ jobs:
               'src/scanner/reports/confidence_vnext_promotion.py',
               'tests/test_confidence_vnext_promotion.py',
           }
+          # These four phases share one lossless v2 evidence transport; allow
+          # tightly-scoped cross-phase reader/writer compatibility changes.
+          allowed.update({
+              '.github/workflows/confidence_vnext_5b.yml',
+              '.github/workflows/confidence_vnext_5c.yml',
+              '.github/workflows/confidence_vnext_5d.yml',
+              '.github/workflows/confidence_vnext_5e.yml',
+              'tests/test_confidence_vnext_prospective_v2.py',
+          })
           changed = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -96,14 +105,21 @@ jobs:
               artifacts/research/confidence_vnext_model_versions_5c.jsonl \
               artifacts/research/confidence_vnext_walkforward_evaluations_5d.jsonl
             do
-              if git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
+              if [[ "$path" == *.csv ]] && git cat-file -e "origin/phase4e-shadow-data:$path.gz" 2>/dev/null; then
+                mkdir -p "$(dirname "$path")"
+                git show "origin/phase4e-shadow-data:$path.gz" > "$path.gz"
+                gzip -t "$path.gz"
+                gzip -cd "$path.gz" > "$path"
+                rm -f "$path.gz"
+              elif git cat-file -e "origin/phase4e-shadow-data:$path" 2>/dev/null; then
                 mkdir -p "$(dirname "$path")"
                 git show "origin/phase4e-shadow-data:$path" > "$path"
               else
                 rm -f "$path"
               fi
             done
-            if git cat-file -e "origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv" 2>/dev/null; then
+            if git cat-file -e "origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv.gz" 2>/dev/null || \
+               git cat-file -e "origin/phase4e-shadow-data:artifacts/research/confidence_vnext_shadow_claims_5b_v2.csv" 2>/dev/null; then
               SHADOW_AVAILABLE=true
             fi
           fi
