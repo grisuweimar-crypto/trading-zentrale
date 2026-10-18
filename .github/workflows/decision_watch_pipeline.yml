@@ -236,15 +236,30 @@ jobs:
             echo 'No Elliott shadow branch yet; Phase 6 remains not_supplied.'
             exit 0
           fi
-          if ! git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" 2>/dev/null; then
-            echo 'No prospective Elliott capture yet; Phase 6 remains not_supplied.'
+          # The shadow branch stores the current 6H capture in deterministic
+          # gzip. Prefer it to legacy plaintext: ignoring .gz silently
+          # disables Stage-3 Elliott context even when capture exists.
+          if git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH.gz" 2>/dev/null; then
+            CAPTURE_STORAGE_PATH="$CAPTURE_PATH.gz"
+            CAPTURE_FORMAT=gzip
+          elif git cat-file -e "origin/elliott-vnext-shadow-data:$CAPTURE_PATH" 2>/dev/null; then
+            CAPTURE_STORAGE_PATH="$CAPTURE_PATH"
+            CAPTURE_FORMAT=plain
+          else
+            echo 'No prospective Elliott capture in either supported format; Phase 6 remains not_supplied.'
             exit 0
           fi
 
-          CAPTURE_COMMIT=$(git log -1 --format=%H origin/elliott-vnext-shadow-data -- "$CAPTURE_PATH")
+          CAPTURE_COMMIT=$(git log -1 --format=%H origin/elliott-vnext-shadow-data -- "$CAPTURE_STORAGE_PATH")
           test -n "$CAPTURE_COMMIT"
           CAPTURE_AVAILABLE_FROM=$(git show -s --format=%cI "$CAPTURE_COMMIT")
-          git show "$CAPTURE_COMMIT:$CAPTURE_PATH" > "$CAPTURE_FILE"
+          if [[ "$CAPTURE_FORMAT" == gzip ]]; then
+            git show "$CAPTURE_COMMIT:$CAPTURE_STORAGE_PATH" > "$CAPTURE_FILE.gz"
+            gzip -t "$CAPTURE_FILE.gz"
+            gzip -cd "$CAPTURE_FILE.gz" > "$CAPTURE_FILE"
+          else
+            git show "$CAPTURE_COMMIT:$CAPTURE_STORAGE_PATH" > "$CAPTURE_FILE"
+          fi
 
           set +e
           CAPTURE_FILE="$CAPTURE_FILE" python - <<'PY'

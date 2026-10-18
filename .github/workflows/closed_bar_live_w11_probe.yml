@@ -1,13 +1,17 @@
-name: Live W10 to private synthetic W11 acceptance (read-only)
+name: UEC Live Scanner ARGUS Elliott and synthetic W11 Acceptance
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/closed_bar_live_w11_probe.yml'
+  workflow_run:
+    workflows: ['Decision Watch Symbol Views']
+    types: [completed]
 permissions:
   contents: read
 jobs:
   verify:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -22,6 +26,68 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -e './live[test]'
+      - name: Prove real UEC scanner and public ARGUS Watch invariants
+        run: python -m pytest -q live/tests/test_uec_closed_bar_e2e_acceptance.py
+      - name: Check live compressed Elliott and exact-snapshot integration
+        run: |
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force
+          python - <<'PY'
+          import gzip, json, subprocess
+          from pathlib import Path
+          root = Path('live')
+          base = 'artifacts/research/'
+          daily = json.loads((root / (base + 'daily_research.json')).read_text())
+          w10 = json.loads((root / (base + 'decision_snapshot_w10.json')).read_text())
+          index = json.loads((root / (base + 'watch_runtime/symbols/index.json')).read_text())
+          source = base + 'elliott_vnext_prospective_current_6h.json.gz'
+          try:
+              compressed = subprocess.check_output(
+                  ['git','show',f'origin/elliott-vnext-shadow-data:{source}'])
+          except subprocess.CalledProcessError as exc:
+              raise SystemExit('UEC_E2E_MISSING_COMPRESSED_ELLIOTT_SOURCE') from exc
+          capture = json.loads(gzip.decompress(compressed))
+          assert capture['snapshot_id'] == daily['snapshot_id'], (
+              'current Elliott capture is NOT the current scanner snapshot',
+              capture['snapshot_id'], daily['snapshot_id'])
+          assert capture['as_of'] == daily['as_of']
+          assert capture['output_count'] > 0
+          assert w10['stages']['phase6_elliott']['status'] == 'available', 'Elliott W10 boundary still missing'
+          stage = w10['stages']['phase6_elliott']
+          assert stage['source_capture_id'] == capture['capture_id']
+          # Private W11 must consume this exact frozen W6 source; merely
+          # reading a current Elliott capture would violate the PIT guard.
+          from os import environ
+          import sys
+          tmp = Path(environ['RUNNER_TEMP'])
+          capture_path = tmp / 'uec_elliott_capture.json'
+          source_path = tmp / 'uec_elliott_frozen_w6.json'
+          capture_path.write_bytes(gzip.decompress(compressed))
+          subprocess.run([
+              sys.executable, str(root / 'scripts/build_elliott_w6_source.py'),
+              '--root', str(root.resolve()),
+              '--capture', str(capture_path),
+              '--source-commit', stage['source_commit'],
+              '--available-from', stage['available_from'],
+              '--evidence-available-from', stage['available_from'],
+              '--output', str(source_path),
+          ], check=True)
+          assert source_path.is_file()
+          assert index['elliott_vnext_display']['capture_supplied'] is True
+          assert index['elliott_vnext_display']['source_capture_id'] == capture['capture_id']
+          summary = json.loads((root / (base + 'watch_runtime/symbols') /
+                                index['summary_files']['UEC']).read_text())
+          display = summary['elliott_vnext_research']
+          assert display['research_only'] is True and display['decision_effect'] == 'none'
+          assert display['changes_universal_stance'] is False
+          assert display['changes_portfolio_action'] is False
+          if any(row.get('symbol') == 'UEC' for row in capture['outputs']):
+              assert display['outputs'], 'UEC Elliott output silently dropped'
+          else:
+              assert display['status'] == 'no_elliott_output_for_symbol'
+          print({'status':'PASS','symbol':'UEC','as_of':daily['as_of'],
+                 'eli_status':display['status'],'elliott_outputs':len(display['outputs']),
+                 'research_only':True,'decision_effect':'none'})
+          PY
       - name: Validate deployed W10 identity and run private synthetic W11
         run: |
           python - <<'PY'
@@ -36,7 +102,8 @@ jobs:
           assert w10["status"]=="sealed"
           assert sid==w10["snapshot_id"]==runtime["snapshot_id"],"W10 and runtime different snapshots"
           symbols=daily.get("symbols",{})
-          sym="UEC" if "UEC" in symbols else sorted(symbols)[0]
+          assert "UEC" in symbols, 'UEC missing from scanner universe'
+          sym="UEC"
           item=symbols[sym]["current"]
           price=float(item["close"])
           assert price>0
@@ -52,14 +119,17 @@ jobs:
           path=tmp/"synthetic_private_position.json"
           path.write_text(json.dumps(book))
           out=tmp/"w11_private"
+          frozen_source = tmp / 'uec_elliott_frozen_w6.json'
+          assert frozen_source.is_file(), 'W11 frozen Elliott W6 source missing'
           subprocess.run([sys.executable,str(root/"scripts/run_depot_watch_e2e_w11.py"),
                     "--root",str(root),"--positions",str(path),
+                    "--elliott-6h-source",str(frozen_source),
                     "--private-output-dir",str(out)],check=True)
           receipt=json.loads((out/"w11_acceptance_receipt.json").read_text())
           assert receipt.get("status")=="passed",receipt.get("status")
           assert receipt.get("snapshot_id")==sid
           assert receipt.get("receipt_contains_position_rows") is False
-          safe={"status":"passed","current_main_snapshot_id":sid,
+          safe={"status":"passed","symbol":"UEC","current_main_snapshot_id":sid,
                 "w10_status":w10["status"],"runtime_symbol_count":runtime["symbol_count"],
                 "w11_status":receipt["status"],
                 "fixture":"synthetic_only_no_real_position_data",

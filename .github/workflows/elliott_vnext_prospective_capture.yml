@@ -301,10 +301,12 @@ jobs:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
               else:
-                  # The Autopilot completion must capture the newest publication,
-                  # so W10 can bind same-snapshot Elliott evidence. Scheduled
-                  # runs drain older uncaptured publications without starvation.
-                  prefer_latest = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_run'
+                  # Interactive/manual and code-push refreshes must capture the
+                  # newest publication first, so W10 can bind current Elliott.
+                  # Only scheduled runs drain older uncaptured publications.
+                  prefer_latest = os.environ.get('GITHUB_EVENT_NAME') in {
+                      'workflow_run', 'workflow_dispatch', 'push'
+                  }
                   sha, run_id, published_at = candidates[-1] if prefer_latest else candidates[0]
                   handle.write('process=true\n')
                   handle.write(f'commit={sha}\n')
@@ -315,7 +317,7 @@ jobs:
               'claimed_or_rejected_runs': len(claimed_run_ids),
               'repairable_legacy_empty_runs': len(repairable_run_ids),
               'uncaptured_publications': len(candidates),
-              'selected': (candidates[-1] if os.environ.get('GITHUB_EVENT_NAME') == 'workflow_run' else candidates[0]) if candidates else None,
+              'selected': (candidates[-1] if os.environ.get('GITHUB_EVENT_NAME') in {'workflow_run', 'workflow_dispatch', 'push'} else candidates[0]) if candidates else None,
           }, indent=2))
           PY
 
@@ -417,6 +419,12 @@ jobs:
               rm -f "$path"
             fi
           done
+          # Historical catch-up runs must never downgrade the published
+          # "current" capture when they process an older scanner publication.
+          current='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          if [[ -s "$current" ]]; then
+            cp "$current" "$RUNNER_TEMP/elliott-shadow-previous-current.json"
+          fi
 
       - name: Freeze restored archive and reject mismatched prior capture
         if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
@@ -513,6 +521,37 @@ jobs:
               'symbols_with_outputs': capture['symbols_with_outputs'],
               'validation_partition': capture['validation_partition'],
           }, indent=2))
+          PY
+
+      - name: Preserve newest snapshot as current during backlog capture
+        if: github.event_name != 'pull_request' && steps.bind.outputs.process == 'true'
+        env:
+          PREVIOUS_CAPTURE: ${{ runner.temp }}/elliott-shadow-previous-current.json
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime
+          from pathlib import Path
+
+          before = Path(os.environ['PREVIOUS_CAPTURE'])
+          current = Path('artifacts/research/elliott_vnext_prospective_current_6h.json')
+          if not before.is_file():
+              print('no existing latest capture; generated capture stays current')
+          else:
+              old = json.loads(before.read_text(encoding='utf-8'))
+              new = json.loads(current.read_text(encoding='utf-8'))
+              def stamp(record):
+                  value = str(record.get('scanner_published_at') or '').replace('Z', '+00:00')
+                  result = datetime.fromisoformat(value)
+                  if result.tzinfo is None or result.utcoffset() is None:
+                      raise ValueError('elliott_current_scanner_publish_stamp_not_utc')
+                  return result
+              if stamp(old) > stamp(new):
+                  current.write_bytes(before.read_bytes())
+                  print('historical capture appended, existing newer current snapshot preserved')
+              else:
+                  print('newest scanner publication retained as current')
           PY
 
       - name: Preserve shadow publication payload

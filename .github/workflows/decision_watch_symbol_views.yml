@@ -54,6 +54,7 @@ jobs:
           tests/test_elliott_vnext_watch_display.py
           tests/test_watch_runtime_transport.py
           tests/test_decision_depot_watch_orchestration.py
+          tests/test_uec_closed_bar_e2e_acceptance.py
       - name: Build current runtime fixture from sealed W10 for symbol-view regression
         run: python scripts/build_watch_runtime_w10.py
 
@@ -158,8 +159,14 @@ jobs:
           set -euo pipefail
           git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
           path="$RUNNER_TEMP/elliott_vnext_prospective_current_6h.json"
-          if git cat-file -e "origin/elliott-vnext-shadow-data:artifacts/research/elliott_vnext_prospective_current_6h.json" 2>/dev/null; then
-            git show "origin/elliott-vnext-shadow-data:artifacts/research/elliott_vnext_prospective_current_6h.json" > "$path"
+          capture='artifacts/research/elliott_vnext_prospective_current_6h.json'
+          if git cat-file -e "origin/elliott-vnext-shadow-data:$capture.gz" 2>/dev/null; then
+            git show "origin/elliott-vnext-shadow-data:$capture.gz" > "$path.gz"
+            gzip -t "$path.gz"
+            gzip -cd "$path.gz" > "$path"
+            echo "path=$path" >> "$GITHUB_OUTPUT"
+          elif git cat-file -e "origin/elliott-vnext-shadow-data:$capture" 2>/dev/null; then
+            git show "origin/elliott-vnext-shadow-data:$capture" > "$path"
             echo "path=$path" >> "$GITHUB_OUTPUT"
           else
             echo "path=" >> "$GITHUB_OUTPUT"
