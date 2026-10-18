@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/scanner/reports/cycle_cache_provenance.py'
       - 'scripts/prefetch_market_history.py'
+      - 'scripts/verify_cycle_cache_receipt.py'
       - 'tests/test_cycle_cache_provenance.py'
       - '.github/workflows/cycle_cache_provenance.yml'
   workflow_dispatch:
@@ -19,5 +20,5 @@ jobs:
         with:
           python-version: '3.11'
       - run: python -m pip install -e ".[test]"
-      - run: python -m compileall -q src/scanner/reports/cycle_cache_provenance.py scripts/prefetch_market_history.py
+      - run: python -m compileall -q src/scanner/reports/cycle_cache_provenance.py scripts/prefetch_market_history.py scripts/verify_cycle_cache_receipt.py
       - run: python -m pytest -q tests/test_cycle_cache_provenance.py
