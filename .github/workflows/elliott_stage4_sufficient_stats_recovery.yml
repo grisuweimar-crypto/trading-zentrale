@@ -91,7 +91,12 @@ jobs:
           python scripts/aggregate_elliott_stage4_sufficient_stats.py --help
 
   reduce:
-    if: github.event_name != 'pull_request'
+    # The October historical component downloads are expired. Routine pushes
+    # only verify frozen input provenance and test correctness; recovery of
+    # historical evidence must be an explicit manual operation with available
+    # source components. Do not regenerate or overwrite a sealed Stage-4
+    # research artifact during unrelated productive scanner cutovers.
+    if: github.event_name == 'workflow_dispatch'
     needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 30
