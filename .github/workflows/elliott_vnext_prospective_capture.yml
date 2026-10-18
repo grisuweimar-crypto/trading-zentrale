@@ -170,27 +170,71 @@ jobs:
           repairable_run_ids = set()
           # The remote shadow branch may still contain the legacy plain JSONL.
           # Prefer lossless gzip after migration and reject corrupted new files.
-          zipped_archive = git_bytes(
-              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.gz', allow_fail=True
+          # Prefer verified shard transport; preserve gzip/plain legacy readers.
+          manifest_raw = git_bytes(
+              'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.manifest.json',
+              allow_fail=True,
           )
-          if zipped_archive is not None:
+          archive_path = None
+          archive_sha256 = None
+          if manifest_raw is not None:
+              from pathlib import Path
+              import runpy
+              unpack_sharded = runpy.run_path(
+                  'src/scanner/research/elliott_vnext/shadow_shards.py'
+              )['unpack_sharded']
+              tmp = Path(os.environ['RUNNER_TEMP']) / 'elliott-bind-shards'
+              tmp.mkdir(parents=True, exist_ok=True)
+              stem = ARCHIVE_PATH.rsplit('/', 1)[-1]
+              parent = ARCHIVE_PATH.rsplit('/', 1)[0]
+              manifest_file = tmp / (stem + '.manifest.json')
+              manifest_file.write_bytes(manifest_raw)
               try:
-                  archive_bytes = gzip.decompress(zipped_archive)
-                  archive = archive_bytes.decode('utf-8')
-              except (OSError, EOFError, UnicodeDecodeError) as exc:
-                  raise SystemExit(f'elliott_shadow_archive_gzip_invalid:{exc}') from exc
+                  part_list = json.loads(manifest_raw)['parts']
+              except (ValueError, KeyError, TypeError) as exc:
+                  raise SystemExit('elliott_shadow_shard_manifest_invalid') from exc
+              if not isinstance(part_list, list) or not 1 <= len(part_list) <= 10000:
+                  raise SystemExit('elliott_shadow_shard_manifest_invalid')
+              for index in range(len(part_list)):
+                  filename = f'{stem}.part-{index:05d}.gz'
+                  blob = git_bytes('show',
+                      f'origin/elliott-vnext-shadow-data:{parent}/{filename}',
+                      allow_fail=True)
+                  if blob is None:
+                      raise SystemExit(f'elliott_shadow_shard_missing:{filename}')
+                  (tmp / filename).write_bytes(blob)
+              archive_path = tmp / 'restored_history.jsonl'
+              verified = unpack_sharded(manifest_file, archive_path)
+              archive_sha256 = verified['original_sha256']
+              archive_bytes = None
+              archive = None
           else:
-              # Git text mode normalizes CRLF/bare-CR newlines. The restored
-              # legacy JSONL is byte-exact, so hash its raw Git blob bytes.
-              archive_bytes = git_bytes(
-                  'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+            zipped_archive = git_bytes(
+                'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}.gz', allow_fail=True
+            )
+            if zipped_archive is not None:
+                try:
+                    archive_bytes = gzip.decompress(zipped_archive)
+                    archive = archive_bytes.decode('utf-8')
+                except (OSError, EOFError, UnicodeDecodeError) as exc:
+                    raise SystemExit(f'elliott_shadow_archive_gzip_invalid:{exc}') from exc
+            else:
+                # Git text mode normalizes CRLF/bare-CR newlines. The restored
+                # legacy JSONL is byte-exact, so hash its raw Git blob bytes.
+                archive_bytes = git_bytes(
+                    'show', f'origin/elliott-vnext-shadow-data:{ARCHIVE_PATH}', allow_fail=True
+                )
+                try:
+                    archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None
+                except UnicodeDecodeError as exc:
+                    raise SystemExit(f'elliott_shadow_archive_utf8_invalid:{exc}') from exc
+            archive_sha256 = hashlib.sha256(archive_bytes or b'').hexdigest()
+          if archive or archive_path is not None:
+              archive_lines = (
+                  archive_path.open('r', encoding='utf-8', newline='')
+                  if archive_path is not None else archive.splitlines()
               )
-              try:
-                  archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None
-              except UnicodeDecodeError as exc:
-                  raise SystemExit(f'elliott_shadow_archive_utf8_invalid:{exc}') from exc
-          if archive:
-              for line_number, line in enumerate(archive.splitlines(), start=1):
+              for line_number, line in enumerate(archive_lines, start=1):
                   if not line.strip():
                       continue
                   try:
@@ -252,7 +296,7 @@ jobs:
 
           output = os.environ['GITHUB_OUTPUT']
           with open(output, 'a', encoding='utf-8') as handle:
-              handle.write(f'archive_sha256={hashlib.sha256(archive_bytes or b'').hexdigest()}\n')
+              handle.write(f'archive_sha256={archive_sha256}\n')
               if not candidates:
                   handle.write('process=false\n')
                   handle.write('backlog_count=0\n')
