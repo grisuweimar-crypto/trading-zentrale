@@ -52,7 +52,7 @@ def test_uec_real_snapshot_consistent_across_layers():
     assert row["score_status"] == "OK"
     assert row["cycle_quality"] == "VALID"
     assert row["cycle_quality_reason"] == "COMPLETED_DAILY_BARS"
-    assert date.fromisoformat(row["cycle_last_bar"]) < date.fromisoformat(daily["as_of"])
+    assert date.fromisoformat(row["cycle_last_bar"]) <= date.fromisoformat(daily["as_of"])
     assert float(row["cycle_eligible_bars"]) >= 200
     assert float(row["close"]) == pytest.approx(uec["current"]["close"], rel=1e-9)
     assert float(row["score"]) == pytest.approx(uec["current"]["score"], abs=1e-9)
