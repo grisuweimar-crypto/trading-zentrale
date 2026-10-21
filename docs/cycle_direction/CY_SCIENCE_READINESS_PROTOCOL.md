@@ -54,6 +54,20 @@ Die Aktion **ersetzt weder** den produktiven täglichen Scanner noch dessen best
 
 **Nicht vergessen:** Zeit allein schafft weder Unabhängigkeit noch ausreichendes N. Mehrere tägliche Snapshots desselben Datums zählen nur als **ein** kanonischer 1/5/10obs-Tag. Erst fünf *qualifizierte* Vorgänger ermöglichen einen deskriptiven 5obs-Lag; für die vorregistrierte C–B-Hypothese mit 20 Sessions und ihre prospektive Bestätigung gelten zusätzliche **eigene** Reife- und Mindest-N-/Stützregionsbedingungen. Negative und ausgefallene Samples bleiben als Ausschlüsse sichtbar.
 
+## 4a. 21.10.2026 – Pre-Scoring-Witness und CY-03-v2 Proof Queue (technischer Vorschlag)
+
+**Quelle und Grenzen:** Im regulären Scanner wird zunächst `scripts/prefetch_closed_bar_inputs.py` ausgeführt. Dieser Prozess aktualisiert den kanonischen OHLCV-Cache. Später rechnet der Scanner mit `SCANNER_PRICE_SOURCE=archive` und darf darum keinen zweiten direkten Yahoo-Beleg vortäuschen.
+
+Diese Änderung sammelt **während des wirklichen `yfinance.download`-Aufrufs** pro Versuch Client-UTC-Start und -Ende, angefragte Provider-Symbole, Request-Parameter und die **tatsächlich von yfinance normalisierten Datenzeilen** samt SHA. Sie hält bewusst **keine signierten Yahoo-HTTP-Antworten** fest. Nach dem Cache-Merge werden die konkrete Cache-Datei und ihr Hash dokumentiert. Bei vollständigem Scannerlauf bindet `scripts/record_cycle_prefetch_witness.py` den Beleg exakt an GitHub-Run-/Attempt-ID, CY-03-Snapshot-ID, Run-ID, archivierte 60-Bar-Hashsumme und Scanner-`generated_at`. Manipulationen, Wiederverwendung aus fremden Runs oder Abrufe nach Snapshotabschluss führen zum Fehler. Das zusätzliche Archiv ist append-only unter `artifacts/cycle_history/prefetch_receipts/<snapshot_id>.json`.
+
+`scripts/watch_cycle_science.py` prüft diese Witnesses neben der älteren direkten `cycle_provider_fetch_receipt_v1`-Schicht. Frühere Scan-Snapshots ohne zeitgenössischen Witness bleiben unverändert und **bekommen keinen rückdatierten Beleg**. Auch die unveränderlichen CY-03-v1-Archive werden nicht umgeschrieben.
+
+**Unveränderte wissenschaftliche Blockade:** Client-Uhrzeit und normalisierte yfinance-Frames sind weder unabhängige Provider-Publikationszeit, noch originale Notierungswährungsbestätigung, noch zwingender Beleg, dass genau diese `adjusted`-Bar-Fassung zum ursprünglichen Scanzeitpunkt veröffentlicht war. Selbst bei erfolgreicher technischer Witness-Prüfung bleiben `#269` / `#290`, `research_eligible=0`, CY-05 L1 und alle Handelsfreigaben **BLOCKED**.
+
+**Vorbereitete Teilkohorte:** `python scripts/inventory_cycle_v2_candidates.py --repo-root . --output /tmp/cycle-v2-proof-queue.json` erstellt nach vollständigem internem Archiv-Replay eine read-only-Liste der vorläufig gültigen 10obs-Kandidaten auf Ebene Asset × Snapshot, mit Preis-/Bar-Hashes, Witness-Präsenz und **explizit ungeprüften** externen Herkunfts-/PIT-Feldern. Dies ist eine Prüfliste, **kein freigegebener CY-03-v2-Release**, kein eingefrorener CY-05-Datensatz und keine Research-/Handelsbewertung. Ein unabhängiger Prüfer muss Belege pro relevanter Lag-Kette, Cash-Session, Provider-/Listing-/Quote-Identität, Bar-Verfügbarkeit, fehlenden Beobachtungen und Reviewer-Hash hinzufügen; erst eine gesonderte versionierte Review- und Freigabe-Implementierung kann das Schema sicher erweitern.
+
+---
+
 ## 5. Freigabegrenzen für die heutige Arbeit
 
 **Als technisch erledigt gilt nur:** Die Überprüfung ist ausführbar und kann Archivwachstum und fehlende Belege nach jedem erfolgreichen Scan und täglich auditieren, ohne die Forschungs-Gates aufzuweichen. Sie macht bereits implementierte Schutzklauseln sichtbar.
