@@ -317,6 +317,28 @@ def record(root: Path, *, write=True):
         "archive_bars_sha256": barhash,
         "source_watchlist_sha256": meta["source"]["sha256"],
         "file_sha256": {name:sha(data) for name,data in outputs.items()}}
+    # Bind the archived CY-03 snapshot to the pre-scoring cache receipt, if
+    # present. This is client-observed evidence, NOT proof that each scanner
+    # input was served from that cache, nor provider publication PIT.
+    cache_evidence = None
+    receipt_path = root / "artifacts/market_data/latest_cache_provenance.json"
+    if receipt_path.exists():
+        from scanner.reports.cycle_cache_provenance import (
+            canonical_hash, verify_prefetch_receipt,
+        )
+        checked = verify_prefetch_receipt(root)
+        cache_evidence = {
+            "schema_version": "cy03_snapshot_cache_binding_v1",
+            "snapshot_id": sid,
+            "run_id": meta["daily_run"]["run_id"],
+            "archive_bars_sha256": barhash,
+            "cache_sha256": checked["cache_sha256"],
+            "acquisition_receipt_sha256": sha(receipt_path.read_bytes()),
+            "scanner_cache_consumption_verified": False,
+            "provider_pit_verified": False,
+            "research_eligible": False,
+        }
+        cache_evidence["record_sha256"] = canonical_hash(cache_evidence)
     if write:
         dest.mkdir(parents=True, exist_ok=True)
         bar_archive = dest/"bars"/f"{sid}.csv.gz"
@@ -329,6 +351,14 @@ def record(root: Path, *, write=True):
             target = dest/name
             if not target.exists() or target.read_bytes() != data:
                 atomic_write(target,data)
+        if cache_evidence is not None:
+            evidence_path = dest / "cache_provenance" / "snapshots" / (sid + ".json")
+            payload = (json.dumps(cache_evidence, indent=2, sort_keys=True) + "\n").encode()
+            evidence_path.parent.mkdir(parents=True, exist_ok=True)
+            if evidence_path.exists() and evidence_path.read_bytes() != payload:
+                raise ValueError("cy03:immutable_cache_binding_changed")
+            if not evidence_path.exists():
+                atomic_write(evidence_path, payload)
         atomic_write(dest/"manifest.json",
                      (json.dumps(manifest,indent=2,sort_keys=True,ensure_ascii=False)+"\n").encode())
     return manifest

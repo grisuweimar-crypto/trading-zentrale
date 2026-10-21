@@ -1,0 +1,25 @@
+name: CY-03 Cache Provenance Regression
+on:
+  pull_request:
+    paths:
+      - 'src/scanner/reports/cycle_cache_provenance.py'
+      - 'scripts/prefetch_market_history.py'
+      - 'scripts/verify_cycle_cache_receipt.py'
+      - 'src/scanner/reports/cycle_history.py'
+      - 'tests/test_cycle_cache_provenance.py'
+      - '.github/workflows/cycle_cache_provenance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e ".[test]"
+      - run: python -m compileall -q src/scanner/reports/cycle_cache_provenance.py scripts/prefetch_market_history.py scripts/verify_cycle_cache_receipt.py src/scanner/reports/cycle_history.py
+      - run: python -m pytest -q tests/test_cycle_cache_provenance.py tests/test_cycle_history_cy03.py

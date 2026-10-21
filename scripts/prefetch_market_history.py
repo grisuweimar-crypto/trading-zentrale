@@ -5,6 +5,7 @@ import argparse
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 import json
+import hashlib
 from pathlib import Path
 import re
 import time
@@ -255,10 +256,23 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
         modes[symbol] = mode
         requests[request].append(symbol)
     incoming, successful_providers, provider_failures = [], set(), set()
+    acquisition_windows = []
 
     def acquire(symbols, period, start):
         providers = list(dict.fromkeys(mappings[s][0] for s in symbols))
+        fetch_started = datetime.now(timezone.utc).isoformat()
         frame, errors = fetch_batch(providers, {"period": period, "start": start, "end": end.isoformat()}, retries=retries, sleep=sleep)
+        fetch_finished = datetime.now(timezone.utc).isoformat()
+        # Actual client call boundaries; never represent these as provider publication PIT.
+        from scanner.reports.cycle_cache_provenance import canonical_hash
+        batch = {"schema_version": "cycle_cache_acquisition_batch_v1",
+                 "provider": "YAHOO_FINANCE_VIA_YFINANCE",
+                 "symbols": providers, "request": {"period": period, "start": start, "end": end.isoformat()},
+                 "started_at_utc": fetch_started, "finished_at_utc": fetch_finished,
+                 "response_rows_sha256": hashlib.sha256(frame.to_csv(index=False).encode()).hexdigest(),
+                 "response_row_count": len(frame), "provider_pit_verified": False}
+        batch["record_sha256"] = canonical_hash(batch)
+        acquisition_windows.append(batch)
         records = frame.to_dict("records")
         for symbol in symbols:
             provider = mappings[symbol][0]
@@ -319,6 +333,25 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     encoded = encode_csv(MARKET_COLUMNS, merged)
     if encoded != existing_raw:
         atomic_write(target, encoded)
+    # Capture provenance even when an unchanged cache is reused; distinguish
+    # newly downloaded data from previously unverified legacy rows.
+    from scanner.reports.cycle_cache_provenance import canonical_hash
+    cache_hash = hashlib.sha256(target.read_bytes()).hexdigest()
+    record = {"schema_version": "cycle_cache_prefetch_v1",
+              "cache_sha256": cache_hash, "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+              "fetch_batches": acquisition_windows,
+              "legacy_cache_rows_unattested": bool(original),
+              "provider_pit_verified": False, "research_eligible": False}
+    record["record_sha256"] = canonical_hash(record)
+    evidence = root / "artifacts/market_data/cache_provenance"
+    evidence.mkdir(parents=True, exist_ok=True)
+    receipt = evidence / (record["record_sha256"] + ".json")
+    payload = (json.dumps(record, sort_keys=True, indent=2) + "\n").encode()
+    if receipt.exists() and receipt.read_bytes() != payload:
+        raise ValueError("immutable_cache_provenance_changed")
+    if not receipt.exists():
+        atomic_write(receipt, payload)
+    atomic_write(root / "artifacts/market_data/latest_cache_provenance.json", payload)
     required = {r["symbol"] for r in latest}
     frame = pd.DataFrame([r for r in merged if r["symbol"] in required], columns=MARKET_COLUMNS)
     frame.attrs["coverage"] = coverage(required, merged, minimum_sessions=minimum_days, as_of=meta["as_of"], fetch_state=details)
