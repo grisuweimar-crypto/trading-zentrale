@@ -113,6 +113,20 @@ def audit_scientific_readiness(
     gates["CY03_provider_receipt_integrity"] = "PASS_CLIENT_CAPTURE_ONLY"
     if receipt_audit["provider_receipt_count"] < receipt_audit["snapshot_count"]:
         alerts.append("CY03_SOME_SNAPSHOTS_HAVE_NO_CONTEMPORANEOUS_PROVIDER_RECEIPT")
+    # Separate evidence for real pre-scoring market-cache downloads.
+    # This is a client-side trace, NOT a publisher-certified PIT release.
+    from scanner.reports.cycle_prefetch_evidence import inspect_archived_witnesses
+    try:
+        prefetch_audit = inspect_archived_witnesses(repo, ledger)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        report["status"] = "INTEGRITY_FAILURE"
+        blockers.append("CY03_PREFETCH_WITNESS_INTEGRITY_FAILURE")
+        gates["CY03_prefetch_client_witness"] = "FAIL"
+        report["integrity_error"] = type(exc).__name__ + ": " + str(exc)[:300]
+        return report
+    report["observations"]["prefetch_witness_snapshots"] = prefetch_audit["witness_snapshots"]
+    report["observations"]["snapshots_without_prefetch_witness"] = prefetch_audit["snapshots_without_prefetch_witness"]
+    gates["CY03_prefetch_client_witness"] = "PASS_CLIENT_CAPTURE_ONLY"
     snapshot_ids = {row["snapshot_id"] for row in ledger}
     if ORIGINAL_SNAPSHOT not in snapshot_ids:
         report["status"] = "INTEGRITY_FAILURE"
