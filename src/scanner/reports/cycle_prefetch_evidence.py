@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -78,6 +79,9 @@ def write_current_witness(root: Path, attempts: list[dict], *, cache: bytes) -> 
     document = stamped({
         "schema_version": SCHEMA,
         "provider": "YAHOO_FINANCE_VIA_YFINANCE_DOWNLOAD",
+        "execution_id": ("github-" + os.environ["GITHUB_RUN_ID"] + "-" +
+                         os.environ.get("GITHUB_RUN_ATTEMPT", "1"))
+                        if os.environ.get("GITHUB_RUN_ID") else None,
         "clock_authority": "CLIENT_RUNNER_UTC_UNATTESTED",
         "response_scope": "YFINANCE_NORMALIZED_FRAME_NOT_ORIGINAL_HTTP",
         "source_quote_currency_verified": False,
@@ -135,7 +139,8 @@ def archive_current_witness(root: Path) -> dict:
             meta.get("validation", {}).get("status") != "ok" or
             sid != manifest.get("latest_snapshot_id") or
             meta.get("as_of") != manifest.get("as_of") or
-            meta.get("daily_run", {}).get("run_id") != manifest.get("run_id")):
+            meta.get("daily_run", {}).get("run_id") != manifest.get("run_id") or
+            report.get("execution_id") != manifest.get("run_id")):
         raise ValueError("cy_prefetch:snapshot_identity_mismatch")
     generated = datetime.fromisoformat(meta["generated_at"].replace("Z", "+00:00"))
     if generated.utcoffset() is None or any(
@@ -184,6 +189,8 @@ def inspect_archived_witnesses(root: Path, ledger: list[dict]) -> dict:
             raise ValueError("cy_prefetch:archive_identity_or_claim")
         found.add(sid)
         verify_witness(doc["witness"])
+        if doc["witness"].get("execution_id") != doc["run_id"]:
+            raise ValueError("cy_prefetch:execution_identity_mismatch")
         records = by_sid[sid]
         if (any(row["run_id"] != doc["run_id"] or row["as_of"] != doc["as_of"] or
                 row["bars_sha256"] != doc["bars_sha256"] or
