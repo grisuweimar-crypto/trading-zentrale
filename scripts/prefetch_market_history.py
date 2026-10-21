@@ -15,6 +15,7 @@ import yfinance as yf
 from scanner.data.enrich.yahoo_prices import ISIN_RE, _pick_symbol
 from scanner.data.price_history import MARKET_COLUMNS, coverage, merge_prices, number, validated_rows
 from scanner.reports.research_views import atomic_write, encode_csv, parse_csv
+from scanner.reports.cycle_prefetch_evidence import attempt_record, write_current_witness
 
 DEFAULT_DAYS = 300
 CACHE = "artifacts/market_data/yahoo_ohlcv.csv"
@@ -137,21 +138,33 @@ def _temporary(error):
     return any(term in error.lower() for term in ("ratelimit", "too many", "429", "timeout", "timed out", "connection", "curl", "500", "502", "503", "jsondecode", "unauthorized", "401", "403"))
 
 
-def fetch_batch(tickers, request, *, retries=2, sleep=time.sleep):
+def fetch_batch(tickers, request, *, retries=2, sleep=time.sleep, witness_attempts=None):
     pending, frames, errors = list(tickers), [], {}
     for attempt in range(retries + 1):
         if attempt:
             sleep(2 ** attempt)
+        started = datetime.now(timezone.utc).isoformat()
+        attempt_frame = None
+        exception_type = None
         try:
             frame = _download(pending, **request)
+            attempt_frame = frame
             reported = frame.attrs.get("errors", {})
             found = set(frame.get("symbol", pd.Series(dtype=str)).astype(str))
             frames.append(frame)
         except (ProviderSchemaError, TypeError, KeyError):
-            raise  # structural contract/programming failure
+            raise  # structural contract/programming failure; no successful publish
         except Exception as exc:
+            exception_type = type(exc).__name__
             reported = {ticker: f"provider_error: {type(exc).__name__}: {exc}" for ticker in pending}
             found = set()
+        finally:
+            finished = datetime.now(timezone.utc).isoformat()
+            if witness_attempts is not None:
+                witness_attempts.append(attempt_record(
+                    requested=pending, request=request, started=started,
+                    finished=finished, frame=attempt_frame,
+                    exception_type=exception_type))
         retry = []
         for ticker in pending:
             if ticker in found:
@@ -255,10 +268,11 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
         modes[symbol] = mode
         requests[request].append(symbol)
     incoming, successful_providers, provider_failures = [], set(), set()
+    witness_attempts = []
 
     def acquire(symbols, period, start):
         providers = list(dict.fromkeys(mappings[s][0] for s in symbols))
-        frame, errors = fetch_batch(providers, {"period": period, "start": start, "end": end.isoformat()}, retries=retries, sleep=sleep)
+        frame, errors = fetch_batch(providers, {"period": period, "start": start, "end": end.isoformat()}, retries=retries, sleep=sleep, witness_attempts=witness_attempts)
         records = frame.to_dict("records")
         for symbol in symbols:
             provider = mappings[symbol][0]
@@ -319,6 +333,10 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     encoded = encode_csv(MARKET_COLUMNS, merged)
     if encoded != existing_raw:
         atomic_write(target, encoded)
+    # This is pre-scoring client evidence for the SAME canonical cache, not
+    # provider-signed bar availability or independent currency verification.
+    if target.resolve() == (root / CACHE).resolve():
+        write_current_witness(root, witness_attempts, cache=target.read_bytes())
     required = {r["symbol"] for r in latest}
     frame = pd.DataFrame([r for r in merged if r["symbol"] in required], columns=MARKET_COLUMNS)
     frame.attrs["coverage"] = coverage(required, merged, minimum_sessions=minimum_days, as_of=meta["as_of"], fetch_state=details)

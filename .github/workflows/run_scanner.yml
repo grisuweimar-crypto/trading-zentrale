@@ -65,7 +65,8 @@ jobs:
         # Governance-/QM-Suiten laufen in ihren eigenen Workflows und duerfen
         # einen ansonsten gueltigen Tageslauf nicht blockieren.
         run: |
-          python -m pytest tests/test_history_delta_completion.py \
+          python -m pytest tests/test_cycle_prefetch_evidence.py \
+            tests/test_history_delta_completion.py \
             tests/test_daily_research.py \
             tests/test_history_query_and_daily_research.py \
             tests/test_history_research.py \
@@ -137,6 +138,10 @@ jobs:
           # A cached OHLCV projection is not a direct new Yahoo download.
           # No false receipt may enter the immutable cycle history.
           test ! -e artifacts/reports/cycle_provider_fetch_receipt_v1.json
+          # Direct pre-scoring Yahoo requests HAVE client witnesses. This archive
+          # is distinct from the old direct-cycle-download receipt, and never
+          # claims publisher-bar PIT or retroactively certifies cached bars.
+          python scripts/record_cycle_prefetch_witness.py
 
       - name: Aktuelle Phase-7A Decision-Evidence archivieren
         id: decision_evidence

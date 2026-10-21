@@ -29,8 +29,25 @@ def test_qm10_historical_proof_is_frozen_and_current_snapshot_identity_is_cohere
     assert runtime["diagnostics"]["private_position_data_persisted"] is False
     assert runtime["diagnostics"]["missing_current_packet_symbols"]==[]
     assert w10["status"]=="sealed"
-    assert w10["stages"]["phase6_elliott"]["status"]=="not_supplied"
-    assert w10["stages"]["phase6_elliott"]["decision_effect"]=="none"
+    # Old QM10 proof on 06.10 is immutable; the *current* Elliott source
+    # may now be supplied, but it must remain review-only (never a vote).
+    assert p["phase6_elliott_status"] == "not_supplied"
+    assert p["phase6_decision_effect"] == "none"
+    phase = w10["stages"]["phase6_elliott"]
+    assert phase["status"] == runtime["diagnostics"]["elliott_6h_source_status"]
+    assert phase["status"] in {"available", "not_supplied"}
+    assert runtime["diagnostics"]["elliott_changed_universal_stance"] is False
+    assert runtime["diagnostics"]["elliott_direction_used_as_vote"] is False
+    assert runtime["semantics"]["elliott_direction_used_as_vote"] is False
+    if phase["status"] == "available":
+        assert phase["snapshot_identity_state"] == "verified"
+        assert phase["elliott_direction_used_as_vote"] is False
+        assert phase["multi_degree_reducer_used"] is False
+        assert phase["artifact_sha256"] and len(phase["artifact_sha256"]) == 64
+        assert phase["symbol_count"] > 0
+        assert phase["decision_effect"] == "review_only_downstream_of_7d_7e"
+    else:
+        assert phase["decision_effect"] == "none"
     assert manifest["decision_logic_changed"] is False
     assert manifest["private_position_data_included"] is False
 

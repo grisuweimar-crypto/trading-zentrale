@@ -4,6 +4,12 @@ on:
   pull_request:
     paths:
       - "scripts/watch_cycle_science.py"
+      - "scripts/prefetch_market_history.py"
+      - "scripts/inventory_cycle_v2_candidates.py"
+      - "scripts/record_cycle_prefetch_witness.py"
+      - "src/scanner/reports/cycle_prefetch_evidence.py"
+      - "tests/test_cycle_prefetch_evidence.py"
+      - ".github/workflows/run_scanner.yml"
       - "tests/test_cycle_science_watch.py"
       - "docs/cycle_direction/CY_SCIENCE_READINESS_PROTOCOL.md"
       - ".github/workflows/cycle_dir_science_watch.yml"
@@ -45,8 +51,8 @@ jobs:
       - name: Compile and run watcher regressions
         if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         run: |
-          python -m compileall -q scripts/watch_cycle_science.py
-          python -m pytest -q tests/test_cycle_science_watch.py tests/pattern_discovery/test_cy05_cycle_archive_adapter.py
+          python -m compileall -q scripts/watch_cycle_science.py scripts/prefetch_market_history.py scripts/inventory_cycle_v2_candidates.py scripts/record_cycle_prefetch_witness.py src/scanner/reports/cycle_prefetch_evidence.py
+          python -m pytest -q tests/test_cycle_science_watch.py tests/test_cycle_prefetch_evidence.py tests/test_cycle_provider_receipt.py tests/test_market_history.py tests/pattern_discovery/test_cy05_cycle_archive_adapter.py
       - name: Read current issue state (informational, not a research certificate)
         id: issue
         env:
@@ -66,6 +72,21 @@ jobs:
             --repo-root . \
             --issue-269-state "${ISSUE_STATE^^}" \
             --output /tmp/cycle-science-watch.json
+      - name: Create blocked CY-03-v2 proof queue without freeze or research release
+        run: |
+          python scripts/inventory_cycle_v2_candidates.py \
+            --repo-root . --output /tmp/cycle-v2-proof-queue.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          inv = json.loads(Path('/tmp/cycle-v2-proof-queue.json').read_text())
+          manifest = json.loads(Path('artifacts/cycle_history/manifest.json').read_text())
+          assert inv['provisional_10obs_records'] == manifest['provisional_lags']['10']
+          assert inv['released_research_rows'] == 0
+          assert not inv['cy05_frozen_pre_run_created']
+          assert all(not row['research_eligible'] for row in inv['rows'])
+          print('CY-03-v2 proof queue (UNRELEASED):', inv['provisional_10obs_records'])
+          PY
       - name: Write operator summary
         if: always()
         run: |
@@ -101,6 +122,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: cycle-science-watch-${{ github.run_id }}
-          path: /tmp/cycle-science-watch.json
+          path: |
+            /tmp/cycle-science-watch.json
+            /tmp/cycle-v2-proof-queue.json
           if-no-files-found: warn
           retention-days: 30
