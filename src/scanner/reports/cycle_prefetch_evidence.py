@@ -7,6 +7,8 @@ Only NEW observations may be stamped. Historical v1 remains unchanged.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import base64
+import gzip
 from hashlib import sha256
 import json
 import os
@@ -63,13 +65,17 @@ def attempt_record(*, requested: list[str], request: dict, started: str,
     rows = [{col: ("" if value.get(col) is None else str(value.get(col)))
              for col in COLUMNS} for value in values]
     rows.sort(key=lambda x: (x["symbol"], x["date"]))
+    normalized = canonical(rows)
+    packed = gzip.compress(normalized, mtime=0)
     return {
         "requested_provider_symbols": list(requested),
         "request": {k: request.get(k) for k in ("period", "start", "end")},
         "started_at_utc": started, "finished_at_utc": finished,
         "exception_type": exception_type,
         "frame_representation": "YFINANCE_NORMALIZED_DAILY_ROWS_NOT_HTTP_RESPONSE",
-        "frame_rows": rows, "frame_sha256": digest(canonical(rows)),
+        "frame_rows_count": len(rows),
+        "frame_rows_gzip_base64": base64.b64encode(packed).decode("ascii"),
+        "frame_sha256": digest(normalized),
     }
 
 
@@ -116,9 +122,18 @@ def verify_witness(data: dict, *, cache: bytes | None = None) -> None:
     for item in attempts:
         if parse_utc(item["started_at_utc"]) > parse_utc(item["finished_at_utc"]):
             raise ValueError("cy_prefetch:reversed_clock")
-        rows = item.get("frame_rows")
+        try:
+            packed = base64.b64decode(item["frame_rows_gzip_base64"], validate=True)
+            normalized = gzip.decompress(packed)
+            if len(normalized) > 100_000_000:
+                raise ValueError("oversized")
+            rows = json.loads(normalized)
+        except (ValueError, TypeError, KeyError, OSError, EOFError) as exc:
+            raise ValueError("cy_prefetch:compressed_frame_invalid") from exc
         if (not isinstance(rows, list) or
                 any(not isinstance(r, dict) or set(r) != set(COLUMNS) for r in rows) or
+                type(item.get("frame_rows_count")) is not int or
+                item["frame_rows_count"] != len(rows) or
                 item.get("frame_sha256") != digest(canonical(rows)) or
                 item.get("frame_representation") != "YFINANCE_NORMALIZED_DAILY_ROWS_NOT_HTTP_RESPONSE"):
             raise ValueError("cy_prefetch:frame_digest_or_schema_changed")
