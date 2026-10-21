@@ -137,6 +137,10 @@ jobs:
           # A cached OHLCV projection is not a direct new Yahoo download.
           # No false receipt may enter the immutable cycle history.
           test ! -e artifacts/reports/cycle_provider_fetch_receipt_v1.json
+          # Direct pre-scoring Yahoo requests HAVE client witnesses. This archive
+          # is distinct from the old direct-cycle-download receipt, and never
+          # claims publisher-bar PIT or retroactively certifies cached bars.
+          python scripts/record_cycle_prefetch_witness.py
 
       - name: Aktuelle Phase-7A Decision-Evidence archivieren
         id: decision_evidence
