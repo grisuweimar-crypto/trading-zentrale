@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-19T20:09:14.304510+00:00",
+  "decision_as_of": "2026-10-20T18:48:33.668749+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-19T19:56:49.616931+00:00",
+    "captured_at": "2026-10-20T18:35:22.475112+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-19T19:54:39+00:00",
+    "scanner_published_at": "2026-10-20T18:33:14+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-19",
-    "source_capture_id": "8b7e1c313fbb2ba0309b97ae9fc9240500b79aef8b6e63839dd88b2d94615af9",
-    "source_publication_commit": "f21e2f70d58af6c42a6dea2a7c9e227583188244",
-    "source_run_id": "github-39313776391-1",
-    "source_snapshot_id": "de20547f-a9fa-445e-a8cc-2828c42d38f0",
+    "source_as_of": "2026-10-20",
+    "source_capture_id": "1d1a7323c2a5fb1617dbe667f31b1547069239166d47d93d7b301e607de13fd1",
+    "source_publication_commit": "732e9735338f3a12fad06d4177d0ebfe31dfbe22",
+    "source_run_id": "github-39474599402-1",
+    "source_snapshot_id": "057f2932-f91f-41b6-96a2-bd71f9cc5dd2",
     "status": "no_elliott_output_for_symbol",
     "symbol": "MU",
     "validation_partition": "prospective_unspent",
@@ -27,17 +27,29 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "positive",
+    "known_directional_claim_ids": [
+      "timing:MU:9aace91dab644870:5T",
+      "timing:MU:03f6bed3788ea96b:5T",
+      "timing:MU:2ec83739629fba4d:5T",
+      "timing:MU:42bcd8a34d314c09:5T",
+      "timing:MU:838b819bd450346e:5T",
+      "timing:MU:6267ff2c27f27eb8:20T",
+      "timing:MU:cad5eb04910821c4:20T",
+      "timing:MU:a0bebf08166a0860:60T",
+      "timing:MU:2fbfff31832fc700:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 9
+    },
+    "relation_state": "correlated_same_family_support",
+    "state": "positive",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "de20547f-a9fa-445e-a8cc-2828c42d38f0",
+  "snapshot_id": "057f2932-f91f-41b6-96a2-bd71f9cc5dd2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -334,6 +346,14 @@
       "source_snapshot_id": "de20547f-a9fa-445e-a8cc-2828c42d38f0",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-20T18:48:33.668749+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "057f2932-f91f-41b6-96a2-bd71f9cc5dd2",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -348,7 +368,7 @@
     "last_overextension_rs3m": 0.2579461354170402,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 57,
+    "sessions_since_last_overextension": 58,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -358,8 +378,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "stable_confirmed"
   }
 }
