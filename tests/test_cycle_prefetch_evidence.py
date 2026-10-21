@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+import base64
+import gzip
 from hashlib import sha256
 import json
 
@@ -71,7 +73,10 @@ def test_real_prefetch_fetch_batch_captures_request_before_after(monkeypatch):
     assert len(attempts) == 1
     assert datetime.fromisoformat(attempts[0]["started_at_utc"]) <= datetime.fromisoformat(
         attempts[0]["finished_at_utc"])
-    assert attempts[0]["frame_sha256"] == digest(canonical(attempts[0]["frame_rows"]))
+    packed = base64.b64decode(attempts[0]["frame_rows_gzip_base64"])
+    raw = gzip.decompress(packed)
+    assert len(json.loads(raw)) == attempts[0]["frame_rows_count"]
+    assert attempts[0]["frame_sha256"] == digest(raw)
 
 
 def test_archive_is_single_run_bound_and_stays_unverified(tmp_path, monkeypatch):
@@ -89,8 +94,10 @@ def test_archive_is_single_run_bound_and_stays_unverified(tmp_path, monkeypatch)
 
 def test_mutation_of_response_or_forged_pit_is_rejected(tmp_path, monkeypatch):
     witness, ledger = fixture(tmp_path, monkeypatch)
-    witness["attempts"][0]["frame_rows"][0]["close"] = "999"
-    with pytest.raises(ValueError, match="digest_mismatch"):
+    witness["attempts"][0]["frame_sha256"] = "0" * 64
+    witness["witness_sha256"] = digest(canonical({k: v for k, v in witness.items()
+                                                  if k != "witness_sha256"}))
+    with pytest.raises(ValueError, match="frame_digest_or_schema"):
         verify_witness(witness)
     doc = json.loads((tmp_path / REPORT).read_text())
     doc["publisher_bar_availability_verified"] = True
