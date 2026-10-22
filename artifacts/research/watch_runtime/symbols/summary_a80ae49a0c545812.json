@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-21T17:18:18.777405+00:00",
+  "decision_as_of": "2026-10-22T18:47:29.206482+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-21T17:09:41.733341+00:00",
+    "captured_at": "2026-10-22T18:36:42.982389+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-21T17:07:13+00:00",
+    "scanner_published_at": "2026-10-22T18:34:17+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-21",
-    "source_capture_id": "2c7063fb36a82c88af2c8f65951695b74af1d61a5360305755f7d4f72769cc34",
-    "source_publication_commit": "e521151d612fe65963b9d978a5abe28bf8f77c7f",
-    "source_run_id": "github-39639639239-1",
-    "source_snapshot_id": "58ae9d45-a5a1-467e-8474-da03e27082b4",
+    "source_as_of": "2026-10-22",
+    "source_capture_id": "0f58be63f3e1c6c3721e76545d1c37a90f5ce1e993c6fc15d6e39de9c0feb3ed",
+    "source_publication_commit": "e5d1c265267fc6784fdc6ce73e223b7710eed406",
+    "source_run_id": "github-39831519300-1",
+    "source_snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
     "status": "no_elliott_output_for_symbol",
     "symbol": "SAP.DE",
     "validation_partition": "prospective_unspent",
@@ -27,17 +27,21 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": null,
-    "known_directional_claim_ids": [],
-    "known_directional_family_counts": {},
-    "relation_state": "insufficient_directional_relation",
-    "state": "insufficient_evidence",
-    "support_structure": "insufficient_directional_relation"
+    "direction": "negative",
+    "known_directional_claim_ids": [
+      "timing:SAP.DE:c672817d91249136:60T"
+    ],
+    "known_directional_family_counts": {
+      "timing": 1
+    },
+    "relation_state": "single_direction_or_unopposed",
+    "state": "negative",
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "58ae9d45-a5a1-467e-8474-da03e27082b4",
+  "snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -350,6 +354,14 @@
       "source_snapshot_id": "58ae9d45-a5a1-467e-8474-da03e27082b4",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-22T18:47:29.206482+00:00",
+      "direction": "negative",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
+      "state": "negative",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
@@ -360,8 +372,8 @@
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
-    "last_overextension_date": "2026-10-21",
-    "last_overextension_rs3m": 0.526276518867193,
+    "last_overextension_date": "2026-10-22",
+    "last_overextension_rs3m": 0.4394040128730001,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
@@ -371,11 +383,11 @@
   "state_history_state": "overextended",
   "symbol": "SAP.DE",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "negative",
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_insufficient"
+    "status": "transition_pending"
   }
 }

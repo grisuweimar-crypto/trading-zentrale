@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-21T17:18:18.777405+00:00",
+  "decision_as_of": "2026-10-22T18:47:29.206482+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-21T17:09:41.733341+00:00",
+    "captured_at": "2026-10-22T18:36:42.982389+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-21T17:07:13+00:00",
+    "scanner_published_at": "2026-10-22T18:34:17+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-21",
-    "source_capture_id": "2c7063fb36a82c88af2c8f65951695b74af1d61a5360305755f7d4f72769cc34",
-    "source_publication_commit": "e521151d612fe65963b9d978a5abe28bf8f77c7f",
-    "source_run_id": "github-39639639239-1",
-    "source_snapshot_id": "58ae9d45-a5a1-467e-8474-da03e27082b4",
+    "source_as_of": "2026-10-22",
+    "source_capture_id": "0f58be63f3e1c6c3721e76545d1c37a90f5ce1e993c6fc15d6e39de9c0feb3ed",
+    "source_publication_commit": "e5d1c265267fc6784fdc6ce73e223b7710eed406",
+    "source_run_id": "github-39831519300-1",
+    "source_snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
     "status": "no_elliott_output_for_symbol",
     "symbol": "FCX",
     "validation_partition": "prospective_unspent",
@@ -29,12 +29,34 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
+      "timing:FCX:13dfd193091882d7:5T",
+      "timing:FCX:a2763d94cd6f82e9:5T",
+      "timing:FCX:d18193c29692a1cb:5T",
+      "timing:FCX:9aace91dab644870:5T",
+      "timing:FCX:056cab0d8c42f322:5T",
+      "timing:FCX:03f6bed3788ea96b:5T",
+      "timing:FCX:2ec83739629fba4d:5T",
+      "timing:FCX:42bcd8a34d314c09:5T",
+      "timing:FCX:838b819bd450346e:5T",
+      "timing:FCX:63001daa7f481bc1:5T",
+      "timing:FCX:1758b10ff7893792:20T",
+      "timing:FCX:85b7b4bcb43aeb00:20T",
+      "timing:FCX:ae61c82fbb0371fc:20T",
+      "timing:FCX:a4278e33701f9d98:20T",
+      "timing:FCX:6267ff2c27f27eb8:20T",
+      "timing:FCX:cad5eb04910821c4:20T",
       "timing:FCX:15f457a0b3a6df9d:20T",
+      "timing:FCX:b5c6f29104b27dae:40T",
+      "timing:FCX:f9714fd629aaf7f2:40T",
+      "timing:FCX:677e719dc170acd6:40T",
+      "timing:FCX:2d034c21b8215d13:40T",
       "timing:FCX:e64908cc5e4c18f0:60T",
-      "timing:FCX:ff63700b226f41b1:60T"
+      "timing:FCX:a0bebf08166a0860:60T",
+      "timing:FCX:ff63700b226f41b1:60T",
+      "timing:FCX:2fbfff31832fc700:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 25
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -43,7 +65,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "58ae9d45-a5a1-467e-8474-da03e27082b4",
+  "snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -356,6 +378,14 @@
       "source_snapshot_id": "58ae9d45-a5a1-467e-8474-da03e27082b4",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-22T18:47:29.206482+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -370,7 +400,7 @@
     "last_overextension_rs3m": 0.1978733581914393,
     "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 8,
+    "sessions_since_last_overextension": 9,
     "upstream_review_state": "profit_protection_review",
     "upstream_sequence_state": "post_overextension_decay"
   },
