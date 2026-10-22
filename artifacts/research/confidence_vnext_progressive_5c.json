@@ -3,18 +3,18 @@
   "schema_version": "phase5c_progressive_learning_v1",
   "status": "progressive_learning_active",
   "source_schema_version": "phase5b_shadow_v2",
-  "claims": 38480,
-  "mature_outcomes": 7857,
+  "claims": 39328,
+  "mature_outcomes": 8235,
   "horizons": {
     "5": {
       "stage": "robust_learning_base",
       "pilot_ready": true,
       "robust_learning_base": true,
-      "training_rows": 624,
+      "training_rows": 795,
       "symbols": 212,
-      "directional_rows": 291,
-      "directional_symbols": 144,
-      "observation_dates": 12,
+      "directional_rows": 396,
+      "directional_symbols": 166,
+      "observation_dates": 13,
       "support_regions": 2,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -24,20 +24,20 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 10
       },
-      "latest_candidate_version": "phase5c-5T-b310f0e7eceb058e",
-      "candidate_version_from_current_evidence": "phase5c-5T-b310f0e7eceb058e",
-      "version_count": 11
+      "latest_candidate_version": "phase5c-5T-e95b7d559aa6f427",
+      "candidate_version_from_current_evidence": "phase5c-5T-e95b7d559aa6f427",
+      "version_count": 12
     },
     "20": {
-      "stage": "collecting",
+      "stage": "mature_outcomes_accumulating",
       "pilot_ready": false,
       "robust_learning_base": false,
-      "training_rows": 0,
-      "symbols": 0,
+      "training_rows": 166,
+      "symbols": 166,
       "directional_rows": 0,
       "directional_symbols": 0,
-      "observation_dates": 0,
-      "support_regions": 0,
+      "observation_dates": 1,
+      "support_regions": 1,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
         "minimum_pilot_training_rows": 20,
@@ -95,9 +95,11 @@
       "version_count": 0
     }
   },
-  "model_versions": 11,
-  "version_chain_tip": "a4bee18736e9a5315833f9dffdec6b44e70f398004a79166668899909f705fd1",
-  "new_model_versions": [],
+  "model_versions": 12,
+  "version_chain_tip": "fd8c2ba676d20f6295468ac4c5a370542c47ad7437fcc34680a1e1eb0fdf9a1e",
+  "new_model_versions": [
+    "phase5c-5T-e95b7d559aa6f427"
+  ],
   "semantics": {
     "research_only": true,
     "dynamic_horizon_specific_learning": true,
