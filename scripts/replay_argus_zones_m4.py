@@ -16,7 +16,7 @@ from pathlib import Path
 from scanner.research.zones_v01 import build_zones, read_rows
 from scanner.research.zones_m4 import (
     M4_VERSION, ReplayPolicy, _digest, evaluate_frozen,
-    normalize_future_bars, summarize,
+    normalize_future_bars, summarize, _cost_adjusted, _pct,
 )
 
 
@@ -45,14 +45,14 @@ def replay_symbol(rows, symbol, *, cutoff, stride=20, first_index=150,
         plans = report["scenario_plans"]
         index_rows.append({
             "symbol": symbol, "asof": asof, "price_rows": len(historical),
+            "baseline_long_20bar_net_pct": None,
+            "baseline_short_20bar_net_pct": None,
             "data_quality": report["data_quality"],
             "model_version": report["model_version"],
             "m3_status": report["m3_status"],
             "frozen_plans": len(plans),
             "snapshot_hash": report["data_hash"],
         })
-        if not plans:
-            continue
         if (historical[-1].get("adj_close") in ("", None) or
                 report["data_quality"] == "blocked"):
             # No usable price scale => no evaluation rather than guess.
@@ -62,6 +62,16 @@ def replay_symbol(rows, symbol, *, cutoff, stride=20, first_index=150,
             later, asof=asof,
             asof_raw_close=historical[-1]["close"],
             asof_adj_close=historical[-1]["adj_close"])
+        if len(observed) != policy.horizon_bars:
+            raise ValueError("incomplete_selected_future_window")
+        # Truly plan-independent controls, ONE baseline per eligible as-of
+        # snapshot, even when that snapshot generated no setup.
+        index_rows[-1]["baseline_long_20bar_net_pct"] = _cost_adjusted(
+            _pct("bull", observed[0]["open"], observed[-1]["close"]), policy)
+        index_rows[-1]["baseline_short_20bar_net_pct"] = _cost_adjusted(
+            _pct("bear", observed[0]["open"], observed[-1]["close"]), policy)
+        if not plans:
+            continue
         lookup = {c["cluster_id"]: c for c in report["zone_clusters"]}
         for p in plans:
             selected_ids = [p["entry_cluster_id"], p["invalidation_cluster_id"],
@@ -130,6 +140,22 @@ def run(input_path, symbols, *, cutoff, output_dir, stride=20,
         (output_dir / name).write_text(
             "".join(_encode(obj) + "\n" for obj in records), encoding="utf-8")
     summary = summarize(all_outcomes)
+    independent_baselines = [
+        x for x in indexed if x["baseline_long_20bar_net_pct"] is not None]
+    summary["naive_directional_controls"] = {
+        "comparison_note": "one independent-of-plan same-symbol 20-bar hold per selected asof; NOT matched holding periods or risk exposures",
+        "snapshots": len(independent_baselines),
+        "mean_long_net_pct": (
+            round(sum(x["baseline_long_20bar_net_pct"] for x in independent_baselines)
+                  / len(independent_baselines), 6)
+            if independent_baselines else None),
+        "mean_short_net_pct": (
+            round(sum(x["baseline_short_20bar_net_pct"] for x in independent_baselines)
+                  / len(independent_baselines), 6)
+            if independent_baselines else None),
+        "independent_repeated_observations": False,
+        "not_an_alpha_test": True,
+    }
     summary.update({
         "source_sha256": source_sha, "selection": {
             "cutoff": cutoff, "stride": stride, "first_index": first_index,
