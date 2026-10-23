@@ -5,6 +5,9 @@ on:
       - 'src/scanner/research/zones_v01.py'
       - 'src/scanner/research/zones_m3.py'
       - 'src/scanner/research/zones_m3_weekly.py'
+      - 'src/scanner/research/zones_m4.py'
+      - 'scripts/replay_argus_zones_m4.py'
+      - 'tests/test_argus_zones_m4.py'
       - 'tests/test_argus_zones_v01.py'
       - 'tests/test_argus_zones_m3.py'
       - '.github/workflows/argus_zones_research.yml'
@@ -23,7 +26,7 @@ jobs:
       - name: Causal/reproducibility unit tests
         env:
           PYTHONPATH: src
-        run: python -m pytest -q tests/test_argus_zones_v01.py tests/test_argus_zones_m3.py
+        run: python -m pytest -q tests/test_argus_zones_v01.py tests/test_argus_zones_m3.py tests/test_argus_zones_m4.py
       - name: Archived cache offline smoke (no vendor access or orders)
         env:
           PYTHONPATH: src
@@ -56,6 +59,28 @@ jobs:
               print(symbol, 'status=',report['zone_status'], 'zones=',len(report['zones']),
                     'bar=',report['last_completed_bar'],'warnings=',report['warnings'][:2])
           PY
+      - name: M4 frozen-ledger smoke on archived offline daily bars
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m4.py \
+            --input artifacts/market_data/yahoo_ohlcv.csv \
+            --symbols NOW AMD INTC ARM SMH \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 20 --max-snapshots 4 \
+            --output-dir /tmp/argus-zones-research/m4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-research/m4')
+          x=json.loads((p/'m4_summary.json').read_text())
+          assert x['research_only'] and x['causal_market_PIT_verified'] is False
+          assert (p/'forecast_ledger.jsonl').exists()
+          assert (p/'outcome_ledger.jsonl').exists()
+          assert (p/'asof_coverage.jsonl').exists()
+          assert x['success_probability'] is None
+          assert x['coverage']['AMD']['rows'] == 0
+          PY
       - name: Attach research output (not production)
         uses: actions/upload-artifact@v4
         with:
@@ -64,4 +89,5 @@ jobs:
             /tmp/argus-zones-research/*.json
             /tmp/argus-zones-research/*.csv
             /tmp/argus-zones-research/*.md
+            /tmp/argus-zones-research/m4/*
           retention-days: 7
