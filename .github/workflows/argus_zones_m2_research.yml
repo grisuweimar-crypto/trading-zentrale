@@ -1,0 +1,68 @@
+name: ARGUS Zonen M2 Prototyp
+
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/zones/**"
+      - "scripts/run_argus_zones_m2.py"
+      - "configs/argus_zones_m2_assets_v1.json"
+      - "tests/test_argus_zones_m2.py"
+      - ".github/workflows/argus_zones_m2_research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract_and_five_symbols:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install minimal research test dependencies
+        run: python -m pip install pandas numpy pytest
+      - name: Contract, causality, synthetic hand-check tests
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q tests/test_argus_zones_m2.py
+      - name: Independent archived 2026-10-22 price-zone preview
+        id: actual
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/run_argus_zones_m2.py \
+            --input artifacts/market_data/yahoo_ohlcv.csv \
+            --manifest configs/argus_zones_m2_assets_v1.json \
+            --asof 2026-10-22 \
+            --bar-end-utc 2026-10-22T20:00:00Z \
+            --output-dir _argus_zones_m2_preview
+      - name: Print readable zone bands, never a probability
+        if: steps.actual.outcome == 'success'
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          with open("_argus_zones_m2_preview/AMD.json",encoding="utf8") as fh:
+              obj = json.load(fh)
+          print("RESEARCH-ONLY: these bands are not investment advice or empirically validated")
+          for path in sorted(Path("_argus_zones_m2_preview").glob("*.json")):
+              z = json.loads(path.read_text())
+              print("\n", z["symbol"], "asof", z["asof"], "close", z["close"], z["currency"])
+              ranked = sorted(z["zones"],key=lambda x: abs(x["center"] - z["close"]))
+              for row in ranked[:8]:
+                  print(row["role"], row["side"],
+                        str(row["lower"]) + ".." + str(row["upper"]),
+                        row["drivers"][0]["family"], row["status"],
+                        "not_validated")
+          PY
+      - name: Preserve frozen five-symbol output for review
+        if: steps.actual.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-zones-m2-preview-2026-10-22
+          path: _argus_zones_m2_preview/*.json
+          retention-days: 14
