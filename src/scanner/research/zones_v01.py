@@ -136,6 +136,7 @@ def build_zones(rows: list[dict], symbol: str, *, asof: str, exchange: str = "un
         "zone_status": "no_qualifying_zone",
         "m3_version": "argus-zones-m3-v0.1-research", "zone_clusters": [], "scenario_plans": [],
         "m3_status": "no_valid_setup",
+        "weekly_zones": [], "last_confirmed_week": None,
     }
     if len(selected) < MIN_BARS:
         result["warnings"].append(f"insufficient_completed_daily_bars:{len(selected)}")
@@ -241,6 +242,9 @@ def build_zones(rows: list[dict], symbol: str, *, asof: str, exchange: str = "un
                 "horizon_bars": None, "risk_reward_after_costs": None,
                 "evidence_status": "not_validated",
             })
+    from scanner.research.zones_m3_weekly import build_weekly_zones
+    result["weekly_zones"], result["last_confirmed_week"] = build_weekly_zones(
+        frame, asof=asof, current=last)
     unique = {z["zone_id"]: z for z in zones}
     result["zones"] = sorted(unique.values(), key=lambda z: (z["lower"], z["role"], z["zone_id"]))
     result["scenarios"] = scenario_refs
@@ -269,6 +273,7 @@ def main() -> None:
         write_readable_tables(report, path)
         print(json.dumps({"symbol": symbol, "source_bars": len(data[symbol]),
                           "zones": len(report["zones"]), "status": report["zone_status"],
+                          "weekly_zones": len(report["weekly_zones"]),
                           "clusters": len(report["zone_clusters"]),
                           "plans": len(report["scenario_plans"]),
                           "data_quality": report["data_quality"], "output": str(path)}))
