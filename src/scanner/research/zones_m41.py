@@ -213,6 +213,9 @@ def evaluate_zone(forecast, future_bars, *, policy=ZoneObservationPolicy()):
     first_index = None
     entry_approach = None
     max_depth = 0.0
+    first_episode_depth = 0.0
+    first_episode_active = True
+    first_touch_inside_close = None
     inside_days = 0
     first_favorable = None
     first_broken = None
@@ -234,12 +237,17 @@ def evaluate_zone(forecast, future_bars, *, policy=ZoneObservationPolicy()):
         if first_index is None and contact:
             first_index, first = i, b["date"]
             contact_close = b["close"]
+            first_touch_inside_close = inside
             entry_approach = ("from_above" if prior > upper else
                               "from_below" if prior < lower else "inside_from_asof_or_prior")
             min_low, max_high = b["low"], b["high"]
         if first_index is not None:
             if contact and depth is not None:
                 max_depth = max(max_depth, depth)
+                if first_episode_active:
+                    first_episode_depth = max(first_episode_depth, depth)
+            elif not contact:
+                first_episode_active = False
             if inside:
                 inside_days += 1
                 active_inside_closes += 1
@@ -253,8 +261,8 @@ def evaluate_zone(forecast, future_bars, *, policy=ZoneObservationPolicy()):
                     first_broken = b["date"]
                 if (i > first_index and favorable and first_favorable is None):
                     first_favorable = b["date"]
-                if i > first_index and first_exit is None and (favorable or broken):
-                    first_exit = "favorable" if favorable else "broken"
+                if first_exit is None and (broken or (i > first_index and favorable)):
+                    first_exit = "broken" if broken else "favorable"
                 if (first_broken and i > first_index and favorable
                         and b["date"] > first_broken and reclaimed is None):
                     reclaimed = b["date"]
@@ -330,10 +338,13 @@ def evaluate_zone(forecast, future_bars, *, policy=ZoneObservationPolicy()):
         "first_touch_date": first, "touch_bar_index": first_index,
         "approach_to_first_touch": entry_approach,
         "first_touch_close": contact_close,
+        "first_touch_close_inside_band": first_touch_inside_close,
         "touch_episodes": len(touches), "retests": max(0, len(touches)-1),
         "touch_episode_starts": touches, "close_inside_days": inside_days,
         "longest_consecutive_inside_closes": max_inside_run,
         "max_penetration_depth_fraction": round(max_depth, 6) if first_index is not None and support_resistance else None,
+        "first_contact_episode_penetration_depth_fraction": (
+            round(first_episode_depth, 6) if first_index is not None and support_resistance else None),
         "max_penetration_beyond_far_edge": max_depth == 1.0 if first_index is not None and support_resistance else None,
         "low_after_first_touch": min_low, "high_after_first_touch": max_high,
         "intraday_far_edge_breached": wick_cross_far_boundary if first_index is not None and support_resistance else None,
@@ -384,10 +395,47 @@ def summarize_events(events, predictions):
     lookup = {e["forecast_id"]: e for e in events}
     pairs = [(lookup[c["parent_forecast_id"]], c) for c in comparable
              if c["parent_forecast_id"] in lookup]
+    def paired_report(pairs_in):
+        n = len(pairs_in)
+        both = [(a,b) for a,b in pairs_in
+                if a["first_touch_date"] is not None and b["first_touch_date"] is not None]
+        # Comparisons are paired but NOT independent or investable; same stock
+        # and repeated shared swings, conditional touch-selection and non-PIT.
+        def tally(pairs_used):
+            return {
+                "paired_cases": len(pairs_used),
+                "real_first_favorable_before_break": sum(
+                    a["first_decisive_exit_after_touch"] == "favorable" for a,b in pairs_used),
+                "null_first_favorable_before_break": sum(
+                    b["first_decisive_exit_after_touch"] == "favorable" for a,b in pairs_used),
+                "real_first_break_before_favorable": sum(
+                    a["first_decisive_exit_after_touch"] == "broken" for a,b in pairs_used),
+                "null_first_break_before_favorable": sum(
+                    b["first_decisive_exit_after_touch"] == "broken" for a,b in pairs_used),
+            }
+        return {
+            "total_predeclared_pairs": n,
+            "real_touched": sum(a["first_touch_date"] is not None for a,b in pairs_in),
+            "null_touched": sum(b["first_touch_date"] is not None for a,b in pairs_in),
+            "both_touched": len(both),
+            "same_asof_contact_rate_denom": n,
+            "both_touched_directional_comparison": tally(both),
+            "all_frozen_directional_comparison": tally(pairs_in),
+            "statistically_independent": False,
+            "null_caveat": "distance_width_side_timeframe_matched_only; controls can intersect nearby original bands",
+        }
+    by_source_scope = {}
+    prediction_by_id = {p["forecast_id"]: p for p in predictions}
+    for scope in ("raw_daily","raw_weekly","cluster"):
+        sample = [(a,b) for a,b in pairs
+                  if prediction_by_id[a["forecast_id"]]["scope"] == scope]
+        by_source_scope[scope] = paired_report(sample)
     return {
         "version": M41_VERSION, "predictions": len(predictions),
         "outcomes": len(events), "summary_by_scope": groups,
         "matched_pairs": len(pairs),
+        "paired_control_audit": paired_report(pairs),
+        "paired_control_by_original_scope": by_source_scope,
         "both_touched_pairs": sum(bool(a["first_touch_date"] and b["first_touch_date"])
                                    for a,b in pairs),
         "real_touch_only_pairs": sum(bool(a["first_touch_date"] and not b["first_touch_date"])
