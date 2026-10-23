@@ -134,6 +134,8 @@ def build_zones(rows: list[dict], symbol: str, *, asof: str, exchange: str = "un
         "source_blob_sha": source_sha, "data_hash": digest(selected),
         "data_quality": "blocked", "zones": [], "scenarios": [], "warnings": [],
         "zone_status": "no_qualifying_zone",
+        "m3_version": None, "zone_clusters": [], "scenario_plans": [],
+        "m3_status": "no_valid_setup",
     }
     if len(selected) < MIN_BARS:
         result["warnings"].append(f"insufficient_completed_daily_bars:{len(selected)}")
@@ -243,7 +245,8 @@ def build_zones(rows: list[dict], symbol: str, *, asof: str, exchange: str = "un
     result["zones"] = sorted(unique.values(), key=lambda z: (z["lower"], z["role"], z["zone_id"]))
     result["scenarios"] = scenario_refs
     result["zone_status"] = "candidate_zones_unvalidated" if unique else "no_qualifying_zone"
-    return result
+    from scanner.research.zones_m3 import enrich_m3
+    return enrich_m3(result)
 
 
 def main() -> None:
@@ -262,8 +265,12 @@ def main() -> None:
                              source_sha=args.source_git_blob)
         path = args.output_dir / f"{symbol.replace('/', '_')}_{args.asof}_zones.json"
         path.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+        from scanner.research.zones_m3 import write_readable_tables
+        write_readable_tables(report, path)
         print(json.dumps({"symbol": symbol, "source_bars": len(data[symbol]),
                           "zones": len(report["zones"]), "status": report["zone_status"],
+                          "clusters": len(report["zone_clusters"]),
+                          "plans": len(report["scenario_plans"]),
                           "data_quality": report["data_quality"], "output": str(path)}))
 
 
