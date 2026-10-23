@@ -146,6 +146,7 @@ def evaluate_frozen(report, scenario, future_bars, policy=ReplayPolicy()):
         "gross_return_pct": None, "net_return_pct": None,
         "same_exit_close_hold_net_pct": None,
         "risk_pct_at_fill": None, "planned_reward_risk_at_fill": None,
+        "rejection_reason": None, "entry_drift_beyond_band_pct": None,
         "empirical_probability": None, "evidence_status": "descriptive_replay_only",
         "warning": "posthoc_adjusted_OHLC_proxy_not_true_historical_PIT",
     }
@@ -200,12 +201,24 @@ def evaluate_frozen(report, scenario, future_bars, policy=ReplayPolicy()):
             event["risk_pct_at_fill"] = round(risk / entry_price * 100, 6)
             event["planned_reward_risk_at_fill"] = (
                 round(reward / risk, 6) if risk > 0 else None)
-            # Fail closed; gap can invalidate geometry or risk constraint.
-            if (risk <= 0 or reward <= 0 or
-                    risk / entry_price > policy.max_initial_risk_pct or
-                    reward / risk < policy.min_reward_risk or
-                    reward / risk > policy.max_reward_risk):
-                event.update(outcome="risk_rejected", fill_date=None)
+            beyond = (max(0, entry_price - entry_high) if side == "bull"
+                      else max(0, entry_low - entry_price))
+            event["entry_drift_beyond_band_pct"] = round(
+                beyond / entry_price * 100, 6)
+            # Separate reasons prevent an aggregate risk_rejected count
+            # from concealing where M3 geometry routinely fails.
+            rejection = (
+                "stop_invalidated_at_open" if risk <= 0 else
+                "target_behind_open" if reward <= 0 else
+                "risk_exceeds_frozen_limit" if
+                    risk / entry_price > policy.max_initial_risk_pct else
+                "reward_risk_below_frozen_minimum" if
+                    reward / risk < policy.min_reward_risk else
+                "reward_risk_above_sanity_limit" if
+                    reward / risk > policy.max_reward_risk else None)
+            if rejection:
+                event.update(outcome="risk_rejected",
+                             rejection_reason=rejection, fill_date=None)
                 return event
             entered, fill_index = True, index
             event["fill_date"] = day
@@ -266,13 +279,18 @@ def evaluate_frozen(report, scenario, future_bars, policy=ReplayPolicy()):
 def summarize(events):
     """Count every forecast including rejects; NEVER infer independent trades."""
     outcomes = {}
+    rejects = {}
     for event in events:
         k = event["outcome"]
         outcomes[k] = outcomes.get(k, 0) + 1
+        if event.get("rejection_reason"):
+            reason = event["rejection_reason"]
+            rejects[reason] = rejects.get(reason, 0) + 1
     closed = [e for e in events if e["net_return_pct"] is not None]
     return {
         "version": M4_VERSION, "total_forecasts": len(events),
         "outcome_counts": dict(sorted(outcomes.items())),
+        "risk_rejection_reasons": dict(sorted(rejects.items())),
         "closed_experimental_fills": len(closed),
         "mean_net_pct_closed_only": (
             round(sum(e["net_return_pct"] for e in closed) / len(closed), 6)
