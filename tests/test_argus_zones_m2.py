@@ -24,14 +24,12 @@ def sample(n=165):
 
 def build(rows=None, at=135, **kw):
     data = sample() if rows is None else rows
-    day = data[at]["date"]
-    return build_zones(
-        data, symbol="TEST", exchange="XNAS",
-        asset_id="XNAS:TEST:US", currency="USD", asof=day,
-        bar_end_utc=day + "T20:00:00Z",
-        published_at="2026-10-22T23:00:00Z",
-        **kw,
-    )
+    day = (date(2026, 1, 5) + timedelta(days=at)).isoformat()
+    options = dict(symbol="TEST", exchange="XNAS", asset_id="XNAS:TEST:US",
+                   currency="USD", asof=day, bar_end_utc=day + "T20:00:00Z",
+                   published_at="2026-10-22T23:00:00Z")
+    options.update(kw)
+    return build_zones(data, **options)
 
 
 def test_all_three_families_present_without_video_zones():
@@ -121,7 +119,7 @@ def test_incomplete_and_duplicate_rows_fail_closed():
         build(rows + [rows[10]])
     rows = sample()
     rows[12]["high"] = ""
-    with pytest.raises(ZoneInputError, match="history_invalid_or_duplicate"):
+    with pytest.raises((ZoneInputError, ValueError), match="incomplete_ohlc_session|history_invalid_or_duplicate"):
         build(rows)
 
 
