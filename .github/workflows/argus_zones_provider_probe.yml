@@ -5,6 +5,8 @@ on:
       - 'scripts/probe_argus_zone_symbols.py'
       - 'scripts/replay_argus_zones_m4.py'
       - 'src/scanner/research/zones_m4.py'
+      - 'src/scanner/research/zones_m41.py'
+      - 'scripts/replay_argus_zones_m41.py'
       - '.github/workflows/argus_zones_provider_probe.yml'
   workflow_dispatch:
 jobs:
@@ -45,6 +47,28 @@ jobs:
           assert result['independent_observations'] is False
           assert result['research_only']
           assert all(x['forecasts'] >= 0 for x in result['coverage'].values())
+          PY
+      - name: M4.1 independently frozen zone-response and matched-control replay
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m41.py \
+            --input /tmp/argus-zones-provider/isolated_source_ohlcv.csv \
+            --symbols AMD INTC ARM SMH NOW \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 60 --max-snapshots 12 \
+            --output-dir /tmp/argus-zones-provider/m41
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-provider/m41')
+          x=json.loads((p/'m41_summary.json').read_text())
+          assert x['research_only'] and not x['source_retrospective_PIT_certified']
+          assert x['matched_pairs'] > 0 and x['predictions'] == x['outcomes']
+          assert x['summary_by_scope']['raw_daily']['predictions'] > 0
+          assert x['summary_by_scope']['raw_weekly']['predictions'] > 0
+          assert x['summary_by_scope']['cluster']['predictions'] > 0
+          assert (p/'m41_asof_coverage.jsonl').exists()
           PY
       - name: Publish source receipt and isolated research zones
         if: always()
