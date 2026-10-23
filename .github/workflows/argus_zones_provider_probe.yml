@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'scripts/probe_argus_zone_symbols.py'
+      - 'scripts/replay_argus_zones_m4.py'
+      - 'src/scanner/research/zones_m4.py'
       - '.github/workflows/argus_zones_provider_probe.yml'
   workflow_dispatch:
 jobs:
@@ -24,6 +26,26 @@ jobs:
             --asof 2026-10-21 \
             --base-cache artifacts/market_data/yahoo_ohlcv.csv \
             --output-dir /tmp/argus-zones-provider
+      - name: Frozen M4 price-zone replay on isolated acquired history
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m4.py \
+            --input /tmp/argus-zones-provider/isolated_source_ohlcv.csv \
+            --symbols AMD INTC ARM SMH NOW \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 20 --max-snapshots 30 \
+            --output-dir /tmp/argus-zones-provider/m4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-provider/m4')
+          result=json.loads((p/'m4_summary.json').read_text())
+          assert result['success_probability'] is None
+          assert result['independent_observations'] is False
+          assert result['research_only']
+          assert all(x['forecasts'] >= 0 for x in result['coverage'].values())
+          PY
       - name: Publish source receipt and isolated research zones
         if: always()
         uses: actions/upload-artifact@v4
