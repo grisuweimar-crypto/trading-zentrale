@@ -137,6 +137,7 @@ def build_zones(rows: list[dict], symbol: str, *, asof: str, exchange: str = "un
         "m3_version": "argus-zones-m3-v0.1-research", "zone_clusters": [], "scenario_plans": [],
         "m3_status": "no_valid_setup",
         "weekly_zones": [], "last_confirmed_week": None,
+        "cross_timeframe_overlaps": [],
     }
     if len(selected) < MIN_BARS:
         result["warnings"].append(f"insufficient_completed_daily_bars:{len(selected)}")
