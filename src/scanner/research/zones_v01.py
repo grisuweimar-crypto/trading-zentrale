@@ -134,7 +134,7 @@ def build_zones(rows: list[dict], symbol: str, *, asof: str, exchange: str = "un
         "source_blob_sha": source_sha, "data_hash": digest(selected),
         "data_quality": "blocked", "zones": [], "scenarios": [], "warnings": [],
         "zone_status": "no_qualifying_zone",
-        "m3_version": None, "zone_clusters": [], "scenario_plans": [],
+        "m3_version": "argus-zones-m3-v0.1-research", "zone_clusters": [], "scenario_plans": [],
         "m3_status": "no_valid_setup",
     }
     if len(selected) < MIN_BARS:
