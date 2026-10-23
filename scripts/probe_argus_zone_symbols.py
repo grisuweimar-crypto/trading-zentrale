@@ -18,6 +18,7 @@ import yfinance
 
 from scripts.prefetch_market_history import _download
 from scanner.research.zones_v01 import build_zones, read_rows
+from scanner.research.zones_m3 import write_readable_tables
 
 MISSING = ("AMD", "INTC", "ARM", "SMH")
 CURRENCY = {s: "USD" for s in MISSING}
@@ -76,10 +77,31 @@ def main():
         }
         report = build_zones(sample, sym, asof=args.asof, exchange="unknown",
                              source_sha=None if sym in MISSING else "e0d758a7b3060d57ce3918927de41950fc10f44d")
-        (out / f"{sym}_{args.asof}_zones.json").write_text(
+        report_path = out / f"{sym}_{args.asof}_zones.json"
+        report_path.write_text(
             json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
             encoding="utf-8")
+        write_readable_tables(report, report_path)
         coverage[sym]["candidate_zones"] = len(report["zones"])
+        coverage[sym]["weekly_zones"] = len(report["weekly_zones"])
+        coverage[sym]["m3_clusters"] = len(report["zone_clusters"])
+        coverage[sym]["m3_plans"] = len(report["scenario_plans"])
+        by_cluster = {c["cluster_id"]: c for c in report["zone_clusters"]}
+        def zone_band(cluster_id):
+            z = by_cluster[cluster_id]
+            return [z["lower"], z["upper"]]
+        sample = []
+        for side in ("bull", "bear"):
+            scenario = next((p for p in report["scenario_plans"]
+                             if p["side"] == side), None)
+            if scenario:
+                sample.append({
+                    "side": side, "entry": zone_band(scenario["entry_cluster_id"]),
+                    "invalidation": zone_band(scenario["invalidation_cluster_id"]),
+                    "targets": [zone_band(x) for x in scenario["target_cluster_ids"]],
+                    "status": scenario["state"], "evidence": scenario["evidence_status"],
+                })
+        coverage[sym]["sample_m3_plans"] = sample
         coverage[sym]["quality"] = report["data_quality"]
     receipt = {
         "source": "read_only_existing_yahoo_adapter", "retrieved_at": downloaded_at,
