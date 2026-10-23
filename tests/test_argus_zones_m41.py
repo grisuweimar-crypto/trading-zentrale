@@ -101,7 +101,7 @@ class ZoneM41Tests(unittest.TestCase):
         self.assertFalse(x["asof_windows"]["60"]["touched"])
 
     def test_limited_future_is_censored_not_negative(self):
-        x=evaluate_zone(self.f, future([bar(1,105,108,97,99)],n=3))
+        x=evaluate_zone(self.f, future([bar(1,105,108,97,99)],n=1))
         self.assertEqual(x["status"],"right_censored_after_touch")
         self.assertEqual(x["touch_windows"]["3"]["status"],"right_censored")
         self.assertEqual(x["asof_windows"]["20"]["status"],"right_censored")
