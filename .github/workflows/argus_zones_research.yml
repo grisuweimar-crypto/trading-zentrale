@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/scanner/research/zones_v01.py'
       - 'src/scanner/research/zones_m3.py'
+      - 'src/scanner/research/zones_m3_weekly.py'
       - 'tests/test_argus_zones_v01.py'
       - 'tests/test_argus_zones_m3.py'
       - '.github/workflows/argus_zones_research.yml'
@@ -46,6 +47,10 @@ jobs:
                          for c in report['zone_clusters'])
               assert all(x['state']=='untriggered' and x['empirical_probability'] is None
                          for x in report['scenario_plans'])
+              assert all(z['evidence_status']=='not_validated' and z['empirical_probability'] is None
+                         for z in report['weekly_zones'])
+              assert all(x['independence_claim'] is False
+                         for x in report['cross_timeframe_overlaps'])
               assert all(z['evidence_status']=='not_validated' and z['empirical_probability'] is None
                          for z in report['zones'])
               print(symbol, 'status=',report['zone_status'], 'zones=',len(report['zones']),
