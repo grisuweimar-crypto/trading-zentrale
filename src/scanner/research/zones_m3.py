@@ -212,14 +212,34 @@ def enrich_m3(report):
     report["zone_clusters"] = []
     report["scenario_plans"] = []
     report["m3_status"] = "no_valid_setup"
-    if report.get("data_quality") == "blocked" or not report.get("zones"):
+    report["cross_timeframe_overlaps"] = []
+    raw_zones = list(report.get("zones", [])) + list(report.get("weekly_zones", []))
+    if report.get("data_quality") == "blocked" or not raw_zones:
         return report
     close = report.get("asof_raw_close")
     if close is None or float(close) <= 0:
         return report
-    clusters = cluster_zones(report["zones"], float(close))
-    plans = build_scenario_plans(clusters, report["zones"],
+    clusters = cluster_zones(raw_zones, float(close))
+    plans = build_scenario_plans(clusters, raw_zones,
                                  asof=report["asof"], close=float(close))
+    daily = [c for c in clusters if c["timeframe"] == "daily"]
+    weekly = [c for c in clusters if c["timeframe"] == "weekly"]
+    overlaps = []
+    for a in daily:
+        for b in weekly:
+            if (a["role"] == b["role"] and a["side"] == b["side"] and
+                a["lower"] <= b["upper"] and b["lower"] <= a["upper"]):
+                overlaps.append({
+                    "daily_cluster_id": a["cluster_id"],
+                    "weekly_cluster_id": b["cluster_id"],
+                    "role": a["role"], "side": a["side"],
+                    "overlap_lower": max(a["lower"], b["lower"]),
+                    "overlap_upper": min(a["upper"], b["upper"]),
+                    "independence_claim": False,
+                    "evidence_status": "not_validated",
+                })
+    report["cross_timeframe_overlaps"] = sorted(
+        overlaps, key=lambda x: (x["daily_cluster_id"], x["weekly_cluster_id"]))
     report["zone_clusters"] = clusters
     report["scenario_plans"] = plans
     report["m3_status"] = "conditional_setups_unvalidated" if plans else "no_valid_setup"
@@ -234,7 +254,7 @@ def write_readable_tables(report, output_json_path):
     cpath = path.with_name(path.stem + "_clusters.csv")
     spath = path.with_name(path.stem + "_plans.csv")
     with cpath.open("w", newline="", encoding="utf-8") as f:
-        fields = ["cluster_id", "role", "side", "lower", "upper", "status",
+        fields = ["cluster_id", "timeframe", "role", "side", "lower", "upper", "status",
                   "known_at", "distinct_family_count", "independent_anchor_groups",
                   "dependent_source_count", "source_zone_ids", "families"]
         w = csv.DictWriter(f, fieldnames=fields)
@@ -257,14 +277,20 @@ def write_readable_tables(report, output_json_path):
         "Data quality: " + str(report["data_quality"]),
         "M3 status: " + str(report["m3_status"]),
         "",
-        "| Typ | Seite | Unterkante | Oberkante | Status | Familien | Unabh. Ankergruppen |",
-        "|---|---|---:|---:|---|---|---:|",
+        "| Zeitrahmen | Typ | Seite | Unterkante | Oberkante | Status | Familien | Unabh. Ankergruppen |",
+        "|---|---|---|---:|---:|---|---|---:|",
     ]
     for c in clusters:
         md.append("| " + " | ".join([
-            c["role"], c["side"], str(c["lower"]), str(c["upper"]),
+            c["timeframe"], c["role"], c["side"], str(c["lower"]), str(c["upper"]),
             c["status"], ", ".join(c["families"]), str(c["independent_anchor_groups"]),
         ]) + " |")
+    md += ["", "## Daily/Weekly-Überlappungen", ""]
+    for x in report.get("cross_timeframe_overlaps", []):
+        md.append("- " + x["role"] + " " + x["side"] + ": " +
+                  x["daily_cluster_id"] + " / " + x["weekly_cluster_id"] +
+                  " (" + str(x["overlap_lower"]) + "–" + str(x["overlap_upper"]) +
+                  "); no independence claim")
     md += ["", "## Unausgeloeste Szenarien", ""]
     for p in plans:
         md.append("- " + p["side"] + ": entry " + p["entry_cluster_id"] +
