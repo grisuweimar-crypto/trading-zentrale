@@ -130,6 +130,39 @@ class M3ResearchTests(unittest.TestCase):
         for p in left["scenario_plans"]:
             self.assertLessEqual(p["known_at"], cutoff)
 
+    def test_weekly_close_requires_next_real_week_confirmation(self):
+        rows = bars(300)
+        cutoff = rows[278]["date"]
+        r = build_zones(rows, "DEMO", asof=cutoff)
+        self.assertIsNotNone(r["last_confirmed_week"])
+        w = r["last_confirmed_week"]
+        self.assertLess(w["bar_end"], w["known_at"])
+        self.assertLessEqual(w["known_at"], cutoff)
+        self.assertTrue(r["weekly_zones"])
+        for z in r["weekly_zones"]:
+            self.assertEqual(z["timeframe"], "weekly")
+            self.assertLessEqual(z["known_at"], cutoff)
+            self.assertIsNone(z["empirical_probability"])
+            self.assertEqual(z["evidence_status"], "not_validated")
+        # A future week may not silently revise any as-of price zone.
+        self.assertEqual(r, build_zones(rows[:279], "DEMO", asof=cutoff))
+
+    def test_cross_timeframe_overlap_is_a_note_not_a_prognosis(self):
+        raw = demo()
+        weekly = zone("weekly-s", "support", "bull", 100, 103,
+                      "horizontal", [LOW])
+        weekly["timeframe"] = "weekly"
+        report = {"symbol": "DEMO", "asof": "2026-10-21",
+                  "data_quality": "degraded", "asof_raw_close": 110,
+                  "zones": raw, "weekly_zones": [weekly]}
+        enrich_m3(report)
+        overlaps = report["cross_timeframe_overlaps"]
+        self.assertTrue(overlaps)
+        self.assertTrue(all(x["independence_claim"] is False for x in overlaps))
+        self.assertTrue(all(x["evidence_status"] == "not_validated" for x in overlaps))
+        self.assertTrue(any(c["timeframe"] == "weekly" for c in report["zone_clusters"]))
+        self.assertTrue(any(c["timeframe"] == "daily" for c in report["zone_clusters"]))
+
     def test_csv_and_markdown_export_same_snapshot(self):
         report = {"symbol": "DEMO", "asof": "2026-10-21",
                   "data_quality": "degraded", "asof_raw_close": 110,
