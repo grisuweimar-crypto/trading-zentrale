@@ -1,0 +1,52 @@
+name: ARGUS zones research v0.1 (isolated)
+on:
+  pull_request:
+    paths:
+      - 'src/scanner/research/zones_v01.py'
+      - 'tests/test_argus_zones_v01.py'
+      - '.github/workflows/argus_zones_research.yml'
+  workflow_dispatch:
+jobs:
+  zones-research-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install only research test dependencies
+        run: python -m pip install numpy pandas pytest
+      - name: Causal/reproducibility unit tests
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q tests/test_argus_zones_v01.py
+      - name: Archived cache offline smoke (no vendor access or orders)
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m scanner.research.zones_v01 \
+            --input artifacts/market_data/yahoo_ohlcv.csv \
+            --symbols AMD INTC ARM SMH NOW \
+            --asof 2026-10-21 \
+            --source-git-blob e0d758a7b3060d57ce3918927de41950fc10f44d \
+            --output-dir /tmp/argus-zones-research
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/argus-zones-research')
+          for symbol in ('AMD','INTC','ARM','SMH','NOW'):
+              p=root/f'{symbol}_2026-10-21_zones.json'
+              report=json.loads(p.read_text())
+              assert report['model_version']=='argus-zones-v0.1.0-research'
+              assert all(z['evidence_status']=='not_validated' and z['empirical_probability'] is None
+                         for z in report['zones'])
+              print(symbol, 'status=',report['zone_status'], 'zones=',len(report['zones']),
+                    'bar=',report['last_completed_bar'],'warnings=',report['warnings'][:2])
+          PY
+      - name: Attach research output (not production)
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-zones-2026-10-21-research
+          path: /tmp/argus-zones-research/*.json
+          retention-days: 7
