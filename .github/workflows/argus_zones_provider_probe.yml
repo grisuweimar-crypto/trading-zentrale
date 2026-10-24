@@ -1,0 +1,90 @@
+name: ARGUS zones provider coverage probe (read-only)
+on:
+  pull_request:
+    paths:
+      - 'scripts/probe_argus_zone_symbols.py'
+      - 'scripts/replay_argus_zones_m4.py'
+      - 'src/scanner/research/zones_m4.py'
+      - 'src/scanner/research/zones_m41.py'
+      - 'scripts/replay_argus_zones_m41.py'
+      - 'scripts/m41_refetch_now_readonly.py'
+      - '.github/workflows/argus_zones_provider_probe.yml'
+  workflow_dispatch:
+jobs:
+  optional-market-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install read-only market adapter dependencies
+        run: python -m pip install pandas numpy "yfinance>=0.2.36,<1" requests
+      - name: Request OHLCV for missing five-symbol research coverage
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/probe_argus_zone_symbols.py \
+            --asof 2026-10-21 \
+            --base-cache artifacts/market_data/yahoo_ohlcv.csv \
+            --output-dir /tmp/argus-zones-provider
+      - name: Frozen M4 price-zone replay on isolated acquired history
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m4.py \
+            --input /tmp/argus-zones-provider/isolated_source_ohlcv.csv \
+            --symbols AMD INTC ARM SMH NOW \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 20 --max-snapshots 30 \
+            --output-dir /tmp/argus-zones-provider/m4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-provider/m4')
+          result=json.loads((p/'m4_summary.json').read_text())
+          assert result['success_probability'] is None
+          assert result['independent_observations'] is False
+          assert result['research_only']
+          assert all(x['forecasts'] >= 0 for x in result['coverage'].values())
+          PY
+      - name: Reconcile NOW historical closed daily archive for M4.1 only
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/m41_refetch_now_readonly.py \
+            --input /tmp/argus-zones-provider/isolated_source_ohlcv.csv \
+            --output /tmp/argus-zones-provider/m41_complete_source_ohlcv.csv \
+            --asof 2026-10-21
+      - name: M4.1 independently frozen zone-response and matched-control replay
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m41.py \
+            --input /tmp/argus-zones-provider/m41_complete_source_ohlcv.csv \
+            --symbols AMD INTC ARM SMH NOW \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 60 --max-snapshots 12 \
+            --output-dir /tmp/argus-zones-provider/m41
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-provider/m41')
+          x=json.loads((p/'m41_summary.json').read_text())
+          assert x['research_only'] and not x['source_retrospective_PIT_certified']
+          assert x['matched_pairs'] > 0 and x['predictions'] == x['outcomes']
+          assert x['coverage']['NOW']['blocked_snapshots'] == 0
+          assert x['summary_by_scope']['raw_daily']['predictions'] > 0
+          assert x['summary_by_scope']['raw_weekly']['predictions'] > 0
+          assert x['summary_by_scope']['cluster']['predictions'] > 0
+          assert (p/'m41_asof_coverage.jsonl').exists()
+          PY
+      - name: Publish source receipt and isolated research zones
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-zones-provider-probe-2026-10-21
+          path: /tmp/argus-zones-provider/*
+          retention-days: 7
+          if-no-files-found: warn
