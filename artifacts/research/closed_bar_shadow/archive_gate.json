@@ -1,27 +1,69 @@
 {
   "symbols": 220,
-  "eligible": 220,
+  "eligible": 212,
   "statuses": {
-    "CLOSED_ARCHIVED_SESSION": 219,
+    "CLOSED_ARCHIVED_SESSION": 211,
+    "NO_ELIGIBLE_CLOSED_BAR": 8,
     "CLOSED_ARCHIVED_SHORT_HISTORY": 1
   },
   "source": "artifacts/market_data/yahoo_ohlcv.csv",
   "research_only": true,
   "watch_publication_untouched": true,
-  "blocked": [],
+  "blocked": [
+    {
+      "symbol": "CRYPTO:ADA",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:AVAX",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:BTC",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:DOGE",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:ETH",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:MANA",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:SOL",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    },
+    {
+      "symbol": "CRYPTO:XRP",
+      "status": "NO_ELIGIBLE_CLOSED_BAR",
+      "latest_session": null
+    }
+  ],
   "sample_last_dates": {
-    "000660.KS": "2026-10-22",
-    "005930.KS": "2026-10-22",
-    "0700.HK": "2026-10-22",
-    "0857.HK": "2026-10-22",
-    "1211.HK": "2026-10-22",
-    "1810.HK": "2026-10-22",
-    "2899.HK": "2026-10-22",
-    "3750.HK": "2026-10-22",
-    "6503.T": "2026-10-22",
-    "6506.T": "2026-10-22",
-    "6861.T": "2026-10-22",
-    "8035.T": "2026-10-22"
+    "000660.KS": "2026-10-23",
+    "005930.KS": "2026-10-23",
+    "0700.HK": "2026-10-23",
+    "0857.HK": "2026-10-23",
+    "1211.HK": "2026-10-23",
+    "1810.HK": "2026-10-23",
+    "2899.HK": "2026-10-23",
+    "3750.HK": "2026-10-23",
+    "6503.T": "2026-10-23",
+    "6506.T": "2026-10-23",
+    "6861.T": "2026-10-23",
+    "8035.T": "2026-10-23"
   },
   "recent_adjusted_coverage": {
     "last300_complete": 219,
