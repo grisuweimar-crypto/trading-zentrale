@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-22T18:47:29.206482+00:00",
+  "decision_as_of": "2026-10-25T18:39:57.399246+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-22T18:36:42.982389+00:00",
+    "captured_at": "2026-10-25T18:28:12.156674+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-22T18:34:17+00:00",
+    "scanner_published_at": "2026-10-25T18:25:46+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-22",
-    "source_capture_id": "0f58be63f3e1c6c3721e76545d1c37a90f5ce1e993c6fc15d6e39de9c0feb3ed",
-    "source_publication_commit": "e5d1c265267fc6784fdc6ce73e223b7710eed406",
-    "source_run_id": "github-39831519300-1",
-    "source_snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
+    "source_as_of": "2026-10-25",
+    "source_capture_id": "661ff08bf4e119a5ad49fc5767a026dc887dc0f600f3e1f89dc94f3d42ed1010",
+    "source_publication_commit": "68e11025c6e5743026e73552301a0c991b86130b",
+    "source_run_id": "github-40220733765-1",
+    "source_snapshot_id": "f46697ff-ad97-491c-8606-e615b57e5463",
     "status": "no_elliott_output_for_symbol",
     "symbol": "PG",
     "validation_partition": "prospective_unspent",
@@ -27,21 +27,23 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
+    "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:PG:32bb40f535b6b527:60T"
+      "timing:PG:cce5c47f08a2bf66:60T",
+      "timing:PG:8383be481c5c6052:60T",
+      "timing:PG:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 3
     },
-    "relation_state": "single_direction_or_unopposed",
-    "state": "positive",
-    "support_structure": "single_direction_or_unopposed"
+    "relation_state": "correlated_same_family_support",
+    "state": "negative",
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
+  "snapshot_id": "f46697ff-ad97-491c-8606-e615b57e5463",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -362,14 +364,38 @@
       "source_snapshot_id": "59cc3331-122d-4a2c-ba59-12236fd7aa79",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-10-23T18:30:39.374305+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "aa350520-8a7c-4a6c-a1ae-5bd7466eb495",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-10-24T17:55:41.071931+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "26b7b83a-f155-452e-bc9f-341de214a138",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-25T18:39:57.399246+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "f46697ff-ad97-491c-8606-e615b57e5463",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
-      "score_falling_5t": false,
+      "rs3m_falling_5t": true,
+      "score_falling_5t": true,
       "trend200_falling_5t": false
     },
     "last_overextension_date": null,
@@ -383,11 +409,11 @@
   "state_history_state": "never_overextended",
   "symbol": "PG",
   "transition_state": {
-    "pending_confirmation_count": 0,
-    "pending_direction": null,
+    "pending_confirmation_count": 1,
+    "pending_direction": "negative",
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "transition_pending"
   }
 }
