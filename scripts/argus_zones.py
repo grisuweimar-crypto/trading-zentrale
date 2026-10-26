@@ -64,10 +64,10 @@ def resolve_equity_identity(symbol, *, metadata=None):
         raise ValueError("ticker_redirect_requires_explicit_identity_selection")
     if str(metadata.get("instrumentType", "")).upper() != "EQUITY":
         raise ValueError("instrument_is_not_provider_verified_equity")
-    currency = str(metadata.get("currency") or "").upper()
+    currency = str(metadata.get("currency") or "").strip()
     venue = str(metadata.get("exchangeName") or "").upper()
     timezone_name = str(metadata.get("exchangeTimezoneName") or "")
-    if not re.fullmatch(r"[A-Z]{3}", currency):
+    if not re.fullmatch(r"[A-Za-z]{3}", currency):
         raise ValueError("missing_or_invalid_provider_currency")
     if not re.fullmatch(r"[A-Z0-9]{2,8}", venue) or "/" not in timezone_name:
         raise ValueError("missing_or_invalid_provider_exchange_or_timezone")
@@ -82,7 +82,7 @@ def resolve_equity_identity(symbol, *, metadata=None):
     }
 
 
-def fetch_provider(symbol, asof):
+def fetch_provider(symbol, asof, *, identity=None):
     # Lazy import: offline CSV replays require no network adapter.
     from scripts.prefetch_market_history import _download
     end = (date.fromisoformat(asof)+timedelta(days=1)).isoformat()
@@ -95,7 +95,7 @@ def fetch_provider(symbol, asof):
         if str(item.get("symbol"))!=symbol:
             raise ValueError("provider_returned_different_instrument")
         if str(item.get("date",""))[:10]>asof:continue
-        row={"symbol":symbol,"currency":PILOT_IDENTITIES[symbol][2],
+        row={"symbol":symbol,"currency":identity["currency"] if identity else PILOT_IDENTITIES[symbol][2],
              "date":str(item["date"])[:10]}
         for k in ("open","high","low","close","adj_close","volume"):
             value=float(item[k])
@@ -106,26 +106,46 @@ def fetch_provider(symbol, asof):
     return rows
 
 
-def verify_completed(asof, now=None):
+def verify_completed(asof, now=None, *, identity=None):
     """Prevent unfinished NYSE/NASDAQ candles being used as complete."""
     import pandas_market_calendars as mcal
     now=now or datetime.now(timezone.utc)
-    session=mcal.get_calendar("NYSE").schedule(
-        start_date=(date.fromisoformat(asof)-timedelta(days=2)).isoformat(),
-        end_date=asof)
-    if asof not in {x.date().isoformat() for x in session.index}:
-        raise ValueError("not_a_us_stock_market_session")
-    bar=session.loc[asof,"market_close"].to_pydatetime()
+    calendar = identity.get("calendar") if identity is not None else "NYSE"
+    if calendar is None:
+        # No invented NYSE close for an unknown foreign exchange. The provider
+        # still must supply an actual bar dated asof, two days in the past.
+        cutoff = datetime.combine(date.fromisoformat(asof), datetime.min.time(),
+                                  tzinfo=timezone.utc) + timedelta(days=2)
+        if cutoff > now:
+            raise ValueError("unmapped_exchange_requires_48h_old_daily_bar")
+        return
+    try:
+        session=mcal.get_calendar(calendar).schedule(
+            start_date=asof, end_date=asof)
+    except Exception as exc:
+        raise ValueError("calendar_unavailable_for_exchange:"+str(calendar)) from exc
+    if session.empty:
+        raise ValueError("not_a_us_stock_market_session" if identity is None
+                         else "not_a_completed_exchange_session")
+    bar=session.iloc[0]["market_close"].to_pydatetime()
     if bar+timedelta(minutes=90)>now:
         raise ValueError("session_not_yet_closed_plus_safety_margin")
 
 
-def analyze(symbol,asof,rows,*,source_kind):
+def analyze(symbol,asof,rows,*,source_kind,identity=None):
     symbol=symbol.upper()
-    if symbol not in PILOT_IDENTITIES:
-        raise ValueError("instrument_identity_unverified:"+symbol)
+    if identity is None:
+        if symbol not in PILOT_IDENTITIES:
+            raise ValueError("instrument_identity_unverified:"+symbol)
+        exchange,asset_id,currency=PILOT_IDENTITIES[symbol]
+        identity_source="legacy_verified_pilot_identity"
+    else:
+        if identity["symbol"]!=symbol:
+            raise ValueError("instrument_metadata_ticker_mismatch")
+        exchange,asset_id,currency=(identity["exchange"],identity["asset_id"],
+                                   identity["currency"])
+        identity_source=identity["identity_source"]
     date.fromisoformat(asof)
-    exchange, asset_id, currency=PILOT_IDENTITIES[symbol]
     sample=sorted((r for r in rows if r.get("date","")<=asof),key=lambda r:r["date"])
     if len(sample)<80 or sample[-1]["date"]!=asof:
         raise ValueError("closed_asof_bar_or_minimum_history_missing:"+symbol)
@@ -155,26 +175,37 @@ def analyze(symbol,asof,rows,*,source_kind):
         "source_asof":asof,
         "source_retrospective_pit_certified":False,
         "first_seen_prospective":False,
-        "market_identity":"curated_issuer_verified_US_security_registry",
+        "market_identity":identity_source,
+        "resolved_instrument": identity if identity is not None else
+            {"symbol":symbol,"exchange":exchange,"asset_id":asset_id,
+             "currency":currency,"identity_source":identity_source,
+             "mic_independently_verified":False},
+        "provider_asset_identity_independently_certified":False,
         "can_trade":False,
         "empirical_probability":None,
     }
     return report
 
 
-def run(symbol,asof,output_dir,*,input_file=None,downloader=fetch_provider,now=None):
-    symbol=symbol.upper()
-    if symbol not in PILOT_IDENTITIES:
-        raise ValueError("unknown_instrument_id_not_allowed")
-    verify_completed(asof,now=now)
+def run(symbol,asof,output_dir,*,input_file=None,downloader=fetch_provider,
+        now=None,metadata=None):
+    symbol=symbol.strip().upper()
+    # For offline tests, previous documented pilots remain reproducible.
+    # Any other equity can use a supplied issuer/provider metadata receipt.
+    if metadata is None and input_file and symbol in PILOT_IDENTITIES:
+        identity=None
+    else:
+        identity=resolve_equity_identity(symbol,metadata=metadata)
+    verify_completed(asof,now=now,identity=identity)
     if input_file:
         data=read_rows(Path(input_file),{symbol})
         records=data[symbol]
         source="explicit_historical_ohlcv_csv"
     else:
-        records=downloader(symbol,asof)
+        records=(fetch_provider(symbol,asof,identity=identity)
+                 if downloader is fetch_provider else downloader(symbol,asof))
         source="read_only_yahoo_provider_adapter"
-    report=analyze(symbol,asof,records,source_kind=source)
+    report=analyze(symbol,asof,records,source_kind=source,identity=identity)
     output=Path(output_dir)
     output.mkdir(parents=True,exist_ok=True)
     dest=output/f"{symbol}_{asof}_zones.json"
@@ -185,13 +216,18 @@ def run(symbol,asof,output_dir,*,input_file=None,downloader=fetch_provider,now=N
 
 def main():
     parser=argparse.ArgumentParser(description="ARGUS independent research zone analysis for curated identity-verified instruments")
-    parser.add_argument("--symbol",required=True)
+    parser.add_argument("--symbol",required=True,
+                        help="Yahoo equity ticker (e.g., FISV, SAP.DE, 7203.T)")
     parser.add_argument("--asof",required=True)
+    parser.add_argument("--metadata-json",type=Path,
+                        help="Optional locally supplied Yahoo instrument metadata JSON; unverified provenance")
     parser.add_argument("--input",type=Path,default=None,
                         help="Optional OHLCV CSV for reproducible offline replay")
     parser.add_argument("--output-dir",required=True,type=Path)
     args=parser.parse_args()
-    path,report=run(args.symbol,args.asof,args.output_dir,input_file=args.input)
+    metadata=json.loads(args.metadata_json.read_text()) if args.metadata_json else None
+    path,report=run(args.symbol,args.asof,args.output_dir,input_file=args.input,
+                    metadata=metadata)
     print(json.dumps({
         "symbol":report["symbol"],"asof":report["asof"],
         "last_completed_bar":report["last_completed_bar"],
