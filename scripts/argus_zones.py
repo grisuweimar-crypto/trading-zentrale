@@ -44,12 +44,12 @@ VENUE_CALENDARS = {
 def resolve_equity_identity(symbol, *, metadata=None):
     """Resolve any provider-listed equity; fail closed on ambiguous identity."""
     import re
-    import yfinance as yf
     symbol = symbol.strip().upper()
     if not re.fullmatch(r"[A-Z0-9][A-Z0-9.\\-]{0,29}", symbol):
         raise ValueError("invalid_provider_ticker")
     provenance = "operator_supplied_metadata_unverified" if metadata is not None else "yfinance_history_metadata_live"
     if metadata is None:
+        import yfinance as yf
         ticker = yf.Ticker(symbol)
         try:
             metadata = ticker.get_history_metadata() or {}
@@ -72,10 +72,14 @@ def resolve_equity_identity(symbol, *, metadata=None):
     if not re.fullmatch(r"[A-Z0-9]{2,8}", venue) or "/" not in timezone_name:
         raise ValueError("missing_or_invalid_provider_exchange_or_timezone")
     exchange, calendar = VENUE_CALENDARS.get(venue, ("YF-" + venue, None))
-    # No country/ISIN suffix inferred from a bare ticker.
+    # Preserve the already-established ARGUS identity for documented pilots;
+    # the dynamic path works equally for every other provider-listed share.
+    previous = PILOT_IDENTITIES.get(symbol)
+    asset_id = (previous[1] if previous and previous[0] == exchange
+                and previous[2] == currency else exchange + ":" + symbol + ":" + currency)
     return {
         "symbol": symbol, "exchange": exchange, "currency": currency,
-        "asset_id": exchange + ":" + symbol + ":" + currency,
+        "asset_id": asset_id,
         "provider_exchange": venue, "exchange_timezone": timezone_name,
         "calendar": calendar, "identity_source": provenance,
         "mic_independently_verified": False,
