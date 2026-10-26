@@ -31,6 +31,56 @@ PILOT_IDENTITIES = {
 }
 COLUMNS=("date","symbol","currency","open","high","low","close","adj_close","volume")
 
+# Venue aliases are provider-metadata mappings, NOT independent ISO-MIC proofs.
+VENUE_CALENDARS = {
+    "NMS": ("XNAS", "NASDAQ"), "NGM": ("XNAS", "NASDAQ"),
+    "NCM": ("XNAS", "NASDAQ"), "NYQ": ("XNYS", "NYSE"),
+    "GER": ("XETR", "XETR"), "ETR": ("XETR", "XETR"),
+    "LSE": ("XLON", "LSE"), "TOR": ("XTSE", "TSX"),
+    "HKG": ("XHKG", "HKEX"), "JPX": ("XTKS", "JPX"),
+    "PAR": ("XPAR", "Euronext"), "AMS": ("XAMS", "Euronext"),
+}
+
+def resolve_equity_identity(symbol, *, metadata=None):
+    """Resolve any provider-listed equity; fail closed on ambiguous identity."""
+    import re
+    import yfinance as yf
+    symbol = symbol.strip().upper()
+    if not re.fullmatch(r"[A-Z0-9][A-Z0-9.\\-]{0,29}", symbol):
+        raise ValueError("invalid_provider_ticker")
+    provenance = "operator_supplied_metadata_unverified" if metadata is not None else "yfinance_history_metadata_live"
+    if metadata is None:
+        ticker = yf.Ticker(symbol)
+        try:
+            metadata = ticker.get_history_metadata() or {}
+            if not metadata.get("instrumentType"):
+                ticker.history(period="5d", auto_adjust=False)
+                metadata = ticker.get_history_metadata() or {}
+        except Exception as exc:
+            raise ValueError("provider_identity_metadata_unavailable:" + type(exc).__name__) from exc
+    if not isinstance(metadata, dict):
+        raise ValueError("provider_identity_not_a_mapping")
+    if str(metadata.get("symbol", symbol)).upper() != symbol:
+        raise ValueError("ticker_redirect_requires_explicit_identity_selection")
+    if str(metadata.get("instrumentType", "")).upper() != "EQUITY":
+        raise ValueError("instrument_is_not_provider_verified_equity")
+    currency = str(metadata.get("currency") or "").upper()
+    venue = str(metadata.get("exchangeName") or "").upper()
+    timezone_name = str(metadata.get("exchangeTimezoneName") or "")
+    if not re.fullmatch(r"[A-Z]{3}", currency):
+        raise ValueError("missing_or_invalid_provider_currency")
+    if not re.fullmatch(r"[A-Z0-9]{2,8}", venue) or "/" not in timezone_name:
+        raise ValueError("missing_or_invalid_provider_exchange_or_timezone")
+    exchange, calendar = VENUE_CALENDARS.get(venue, ("YF-" + venue, None))
+    # No country/ISIN suffix inferred from a bare ticker.
+    return {
+        "symbol": symbol, "exchange": exchange, "currency": currency,
+        "asset_id": exchange + ":" + symbol + ":" + currency,
+        "provider_exchange": venue, "exchange_timezone": timezone_name,
+        "calendar": calendar, "identity_source": provenance,
+        "mic_independently_verified": False,
+    }
+
 
 def fetch_provider(symbol, asof):
     # Lazy import: offline CSV replays require no network adapter.
