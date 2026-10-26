@@ -1,0 +1,120 @@
+name: ARGUS zones research v0.1 (isolated)
+on:
+  pull_request:
+    paths:
+      - 'src/scanner/research/zones_v01.py'
+      - 'src/scanner/research/zones_m3.py'
+      - 'src/scanner/research/zones_m3_weekly.py'
+      - 'src/scanner/research/zones_m4.py'
+      - 'src/scanner/research/zones_m41.py'
+      - 'scripts/replay_argus_zones_m41.py'
+      - 'tests/test_argus_zones_m41.py'
+      - 'scripts/replay_argus_zones_m4.py'
+      - 'tests/test_argus_zones_m4.py'
+      - 'tests/test_argus_zones_v01.py'
+      - 'tests/test_argus_zones_m3.py'
+      - 'tests/test_argus_zones_cli.py'
+      - 'scripts/argus_zones.py'
+      - '.github/workflows/argus_zones_research.yml'
+  workflow_dispatch:
+jobs:
+  zones-research-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install only research test dependencies
+        run: python -m pip install numpy pandas pytest pandas_market_calendars
+      - name: Causal/reproducibility unit tests
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q tests/test_argus_zones_v01.py tests/test_argus_zones_m3.py tests/test_argus_zones_m4.py tests/test_argus_zones_m41.py tests/test_argus_zones_cli.py
+      - name: Archived cache offline smoke (no vendor access or orders)
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m scanner.research.zones_v01 \
+            --input artifacts/market_data/yahoo_ohlcv.csv \
+            --symbols AMD INTC ARM SMH NOW \
+            --asof 2026-10-21 \
+            --source-git-blob e0d758a7b3060d57ce3918927de41950fc10f44d \
+            --output-dir /tmp/argus-zones-research
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('/tmp/argus-zones-research')
+          for symbol in ('AMD','INTC','ARM','SMH','NOW'):
+              p=root/f'{symbol}_2026-10-21_zones.json'
+              report=json.loads(p.read_text())
+              assert report['model_version']=='argus-zones-v0.1.0-research'
+              assert report['m3_version']=='argus-zones-m3-v0.1-research'
+              assert all(c['evidence_status']=='not_validated' and c['empirical_probability'] is None
+                         for c in report['zone_clusters'])
+              assert all(x['state']=='untriggered' and x['empirical_probability'] is None
+                         for x in report['scenario_plans'])
+              assert all(z['evidence_status']=='not_validated' and z['empirical_probability'] is None
+                         for z in report['weekly_zones'])
+              assert all(x['independence_claim'] is False
+                         for x in report['cross_timeframe_overlaps'])
+              assert all(z['evidence_status']=='not_validated' and z['empirical_probability'] is None
+                         for z in report['zones'])
+              print(symbol, 'status=',report['zone_status'], 'zones=',len(report['zones']),
+                    'bar=',report['last_completed_bar'],'warnings=',report['warnings'][:2])
+          PY
+      - name: M4 frozen-ledger smoke on archived offline daily bars
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m4.py \
+            --input artifacts/market_data/yahoo_ohlcv.csv \
+            --symbols NOW AMD INTC ARM SMH \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 20 --max-snapshots 4 \
+            --output-dir /tmp/argus-zones-research/m4
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-research/m4')
+          x=json.loads((p/'m4_summary.json').read_text())
+          assert x['research_only'] and x['causal_market_PIT_verified'] is False
+          assert (p/'forecast_ledger.jsonl').exists()
+          assert (p/'outcome_ledger.jsonl').exists()
+          assert (p/'asof_coverage.jsonl').exists()
+          assert x['success_probability'] is None
+          assert x['coverage']['AMD']['rows'] == 0
+          PY
+      - name: M4.1 raw-zone and matched-controls read-only offline smoke
+        env:
+          PYTHONPATH: 'src:.'
+        run: |
+          python scripts/replay_argus_zones_m41.py \
+            --input artifacts/market_data/yahoo_ohlcv.csv \
+            --symbols NOW AMD INTC ARM SMH \
+            --cutoff 2026-10-21 \
+            --first-index 150 --stride 60 --max-snapshots 2 \
+            --output-dir /tmp/argus-zones-research/m41
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('/tmp/argus-zones-research/m41')
+          x=json.loads((p/'m41_summary.json').read_text())
+          assert x['research_only'] and not x['source_retrospective_PIT_certified']
+          assert x['calibrated_probability'] is None
+          assert x['coverage']['AMD']['source_rows'] == 0
+          assert (p/'m41_frozen_zone_forecasts.jsonl').exists()
+          assert (p/'m41_observed_zone_outcomes.jsonl').exists()
+          PY
+      - name: Attach research output (not production)
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-zones-2026-10-21-research
+          path: |
+            /tmp/argus-zones-research/*.json
+            /tmp/argus-zones-research/*.csv
+            /tmp/argus-zones-research/*.md
+            /tmp/argus-zones-research/m4/*
+            /tmp/argus-zones-research/m41/*
+          retention-days: 7
