@@ -1,0 +1,100 @@
+name: ARGUS arbitrary-equity single-stock zone research (read-only)
+on:
+  pull_request:
+    paths:
+      - 'scripts/argus_zones.py'
+      - 'tests/test_argus_zones_cli.py'
+      - '.github/workflows/argus_fisv_adhoc_zone_probe.yml'
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: 'Provider equity ticker, e.g. FISV, AAPL, SAP.DE, 7203.T, RR.L'
+        required: true
+        default: FISV
+        type: string
+      asof:
+        description: 'Last COMPLETED market daily session (YYYY-MM-DD)'
+        required: true
+        default: '2026-10-23'
+        type: string
+permissions:
+  contents: read
+jobs:
+  arbitrary-equity-zone-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install isolated ARGUS research dependencies
+        run: python -m pip install "numpy>=1.23" "pandas>=2,<4" "yfinance>=0.2.36,<1" pandas_market_calendars pytest requests
+      - name: Test causal M1-M3 and arbitrary international equity identity
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_argus_zones_cli.py
+      - name: Compute on-demand OHLCV swings, true price zones and conditional M3 levels
+        env:
+          PYTHONPATH: "src:."
+          ARGUS_SYMBOL: ${{ inputs.symbol || 'FISV' }}
+          ARGUS_ASOF: ${{ inputs.asof || '2026-10-23' }}
+        run: |
+          set -euo pipefail
+          python scripts/argus_zones.py --symbol "$ARGUS_SYMBOL" --asof "$ARGUS_ASOF" --output-dir /tmp/argus-single-equity
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          files=list(Path('/tmp/argus-single-equity').glob('*_zones.json'))
+          assert len(files)==1
+          d=json.loads(files[0].read_text())
+          receipt=d['research_cli_receipt']
+          assert d['symbol']==os.environ['ARGUS_SYMBOL'].upper()
+          assert d['last_completed_bar']==os.environ['ARGUS_ASOF']
+          assert receipt['source_sessions'] >= 80
+          assert receipt['first_seen_prospective'] is False
+          assert receipt['can_trade'] is False
+          assert d['data_quality']=='degraded'
+          assert all(c['empirical_probability'] is None for c in d['zone_clusters'])
+          close=float(d['asof_raw_close'])
+          print('ARGUS_ARBITRARY_EQUITY_ACTUAL',json.dumps({
+            'symbol':d['symbol'],'exchange':d['exchange'],
+            'quote_currency':d['currency'],'asset_id':d['asset_id'],
+            'completed_asof':d['asof'],'close':close,
+            'source_daily_sessions':receipt['source_sessions'],
+            'source_rows_sha256':receipt['source_rows_sha256'],
+            'provider_identity':receipt['resolved_instrument'],
+            'raw_daily_zones':len(d['zones']),
+            'weekly_zones':len(d['weekly_zones']),
+            'm3_clusters':len(d['zone_clusters']),
+            'conditional_plans':len(d['scenario_plans']),
+            'research_only':True,'prospective':False,
+          },sort_keys=True))
+          for role in ('support','resistance'):
+            matches=[c for c in d['zone_clusters'] if c['role']==role
+                     and c['status'] not in ('broken','expired','invalidated')]
+            matches.sort(key=lambda c:(max(0,c['lower']-close,close-c['upper'])/close,c['cluster_id']))
+            print('ARGUS_'+role.upper()+'_NEAREST',json.dumps([
+              {'lower':c['lower'],'upper':c['upper'],'families':c['families'],
+               'known_at':c['known_at'],'status':c['status']}
+              for c in matches[:4]],sort_keys=True))
+          reference={c['cluster_id']:c for c in d['zone_clusters']}
+          for plan in d['scenario_plans'][:8]:
+            band=lambda id:[reference[id]['lower'],reference[id]['upper']]
+            print('ARGUS_UNTRIGGERED_SCENARIO',json.dumps({
+              'side':plan['side'],'entry':band(plan['entry_cluster_id']),
+              'invalidation':band(plan['invalidation_cluster_id']),
+              'targets':[band(i) for i in plan['target_cluster_ids']],
+              'state':plan['state'],'empirical_probability':plan['empirical_probability']
+            },sort_keys=True))
+          PY
+      - name: Retain exact input basis and generated research zones for reproducibility
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: argus-one-off-equity-zones
+          path: /tmp/argus-single-equity/*
+          if-no-files-found: warn
+          retention-days: 7
