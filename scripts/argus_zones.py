@@ -25,6 +25,9 @@ PILOT_IDENTITIES = {
     "ARM": ("XNAS", "XNAS:ARM:US", "USD"),
     "SMH": ("XNAS", "XNAS:SMH:US", "USD"),
     "NOW": ("XNYS", "XNYS:NOW:US", "USD"),
+    # Original Nasdaq ticker since 2025-11-11 (FI on NYSE until 2025-11-10).
+    # Official issuer announcement: investors.fiserv.com, 2025-10-29.
+    "FISV": ("XNAS", "XNAS:FISV:US", "USD"),
 }
 COLUMNS=("date","symbol","currency","open","high","low","close","adj_close","volume")
 
@@ -102,7 +105,7 @@ def analyze(symbol,asof,rows,*,source_kind):
         "source_asof":asof,
         "source_retrospective_pit_certified":False,
         "first_seen_prospective":False,
-        "market_identity":"fixed_five_pilot_security_registry",
+        "market_identity":"curated_issuer_verified_US_security_registry",
         "can_trade":False,
         "empirical_probability":None,
     }
@@ -131,7 +134,7 @@ def run(symbol,asof,output_dir,*,input_file=None,downloader=fetch_provider,now=N
 
 
 def main():
-    parser=argparse.ArgumentParser(description="ARGUS independent research zone analysis for five identity-verified pilots")
+    parser=argparse.ArgumentParser(description="ARGUS independent research zone analysis for curated identity-verified instruments")
     parser.add_argument("--symbol",required=True)
     parser.add_argument("--asof",required=True)
     parser.add_argument("--input",type=Path,default=None,
