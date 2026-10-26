@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install only research test dependencies
-        run: python -m pip install numpy pandas pytest pandas_market_calendars 'yfinance>=0.2.36,<1' requests
+        run: python -m pip install numpy pandas pytest pandas_market_calendars
       - name: Causal/reproducibility unit tests
         env:
           PYTHONPATH: src
@@ -117,54 +117,4 @@ jobs:
             /tmp/argus-zones-research/*.md
             /tmp/argus-zones-research/m4/*
             /tmp/argus-zones-research/m41/*
-          retention-days: 7
-
-      - name: Fiserv FISV live Yahoo daily OHLCV and actual ARGUS M2/M3 one-off zones
-        env:
-          PYTHONPATH: 'src:.'
-        run: |
-          set -euo pipefail
-          python scripts/argus_zones.py --symbol FISV --asof 2026-10-23 --output-dir /tmp/argus-fisv-oneoff
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          file=Path('/tmp/argus-fisv-oneoff/FISV_2026-10-23_zones.json')
-          d=json.loads(file.read_text())
-          assert d['symbol']=='FISV' and d['exchange']=='XNAS' and d['currency']=='USD'
-          assert d['asset_id']=='XNAS:FISV:US'
-          assert d['research_cli_receipt']['source_sessions']>=80
-          assert d['last_completed_bar']=='2026-10-23'
-          assert d['research_cli_receipt']['can_trade'] is False
-          assert d['research_cli_receipt']['first_seen_prospective'] is False
-          assert d['data_quality']=='degraded'
-          last=d['asof_raw_close']
-          print('ARGUS_FISV_OCT23_REAL',json.dumps({
-            'close_usd':last,'source_sessions':d['research_cli_receipt']['source_sessions'],
-            'provider_bars_hash':d['research_cli_receipt']['source_rows_sha256'],
-            'daily_zones':len(d['zones']),'weekly_zones':len(d['weekly_zones']),
-            'clusters':len(d['zone_clusters']),'scenarios':len(d['scenario_plans'])},sort_keys=True))
-          for role in ['support','resistance']:
-            zones=[x for x in d['zone_clusters'] if x['role']==role
-                   and x['status'] not in ('broken','expired','invalidated')]
-            zones.sort(key=lambda z:(max(0,z['lower']-last,last-z['upper'])/last,z['cluster_id']))
-            print('ARGUS_FISV_'+role.upper(),json.dumps([
-              {'lo':x['lower'],'hi':x['upper'],'families':x['families'],
-               'known_at':x['known_at'],'status':x['status']}
-              for x in zones[:3]],sort_keys=True))
-          lookup={x['cluster_id']:x for x in d['zone_clusters']}
-          for p in d['scenario_plans'][:6]:
-            band=lambda id:[lookup[id]['lower'],lookup[id]['upper']]
-            print('ARGUS_FISV_SCENARIO',json.dumps({
-              'side':p['side'],'entry':band(p['entry_cluster_id']),
-              'invalidation':band(p['invalidation_cluster_id']),
-              'targets':[band(i) for i in p['target_cluster_ids']],
-              'state':p['state']},sort_keys=True))
-          PY
-      - name: Attach one-off Fiserv real research zones only
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: argus-fisv-2026-10-23-oneoff
-          path: /tmp/argus-fisv-oneoff/*
-          if-no-files-found: warn
           retention-days: 7
