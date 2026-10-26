@@ -95,3 +95,14 @@ def test_requires_truly_closed_us_daily_candle():
         verify_completed("2026-10-23",datetime(2026,10,23,18,tzinfo=timezone.utc))
     with pytest.raises(ValueError,match="not_a_us_stock_market_session"):
         verify_completed("2026-10-25",now())
+
+
+def test_fiserv_nasdaq_ticker_replacement_is_supported_not_legacy_fi():
+    # Fiserv issuer moved NYSE:FI -> NASDAQ:FISV on 2025-11-11.
+    assert PILOT_IDENTITIES["FISV"] == ("XNAS", "XNAS:FISV:US", "USD")
+    report=analyze("FISV", "2026-10-23", sample("FISV"), source_kind="offline_fixture")
+    assert report["asset_id"]=="XNAS:FISV:US"
+    assert report["last_completed_bar"]=="2026-10-23"
+    assert report["research_cli_receipt"]["can_trade"] is False
+    with pytest.raises(ValueError, match="instrument_identity_unverified"):
+        analyze("FI", "2026-10-23", sample("FI"), source_kind="offline_fixture")
