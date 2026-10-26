@@ -1,0 +1,88 @@
+name: ARGUS one-off Fiserv FISV zone audit (read-only)
+on:
+  pull_request:
+    paths:
+      - 'scripts/argus_zones.py'
+      - 'tests/test_argus_zones_cli.py'
+      - '.github/workflows/argus_fisv_adhoc_zone_probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fisv-zone-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install read-only ARGUS research data adapter
+        run: python -m pip install "numpy>=1.23" "pandas>=2,<4" "yfinance>=0.2.36,<1" pandas_market_calendars pytest requests
+      - name: Check fixed issuer identity and no-lookahead M1-M3 contracts
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          set -euo pipefail
+          python -m pytest -q tests/test_argus_zones_cli.py
+      - name: Compute real Fiserv daily bars, swing pivots, zones and M3 scenarios
+        env:
+          PYTHONPATH: "src:."
+        run: |
+          set -euo pipefail
+          python scripts/argus_zones.py \
+            --symbol FISV \
+            --asof 2026-10-23 \
+            --output-dir /tmp/fisv-zones
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path("/tmp/fisv-zones/FISV_2026-10-23_zones.json")
+          report=json.loads(path.read_text())
+          receipt=report['research_cli_receipt']
+          assert report['symbol']=='FISV' and report['exchange']=='XNAS'
+          assert report['asset_id']=='XNAS:FISV:US' and report['currency']=='USD'
+          assert report['last_completed_bar']=='2026-10-23'
+          assert receipt['source_sessions'] >= 80
+          assert receipt['first_seen_prospective'] is False
+          assert receipt['can_trade'] is False
+          assert report['data_quality']=='degraded'
+          assert all(c['empirical_probability'] is None for c in report['zone_clusters'])
+          close=float(report['asof_raw_close'])
+          clusters=report['zone_clusters']
+          print('FISV_ACTUAL_ASOF_2026_10_23', json.dumps({
+            'close_usd':close, 'source_daily_sessions':receipt['source_sessions'],
+            'source_rows_sha256':receipt['source_rows_sha256'],
+            'raw_daily_zones':len(report['zones']),
+            'weekly_zones':len(report['weekly_zones']),
+            'm3_clusters':len(clusters),
+            'conditional_plans':len(report['scenario_plans']),
+            'data_quality':report['data_quality'],
+            'not_prospective_first_seen':True,
+          },sort_keys=True))
+          for role in ('support','resistance'):
+            matches=[c for c in clusters if c.get('role')==role and c.get('status') not in ('broken','expired','invalidated')]
+            matches.sort(key=lambda c:(max(0,c['lower']-close,close-c['upper'])/close,c['cluster_id']))
+            print('FISV_'+role.upper()+'_M3_NEAREST',json.dumps([
+              {'lower':c['lower'],'upper':c['upper'],'families':c['families'],
+               'known_at':c['known_at'],'status':c['status'],
+               'independent_anchor_groups':c['independent_anchor_groups']}
+               for c in matches[:4]],sort_keys=True))
+          by_id={c['cluster_id']:c for c in clusters}
+          for plan in report['scenario_plans'][:8]:
+            p=lambda id:[by_id[id]['lower'],by_id[id]['upper']]
+            print('FISV_UNTRIGGERED_SCENARIO',json.dumps({
+              'side':plan['side'],'entry':p(plan['entry_cluster_id']),
+              'invalidation':p(plan['invalidation_cluster_id']),
+              'targets':[p(i) for i in plan['target_cluster_ids']],
+              'state':plan['state'],'empirical_probability':plan['empirical_probability']},
+              sort_keys=True))
+          PY
+      - name: Attach original outputs and provider receipt (short-lived private actions artifacts)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fisv-research-only-closed-bar-2026-10-23
+          path: /tmp/fisv-zones/*
+          if-no-files-found: warn
+          retention-days: 7
