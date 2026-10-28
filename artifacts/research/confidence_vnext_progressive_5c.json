@@ -3,18 +3,18 @@
   "schema_version": "phase5c_progressive_learning_v1",
   "status": "progressive_learning_active",
   "source_schema_version": "phase5b_shadow_v2",
-  "claims": 43568,
-  "mature_outcomes": 10669,
+  "claims": 44416,
+  "mature_outcomes": 11297,
   "horizons": {
     "5": {
       "stage": "robust_learning_base",
       "pilot_ready": true,
       "robust_learning_base": true,
-      "training_rows": 832,
+      "training_rows": 836,
       "symbols": 212,
-      "directional_rows": 419,
+      "directional_rows": 421,
       "directional_symbols": 172,
-      "observation_dates": 17,
+      "observation_dates": 18,
       "support_regions": 2,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -24,16 +24,16 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 10
       },
-      "latest_candidate_version": "phase5c-5T-636b999e77c20b63",
-      "candidate_version_from_current_evidence": "phase5c-5T-636b999e77c20b63",
-      "version_count": 15
+      "latest_candidate_version": "phase5c-5T-9b7725629f4085f4",
+      "candidate_version_from_current_evidence": "phase5c-5T-9b7725629f4085f4",
+      "version_count": 16
     },
     "20": {
       "stage": "pilot_learning",
       "pilot_ready": true,
       "robust_learning_base": false,
-      "training_rows": 199,
-      "symbols": 199,
+      "training_rows": 201,
+      "symbols": 201,
       "directional_rows": 0,
       "directional_symbols": 0,
       "observation_dates": 3,
@@ -46,9 +46,9 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 40
       },
-      "latest_candidate_version": "phase5c-20T-da0c11f45890a9f4",
-      "candidate_version_from_current_evidence": "phase5c-20T-da0c11f45890a9f4",
-      "version_count": 3
+      "latest_candidate_version": "phase5c-20T-875b75141020851f",
+      "candidate_version_from_current_evidence": "phase5c-20T-875b75141020851f",
+      "version_count": 4
     },
     "40": {
       "stage": "collecting",
@@ -95,9 +95,12 @@
       "version_count": 0
     }
   },
-  "model_versions": 18,
-  "version_chain_tip": "fd18cf1dbb6bbf4df79b977012f7788b4f3043410ccc1f728b0e783849e71aa1",
-  "new_model_versions": [],
+  "model_versions": 20,
+  "version_chain_tip": "781f00a77a80af29aa843bee4b1d78ae8cf501e6f3362df375168bcd82bc1d88",
+  "new_model_versions": [
+    "phase5c-5T-9b7725629f4085f4",
+    "phase5c-20T-875b75141020851f"
+  ],
   "semantics": {
     "research_only": true,
     "dynamic_horizon_specific_learning": true,
