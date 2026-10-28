@@ -81,7 +81,7 @@ jobs:
     needs: snapshot-readiness
     if: github.event_name == 'pull_request' && needs.snapshot-readiness.outputs.ready == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
@@ -206,7 +206,10 @@ jobs:
         github.event.workflow_run.head_branch == 'main' &&
         github.event.workflow_run.conclusion == 'success'))
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # A 220-symbol / ~9,500-packet historical transport exceeded the previous
+    # 20-minute job limit while building the unchanged full-history runtime.
+    # Keep every packet and every snapshot/lineage/privacy gate intact.
+    timeout-minutes: 60
     permissions:
       contents: write
       actions: write
