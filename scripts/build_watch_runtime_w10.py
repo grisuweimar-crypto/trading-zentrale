@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from time import perf_counter
 
 from scanner.research.decision_layer.current_evidence import DEFAULT_ARCHIVE
 from scanner.research.decision_layer.evidence_archive import load_evidence_archive
@@ -54,6 +55,13 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    started = perf_counter()
+    def progress(stage: str) -> None:
+        # Runtime can exceed 20 minutes with full historical retention.
+        # Emit phase boundaries immediately without changing any data.
+        print(f"WATCH_RUNTIME_STAGE {stage} elapsed_s={perf_counter() - started:.1f}", flush=True)
+
+    progress("start")
     root = args.root.resolve()
     current_path = root / args.current
     archive_path = root / args.archive
@@ -68,14 +76,18 @@ def main() -> int:
     w10 = _load(w10_path)
     daily = _load(daily_path)
     elliott_6h_source = _load(elliott_source_path) if elliott_source_path is not None else None
+    progress("load_archive_start")
     packets, archive_metadata = load_evidence_archive(archive_path, missing_ok=False)
+    progress("load_archive_done")
     manifest, shards = build_watch_runtime(
         current_packet_set=current,
         archive_packets=packets,
         w10_manifest=w10,
     )
+    progress("build_runtime_done")
     write_watch_runtime(output_dir, manifest=manifest, shards=shards)
-
+    progress("write_shards_done")
+    progress("build_public_long_start")
     public_long = build_public_long_reference(
         daily,
         packets,
@@ -92,6 +104,8 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    progress("build_public_long_done")
+    progress("build_public_flat_start")
     public_flat = build_public_flat_reference(
         daily,
         packets,
@@ -108,6 +122,7 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    progress("build_public_flat_done")
     sizes = {
         path.name: path.stat().st_size
         for path in sorted(output_dir.glob("shard_*.json"))
@@ -130,6 +145,7 @@ def main() -> int:
         "total_shard_bytes": sum(sizes.values()),
         "private_position_data_included": False,
     }, sort_keys=True))
+    progress("finished")
     return 0
 
 
