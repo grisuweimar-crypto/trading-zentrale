@@ -5,6 +5,11 @@ on:
     workflows: ['Decision Watch Integration Pipeline']
     types: [completed]
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/decision_watch_runtime.yml'
+      - 'scripts/build_watch_runtime_w10.py'
   pull_request:
     branches: [main]
     paths:
@@ -155,6 +160,7 @@ jobs:
 
   readiness:
     if: >-
+      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.head_branch == 'main' &&
@@ -201,7 +207,8 @@ jobs:
     needs: readiness
     if: >-
       needs.readiness.outputs.ready == 'true' &&
-      (github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch' ||
        (github.event_name == 'workflow_run' &&
         github.event.workflow_run.head_branch == 'main' &&
         github.event.workflow_run.conclusion == 'success'))
