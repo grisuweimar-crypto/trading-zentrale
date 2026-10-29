@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-28T20:34:26.388562+00:00",
+  "decision_as_of": "2026-10-29T20:34:26.323361+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-28T20:24:16.557123+00:00",
+    "captured_at": "2026-10-29T20:22:45.081399+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-28T20:20:18+00:00",
+    "scanner_published_at": "2026-10-29T20:19:56+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-28",
-    "source_capture_id": "3ff968b447300c1f56bf9a4e8aeb6320171281628bc05b96558d36a8438a5719",
-    "source_publication_commit": "1182a7dabeaca5664936667bde0de7f330050af1",
-    "source_run_id": "github-40761023514-1",
-    "source_snapshot_id": "c6335a46-0de4-4c29-bd46-d00ee16d10be",
+    "source_as_of": "2026-10-29",
+    "source_capture_id": "ec2d3d131f9c48f8d8268caa6edcf1edf14e1b0ed3c9d48ad24dc7211afa93e6",
+    "source_publication_commit": "76f66c5431234027fd71c646ad7249310607e99e",
+    "source_run_id": "github-40946706341-1",
+    "source_snapshot_id": "cc326392-7393-4d21-a039-9b6cdac9a44a",
     "status": "no_elliott_output_for_symbol",
     "symbol": "CVX",
     "validation_partition": "prospective_unspent",
@@ -30,20 +30,19 @@
     "direction": "positive",
     "known_directional_claim_ids": [
       "timing:CVX:ea08718de33a1787:5T",
+      "timing:CVX:0671faf1011640c5:5T",
       "timing:CVX:c42ca6c1baee697b:20T",
       "timing:CVX:f483a5247b57affc:20T",
-      "timing:CVX:494a15c3341a0317:20T",
-      "timing:CVX:15f457a0b3a6df9d:20T",
+      "timing:CVX:b158fef8cbfb5c55:20T",
       "timing:CVX:4ccb45d4ee923f1a:40T",
-      "timing:CVX:e64908cc5e4c18f0:60T",
-      "timing:CVX:32bb40f535b6b527:60T",
+      "timing:CVX:9cb11f4adfc9eb9c:40T",
+      "timing:CVX:3e260f25164f48ce:40T",
+      "timing:CVX:df23cc7f8d9328ee:60T",
       "timing:CVX:5472db56664c10c8:60T",
-      "timing:CVX:6289a7880870e93e:60T",
-      "timing:CVX:fe6ff0aee1bf447a:60T",
-      "timing:CVX:92ad9e5c355866b9:60T"
+      "timing:CVX:fe6ff0aee1bf447a:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 12
+      "timing": 11
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -52,7 +51,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "c6335a46-0de4-4c29-bd46-d00ee16d10be",
+  "snapshot_id": "cc326392-7393-4d21-a039-9b6cdac9a44a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -421,6 +420,14 @@
       "source_snapshot_id": "c6335a46-0de4-4c29-bd46-d00ee16d10be",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-10-29T20:34:26.323361+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "cc326392-7393-4d21-a039-9b6cdac9a44a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -432,14 +439,14 @@
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-10-28",
-    "last_overextension_rs3m": 0.15685100461364065,
-    "overextension_active": true,
+    "last_overextension_rs3m": 0.1568510046136406,
+    "overextension_active": false,
     "recent_overextension": true,
-    "sessions_since_last_overextension": 0,
+    "sessions_since_last_overextension": 1,
     "upstream_review_state": "monitor",
-    "upstream_sequence_state": "active_overextension"
+    "upstream_sequence_state": "post_overextension_memory"
   },
-  "state_history_state": "overextended",
+  "state_history_state": "post_overextension_correction",
   "symbol": "CVX",
   "transition_state": {
     "pending_confirmation_count": 0,
@@ -447,6 +454,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "transition_confirmed"
+    "status": "stable_confirmed"
   }
 }
