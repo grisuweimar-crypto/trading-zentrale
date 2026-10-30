@@ -404,7 +404,6 @@ jobs:
             git push origin HEAD:main
           fi
 
-      - name: Dispatch symbol views after runtime publication
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run decision_watch_symbol_views.yml --ref main
+      # Symbol views are started automatically by the successful
+      # workflow_run event from this runtime workflow. A second explicit
+      # workflow_dispatch would race with that run and get cancelled.
