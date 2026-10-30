@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-29T20:34:26.323361+00:00",
+  "decision_as_of": "2026-10-30T20:17:13.550964+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-29T20:22:45.081399+00:00",
+    "captured_at": "2026-10-30T20:06:44.768284+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,53 +13,31 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-29T20:19:56+00:00",
+    "scanner_published_at": "2026-10-30T20:03:48+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-29",
-    "source_capture_id": "ec2d3d131f9c48f8d8268caa6edcf1edf14e1b0ed3c9d48ad24dc7211afa93e6",
-    "source_publication_commit": "76f66c5431234027fd71c646ad7249310607e99e",
-    "source_run_id": "github-40946706341-1",
-    "source_snapshot_id": "cc326392-7393-4d21-a039-9b6cdac9a44a",
+    "source_as_of": "2026-10-30",
+    "source_capture_id": "1c9369cb3a491b73734fa1943bd4db45535d33bd2c15b0e15923cb18ad65968d",
+    "source_publication_commit": "6a58e22f3f0bf5834e4d66d4d03c93e42c9e7f6c",
+    "source_run_id": "github-41119038053-1",
+    "source_snapshot_id": "7214e2f5-3b78-4713-8203-5a10986a5d96",
     "status": "no_elliott_output_for_symbol",
     "symbol": "MCD",
     "validation_partition": "prospective_unspent",
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:MCD:51a8cac8cfa550aa:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:MCD:0671faf1011640c5:5T",
-          "timing:MCD:b158fef8cbfb5c55:20T",
-          "timing:MCD:3e260f25164f48ce:40T",
-          "timing:MCD:5b62a0aabd2f08fc:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
+    "conflicts": [],
     "direction": null,
-    "known_directional_claim_ids": [
-      "timing:MCD:0671faf1011640c5:5T",
-      "timing:MCD:b158fef8cbfb5c55:20T",
-      "timing:MCD:3e260f25164f48ce:40T",
-      "timing:MCD:5b62a0aabd2f08fc:60T",
-      "timing:MCD:51a8cac8cfa550aa:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 5
-    },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "cc326392-7393-4d21-a039-9b6cdac9a44a",
+  "snapshot_id": "7214e2f5-3b78-4713-8203-5a10986a5d96",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -436,13 +414,21 @@
       "source_snapshot_id": "cc326392-7393-4d21-a039-9b6cdac9a44a",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-10-30T20:17:13.550964+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "7214e2f5-3b78-4713-8203-5a10986a5d96",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": true,
+      "rs3m_falling_5t": false,
       "score_falling_5t": false,
       "trend200_falling_5t": false
     },
@@ -462,6 +448,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "blocked_insufficient"
   }
 }
