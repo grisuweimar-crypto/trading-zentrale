@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-31T19:37:35.926548+00:00",
+  "decision_as_of": "2026-11-01T19:54:51.820822+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-31T19:24:46.543307+00:00",
+    "captured_at": "2026-11-01T19:40:36.534778+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,97 +13,31 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-31T19:22:01+00:00",
+    "scanner_published_at": "2026-11-01T19:38:21+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-31",
-    "source_capture_id": "0784c74dc7d8e5327095e1715ad887d6a4c66591e61da2eace5260d965c709ee",
-    "source_publication_commit": "d6f75f6f713de9a0635411a3269312363916abe7",
-    "source_run_id": "github-41233135202-1",
-    "source_snapshot_id": "0d2897bb-731c-4fc9-a688-66396ef4556b",
+    "source_as_of": "2026-11-01",
+    "source_capture_id": "7f5e0df21cca6e4708d45faf40e40808f631a4a87f26af7cee602377d9f5f4b4",
+    "source_publication_commit": "16bdd163643b9f1ad1deff01dd6c1495603fd1d2",
+    "source_run_id": "github-41341962739-1",
+    "source_snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
     "status": "no_elliott_output_for_symbol",
     "symbol": "DVLT",
     "validation_partition": "prospective_unspent",
     "w10_source_emitted": false
   },
   "latest_universal_stance": {
-    "conflicts": [
-      {
-        "negative_claim_ids": [
-          "timing:DVLT:5df2a86791ff5f88:60T",
-          "timing:DVLT:b0fb906b9f3e02ec:60T",
-          "timing:DVLT:51a8cac8cfa550aa:60T"
-        ],
-        "positive_claim_ids": [
-          "timing:DVLT:13dfd193091882d7:5T",
-          "timing:DVLT:a2763d94cd6f82e9:5T",
-          "timing:DVLT:d18193c29692a1cb:5T",
-          "timing:DVLT:9aace91dab644870:5T",
-          "timing:DVLT:056cab0d8c42f322:5T",
-          "timing:DVLT:03f6bed3788ea96b:5T",
-          "timing:DVLT:2ec83739629fba4d:5T",
-          "timing:DVLT:42bcd8a34d314c09:5T",
-          "timing:DVLT:838b819bd450346e:5T",
-          "timing:DVLT:1758b10ff7893792:20T",
-          "timing:DVLT:85b7b4bcb43aeb00:20T",
-          "timing:DVLT:ae61c82fbb0371fc:20T",
-          "timing:DVLT:a4278e33701f9d98:20T",
-          "timing:DVLT:6267ff2c27f27eb8:20T",
-          "timing:DVLT:cad5eb04910821c4:20T",
-          "timing:DVLT:15f457a0b3a6df9d:20T",
-          "timing:DVLT:b5c6f29104b27dae:40T",
-          "timing:DVLT:f9714fd629aaf7f2:40T",
-          "timing:DVLT:677e719dc170acd6:40T",
-          "timing:DVLT:2d034c21b8215d13:40T",
-          "timing:DVLT:e64908cc5e4c18f0:60T",
-          "timing:DVLT:a0bebf08166a0860:60T",
-          "timing:DVLT:ff63700b226f41b1:60T",
-          "timing:DVLT:2fbfff31832fc700:60T"
-        ],
-        "relation_type": "within_family_conflict",
-        "resolved": false
-      }
-    ],
+    "conflicts": [],
     "direction": null,
-    "known_directional_claim_ids": [
-      "timing:DVLT:13dfd193091882d7:5T",
-      "timing:DVLT:a2763d94cd6f82e9:5T",
-      "timing:DVLT:d18193c29692a1cb:5T",
-      "timing:DVLT:9aace91dab644870:5T",
-      "timing:DVLT:056cab0d8c42f322:5T",
-      "timing:DVLT:03f6bed3788ea96b:5T",
-      "timing:DVLT:2ec83739629fba4d:5T",
-      "timing:DVLT:42bcd8a34d314c09:5T",
-      "timing:DVLT:838b819bd450346e:5T",
-      "timing:DVLT:1758b10ff7893792:20T",
-      "timing:DVLT:85b7b4bcb43aeb00:20T",
-      "timing:DVLT:ae61c82fbb0371fc:20T",
-      "timing:DVLT:a4278e33701f9d98:20T",
-      "timing:DVLT:6267ff2c27f27eb8:20T",
-      "timing:DVLT:cad5eb04910821c4:20T",
-      "timing:DVLT:15f457a0b3a6df9d:20T",
-      "timing:DVLT:b5c6f29104b27dae:40T",
-      "timing:DVLT:f9714fd629aaf7f2:40T",
-      "timing:DVLT:677e719dc170acd6:40T",
-      "timing:DVLT:2d034c21b8215d13:40T",
-      "timing:DVLT:e64908cc5e4c18f0:60T",
-      "timing:DVLT:a0bebf08166a0860:60T",
-      "timing:DVLT:ff63700b226f41b1:60T",
-      "timing:DVLT:2fbfff31832fc700:60T",
-      "timing:DVLT:5df2a86791ff5f88:60T",
-      "timing:DVLT:b0fb906b9f3e02ec:60T",
-      "timing:DVLT:51a8cac8cfa550aa:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 27
-    },
-    "relation_state": "conflict_present",
-    "state": "conflicted",
-    "support_structure": "unresolved_conflict"
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "0d2897bb-731c-4fc9-a688-66396ef4556b",
+  "snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -496,6 +430,14 @@
       "source_snapshot_id": "0d2897bb-731c-4fc9-a688-66396ef4556b",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-11-01T19:54:51.820822+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -510,7 +452,7 @@
     "last_overextension_rs3m": 0.1795654290686532,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 182,
+    "sessions_since_last_overextension": 183,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -522,6 +464,6 @@
     "required_confirmation_count": 2,
     "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "blocked_conflict"
+    "status": "blocked_insufficient"
   }
 }

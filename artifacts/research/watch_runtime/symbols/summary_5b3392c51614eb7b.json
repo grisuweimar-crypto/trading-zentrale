@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-10-31T19:37:35.926548+00:00",
+  "decision_as_of": "2026-11-01T19:54:51.820822+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-10-31T19:24:46.543307+00:00",
+    "captured_at": "2026-11-01T19:40:36.534778+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-10-31T19:22:01+00:00",
+    "scanner_published_at": "2026-11-01T19:38:21+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-10-31",
-    "source_capture_id": "0784c74dc7d8e5327095e1715ad887d6a4c66591e61da2eace5260d965c709ee",
-    "source_publication_commit": "d6f75f6f713de9a0635411a3269312363916abe7",
-    "source_run_id": "github-41233135202-1",
-    "source_snapshot_id": "0d2897bb-731c-4fc9-a688-66396ef4556b",
+    "source_as_of": "2026-11-01",
+    "source_capture_id": "7f5e0df21cca6e4708d45faf40e40808f631a4a87f26af7cee602377d9f5f4b4",
+    "source_publication_commit": "16bdd163643b9f1ad1deff01dd6c1495603fd1d2",
+    "source_run_id": "github-41341962739-1",
+    "source_snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
     "status": "no_elliott_output_for_symbol",
     "symbol": "NOVO-B.CO",
     "validation_partition": "prospective_unspent",
@@ -29,13 +29,12 @@
     "conflicts": [],
     "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:NOVO-B.CO:0b9187e88ff3ae83:60T",
       "timing:NOVO-B.CO:cce5c47f08a2bf66:60T",
-      "timing:NOVO-B.CO:b0fb906b9f3e02ec:60T",
+      "timing:NOVO-B.CO:8383be481c5c6052:60T",
       "timing:NOVO-B.CO:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
     "state": "negative",
@@ -44,7 +43,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "0d2897bb-731c-4fc9-a688-66396ef4556b",
+  "snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -437,6 +436,14 @@
       "source_snapshot_id": "0d2897bb-731c-4fc9-a688-66396ef4556b",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-01T19:54:51.820822+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -451,18 +458,18 @@
     "last_overextension_rs3m": 0.2160335711903296,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 90,
+    "sessions_since_last_overextension": 91,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "NOVO-B.CO",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
-    "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "stable_anchor_is_current_stance": true,
+    "stable_directional_anchor": "negative",
+    "status": "transition_confirmed"
   }
 }
