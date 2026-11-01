@@ -1,0 +1,26 @@
+name: Research Cycle x Fibonacci joint exploratory
+on:
+  pull_request:
+    paths:
+      - scripts/research_cycle_fib_joint_exploratory.py
+      - .github/workflows/research_cycle_fib_joint_exploratory.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run archived Cycle x causal Fibonacci outcome study
+        run: python scripts/research_cycle_fib_joint_exploratory.py
+      - name: Upload actual results and exclusions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cycle-fib-joint-exploratory
+          path: artifacts/research/cycle_fib_joint_exploratory/
+          if-no-files-found: warn
