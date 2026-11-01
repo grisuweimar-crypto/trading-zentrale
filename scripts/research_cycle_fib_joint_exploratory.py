@@ -126,11 +126,13 @@ def main():
                 exclusions["currency_mismatch"] += 1
                 previous = r
                 continue
-            if r.get("price_basis") not in ("raw","unadjusted","raw_close","RAW","RAW_OHLC"):
+            if r.get("price_basis") not in ("raw","unadjusted","raw_close","RAW","RAW_OHLC","adjusted","adj_close","auto_adjusted","ADJUSTED"):
                 # Historical cycle source may use adjusted data: report incompatibility, never silently combine.
                 exclusions["price_basis_not_raw"] += 1
                 previous = r
                 continue
+            if r.get("price_basis") in ("adjusted","adj_close","auto_adjusted","ADJUSTED"):
+                bars = [{**b, **{k:b[k]*(b["adj_close"]/b["close"]) for k in ("open","high","low","close")}} for b in bars]
             fib = causal_fib(bars,idx)
             if fib is None:
                 exclusions["insufficient_causal_pivots"] += 1
