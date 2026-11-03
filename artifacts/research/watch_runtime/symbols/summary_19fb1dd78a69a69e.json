@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-01T19:54:51.820822+00:00",
+  "decision_as_of": "2026-11-03T00:26:33.169501+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-01T19:40:36.534778+00:00",
+    "captured_at": "2026-11-03T00:13:03.299892+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-01T19:38:21+00:00",
+    "scanner_published_at": "2026-11-03T00:10:41+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-01",
-    "source_capture_id": "7f5e0df21cca6e4708d45faf40e40808f631a4a87f26af7cee602377d9f5f4b4",
-    "source_publication_commit": "16bdd163643b9f1ad1deff01dd6c1495603fd1d2",
-    "source_run_id": "github-41341962739-1",
-    "source_snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
+    "source_as_of": "2026-11-03",
+    "source_capture_id": "f6173aa8fb9a41c3de138a14c344d7c45ef1b623f2f1a1108a07a72a374ce941",
+    "source_publication_commit": "4a5a264fbff2b57e92242af77bde8b9b7be17888",
+    "source_run_id": "github-41549804090-1",
+    "source_snapshot_id": "7aa72cb0-15bd-4cc8-986b-1350d71060d3",
     "status": "no_elliott_output_for_symbol",
     "symbol": "LC0A.MU",
     "validation_partition": "prospective_unspent",
@@ -37,7 +37,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
+  "snapshot_id": "7aa72cb0-15bd-4cc8-986b-1350d71060d3",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -438,6 +438,30 @@
       "source_snapshot_id": "85c1c8c5-b0de-4c6e-8b84-166c4911eb94",
       "state": "insufficient_evidence",
       "support_structure": "insufficient_directional_relation"
+    },
+    {
+      "as_of": "2026-11-02T17:47:26.231022+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "80577256-5a12-46e5-9816-8da5a9cc9c0b",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-02T23:25:06.779887+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "a339760a-45e9-4684-a475-1917a1216a8c",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-03T00:26:33.169501+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "7aa72cb0-15bd-4cc8-986b-1350d71060d3",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -452,7 +476,7 @@
     "last_overextension_rs3m": 0.171390556240004,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 46,
+    "sessions_since_last_overextension": 48,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
