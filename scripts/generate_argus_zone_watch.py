@@ -18,8 +18,9 @@ from pathlib import Path
 import sys
 
 from scanner.research.zones_v01 import build_zones, read_rows
+from scanner.research.zone_timeframes import analyze as analyze_multiscale, read_bars as read_multiscale
 
-VERSION = "argus-zone-watch-v1"
+VERSION = "argus-zone-watch-v2-multiscale"
 MIN_BARS = 80
 MAX_DISPLAY_ZONES = 24
 
@@ -189,8 +190,11 @@ def _price_series(bars, limit=150):
     return points
 
 
-def calculate(universe, market_csv: Path):
+def calculate(universe, market_csv: Path, multiscale_path: Path | None = None):
     raw = read_rows(market_csv, set(universe))
+    additional = read_multiscale(
+        Path(multiscale_path) if multiscale_path is not None
+        else Path("artifacts/market_data/argus_multiscale.csv"), set(universe))
     results = []
     for symbol, entry in sorted(universe.items()):
         item = {**entry, "status": "UNAVAILABLE", "reason": None, "currency": None,
@@ -199,6 +203,16 @@ def calculate(universe, market_csv: Path):
                 "wave_counts": [], "price_history": [], "model_version": None,
                 "research_only": True, "empirical_probability": None}
         asof = entry["asof"]
+        item["multiscale"] = {}
+        for timeframe in ("monthly", "four_hour"):
+            if asof:
+                item["multiscale"][timeframe] = analyze_multiscale(
+                    additional.get((symbol,timeframe), []),symbol,timeframe,asof=asof)
+            else:
+                item["multiscale"][timeframe] = {
+                    "status":"UNAVAILABLE","reason":"scanner_closed_bar_not_proven",
+                    "timeframe":timeframe,"zones":[],"waves":[],"price_history":[],
+                    "research_only":True,"empirical_probability":None}
         if not asof:
             item["reason"] = "closed_daily_bar_not_proven"
             results.append(item)
@@ -381,6 +395,8 @@ drawList();drawDetail();
 
 def write_outputs(assets, *, out_json: Path, out_html: Path, history_dir: Path):
     output = {"version": VERSION, "count": len(assets),
+              "monthly_available":sum(a.get("multiscale",{}).get("monthly",{}).get("status")=="RESEARCH_ONLY" for a in assets),
+              "four_hour_available":sum(a.get("multiscale",{}).get("four_hour",{}).get("status")=="RESEARCH_ONLY" for a in assets),
               "available": sum(a["status"] == "RESEARCH_ONLY" for a in assets),
               "research_only": True, "score_modified": False,
               "assets": assets}
@@ -406,17 +422,20 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Build complete read-only ARGUS multi-symbol zone dashboard")
     parser.add_argument("--watchlist", type=Path, default=Path("artifacts/watchlist/watchlist_ALL.csv"))
     parser.add_argument("--market", type=Path, default=Path("artifacts/market_data/yahoo_ohlcv.csv"))
+    parser.add_argument("--multiscale", type=Path, default=Path("artifacts/market_data/argus_multiscale.csv"))
     parser.add_argument("--json", type=Path, default=Path("artifacts/reports/argus_zones_all.json"))
     parser.add_argument("--html", type=Path, default=Path("artifacts/ui/zones.html"))
     parser.add_argument("--history", type=Path, default=Path("artifacts/zones/history"))
     args = parser.parse_args(argv)
     universe = _load_universe(args.watchlist)
-    results = calculate(universe, args.market)
+    results = calculate(universe, args.market, args.multiscale)
     published = write_outputs(results, out_json=args.json, out_html=args.html,
                               history_dir=args.history)
     print(json.dumps({"version": VERSION, "count": published["count"],
                       "research_zone_available": published["available"],
                       "unavailable": published["count"]-published["available"],
+                      "monthly_available":published["monthly_available"],
+                      "four_hour_available":published["four_hour_available"],
                       "html": str(args.html), "json": str(args.json)},
                      sort_keys=True))
 
