@@ -18,8 +18,9 @@ from pathlib import Path
 import sys
 
 from scanner.research.zones_v01 import build_zones, read_rows
+from scanner.research.zone_timeframes import analyze as analyze_multiscale, read_bars as read_multiscale
 
-VERSION = "argus-zone-watch-v1"
+VERSION = "argus-zone-watch-v2-multiscale"
 MIN_BARS = 80
 MAX_DISPLAY_ZONES = 24
 
@@ -189,8 +190,11 @@ def _price_series(bars, limit=150):
     return points
 
 
-def calculate(universe, market_csv: Path):
+def calculate(universe, market_csv: Path, multiscale_path: Path | None = None):
     raw = read_rows(market_csv, set(universe))
+    additional = read_multiscale(
+        Path(multiscale_path) if multiscale_path is not None
+        else Path("artifacts/market_data/argus_multiscale.csv"), set(universe))
     results = []
     for symbol, entry in sorted(universe.items()):
         item = {**entry, "status": "UNAVAILABLE", "reason": None, "currency": None,
@@ -199,6 +203,16 @@ def calculate(universe, market_csv: Path):
                 "wave_counts": [], "price_history": [], "model_version": None,
                 "research_only": True, "empirical_probability": None}
         asof = entry["asof"]
+        item["multiscale"] = {}
+        for timeframe in ("monthly", "four_hour"):
+            if asof:
+                item["multiscale"][timeframe] = analyze_multiscale(
+                    additional.get((symbol,timeframe), []),symbol,timeframe,asof=asof)
+            else:
+                item["multiscale"][timeframe] = {
+                    "status":"UNAVAILABLE","reason":"scanner_closed_bar_not_proven",
+                    "timeframe":timeframe,"zones":[],"waves":[],"price_history":[],
+                    "research_only":True,"empirical_probability":None}
         if not asof:
             item["reason"] = "closed_daily_bar_not_proven"
             results.append(item)
@@ -306,7 +320,7 @@ function drawList(){
      .map(x=>'<button class="item '+(selected===x.symbol?"active":"")+'" data-symbol="'+esc(x.symbol)+'">'+
        '<b>'+esc(x.symbol)+'</b> · '+esc(x.name)+'<span>'+esc(x.status)+' · '+esc(x.asof||"kein abgeschlossener Bar")+'</span></button>').join("");
 }
-function chart(x){
+function chart(x,title){
   const p=x.price_history||[];
   if(p.length<3)return '<p class="muted">Keine konsistente Preishistorie für die Darstellung.</p>';
   const z=(x.zones||[]).filter(q=>q.role==="support"||q.role==="resistance").slice(0,7);
@@ -330,7 +344,7 @@ function chart(x){
   const lbl=[0,Math.floor((p.length-1)/2),p.length-1].map(i=>
     '<text x="'+X(i)+'" y="'+(H-7)+'" text-anchor="middle" font-size="12" fill="#9eafc2">'+
     txt(p[i].date)+'</text>').join("");
-  return '<h3>Kursverlauf und horizontale Zonen · abgeschlossene Tageskerzen</h3>'+
+  return '<h3>'+esc(title||'Kursverlauf und horizontale Zonen · abgeschlossene Tageskerzen')+'</h3>'+
   '<div class="wide"><svg width="100%" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Tages-Schlusskursverlauf mit Forschungszonen">'+
    ticks+bands+'<path d="'+path+'" stroke="#90b9ed" stroke-width="2.5" fill="none"/>'+
    '<circle cx="'+X(p.length-1)+'" cy="'+Y(p[p.length-1].close)+'" r="4" fill="#d7e9ff"/>'+
@@ -369,7 +383,30 @@ function drawDetail(){
     out+=table(["Richtung","Status","Bestätigungsregel"],(x.plans||[]).map(p=>
       '<tr><td>'+txt(p.side)+'</td><td>'+txt(p.state)+'</td><td>'+txt(p.activation_rule)+'</td></tr>'));
   }
-  out+='<p class="muted">Piekarski-ähnliche W2-Fibonacci-Rückläufe (38,2–61,8 %) sind nur als Forschungshypothese gekennzeichnet; kein belegter proprietärer Signalabgleich. Für Langfristzählungen über 450 Tageskerzen und Intraday-Wellen fehlen in diesem Modul noch die entsprechenden Daten-/Modellfreigaben.</p>';
+  for(const [key,heading] of [['monthly','Mehrjährige Elliott-/Fibonacci-Analyse · Monatskerzen'],['four_hour','4-Stunden-Elliott-/Fibonacci-Analyse']]){
+    const t=x.multiscale?.[key];
+    if(!t)continue;
+    out+='<h2>'+heading+'</h2>';
+    if(t.status!=='RESEARCH_ONLY'){
+      out+='<p class="notice">Nicht auswertbar: '+txt(t.reason)+'. Keine erfundenen Kurszonen.</p>';
+      continue;
+    }
+    out+='<p class="muted">Letzter bestätigter Balken: '+txt(t.last_confirmed)+' · '+fmt(t.bars)+' Quellkerzen · '+txt(t.currency)+
+      ' · Datenstand kann vom letzten Tageskurs abweichen. Unvalidierte Forschungshypothesen.</p>';
+    out+=chart({price_history:t.price_history,zones:t.zones},heading);
+    out+=table(['Art','Preiszone','Zustand','Fibonacci','Frühere Kontakte'],
+      (t.zones||[]).map(z=>'<tr><td>'+txt(z.family)+' / '+txt(z.role)+'</td><td class="num">'+
+        fmt(z.lower)+'–'+fmt(z.upper)+'</td><td>'+txt(z.status)+'</td><td>'+fmt(z.level)+
+        '</td><td>'+fmt(z.previous_contacts)+'</td></tr>'));
+    out+='<h3>Mögliche Fünferstrukturen · Elliott vNext 6B</h3>';
+    if(!t.waves?.length)out+='<p class="muted">Keine fünfteilige Struktur mit gültigen Elliott-Hardrules aus bestätigten Pivotpunkten.</p>';
+    else for(const w of t.waves){
+      out+='<p><span class="tag">'+txt(w.direction)+' · '+txt(w.stage)+'</span> '+
+        w.pivots.map(p=>txt(p.start)+' '+fmt(p.price)).join(' → ')+
+        '<br><small>Regelgeprüfter Kandidat, keine belegte Eintrittswahrscheinlichkeit.</small></p>';
+    }
+  }
+  out+='<p class="muted">Piekarski-ähnliche W2-Fibonacci-Rückläufe (38,2–61,8 %) sind nur als Forschungshypothese gekennzeichnet; kein belegter proprietärer Signalabgleich. Mehrjährige Monatsdaten und abgeschlossene 4-Stunden-Sitzungskerzen sind integriert; fehlende Daten werden ausdrücklich nicht extrapoliert.</p>';
   document.getElementById("detail").innerHTML=out;
 }
 document.getElementById("headline").textContent=data.version+" · "+data.count+" Titel · "+data.available+" mit Forschungszonen · zuletzt abgeschlossene Tageskerzen";
@@ -381,6 +418,8 @@ drawList();drawDetail();
 
 def write_outputs(assets, *, out_json: Path, out_html: Path, history_dir: Path):
     output = {"version": VERSION, "count": len(assets),
+              "monthly_available":sum(a.get("multiscale",{}).get("monthly",{}).get("status")=="RESEARCH_ONLY" for a in assets),
+              "four_hour_available":sum(a.get("multiscale",{}).get("four_hour",{}).get("status")=="RESEARCH_ONLY" for a in assets),
               "available": sum(a["status"] == "RESEARCH_ONLY" for a in assets),
               "research_only": True, "score_modified": False,
               "assets": assets}
@@ -406,17 +445,20 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Build complete read-only ARGUS multi-symbol zone dashboard")
     parser.add_argument("--watchlist", type=Path, default=Path("artifacts/watchlist/watchlist_ALL.csv"))
     parser.add_argument("--market", type=Path, default=Path("artifacts/market_data/yahoo_ohlcv.csv"))
+    parser.add_argument("--multiscale", type=Path, default=Path("artifacts/market_data/argus_multiscale.csv"))
     parser.add_argument("--json", type=Path, default=Path("artifacts/reports/argus_zones_all.json"))
     parser.add_argument("--html", type=Path, default=Path("artifacts/ui/zones.html"))
     parser.add_argument("--history", type=Path, default=Path("artifacts/zones/history"))
     args = parser.parse_args(argv)
     universe = _load_universe(args.watchlist)
-    results = calculate(universe, args.market)
+    results = calculate(universe, args.market, args.multiscale)
     published = write_outputs(results, out_json=args.json, out_html=args.html,
                               history_dir=args.history)
     print(json.dumps({"version": VERSION, "count": published["count"],
                       "research_zone_available": published["available"],
                       "unavailable": published["count"]-published["available"],
+                      "monthly_available":published["monthly_available"],
+                      "four_hour_available":published["four_hour_available"],
                       "html": str(args.html), "json": str(args.json)},
                      sort_keys=True))
 
