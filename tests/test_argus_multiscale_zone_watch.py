@@ -196,3 +196,12 @@ def test_provider_hourly_supported_period_fallback_preserves_monthly(monkeypatch
     assert calls==[("10y","1mo"),("3mo","60m"),("1mo","60m")]
     assert sum(r["timeframe"]=="monthly" for r in result)==1
     assert sum(r["timeframe"]=="four_hour" for r in result)==2
+
+
+def test_canonical_full_scanner_universe_includes_unranked_uec():
+    """ALL is a 200-name view; ARGUS must never silently omit the full universe."""
+    from scripts.generate_argus_zone_watch import _load_universe
+    root=Path(__file__).resolve().parents[1]
+    full=_load_universe(root/"artifacts/watchlist/watchlist_full.csv")
+    assert len(full)>200
+    assert "UEC" in full
