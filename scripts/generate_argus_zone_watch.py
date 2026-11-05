@@ -392,7 +392,9 @@ function drawDetail(){
       continue;
     }
     out+='<p class="muted">Letzter bestätigter Balken: '+txt(t.last_confirmed)+' · '+fmt(t.bars)+' Quellkerzen · '+txt(t.currency)+
-      ' · Datenstand kann vom letzten Tageskurs abweichen. Unvalidierte Forschungshypothesen.</p>';
+      ' · Datenstand kann vom letzten Tageskurs abweichen. '+
+      (key==='four_hour'?'Abgekürzte Sitzungsschlussbalken: '+fmt(t.session_tail_bars)+'. ':'')+
+      'Unvalidierte Forschungshypothesen.</p>';
     out+=chart({price_history:t.price_history,zones:t.zones},heading);
     out+=table(['Art','Preiszone','Zustand','Fibonacci','Frühere Kontakte'],
       (t.zones||[]).map(z=>'<tr><td>'+txt(z.family)+' / '+txt(z.role)+'</td><td class="num">'+
@@ -443,7 +445,7 @@ def write_outputs(assets, *, out_json: Path, out_html: Path, history_dir: Path):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Build complete read-only ARGUS multi-symbol zone dashboard")
-    parser.add_argument("--watchlist", type=Path, default=Path("artifacts/watchlist/watchlist_ALL.csv"))
+    parser.add_argument("--watchlist", type=Path, default=Path("artifacts/watchlist/watchlist_full.csv"))
     parser.add_argument("--market", type=Path, default=Path("artifacts/market_data/yahoo_ohlcv.csv"))
     parser.add_argument("--multiscale", type=Path, default=Path("artifacts/market_data/argus_multiscale.csv"))
     parser.add_argument("--json", type=Path, default=Path("artifacts/reports/argus_zones_all.json"))

@@ -160,3 +160,48 @@ def test_update_cache_and_readonly_universe_using_mock(tmp_path):
                       history_dir=tmp_path/"history")
     assert out["monthly_available"]==1 and out["four_hour_available"]==1
     assert "4-Stunden-Elliott" in (tmp_path/"zones.html").read_text()
+
+
+def test_provider_hourly_supported_period_fallback_preserves_monthly(monkeypatch):
+    """Unrecognized '60d' must never silently erase good monthly provider data."""
+    import sys
+    from types import SimpleNamespace
+    from zoneinfo import ZoneInfo
+    from scripts.prefetch_argus_timeframes import _provider
+
+    calls=[]
+    class FakeTicker:
+        def get_history_metadata(self):
+            return {"currency":"USD","instrumentType":"EQUITY"}
+        def history(self,**kwargs):
+            calls.append((kwargs["period"],kwargs["interval"]))
+            if kwargs["interval"]=="1mo":
+                ix=pd.to_datetime(["2026-10-01"]).tz_localize("America/New_York")
+                return pd.DataFrame({"Open":[10],"High":[11],"Low":[9],
+                                     "Close":[10.5],"Adj Close":[10.5],"Volume":[100]},index=ix)
+            if kwargs["period"]=="3mo":
+                raise ValueError("60m provider history window unavailable")
+            ix=pd.date_range("2026-11-04 09:30",periods=7,freq="h",tz=ZoneInfo("America/New_York"))
+            return pd.DataFrame({"Open":[10+i*.1 for i in range(7)],
+                                 "High":[10.15+i*.1 for i in range(7)],
+                                 "Low":[9.95+i*.1 for i in range(7)],
+                                 "Close":[10.10+i*.1 for i in range(7)],
+                                 "Adj Close":[10.10+i*.1 for i in range(7)],
+                                 "Volume":[100]*7},index=ix)
+
+    monkeypatch.setitem(sys.modules,"yfinance",SimpleNamespace(Ticker=lambda sym: FakeTicker()))
+    daily={"2026-11-04":{"close":"10.7","high":"10.75","low":"9.95"}}
+    result=_provider("XPEV",currency="USD",asof="2026-11-05",
+                     daily=daily,retrieved="2026-11-05T20:00:00+00:00")
+    assert calls==[("10y","1mo"),("3mo","60m"),("1mo","60m")]
+    assert sum(r["timeframe"]=="monthly" for r in result)==1
+    assert sum(r["timeframe"]=="four_hour" for r in result)==2
+
+
+def test_canonical_full_scanner_universe_includes_unranked_uec():
+    """ALL is a 200-name view; ARGUS must never silently omit the full universe."""
+    from scripts.generate_argus_zone_watch import _load_universe
+    root=Path(__file__).resolve().parents[1]
+    full=_load_universe(root/"artifacts/watchlist/watchlist_full.csv")
+    assert len(full)>200
+    assert "UEC" in full
