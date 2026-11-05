@@ -34,7 +34,7 @@ def doc(items=None):
 
 def zones(entries=None):
     return {"research_only":True,"score_modified":False,
-            "assets":entries or [zone()]}
+            "assets":[zone()] if entries is None else entries}
 
 
 def test_exact_scanner_and_shadow_membership_without_promotion():
