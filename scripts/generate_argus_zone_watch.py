@@ -171,6 +171,24 @@ def _zone_rows(items, bars, asof, last_close, limit=MAX_DISPLAY_ZONES):
     return scored[:limit]
 
 
+def _price_series(bars, limit=150):
+    """Close series in the same adjusted-to-final-raw units as the zone engine."""
+    if not bars:
+        return []
+    final_raw = _number(bars[-1].get("close"))
+    final_adj = _number(bars[-1].get("adj_close"))
+    if final_raw is None or final_adj is None:
+        return []
+    scale = final_raw / final_adj
+    points = []
+    for b in bars[-limit:]:
+        adjusted = _number(b.get("adj_close"))
+        if adjusted is None:
+            return []
+        points.append({"date": b["date"], "close": round(adjusted * scale, 6)})
+    return points
+
+
 def calculate(universe, market_csv: Path):
     raw = read_rows(market_csv, set(universe))
     results = []
@@ -178,7 +196,7 @@ def calculate(universe, market_csv: Path):
         item = {**entry, "status": "UNAVAILABLE", "reason": None, "currency": None,
                 "last_close": None, "data_quality": "blocked", "bar_count": 0,
                 "zones": [], "weekly_zones": [], "clusters": [], "plans": [],
-                "wave_counts": [], "model_version": None,
+                "wave_counts": [], "price_history": [], "model_version": None,
                 "research_only": True, "empirical_probability": None}
         asof = entry["asof"]
         if not asof:
@@ -235,6 +253,7 @@ def calculate(universe, market_csv: Path):
                            "entry_cluster_id","invalidation_cluster_id","target_cluster_ids")}
                          for p in report.get("scenario_plans", [])][:10]
         item["wave_counts"] = _wave_counts(report["zones"])
+        item["price_history"] = _price_series(bars)
         item["asof"] = report["last_completed_bar"]
         item["source_hash"] = report["data_hash"]
         results.append(item)
@@ -287,6 +306,36 @@ function drawList(){
      .map(x=>'<button class="item '+(selected===x.symbol?"active":"")+'" data-symbol="'+esc(x.symbol)+'">'+
        '<b>'+esc(x.symbol)+'</b> · '+esc(x.name)+'<span>'+esc(x.status)+' · '+esc(x.asof||"kein abgeschlossener Bar")+'</span></button>').join("");
 }
+function chart(x){
+  const p=x.price_history||[];
+  if(p.length<3)return '<p class="muted">Keine konsistente Preishistorie für die Darstellung.</p>';
+  const z=(x.zones||[]).filter(q=>q.role==="support"||q.role==="resistance").slice(0,7);
+  const values=p.map(a=>a.close).concat(z.map(a=>a.center));
+  const bottom=Math.min(...values),top=Math.max(...values),pad=(top-bottom)*.08||.1;
+  const lo=bottom-pad,hi=top+pad,W=800,H=270,L=62,R=18,T=18,B=28;
+  const X=i=>L+(W-L-R)*i/(p.length-1);
+  const Y=v=>T+(H-T-B)*(hi-v)/(hi-lo);
+  const path=p.map((a,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(a.close).toFixed(1)).join(" ");
+  const bands=z.map(q=>{
+    const y=Y(q.center);
+    if(y<T||y>H-B)return "";
+    const color=q.role==="support"?"#5d9a7e":"#af8a65";
+    return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+
+       '" stroke="'+color+'" opacity=".48" stroke-dasharray="5 5"/>';
+  }).join("");
+  const ticks=Array.from({length:5},(_,i)=>{const v=lo+(hi-lo)*i/4;const y=Y(v);
+    return '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="#344457" opacity=".5"/>'+
+      '<text x="'+(L-9)+'" y="'+(y+4)+'" text-anchor="end" font-size="12" fill="#9eafc2">'+fmt(v)+'</text>';
+  }).join("");
+  const lbl=[0,Math.floor((p.length-1)/2),p.length-1].map(i=>
+    '<text x="'+X(i)+'" y="'+(H-7)+'" text-anchor="middle" font-size="12" fill="#9eafc2">'+
+    txt(p[i].date)+'</text>').join("");
+  return '<h3>Kursverlauf und horizontale Zonen · abgeschlossene Tageskerzen</h3>'+
+  '<div class="wide"><svg width="100%" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Tages-Schlusskursverlauf mit Forschungszonen">'+
+   ticks+bands+'<path d="'+path+'" stroke="#90b9ed" stroke-width="2.5" fill="none"/>'+
+   '<circle cx="'+X(p.length-1)+'" cy="'+Y(p[p.length-1].close)+'" r="4" fill="#d7e9ff"/>'+
+   lbl+'</svg></div><small>Linie: Schlusskurse. Gestrichelte Linien: nächstliegende bestätigte Unterstützungen/Widerstände; keine Prognose oder Order.</small>';
+}
 function drawDetail(){
   const x=rows.find(x=>x.symbol===selected);
   if(!x)return;
@@ -302,6 +351,7 @@ function drawDetail(){
   }else{
     out+='<p class="muted">Datenqualität: '+txt(x.data_quality)+' · Modell: '+txt(x.model_version)+
     '. Historische Anpassungen sind nur eine rekonstruierte Forschungsbasis und kein vollständiger historischer Point-in-Time-Nachweis.</p>';
+    out+=chart(x);
     const zoneLine=z=>'<tr><td>'+txt(z.role)+' / '+txt(z.side)+'</td><td class="num">'+fmt(z.lower)+'–'+fmt(z.upper)+'</td>'+
        '<td>'+txt(z.status)+'</td><td class="num">'+fmt(z.distance_pct)+' %</td><td>'+fmt(z.contacts?.episodes)+'</td>'+
        '<td>'+txt((z.families||[]).join(", "))+'</td></tr>';
