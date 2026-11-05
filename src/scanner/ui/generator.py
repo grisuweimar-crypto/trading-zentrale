@@ -1223,7 +1223,7 @@ def _render_html(*, data_records: list[dict[str, Any]], presets: dict[str, Any],
     <div class="wrap">
       <div class="title">
         <h1>Scanner_vNext  Research Dashboard</h1>
-        <div class="meta">version __VERSION__ Â· build __BUILD__ Â· <span title="Quelle: __RUN_SRC__">run __RUN_AT__</span> Â· universe __RUN_UNIVERSE__ Â· <a class=\"helpLink\" href=\"zones.html\" rel=\"noopener\">Wellen &amp; Zonen</a> Â· <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
+        <div class="meta">version __VERSION__ Â· build __BUILD__ Â· <span title="Quelle: __RUN_SRC__">run __RUN_AT__</span> Â· universe __RUN_UNIVERSE__ Â· <a class=\"helpLink\" href=\"zones.html\" rel=\"noopener\">Wellen &amp; Zonen</a> Â· <a class=\"helpLink\" href=\"radar-zones.html\" rel=\"noopener\">Kandidatenradar</a> Â· <a class=\"helpLink\" href=\"help.html\" target=\"_blank\" rel=\"noopener\">Hilfe / Projektbeschreibung</a></div>
       </div>
     </div>
   </header>

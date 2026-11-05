@@ -7,6 +7,9 @@ on:
       - 'scripts/generate_argus_zone_watch.py'
       - 'tests/test_argus_multiscale_zone_watch.py'
       - '.github/workflows/argus_multiscale.yml'
+      - 'scripts/audit_radar_zone_bridge.py'
+      - 'tests/test_radar_zone_bridge.py'
+      - 'argus-preview/observations/external_thesis_watch_candidates.json'
   push:
     branches: [main]
     paths:
@@ -42,7 +45,7 @@ jobs:
       - name: Causal monthly, four-hour and scanner regression gates
         run: |
           python -m py_compile scripts/prefetch_argus_timeframes.py src/scanner/research/zone_timeframes.py scripts/generate_argus_zone_watch.py
-          python -m pytest -q tests/test_argus_multiscale_zone_watch.py tests/test_argus_daily_zone_watch.py tests/test_argus_zones_v01.py tests/test_elliott_vnext_scenarios.py
+          python -m pytest -q tests/test_argus_multiscale_zone_watch.py tests/test_argus_daily_zone_watch.py tests/test_argus_zones_v01.py tests/test_elliott_vnext_scenarios.py tests/test_radar_zone_bridge.py
       - name: Existing archived daily cache smoke, optional new timeframes
         run: |
           python scripts/generate_argus_zone_watch.py --json /tmp/zones.json --html /tmp/zones.html --history /tmp/argus-zones
@@ -72,13 +75,15 @@ jobs:
         run: python -m pip install -e '.[test]'
       - name: Cache and close-bar preflight
         run: |
-          test -s artifacts/watchlist/watchlist_ALL.csv
+          test -s artifacts/watchlist/watchlist_full.csv
           test -s artifacts/market_data/yahoo_ohlcv.csv
-          python -m pytest -q tests/test_argus_multiscale_zone_watch.py tests/test_argus_daily_zone_watch.py
+          python -m pytest -q tests/test_argus_multiscale_zone_watch.py tests/test_argus_daily_zone_watch.py tests/test_radar_zone_bridge.py
       - name: Collect provider long-horizon and RTH hourly history, independently from scanner
         run: python -m scripts.prefetch_argus_timeframes --workers 8
       - name: Rebuild documented research-only multi-timeframe outputs
         run: python scripts/generate_argus_zone_watch.py
+      - name: Radar-Zonen-Brücke als separate Forschungsausgabe erzeugen
+        run: python scripts/audit_radar_zone_bridge.py
       - name: Verify complete explicit availability and unaltered scanner scores
         run: |
           python - <<'PY'
@@ -109,7 +114,9 @@ jobs:
           git add artifacts/market_data/argus_multiscale.csv \
             artifacts/reports/argus_multiscale_fetch.json \
             artifacts/reports/argus_zones_all.json \
-            artifacts/ui/zones.html artifacts/zones/history/
+            artifacts/ui/zones.html artifacts/zones/history/ \
+            artifacts/reports/radar_zone_bridge.json artifacts/ui/radar-zones.html \
+            artifacts/research/radar_zone_bridge_history/
           if ! git diff --cached --quiet; then
             git commit -m '📈 ARGUS multi-year and four-hour research snapshot [skip ci]'
             git push origin HEAD:main
