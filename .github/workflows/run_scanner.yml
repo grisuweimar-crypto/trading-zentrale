@@ -203,6 +203,12 @@ jobs:
           TELEGRAM_ENABLED: '0'
         run: python scripts/generate_argus_zone_watch.py
 
+      - name: Kandidatenradar gegen Scanner und Zonen abgleichen (research-only)
+        if: steps.research.outputs.complete == 'true'
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: python scripts/audit_radar_zone_bridge.py
+
       - name: UI generieren
         if: steps.research.outputs.complete == 'true'
         env:
