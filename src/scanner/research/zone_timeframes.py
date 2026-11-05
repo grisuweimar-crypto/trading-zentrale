@@ -66,11 +66,11 @@ def _validated(rows, symbol, timeframe, asof):
             raise ValueError("multi_timeframe_identity_mismatch")
         start = str(original.get("bar_start", ""))
         confirmed = date.fromisoformat(str(original.get("confirmed_at", "")))
+        if confirmed > cutoff:
+            continue
         if start in seen:
             raise ValueError("duplicate_multiscale_bars")
         seen.add(start)
-        if confirmed > cutoff:
-            continue
         if timeframe == "monthly":
             dt = date.fromisoformat(start)
             if dt.day != 1 or not dt < confirmed:
