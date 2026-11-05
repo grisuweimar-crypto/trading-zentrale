@@ -216,7 +216,7 @@ def analyze(rows, symbol, timeframe, *, asof):
     conf=SPECS[timeframe]
     result={"symbol":symbol,"timeframe":timeframe,"asof":asof,
             "status":"UNAVAILABLE","reason":None,"bars":0,"last_confirmed":None,
-            "currency":None,"last_close":None,"zones":[],"waves":[],
+            "currency":None,"last_close":None,"session_tail_bars":0,"zones":[],"waves":[],
             "price_history":[],"research_only":True,"empirical_probability":None,
             "version":VERSION}
     try:
@@ -234,6 +234,7 @@ def analyze(rows, symbol, timeframe, *, asof):
         result.update({"status":"RESEARCH_ONLY","currency":last["currency"],
                        "last_close":round(last["close"],6),
                        "last_confirmed":last["confirmed_at"]})
+        result["session_tail_bars"]=sum(r.get("session_tail")=="1" for r in adjusted)
         result["price_history"]=[{"date":r["bar_start"],"close":round(r["close"],6)}
                                  for r in adjusted[-160:]]
         atrsum=[]
