@@ -261,7 +261,7 @@ def update(*, watchlist, daily_market, output=DEFAULT_CACHE, receipt=DEFAULT_REC
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--watchlist",type=Path,default=Path("artifacts/watchlist/watchlist_ALL.csv"))
+    parser.add_argument("--watchlist",type=Path,default=Path("artifacts/watchlist/watchlist_full.csv"))
     parser.add_argument("--daily-market",type=Path,default=Path("artifacts/market_data/yahoo_ohlcv.csv"))
     parser.add_argument("--output",type=Path,default=DEFAULT_CACHE)
     parser.add_argument("--receipt",type=Path,default=DEFAULT_RECEIPT)
