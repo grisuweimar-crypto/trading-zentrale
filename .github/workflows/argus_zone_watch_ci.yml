@@ -1,0 +1,58 @@
+name: ARGUS daily zones integration checks
+on:
+  pull_request:
+    paths:
+      - 'scripts/generate_argus_zone_watch.py'
+      - 'tests/test_argus_daily_zone_watch.py'
+      - 'src/scanner/ui/generator.py'
+      - 'scripts/build_all.py'
+      - '.github/workflows/run_scanner.yml'
+      - '.github/workflows/argus_zone_watch_ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zone-watch-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: Install project and tests
+        run: python -m pip install -e '.[test]' pandas_market_calendars
+      - name: Syntax and existing zone-regression tests
+        run: |
+          python -m py_compile scripts/generate_argus_zone_watch.py src/scanner/ui/generator.py
+          python -m pytest -q tests/test_argus_daily_zone_watch.py \
+            tests/test_argus_zones_v01.py tests/test_argus_zones_m3.py \
+            tests/test_argus_zones_cli.py
+      - name: Repository-data end-to-end snapshot
+        run: |
+          python scripts/generate_argus_zone_watch.py \
+            --watchlist artifacts/watchlist/watchlist_ALL.csv \
+            --market artifacts/market_data/yahoo_ohlcv.csv \
+            --json /tmp/argus-zones-all.json \
+            --html /tmp/argus-zones.html \
+            --history /tmp/argus-zone-history
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('/tmp/argus-zones-all.json').read_text())
+          assert r["count"] >= 1 and len(r["assets"]) == r["count"]
+          assert r["research_only"] and r["score_modified"] is False
+          assert all(x["status"] in ("RESEARCH_ONLY", "UNAVAILABLE") for x in r["assets"])
+          for x in r["assets"]:
+              assert x["empirical_probability"] is None
+              if x["status"] == "UNAVAILABLE":
+                  assert not x["zones"]
+                  assert not x["wave_counts"]
+          print("COVERAGE:",r["available"],"/",r["count"])
+          for t in ("UEC","XPEV","WPM.TO"):
+              a=next((x for x in r["assets"] if x["symbol"]==t),None)
+              print(t, None if a is None else
+                    (a["status"],a["reason"],len(a["zones"]),len(a["wave_counts"])))
+          PY

@@ -59,6 +59,7 @@ def main() -> int:
         steps.append(([py, "scripts/generate_segment_monitor.py"], "segment monitor report"))
         steps.append(([py, "scripts/generate_reality_check.py"], "reality check report"))
         steps.append(([py, "scripts/generate_macro_chain_signal.py"], "macro chain signal report"))
+        steps.append(([py, "scripts/generate_argus_zone_watch.py"], "daily Elliott/Fibonacci zones for all symbols"))
 
     steps.append(([py, "scripts/test_pipeline.py"], "pipeline gate") )
 

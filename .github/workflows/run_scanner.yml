@@ -70,6 +70,7 @@ jobs:
             tests/test_daily_research.py \
             tests/test_history_query_and_daily_research.py \
             tests/test_history_research.py \
+            tests/test_argus_daily_zone_watch.py \
             tests/test_recent_history.py \
             tests/test_research_views.py \
             tests/test_closed_daily_bar_gate.py \
@@ -195,6 +196,12 @@ jobs:
           TELEGRAM_ENABLED: '0'
         run: |
           python scripts/generate_briefing_realities.py
+
+      - name: ARGUS Elliott/Fibonacci-Zonen für das gesamte Scanneruniversum publizieren
+        if: steps.research.outputs.complete == 'true'
+        env:
+          TELEGRAM_ENABLED: '0'
+        run: python scripts/generate_argus_zone_watch.py
 
       - name: UI generieren
         if: steps.research.outputs.complete == 'true'
