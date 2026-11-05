@@ -102,11 +102,13 @@ def _prior_contacts(zone, bars, asof):
 
 
 def _wave_counts(zones):
-    """Strict, descriptive five-leg candidates from already confirmed pivots.
+    """Reuse the existing Elliott vNext 6B hard-rule evaluator on confirmed pivots.
 
-    Fibonacci does NOT choose pivots. A candidate is not an independently
-    certified Elliott count; unknown structures are left unknown.
+    Fibonacci never chooses pivots and no count is certified as the true count.
+    Truncated fifth waves remain permitted exactly as in Module 6B.
     """
+    from scanner.research.elliott_vnext.scenarios import evaluate_motive_window
+
     by_degree = {}
     for z in zones:
         for driver in z.get("drivers", []):
@@ -120,38 +122,35 @@ def _wave_counts(zones):
     for degree, entries in by_degree.items():
         ordered = sorted(entries.values(), key=lambda x: (x["pivot_time"], x["known_at"]))
         for i in range(max(0, len(ordered) - 7), len(ordered) - 5):
-            p = ordered[i:i+6]
-            if len(p) != 6:
+            pivots = ordered[i:i+6]
+            if len(pivots) != 6:
                 continue
-            k = [x["kind"] for x in p]
-            values = [float(x["price"]) for x in p]
-            direction = ("down" if k == ["high","low","high","low","high","low"]
-                         else "up" if k == ["low","high","low","high","low","high"]
-                         else None)
-            if direction is None:
+            source = [
+                {"symbol": "research", "timeframe": "daily", "degree": degree,
+                 "kind": a["kind"], "pivot_time": a["pivot_time"],
+                 "confirmed_time": a["known_at"], "available_from": a["known_at"],
+                 "price": float(a["price"])}
+                for a in pivots
+            ]
+            assessment = evaluate_motive_window(source)
+            if not assessment.get("valid") or assessment.get("stage") != "wave_5_complete":
                 continue
-            a,b,c,d,e,f = values
-            if direction == "down":
-                valid = b < a and b < c < a and d < b and d < e < b and f < d
-                w1,w3,w5 = a-b, c-d, e-f
-            else:
-                valid = b > a and a < c < b and d > b and b < e < d and f > d
-                w1,w3,w5 = b-a, d-c, f-e
-            if not valid or min(w1,w3,w5) <= 0 or w3 < min(w1,w5)-1e-9:
-                continue
+            lengths = assessment["wave_lengths"]
             out.append({
-                "degree": degree, "direction": direction,
-                "status": "confirmed_pivot_geometry_candidate",
-                "pivots": [{"date": x["pivot_time"], "known_at": x["known_at"],
-                            "kind": x["kind"], "price": round(float(x["price"]), 6)} for x in p],
-                "leg_lengths": [round(w1, 6), round(w3, 6), round(w5, 6)],
-                "wave2_retracement": round(abs(b-c)/w1, 5),
-                "method_note": "hard Elliott overlap/length checks only; not a certified full count",
+                "degree": degree, "direction": assessment["direction"],
+                "status": "confirmed_pivot_geometry_candidate_6B",
+                "pivots": [{"date": a["pivot_time"], "known_at": a["known_at"],
+                            "kind": a["kind"], "price": round(float(a["price"]), 6)}
+                           for a in pivots],
+                "leg_lengths": [round(lengths[f"wave_{i}"], 6) for i in (1,3,5)],
+                "wave2_retracement": round(lengths["wave_2"] / lengths["wave_1"], 5),
+                "truncated_fifth": assessment["truncated_fifth"],
+                "hard_rule_violations": assessment["hard_rule_violations"],
+                "method_note": "6B Elliott hard-rule candidate, not the one true count",
                 "validated_probability": None,
             })
     out.sort(key=lambda w: (w["pivots"][-1]["date"], w["degree"]), reverse=True)
     return out[:4]
-
 
 def _zone_rows(items, bars, asof, last_close, limit=MAX_DISPLAY_ZONES):
     scored = []
