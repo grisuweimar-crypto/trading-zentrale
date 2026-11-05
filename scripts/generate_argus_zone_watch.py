@@ -297,7 +297,7 @@ th{color:#a9b8ca}td.num{text-align:right;font-variant-numeric:tabular-nums}
 .wide{overflow:auto}p{line-height:1.5}
 @media(max-width:760px){main{display:block;padding:12px}aside{margin-bottom:14px}#items{max-height:220px}}
 </style></head><body>
-<header><a href="index.html">← Scanner_vNext</a><h1>ARGUS · Elliott &amp; Fibonacci-Zonen</h1>
+<header><a href="index.html">← Scanner_vNext</a> · <a href="radar-zones.html">Kandidatenradar-Abgleich</a><h1>ARGUS · Elliott &amp; Fibonacci-Zonen</h1>
 <div class="muted" id="headline"></div></header>
 <main><aside><input id="search" type="search" placeholder="Aktie suchen (UEC, XPEV, WPM…)">
 <div id="items"></div></aside><article id="detail" aria-live="polite"></article></main>
