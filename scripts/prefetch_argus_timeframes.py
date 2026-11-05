@@ -145,8 +145,18 @@ def _provider(symbol, *, currency, asof, daily, retrieved):
         raise ValueError("unsupported_or_unverified_instrument_type")
     monthly=ticker.history(period="10y",interval="1mo",auto_adjust=False,
                            prepost=False,repair=False,raise_errors=True)
-    hourly=ticker.history(period="60d",interval="60m",auto_adjust=False,
-                          prepost=False,repair=False,raise_errors=True)
+    # Yahoo's supported period values do not include "60d". Hourly bars
+    # may have a provider-specific history window; use 3mo with 1mo fallback.
+    # Preserve the independent monthly analysis if hourly fetching fails.
+    try:
+        hourly=ticker.history(period="3mo",interval="60m",auto_adjust=False,
+                              prepost=False,repair=False,raise_errors=True)
+    except Exception:
+        try:
+            hourly=ticker.history(period="1mo",interval="60m",auto_adjust=False,
+                                  prepost=False,repair=False,raise_errors=True)
+        except Exception:
+            hourly=None
     mo=_monthly(monthly,symbol=symbol,currency=currency,asof=asof,retrieved=retrieved)
     h4=_four_hour(hourly,symbol=symbol,currency=currency,asof=asof,
                   retrieved=retrieved,daily=daily)
