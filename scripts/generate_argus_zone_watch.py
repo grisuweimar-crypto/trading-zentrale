@@ -392,7 +392,9 @@ function drawDetail(){
       continue;
     }
     out+='<p class="muted">Letzter bestätigter Balken: '+txt(t.last_confirmed)+' · '+fmt(t.bars)+' Quellkerzen · '+txt(t.currency)+
-      ' · Datenstand kann vom letzten Tageskurs abweichen. Unvalidierte Forschungshypothesen.</p>';
+      ' · Datenstand kann vom letzten Tageskurs abweichen. '+
+      (key==='four_hour'?'Abgekürzte Sitzungsschlussbalken: '+fmt(t.session_tail_bars)+'. ':'')+
+      'Unvalidierte Forschungshypothesen.</p>';
     out+=chart({price_history:t.price_history,zones:t.zones},heading);
     out+=table(['Art','Preiszone','Zustand','Fibonacci','Frühere Kontakte'],
       (t.zones||[]).map(z=>'<tr><td>'+txt(z.family)+' / '+txt(z.role)+'</td><td class="num">'+
