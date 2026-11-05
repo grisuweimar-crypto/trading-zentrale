@@ -35,7 +35,7 @@ def months(symbol="UEC"):
 def hours(symbol="UEC"):
     rows=[]
     for i in range(50):
-        d=date(2026,9,1)+timedelta(days=i)
+        d=date(2026,9,20)+timedelta(days=i)
         value=12 + .03*i + 1.4*math.sin(i/2)
         rows.append({"symbol":symbol,"currency":"USD","timeframe":"four_hour",
                      "bar_start":f"{d.isoformat()}T09:30:00-04:00",
@@ -51,7 +51,7 @@ def test_monthly_and_four_hour_research_from_completed_bars():
     m=analyze(months(),"UEC","monthly",asof=ASOF)
     h=analyze(hours(),"UEC","four_hour",asof=ASOF)
     assert m["status"]=="RESEARCH_ONLY"
-    assert m["bars"]==82+1  # latest completed month = 2026-11 boundary: Jan 2020 + 82 = Nov 2026 (excluded)
+    assert m["bars"]==82  # 2020-01 through 2026-10; November not completed
     assert m["zones"] and all(z["known_at"]<=ASOF for z in m["zones"])
     assert len(m["price_history"])>=70
     assert h["status"]=="RESEARCH_ONLY" and h["zones"]
@@ -80,7 +80,7 @@ def test_future_four_hour_bars_cannot_create_pivots():
 
 
 def test_invalid_duplicate_and_mixed_currencies_fail_closed():
-    invalid=months()+[dict(months()[-1])]
+    invalid=months()+[dict(months()[20])]
     a=analyze(invalid,"UEC","monthly",asof=ASOF)
     assert a["status"]=="UNAVAILABLE"
     assert a["zones"]==[]
@@ -106,7 +106,7 @@ def test_true_four_hour_aggregation_and_session_tail():
     assert len(result)==2
     assert [r["session_tail"] for r in result]==["0","1"]
     assert result[0]["bar_start"].startswith("2026-11-04T09:30")
-    assert result[0]["high"]==10.45
+    assert abs(result[0]["high"]-10.45)<1e-6
     assert result[1]["close"]==10.7
     assert not _four_hour(frame,symbol="XPEV",currency="USD",asof="2026-11-03",
                           retrieved="test",daily=daily)
