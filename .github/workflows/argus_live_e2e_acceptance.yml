@@ -56,7 +56,7 @@ jobs:
           root=Path('/tmp/argus-watch-live')
           manifest=json.loads((root/'manifest.json').read_text())
           files=sorted(root.glob('shard_*.json'))
-          assert len(files)==len(SHARD_IDS)==128
+          assert len(files)==len(SHARD_IDS)==256
           sizes=[p.stat().st_size for p in files]
           reserve=(2000000-max(sizes))/2000000
           assert manifest['symbol_count']==220,manifest['symbol_count']
