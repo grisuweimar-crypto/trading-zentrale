@@ -204,7 +204,7 @@ def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
 
 def test_runtime_shard_contract_uses_256_deterministic_buckets() -> None:
     assert len(SHARD_IDS) == 256
-    assert len(set(SHARD_IDS)) == 128
+    assert len(set(SHARD_IDS)) == 256
     assert SHARD_IDS[0] == "00"
     assert SHARD_IDS[-1] == "ff"
 
