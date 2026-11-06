@@ -41,7 +41,7 @@ def test_new_instruments_survive_watchlist_sync_and_canonical_deduplication():
     )
     canonical = canonicalize_df(synced)
     kept, _, _ = _dedupe_universe(canonical)
-    assert len(kept) == 220
+    assert len(kept) == 221
     for symbol in EXPECTED:
         rows = kept.loc[kept["YahooSymbol"].eq(symbol)]
         assert len(rows) == 1, symbol
