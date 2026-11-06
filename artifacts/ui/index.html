@@ -96,9 +96,20 @@
     .activeFilters { display:flex; gap:6px; flex-wrap:wrap; align-items:center; padding: 0 14px 14px 14px; min-height: 24px; }
     .activeFilters .label { color: var(--muted); font-size: 11px; font-family: var(--mono); margin-right:2px; }
     .activeFilterChip { display:inline-flex; align-items:center; padding:3px 7px; border-radius:999px; border:1px solid rgba(96,165,250,.25); background:rgba(96,165,250,.07); color:#bfdbfe; font-size:11px; font-family:var(--mono); }
-    .segmentTable tr.sampleThin td { background: rgba(251,191,36,.035); color: rgba(226,232,240,.82); }
-    .segmentTable tr.sampleUnavailable td { opacity:.58; }
-    .realityTable tr.sampleUnclear td { background: rgba(251,191,36,.035); color: rgba(226,232,240,.76); }
+    .stableSample {
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:2px 7px; border-radius:999px; border:1px solid rgba(148,163,184,.28);
+      font-size:10px; font-weight:700; white-space:nowrap;
+    }
+    .stableSample.stable { background:rgba(52,211,153,.08); border-color:rgba(52,211,153,.28); color:#a7f3d0; }
+    .stableSample.thin { background:rgba(251,191,36,.18); border-color:rgba(251,191,36,.62); color:#fde68a; }
+    .stableSample.unavailable { background:rgba(148,163,184,.07); color:#cbd5e1; }
+    .segmentTable tr.sampleThin td { background:rgba(251,191,36,.13); color:rgba(255,251,235,.96); }
+    .segmentTable tr.sampleThin td:first-child { box-shadow:inset 3px 0 0 rgba(251,191,36,.9); }
+    .segmentTable tr.sampleUnavailable td { opacity:.68; }
+    .realityTable tr.sampleUnclear td { background:rgba(251,191,36,.12); color:rgba(255,251,235,.96); }
+    .realityTable tr.sampleUnclear td:first-child { box-shadow:inset 3px 0 0 rgba(251,191,36,.9); }
+    .realityTable tr.sampleUnclear .signalBadge { font-weight:800; border-width:2px; }
     .fbtn { background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 12px; }
     .fbtn:hover { border-color: rgba(96,165,250,.45); }
     .fbtn.active { border-color: rgba(96,165,250,.60); box-shadow: 0 0 0 2px rgba(96,165,250,.14) inset; }
@@ -3800,11 +3811,14 @@ function applyHeatFilter(rows) {
           const n = asNum(x);
           return n === null ? '–' : (n * 100).toFixed(1) + '%';
         }
-        function stableBadge(state) {
+        function stableBadge(state, nValid, nTotal, coverage) {
           state = normStr(state);
-          if (state === 'stable') return '<span class="stableSample">stable</span>';
-          if (state === 'thin') return '<span class="stableSample" style="background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.25); color: #fde68a;">thin</span>';
-          return '<span class="muted">–</span>';
+          const sample = esc((nValid ?? '–') + '/' + (nTotal ?? '–'));
+          const coverageText = esc(fmtPct(coverage));
+          const title = 'Stichprobe: ' + sample + ' gültig/gesamt · Abdeckung ' + coverageText;
+          if (state === 'stable') return '<span class="stableSample stable" title="' + title + '">Stabil</span>';
+          if (state === 'thin') return '<span class="stableSample thin" title="' + title + '">Dünne Basis</span>';
+          return '<span class="stableSample unavailable" title="Keine belastbare Vergleichsbasis">Keine Basis</span>';
         }
 
         function renderTable(title, groups) {
@@ -3823,14 +3837,14 @@ function applyHeatFilter(rows) {
             '<td title="' + esc(g.segment || '') + '">' + esc(g.segment || '–') + '</td>' +
             '<td class="right">' + esc(fmtAvg(g.average_dscore_1d)) + '</td>' +
             '<td class="right">' + esc(fmtPct(g.positive_share)) + '</td>' +
-            '<td class="right">' + stableBadge(g.sample_state) + '</td>' +
+            '<td class="right">' + stableBadge(g.sample_state, g.n_valid, g.n_total, g.coverage) + '</td>' +
             '<td class="right">' + esc(fmtPct(g.coverage)) + '</td>' +
             '<td class="right">' + esc(g.n_valid ?? 0) + '/' + esc(g.n_total ?? 0) + '</td>' +
           '</tr>';
           }).join('');
           return '<table class="segmentTable">' +
             '<thead><tr><th colspan="6">' + esc(title) + '</th></tr>' +
-            '<tr><th>Segment</th><th class="right">Ø dScore</th><th class="right">Pos%</th><th class="right">Sample</th><th class="right">Cov%</th><th class="right">N</th></tr></thead>' +
+            '<tr><th>Segment</th><th class="right">Ø dScore</th><th class="right">Pos%</th><th class="right">Datenbasis</th><th class="right">Abdeckung</th><th class="right">n/gesamt</th></tr></thead>' +
             '<tbody>' + (html || '<tr><td colspan="6" class="muted">–</td></tr>') + '</tbody></table>';
         }
 
