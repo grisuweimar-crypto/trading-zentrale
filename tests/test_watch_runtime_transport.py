@@ -238,7 +238,7 @@ def test_manifest_accepts_legacy_strategy_absence_but_rejects_unknown_strategy()
 
 
 def test_existing_published_runtime_is_still_loadable_after_shard_fanout() -> None:
-    """Old 64-shard W10 stays readable even when NEW W10 uses 256 shards."""
+    """Previously published W10 manifests stay readable after increasing shard fanout."""
     import json
     from pathlib import Path
     from scanner.research.decision_layer.watch_runtime import load_runtime_packets_for_symbols
