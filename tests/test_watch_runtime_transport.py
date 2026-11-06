@@ -202,11 +202,11 @@ def test_runtime_loader_reads_only_shards_needed_by_private_positions(tmp_path):
     assert json.loads((runtime_dir / "manifest.json").read_text())["symbol_count"] == 1
 
 
-def test_runtime_shard_contract_uses_128_deterministic_buckets() -> None:
-    assert len(SHARD_IDS) == 128
-    assert len(set(SHARD_IDS)) == 128
+def test_runtime_shard_contract_uses_256_deterministic_buckets() -> None:
+    assert len(SHARD_IDS) == 256
+    assert len(set(SHARD_IDS)) == 256
     assert SHARD_IDS[0] == "00"
-    assert SHARD_IDS[-1] == "7f"
+    assert SHARD_IDS[-1] == "ff"
 
 
 def test_balanced_routing_spreads_large_histories_and_is_order_independent():
@@ -238,7 +238,7 @@ def test_manifest_accepts_legacy_strategy_absence_but_rejects_unknown_strategy()
 
 
 def test_existing_published_runtime_is_still_loadable_after_shard_fanout() -> None:
-    """Old 64-shard W10 stays readable even when NEW W10 uses 128 shards."""
+    """Previously published W10 manifests stay readable after increasing shard fanout."""
     import json
     from pathlib import Path
     from scanner.research.decision_layer.watch_runtime import load_runtime_packets_for_symbols
