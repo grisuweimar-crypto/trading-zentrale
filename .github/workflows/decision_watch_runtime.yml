@@ -104,7 +104,7 @@ jobs:
           from scanner.research.decision_layer.watch_runtime import SHARD_IDS
           root = Path('artifacts/research/watch_runtime')
           sizes = {p.name: p.stat().st_size for p in sorted(root.glob('shard_*.json'))}
-          assert len(sizes) == len(SHARD_IDS) == 128
+          assert len(sizes) == len(SHARD_IDS) == 256
           largest = max(sizes, key=sizes.get)
           print({'current_persisted_max_shard': largest, 'bytes': sizes[largest], 'reserve': (2_000_000 - sizes[largest]) / 2_000_000})
           PY
@@ -128,7 +128,7 @@ jobs:
           assert manifest['private_position_data_included'] is False
           assert manifest['decision_logic_changed'] is False
           paths = sorted(root.glob('shard_*.json'))
-          assert len(paths) == len(SHARD_IDS) == 128 and manifest['shard_count'] == len(SHARD_IDS)
+          assert len(paths) == len(SHARD_IDS) == 256 and manifest['shard_count'] == len(SHARD_IDS)
           payloads = [json.loads(p.read_text(encoding='utf-8')) for p in paths]
           assert sum(s['packet_count'] for s in payloads) == manifest['packet_count']
           assert sum(len(s['symbols']) for s in payloads) == manifest['symbol_count']
