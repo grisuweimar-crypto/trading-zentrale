@@ -406,6 +406,6 @@ def test_qm3_capacity_recurrence_is_separate_from_historical_f01() -> None:
     assert f05["state"] == "CLOSED_EFFECTIVE"
     assert f05["effectiveness"]["evidence"]["published_shard_count"] == 64
     # This is immutable historical evidence, not the count of the new runtime.
-    assert len(SHARD_IDS) == 128
+    assert len(SHARD_IDS) == 256
     assert f05["effectiveness"]["historical_f01_evidence_rewritten"] is False
     assert f05["capa"]["early_warning_headroom_ratio"] == 0.20
