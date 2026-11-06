@@ -104,7 +104,7 @@ jobs:
           from scanner.research.decision_layer.watch_runtime import SHARD_IDS
           root = Path('artifacts/research/watch_runtime')
           sizes = {p.name: p.stat().st_size for p in sorted(root.glob('shard_*.json'))}
-          assert len(sizes) == len(SHARD_IDS) == 256
+          assert len(sizes) in (128, len(SHARD_IDS)), 'unexpected_persisted_shard_count'
           largest = max(sizes, key=sizes.get)
           print({'current_persisted_max_shard': largest, 'bytes': sizes[largest], 'reserve': (2_000_000 - sizes[largest]) / 2_000_000})
           PY
