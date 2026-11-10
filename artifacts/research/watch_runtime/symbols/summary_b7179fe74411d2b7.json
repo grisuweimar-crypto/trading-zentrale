@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-10T01:13:39.144152+00:00",
+  "decision_as_of": "2026-11-10T21:36:59.690527+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-10T01:03:06.282651+00:00",
+    "captured_at": "2026-11-10T21:28:13.329149+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-10T00:59:52+00:00",
+    "scanner_published_at": "2026-11-10T21:24:26+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
     "source_as_of": "2026-11-10",
-    "source_capture_id": "a6c9516be7e3dceb72a7e86bfc3222c91cf7025cc55274e9d88da4b436142583",
-    "source_publication_commit": "61bffa7928e722e95523bef8af590c9069c3af7b",
-    "source_run_id": "github-42731357121-1",
-    "source_snapshot_id": "1189d561-a52f-4bc4-92c8-2ed1fc686d18",
+    "source_capture_id": "303d6b3684aaff4f915c8853b14f6d5ba07c59fe2d77b582cd7defa7351e80aa",
+    "source_publication_commit": "063d95a8bfc61fd25defa5da45fe7eb45595be04",
+    "source_run_id": "github-42903221409-1",
+    "source_snapshot_id": "77cac568-b98f-445b-8866-b460989f3e53",
     "status": "no_elliott_output_for_symbol",
     "symbol": "APP",
     "validation_partition": "prospective_unspent",
@@ -29,19 +29,49 @@
     "conflicts": [],
     "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:APP:8383be481c5c6052:60T"
+      "timing:APP:7ab4476ed5a235ac:5T",
+      "timing:APP:66d94c2cea42792c:5T",
+      "timing:APP:2ed3249c1c56577f:5T",
+      "timing:APP:401cca5a7c173601:5T",
+      "timing:APP:5f83639c2a489191:5T",
+      "timing:APP:de6f9e876313f22e:5T",
+      "timing:APP:ef7f3870ca002abb:5T",
+      "timing:APP:bdcecff3727fc9bd:20T",
+      "timing:APP:dfdda8982133a796:20T",
+      "timing:APP:9ded9b32e0bc8942:20T",
+      "timing:APP:494c50d063b91cd4:20T",
+      "timing:APP:d47ac29f6efaa46d:20T",
+      "timing:APP:11940d7ea1f0f388:20T",
+      "timing:APP:eefa168ef78d755e:20T",
+      "timing:APP:c3fe1ba2fba5156b:20T",
+      "timing:APP:487ac8cc07de8323:20T",
+      "timing:APP:c5c42af2647d5f95:20T",
+      "timing:APP:e205699319458e1e:20T",
+      "timing:APP:9f8c45116d8eb363:20T",
+      "timing:APP:153913eb77a6fd4e:40T",
+      "timing:APP:b5ad69e9c49b4283:40T",
+      "timing:APP:ba1546185d8440ab:40T",
+      "timing:APP:8aad3655cfd70cc5:40T",
+      "timing:APP:40a0ee3503943b7d:40T",
+      "timing:APP:089d1930a0f04204:40T",
+      "timing:APP:6eab277f58068de7:40T",
+      "timing:APP:0c9ee67b0531915a:40T",
+      "timing:APP:696f56e402c4c294:40T",
+      "timing:APP:6b9ad841e92f8191:60T",
+      "timing:APP:8383be481c5c6052:60T",
+      "timing:APP:312bf577128ab874:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 31
     },
-    "relation_state": "single_direction_or_unopposed",
+    "relation_state": "correlated_same_family_support",
     "state": "negative",
-    "support_structure": "single_direction_or_unopposed"
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "1189d561-a52f-4bc4-92c8-2ed1fc686d18",
+  "snapshot_id": "77cac568-b98f-445b-8866-b460989f3e53",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -538,6 +568,14 @@
       "source_snapshot_id": "1189d561-a52f-4bc4-92c8-2ed1fc686d18",
       "state": "negative",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-11-10T21:36:59.690527+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "77cac568-b98f-445b-8866-b460989f3e53",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -549,7 +587,7 @@
       "trend200_falling_5t": false
     },
     "last_overextension_date": "2026-11-10",
-    "last_overextension_rs3m": 0.27102891288264397,
+    "last_overextension_rs3m": 0.3729615688663964,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
