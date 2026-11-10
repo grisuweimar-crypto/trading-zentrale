@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-09T13:23:08.981652+00:00",
+  "decision_as_of": "2026-11-10T01:13:39.144152+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-09T13:12:22.056285+00:00",
+    "captured_at": "2026-11-10T01:03:06.282651+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -11,6 +11,23 @@
     "outputs": [
       {
         "alternative_scenarios": [
+          {
+            "available_from": "2026-11-09",
+            "direction": "down",
+            "family": "motive",
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "stage": "wave_2_complete",
+            "status": "valid_structural_candidate",
+            "truncated_fifth": false
+          },
+          {
+            "available_from": "2026-10-30",
+            "direction": "down",
+            "family": "correction",
+            "scenario_id": "66515b13f0eefdfae5f15ba58abb61736ebe48df7a2e0cc73f910b3583e08544",
+            "stage": "correction_complete_candidate",
+            "status": "valid_structural_candidate_geometry_unresolved"
+          },
           {
             "available_from": "2026-10-30",
             "direction": "up",
@@ -424,24 +441,6 @@
             "scenario_id": "a928cbee48315b998264c389b6bcdb279c990cc5aac3f13f91c039aded8330d4",
             "stage": "correction_complete_candidate",
             "status": "valid_structural_candidate_geometry_unresolved"
-          },
-          {
-            "available_from": "2026-07-13",
-            "direction": "up",
-            "family": "motive",
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "stage": "wave_2_complete",
-            "status": "valid_structural_candidate",
-            "truncated_fifth": false
-          },
-          {
-            "available_from": "2026-07-13",
-            "direction": "up",
-            "family": "motive",
-            "scenario_id": "e343653ff942798aaa70fcdc7569e207c95f5bb4d88ff1032965233deec96897",
-            "stage": "wave_4_complete",
-            "status": "conservative_structural_candidate",
-            "truncated_fifth": false
           }
         ],
         "current_wave_stage": "uncertain",
@@ -450,7 +449,7 @@
           "anchor_end": {},
           "anchor_selection_by_fibonacci": false,
           "anchor_start": {},
-          "scenario_id": "66515b13f0eefdfae5f15ba58abb61736ebe48df7a2e0cc73f910b3583e08544",
+          "scenario_id": "f715c1f77c4957baf1ec82d8eca2b1bdeb2efc35b3e4a0ac52b43b21d3333467",
           "status": "unavailable_for_primary_scenario",
           "zones": []
         },
@@ -1791,16 +1790,186 @@
           "rules_frozen_through": "2026-09-25",
           "status": "prospective_evidence_accumulating_no_automatic_promotion"
         },
-        "output_id": "cb9d798403bdc09c878ceaec9668b8d2ffc042e1b559f7693de3298cd76343e5",
+        "output_id": "0b855f4920dad8190c60413f6284e66a36ab9025e71362801e6b660b4377319a",
         "primary_scenario": {
-          "available_from": "2026-10-30",
-          "direction": "down",
+          "available_from": "2026-11-09",
+          "direction": "up",
           "family": "correction",
-          "scenario_id": "66515b13f0eefdfae5f15ba58abb61736ebe48df7a2e0cc73f910b3583e08544",
+          "scenario_id": "f715c1f77c4957baf1ec82d8eca2b1bdeb2efc35b3e4a0ac52b43b21d3333467",
           "stage": "correction_complete_candidate",
           "status": "valid_structural_candidate_geometry_unresolved"
         },
         "projection_zones": [
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 1.0,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 12.375000953674316,
+            "distance_to_zone_pct": 6.891990543704785,
+            "price_high": 12.532338108335223,
+            "price_low": 12.21766379901341,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "a78637d05c36d0f675be3077a0a59235da458ba6ceb8d182676b6c1f932390d2",
+            "zone_width_basis": {
+              "atr": 0.5244571822030204,
+              "atr_component": 0.15733715466090611,
+              "atr_multiplier": 0.3,
+              "degree": "intermediate",
+              "half_width": 0.15733715466090611,
+              "parameter_validated": false,
+              "price_component": 0.018562501430511476,
+              "price_fraction_floor": 0.0015
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 1.618,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 11.284231330871581,
+            "distance_to_zone_pct": 14.995776722838414,
+            "price_high": 11.441568485532487,
+            "price_low": 11.126894176210675,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "8d202ba04ab6c7ad56ca412ea9272b0432974b6ba4bbb6efe05ef5ba5968c19f",
+            "zone_width_basis": {
+              "atr": 0.5244571822030204,
+              "atr_component": 0.15733715466090611,
+              "atr_multiplier": 0.3,
+              "degree": "intermediate",
+              "half_width": 0.15733715466090611,
+              "parameter_validated": false,
+              "price_component": 0.016926346996307372,
+              "price_fraction_floor": 0.0015
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 2.0,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 10.610001564025879,
+            "distance_to_zone_pct": 20.0049131636621,
+            "price_high": 10.767338718686785,
+            "price_low": 10.452664409364973,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "0ab69230287bdba8b311cd96b0e47d0cd8d5040042e7bb54c08097b773f373fe",
+            "zone_width_basis": {
+              "atr": 0.5244571822030204,
+              "atr_component": 0.15733715466090611,
+              "atr_multiplier": 0.3,
+              "degree": "intermediate",
+              "half_width": 0.15733715466090611,
+              "parameter_validated": false,
+              "price_component": 0.01591500234603882,
+              "price_fraction_floor": 0.0015
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 2.618,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 9.519231941223143,
+            "distance_to_zone_pct": 28.108699342795727,
+            "price_high": 9.67656909588405,
+            "price_low": 9.361894786562237,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "9dc2c0bb954f4cc26b5e4b51fc6c5a67110f612bc071c3bc4dc590704959ce9b",
+            "zone_width_basis": {
+              "atr": 0.5244571822030204,
+              "atr_component": 0.15733715466090611,
+              "atr_multiplier": 0.3,
+              "degree": "intermediate",
+              "half_width": 0.15733715466090611,
+              "parameter_validated": false,
+              "price_component": 0.014278847911834716,
+              "price_fraction_floor": 0.0015
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 3.236,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 8.42846231842041,
+            "distance_to_zone_pct": 36.21248552192934,
+            "price_high": 8.585799473081316,
+            "price_low": 8.271125163759503,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "991d7d938c52e2f0792ba59c4b77baf299487049750b35ade22dfea5c9e2138b",
+            "zone_width_basis": {
+              "atr": 0.5244571822030204,
+              "atr_component": 0.15733715466090611,
+              "atr_multiplier": 0.3,
+              "degree": "intermediate",
+              "half_width": 0.15733715466090611,
+              "parameter_validated": false,
+              "price_component": 0.012642693477630616,
+              "price_fraction_floor": 0.0015
+            }
+          },
           {
             "available_from": "2026-10-30",
             "basis": {
@@ -1815,7 +1984,7 @@
               "level_validated": false
             },
             "center_price": 14.270000457763672,
-            "distance_to_zone_pct": 3.8380256646173105,
+            "distance_to_zone_pct": 4.91806721007073,
             "price_high": 14.418029029028757,
             "price_low": 14.121971886498587,
             "projection_type": "wave1_extension_from_wave2",
@@ -1849,7 +2018,7 @@
               "level_validated": false
             },
             "center_price": 15.43184052848816,
-            "distance_to_zone_pct": 12.38096712149784,
+            "distance_to_zone_pct": 13.549865630811574,
             "price_high": 15.579869099753244,
             "price_low": 15.283811957223074,
             "projection_type": "wave1_extension_from_wave2",
@@ -1883,7 +2052,7 @@
               "level_validated": false
             },
             "center_price": 16.15000057220459,
-            "distance_to_zone_pct": 17.661555530119795,
+            "distance_to_zone_pct": 18.88537857049282,
             "price_high": 16.298029143469673,
             "price_low": 16.001972000939507,
             "projection_type": "wave1_extension_from_wave2",
@@ -1917,7 +2086,7 @@
               "level_validated": false
             },
             "center_price": 17.311840642929077,
-            "distance_to_zone_pct": 26.204496987000326,
+            "distance_to_zone_pct": 27.517176991233665,
             "price_high": 17.45986921419416,
             "price_low": 17.163812071663994,
             "projection_type": "wave1_extension_from_wave2",
@@ -1951,7 +2120,7 @@
               "level_validated": false
             },
             "center_price": 18.473680713653565,
-            "distance_to_zone_pct": 34.74743844388085,
+            "distance_to_zone_pct": 36.148975411974504,
             "price_high": 18.621709284918648,
             "price_low": 18.32565214238848,
             "projection_type": "wave1_extension_from_wave2",
@@ -1985,7 +2154,7 @@
               "level_validated": false
             },
             "center_price": 12.039999008178711,
-            "distance_to_zone_pct": 10.463455151132425,
+            "distance_to_zone_pct": 9.532166370801908,
             "price_high": 12.176970441000803,
             "price_low": 11.903027575356619,
             "projection_type": "wave1_extension_from_wave2",
@@ -2019,7 +2188,7 @@
               "level_validated": false
             },
             "center_price": 10.732928560256958,
-            "distance_to_zone_pct": 20.074266998628126,
+            "distance_to_zone_pct": 19.242942330812205,
             "price_high": 10.86989999307905,
             "price_low": 10.595957127434867,
             "projection_type": "wave1_extension_from_wave2",
@@ -2053,7 +2222,7 @@
               "level_validated": false
             },
             "center_price": 9.92499828338623,
-            "distance_to_zone_pct": 26.014930632517054,
+            "distance_to_zone_pct": 25.245396079556432,
             "price_high": 10.061969716208322,
             "price_low": 9.788026850564139,
             "projection_type": "wave1_extension_from_wave2",
@@ -2087,7 +2256,7 @@
               "level_validated": false
             },
             "center_price": 8.617927835464478,
-            "distance_to_zone_pct": 35.625742480012754,
+            "distance_to_zone_pct": 34.95617203956673,
             "price_high": 8.75489926828657,
             "price_low": 8.480956402642386,
             "projection_type": "wave1_extension_from_wave2",
@@ -2121,7 +2290,7 @@
               "level_validated": false
             },
             "center_price": 7.3108573875427245,
-            "distance_to_zone_pct": 45.236554327508465,
+            "distance_to_zone_pct": 44.66694799957703,
             "price_high": 7.4478288203648155,
             "price_low": 7.1738859547206335,
             "projection_type": "wave1_extension_from_wave2",
@@ -2157,7 +2326,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.625999450683594,
-            "distance_to_zone_pct": 6.154628488867621,
+            "distance_to_zone_pct": 5.178522679538167,
             "price_high": 12.762970883505686,
             "price_low": 12.489028017861502,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -2193,7 +2362,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.4709494972229,
-            "distance_to_zone_pct": 7.294701644100412,
+            "distance_to_zone_pct": 6.330453979844755,
             "price_high": 12.607920930044992,
             "price_low": 12.333978064400808,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -2229,7 +2398,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.625999450683594,
-            "distance_to_zone_pct": 6.154628488867621,
+            "distance_to_zone_pct": 5.178522679538167,
             "price_high": 12.762970883505686,
             "price_low": 12.489028017861502,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -2265,7 +2434,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.4709494972229,
-            "distance_to_zone_pct": 7.294701644100412,
+            "distance_to_zone_pct": 6.330453979844755,
             "price_high": 12.607920930044992,
             "price_low": 12.333978064400808,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -2298,7 +2467,7 @@
               "level_validated": false
             },
             "center_price": 12.583789724349975,
-            "distance_to_zone_pct": 6.50296653009958,
+            "distance_to_zone_pct": 5.530483859345657,
             "price_high": 12.715596908569335,
             "price_low": 12.451982540130615,
             "projection_type": "wave3_retracement",
@@ -2331,7 +2500,7 @@
               "level_validated": false
             },
             "center_price": 12.774139789581298,
-            "distance_to_zone_pct": 5.103333736774965,
+            "distance_to_zone_pct": 4.116293185557752,
             "price_high": 12.905946973800658,
             "price_low": 12.642332605361938,
             "projection_type": "wave3_retracement",
@@ -2364,7 +2533,7 @@
               "level_validated": false
             },
             "center_price": 13.082929895401001,
-            "distance_to_zone_pct": 2.832818316492801,
+            "distance_to_zone_pct": 1.8221616480795824,
             "price_high": 13.214737079620361,
             "price_low": 12.951122711181641,
             "projection_type": "wave3_retracement",
@@ -2397,13 +2566,13 @@
               "level_validated": false
             },
             "center_price": 13.332499980926514,
-            "distance_to_zone_pct": 0.9977442096894176,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.464307165145874,
             "price_low": 13.200692796707154,
             "projection_type": "wave3_retracement",
             "research_only": true,
             "scenario_id": "b130b296878efbaed1b82ff952aa7fefb26b4891689b91fae9dfaadd0f7e651a",
-            "status": "reached",
+            "status": "inside",
             "wave_role": "wave_4",
             "zone_id": "9ad11fd7cca59bb55a74330b8a669abad94fe9d46dea6b9af6043029a92062b0",
             "zone_width_basis": {
@@ -2431,7 +2600,7 @@
               "level_validated": false
             },
             "center_price": 12.861000061035156,
-            "distance_to_zone_pct": 4.260296211234367,
+            "distance_to_zone_pct": 3.264487046148272,
             "price_high": 13.020600080490112,
             "price_low": 12.7014000415802,
             "projection_type": "wave1_extension_from_wave2",
@@ -2465,7 +2634,7 @@
               "level_validated": false
             },
             "center_price": 11.916077886581421,
-            "distance_to_zone_pct": 11.208253181450416,
+            "distance_to_zone_pct": 10.284711204957574,
             "price_high": 12.075677906036377,
             "price_low": 11.756477867126465,
             "projection_type": "wave1_extension_from_wave2",
@@ -2499,7 +2668,7 @@
               "level_validated": false
             },
             "center_price": 11.331999778747559,
-            "distance_to_zone_pct": 15.50294503035419,
+            "distance_to_zone_pct": 14.624073063639056,
             "price_high": 11.491599798202515,
             "price_low": 11.172399759292603,
             "projection_type": "wave1_extension_from_wave2",
@@ -2533,7 +2702,7 @@
               "level_validated": false
             },
             "center_price": 10.387077604293824,
-            "distance_to_zone_pct": 22.450902000570238,
+            "distance_to_zone_pct": 21.64429722244836,
             "price_high": 10.54667762374878,
             "price_low": 10.227477584838867,
             "projection_type": "wave1_extension_from_wave2",
@@ -2567,7 +2736,7 @@
               "level_validated": false
             },
             "center_price": 9.442155429840088,
-            "distance_to_zone_pct": 29.39885897078629,
+            "distance_to_zone_pct": 28.66452138125766,
             "price_high": 9.601755449295045,
             "price_low": 9.282555410385132,
             "projection_type": "wave1_extension_from_wave2",
@@ -2603,7 +2772,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.260000228881836,
-            "distance_to_zone_pct": 1.3264715299474064,
+            "distance_to_zone_pct": 0.30014702597090387,
             "price_high": 13.419600248336792,
             "price_low": 13.10040020942688,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -2639,13 +2808,13 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.40181835746765,
-            "distance_to_zone_pct": 0.28369120194796954,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.561418376922607,
             "price_low": 13.242218338012695,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
             "research_only": true,
             "scenario_id": "e61edaa75fbd682588d549baa2a26cd326d6a501fbc13977ca5527b34fef4a74",
-            "status": "approaching",
+            "status": "inside",
             "wave_role": "wave_5",
             "zone_id": "cc2bc98fdf03853109153de15cf5cc04b3e40cf31fb8dfe642b05419936c2b85",
             "zone_width_basis": {
@@ -2675,7 +2844,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.260000228881836,
-            "distance_to_zone_pct": 1.3264715299474064,
+            "distance_to_zone_pct": 0.30014702597090387,
             "price_high": 13.419600248336792,
             "price_low": 13.10040020942688,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -2711,13 +2880,13 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.40181835746765,
-            "distance_to_zone_pct": 0.28369120194796954,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.561418376922607,
             "price_low": 13.242218338012695,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
             "research_only": true,
             "scenario_id": "074b35aaa87c9e7c06c3479e2b199cd3f3f2a6cfa0e6d3eef9438aeb565caf09",
-            "status": "approaching",
+            "status": "inside",
             "wave_role": "wave_5",
             "zone_id": "c30f457f96aed2b2ca1d896c98554d5aeacecb5130319a48aa860a4d3eaf4991",
             "zone_width_basis": {
@@ -2744,13 +2913,13 @@
               "level_validated": false
             },
             "center_price": 13.69423375892639,
-            "distance_to_zone_pct": 0.0,
+            "distance_to_zone_pct": 0.5049735411047623,
             "price_high": 13.860498040880476,
             "price_low": 13.527969476972306,
             "projection_type": "wave3_retracement",
             "research_only": true,
             "scenario_id": "1bb1427a7f46d9443dfe9d09e2740fe5747326f7b1344c84b2d39b1d060375be",
-            "status": "inside",
+            "status": "approaching",
             "wave_role": "wave_4",
             "zone_id": "ebd851616c8e906a31b415f7d8659b4df9594f09ce9197cd26fa763408164de6",
             "zone_width_basis": {
@@ -2777,7 +2946,7 @@
               "level_validated": false
             },
             "center_price": 13.831843784332275,
-            "distance_to_zone_pct": 0.482199404919254,
+            "distance_to_zone_pct": 1.527336282678935,
             "price_high": 13.99810806628636,
             "price_low": 13.66557950237819,
             "projection_type": "wave3_retracement",
@@ -2810,13 +2979,13 @@
               "level_validated": false
             },
             "center_price": 14.055077825546265,
-            "distance_to_zone_pct": 2.1236261325107546,
+            "distance_to_zone_pct": 3.185835841232596,
             "price_high": 14.22134210750035,
             "price_low": 13.88881354359218,
             "projection_type": "wave3_retracement",
             "research_only": true,
             "scenario_id": "1bb1427a7f46d9443dfe9d09e2740fe5747326f7b1344c84b2d39b1d060375be",
-            "status": "approaching",
+            "status": "projected",
             "wave_role": "wave_4",
             "zone_id": "eece0521daa3cb6f5bca726daf7a14974caec2915208b3f5e0201084f382edf4",
             "zone_width_basis": {
@@ -2843,7 +3012,7 @@
               "level_validated": false
             },
             "center_price": 14.235499858856201,
-            "distance_to_zone_pct": 3.4502586931668917,
+            "distance_to_zone_pct": 4.526266991296506,
             "price_high": 14.401764140810286,
             "price_low": 14.069235576902116,
             "projection_type": "wave3_retracement",
@@ -2877,13 +3046,13 @@
               "level_validated": false
             },
             "center_price": 13.869999885559082,
-            "distance_to_zone_pct": 0.0,
+            "distance_to_zone_pct": 0.7861908040349995,
             "price_high": 14.174178450448172,
             "price_low": 13.565821320669992,
             "projection_type": "wave1_extension_from_wave2",
             "research_only": true,
             "scenario_id": "19b5ef8154172fd95ad184c5b35b9d75d6f55b92074a2ff3b93d0404dcc6c292",
-            "status": "inside",
+            "status": "reached",
             "wave_role": "wave_3",
             "zone_id": "a31da0f1c8a7b9a6d8f6670ef83de5e6a860ae4c87b093a59dff36ef44ea1075",
             "zone_width_basis": {
@@ -2911,13 +3080,13 @@
               "level_validated": false
             },
             "center_price": 13.171659814834594,
-            "distance_to_zone_pct": 0.9129558695837602,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.475838379723685,
             "price_low": 12.867481249945504,
             "projection_type": "wave1_extension_from_wave2",
             "research_only": true,
             "scenario_id": "19b5ef8154172fd95ad184c5b35b9d75d6f55b92074a2ff3b93d0404dcc6c292",
-            "status": "approaching",
+            "status": "inside",
             "wave_role": "wave_3",
             "zone_id": "28efb0991e57403aef4e283622fd97f415e42420f67677ec42a07f28273dcb15",
             "zone_width_basis": {
@@ -2945,7 +3114,7 @@
               "level_validated": false
             },
             "center_price": 12.739999771118164,
-            "distance_to_zone_pct": 4.086926690235912,
+            "distance_to_zone_pct": 3.089314271628813,
             "price_high": 13.044178336007255,
             "price_low": 12.435821206229074,
             "projection_type": "wave1_extension_from_wave2",
@@ -2979,7 +3148,7 @@
               "level_validated": false
             },
             "center_price": 12.041659700393677,
-            "distance_to_zone_pct": 9.221780007416623,
+            "distance_to_zone_pct": 8.277576297968507,
             "price_high": 12.345838265282767,
             "price_low": 11.737481135504586,
             "projection_type": "wave1_extension_from_wave2",
@@ -3013,7 +3182,7 @@
               "level_validated": false
             },
             "center_price": 11.343319629669189,
-            "distance_to_zone_pct": 14.356633324597333,
+            "distance_to_zone_pct": 13.465838324308198,
             "price_high": 11.64749819455828,
             "price_low": 11.039141064780098,
             "projection_type": "wave1_extension_from_wave2",
@@ -3047,7 +3216,7 @@
               "level_validated": false
             },
             "center_price": 15.169999122619629,
-            "distance_to_zone_pct": 9.119843329345862,
+            "distance_to_zone_pct": 10.254822191614624,
             "price_high": 15.499699136189053,
             "price_low": 14.840299109050205,
             "projection_type": "wave1_extension_from_wave2",
@@ -3081,7 +3250,7 @@
               "level_validated": false
             },
             "center_price": 15.93013883972168,
-            "distance_to_zone_pct": 14.709105798321648,
+            "distance_to_zone_pct": 15.902219776664698,
             "price_high": 16.259838853291104,
             "price_low": 15.600438826152256,
             "projection_type": "wave1_extension_from_wave2",
@@ -3115,7 +3284,7 @@
               "level_validated": false
             },
             "center_price": 16.399998664855957,
-            "distance_to_zone_pct": 18.16395735681478,
+            "distance_to_zone_pct": 19.39300598619404,
             "price_high": 16.72969867842538,
             "price_low": 16.070298651286535,
             "projection_type": "wave1_extension_from_wave2",
@@ -3149,7 +3318,7 @@
               "level_validated": false
             },
             "center_price": 17.160138381958006,
-            "distance_to_zone_pct": 23.753219825790552,
+            "distance_to_zone_pct": 25.040403571244102,
             "price_high": 17.48983839552743,
             "price_low": 16.830438368388585,
             "projection_type": "wave1_extension_from_wave2",
@@ -3183,7 +3352,7 @@
               "level_validated": false
             },
             "center_price": 17.92027809906006,
-            "distance_to_zone_pct": 29.342482294766352,
+            "distance_to_zone_pct": 30.68780115629419,
             "price_high": 18.24997811262948,
             "price_low": 17.590578085490638,
             "projection_type": "wave1_extension_from_wave2",
@@ -3217,7 +3386,7 @@
               "level_validated": false
             },
             "center_price": 7.920000076293945,
-            "distance_to_zone_pct": 39.34847787472642,
+            "distance_to_zone_pct": 38.71762840247376,
             "price_high": 8.248607240404402,
             "price_low": 7.5913929121834895,
             "projection_type": "wave1_extension_from_wave2",
@@ -3251,7 +3420,7 @@
               "level_validated": false
             },
             "center_price": 3.501300312042236,
-            "distance_to_zone_pct": 71.83891640642145,
+            "distance_to_zone_pct": 71.54600694429156,
             "price_high": 3.8299074761526923,
             "price_low": 3.17269314793178,
             "projection_type": "wave1_extension_from_wave2",
@@ -3285,7 +3454,7 @@
               "level_validated": false
             },
             "center_price": 0.7700004577636719,
-            "distance_to_zone_pct": 91.92200300691901,
+            "distance_to_zone_pct": 91.83798203001066,
             "price_high": 1.098607621874128,
             "price_low": 0.4413932936532157,
             "projection_type": "wave1_extension_from_wave2",
@@ -3321,7 +3490,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.5,
-            "distance_to_zone_pct": 26.078409978125805,
+            "distance_to_zone_pct": 27.389778524373934,
             "price_high": 17.853335762023924,
             "price_low": 17.146664237976076,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -3357,7 +3526,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 16.14205038833618,
-            "distance_to_zone_pct": 16.093486643020206,
+            "distance_to_zone_pct": 17.300999863042154,
             "price_high": 16.495386150360105,
             "price_low": 15.788714626312254,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -3393,7 +3562,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.5,
-            "distance_to_zone_pct": 26.078409978125805,
+            "distance_to_zone_pct": 27.389778524373934,
             "price_high": 17.853335762023924,
             "price_low": 17.146664237976076,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -3429,7 +3598,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 16.14205038833618,
-            "distance_to_zone_pct": 16.093486643020206,
+            "distance_to_zone_pct": 17.300999863042154,
             "price_high": 16.495386150360105,
             "price_low": 15.788714626312254,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -3462,7 +3631,7 @@
               "level_validated": false
             },
             "center_price": 20.660039737701418,
-            "distance_to_zone_pct": 50.104962370036105,
+            "distance_to_zone_pct": 51.666236233832265,
             "price_high": 20.905804020472935,
             "price_low": 20.4142754549299,
             "projection_type": "wave3_retracement",
@@ -3495,7 +3664,7 @@
               "level_validated": false
             },
             "center_price": 20.45663971710205,
-            "distance_to_zone_pct": 48.609374025226174,
+            "distance_to_zone_pct": 50.15509195431583,
             "price_high": 20.702403999873567,
             "price_low": 20.210875434330532,
             "projection_type": "wave3_retracement",
@@ -3528,7 +3697,7 @@
               "level_validated": false
             },
             "center_price": 20.126679683685303,
-            "distance_to_zone_pct": 46.18319737697899,
+            "distance_to_zone_pct": 47.70368012310032,
             "price_high": 20.37244396645682,
             "price_low": 19.880915400913786,
             "projection_type": "wave3_retracement",
@@ -3561,7 +3730,7 @@
               "level_validated": false
             },
             "center_price": 19.859999656677246,
-            "distance_to_zone_pct": 44.222314880450426,
+            "distance_to_zone_pct": 45.72240206773435,
             "price_high": 20.105763939448764,
             "price_low": 19.61423537390573,
             "projection_type": "wave3_retracement",
@@ -3595,7 +3764,7 @@
               "level_validated": false
             },
             "center_price": 22.389999389648438,
-            "distance_to_zone_pct": 62.91270109629869,
+            "distance_to_zone_pct": 64.6071909938083,
             "price_high": 22.623870808737617,
             "price_low": 22.156127970559258,
             "projection_type": "wave1_extension_from_wave2",
@@ -3629,7 +3798,7 @@
               "level_validated": false
             },
             "center_price": 24.651879295349122,
-            "distance_to_zone_pct": 79.54417052465651,
+            "distance_to_zone_pct": 81.41164789789666,
             "price_high": 24.885750714438302,
             "price_low": 24.418007876259942,
             "projection_type": "wave1_extension_from_wave2",
@@ -3663,7 +3832,7 @@
               "level_validated": false
             },
             "center_price": 26.049999237060547,
-            "distance_to_zone_pct": 89.82446392535664,
+            "distance_to_zone_pct": 91.79886883213896,
             "price_high": 26.283870656149727,
             "price_low": 25.816127817971367,
             "projection_type": "wave1_extension_from_wave2",
@@ -3697,7 +3866,7 @@
               "level_validated": false
             },
             "center_price": 28.311879142761228,
-            "distance_to_zone_pct": 106.45593335371444,
+            "distance_to_zone_pct": 108.6033257362273,
             "price_high": 28.545750561850408,
             "price_low": 28.078007723672048,
             "projection_type": "wave1_extension_from_wave2",
@@ -3731,7 +3900,7 @@
               "level_validated": false
             },
             "center_price": 30.573759048461916,
-            "distance_to_zone_pct": 123.08740278207229,
+            "distance_to_zone_pct": 125.40778264031567,
             "price_high": 30.807630467551096,
             "price_low": 30.339887629372736,
             "projection_type": "wave1_extension_from_wave2",
@@ -3767,7 +3936,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.125,
-            "distance_to_zone_pct": 23.90782255142773,
+            "distance_to_zone_pct": 25.19661435294417,
             "price_high": 17.398535660334996,
             "price_low": 16.851464339665004,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -3803,7 +3972,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.943148765563965,
-            "distance_to_zone_pct": 29.923622129482958,
+            "distance_to_zone_pct": 31.27498555090294,
             "price_high": 18.21668442589896,
             "price_low": 17.66961310522897,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -3839,7 +4008,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.125,
-            "distance_to_zone_pct": 23.90782255142773,
+            "distance_to_zone_pct": 25.19661435294417,
             "price_high": 17.398535660334996,
             "price_low": 16.851464339665004,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -3875,7 +4044,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.943148765563965,
-            "distance_to_zone_pct": 29.923622129482958,
+            "distance_to_zone_pct": 31.27498555090294,
             "price_high": 18.21668442589896,
             "price_low": 17.66961310522897,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -3908,7 +4077,7 @@
               "level_validated": false
             },
             "center_price": 17.77818957901001,
-            "distance_to_zone_pct": 28.694772829074193,
+            "distance_to_zone_pct": 30.03335472571991,
             "price_high": 18.053889562334334,
             "price_low": 17.502489595685688,
             "projection_type": "wave3_retracement",
@@ -3941,7 +4110,7 @@
               "level_validated": false
             },
             "center_price": 18.094539695739748,
-            "distance_to_zone_pct": 31.020876563312097,
+            "distance_to_zone_pct": 32.38365276311344,
             "price_high": 18.37023967906407,
             "price_low": 17.818839712415425,
             "projection_type": "wave3_retracement",
@@ -3974,7 +4143,7 @@
               "level_validated": false
             },
             "center_price": 18.607729885101318,
-            "distance_to_zone_pct": 34.7943337321869,
+            "distance_to_zone_pct": 36.19635846821848,
             "price_high": 18.88342986842564,
             "price_low": 18.332029901776995,
             "projection_type": "wave3_retracement",
@@ -4007,7 +4176,7 @@
               "level_validated": false
             },
             "center_price": 19.022500038146973,
-            "distance_to_zone_pct": 37.844114183743265,
+            "distance_to_zone_pct": 39.27786033946777,
             "price_high": 19.298200021471295,
             "price_low": 18.74680005482265,
             "projection_type": "wave3_retracement",
@@ -4041,7 +4210,7 @@
               "level_validated": false
             },
             "center_price": 16.98000144958496,
-            "distance_to_zone_pct": 22.524009601736996,
+            "distance_to_zone_pct": 23.798408068372147,
             "price_high": 17.296737125941686,
             "price_low": 16.663265773228236,
             "projection_type": "wave1_extension_from_wave2",
@@ -4075,7 +4244,7 @@
               "level_validated": false
             },
             "center_price": 14.631601921081543,
-            "distance_to_zone_pct": 5.256366494144449,
+            "distance_to_zone_pct": 6.351160506352677,
             "price_high": 14.948337597438268,
             "price_low": 14.314866244724819,
             "projection_type": "wave1_extension_from_wave2",
@@ -4109,13 +4278,13 @@
               "level_validated": false
             },
             "center_price": 13.180002212524414,
-            "distance_to_zone_pct": 0.7592830124423002,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.496737888881139,
             "price_low": 12.86326653616769,
             "projection_type": "wave1_extension_from_wave2",
             "research_only": true,
             "scenario_id": "31fd8f8cae33c8df8a5db1fedc4cfdcdc7b620c66da00beb8b44763f41ff2420",
-            "status": "approaching",
+            "status": "inside",
             "wave_role": "wave_3",
             "zone_id": "da29fe2038fc17592a3c7f605ee706595e668e6c81dd18867a1cd9f96bacdda6",
             "zone_width_basis": {
@@ -4143,7 +4312,7 @@
               "level_validated": false
             },
             "center_price": 10.831602684020996,
-            "distance_to_zone_pct": 18.026926120034847,
+            "distance_to_zone_pct": 17.1743066212316,
             "price_high": 11.148338360377721,
             "price_low": 10.514867007664272,
             "projection_type": "wave1_extension_from_wave2",
@@ -4177,7 +4346,7 @@
               "level_validated": false
             },
             "center_price": 8.483203155517577,
-            "distance_to_zone_pct": 35.29456922762741,
+            "distance_to_zone_pct": 34.621554183251085,
             "price_high": 8.799938831874302,
             "price_low": 8.166467479160852,
             "projection_type": "wave1_extension_from_wave2",
@@ -4194,248 +4363,6 @@
               "half_width": 0.31673567635672434,
               "parameter_validated": false,
               "price_component": 0.012724804733276366,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 1.0,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 23.100000381469727,
-            "distance_to_zone_pct": 67.19910519305904,
-            "price_high": 23.460921818869455,
-            "price_low": 22.73907894407,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "status": "projected",
-            "wave_role": "wave_3",
-            "zone_id": "832de631c0c53b79ddb0b01ed3430cf8bf78b0a22c9bad2899c945211878e507",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.03465000057220459,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 1.618,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 26.07258005142212,
-            "distance_to_zone_pct": 89.0563080355133,
-            "price_high": 26.433501488821847,
-            "price_low": 25.71165861402239,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "status": "projected",
-            "wave_role": "wave_3",
-            "zone_id": "58e6d9dd355e2fa661b233f7048a106b11ae2bf80dc8a0018ead226c9419904e",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.03910887007713318,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 2.0,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 27.90999984741211,
-            "distance_to_zone_pct": 102.56674733295267,
-            "price_high": 28.270921284811838,
-            "price_low": 27.54907841001238,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "status": "projected",
-            "wave_role": "wave_3",
-            "zone_id": "cc677982457de4b2cf78457cfd2b646636569d629a69bbac0a5a89aa9ae2f777",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.04186499977111816,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 2.618,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 30.8825795173645,
-            "distance_to_zone_pct": 124.42395017540694,
-            "price_high": 31.24350095476423,
-            "price_low": 30.521658079964773,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "status": "projected",
-            "wave_role": "wave_3",
-            "zone_id": "edbf2553181a1b8b8f6f6ea710a998b6dd47bb4ca369ed1dd7ad4783229e138f",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.04632386927604675,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 3.236,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 33.85515918731689,
-            "distance_to_zone_pct": 146.28115301786121,
-            "price_high": 34.21608062471662,
-            "price_low": 33.49423774991717,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "status": "projected",
-            "wave_role": "wave_3",
-            "zone_id": "19b7ba06165502eaf2fabfd5c7168970390be71ff4bfb6662c853252b3251d5f",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.05078273878097534,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_3",
-                "wave_4"
-              ],
-              "length_source": "wave_1",
-              "level": 1.0,
-              "level_source": "elliottwaver_live_kompendium_verified_2026-09-25",
-              "level_validated": false,
-              "numeric_level_frozen": false
-            },
-            "center_price": 22.010000228881836,
-            "distance_to_zone_pct": 59.18439841354278,
-            "price_high": 22.370921666281564,
-            "price_low": 21.649078791482108,
-            "projection_type": "wave_1_length_relative_to_wave_4",
-            "research_only": true,
-            "scenario_id": "e343653ff942798aaa70fcdc7569e207c95f5bb4d88ff1032965233deec96897",
-            "status": "projected",
-            "wave_role": "wave_5",
-            "zone_id": "571bea3d3a8b7e490313aa15ff56e09b926ed791192fff656b592ab040b88fd3",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.033015000343322755,
-              "price_fraction_floor": 0.0015
-            }
-          },
-          {
-            "available_from": "2026-07-13",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_3",
-                "wave_4"
-              ],
-              "length_source": "origin_to_wave_3",
-              "level": 0.618,
-              "level_source": "elliottwaver_live_kompendium_verified_2026-09-25",
-              "level_validated": false,
-              "numeric_level_frozen": false
-            },
-            "center_price": 22.35026072692871,
-            "distance_to_zone_pct": 61.686313770181194,
-            "price_high": 22.711182164328438,
-            "price_low": 21.98933928952898,
-            "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
-            "research_only": true,
-            "scenario_id": "e343653ff942798aaa70fcdc7569e207c95f5bb4d88ff1032965233deec96897",
-            "status": "projected",
-            "wave_role": "wave_5",
-            "zone_id": "11b4a2ca76d192e6bd4981f5c838dc8f78f031869b259feb3dfaf10ae1948ed8",
-            "zone_width_basis": {
-              "atr": 1.203071457999093,
-              "atr_component": 0.36092143739972793,
-              "atr_multiplier": 0.3,
-              "degree": "intermediate",
-              "half_width": 0.36092143739972793,
-              "parameter_validated": false,
-              "price_component": 0.03352539109039306,
               "price_fraction_floor": 0.0015
             }
           }
@@ -4465,10 +4392,22 @@
           "EW_DEEP_SCAN_500",
           "EW_W5_TARGET_APPROACH",
           "EW_W3_TARGET_APPROACH",
-          "EW_W2_CORE",
-          "EW_W2_DEEP"
+          "EW_W2_CORE"
         ],
         "swing_routing": [
+          {
+            "actionability": "review_only_not_trade_instruction",
+            "available_from": "2026-11-09",
+            "final_decision_owned_by_global_layer": true,
+            "reason": "W2 retracement reached the 88.7% danger zone; review structural risk without treating 88.7% as hard invalidation.",
+            "requires_external_confirmation": true,
+            "research_only": true,
+            "review_context": "hold_review",
+            "scenario_id": "8f49f4b4453cf75179d767ab8505ba6ea7a20968e18eb7391ab16c5e84cb554f",
+            "scenario_role": "alternative_1",
+            "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
+            "trigger": "EW_W2_DANGER"
+          },
           {
             "actionability": "review_only_not_trade_instruction",
             "available_from": "2026-10-30",
@@ -4478,7 +4417,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "4b60571d72af5238da3d3ebbe48f8d3e64741f313ec7800733116d369cd9a19e",
-            "scenario_role": "alternative_1",
+            "scenario_role": "alternative_3",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -4491,7 +4430,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "0a3411e6155b4868c670bddfdfc8a8e35486b5a83a27139a629216c4958dc2fb",
-            "scenario_role": "alternative_2",
+            "scenario_role": "alternative_4",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4504,7 +4443,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "bb743ae2f95452e04b881c415d6cf791e9627e088b814bbd81b85968b20a1e5b",
-            "scenario_role": "alternative_3",
+            "scenario_role": "alternative_5",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4517,7 +4456,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "a7e3404da3017abb79ba8e2f6172a2a59dc5a0c3466e676d753d47717561a9e1",
-            "scenario_role": "alternative_5",
+            "scenario_role": "alternative_7",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -4530,7 +4469,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "733ff3d1d0763bd296c8d9299ca84d1588957d919bb7f9bdba48fac7d052207b",
-            "scenario_role": "alternative_6",
+            "scenario_role": "alternative_8",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -4543,7 +4482,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "5fc54ac6cc15c17947086ad4c032c3e37e92ae50791860ab1e01aacfd0a40db2",
-            "scenario_role": "alternative_7",
+            "scenario_role": "alternative_9",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -4556,20 +4495,20 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "b130b296878efbaed1b82ff952aa7fefb26b4891689b91fae9dfaadd0f7e651a",
-            "scenario_role": "alternative_8",
+            "scenario_role": "alternative_10",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "b130b296878efbaed1b82ff952aa7fefb26b4891689b91fae9dfaadd0f7e651a",
-            "scenario_role": "alternative_8",
+            "scenario_role": "alternative_10",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W4_TARGET_ZONE"
           },
@@ -4582,7 +4521,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "a28cca2c702054c95fed3a21e86aa68a3d349eee07cd8d70de810406ab95be9a",
-            "scenario_role": "alternative_11",
+            "scenario_role": "alternative_13",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4595,7 +4534,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "884d5180a12dfdf9ab659b36e82873fc9f6c659dc792561142ee45d879e8372a",
-            "scenario_role": "alternative_12",
+            "scenario_role": "alternative_14",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4608,7 +4547,7 @@
             "research_only": true,
             "review_context": "entry_or_add_review",
             "scenario_id": "3028d051b950ecdb37c89358d005124f84f4e24792962ec4ae98bfc83b38083c",
-            "scenario_role": "alternative_14",
+            "scenario_role": "alternative_16",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_DEEP_SCAN_500"
           },
@@ -4621,20 +4560,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "e61edaa75fbd682588d549baa2a26cd326d6a501fbc13977ca5527b34fef4a74",
-            "scenario_role": "alternative_15",
+            "scenario_role": "alternative_17",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "e61edaa75fbd682588d549baa2a26cd326d6a501fbc13977ca5527b34fef4a74",
-            "scenario_role": "alternative_15",
+            "scenario_role": "alternative_17",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -4647,20 +4586,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "074b35aaa87c9e7c06c3479e2b199cd3f3f2a6cfa0e6d3eef9438aeb565caf09",
-            "scenario_role": "alternative_16",
+            "scenario_role": "alternative_18",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "074b35aaa87c9e7c06c3479e2b199cd3f3f2a6cfa0e6d3eef9438aeb565caf09",
-            "scenario_role": "alternative_16",
+            "scenario_role": "alternative_18",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -4673,20 +4612,20 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "1bb1427a7f46d9443dfe9d09e2740fe5747326f7b1344c84b2d39b1d060375be",
-            "scenario_role": "alternative_17",
+            "scenario_role": "alternative_19",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "1bb1427a7f46d9443dfe9d09e2740fe5747326f7b1344c84b2d39b1d060375be",
-            "scenario_role": "alternative_17",
+            "scenario_role": "alternative_19",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W4_TARGET_ZONE"
           },
@@ -4699,20 +4638,20 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "19b5ef8154172fd95ad184c5b35b9d75d6f55b92074a2ff3b93d0404dcc6c292",
-            "scenario_role": "alternative_21",
+            "scenario_role": "alternative_23",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "19b5ef8154172fd95ad184c5b35b9d75d6f55b92074a2ff3b93d0404dcc6c292",
-            "scenario_role": "alternative_21",
+            "scenario_role": "alternative_23",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W3_TARGET_APPROACH"
           },
@@ -4725,7 +4664,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "629bc1d2b1030615dce2e848ff17ba9759351a618c37decce38ca8fb6695cf07",
-            "scenario_role": "alternative_23",
+            "scenario_role": "alternative_25",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -4738,7 +4677,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "9cefa0b1266e05920e3c9c8e1aca889684309ab48b51e55794b9b40056fc70d4",
-            "scenario_role": "alternative_26",
+            "scenario_role": "alternative_28",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4751,7 +4690,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "af1f7f5f65bbf72fe4395be2214b4332dae2e51bbbe641e6e8878188f3e6f853",
-            "scenario_role": "alternative_27",
+            "scenario_role": "alternative_29",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4764,7 +4703,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "eae94da8f3e10c4ddeabba8a28a065830f0d6bd90a7ed35948233797f56938b8",
-            "scenario_role": "alternative_29",
+            "scenario_role": "alternative_31",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -4777,7 +4716,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "3ddb7806acd3b467b5a4f915ea8565e9e7c8beb8ab03c2589e3b7b58fd3d94cd",
-            "scenario_role": "alternative_30",
+            "scenario_role": "alternative_32",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -4790,20 +4729,20 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "9ff6479bcaabb6fdca19bea1134c5e1bea04e4524a6b50f1bf28e18b3fa06abb",
-            "scenario_role": "alternative_31",
+            "scenario_role": "alternative_33",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "9ff6479bcaabb6fdca19bea1134c5e1bea04e4524a6b50f1bf28e18b3fa06abb",
-            "scenario_role": "alternative_31",
+            "scenario_role": "alternative_33",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W4_TARGET_ZONE"
           },
@@ -4816,7 +4755,7 @@
             "research_only": true,
             "review_context": "entry_or_add_review",
             "scenario_id": "113e50bf17ea66a8897c86ba77baadc06741d2e78ea1e9c3a4bcdb93f511c4db",
-            "scenario_role": "alternative_35",
+            "scenario_role": "alternative_37",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_DEEP_SCAN_500"
           },
@@ -4829,7 +4768,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "eab668b16786e49210bf99140d0742934d74728806ffc1a3cc3fb2d082ac9a8b",
-            "scenario_role": "alternative_36",
+            "scenario_role": "alternative_38",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4842,7 +4781,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "f8e4ace71a21d04a60a4525a8b0f665480d2de42734830722d886c7d2b412963",
-            "scenario_role": "alternative_37",
+            "scenario_role": "alternative_39",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4855,20 +4794,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "7e2fb6dde06c7826790b50578424a9faadf4706f8c34846e1f54daca8bfff9f1",
-            "scenario_role": "alternative_39",
+            "scenario_role": "alternative_41",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "7e2fb6dde06c7826790b50578424a9faadf4706f8c34846e1f54daca8bfff9f1",
-            "scenario_role": "alternative_39",
+            "scenario_role": "alternative_41",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -4881,20 +4820,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "7b519d274593ce6e45fedde2356abf0d749c6260269362fb46f1816747ecbfa2",
-            "scenario_role": "alternative_40",
+            "scenario_role": "alternative_42",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "7b519d274593ce6e45fedde2356abf0d749c6260269362fb46f1816747ecbfa2",
-            "scenario_role": "alternative_40",
+            "scenario_role": "alternative_42",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -4907,7 +4846,7 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "0ca9f10eb114c206d455cde136aac2ae559bec17dfd3bd83224b255b8f46c4d5",
-            "scenario_role": "alternative_41",
+            "scenario_role": "alternative_43",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
@@ -4920,20 +4859,20 @@
             "research_only": true,
             "review_context": "entry_or_add_review",
             "scenario_id": "31fd8f8cae33c8df8a5db1fedc4cfdcdc7b620c66da00beb8b44763f41ff2420",
-            "scenario_role": "alternative_45",
+            "scenario_role": "alternative_47",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_CORE"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "31fd8f8cae33c8df8a5db1fedc4cfdcdc7b620c66da00beb8b44763f41ff2420",
-            "scenario_role": "alternative_45",
+            "scenario_role": "alternative_47",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W3_TARGET_APPROACH"
           },
@@ -4946,7 +4885,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "af0f13a832909ed857d3a108d56a32503959453c653389ce23339773f6aae6b7",
-            "scenario_role": "alternative_46",
+            "scenario_role": "alternative_48",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -4959,35 +4898,9 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "d2d262c9fb76834d2b169e9d37eb22b4b4635834bc17fd327e2a54e89b6a4199",
-            "scenario_role": "alternative_47",
+            "scenario_role": "alternative_49",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
-          },
-          {
-            "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-07-13",
-            "final_decision_owned_by_global_layer": true,
-            "reason": "W2 retracement reached the 78.6% deep research zone; review structure and risk before any entry/add decision.",
-            "requires_external_confirmation": true,
-            "research_only": true,
-            "review_context": "entry_or_add_review",
-            "scenario_id": "b0c995fae6ab5bf68de3ef178dfde442d6b335643cffbd047ba37b9151c272ed",
-            "scenario_role": "alternative_49",
-            "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
-            "trigger": "EW_W2_DEEP"
-          },
-          {
-            "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-07-13",
-            "final_decision_owned_by_global_layer": true,
-            "reason": "A causal W4 endpoint is structurally confirmed; review reentry/add conditions before W5.",
-            "requires_external_confirmation": true,
-            "research_only": true,
-            "review_context": "reentry_or_add_review",
-            "scenario_id": "e343653ff942798aaa70fcdc7569e207c95f5bb4d88ff1032965233deec96897",
-            "scenario_role": "alternative_50",
-            "source": "6b_confirmed_wave4_endpoint",
-            "trigger": "EW_W4_COMPLETION"
           }
         ],
         "timeframe": "daily",
@@ -6794,7 +6707,7 @@
           "rules_frozen_through": "2026-09-25",
           "status": "prospective_evidence_accumulating_no_automatic_promotion"
         },
-        "output_id": "4664ae5aabfcf5847f48d252e81de9738cb3269f58e927ebb82978789bc05f24",
+        "output_id": "55c1b72d7d0eed1685119f112229718d8cee3f801e086e48a96b2ca26a1bff18",
         "primary_scenario": {
           "available_from": "2026-11-03",
           "direction": "down",
@@ -6818,7 +6731,7 @@
               "level_validated": false
             },
             "center_price": 14.270000457763672,
-            "distance_to_zone_pct": 3.387868239238173,
+            "distance_to_zone_pct": 4.463227600893394,
             "price_high": 14.479250440597534,
             "price_low": 14.06075047492981,
             "projection_type": "wave1_extension_from_wave2",
@@ -6852,7 +6765,7 @@
               "level_validated": false
             },
             "center_price": 15.43184052848816,
-            "distance_to_zone_pct": 11.930809696118702,
+            "distance_to_zone_pct": 13.095026021634238,
             "price_high": 15.641090511322021,
             "price_low": 15.222590545654297,
             "projection_type": "wave1_extension_from_wave2",
@@ -6886,7 +6799,7 @@
               "level_validated": false
             },
             "center_price": 16.15000057220459,
-            "distance_to_zone_pct": 17.211398104740645,
+            "distance_to_zone_pct": 18.43053896131547,
             "price_high": 16.359250555038454,
             "price_low": 15.940750589370728,
             "projection_type": "wave1_extension_from_wave2",
@@ -6920,7 +6833,7 @@
               "level_validated": false
             },
             "center_price": 17.311840642929077,
-            "distance_to_zone_pct": 25.754339561621162,
+            "distance_to_zone_pct": 27.062337382056302,
             "price_high": 17.52109062576294,
             "price_low": 17.102590660095213,
             "projection_type": "wave1_extension_from_wave2",
@@ -6954,7 +6867,7 @@
               "level_validated": false
             },
             "center_price": 18.473680713653565,
-            "distance_to_zone_pct": 34.29728101850169,
+            "distance_to_zone_pct": 35.69413580279714,
             "price_high": 18.68293069648743,
             "price_low": 18.2644307308197,
             "projection_type": "wave1_extension_from_wave2",
@@ -6988,7 +6901,7 @@
               "level_validated": false
             },
             "center_price": 5.439999580383301,
-            "distance_to_zone_pct": 58.55421375375036,
+            "distance_to_zone_pct": 58.12312725395008,
             "price_high": 5.636627087593078,
             "price_low": 5.243372073173523,
             "projection_type": "wave1_extension_from_wave2",
@@ -7024,7 +6937,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.190000534057617,
-            "distance_to_zone_pct": 23.456507789204892,
+            "distance_to_zone_pct": 24.740605369214734,
             "price_high": 17.589915537834166,
             "price_low": 16.79008553028107,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -7060,7 +6973,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 18.008149299621582,
-            "distance_to_zone_pct": 29.47230736726012,
+            "distance_to_zone_pct": 30.818976567173507,
             "price_high": 18.40806430339813,
             "price_low": 17.608234295845033,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -7096,7 +7009,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.190000534057617,
-            "distance_to_zone_pct": 23.456507789204892,
+            "distance_to_zone_pct": 24.740605369214734,
             "price_high": 17.589915537834166,
             "price_low": 16.79008553028107,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -7132,7 +7045,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 18.008149299621582,
-            "distance_to_zone_pct": 29.47230736726012,
+            "distance_to_zone_pct": 30.818976567173507,
             "price_high": 18.40806430339813,
             "price_low": 17.608234295845033,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -7165,7 +7078,7 @@
               "level_validated": false
             },
             "center_price": 17.77818957901001,
-            "distance_to_zone_pct": 27.38436836679211,
+            "distance_to_zone_pct": 28.709320465957052,
             "price_high": 18.232104574203493,
             "price_low": 17.32427458381653,
             "projection_type": "wave3_retracement",
@@ -7198,7 +7111,7 @@
               "level_validated": false
             },
             "center_price": 18.094539695739748,
-            "distance_to_zone_pct": 29.710472101030017,
+            "distance_to_zone_pct": 31.059618503350585,
             "price_high": 18.54845469093323,
             "price_low": 17.640624700546265,
             "projection_type": "wave3_retracement",
@@ -7231,7 +7144,7 @@
               "level_validated": false
             },
             "center_price": 18.607729885101318,
-            "distance_to_zone_pct": 33.48392926990482,
+            "distance_to_zone_pct": 34.87232420845562,
             "price_high": 19.0616448802948,
             "price_low": 18.153814889907835,
             "projection_type": "wave3_retracement",
@@ -7264,7 +7177,7 @@
               "level_validated": false
             },
             "center_price": 19.022500038146973,
-            "distance_to_zone_pct": 36.533709721461186,
+            "distance_to_zone_pct": 37.95382607970492,
             "price_high": 19.476415033340455,
             "price_low": 18.56858504295349,
             "projection_type": "wave3_retracement",
@@ -7298,7 +7211,7 @@
               "level_validated": false
             },
             "center_price": 16.98000144958496,
-            "distance_to_zone_pct": 21.31680895113079,
+            "distance_to_zone_pct": 22.578651065235082,
             "price_high": 17.460916419029235,
             "price_low": 16.499086480140686,
             "projection_type": "wave1_extension_from_wave2",
@@ -7332,7 +7245,7 @@
               "level_validated": false
             },
             "center_price": 14.631601921081543,
-            "distance_to_zone_pct": 4.049165843538239,
+            "distance_to_zone_pct": 5.13140350321561,
             "price_high": 15.112516890525818,
             "price_low": 14.150686951637269,
             "projection_type": "wave1_extension_from_wave2",
@@ -7400,7 +7313,7 @@
               "level_validated": false
             },
             "center_price": 10.831602684020996,
-            "distance_to_zone_pct": 16.81972546942864,
+            "distance_to_zone_pct": 15.954549618094532,
             "price_high": 11.312517653465271,
             "price_low": 10.350687714576722,
             "projection_type": "wave1_extension_from_wave2",
@@ -7434,7 +7347,7 @@
               "level_validated": false
             },
             "center_price": 8.483203155517577,
-            "distance_to_zone_pct": 34.0873685770212,
+            "distance_to_zone_pct": 33.401797180114016,
             "price_high": 8.964118124961852,
             "price_low": 8.002288186073303,
             "projection_type": "wave1_extension_from_wave2",
@@ -7468,7 +7381,7 @@
               "level_validated": false
             },
             "center_price": 24.860000610351562,
-            "distance_to_zone_pct": 79.02586368179702,
+            "distance_to_zone_pct": 80.8879500345512,
             "price_high": 25.372483077049257,
             "price_low": 24.34751814365387,
             "projection_type": "wave1_extension_from_wave2",
@@ -7502,7 +7415,7 @@
               "level_validated": false
             },
             "center_price": 28.92026042175293,
-            "distance_to_zone_pct": 108.88071439881283,
+            "distance_to_zone_pct": 111.05332744832674,
             "price_high": 29.432742888450623,
             "price_low": 28.407777955055234,
             "projection_type": "wave1_extension_from_wave2",
@@ -7536,7 +7449,7 @@
               "level_validated": false
             },
             "center_price": 31.43000030517578,
-            "distance_to_zone_pct": 127.33468361224331,
+            "distance_to_zone_pct": 129.69924034810387,
             "price_high": 31.942482771873475,
             "price_low": 30.917517838478087,
             "projection_type": "wave1_extension_from_wave2",
@@ -7570,7 +7483,7 @@
               "level_validated": false
             },
             "center_price": 35.49026011657715,
-            "distance_to_zone_pct": 157.18953432925915,
+            "distance_to_zone_pct": 159.86461776187946,
             "price_high": 36.00274258327484,
             "price_low": 34.97777764987946,
             "projection_type": "wave1_extension_from_wave2",
@@ -7604,7 +7517,7 @@
               "level_validated": false
             },
             "center_price": 39.55051992797851,
-            "distance_to_zone_pct": 187.04438504627495,
+            "distance_to_zone_pct": 190.029995175655,
             "price_high": 40.063002394676204,
             "price_low": 39.03803746128082,
             "projection_type": "wave1_extension_from_wave2",
@@ -7640,7 +7553,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.5600004196167,
-            "distance_to_zone_pct": 69.46703901804085,
+            "distance_to_zone_pct": 71.22970198811336,
             "price_high": 24.072482886314393,
             "price_low": 23.047517952919005,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -7676,7 +7589,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.73458117485046,
-            "distance_to_zone_pct": 70.7507210058122,
+            "distance_to_zone_pct": 72.52673582718455,
             "price_high": 24.247063641548156,
             "price_low": 23.222098708152767,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -7712,7 +7625,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.5600004196167,
-            "distance_to_zone_pct": 69.46703901804085,
+            "distance_to_zone_pct": 71.22970198811336,
             "price_high": 24.072482886314393,
             "price_low": 23.047517952919005,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -7748,7 +7661,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.73458117485046,
-            "distance_to_zone_pct": 70.7507210058122,
+            "distance_to_zone_pct": 72.52673582718455,
             "price_high": 24.247063641548156,
             "price_low": 23.222098708152767,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -7781,7 +7694,7 @@
               "level_validated": false
             },
             "center_price": 21.130780197143554,
-            "distance_to_zone_pct": 51.73499772871248,
+            "distance_to_zone_pct": 53.31322593940285,
             "price_high": 21.62560012435913,
             "price_low": 20.635960269927978,
             "projection_type": "wave3_retracement",
@@ -7814,7 +7727,7 @@
               "level_validated": false
             },
             "center_price": 20.539480224609374,
-            "distance_to_zone_pct": 47.3872039349723,
+            "distance_to_zone_pct": 48.9202098111831,
             "price_high": 21.03430015182495,
             "price_low": 20.044660297393797,
             "projection_type": "wave3_retracement",
@@ -7847,7 +7760,7 @@
               "level_validated": false
             },
             "center_price": 19.580260269165038,
-            "distance_to_zone_pct": 40.33411622512715,
+            "distance_to_zone_pct": 41.79376142540441,
             "price_high": 20.075080196380615,
             "price_low": 19.08544034194946,
             "projection_type": "wave3_retracement",
@@ -7880,7 +7793,7 @@
               "level_validated": false
             },
             "center_price": 18.80500030517578,
-            "distance_to_zone_pct": 34.63367547333449,
+            "distance_to_zone_pct": 36.034029168405205,
             "price_high": 19.299820232391358,
             "price_low": 18.310180377960204,
             "projection_type": "wave3_retracement",
@@ -7916,7 +7829,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.380001068115234,
-            "distance_to_zone_pct": 24.157725508557323,
+            "distance_to_zone_pct": 25.449116604256254,
             "price_high": 17.874550993442536,
             "price_low": 16.885451142787932,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -7952,7 +7865,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 18.801580127716065,
-            "distance_to_zone_pct": 34.61051241831183,
+            "distance_to_zone_pct": 36.010625189486085,
             "price_high": 19.296130053043367,
             "price_low": 18.307030202388763,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -7986,7 +7899,7 @@
               "level_validated": false
             },
             "center_price": 20.789999961853027,
-            "distance_to_zone_pct": 49.23124608274779,
+            "distance_to_zone_pct": 50.7834322363032,
             "price_high": 21.28454988718033,
             "price_low": 20.295450036525725,
             "projection_type": "wave1_extension_from_wave2",
@@ -8020,7 +7933,7 @@
               "level_validated": false
             },
             "center_price": 24.04685965538025,
-            "distance_to_zone_pct": 73.17874315756227,
+            "distance_to_zone_pct": 74.98001235738016,
             "price_high": 24.54140958070755,
             "price_low": 23.552309730052947,
             "projection_type": "wave1_extension_from_wave2",
@@ -8054,7 +7967,7 @@
               "level_validated": false
             },
             "center_price": 26.059999465942383,
-            "distance_to_zone_pct": 87.9812413494379,
+            "distance_to_zone_pct": 89.93647450341803,
             "price_high": 26.554549391269685,
             "price_low": 25.56544954061508,
             "projection_type": "wave1_extension_from_wave2",
@@ -8088,7 +8001,7 @@
               "level_validated": false
             },
             "center_price": 29.316859159469605,
-            "distance_to_zone_pct": 111.92873842425239,
+            "distance_to_zone_pct": 114.13305462449499,
             "price_high": 29.811409084796907,
             "price_low": 28.822309234142303,
             "projection_type": "wave1_extension_from_wave2",
@@ -8122,7 +8035,7 @@
               "level_validated": false
             },
             "center_price": 32.57371885299683,
-            "distance_to_zone_pct": 135.8762354990669,
+            "distance_to_zone_pct": 138.32963474557198,
             "price_high": 33.068268778324125,
             "price_low": 32.07916892766953,
             "projection_type": "wave1_extension_from_wave2",
@@ -8155,7 +8068,7 @@
               "level_validated": false
             },
             "center_price": 17.7805793094635,
-            "distance_to_zone_pct": 27.508814737830026,
+            "distance_to_zone_pct": 28.83506123035464,
             "price_high": 18.219959328174593,
             "price_low": 17.34119929075241,
             "projection_type": "wave3_retracement",
@@ -8188,7 +8101,7 @@
               "level_validated": false
             },
             "center_price": 17.30627935409546,
-            "distance_to_zone_pct": 24.02131516382791,
+            "distance_to_zone_pct": 25.311287426314305,
             "price_high": 17.74565937280655,
             "price_low": 16.866899335384367,
             "projection_type": "wave3_retracement",
@@ -8221,7 +8134,7 @@
               "level_validated": false
             },
             "center_price": 16.536859426498413,
-            "distance_to_zone_pct": 18.363815854891154,
+            "distance_to_zone_pct": 19.59494325531554,
             "price_high": 16.976239445209504,
             "price_low": 16.097479407787322,
             "projection_type": "wave3_retracement",
@@ -8254,7 +8167,7 @@
               "level_validated": false
             },
             "center_price": 15.91499948501587,
-            "distance_to_zone_pct": 13.791316413421736,
+            "distance_to_zone_pct": 14.974884267796003,
             "price_high": 16.35437950372696,
             "price_low": 15.47561946630478,
             "projection_type": "wave3_retracement",
@@ -8288,7 +8201,7 @@
               "level_validated": false
             },
             "center_price": 15.140000343322754,
-            "distance_to_zone_pct": 9.019760306589461,
+            "distance_to_zone_pct": 10.153698183902282,
             "price_high": 15.45331286907196,
             "price_low": 14.826687817573548,
             "projection_type": "wave1_extension_from_wave2",
@@ -8322,7 +8235,7 @@
               "level_validated": false
             },
             "center_price": 16.289480720520018,
-            "distance_to_zone_pct": 17.47182166655423,
+            "distance_to_zone_pct": 18.69367124437422,
             "price_high": 16.602793246269226,
             "price_low": 15.976168194770812,
             "projection_type": "wave1_extension_from_wave2",
@@ -8356,7 +8269,7 @@
               "level_validated": false
             },
             "center_price": 17.000000953674316,
-            "distance_to_zone_pct": 22.696234999089093,
+            "distance_to_zone_pct": 23.972424818970147,
             "price_high": 17.313313479423524,
             "price_low": 16.68668842792511,
             "projection_type": "wave1_extension_from_wave2",
@@ -8390,7 +8303,7 @@
               "level_validated": false
             },
             "center_price": 18.14948133087158,
-            "distance_to_zone_pct": 31.148296359053862,
+            "distance_to_zone_pct": 32.512397879442084,
             "price_high": 18.462793856620788,
             "price_low": 17.836168805122373,
             "projection_type": "wave1_extension_from_wave2",
@@ -8424,7 +8337,7 @@
               "level_validated": false
             },
             "center_price": 19.29896170806885,
-            "distance_to_zone_pct": 39.60035771901866,
+            "distance_to_zone_pct": 41.05237093991405,
             "price_high": 19.612274233818056,
             "price_low": 18.98564918231964,
             "projection_type": "wave1_extension_from_wave2",
@@ -8458,7 +8371,7 @@
               "level_validated": false
             },
             "center_price": 12.84000015258789,
-            "distance_to_zone_pct": 3.148972426471356,
+            "distance_to_zone_pct": 2.141604144671396,
             "price_high": 13.171740119457246,
             "price_low": 12.508260185718536,
             "projection_type": "wave1_extension_from_wave2",
@@ -8492,7 +8405,7 @@
               "level_validated": false
             },
             "center_price": 11.443320011138916,
-            "distance_to_zone_pct": 13.418679060832776,
+            "distance_to_zone_pct": 12.51812819735078,
             "price_high": 11.77505997800827,
             "price_low": 11.11158004426956,
             "projection_type": "wave1_extension_from_wave2",
@@ -8526,7 +8439,7 @@
               "level_validated": false
             },
             "center_price": 10.579999923706055,
-            "distance_to_zone_pct": 19.766620702137082,
+            "distance_to_zone_pct": 18.932096139298228,
             "price_high": 10.91173989057541,
             "price_low": 10.2482599568367,
             "projection_type": "wave1_extension_from_wave2",
@@ -8560,7 +8473,7 @@
               "level_validated": false
             },
             "center_price": 9.18331978225708,
-            "distance_to_zone_pct": 30.036327336498502,
+            "distance_to_zone_pct": 29.308620191977614,
             "price_high": 9.515059749126435,
             "price_low": 8.851579815387725,
             "projection_type": "wave1_extension_from_wave2",
@@ -8594,7 +8507,7 @@
               "level_validated": false
             },
             "center_price": 7.786639640808105,
-            "distance_to_zone_pct": 40.30603397085992,
+            "distance_to_zone_pct": 39.685144244657,
             "price_high": 8.11837960767746,
             "price_low": 7.454899673938751,
             "projection_type": "wave1_extension_from_wave2",
@@ -8628,7 +8541,7 @@
               "level_validated": false
             },
             "center_price": 16.679999351501465,
-            "distance_to_zone_pct": 20.156499546233366,
+            "distance_to_zone_pct": 21.40627303369681,
             "price_high": 17.01871430635452,
             "price_low": 16.34128439664841,
             "projection_type": "wave1_extension_from_wave2",
@@ -8662,7 +8575,7 @@
               "level_validated": false
             },
             "center_price": 18.805919092178346,
-            "distance_to_zone_pct": 35.78826190686896,
+            "distance_to_zone_pct": 37.200624702729606,
             "price_high": 19.144634047031403,
             "price_low": 18.46720413732529,
             "projection_type": "wave1_extension_from_wave2",
@@ -8696,7 +8609,7 @@
               "level_validated": false
             },
             "center_price": 20.119998931884766,
-            "distance_to_zone_pct": 45.450613398394495,
+            "distance_to_zone_pct": 46.963476381646295,
             "price_high": 20.458713886737822,
             "price_low": 19.78128397703171,
             "projection_type": "wave1_extension_from_wave2",
@@ -8730,7 +8643,7 @@
               "level_validated": false
             },
             "center_price": 22.245918672561643,
-            "distance_to_zone_pct": 61.082375759030064,
+            "distance_to_zone_pct": 62.75782805067907,
             "price_high": 22.5846336274147,
             "price_low": 21.907203717708587,
             "projection_type": "wave1_extension_from_wave2",
@@ -8764,7 +8677,7 @@
               "level_validated": false
             },
             "center_price": 24.371838413238528,
-            "distance_to_zone_pct": 76.71413811966568,
+            "distance_to_zone_pct": 78.55217971971189,
             "price_high": 24.710553368091585,
             "price_low": 24.03312345838547,
             "projection_type": "wave1_extension_from_wave2",
@@ -8798,7 +8711,7 @@
               "level_validated": false
             },
             "center_price": 10.785000801086426,
-            "distance_to_zone_pct": 17.988103596936853,
+            "distance_to_zone_pct": 17.13508029675567,
             "price_high": 11.153618223667145,
             "price_low": 10.416383378505707,
             "projection_type": "wave1_extension_from_wave2",
@@ -8832,7 +8745,7 @@
               "level_validated": false
             },
             "center_price": 7.871131296157836,
-            "distance_to_zone_pct": 39.41361406161886,
+            "distance_to_zone_pct": 38.78344208479724,
             "price_high": 8.239748718738555,
             "price_low": 7.502513873577117,
             "projection_type": "wave1_extension_from_wave2",
@@ -8866,7 +8779,7 @@
               "level_validated": false
             },
             "center_price": 6.070001602172852,
-            "distance_to_zone_pct": 52.65721438121194,
+            "distance_to_zone_pct": 52.16479192789089,
             "price_high": 6.438619024753571,
             "price_low": 5.701384179592132,
             "projection_type": "wave1_extension_from_wave2",
@@ -8900,7 +8813,7 @@
               "level_validated": false
             },
             "center_price": 3.1561320972442637,
-            "distance_to_zone_pct": 74.08272484589394,
+            "distance_to_zone_pct": 73.81315371593244,
             "price_high": 3.5247495198249825,
             "price_low": 2.787514674663545,
             "projection_type": "wave1_extension_from_wave2",
@@ -8936,7 +8849,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 2.497281202316284,
-            "distance_to_zone_pct": 78.92721658448004,
+            "distance_to_zone_pct": 78.70803405070755,
             "price_high": 2.8658986248970026,
             "price_low": 2.128663779735565,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -8972,7 +8885,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 2.497281202316284,
-            "distance_to_zone_pct": 78.92721658448004,
+            "distance_to_zone_pct": 78.70803405070755,
             "price_high": 2.8658986248970026,
             "price_low": 2.128663779735565,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -9005,7 +8918,7 @@
               "level_validated": false
             },
             "center_price": 12.74839030265808,
-            "distance_to_zone_pct": 2.7692106816569306,
+            "distance_to_zone_pct": 1.7578924166100025,
             "price_high": 13.223387718200684,
             "price_low": 12.273392887115477,
             "projection_type": "wave3_retracement",
@@ -9104,7 +9017,7 @@
               "level_validated": false
             },
             "center_price": 14.417500019073486,
-            "distance_to_zone_pct": 2.518398620986973,
+            "distance_to_zone_pct": 3.58471444291568,
             "price_high": 14.89249743461609,
             "price_low": 13.942502603530883,
             "projection_type": "wave3_retracement",
@@ -9140,7 +9053,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 29.46999740600586,
-            "distance_to_zone_pct": 111.96416702090524,
+            "distance_to_zone_pct": 114.1688517215699,
             "price_high": 30.112867288589477,
             "price_low": 28.82712752342224,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -9176,7 +9089,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 30.115057342529298,
-            "distance_to_zone_pct": 116.70725465641992,
+            "distance_to_zone_pct": 118.96127322747833,
             "price_high": 30.757927225112915,
             "price_low": 29.47218745994568,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -9254,7 +9167,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
@@ -9280,7 +9193,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
@@ -9319,7 +9232,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
             "requires_external_confirmation": true,
@@ -9423,7 +9336,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
@@ -9475,7 +9388,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
@@ -9514,7 +9427,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
             "requires_external_confirmation": true,
@@ -9618,7 +9531,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
@@ -9670,7 +9583,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
@@ -9711,6 +9624,23 @@
       },
       {
         "alternative_scenarios": [
+          {
+            "available_from": "2026-11-09",
+            "direction": "up",
+            "family": "motive",
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "stage": "wave_2_complete",
+            "status": "valid_structural_candidate",
+            "truncated_fifth": false
+          },
+          {
+            "available_from": "2026-11-06",
+            "direction": "up",
+            "family": "correction",
+            "scenario_id": "e244e6cacce25999552cc6737ba7f8c69cbb3a79948705a6fb9505ff1781c46c",
+            "stage": "correction_complete_candidate",
+            "status": "valid_structural_candidate_geometry_unresolved"
+          },
           {
             "available_from": "2026-11-06",
             "direction": "down",
@@ -10122,23 +10052,6 @@
             "scenario_id": "48181f099e72b285b36ec77f3a9e17d898198b91b7754f68ed79d04e71024458",
             "stage": "correction_complete_candidate",
             "status": "valid_structural_candidate_geometry_unresolved"
-          },
-          {
-            "available_from": "2026-07-17",
-            "direction": "down",
-            "family": "motive",
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "stage": "wave_2_complete",
-            "status": "valid_structural_candidate",
-            "truncated_fifth": false
-          },
-          {
-            "available_from": "2026-07-16",
-            "direction": "down",
-            "family": "correction",
-            "scenario_id": "348be4bb853772132bf76f509015eb3c7b8375d74de2f100d34e9ab1388c6fb2",
-            "stage": "correction_complete_candidate",
-            "status": "valid_structural_candidate_geometry_unresolved"
           }
         ],
         "current_wave_stage": "uncertain",
@@ -10147,7 +10060,7 @@
           "anchor_end": {},
           "anchor_selection_by_fibonacci": false,
           "anchor_start": {},
-          "scenario_id": "e244e6cacce25999552cc6737ba7f8c69cbb3a79948705a6fb9505ff1781c46c",
+          "scenario_id": "9dd3c301a030c05476cb9445e5ba700352a520718b035b9ff6f5e3663cf250cb",
           "status": "unavailable_for_primary_scenario",
           "zones": []
         },
@@ -11488,16 +11401,186 @@
           "rules_frozen_through": "2026-09-25",
           "status": "prospective_evidence_accumulating_no_automatic_promotion"
         },
-        "output_id": "fb97dea65f926575dcdff6c881c9d38e9c2756d3193b6554f4e895a58df12557",
+        "output_id": "44584679d269658fc93be9b38a559cd2cc8413d4742c260665a1a4b0bf60ec46",
         "primary_scenario": {
-          "available_from": "2026-11-06",
-          "direction": "up",
+          "available_from": "2026-11-09",
+          "direction": "down",
           "family": "correction",
-          "scenario_id": "e244e6cacce25999552cc6737ba7f8c69cbb3a79948705a6fb9505ff1781c46c",
+          "scenario_id": "9dd3c301a030c05476cb9445e5ba700352a520718b035b9ff6f5e3663cf250cb",
           "stage": "correction_complete_candidate",
           "status": "valid_structural_candidate_geometry_unresolved"
         },
         "projection_zones": [
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 1.0,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 14.90999984741211,
+            "distance_to_zone_pct": 9.923267478083384,
+            "price_high": 15.024327850341797,
+            "price_low": 14.795671844482422,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "869c6e801c333730e5acd9eac8cbdb45d4cefffdfb2776b8bf6216f1cc5a6c63",
+            "zone_width_basis": {
+              "atr": 0.5716400146484375,
+              "atr_component": 0.1143280029296875,
+              "atr_multiplier": 0.2,
+              "degree": "minor",
+              "half_width": 0.1143280029296875,
+              "parameter_validated": false,
+              "price_component": 0.01490999984741211,
+              "price_fraction_floor": 0.001
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 1.618,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 15.99149984741211,
+            "distance_to_zone_pct": 17.958185731686072,
+            "price_high": 16.105827850341797,
+            "price_low": 15.877171844482422,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "ca8940084a4306ac2897ac03f184989eb95cf880cde5fbe69bbbb71ca78d9843",
+            "zone_width_basis": {
+              "atr": 0.5716400146484375,
+              "atr_component": 0.1143280029296875,
+              "atr_multiplier": 0.2,
+              "degree": "minor",
+              "half_width": 0.1143280029296875,
+              "parameter_validated": false,
+              "price_component": 0.01599149984741211,
+              "price_fraction_floor": 0.001
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 2.0,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 16.65999984741211,
+            "distance_to_zone_pct": 22.924753325336916,
+            "price_high": 16.7743278503418,
+            "price_low": 16.54567184448242,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "8f93493d09bde8870414518c3d1b151c8570b83cc7900c928a8651fa7ef048b2",
+            "zone_width_basis": {
+              "atr": 0.5716400146484375,
+              "atr_component": 0.1143280029296875,
+              "atr_multiplier": 0.2,
+              "degree": "minor",
+              "half_width": 0.1143280029296875,
+              "parameter_validated": false,
+              "price_component": 0.01665999984741211,
+              "price_fraction_floor": 0.001
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 2.618,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 17.741499847412108,
+            "distance_to_zone_pct": 30.959671578939588,
+            "price_high": 17.855827850341797,
+            "price_low": 17.62717184448242,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "ddd81e7b1471d81016cfb57235b1451503624acff0cf1d22023587adf0486a5f",
+            "zone_width_basis": {
+              "atr": 0.5716400146484375,
+              "atr_component": 0.1143280029296875,
+              "atr_multiplier": 0.2,
+              "degree": "minor",
+              "half_width": 0.1143280029296875,
+              "parameter_validated": false,
+              "price_component": 0.017741499847412107,
+              "price_fraction_floor": 0.001
+            }
+          },
+          {
+            "available_from": "2026-11-09",
+            "basis": {
+              "anchor_roles": [
+                "origin",
+                "wave_1",
+                "wave_2"
+              ],
+              "length_source": "wave_1",
+              "level": 3.236,
+              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
+              "level_validated": false
+            },
+            "center_price": 18.82299984741211,
+            "distance_to_zone_pct": 38.99458983254229,
+            "price_high": 18.9373278503418,
+            "price_low": 18.70867184448242,
+            "projection_type": "wave1_extension_from_wave2",
+            "research_only": true,
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "status": "projected",
+            "wave_role": "wave_3",
+            "zone_id": "5dced2069d8366776b4ea1d9cddcaa38a315fd8d15c60df77c6ee25a91ad2266",
+            "zone_width_basis": {
+              "atr": 0.5716400146484375,
+              "atr_component": 0.1143280029296875,
+              "atr_multiplier": 0.2,
+              "degree": "minor",
+              "half_width": 0.1143280029296875,
+              "parameter_validated": false,
+              "price_component": 0.01882299984741211,
+              "price_fraction_floor": 0.001
+            }
+          },
           {
             "available_from": "2026-11-06",
             "basis": {
@@ -11512,7 +11595,7 @@
               "level_validated": false
             },
             "center_price": 12.375000953674316,
-            "distance_to_zone_pct": 8.23464258321194,
+            "distance_to_zone_pct": 7.280171445984944,
             "price_high": 12.480088958740234,
             "price_low": 12.269912948608399,
             "projection_type": "wave1_extension_from_wave2",
@@ -11546,7 +11629,7 @@
               "level_validated": false
             },
             "center_price": 11.284231330871581,
-            "distance_to_zone_pct": 16.255007231796295,
+            "distance_to_zone_pct": 15.383957625118573,
             "price_high": 11.389319335937499,
             "price_low": 11.179143325805663,
             "projection_type": "wave1_extension_from_wave2",
@@ -11580,7 +11663,7 @@
               "level_validated": false
             },
             "center_price": 10.610001564025879,
-            "distance_to_zone_pct": 21.21257890778208,
+            "distance_to_zone_pct": 20.393094065942257,
             "price_high": 10.715089569091797,
             "price_low": 10.504913558959961,
             "projection_type": "wave1_extension_from_wave2",
@@ -11614,7 +11697,7 @@
               "level_validated": false
             },
             "center_price": 9.519231941223143,
-            "distance_to_zone_pct": 29.232943556366436,
+            "distance_to_zone_pct": 28.496880245075886,
             "price_high": 9.624319946289061,
             "price_low": 9.414143936157226,
             "projection_type": "wave1_extension_from_wave2",
@@ -11648,7 +11731,7 @@
               "level_validated": false
             },
             "center_price": 8.42846231842041,
-            "distance_to_zone_pct": 37.253308204950784,
+            "distance_to_zone_pct": 36.6006664242095,
             "price_high": 8.533550323486327,
             "price_low": 8.323374313354492,
             "projection_type": "wave1_extension_from_wave2",
@@ -11682,7 +11765,7 @@
               "level_validated": false
             },
             "center_price": 14.270000457763672,
-            "distance_to_zone_pct": 4.206176948374105,
+            "distance_to_zone_pct": 5.29004771418225,
             "price_high": 14.367960453033447,
             "price_low": 14.172040462493896,
             "projection_type": "wave1_extension_from_wave2",
@@ -11716,7 +11799,7 @@
               "level_validated": false
             },
             "center_price": 15.43184052848816,
-            "distance_to_zone_pct": 12.749118405254633,
+            "distance_to_zone_pct": 13.921846134923094,
             "price_high": 15.529800523757935,
             "price_low": 15.333880533218384,
             "projection_type": "wave1_extension_from_wave2",
@@ -11750,7 +11833,7 @@
               "level_validated": false
             },
             "center_price": 16.15000057220459,
-            "distance_to_zone_pct": 18.02970681387658,
+            "distance_to_zone_pct": 19.257359074604327,
             "price_high": 16.247960567474365,
             "price_low": 16.052040576934814,
             "projection_type": "wave1_extension_from_wave2",
@@ -11784,7 +11867,7 @@
               "level_validated": false
             },
             "center_price": 17.311840642929077,
-            "distance_to_zone_pct": 26.572648270757107,
+            "distance_to_zone_pct": 27.889157495345167,
             "price_high": 17.409800638198853,
             "price_low": 17.213880647659302,
             "projection_type": "wave1_extension_from_wave2",
@@ -11818,7 +11901,7 @@
               "level_validated": false
             },
             "center_price": 18.473680713653565,
-            "distance_to_zone_pct": 35.115589727637634,
+            "distance_to_zone_pct": 36.52095591608602,
             "price_high": 18.57164070892334,
             "price_low": 18.37572071838379,
             "projection_type": "wave1_extension_from_wave2",
@@ -11852,7 +11935,7 @@
               "level_validated": false
             },
             "center_price": 12.039999008178711,
-            "distance_to_zone_pct": 10.87692160110133,
+            "distance_to_zone_pct": 9.949933373875124,
             "price_high": 12.120739002227783,
             "price_low": 11.959259014129639,
             "projection_type": "wave1_extension_from_wave2",
@@ -11886,7 +11969,7 @@
               "level_validated": false
             },
             "center_price": 10.732928560256958,
-            "distance_to_zone_pct": 20.487733448597027,
+            "distance_to_zone_pct": 19.660709333885414,
             "price_high": 10.81366855430603,
             "price_low": 10.652188566207887,
             "projection_type": "wave1_extension_from_wave2",
@@ -11920,7 +12003,7 @@
               "level_validated": false
             },
             "center_price": 9.92499828338623,
-            "distance_to_zone_pct": 26.428397082485958,
+            "distance_to_zone_pct": 25.663163082629648,
             "price_high": 10.005738277435302,
             "price_low": 9.844258289337159,
             "projection_type": "wave1_extension_from_wave2",
@@ -11954,7 +12037,7 @@
               "level_validated": false
             },
             "center_price": 8.617927835464478,
-            "distance_to_zone_pct": 36.039208929981655,
+            "distance_to_zone_pct": 35.37393904263994,
             "price_high": 8.69866782951355,
             "price_low": 8.537187841415406,
             "projection_type": "wave1_extension_from_wave2",
@@ -11988,7 +12071,7 @@
               "level_validated": false
             },
             "center_price": 7.3108573875427245,
-            "distance_to_zone_pct": 45.65002077747736,
+            "distance_to_zone_pct": 45.08471500265024,
             "price_high": 7.391597381591796,
             "price_low": 7.230117393493653,
             "projection_type": "wave1_extension_from_wave2",
@@ -12024,7 +12107,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.625999450683594,
-            "distance_to_zone_pct": 6.5680949388365235,
+            "distance_to_zone_pct": 5.596289682611381,
             "price_high": 12.706739444732666,
             "price_low": 12.545259456634522,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -12060,7 +12143,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.4709494972229,
-            "distance_to_zone_pct": 7.708168094069314,
+            "distance_to_zone_pct": 6.748220982917968,
             "price_high": 12.551689491271972,
             "price_low": 12.390209503173828,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -12096,7 +12179,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.625999450683594,
-            "distance_to_zone_pct": 6.5680949388365235,
+            "distance_to_zone_pct": 5.596289682611381,
             "price_high": 12.706739444732666,
             "price_low": 12.545259456634522,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -12132,7 +12215,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 12.4709494972229,
-            "distance_to_zone_pct": 7.708168094069314,
+            "distance_to_zone_pct": 6.748220982917968,
             "price_high": 12.551689491271972,
             "price_low": 12.390209503173828,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -12165,7 +12248,7 @@
               "level_validated": false
             },
             "center_price": 12.583789724349975,
-            "distance_to_zone_pct": 6.801989771282261,
+            "distance_to_zone_pct": 5.832617305306081,
             "price_high": 12.674929746627807,
             "price_low": 12.492649702072143,
             "projection_type": "wave3_retracement",
@@ -12198,7 +12281,7 @@
               "level_validated": false
             },
             "center_price": 12.774139789581298,
-            "distance_to_zone_pct": 5.402356977957646,
+            "distance_to_zone_pct": 4.418426631518175,
             "price_high": 12.86527981185913,
             "price_low": 12.682999767303466,
             "projection_type": "wave3_retracement",
@@ -12231,7 +12314,7 @@
               "level_validated": false
             },
             "center_price": 13.082929895401001,
-            "distance_to_zone_pct": 3.131841557675482,
+            "distance_to_zone_pct": 2.1242950940400056,
             "price_high": 13.174069917678834,
             "price_low": 12.99178987312317,
             "projection_type": "wave3_retracement",
@@ -12264,7 +12347,7 @@
               "level_validated": false
             },
             "center_price": 13.332499980926514,
-            "distance_to_zone_pct": 1.2967674508720985,
+            "distance_to_zone_pct": 0.2701339884069747,
             "price_high": 13.423640003204346,
             "price_low": 13.241359958648681,
             "projection_type": "wave3_retracement",
@@ -12298,7 +12381,7 @@
               "level_validated": false
             },
             "center_price": 12.861000061035156,
-            "distance_to_zone_pct": 4.717207804365502,
+            "distance_to_zone_pct": 3.726151074623033,
             "price_high": 12.958460102081299,
             "price_low": 12.763540019989014,
             "projection_type": "wave1_extension_from_wave2",
@@ -12332,7 +12415,7 @@
               "level_validated": false
             },
             "center_price": 11.916077886581421,
-            "distance_to_zone_pct": 11.66516477458155,
+            "distance_to_zone_pct": 10.746375233432333,
             "price_high": 12.013537927627564,
             "price_low": 11.818617845535279,
             "projection_type": "wave1_extension_from_wave2",
@@ -12366,7 +12449,7 @@
               "level_validated": false
             },
             "center_price": 11.331999778747559,
-            "distance_to_zone_pct": 15.959856623485326,
+            "distance_to_zone_pct": 15.085737092113817,
             "price_high": 11.429459819793701,
             "price_low": 11.234539737701416,
             "projection_type": "wave1_extension_from_wave2",
@@ -12400,7 +12483,7 @@
               "level_validated": false
             },
             "center_price": 10.387077604293824,
-            "distance_to_zone_pct": 22.907813593701373,
+            "distance_to_zone_pct": 22.105961250923116,
             "price_high": 10.484537645339966,
             "price_low": 10.289617563247681,
             "projection_type": "wave1_extension_from_wave2",
@@ -12434,7 +12517,7 @@
               "level_validated": false
             },
             "center_price": 9.442155429840088,
-            "distance_to_zone_pct": 29.85577056391742,
+            "distance_to_zone_pct": 29.12618540973242,
             "price_high": 9.53961547088623,
             "price_low": 9.344695388793946,
             "projection_type": "wave1_extension_from_wave2",
@@ -12470,13 +12553,13 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.260000228881836,
-            "distance_to_zone_pct": 1.7833831230785406,
+            "distance_to_zone_pct": 0.7618110544456649,
             "price_high": 13.357460269927978,
             "price_low": 13.162540187835694,
             "projection_type": "wave_1_length_relative_to_wave_4",
             "research_only": true,
             "scenario_id": "cd84cd0465312f4429e7509a60d252d7d926b32ceb316c647674c741d627d48f",
-            "status": "projected",
+            "status": "approaching",
             "wave_role": "wave_5",
             "zone_id": "82fffb8774b21b0ed5c09af282b04194ab47d0c2f3aa4098d8f7b3cd8c8e4f06",
             "zone_width_basis": {
@@ -12506,13 +12589,13 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.40181835746765,
-            "distance_to_zone_pct": 0.740602795079104,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.499278398513793,
             "price_low": 13.304358316421508,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
             "research_only": true,
             "scenario_id": "cd84cd0465312f4429e7509a60d252d7d926b32ceb316c647674c741d627d48f",
-            "status": "approaching",
+            "status": "inside",
             "wave_role": "wave_5",
             "zone_id": "eaa07a347b092c66a0b9dfab024a527205a6ca795fc4d9ba7001af09b1c557e1",
             "zone_width_basis": {
@@ -12542,13 +12625,13 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.260000228881836,
-            "distance_to_zone_pct": 1.7833831230785406,
+            "distance_to_zone_pct": 0.7618110544456649,
             "price_high": 13.357460269927978,
             "price_low": 13.162540187835694,
             "projection_type": "wave_1_length_relative_to_wave_4",
             "research_only": true,
             "scenario_id": "f4001ab352a10ad9884b3824973d9a48fac0fd6b057c5315587b05aaadb95dee",
-            "status": "projected",
+            "status": "approaching",
             "wave_role": "wave_5",
             "zone_id": "097f011781836464c54eeaab183e81c785b83ab0cda36c7e3b96fdcd2fc9fea3",
             "zone_width_basis": {
@@ -12578,13 +12661,13 @@
               "numeric_level_frozen": false
             },
             "center_price": 13.40181835746765,
-            "distance_to_zone_pct": 0.740602795079104,
+            "distance_to_zone_pct": 0.0,
             "price_high": 13.499278398513793,
             "price_low": 13.304358316421508,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
             "research_only": true,
             "scenario_id": "f4001ab352a10ad9884b3824973d9a48fac0fd6b057c5315587b05aaadb95dee",
-            "status": "approaching",
+            "status": "inside",
             "wave_role": "wave_5",
             "zone_id": "3c5c2b7f0cdbf0a474c2780abdd21154dc652bf922678c8af275c906a42c71ae",
             "zone_width_basis": {
@@ -12611,13 +12694,13 @@
               "level_validated": false
             },
             "center_price": 13.69423375892639,
-            "distance_to_zone_pct": 0.0,
+            "distance_to_zone_pct": 0.8846485430286725,
             "price_high": 13.809393785476683,
             "price_low": 13.579073732376099,
             "projection_type": "wave3_retracement",
             "research_only": true,
             "scenario_id": "0082539524ae311bc8e8bbdad62ed6510f10a9b2aa57930056237949f3ee1587",
-            "status": "inside",
+            "status": "approaching",
             "wave_role": "wave_4",
             "zone_id": "5769ce0005cee1396144be246a288732ba232de8e1990262b12d36eb6747d3ba",
             "zone_width_basis": {
@@ -12644,13 +12727,13 @@
               "level_validated": false
             },
             "center_price": 13.831843784332275,
-            "distance_to_zone_pct": 0.8579659782307033,
+            "distance_to_zone_pct": 1.907011284602845,
             "price_high": 13.947003810882567,
             "price_low": 13.716683757781983,
             "projection_type": "wave3_retracement",
             "research_only": true,
             "scenario_id": "0082539524ae311bc8e8bbdad62ed6510f10a9b2aa57930056237949f3ee1587",
-            "status": "approaching",
+            "status": "projected",
             "wave_role": "wave_4",
             "zone_id": "60e2a23478671d5aa981f1bd030df0499adf16be097e9a08f35cbf965c5bdfb2",
             "zone_width_basis": {
@@ -12677,7 +12760,7 @@
               "level_validated": false
             },
             "center_price": 14.055077825546265,
-            "distance_to_zone_pct": 2.499392705822204,
+            "distance_to_zone_pct": 3.565510843156506,
             "price_high": 14.170237852096557,
             "price_low": 13.939917798995973,
             "projection_type": "wave3_retracement",
@@ -12710,7 +12793,7 @@
               "level_validated": false
             },
             "center_price": 14.235499858856201,
-            "distance_to_zone_pct": 3.826025266478341,
+            "distance_to_zone_pct": 4.9059419932204165,
             "price_high": 14.350659885406493,
             "price_low": 14.120339832305909,
             "projection_type": "wave3_retracement",
@@ -12744,7 +12827,7 @@
               "level_validated": false
             },
             "center_price": 13.869999885559082,
-            "distance_to_zone_pct": 1.0647024529203981,
+            "distance_to_zone_pct": 2.115898069645576,
             "price_high": 13.995199851989746,
             "price_low": 13.744799919128418,
             "projection_type": "wave1_extension_from_wave2",
@@ -12778,13 +12861,13 @@
               "level_validated": false
             },
             "center_price": 13.171659814834594,
-            "distance_to_zone_pct": 2.2289749389823803,
+            "distance_to_zone_pct": 1.2120375662656668,
             "price_high": 13.296859781265258,
             "price_low": 13.04645984840393,
             "projection_type": "wave1_extension_from_wave2",
             "research_only": true,
             "scenario_id": "b99453586154b9a90a0b7607e3a859187d60fd496248ef8c69548046eab83805",
-            "status": "projected",
+            "status": "approaching",
             "wave_role": "wave_3",
             "zone_id": "e87e244b0d383a1fa0cebe015cb88590bddead7bc71c349b847a2d2a39e8ad65",
             "zone_width_basis": {
@@ -12812,7 +12895,7 @@
               "level_validated": false
             },
             "center_price": 12.739999771118164,
-            "distance_to_zone_pct": 5.402945759634532,
+            "distance_to_zone_pct": 4.41902153723939,
             "price_high": 12.865199737548828,
             "price_low": 12.6147998046875,
             "projection_type": "wave1_extension_from_wave2",
@@ -12846,7 +12929,7 @@
               "level_validated": false
             },
             "center_price": 12.041659700393677,
-            "distance_to_zone_pct": 10.537799076815244,
+            "distance_to_zone_pct": 9.607283563579085,
             "price_high": 12.16685966682434,
             "price_low": 11.916459733963013,
             "projection_type": "wave1_extension_from_wave2",
@@ -12880,7 +12963,7 @@
               "level_validated": false
             },
             "center_price": 11.343319629669189,
-            "distance_to_zone_pct": 15.672652393995953,
+            "distance_to_zone_pct": 14.795545589918776,
             "price_high": 11.468519596099853,
             "price_low": 11.218119663238525,
             "projection_type": "wave1_extension_from_wave2",
@@ -12914,7 +12997,7 @@
               "level_validated": false
             },
             "center_price": 15.169999122619629,
-            "distance_to_zone_pct": 9.954990640668566,
+            "distance_to_zone_pct": 11.098656048998167,
             "price_high": 15.38611909866333,
             "price_low": 14.953879146575927,
             "projection_type": "wave1_extension_from_wave2",
@@ -12948,7 +13031,7 @@
               "level_validated": false
             },
             "center_price": 15.93013883972168,
-            "distance_to_zone_pct": 15.544253109644352,
+            "distance_to_zone_pct": 16.74605363404824,
             "price_high": 16.146258815765382,
             "price_low": 15.714018863677978,
             "projection_type": "wave1_extension_from_wave2",
@@ -12982,7 +13065,7 @@
               "level_validated": false
             },
             "center_price": 16.399998664855957,
-            "distance_to_zone_pct": 18.999104668137484,
+            "distance_to_zone_pct": 20.23683984357758,
             "price_high": 16.616118640899657,
             "price_low": 16.183878688812257,
             "projection_type": "wave1_extension_from_wave2",
@@ -13016,7 +13099,7 @@
               "level_validated": false
             },
             "center_price": 17.160138381958006,
-            "distance_to_zone_pct": 24.588367137113256,
+            "distance_to_zone_pct": 25.884237428627642,
             "price_high": 17.376258358001706,
             "price_low": 16.944018405914306,
             "projection_type": "wave1_extension_from_wave2",
@@ -13050,7 +13133,7 @@
               "level_validated": false
             },
             "center_price": 17.92027809906006,
-            "distance_to_zone_pct": 30.177629606089056,
+            "distance_to_zone_pct": 31.53163501367773,
             "price_high": 18.13639807510376,
             "price_low": 17.70415812301636,
             "projection_type": "wave1_extension_from_wave2",
@@ -13084,7 +13167,7 @@
               "level_validated": false
             },
             "center_price": 7.920000076293945,
-            "distance_to_zone_pct": 40.05353057935573,
+            "distance_to_zone_pct": 39.43001451129541,
             "price_high": 8.152720069885254,
             "price_low": 7.687280082702637,
             "projection_type": "wave1_extension_from_wave2",
@@ -13118,7 +13201,7 @@
               "level_validated": false
             },
             "center_price": 3.501300312042236,
-            "distance_to_zone_pct": 72.54396911105074,
+            "distance_to_zone_pct": 72.25839305311322,
             "price_high": 3.734020305633545,
             "price_low": 3.2685803184509274,
             "projection_type": "wave1_extension_from_wave2",
@@ -13152,7 +13235,7 @@
               "level_validated": false
             },
             "center_price": 0.7700004577636719,
-            "distance_to_zone_pct": 92.62705571154831,
+            "distance_to_zone_pct": 92.55036813883231,
             "price_high": 1.0027204513549806,
             "price_low": 0.5372804641723633,
             "projection_type": "wave1_extension_from_wave2",
@@ -13188,7 +13271,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.5,
-            "distance_to_zone_pct": 26.74352542811211,
+            "distance_to_zone_pct": 28.061811982613094,
             "price_high": 17.762880058288573,
             "price_low": 17.237119941711427,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -13224,7 +13307,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 16.14205038833618,
-            "distance_to_zone_pct": 16.75860209300651,
+            "distance_to_zone_pct": 17.973033321281314,
             "price_high": 16.404930446624753,
             "price_low": 15.879170330047605,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -13260,7 +13343,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 17.5,
-            "distance_to_zone_pct": 26.74352542811211,
+            "distance_to_zone_pct": 28.061811982613094,
             "price_high": 17.762880058288573,
             "price_low": 17.237119941711427,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -13296,7 +13379,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 16.14205038833618,
-            "distance_to_zone_pct": 16.75860209300651,
+            "distance_to_zone_pct": 17.973033321281314,
             "price_high": 16.404930446624753,
             "price_low": 15.879170330047605,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -13329,7 +13412,7 @@
               "level_validated": false
             },
             "center_price": 20.660039737701418,
-            "distance_to_zone_pct": 50.65411136699815,
+            "distance_to_zone_pct": 52.22109704713102,
             "price_high": 20.83111975479126,
             "price_low": 20.488959720611575,
             "projection_type": "wave3_retracement",
@@ -13362,7 +13445,7 @@
               "level_validated": false
             },
             "center_price": 20.45663971710205,
-            "distance_to_zone_pct": 49.15852302218822,
+            "distance_to_zone_pct": 50.70995276761459,
             "price_high": 20.627719734191892,
             "price_low": 20.285559700012207,
             "projection_type": "wave3_retracement",
@@ -13395,7 +13478,7 @@
               "level_validated": false
             },
             "center_price": 20.126679683685303,
-            "distance_to_zone_pct": 46.73234637394103,
+            "distance_to_zone_pct": 48.25854093639907,
             "price_high": 20.297759700775146,
             "price_low": 19.95559966659546,
             "projection_type": "wave3_retracement",
@@ -13428,7 +13511,7 @@
               "level_validated": false
             },
             "center_price": 19.859999656677246,
-            "distance_to_zone_pct": 44.77146387741247,
+            "distance_to_zone_pct": 46.2772628810331,
             "price_high": 20.03107967376709,
             "price_low": 19.688919639587404,
             "projection_type": "wave3_retracement",
@@ -13462,7 +13545,7 @@
               "level_validated": false
             },
             "center_price": 22.389999389648438,
-            "distance_to_zone_pct": 63.522196839214864,
+            "distance_to_zone_pct": 65.22302623249121,
             "price_high": 22.540979385375977,
             "price_low": 22.2390193939209,
             "projection_type": "wave1_extension_from_wave2",
@@ -13496,7 +13579,7 @@
               "level_validated": false
             },
             "center_price": 24.651879295349122,
-            "distance_to_zone_pct": 80.15366626757269,
+            "distance_to_zone_pct": 82.02748313657956,
             "price_high": 24.80285929107666,
             "price_low": 24.500899299621583,
             "projection_type": "wave1_extension_from_wave2",
@@ -13530,7 +13613,7 @@
               "level_validated": false
             },
             "center_price": 26.049999237060547,
-            "distance_to_zone_pct": 90.43395966827282,
+            "distance_to_zone_pct": 92.41470407082187,
             "price_high": 26.200979232788086,
             "price_low": 25.899019241333008,
             "projection_type": "wave1_extension_from_wave2",
@@ -13564,7 +13647,7 @@
               "level_validated": false
             },
             "center_price": 28.311879142761228,
-            "distance_to_zone_pct": 107.0654290966306,
+            "distance_to_zone_pct": 109.2191609749102,
             "price_high": 28.462859138488767,
             "price_low": 28.16089914703369,
             "projection_type": "wave1_extension_from_wave2",
@@ -13598,7 +13681,7 @@
               "level_validated": false
             },
             "center_price": 30.573759048461916,
-            "distance_to_zone_pct": 123.69689852498846,
+            "distance_to_zone_pct": 126.02361787899858,
             "price_high": 30.724739044189455,
             "price_low": 30.422779052734377,
             "projection_type": "wave1_extension_from_wave2",
@@ -13634,7 +13717,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 19.160001754760742,
-            "distance_to_zone_pct": 39.49103889770959,
+            "distance_to_zone_pct": 40.941915070130136,
             "price_high": 19.349221687316895,
             "price_low": 18.97078182220459,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -13670,7 +13753,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 19.426581535339356,
-            "distance_to_zone_pct": 41.45118428815998,
+            "distance_to_zone_pct": 42.92244835261973,
             "price_high": 19.61580146789551,
             "price_low": 19.237361602783203,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -13706,7 +13789,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 19.160001754760742,
-            "distance_to_zone_pct": 39.49103889770959,
+            "distance_to_zone_pct": 40.941915070130136,
             "price_high": 19.349221687316895,
             "price_low": 18.97078182220459,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -13742,7 +13825,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 19.426581535339356,
-            "distance_to_zone_pct": 41.45118428815998,
+            "distance_to_zone_pct": 42.92244835261973,
             "price_high": 19.61580146789551,
             "price_low": 19.237361602783203,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -13775,7 +13858,7 @@
               "level_validated": false
             },
             "center_price": 18.61112051010132,
-            "distance_to_zone_pct": 35.55294147511253,
+            "distance_to_zone_pct": 36.96285665276045,
             "price_high": 18.7870404624939,
             "price_low": 18.43520055770874,
             "projection_type": "wave3_retracement",
@@ -13808,7 +13891,7 @@
               "level_validated": false
             },
             "center_price": 18.765920448303223,
-            "distance_to_zone_pct": 36.69117628290579,
+            "distance_to_zone_pct": 38.112930484582044,
             "price_high": 18.941840400695803,
             "price_low": 18.590000495910644,
             "projection_type": "wave3_retracement",
@@ -13841,7 +13924,7 @@
               "level_validated": false
             },
             "center_price": 19.01704034805298,
-            "distance_to_zone_pct": 38.537646082214856,
+            "distance_to_zone_pct": 39.97860581175929,
             "price_high": 19.19296030044556,
             "price_low": 18.8411203956604,
             "projection_type": "wave3_retracement",
@@ -13874,7 +13957,7 @@
               "level_validated": false
             },
             "center_price": 19.22000026702881,
-            "distance_to_zone_pct": 40.02999838576601,
+            "distance_to_zone_pct": 41.486480391258695,
             "price_high": 19.395920219421388,
             "price_low": 19.04408031463623,
             "projection_type": "wave3_retracement",
@@ -13891,176 +13974,6 @@
               "half_width": 0.17591995239257813,
               "parameter_validated": false,
               "price_component": 0.01922000026702881,
-              "price_fraction_floor": 0.001
-            }
-          },
-          {
-            "available_from": "2026-07-17",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 1.0,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 18.46000099182129,
-            "distance_to_zone_pct": 34.17853287588757,
-            "price_high": 18.671721000671386,
-            "price_low": 18.248280982971192,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "status": "reached",
-            "wave_role": "wave_3",
-            "zone_id": "85c869b38dc8139b8112423eddb7034979febfb20519f6b72bb6cf5313a1bb9d",
-            "zone_width_basis": {
-              "atr": 1.0586000442504884,
-              "atr_component": 0.21172000885009767,
-              "atr_multiplier": 0.2,
-              "degree": "minor",
-              "half_width": 0.21172000885009767,
-              "parameter_validated": false,
-              "price_component": 0.01846000099182129,
-              "price_fraction_floor": 0.001
-            }
-          },
-          {
-            "available_from": "2026-07-17",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 1.618,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 17.458841651916504,
-            "distance_to_zone_pct": 26.81706734777711,
-            "price_high": 17.6705616607666,
-            "price_low": 17.247121643066407,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "status": "reached",
-            "wave_role": "wave_3",
-            "zone_id": "fc6130e98efa97004b1ddf1dd31ac2ddd0c917ffa9800dcec9661e6d3fc1ea8a",
-            "zone_width_basis": {
-              "atr": 1.0586000442504884,
-              "atr_component": 0.21172000885009767,
-              "atr_multiplier": 0.2,
-              "degree": "minor",
-              "half_width": 0.21172000885009767,
-              "parameter_validated": false,
-              "price_component": 0.017458841651916506,
-              "price_fraction_floor": 0.001
-            }
-          },
-          {
-            "available_from": "2026-07-17",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 2.0,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 16.840002059936523,
-            "distance_to_zone_pct": 22.266776357909478,
-            "price_high": 17.05172206878662,
-            "price_low": 16.628282051086426,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "status": "reached",
-            "wave_role": "wave_3",
-            "zone_id": "5bb685fd55e7d381d84f81922a3d14635738512e0597e8837022a470dd0e3ebc",
-            "zone_width_basis": {
-              "atr": 1.0586000442504884,
-              "atr_component": 0.21172000885009767,
-              "atr_multiplier": 0.2,
-              "degree": "minor",
-              "half_width": 0.21172000885009767,
-              "parameter_validated": false,
-              "price_component": 0.016840002059936524,
-              "price_fraction_floor": 0.001
-            }
-          },
-          {
-            "available_from": "2026-07-17",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 2.618,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 15.838842720031739,
-            "distance_to_zone_pct": 14.905310829799019,
-            "price_high": 16.050562728881836,
-            "price_low": 15.627122711181642,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "status": "reached",
-            "wave_role": "wave_3",
-            "zone_id": "cfadd33d5b955d368a0b4e70b8de756cba6d6be04c505f8ca719cf03d5f2910b",
-            "zone_width_basis": {
-              "atr": 1.0586000442504884,
-              "atr_component": 0.21172000885009767,
-              "atr_multiplier": 0.2,
-              "degree": "minor",
-              "half_width": 0.21172000885009767,
-              "parameter_validated": false,
-              "price_component": 0.015838842720031738,
-              "price_fraction_floor": 0.001
-            }
-          },
-          {
-            "available_from": "2026-07-17",
-            "basis": {
-              "anchor_roles": [
-                "origin",
-                "wave_1",
-                "wave_2"
-              ],
-              "length_source": "wave_1",
-              "level": 3.236,
-              "level_source": "elliott_vnext_contract_v2.soft_guidelines.wave_3_extension_research_candidates",
-              "level_validated": false
-            },
-            "center_price": 14.837683380126954,
-            "distance_to_zone_pct": 7.5438453016885605,
-            "price_high": 15.049403388977051,
-            "price_low": 14.625963371276857,
-            "projection_type": "wave1_extension_from_wave2",
-            "research_only": true,
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "status": "reached",
-            "wave_role": "wave_3",
-            "zone_id": "852b3612aeeabfa0451a944cc776a6f64a4fb0d38acd70b6d15a34cc6b30bafb",
-            "zone_width_basis": {
-              "atr": 1.0586000442504884,
-              "atr_component": 0.21172000885009767,
-              "atr_multiplier": 0.2,
-              "degree": "minor",
-              "half_width": 0.21172000885009767,
-              "parameter_validated": false,
-              "price_component": 0.014837683380126955,
               "price_fraction_floor": 0.001
             }
           }
@@ -14082,17 +13995,29 @@
           "within_scenario_conflict": true
         },
         "routing_triggers": [
+          "EW_DEEP_SCAN_500",
           "EW_W2_DANGER",
           "EW_W5_COMPLETION_RISK",
           "EW_W4_COMPLETION",
           "EW_W3_EXHAUSTION",
           "EW_W4_TARGET_ZONE",
-          "EW_DEEP_SCAN_500",
           "EW_W5_TARGET_APPROACH",
-          "EW_W2_CORE",
           "EW_W3_TARGET_APPROACH"
         ],
         "swing_routing": [
+          {
+            "actionability": "review_only_not_trade_instruction",
+            "available_from": "2026-11-09",
+            "final_decision_owned_by_global_layer": true,
+            "reason": "W2 retracement reached the 50% research depth; review possible entry/add conditions.",
+            "requires_external_confirmation": true,
+            "research_only": true,
+            "review_context": "entry_or_add_review",
+            "scenario_id": "091b460c830126908aa839379c25cb0e8e839f0cb9e2caa4dc1e8ef07e28e2bc",
+            "scenario_role": "alternative_1",
+            "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
+            "trigger": "EW_DEEP_SCAN_500"
+          },
           {
             "actionability": "review_only_not_trade_instruction",
             "available_from": "2026-11-06",
@@ -14102,7 +14027,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "1aaec9d9584898a3b882a07958138ac510c5cd662bcc0280850774a41c0081ea",
-            "scenario_role": "alternative_1",
+            "scenario_role": "alternative_3",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -14115,7 +14040,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "1cac47e24f4529b16f78eb211b3b7e528e34eadd7e8fba830552401d0001ee62",
-            "scenario_role": "alternative_3",
+            "scenario_role": "alternative_5",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -14128,7 +14053,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "369bba75171bb80669b587183fc836f9af028c27f2fa89f9623c08844c19116d",
-            "scenario_role": "alternative_4",
+            "scenario_role": "alternative_6",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14141,7 +14066,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "1179e446c0297976549a15e93c889c4f9951632a2bab07dea1952d7dbb9f5999",
-            "scenario_role": "alternative_5",
+            "scenario_role": "alternative_7",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14154,7 +14079,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "7df2c2b81af65520ca6287b02f525705c9a15e27ac8cdbbec99774b36b51ec34",
-            "scenario_role": "alternative_7",
+            "scenario_role": "alternative_9",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -14167,7 +14092,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "65b4035e9512445696c3cce5d0fd4691fdf5e85b9ffcfd2e0faa3ea9556a0a88",
-            "scenario_role": "alternative_8",
+            "scenario_role": "alternative_10",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -14180,7 +14105,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "b7431e611a6cca6d70caf504132e80ce24cb417046415a0f254b4726fb0d5aaa",
-            "scenario_role": "alternative_9",
+            "scenario_role": "alternative_11",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -14193,20 +14118,20 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "a62188242e0683c90e3d8c798c58856030e6670e1faebbc631944686ba532bef",
-            "scenario_role": "alternative_10",
+            "scenario_role": "alternative_12",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "a62188242e0683c90e3d8c798c58856030e6670e1faebbc631944686ba532bef",
-            "scenario_role": "alternative_10",
+            "scenario_role": "alternative_12",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W4_TARGET_ZONE"
           },
@@ -14219,7 +14144,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "8dadf5e9de699c8323a9ec5c48b60325055918d9b5e883e55a80b9ef5af3b149",
-            "scenario_role": "alternative_13",
+            "scenario_role": "alternative_15",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14232,7 +14157,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "a5fa8162da521f7cf8e3b5f1da4097f14c1c30ba86a9943486377d2608eef944",
-            "scenario_role": "alternative_14",
+            "scenario_role": "alternative_16",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14245,7 +14170,7 @@
             "research_only": true,
             "review_context": "entry_or_add_review",
             "scenario_id": "ea0c4650fc97aebcfcbe9fed4841b5f975365586ea70a07ad085ce31fbce00e0",
-            "scenario_role": "alternative_16",
+            "scenario_role": "alternative_18",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_DEEP_SCAN_500"
           },
@@ -14258,20 +14183,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "cd84cd0465312f4429e7509a60d252d7d926b32ceb316c647674c741d627d48f",
-            "scenario_role": "alternative_17",
+            "scenario_role": "alternative_19",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "cd84cd0465312f4429e7509a60d252d7d926b32ceb316c647674c741d627d48f",
-            "scenario_role": "alternative_17",
+            "scenario_role": "alternative_19",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -14284,20 +14209,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "f4001ab352a10ad9884b3824973d9a48fac0fd6b057c5315587b05aaadb95dee",
-            "scenario_role": "alternative_18",
+            "scenario_role": "alternative_20",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "f4001ab352a10ad9884b3824973d9a48fac0fd6b057c5315587b05aaadb95dee",
-            "scenario_role": "alternative_18",
+            "scenario_role": "alternative_20",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -14310,20 +14235,20 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "0082539524ae311bc8e8bbdad62ed6510f10a9b2aa57930056237949f3ee1587",
-            "scenario_role": "alternative_19",
+            "scenario_role": "alternative_21",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "0082539524ae311bc8e8bbdad62ed6510f10a9b2aa57930056237949f3ee1587",
-            "scenario_role": "alternative_19",
+            "scenario_role": "alternative_21",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W4_TARGET_ZONE"
           },
@@ -14336,9 +14261,22 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "b99453586154b9a90a0b7607e3a859187d60fd496248ef8c69548046eab83805",
-            "scenario_role": "alternative_23",
+            "scenario_role": "alternative_25",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
+          },
+          {
+            "actionability": "review_only_not_trade_instruction",
+            "available_from": "2026-11-10",
+            "final_decision_owned_by_global_layer": true,
+            "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
+            "requires_external_confirmation": true,
+            "research_only": true,
+            "review_context": "partial_reduce_review",
+            "scenario_id": "b99453586154b9a90a0b7607e3a859187d60fd496248ef8c69548046eab83805",
+            "scenario_role": "alternative_25",
+            "source": "6c_current_price_vs_projection_frontier",
+            "trigger": "EW_W3_TARGET_APPROACH"
           },
           {
             "actionability": "review_only_not_trade_instruction",
@@ -14349,7 +14287,7 @@
             "research_only": true,
             "review_context": "hold_review",
             "scenario_id": "e0a9101007a333185761c6517f14eb422787fff000b8e22085318c0411c3c823",
-            "scenario_role": "alternative_25",
+            "scenario_role": "alternative_27",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_W2_DANGER"
           },
@@ -14362,7 +14300,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "e1d23431785c6bc21d633ebda5c4b12aa45b4b5be751220a298ac7834d74505d",
-            "scenario_role": "alternative_28",
+            "scenario_role": "alternative_30",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14375,7 +14313,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "2f71de1b6dbae655b3d690bb566e326afbac948674ca5e02a713941e27ee3761",
-            "scenario_role": "alternative_29",
+            "scenario_role": "alternative_31",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14388,7 +14326,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "64794403285770ebaf20e8be511a25ca59e736b5359861227816c59073749a8b",
-            "scenario_role": "alternative_31",
+            "scenario_role": "alternative_33",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -14401,7 +14339,7 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "02078001803fe97dee3b5ac50c8c6dc381cff244efd70056f8301307b51ebf32",
-            "scenario_role": "alternative_32",
+            "scenario_role": "alternative_34",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
@@ -14414,20 +14352,20 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "c2ae8d9d9e2b46cd37fb929022109edbb265e38689c808acfa8b42190c6ed72f",
-            "scenario_role": "alternative_33",
+            "scenario_role": "alternative_35",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "c2ae8d9d9e2b46cd37fb929022109edbb265e38689c808acfa8b42190c6ed72f",
-            "scenario_role": "alternative_33",
+            "scenario_role": "alternative_35",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W4_TARGET_ZONE"
           },
@@ -14440,7 +14378,7 @@
             "research_only": true,
             "review_context": "entry_or_add_review",
             "scenario_id": "40eecae4095751e9505c768b4dac663c28633f60a4aeacc9e38fb6f89fcb6f72",
-            "scenario_role": "alternative_37",
+            "scenario_role": "alternative_39",
             "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
             "trigger": "EW_DEEP_SCAN_500"
           },
@@ -14453,7 +14391,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "1215fa0f990b8c5f1d5d80f93bd66d32158ec4c4ff6616a255b0490d61c40dae",
-            "scenario_role": "alternative_40",
+            "scenario_role": "alternative_42",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14466,7 +14404,7 @@
             "research_only": true,
             "review_context": "larger_reduce_or_exit_review",
             "scenario_id": "e5e2fffd2eff1a9d5f6be958afe47f7e6b65fe0eaf29f6a48b0efd3816544269",
-            "scenario_role": "alternative_41",
+            "scenario_role": "alternative_43",
             "source": "6b_confirmed_wave5_endpoint",
             "trigger": "EW_W5_COMPLETION_RISK"
           },
@@ -14479,20 +14417,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "efecbdf0d24b54a35acde8cbb2e8635d2e744ff738536adcb1764ee643df2ed7",
-            "scenario_role": "alternative_43",
+            "scenario_role": "alternative_45",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "efecbdf0d24b54a35acde8cbb2e8635d2e744ff738536adcb1764ee643df2ed7",
-            "scenario_role": "alternative_43",
+            "scenario_role": "alternative_45",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -14505,20 +14443,20 @@
             "research_only": true,
             "review_context": "reentry_or_add_review",
             "scenario_id": "843e8846de96dbc032047678eb499010a0513d32affda51d9dfc2934c72a0689",
-            "scenario_role": "alternative_44",
+            "scenario_role": "alternative_46",
             "source": "6b_confirmed_wave4_endpoint",
             "trigger": "EW_W4_COMPLETION"
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W5 research projection frontier; review profit protection.",
             "requires_external_confirmation": true,
             "research_only": true,
             "review_context": "profit_protection_review",
             "scenario_id": "843e8846de96dbc032047678eb499010a0513d32affda51d9dfc2934c72a0689",
-            "scenario_role": "alternative_44",
+            "scenario_role": "alternative_46",
             "source": "6c_current_price_vs_projection_frontier",
             "trigger": "EW_W5_TARGET_APPROACH"
           },
@@ -14531,35 +14469,9 @@
             "research_only": true,
             "review_context": "partial_reduce_review",
             "scenario_id": "6619e24533c7b3f9090ccffa2252fb365702f31028ef201c1599a645c7444d4d",
-            "scenario_role": "alternative_45",
+            "scenario_role": "alternative_47",
             "source": "6b_confirmed_wave3_endpoint",
             "trigger": "EW_W3_EXHAUSTION"
-          },
-          {
-            "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-07-17",
-            "final_decision_owned_by_global_layer": true,
-            "reason": "W2 retracement reached the 61.8% core research zone; review possible entry/add conditions.",
-            "requires_external_confirmation": true,
-            "research_only": true,
-            "review_context": "entry_or_add_review",
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "scenario_role": "alternative_49",
-            "source": "6b_confirmed_wave2_endpoint_via_6c_depth_geometry",
-            "trigger": "EW_W2_CORE"
-          },
-          {
-            "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
-            "final_decision_owned_by_global_layer": true,
-            "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
-            "requires_external_confirmation": true,
-            "research_only": true,
-            "review_context": "partial_reduce_review",
-            "scenario_id": "593eb1c7941737e5107a7140f55d4c84652d252cc8e4ce40cbeec0cc9a2f58d9",
-            "scenario_role": "alternative_49",
-            "source": "6c_current_price_vs_projection_frontier",
-            "trigger": "EW_W3_TARGET_APPROACH"
           }
         ],
         "timeframe": "daily",
@@ -14854,7 +14766,7 @@
             {
               "available_from": "2026-11-02",
               "center_price": 19.10814968109131,
-              "distance_to_zone_pct": 29.788009986091794,
+              "distance_to_zone_pct": 31.13796287656232,
               "level": 0.382,
               "price_high": 20.565129508972166,
               "price_low": 17.65116985321045,
@@ -14875,7 +14787,7 @@
             {
               "available_from": "2026-11-02",
               "center_price": 19.677499771118164,
-              "distance_to_zone_pct": 33.974407589452206,
+              "distance_to_zone_pct": 35.36790409805757,
               "level": 0.5,
               "price_high": 21.13447959899902,
               "price_low": 18.220519943237306,
@@ -14896,7 +14808,7 @@
             {
               "available_from": "2026-11-02",
               "center_price": 20.24684986114502,
-              "distance_to_zone_pct": 38.16080519281262,
+              "distance_to_zone_pct": 39.59784531955282,
               "level": 0.618,
               "price_high": 21.703829689025877,
               "price_low": 18.78987003326416,
@@ -14917,7 +14829,7 @@
             {
               "available_from": "2026-11-02",
               "center_price": 21.057449989318847,
-              "distance_to_zone_pct": 44.12110008573252,
+              "distance_to_zone_pct": 45.62013451625792,
               "level": 0.786,
               "price_high": 22.514429817199705,
               "price_low": 19.60047016143799,
@@ -14938,7 +14850,7 @@
             {
               "available_from": "2026-11-02",
               "center_price": 21.54477506637573,
-              "distance_to_zone_pct": 47.70437261064269,
+              "distance_to_zone_pct": 49.24067742618182,
               "level": 0.887,
               "price_high": 23.00175489425659,
               "price_low": 20.087795238494873,
@@ -16292,7 +16204,7 @@
           "rules_frozen_through": "2026-09-25",
           "status": "prospective_evidence_accumulating_no_automatic_promotion"
         },
-        "output_id": "2aa49548e918ce421b3fbaed3e152327bf043c3282179e778375b46e19bfcda8",
+        "output_id": "07562ce9af97e55971bbdfff4147280d912244fcb3ccd367817978f3c09b6aef",
         "primary_scenario": {
           "available_from": "2026-11-02",
           "direction": "down",
@@ -16319,7 +16231,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 9.329998970031738,
-            "distance_to_zone_pct": 23.36897924734622,
+            "distance_to_zone_pct": 22.571923587306152,
             "price_high": 10.421819114685059,
             "price_low": 8.238178825378418,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -16355,7 +16267,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 8.089329402923585,
-            "distance_to_zone_pct": 32.4915493378485,
+            "distance_to_zone_pct": 31.789379483234626,
             "price_high": 9.181149547576906,
             "price_low": 6.997509258270265,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -16389,7 +16301,7 @@
               "level_validated": false
             },
             "center_price": 5.439999580383301,
-            "distance_to_zone_pct": 51.97191513364693,
+            "distance_to_zone_pct": 51.47236473607134,
             "price_high": 6.5318197250366214,
             "price_low": 4.34817943572998,
             "projection_type": "wave1_extension_from_wave2",
@@ -16488,7 +16400,7 @@
               "level_validated": false
             },
             "center_price": 15.604129676818847,
-            "distance_to_zone_pct": 6.3362442371075485,
+            "distance_to_zone_pct": 7.44227028901362,
             "price_high": 16.74652973175049,
             "price_low": 14.461729621887207,
             "projection_type": "wave3_retracement",
@@ -16521,7 +16433,7 @@
               "level_validated": false
             },
             "center_price": 16.63249969482422,
-            "distance_to_zone_pct": 13.89778827505145,
+            "distance_to_zone_pct": 15.08246356606317,
             "price_high": 17.77489974975586,
             "price_low": 15.490099639892579,
             "projection_type": "wave3_retracement",
@@ -16555,7 +16467,7 @@
               "level_validated": false
             },
             "center_price": 16.16499900817871,
-            "distance_to_zone_pct": 8.164844283921743,
+            "distance_to_zone_pct": 9.28988999657287,
             "price_high": 17.61957878112793,
             "price_low": 14.710419235229493,
             "projection_type": "wave1_extension_from_wave2",
@@ -16623,7 +16535,7 @@
               "level_validated": false
             },
             "center_price": 11.339998245239258,
-            "distance_to_zone_pct": 5.922223093307076,
+            "distance_to_zone_pct": 4.943699985680719,
             "price_high": 12.794578018188476,
             "price_low": 9.88541847229004,
             "projection_type": "wave1_extension_from_wave2",
@@ -16657,7 +16569,7 @@
               "level_validated": false
             },
             "center_price": 8.358147773742676,
-            "distance_to_zone_pct": 27.847593592262452,
+            "distance_to_zone_pct": 27.0971209592745,
             "price_high": 9.812727546691894,
             "price_low": 6.903568000793458,
             "projection_type": "wave1_extension_from_wave2",
@@ -16691,7 +16603,7 @@
               "level_validated": false
             },
             "center_price": 5.376297302246092,
-            "distance_to_zone_pct": 49.772964091217844,
+            "distance_to_zone_pct": 49.25054193286829,
             "price_high": 6.8308770751953105,
             "price_low": 3.9217175292968736,
             "projection_type": "wave1_extension_from_wave2",
@@ -16725,7 +16637,7 @@
               "level_validated": false
             },
             "center_price": 23.834999084472656,
-            "distance_to_zone_pct": 64.54425462430353,
+            "distance_to_zone_pct": 66.25571465951171,
             "price_high": 25.291978912353514,
             "price_low": 22.3780192565918,
             "projection_type": "wave1_extension_from_wave2",
@@ -16759,7 +16671,7 @@
               "level_validated": false
             },
             "center_price": 27.895258895874022,
-            "distance_to_zone_pct": 94.39910534131933,
+            "distance_to_zone_pct": 96.42109207328726,
             "price_high": 29.35223872375488,
             "price_low": 26.438279067993165,
             "projection_type": "wave1_extension_from_wave2",
@@ -16793,7 +16705,7 @@
               "level_validated": false
             },
             "center_price": 30.404998779296875,
-            "distance_to_zone_pct": 112.85307455474982,
+            "distance_to_zone_pct": 115.06700497306439,
             "price_high": 31.861978607177733,
             "price_low": 28.948018951416017,
             "projection_type": "wave1_extension_from_wave2",
@@ -16827,7 +16739,7 @@
               "level_validated": false
             },
             "center_price": 34.46525859069824,
-            "distance_to_zone_pct": 142.70792527176562,
+            "distance_to_zone_pct": 145.23238238683993,
             "price_high": 35.9222384185791,
             "price_low": 33.00827876281738,
             "projection_type": "wave1_extension_from_wave2",
@@ -16861,7 +16773,7 @@
               "level_validated": false
             },
             "center_price": 38.52551840209961,
-            "distance_to_zone_pct": 172.56277598878142,
+            "distance_to_zone_pct": 175.39775980061546,
             "price_high": 39.982498229980465,
             "price_low": 37.06853857421875,
             "projection_type": "wave1_extension_from_wave2",
@@ -16897,7 +16809,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.754998207092285,
-            "distance_to_zone_pct": 63.956012895359365,
+            "distance_to_zone_pct": 65.66135450235242,
             "price_high": 25.211978034973143,
             "price_low": 22.298018379211427,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -16933,7 +16845,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.463539224624633,
-            "distance_to_zone_pct": 61.812932202032535,
+            "distance_to_zone_pct": 63.49598316771922,
             "price_high": 24.92051905250549,
             "price_low": 22.006559396743775,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -16969,7 +16881,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.754998207092285,
-            "distance_to_zone_pct": 63.956012895359365,
+            "distance_to_zone_pct": 65.66135450235242,
             "price_high": 25.211978034973143,
             "price_low": 22.298018379211427,
             "projection_type": "wave_1_length_relative_to_wave_4",
@@ -17005,7 +16917,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 23.463539224624633,
-            "distance_to_zone_pct": 61.812932202032535,
+            "distance_to_zone_pct": 63.49598316771922,
             "price_high": 24.92051905250549,
             "price_low": 22.006559396743775,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -17038,7 +16950,7 @@
               "level_validated": false
             },
             "center_price": 21.130780197143554,
-            "distance_to_zone_pct": 45.43985040216305,
+            "distance_to_zone_pct": 46.952601437185784,
             "price_high": 22.481740184783934,
             "price_low": 19.779820209503175,
             "projection_type": "wave3_retracement",
@@ -17071,7 +16983,7 @@
               "level_validated": false
             },
             "center_price": 20.539480224609374,
-            "distance_to_zone_pct": 41.09205660842288,
+            "distance_to_zone_pct": 42.559585308966035,
             "price_high": 21.890440212249754,
             "price_low": 19.188520236968994,
             "projection_type": "wave3_retracement",
@@ -17104,7 +17016,7 @@
               "level_validated": false
             },
             "center_price": 19.580260269165038,
-            "distance_to_zone_pct": 34.03896889857772,
+            "distance_to_zone_pct": 35.43313692318734,
             "price_high": 20.931220256805418,
             "price_low": 18.229300281524658,
             "projection_type": "wave3_retracement",
@@ -17137,7 +17049,7 @@
               "level_validated": false
             },
             "center_price": 18.80500030517578,
-            "distance_to_zone_pct": 28.338528146785066,
+            "distance_to_zone_pct": 29.673404666188137,
             "price_high": 20.15596029281616,
             "price_low": 17.4540403175354,
             "projection_type": "wave3_retracement",
@@ -17171,7 +17083,7 @@
               "level_validated": false
             },
             "center_price": 22.00999927520752,
-            "distance_to_zone_pct": 53.28734374642809,
+            "distance_to_zone_pct": 54.88171824053748,
             "price_high": 23.172919216156007,
             "price_low": 20.847079334259032,
             "projection_type": "wave1_extension_from_wave2",
@@ -17205,7 +17117,7 @@
               "level_validated": false
             },
             "center_price": 26.02081854438782,
-            "distance_to_zone_pct": 82.7786610749564,
+            "distance_to_zone_pct": 84.6797810771886,
             "price_high": 27.183738485336306,
             "price_low": 24.85789860343933,
             "projection_type": "wave1_extension_from_wave2",
@@ -17239,7 +17151,7 @@
               "level_validated": false
             },
             "center_price": 28.499998092651367,
-            "distance_to_zone_pct": 101.00792194793021,
+            "distance_to_zone_pct": 103.09864839693086,
             "price_high": 29.662918033599855,
             "price_low": 27.33707815170288,
             "projection_type": "wave1_extension_from_wave2",
@@ -17273,7 +17185,7 @@
               "level_validated": false
             },
             "center_price": 32.51081736183166,
-            "distance_to_zone_pct": 130.49923927645852,
+            "distance_to_zone_pct": 132.89671123358195,
             "price_high": 33.67373730278015,
             "price_low": 31.347897420883175,
             "projection_type": "wave1_extension_from_wave2",
@@ -17307,7 +17219,7 @@
               "level_validated": false
             },
             "center_price": 36.521636631011965,
-            "distance_to_zone_pct": 159.99055660498686,
+            "distance_to_zone_pct": 162.6947740702331,
             "price_high": 37.68455657196045,
             "price_low": 35.35871669006348,
             "projection_type": "wave1_extension_from_wave2",
@@ -17343,7 +17255,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 5.547280439376831,
-            "distance_to_zone_pct": 50.88220457800123,
+            "distance_to_zone_pct": 50.371319867537046,
             "price_high": 6.6800203647613525,
             "price_low": 4.414540513992309,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -17379,7 +17291,7 @@
               "numeric_level_frozen": false
             },
             "center_price": 5.547280439376831,
-            "distance_to_zone_pct": 50.88220457800123,
+            "distance_to_zone_pct": 50.371319867537046,
             "price_high": 6.6800203647613525,
             "price_low": 4.414540513992309,
             "projection_type": "wave_1_to_wave_3_structure_relative_to_wave_4",
@@ -17587,7 +17499,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
@@ -17613,7 +17525,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W3 projection frontier; review partial reduction only with external confirmation.",
             "requires_external_confirmation": true,
@@ -17704,7 +17616,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
@@ -17795,7 +17707,7 @@
           },
           {
             "actionability": "review_only_not_trade_instruction",
-            "available_from": "2026-11-09",
+            "available_from": "2026-11-10",
             "final_decision_owned_by_global_layer": true,
             "reason": "Price is approaching/inside the active W4 retracement frontier; review reentry/add conditions.",
             "requires_external_confirmation": true,
@@ -17840,13 +17752,13 @@
     "reason": "current_prospective_6h_outputs_available_read_only",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-09T13:08:57+00:00",
+    "scanner_published_at": "2026-11-10T00:59:52+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-09",
-    "source_capture_id": "8ddb3b606574790e466a6926436680926f455f215a8c1d727843371fae1ca52d",
-    "source_publication_commit": "7da20bbfa68bd8444303dc30179741fff045faa8",
-    "source_run_id": "github-42621856562-1",
-    "source_snapshot_id": "49572cd0-4b97-47d1-8377-bcfed6b4a432",
+    "source_as_of": "2026-11-10",
+    "source_capture_id": "a6c9516be7e3dceb72a7e86bfc3222c91cf7025cc55274e9d88da4b436142583",
+    "source_publication_commit": "61bffa7928e722e95523bef8af590c9069c3af7b",
+    "source_run_id": "github-42731357121-1",
+    "source_snapshot_id": "1189d561-a52f-4bc4-92c8-2ed1fc686d18",
     "status": "available",
     "symbol": "KLAR",
     "validation_partition": "prospective_unspent",
@@ -17856,21 +17768,19 @@
     "conflicts": [],
     "direction": "negative",
     "known_directional_claim_ids": [
-      "timing:KLAR:0b9187e88ff3ae83:60T",
-      "timing:KLAR:cce5c47f08a2bf66:60T",
-      "timing:KLAR:6c608d2ad71a6396:60T"
+      "timing:KLAR:8383be481c5c6052:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 1
     },
-    "relation_state": "correlated_same_family_support",
+    "relation_state": "single_direction_or_unopposed",
     "state": "negative",
-    "support_structure": "same_family_correlated_support"
+    "support_structure": "single_direction_or_unopposed"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "49572cd0-4b97-47d1-8377-bcfed6b4a432",
+  "snapshot_id": "1189d561-a52f-4bc4-92c8-2ed1fc686d18",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -18351,6 +18261,22 @@
       "source_snapshot_id": "49572cd0-4b97-47d1-8377-bcfed6b4a432",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-10T00:11:30.170176+00:00",
+      "direction": "negative",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "91611f7c-7bf8-47ee-a564-18468549eec8",
+      "state": "negative",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-10T01:13:39.144152+00:00",
+      "direction": "negative",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "1189d561-a52f-4bc4-92c8-2ed1fc686d18",
+      "state": "negative",
+      "support_structure": "single_direction_or_unopposed"
     }
   ],
   "state_history_path_memory": {
