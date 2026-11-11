@@ -1,13 +1,13 @@
 {
   "as_of": "2026-11-11",
-  "bound_at": "2026-11-11T21:55:18.108343+00:00",
+  "bound_at": "2026-11-11T23:44:39.871415+00:00",
   "boundaries": {
     "decision_semantics_changed": false,
     "historical_provenance_inferred": false,
     "scanner_values_changed": false,
     "scanner_weights_changed": false
   },
-  "content_hash": "a60f289fa03be82e8378c9d7399ba0cee862ee7c36c4378790ebb9f08d519226",
+  "content_hash": "7535e986e41c6e11ae81586b2d1d51654ed7553e44b30d5b04a55475621f90f7",
   "coverage": {
     "direct_scoring_input_bound": true,
     "historical_backfill": false,
@@ -19,8 +19,8 @@
     "snapshot_identity_bound": true
   },
   "pre_run": {
-    "captured_at": "2026-11-11T21:53:46.633017+00:00",
-    "code_revision": "2e7d7e80284d492bd27ea59d9126a6a570696f95",
+    "captured_at": "2026-11-11T23:43:21.688528+00:00",
+    "code_revision": "01c7fca74072ea32d40e40156f99f9fc5291e454",
     "historical_backfill": false,
     "inputs": [
       {
@@ -28,8 +28,8 @@
         "path": "artifacts/watchlist/watchlist.csv",
         "required": true,
         "role": "persistent_watchlist_state",
-        "sha256": "76f4e0f7ecd892376914e8a4c326dfe80216fddf610c527ecc57704a56aecc94",
-        "size_bytes": 259352
+        "sha256": "1182c26ae848b76de9fe378b1c0bc2b64130f2871325c7f48fc337fd95b528c1",
+        "size_bytes": 260083
       },
       {
         "exists": true,
@@ -56,7 +56,7 @@
         "size_bytes": null
       }
     ],
-    "run_id": "github-43106502352-1",
+    "run_id": "github-43121743251-1",
     "runtime_intent": {
       "scanner_fetch_yahoo": "1"
     },
@@ -65,23 +65,23 @@
     "schema_version": "scanner_pre_run_provenance_v1",
     "selected_watchlist_input": "artifacts/watchlist/watchlist.csv"
   },
-  "run_id": "github-43106502352-1",
+  "run_id": "github-43121743251-1",
   "runtime": {
-    "captured_at": "2026-11-11T21:53:52.676284+00:00",
-    "code_revision": "2e7d7e80284d492bd27ea59d9126a6a570696f95",
+    "captured_at": "2026-11-11T23:43:26.445076+00:00",
+    "code_revision": "01c7fca74072ea32d40e40156f99f9fc5291e454",
     "historical_backfill": false,
-    "run_id": "github-43106502352-1",
+    "run_id": "github-43121743251-1",
     "scanner_build": "2026-02-13",
     "scanner_version": "0.0.1-v7",
     "schema_version": "scanner_runtime_provenance_v1",
     "scoring_rows_input": {
       "path": "artifacts/watchlist/watchlist_full_raw.csv",
-      "sha256": "1182c26ae848b76de9fe378b1c0bc2b64130f2871325c7f48fc337fd95b528c1",
+      "sha256": "1149f5bee914f0643a76964cbb8cf90b28f34b78079279175e5c6c6815380524",
       "size_bytes": 260083
     },
     "selected_scoring_universe": {
       "path": "artifacts/watchlist/watchlist.csv",
-      "sha256": "1182c26ae848b76de9fe378b1c0bc2b64130f2871325c7f48fc337fd95b528c1",
+      "sha256": "1149f5bee914f0643a76964cbb8cf90b28f34b78079279175e5c6c6815380524",
       "size_bytes": 260083
     },
     "yahoo_enrichment": {
@@ -104,14 +104,14 @@
   },
   "scanner_output": {
     "latest_scanner_path": "artifacts/research/latest_scanner.csv",
-    "latest_scanner_sha256": "e0291e39c2af5c70cae8daac71ec2f9b4fd13572e18234e17aa2ca129caffd31",
+    "latest_scanner_sha256": "de52d57e4dafdb48aeb2242babd752693b878cbc6f3a2e7d31c22fc08fdbfaf0",
     "source_file": "artifacts/watchlist/watchlist_full.csv",
-    "source_sha256": "0e04446ba6df580ec18d2b7726989ded15709d0a4cea350571d7a3578319b008"
+    "source_sha256": "984b124dc41b24f2c402c681231182a52ac3941e219fb7b3caedda780f63a385"
   },
   "schema_version": "scanner_input_provenance_v1",
-  "snapshot_id": "3d6df9a3-3b9d-4ee9-aa5c-a64b4412e9bc",
+  "snapshot_id": "182091e2-ced1-4463-b085-022bb2b43c85",
   "transform_identity": {
-    "code_revision": "2e7d7e80284d492bd27ea59d9126a6a570696f95",
+    "code_revision": "01c7fca74072ea32d40e40156f99f9fc5291e454",
     "scanner_build": "2026-02-13",
     "scanner_version": "0.0.1-v7"
   }
