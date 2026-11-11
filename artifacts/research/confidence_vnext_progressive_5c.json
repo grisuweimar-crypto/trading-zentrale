@@ -3,18 +3,18 @@
   "schema_version": "phase5c_progressive_learning_v1",
   "status": "progressive_learning_active",
   "source_schema_version": "phase5b_shadow_v2",
-  "claims": 58832,
-  "mature_outcomes": 20167,
+  "claims": 59680,
+  "mature_outcomes": 20661,
   "horizons": {
     "5": {
       "stage": "robust_learning_base",
       "pilot_ready": true,
       "robust_learning_base": true,
-      "training_rows": 1256,
+      "training_rows": 1260,
       "symbols": 212,
       "directional_rows": 677,
       "directional_symbols": 179,
-      "observation_dates": 27,
+      "observation_dates": 28,
       "support_regions": 3,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -24,19 +24,19 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 10
       },
-      "latest_candidate_version": "phase5c-5T-be20611e3251eeb6",
-      "candidate_version_from_current_evidence": "phase5c-5T-be20611e3251eeb6",
-      "version_count": 27
+      "latest_candidate_version": "phase5c-5T-81e25fff0ffe6309",
+      "candidate_version_from_current_evidence": "phase5c-5T-81e25fff0ffe6309",
+      "version_count": 28
     },
     "20": {
       "stage": "pilot_learning",
       "pilot_ready": true,
       "robust_learning_base": false,
-      "training_rows": 608,
+      "training_rows": 612,
       "symbols": 208,
       "directional_rows": 0,
       "directional_symbols": 0,
-      "observation_dates": 11,
+      "observation_dates": 12,
       "support_regions": 1,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -46,9 +46,9 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 40
       },
-      "latest_candidate_version": "phase5c-20T-e54bf7bb5250ceb7",
-      "candidate_version_from_current_evidence": "phase5c-20T-e54bf7bb5250ceb7",
-      "version_count": 14
+      "latest_candidate_version": "phase5c-20T-149cd01d657b99c5",
+      "candidate_version_from_current_evidence": "phase5c-20T-149cd01d657b99c5",
+      "version_count": 15
     },
     "40": {
       "stage": "collecting",
@@ -95,9 +95,12 @@
       "version_count": 0
     }
   },
-  "model_versions": 41,
-  "version_chain_tip": "26c3073b34215fe47a5ed724d2e0222705cae0fe07e705a0dc0216caf0421ae9",
-  "new_model_versions": [],
+  "model_versions": 43,
+  "version_chain_tip": "b864819899cd4161e53b3d441d8b3fa77f6ee3fce50375535cbda4c308bcb856",
+  "new_model_versions": [
+    "phase5c-5T-81e25fff0ffe6309",
+    "phase5c-20T-149cd01d657b99c5"
+  ],
   "semantics": {
     "research_only": true,
     "dynamic_horizon_specific_learning": true,
