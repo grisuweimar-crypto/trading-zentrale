@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-13T21:48:45.001534+00:00",
+  "decision_as_of": "2026-11-14T20:12:13.819531+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-13T21:33:02.899376+00:00",
+    "captured_at": "2026-11-14T20:06:24.203703+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-13T21:29:31+00:00",
+    "scanner_published_at": "2026-11-14T19:59:09+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-13",
-    "source_capture_id": "f9ea604db92d5187df0dfc845d103a061a277bf7cca4110660fb77f8a32e9a34",
-    "source_publication_commit": "4a4b7152fa0d4db527a01484db5b6099de9ffd64",
-    "source_run_id": "github-43510004513-1",
-    "source_snapshot_id": "efb72439-7c3e-41d9-85f6-d381067dc8df",
+    "source_as_of": "2026-11-14",
+    "source_capture_id": "6bdbbe2ddf92029d543dcbcc943e442efd2250fcbdc5e0457487568fd2fce578",
+    "source_publication_commit": "2b7d57cc2b7d6e351161d453f4b402619b74b513",
+    "source_run_id": "github-43634308310-1",
+    "source_snapshot_id": "b3d96a54-900b-4fdd-b54e-82684d575646",
     "status": "no_elliott_output_for_symbol",
     "symbol": "FME.DE",
     "validation_partition": "prospective_unspent",
@@ -29,12 +29,11 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:FME.DE:15f457a0b3a6df9d:20T",
-      "timing:FME.DE:e64908cc5e4c18f0:60T",
-      "timing:FME.DE:ff63700b226f41b1:60T"
+      "timing:FME.DE:2ec83739629fba4d:5T",
+      "timing:FME.DE:1aa807ae1a9556c5:20T"
     ],
     "known_directional_family_counts": {
-      "timing": 3
+      "timing": 2
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -43,7 +42,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "efb72439-7c3e-41d9-85f6-d381067dc8df",
+  "snapshot_id": "b3d96a54-900b-4fdd-b54e-82684d575646",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -580,13 +579,21 @@
       "source_snapshot_id": "efb72439-7c3e-41d9-85f6-d381067dc8df",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-14T20:12:13.819531+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "b3d96a54-900b-4fdd-b54e-82684d575646",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
-      "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
+      "rank_worsening_5t": true,
+      "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
@@ -594,18 +601,18 @@
     "last_overextension_rs3m": 0.1775356507070806,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 100,
+    "sessions_since_last_overextension": 101,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
   "state_history_state": "post_overextension_correction",
   "symbol": "FME.DE",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "positive",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
-    "stable_directional_anchor": "negative",
-    "status": "transition_pending"
+    "stable_anchor_is_current_stance": true,
+    "stable_directional_anchor": "positive",
+    "status": "transition_confirmed"
   }
 }
