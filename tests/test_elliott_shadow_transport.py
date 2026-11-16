@@ -156,3 +156,21 @@ def test_legacy_plain_jsonl_binding_preserves_exact_bytes(tmp_path, line_ending)
     assert "archive = archive_bytes.decode('utf-8') if archive_bytes is not None else None" in workflow
     assert "hashlib.sha256(archive_bytes or b'').hexdigest()" in workflow
     assert "elliott_shadow_archive_utf8_invalid" in workflow
+
+
+def test_shadow_publication_uses_clean_worktree_without_overwriting_capture_inputs():
+    """Regress GitHub run 43758048458: dirty scanner files blocked checkout."""
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github/workflows/elliott_vnext_prospective_capture.yml"
+    ).read_text(encoding="utf-8")
+    publish = workflow.split(
+        "      - name: Publish isolated Elliott shadow data branch", 1
+    )[1].split("      - name: Continue prospective queue when backlog remains", 1)[0]
+    assert 'git worktree add --detach "$PUBLISH_DIR"' in publish
+    assert 'cd "$PUBLISH_DIR"' in publish
+    assert 'git checkout -B elliott-vnext-shadow-data' not in publish
+    assert "git restore --source=origin/main" not in publish
+    assert 'git push origin HEAD:refs/heads/elliott-vnext-shadow-data' in publish
+    assert 'RUNNER_TEMP/elliott-shadow-payload' in publish
+

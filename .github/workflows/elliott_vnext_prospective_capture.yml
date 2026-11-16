@@ -576,32 +576,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # The generated capture payload is already in RUNNER_TEMP. Do not
+          # switch the bound Scanner working tree: capture/replay may leave
+          # modified tracked files, and a checkout would refuse to overwrite
+          # them (observed in production run 43758048458).
+          # A fresh detached worktree isolates archive publication safely.
+          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
+          PUBLISH_DIR="$RUNNER_TEMP/elliott-shadow-publish"
+          if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
+            git worktree add --detach "$PUBLISH_DIR" origin/elliott-vnext-shadow-data
+          else
+            git worktree add --detach "$PUBLISH_DIR" origin/main
+          fi
+          cd "$PUBLISH_DIR"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          # The capture files are intentionally untracked in the bound scanner
-          # publication. They have already been copied to RUNNER_TEMP above;
-          # remove the working-tree copies before switching to the shadow branch.
-          rm -f \
-            artifacts/research/elliott_vnext_prospective_history_6h.jsonl \
-            artifacts/research/elliott_vnext_prospective_current_6h.json
-          # Restore tracked scanner inputs to current main before switching
-          # branches. The capture itself was built from the exact bound
-          # publication files above, while the repaired replay code comes from
-          # current main.
-          git restore --source=origin/main -- \
-            artifacts/research/history_metadata.json \
-            artifacts/research/latest_scanner.csv \
-            artifacts/research/daily_research.json \
-            artifacts/research/history_recent.csv \
-            artifacts/research/price_backfill.csv \
-            artifacts/research/scanner_input_provenance.json \
-            artifacts/market_data/yahoo_ohlcv.csv
-          git fetch origin elliott-vnext-shadow-data:refs/remotes/origin/elliott-vnext-shadow-data --force || true
-          if git show-ref --verify --quiet refs/remotes/origin/elliott-vnext-shadow-data; then
-            git checkout -B elliott-vnext-shadow-data origin/elliott-vnext-shadow-data
-          else
-            git checkout -B elliott-vnext-shadow-data origin/main
-          fi
           mkdir -p artifacts/research
           # The old branch's raw blobs are preserved in immutable Git history.
           # Migrate latest full byte streams into deterministic gzip containers.
