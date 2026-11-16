@@ -49,7 +49,13 @@ def test_uec_real_snapshot_consistent_across_layers():
     assert len(rows) == 1
     row = rows[0]
     assert row["snapshot_id"] == snap
-    assert row["score_status"] == "OK"
+    # A completed, fully traceable scan is not automatically a BUY candidate.
+    # UEC can legitimately be marked AVOID (e.g. score 0 and weak trend).
+    # Check data integrity below and verify the decision stays non-ordering;
+    # never convert a negative scanner disposition into OK to pass CI.
+    assert row["score_status"] in {"OK", "AVOID"}, (
+        f"Unexpected scanner disposition for UEC: {row['score_status']}"
+    )
     assert row["cycle_quality"] == "VALID"
     assert row["cycle_quality_reason"] == "COMPLETED_DAILY_BARS"
     assert date.fromisoformat(row["cycle_last_bar"]) <= date.fromisoformat(daily["as_of"])
@@ -78,6 +84,54 @@ def test_uec_real_snapshot_consistent_across_layers():
         assert decision["portfolio_action_state"] not in ("BUY", "SELL", "ORDER")
         if decision["universal_stance_state"] == "insufficient_evidence":
             assert decision["portfolio_action_state"] == ("HOLD" if expected_position == "long" else "NO_ACTION")
+
+
+
+def test_avoid_is_a_trade_disposition_not_an_analysis_access_gate():
+    """Every AVOID symbol stays available in research and public Watch views.
+
+    A negative market assessment must not remove the analysis. Elliott output
+    can be absent for independent evidence reasons, never because AVOID
+    suppressed the symbol entirely.
+    """
+    daily = _json(RESEARCH / "daily_research.json")
+    symbol_index = _json(RESEARCH / "watch_runtime/symbols/index.json")
+    flat = _json(RESEARCH / "watch_runtime/public_flat_reference.json")
+    long = _json(RESEARCH / "watch_runtime/public_long_reference.json")
+    flat_by_symbol = {entry["symbol"]: entry for entry in flat["rows"]}
+    long_by_symbol = {entry["symbol"]: entry for entry in long["rows"]}
+
+    with (RESEARCH / "latest_scanner.csv").open(newline="", encoding="utf-8") as stream:
+        avoid_symbols = {
+            row["symbol"] for row in csv.DictReader(stream)
+            if row["score_status"] == "AVOID"
+        }
+    assert avoid_symbols, "No AVOID case available for real-snapshot acceptance"
+
+    for symbol in sorted(avoid_symbols):
+        assert symbol in daily["symbols"], f"AVOID hid research for {symbol}"
+        assert symbol in flat_by_symbol, f"AVOID hid public flat scenario for {symbol}"
+        assert symbol in long_by_symbol, f"AVOID hid public long scenario for {symbol}"
+        assert flat_by_symbol[symbol]["availability"] == "decision_available"
+        assert long_by_symbol[symbol]["availability"] == "decision_available"
+        assert symbol in symbol_index["symbol_files"], (
+            f"AVOID hid per-symbol packets for {symbol}"
+        )
+        assert symbol in symbol_index["summary_files"], (
+            f"AVOID hid per-symbol summary for {symbol}"
+        )
+        summary_path = (
+            RESEARCH / "watch_runtime/symbols"
+            / symbol_index["summary_files"][symbol]
+        )
+        summary = _json(summary_path)
+        assert summary["symbol"] == symbol
+        assert summary["snapshot_id"] == daily["snapshot_id"]
+        elliott = summary["elliott_vnext_research"]
+        assert elliott["research_only"] is True
+        assert elliott["direct_ordering_allowed"] is False
+        # Zero computed Elliott counts are an evidence/coverage gap,
+        # not permission to suppress the research or invent a forecast.
 
 
 def test_capture_readers_handle_both_lossless_formats_without_stale_fallback():
