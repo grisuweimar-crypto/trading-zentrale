@@ -49,7 +49,13 @@ def test_uec_real_snapshot_consistent_across_layers():
     assert len(rows) == 1
     row = rows[0]
     assert row["snapshot_id"] == snap
-    assert row["score_status"] == "OK"
+    # A completed, fully traceable scan is not automatically a BUY candidate.
+    # UEC can legitimately be marked AVOID (e.g. score 0 and weak trend).
+    # Check data integrity below and verify the decision stays non-ordering;
+    # never convert a negative scanner disposition into OK to pass CI.
+    assert row["score_status"] in {"OK", "AVOID"}, (
+        f"Unexpected scanner disposition for UEC: {row['score_status']}"
+    )
     assert row["cycle_quality"] == "VALID"
     assert row["cycle_quality_reason"] == "COMPLETED_DAILY_BARS"
     assert date.fromisoformat(row["cycle_last_bar"]) <= date.fromisoformat(daily["as_of"])
