@@ -24,6 +24,7 @@ from scanner.research.pattern_discovery import (
     run_discovery_search, write_search_result,
     apply_statistical_guard, write_statistical_evidence,
     OperationsRegistry, load_operations_contract,
+    freeze_candidates, write_freeze_snapshot,
 )
 
 CUTOFF = "2026-11-17T00:00:00+00:00"
@@ -216,7 +217,31 @@ def run(root, dry_run=False):
     write_search_result(root,l3)
     l4=apply_statistical_guard(manifest,l3,rows,repo_root=root,feature_library=library)
     write_statistical_evidence(root,l4)
+    # A zero-survivor L4 result is a scientifically meaningful completed run.
+    # Seal an EMPTY L5 snapshot, with NO invented QM-C research identity.
+    # This lets the existing L14 system recognise the initial round as processed
+    # and evaluate future data-triggered rounds. If any candidate passes L4,
+    # do NOT invent identity context or freeze it automatically.
+    frozen_count = None
+    empty_freeze_done = False
+    if l4["counts"]["eligible_for_l5"] == 0:
+        empty_context = {
+            "universe_ledger_version": "NOT_APPLICABLE_ZERO_CANDIDATES",
+            "instrument_master_version": "NOT_APPLICABLE_ZERO_CANDIDATES",
+            "environment_or_dependency_fingerprint": "NOT_APPLICABLE_ZERO_CANDIDATES"
+        }
+        snapshot=freeze_candidates(
+            manifest,l3,l4,repo_root=root,freeze_timestamp=now,
+            qm_external_context=empty_context,
+            actor_id="github-actions-initial-research",
+            actor_role="research_automation")
+        if snapshot["frozen_pattern_count"] != 0:
+            raise ValueError("unexpected_nonempty_l5_snapshot")
+        write_freeze_snapshot(root,snapshot)
+        frozen_count = 0
+        empty_freeze_done = True
     summary={
+
         "schema_version":"argus_initial_discovery_evidence_summary_v1",
         "asof":"2026-11-16","run_id":manifest["run_id"],
         "l1_manifest_hash":manifest["manifest_hash"],"l3_result_hash":l3["result_hash"],
@@ -225,7 +250,9 @@ def run(root, dry_run=False):
         "sources":coverage,"l3_counts":l3["candidate_counts"],
         "l4_counts":l4["counts"],
         "rejected_reasons":{},
-        "l5_freeze_performed":False,
+        "l5_empty_closeout_performed":empty_freeze_done,
+        "l5_frozen_pattern_count":frozen_count,
+        "l5_freeze_performed":False,  # zero-PAT closeout is not pattern freeze
         "prospective_confirmation":False,
         "models_are_trade_signals":False,
     }
