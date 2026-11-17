@@ -68,29 +68,69 @@ jobs:
             artifacts/research/pattern_discovery/discovery_runs/
             artifacts/research/pattern_discovery/inputs/
           retention-days: 30
-      - name: Commit immutable L1-L4 and empty L5 closure with L14 classification
+      - name: Publish immutable L1-L4 and zero-candidate L5 evidence (without registry)
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A artifacts/research/pattern_discovery/
-          if git diff --cached --quiet; then
-            echo 'No evidence changes'
-          else
-            git commit -m 'research(patterns): first immutable L1-L4 discovery and L14 classification [skip ci]'
-            # Other scheduled ARGUS workflows update main concurrently.
-            # Never force-push: rebase own new artifacts onto the latest
-            # remote head, and retry only if another safe fast-forward wins.
-            success=0
-            for attempt in 1 2 3 4 5 6; do
+          # Never rebase a speculative local L14 hash-chain event.
+          # The registry is append-only and MUST be re-derived against latest main.
+          git restore -- artifacts/research/pattern_discovery/operations/operations_registry.jsonl
+          git add -A -- artifacts/research/pattern_discovery/discovery_runs/ artifacts/research/pattern_discovery/inputs/
+          if ! git diff --cached --quiet; then
+            git commit -m 'research(patterns): initial immutable discovery evidence [skip ci]'
+            published=0
+            for attempt in 1 2 3 4 5 6 7 8; do
               git fetch origin main
               git rebase origin/main
               if git push origin HEAD:main; then
-                success=1
+                published=1
                 break
               fi
-              echo "Concurrent main advancement on attempt ${attempt}; retrying safe rebase"
+              echo "Concurrent main change; retrying append-only evidence publication"
               sleep 2
             done
-            test "$success" -eq 1
+            test "$published" -eq 1
           fi
+      - name: Recreate and publish L14 classification on current chain head
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          export ARGUS_RUN_ID="$(python -c 'import json;print(json.load(open("/tmp/initial_result.json"))["run_id"])')"
+          export ARGUS_TRIGGER_HASH="$(python -c 'import json;print(json.load(open("/tmp/initial_result.json"))["l14_trigger_cycle_hash"])')"
+          classified=0
+          for attempt in 1 2 3 4 5 6 7 8; do
+            git fetch origin main
+            git reset --hard origin/main
+            # Recalculate event hash from the current operations ledger.
+            # Never cherry-pick, rebase or force-push old hash-chain events.
+            python scripts/pattern_discovery/run_l14_operations.py classify-run \
+              --manifest "artifacts/research/pattern_discovery/discovery_runs/$ARGUS_RUN_ID/manifest.json" \
+              --mode INITIAL \
+              --trigger-cycle-hash "$ARGUS_TRIGGER_HASH" \
+              --recorded-at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+              --actor-id "github-actions-initial-research" \
+              --actor-role research_automation \
+              --repo-root .
+            git add -- artifacts/research/pattern_discovery/operations/operations_registry.jsonl
+            if git diff --cached --quiet; then
+              classified=1
+              break
+            fi
+            git commit -m 'research(patterns): classify initial run on fresh L14 hash chain [skip ci]'
+            if git push origin HEAD:main; then
+              classified=1
+              break
+            fi
+            echo "L14 chain advanced concurrently, rebuilding event on fresh chain"
+            sleep 2
+          done
+          test "$classified" -eq 1
+          python scripts/pattern_discovery/run_initial_real_discovery.py --dry-run > /tmp/final_verified.json
+          python - <<'PY'
+          import json
+          a=json.load(open("/tmp/initial_result.json"))
+          b=json.load(open("/tmp/final_verified.json"))
+          assert a["run_id"]==b["run_id"]
+          assert b["l4_counts"]["eligible_for_l5"]==0
+          print("ARGUS E2E: immutable discovery evidence and L14 chain classification verified")
+          PY
