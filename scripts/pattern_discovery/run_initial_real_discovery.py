@@ -196,7 +196,7 @@ def exclusive_json(path, value):
         f.write(body)
 
 
-def verify_existing(root):
+def verify_existing(root, *, allow_unclassified=False):
     """Verify, but never re-run, an already published immutable initial run."""
     manifests=sorted((root/"artifacts/research/pattern_discovery/discovery_runs").glob("*/manifest.json"))
     if len(manifests)!=1:
@@ -224,9 +224,14 @@ def verify_existing(root):
     reg_path=root/load_operations_contract()["storage"]["registry_path"]
     state=OperationsRegistry(reg_path).state()
     classification=state["classifications"].get(manifest["run_id"])
-    if (classification is None or classification.get("mode") != "INITIAL"
+    if classification is None:
+        # Safe resume after immutable evidence was committed but the
+        # separately hash-chained L14 classification has not yet landed.
+        if not allow_unclassified:
+            raise RuntimeError("initial_run_missing_l14_classification")
+    elif (classification.get("mode") != "INITIAL"
             or classification.get("manifest_hash") != manifest["manifest_hash"]):
-        raise RuntimeError("initial_run_missing_l14_classification")
+        raise RuntimeError("initial_run_l14_classification_mismatch")
     return summary
 
 
@@ -235,7 +240,7 @@ def run(root, dry_run=False):
     if existing:
         # Once published, a second workflow run only audits signed evidence.
         # No re-selection, re-preregistration or replacement of original data.
-        summary=verify_existing(root)
+        summary=verify_existing(root,allow_unclassified=not dry_run)
         print(json.dumps(summary,sort_keys=True,ensure_ascii=False))
         return summary
     latest=root/"artifacts/research/pattern_discovery/operations/latest.json"
