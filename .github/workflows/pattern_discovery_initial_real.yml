@@ -1,0 +1,82 @@
+name: ARGUS Pattern Research – first registered L1-L4 discovery
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/pattern_discovery/run_initial_real_discovery.py'
+      - 'tests/pattern_discovery/test_initial_real_discovery.py'
+      - '.github/workflows/pattern_discovery_initial_real.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/pattern_discovery/run_initial_real_discovery.py'
+      - 'tests/pattern_discovery/test_initial_real_discovery.py'
+      - '.github/workflows/pattern_discovery_initial_real.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: initial-pattern-lab-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  initial-real-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install existing governed laboratory and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Test immutable upfront plan and source restrictions
+        run: python -m pytest -q tests/pattern_discovery/test_initial_real_discovery.py
+      - name: Execute preregistration, real discovery and negative controls
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python scripts/pattern_discovery/run_initial_real_discovery.py --dry-run | tee /tmp/initial_result.json
+          else
+            python scripts/pattern_discovery/run_initial_real_discovery.py | tee /tmp/initial_result.json
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/initial_result.json").read_text())
+          assert j["sources"]["research_rows"]>=1000
+          assert j["sources"]["no_scanner_score_or_rank"] is True
+          assert j["l3_counts"]["tested"]>=1
+          assert j["l4_counts"]["l3_tested_candidates"]==j["l3_counts"]["tested"]
+          assert j["l5_freeze_performed"] is False
+          if j["l4_counts"]["eligible_for_l5"] == 0:
+            assert j["l5_empty_closeout_performed"] is True
+            assert j["l5_frozen_pattern_count"] == 0
+          assert j["prospective_confirmation"] is False
+          assert j["models_are_trade_signals"] is False
+          print("L1-L4 real discovery complete; negative L4 rejections preserved")
+          PY
+      - name: Preserve initial evidence for PR review
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARGUS-Initial-Pattern-Discovery-L1-L4
+          path: |
+            artifacts/research/pattern_discovery/discovery_runs/
+            artifacts/research/pattern_discovery/inputs/
+          retention-days: 30
+      - name: Commit immutable L1-L4 and empty L5 closure with L14 classification
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A artifacts/research/pattern_discovery/
+          if git diff --cached --quiet; then
+            echo 'No evidence changes'
+          else
+            git commit -m 'research(patterns): first immutable L1-L4 discovery and L14 classification [skip ci]'
+            git push origin HEAD:main
+          fi
