@@ -52,6 +52,9 @@ jobs:
           assert j["l3_counts"]["tested"]>=1
           assert j["l4_counts"]["l3_tested_candidates"]==j["l3_counts"]["tested"]
           assert j["l5_freeze_performed"] is False
+          if j["l4_counts"]["eligible_for_l5"] == 0:
+            assert j["l5_empty_closeout_performed"] is True
+            assert j["l5_frozen_pattern_count"] == 0
           assert j["prospective_confirmation"] is False
           assert j["models_are_trade_signals"] is False
           print("L1-L4 real discovery complete; negative L4 rejections preserved")
@@ -65,7 +68,7 @@ jobs:
             artifacts/research/pattern_discovery/discovery_runs/
             artifacts/research/pattern_discovery/inputs/
           retention-days: 30
-      - name: Commit immutable L1-L4 evidence and L14 run classification on main
+      - name: Commit immutable L1-L4 and empty L5 closure with L14 classification
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
