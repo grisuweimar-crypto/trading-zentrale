@@ -1,0 +1,121 @@
+{
+  "config_hash": "1ba123ec9b1bf6290eb314b3f91bc0b7f0712a7bab4c570b07bb3654227d3665",
+  "execution_allowed": false,
+  "input_fingerprint_hash": "21350e11bd7f0b55a544b791ab21115ff363b36610ae44d9387447b743d208ec",
+  "input_fingerprints": [
+    {
+      "path": "artifacts/research/history_analysis.csv",
+      "sha256": "5fe65e83d3eef6b292395d8271146ea7429219aea8bcbb1f05abc9a8cadc45eb",
+      "size_bytes": 20937285
+    },
+    {
+      "path": "artifacts/research/pattern_discovery/inputs/initial_rs3m_trend_cycle_2026-11-16.json",
+      "sha256": "1efb2256326e4f4a647025d25f09b13880c8cc5c789fc75b0dca9173a21c3b4f",
+      "size_bytes": 9122860
+    },
+    {
+      "path": "artifacts/research/price_backfill.csv",
+      "sha256": "65a8be8b533ef622145fb2f8e26c291f5f4791c8a5e2759c9d3614ddb7bb0a14",
+      "size_bytes": 22001030
+    },
+    {
+      "path": "configs/pattern_discovery/feature_library_v1.json",
+      "sha256": "d872763478112578d2214f6ffdbc88f8e03b86bb7383d5ccea4862bbd6d94422",
+      "size_bytes": 14458
+    }
+  ],
+  "l0_boundary_contract_hash": "f13c0f153386c13cbade154133f60e836628a7a11f14a90aaae1e6940b7af32c",
+  "l1_run_contract_hash": "597488e639aedd730421aa5c3ab6dd804bce415f7337ea11af82b8ed6e5e5b95",
+  "manifest_hash": "d85ddfa50649f16b70588a0cf2935083b73a4000c1eb7015923bcbb396d2792b",
+  "module": "pattern_discovery_lab",
+  "phase": "L1",
+  "preregistration": {
+    "allowed_transformations": [
+      "change_direction",
+      "threshold_crossing"
+    ],
+    "baselines": {
+      "peer_excess_20t_gt_0": "same_date_currency_leave_one_out_peer_median",
+      "return_20t_gt_0": "unconditional_20_session_adjusted_return"
+    },
+    "candidate_budget": {
+      "max_frozen_candidates_per_horizon": 12,
+      "max_frozen_candidates_total": 12
+    },
+    "code_version": "02c2d51b32ded413f47e7aacf972e512e688d2f9",
+    "data_cutoff": "2026-11-17T00:00:00+00:00",
+    "data_sources": [
+      "artifacts/research/history_analysis.csv",
+      "artifacts/research/pattern_discovery/inputs/initial_rs3m_trend_cycle_2026-11-16.json",
+      "artifacts/research/price_backfill.csv",
+      "configs/pattern_discovery/feature_library_v1.json"
+    ],
+    "declared_start_at": "2026-11-17T14:10:24.095842+00:00",
+    "dependency_rules": [
+      "duplicate_specs_rejected",
+      "overlapping_events_not_independent"
+    ],
+    "determinism": {
+      "randomness_allowed": false,
+      "seed": null
+    },
+    "exclusion_rules": [
+      "crypto_excluded",
+      "missing_forward_target",
+      "missing_required_feature",
+      "unreliable_adjusted_close"
+    ],
+    "feature_library_version": "PDL-FEATURE-LIBRARY-v1",
+    "horizons_sessions": [
+      20
+    ],
+    "minimum_criteria": {
+      "minimum_baseline_lift": 0.02,
+      "minimum_effect_size": 0.005,
+      "minimum_raw_n": 60,
+      "minimum_temporal_support_regions": 3
+    },
+    "multiple_testing": {
+      "parameters": {
+        "family_alpha": 0.05
+      },
+      "primary_method": "HOLM_FWER"
+    },
+    "pattern_complexity": {
+      "max_atomic_conditions": 3,
+      "min_atomic_conditions": 1
+    },
+    "pattern_types": [
+      "DIRECTIONAL",
+      "RELATIVE_ALPHA"
+    ],
+    "pit_rules": [
+      "mature_adjusted_price_labels_only",
+      "missing_remains_missing",
+      "no_future_features",
+      "no_retrofit_of_modern_features",
+      "same_date_currency_leave_one_out_peer_baseline"
+    ],
+    "robustness_checks": [
+      "moving_block_bootstrap",
+      "symbol_concentration",
+      "temporal_support"
+    ],
+    "search_budget": {
+      "max_tested_candidates_per_family": 100,
+      "max_tested_candidates_total": 200
+    },
+    "statistical_primary_method": "cluster_aware_effect_and_probability_estimation",
+    "targets": [
+      "peer_excess_20t_gt_0",
+      "return_20t_gt_0"
+    ],
+    "universe_version": "observed_equities_history_through_2026-11-16"
+  },
+  "productive_integration_enabled": false,
+  "research_only": true,
+  "run_id": "DISC-B38291D31AD9220C5A64",
+  "run_identity_hash": "b38291d31ad9220c5a642fc1522b6fc943a0427d5401383f86e72cf62333a0d3",
+  "schema_version": "pattern_discovery_run_manifest_v1",
+  "state": "FROZEN_PRE_RUN"
+}
