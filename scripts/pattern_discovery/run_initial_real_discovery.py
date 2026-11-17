@@ -25,6 +25,8 @@ from scanner.research.pattern_discovery import (
     apply_statistical_guard, write_statistical_evidence,
     OperationsRegistry, load_operations_contract,
     freeze_candidates, write_freeze_snapshot,
+    verify_run_manifest, verify_search_result, verify_statistical_evidence,
+    verify_freeze_snapshot,
 )
 
 CUTOFF = "2026-11-17T00:00:00+00:00"
@@ -194,9 +196,48 @@ def exclusive_json(path, value):
         f.write(body)
 
 
+def verify_existing(root):
+    """Verify, but never re-run, an already published immutable initial run."""
+    manifests=sorted((root/"artifacts/research/pattern_discovery/discovery_runs").glob("*/manifest.json"))
+    if len(manifests)!=1:
+        raise RuntimeError("initial_run_ambiguous_or_missing")
+    parent=manifests[0].parent
+    manifest=json.loads(manifests[0].read_text(encoding="utf-8"))
+    l3=json.loads((parent/"l3_search_result.json").read_text(encoding="utf-8"))
+    l4=json.loads((parent/"l4_discovery_evidence.json").read_text(encoding="utf-8"))
+    snapshot=json.loads((parent/"l5_freeze_snapshot.json").read_text(encoding="utf-8"))
+    summary=json.loads((parent/"initial_evidence_summary.json").read_text(encoding="utf-8"))
+    verify_run_manifest(manifest)
+    verify_search_result(l3)
+    verify_statistical_evidence(l4)
+    verify_freeze_snapshot(snapshot)
+    if summary["run_id"] != manifest["run_id"] or parent.name != manifest["run_id"]:
+        raise RuntimeError("initial_run_identity_mismatch")
+    if (summary["l1_manifest_hash"] != manifest["manifest_hash"]
+            or summary["l3_result_hash"] != l3["result_hash"]
+            or summary["l4_evidence_hash"] != l4["evidence_hash"]):
+        raise RuntimeError("initial_run_source_hash_mismatch")
+    if summary["l4_counts"] != l4["counts"] or summary["l3_counts"] != l3["candidate_counts"]:
+        raise RuntimeError("initial_run_count_mismatch")
+    if snapshot["frozen_pattern_count"] != 0 or summary["l5_frozen_pattern_count"] != 0:
+        raise RuntimeError("unexpected_frozen_pattern_in_initial_run")
+    reg_path=root/load_operations_contract()["storage"]["registry_path"]
+    state=OperationsRegistry(reg_path).state()
+    classification=state["classifications"].get(manifest["run_id"])
+    if (classification is None or classification.get("mode") != "INITIAL"
+            or classification.get("manifest_hash") != manifest["manifest_hash"]):
+        raise RuntimeError("initial_run_missing_l14_classification")
+    return summary
+
+
 def run(root, dry_run=False):
-    if list((root/"artifacts/research/pattern_discovery/discovery_runs").glob("*/manifest.json")):
-        raise RuntimeError("initial_discovery_already_preregistered; never rerun INITIAL as fresh discovery")
+    existing=list((root/"artifacts/research/pattern_discovery/discovery_runs").glob("*/manifest.json"))
+    if existing:
+        # Once published, a second workflow run only audits signed evidence.
+        # No re-selection, re-preregistration or replacement of original data.
+        summary=verify_existing(root)
+        print(json.dumps(summary,sort_keys=True,ensure_ascii=False))
+        return summary
     latest=root/"artifacts/research/pattern_discovery/operations/latest.json"
     pointer=json.loads(latest.read_text(encoding="utf-8"))
     cycle=json.loads((root/pointer["cycle_path"]).read_text(encoding="utf-8"))
