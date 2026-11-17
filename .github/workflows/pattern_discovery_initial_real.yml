@@ -78,5 +78,19 @@ jobs:
             echo 'No evidence changes'
           else
             git commit -m 'research(patterns): first immutable L1-L4 discovery and L14 classification [skip ci]'
-            git push origin HEAD:main
+            # Other scheduled ARGUS workflows update main concurrently.
+            # Never force-push: rebase own new artifacts onto the latest
+            # remote head, and retry only if another safe fast-forward wins.
+            success=0
+            for attempt in 1 2 3 4 5 6; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                success=1
+                break
+              fi
+              echo "Concurrent main advancement on attempt ${attempt}; retrying safe rebase"
+              sleep 2
+            done
+            test "$success" -eq 1
           fi
