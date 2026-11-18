@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-17T01:32:10.955241+00:00",
+  "decision_as_of": "2026-11-17T23:54:03.852896+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-17T01:18:47.411729+00:00",
+    "captured_at": "2026-11-17T23:40:46.154965+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-17T01:14:26+00:00",
+    "scanner_published_at": "2026-11-17T23:37:00+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
     "source_as_of": "2026-11-17",
-    "source_capture_id": "d3fd1b2c5fd85a330e4e404545f167032449d414f11a6bc4f1f116fc41e55cb4",
-    "source_publication_commit": "6c37dddfb8b0a0c9f4f93c36d99e95ab2c560d57",
-    "source_run_id": "github-43992399218-1",
-    "source_snapshot_id": "916c28dd-c8f5-4817-a25b-f26be2cc15ed",
+    "source_capture_id": "639b1e3f2f24c3b50c898e8c94d0d1f855b0d7fbae419553a295bd2c2256b49f",
+    "source_publication_commit": "cdbfac755e5da8e794b806bfc15c6597e114b4cc",
+    "source_run_id": "github-44199477208-1",
+    "source_snapshot_id": "b96165ca-ecb0-4d67-9f6a-fc5321c067d2",
     "status": "no_elliott_output_for_symbol",
     "symbol": "9988.HK",
     "validation_partition": "prospective_unspent",
@@ -31,11 +31,13 @@
     "known_directional_claim_ids": [
       "timing:9988.HK:63001daa7f481bc1:5T",
       "timing:9988.HK:15f457a0b3a6df9d:20T",
+      "timing:9988.HK:862e678b240083af:40T",
+      "timing:9988.HK:8868c70444a4a57f:40T",
       "timing:9988.HK:e64908cc5e4c18f0:60T",
       "timing:9988.HK:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 4
+      "timing": 6
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -44,7 +46,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "916c28dd-c8f5-4817-a25b-f26be2cc15ed",
+  "snapshot_id": "b96165ca-ecb0-4d67-9f6a-fc5321c067d2",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -611,6 +613,22 @@
       "direction": "positive",
       "relation_state": "correlated_same_family_support",
       "source_snapshot_id": "916c28dd-c8f5-4817-a25b-f26be2cc15ed",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-17T23:11:31.105696+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "b45519e4-f848-42bb-b9cb-13b38e281d25",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-17T23:54:03.852896+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "b96165ca-ecb0-4d67-9f6a-fc5321c067d2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
     }
