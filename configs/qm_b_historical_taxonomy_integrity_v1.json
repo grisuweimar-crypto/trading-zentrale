@@ -148,6 +148,11 @@
       "path": "src/scanner/app/build_watchlist.py",
       "status": "SAFE",
       "reason": "Reviewed in CYCLE-DIR CY-01 / PR #260: the production builder reads current watchlist and current Yahoo-enriched rows only, materializes nullable cycle plus current-run quality, and emits current-run reports. Its taxonomy/pillar assignments are current-snapshot metadata; it does not read previous research history or use present-day classifications to define or enrich historical scanner observations. The cycle/history reference in its comment is descriptive, not a historical backfill."
+    },
+    {
+      "path": "scripts/pattern_discovery/run_initial_real_discovery.py",
+      "status": "SAFE",
+      "reason": "Reviewed 2026-11-18: initial discovery builds historical events only from stored history_analysis.csv and price_backfill.csv rows filtered by fixed 2026-11-16 cutoff; sector/pillar_primary/cluster_official are copied solely from each historical event row (not joined from current universe_master, nor backfilled using current taxonomy). QM-B prospective historical taxonomy gate and missing-feature rules remain unchanged."
     }
   ],
   "confirmed_current_taxonomy_dependencies": 0,
