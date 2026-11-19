@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-17T23:54:03.852896+00:00",
+  "decision_as_of": "2026-11-18T23:08:44.039608+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-17T23:40:46.154965+00:00",
+    "captured_at": "2026-11-18T22:48:21.467351+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-17T23:37:00+00:00",
+    "scanner_published_at": "2026-11-18T22:44:18+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-17",
-    "source_capture_id": "639b1e3f2f24c3b50c898e8c94d0d1f855b0d7fbae419553a295bd2c2256b49f",
-    "source_publication_commit": "cdbfac755e5da8e794b806bfc15c6597e114b4cc",
-    "source_run_id": "github-44199477208-1",
-    "source_snapshot_id": "b96165ca-ecb0-4d67-9f6a-fc5321c067d2",
+    "source_as_of": "2026-11-18",
+    "source_capture_id": "a845e4db30b86924340d3fcc599a25460a4c3c4a4136a1cf15909257defd5afa",
+    "source_publication_commit": "a33b24a6d7950558beee3ce2be7307983095adc6",
+    "source_run_id": "github-44412524375-1",
+    "source_snapshot_id": "9ab249a7-7ecf-437b-a24e-d2f06a02d38a",
     "status": "no_elliott_output_for_symbol",
     "symbol": "YCA.L",
     "validation_partition": "prospective_unspent",
@@ -29,23 +29,21 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:YCA.L:9aace91dab644870:5T",
-      "timing:YCA.L:2ec83739629fba4d:5T",
-      "timing:YCA.L:42bcd8a34d314c09:5T",
+      "timing:YCA.L:ea08718de33a1787:5T",
       "timing:YCA.L:0671faf1011640c5:5T",
-      "timing:YCA.L:1aa807ae1a9556c5:20T",
-      "timing:YCA.L:6267ff2c27f27eb8:20T",
-      "timing:YCA.L:f483a5247b57affc:20T",
-      "timing:YCA.L:cad5eb04910821c4:20T",
+      "timing:YCA.L:c42ca6c1baee697b:20T",
       "timing:YCA.L:b158fef8cbfb5c55:20T",
+      "timing:YCA.L:4ccb45d4ee923f1a:40T",
+      "timing:YCA.L:9cb11f4adfc9eb9c:40T",
+      "timing:YCA.L:8868c70444a4a57f:40T",
       "timing:YCA.L:3e260f25164f48ce:40T",
-      "timing:YCA.L:e3f414dec0e09a39:40T",
+      "timing:YCA.L:9d34e7ebabe3e590:40T",
       "timing:YCA.L:df23cc7f8d9328ee:60T",
-      "timing:YCA.L:a0bebf08166a0860:60T",
-      "timing:YCA.L:fe6ff0aee1bf447a:60T"
+      "timing:YCA.L:5472db56664c10c8:60T",
+      "timing:YCA.L:5b62a0aabd2f08fc:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 14
+      "timing": 12
     },
     "relation_state": "correlated_same_family_support",
     "state": "positive",
@@ -54,7 +52,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "b96165ca-ecb0-4d67-9f6a-fc5321c067d2",
+  "snapshot_id": "9ab249a7-7ecf-437b-a24e-d2f06a02d38a",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -639,6 +637,14 @@
       "source_snapshot_id": "b96165ca-ecb0-4d67-9f6a-fc5321c067d2",
       "state": "positive",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-18T23:08:44.039608+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "9ab249a7-7ecf-437b-a24e-d2f06a02d38a",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
@@ -647,13 +653,13 @@
       "rank_worsening_5t": false,
       "rs3m_falling_5t": true,
       "score_falling_5t": false,
-      "trend200_falling_5t": false
+      "trend200_falling_5t": true
     },
     "last_overextension_date": "2026-03-15",
     "last_overextension_rs3m": 0.165646395420568,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 246,
+    "sessions_since_last_overextension": 247,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
