@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-18T23:08:44.039608+00:00",
+  "decision_as_of": "2026-11-19T23:21:58.797654+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-18T22:48:21.467351+00:00",
+    "captured_at": "2026-11-19T23:12:32.819806+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-18T22:44:18+00:00",
+    "scanner_published_at": "2026-11-19T23:08:38+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-18",
-    "source_capture_id": "a845e4db30b86924340d3fcc599a25460a4c3c4a4136a1cf15909257defd5afa",
-    "source_publication_commit": "a33b24a6d7950558beee3ce2be7307983095adc6",
-    "source_run_id": "github-44412524375-1",
-    "source_snapshot_id": "9ab249a7-7ecf-437b-a24e-d2f06a02d38a",
+    "source_as_of": "2026-11-19",
+    "source_capture_id": "37a321c2747c13b16b4e521abacaef310fc9ccd2c8ee6465889569084be5dcc1",
+    "source_publication_commit": "c4bb24d6178e36d1f2f318844fba4fbe15b8abe2",
+    "source_run_id": "github-44633679856-1",
+    "source_snapshot_id": "9d382b71-1784-4f10-9449-3cdb0eb0f1a3",
     "status": "no_elliott_output_for_symbol",
     "symbol": "APP",
     "validation_partition": "prospective_unspent",
@@ -29,19 +29,20 @@
     "conflicts": [],
     "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:APP:32bb40f535b6b527:60T"
+      "timing:APP:862e678b240083af:40T",
+      "timing:APP:e3f414dec0e09a39:40T"
     ],
     "known_directional_family_counts": {
-      "timing": 1
+      "timing": 2
     },
-    "relation_state": "single_direction_or_unopposed",
+    "relation_state": "correlated_same_family_support",
     "state": "positive",
-    "support_structure": "single_direction_or_unopposed"
+    "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "9ab249a7-7ecf-437b-a24e-d2f06a02d38a",
+  "snapshot_id": "9d382b71-1784-4f10-9449-3cdb0eb0f1a3",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -634,25 +635,41 @@
       "source_snapshot_id": "9ab249a7-7ecf-437b-a24e-d2f06a02d38a",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-11-19T22:41:53.879728+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "dc59453e-c512-4b80-b8cb-d09660dc3fce",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-19T23:21:58.797654+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "9d382b71-1784-4f10-9449-3cdb0eb0f1a3",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": true,
+      "rs3m_falling_5t": false,
       "score_falling_5t": false,
       "trend200_falling_5t": true
     },
-    "last_overextension_date": "2026-11-18",
-    "last_overextension_rs3m": 0.3291936312983298,
+    "last_overextension_date": "2026-11-19",
+    "last_overextension_rs3m": 0.32246428808077165,
     "overextension_active": true,
     "recent_overextension": true,
     "sessions_since_last_overextension": 0,
-    "upstream_review_state": "profit_protection_review",
-    "upstream_sequence_state": "overextension_with_fading_dynamics"
+    "upstream_review_state": "monitor",
+    "upstream_sequence_state": "active_overextension"
   },
-  "state_history_state": "overextension_with_momentum_loss",
+  "state_history_state": "overextended",
   "symbol": "APP",
   "transition_state": {
     "pending_confirmation_count": 0,
