@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-20T23:48:02.827913+00:00",
+  "decision_as_of": "2026-11-21T21:18:05.924974+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-20T23:34:57.163737+00:00",
+    "captured_at": "2026-11-21T21:03:00.970327+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-20T23:31:06+00:00",
+    "scanner_published_at": "2026-11-21T20:59:43+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-20",
-    "source_capture_id": "405aeb567ef5ba5f9e8a59ea65e2f002f95f31a181b3dda1076d72a1ce602a41",
-    "source_publication_commit": "cd16f91a9095eeeb1721e82c1fe5772b6f882698",
-    "source_run_id": "github-44835888801-1",
-    "source_snapshot_id": "5b9f39c9-1e90-4588-80c1-00895ad2d34b",
+    "source_as_of": "2026-11-21",
+    "source_capture_id": "f05c01f2ec7902cf7bb2b2202407e5fa67ca298451862f53928ffc6c2458539a",
+    "source_publication_commit": "d0626393aa98a3711617898656d048a29daf0f35",
+    "source_run_id": "github-44948458894-1",
+    "source_snapshot_id": "0e63f53c-7bc9-48f9-8f31-5933d0f5d8f0",
     "status": "no_elliott_output_for_symbol",
     "symbol": "ROL",
     "validation_partition": "prospective_unspent",
@@ -29,26 +29,16 @@
     "conflicts": [
       {
         "negative_claim_ids": [
-          "timing:ROL:5df2a86791ff5f88:60T",
-          "timing:ROL:b0fb906b9f3e02ec:60T",
-          "timing:ROL:51a8cac8cfa550aa:60T",
-          "timing:ROL:1691f75766881bca:60T"
+          "timing:ROL:6b9ad841e92f8191:60T",
+          "timing:ROL:8383be481c5c6052:60T",
+          "timing:ROL:6c608d2ad71a6396:60T"
         ],
         "positive_claim_ids": [
-          "timing:ROL:9aace91dab644870:5T",
-          "timing:ROL:2ec83739629fba4d:5T",
-          "timing:ROL:42bcd8a34d314c09:5T",
-          "timing:ROL:0671faf1011640c5:5T",
+          "timing:ROL:d18193c29692a1cb:5T",
+          "timing:ROL:63001daa7f481bc1:5T",
+          "timing:ROL:a4278e33701f9d98:20T",
           "timing:ROL:1aa807ae1a9556c5:20T",
-          "timing:ROL:6267ff2c27f27eb8:20T",
-          "timing:ROL:f483a5247b57affc:20T",
-          "timing:ROL:cad5eb04910821c4:20T",
-          "timing:ROL:b158fef8cbfb5c55:20T",
-          "timing:ROL:3e260f25164f48ce:40T",
-          "timing:ROL:df23cc7f8d9328ee:60T",
-          "timing:ROL:a0bebf08166a0860:60T",
-          "timing:ROL:6289a7880870e93e:60T",
-          "timing:ROL:fe6ff0aee1bf447a:60T"
+          "timing:ROL:2d034c21b8215d13:40T"
         ],
         "relation_type": "within_family_conflict",
         "resolved": false
@@ -56,27 +46,17 @@
     ],
     "direction": null,
     "known_directional_claim_ids": [
-      "timing:ROL:9aace91dab644870:5T",
-      "timing:ROL:2ec83739629fba4d:5T",
-      "timing:ROL:42bcd8a34d314c09:5T",
-      "timing:ROL:0671faf1011640c5:5T",
+      "timing:ROL:d18193c29692a1cb:5T",
+      "timing:ROL:63001daa7f481bc1:5T",
+      "timing:ROL:a4278e33701f9d98:20T",
       "timing:ROL:1aa807ae1a9556c5:20T",
-      "timing:ROL:6267ff2c27f27eb8:20T",
-      "timing:ROL:f483a5247b57affc:20T",
-      "timing:ROL:cad5eb04910821c4:20T",
-      "timing:ROL:b158fef8cbfb5c55:20T",
-      "timing:ROL:3e260f25164f48ce:40T",
-      "timing:ROL:df23cc7f8d9328ee:60T",
-      "timing:ROL:a0bebf08166a0860:60T",
-      "timing:ROL:6289a7880870e93e:60T",
-      "timing:ROL:fe6ff0aee1bf447a:60T",
-      "timing:ROL:5df2a86791ff5f88:60T",
-      "timing:ROL:b0fb906b9f3e02ec:60T",
-      "timing:ROL:51a8cac8cfa550aa:60T",
-      "timing:ROL:1691f75766881bca:60T"
+      "timing:ROL:2d034c21b8215d13:40T",
+      "timing:ROL:6b9ad841e92f8191:60T",
+      "timing:ROL:8383be481c5c6052:60T",
+      "timing:ROL:6c608d2ad71a6396:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 18
+      "timing": 8
     },
     "relation_state": "conflict_present",
     "state": "conflicted",
@@ -85,7 +65,7 @@
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "5b9f39c9-1e90-4588-80c1-00895ad2d34b",
+  "snapshot_id": "0e63f53c-7bc9-48f9-8f31-5933d0f5d8f0",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -710,15 +690,23 @@
       "source_snapshot_id": "5b9f39c9-1e90-4588-80c1-00895ad2d34b",
       "state": "conflicted",
       "support_structure": "unresolved_conflict"
+    },
+    {
+      "as_of": "2026-11-21T21:18:05.924974+00:00",
+      "direction": null,
+      "relation_state": "conflict_present",
+      "source_snapshot_id": "0e63f53c-7bc9-48f9-8f31-5933d0f5d8f0",
+      "state": "conflicted",
+      "support_structure": "unresolved_conflict"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": true,
+      "rs3m_falling_5t": false,
       "score_falling_5t": true,
-      "trend200_falling_5t": false
+      "trend200_falling_5t": true
     },
     "last_overextension_date": null,
     "last_overextension_rs3m": null,
