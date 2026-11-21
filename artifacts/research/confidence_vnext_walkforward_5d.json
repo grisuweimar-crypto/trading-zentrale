@@ -3,16 +3,16 @@
   "schema_version": "phase5d_walkforward_evaluation_v1",
   "status": "walkforward_evaluation_active",
   "source_phase5c_schema_version": "phase5c_progressive_learning_v1",
-  "claims": 69856,
-  "mature_outcomes": 25035,
-  "phase5c_versions": 57,
+  "claims": 71552,
+  "mature_outcomes": 25638,
+  "phase5c_versions": 62,
   "finalized_evaluations": 0,
   "new_finalized_evaluations": [],
   "evaluation_chain_tip": null,
-  "as_known_at": "2026-11-19T22:40:56.130421+00:00",
+  "as_known_at": "2026-11-20T23:22:02.351239+00:00",
   "horizons": {
     "5": {
-      "phase5c_versions": 35,
+      "phase5c_versions": 37,
       "finalized_evaluation_epochs": 0,
       "finalized_status": [
         {
@@ -184,16 +184,26 @@
           "version_id": "phase5c-5T-b91a1cc3c63b397e",
           "successor_version_id": "phase5c-5T-869cfb0854d37aab",
           "status": "awaiting_or_missing_strictly_future_rows"
+        },
+        {
+          "version_id": "phase5c-5T-869cfb0854d37aab",
+          "successor_version_id": "phase5c-5T-07ce7213409b0065",
+          "status": "awaiting_or_missing_strictly_future_rows"
+        },
+        {
+          "version_id": "phase5c-5T-07ce7213409b0065",
+          "successor_version_id": "phase5c-5T-9db955329a472630",
+          "status": "awaiting_or_missing_strictly_future_rows"
         }
       ],
       "latest_provisional": {
         "status": "awaiting_future_mature_evidence",
         "N": 0,
-        "as_known_at": "2026-11-19T22:40:56.130421+00:00"
+        "as_known_at": "2026-11-20T23:22:02.351239+00:00"
       }
     },
     "20": {
-      "phase5c_versions": 22,
+      "phase5c_versions": 24,
       "finalized_evaluation_epochs": 0,
       "finalized_status": [
         {
@@ -300,19 +310,33 @@
           "version_id": "phase5c-20T-a937091f22d9ef26",
           "successor_version_id": "phase5c-20T-386553917cd2acb1",
           "status": "awaiting_or_missing_strictly_future_rows"
+        },
+        {
+          "version_id": "phase5c-20T-386553917cd2acb1",
+          "successor_version_id": "phase5c-20T-70e16d693fe7f3ce",
+          "status": "awaiting_or_missing_strictly_future_rows"
+        },
+        {
+          "version_id": "phase5c-20T-70e16d693fe7f3ce",
+          "successor_version_id": "phase5c-20T-dd8ba51efe40ec70",
+          "status": "awaiting_or_missing_strictly_future_rows"
         }
       ],
       "latest_provisional": {
         "status": "awaiting_future_mature_evidence",
         "N": 0,
-        "as_known_at": "2026-11-19T22:40:56.130421+00:00"
+        "as_known_at": "2026-11-20T23:22:02.351239+00:00"
       }
     },
     "40": {
-      "phase5c_versions": 0,
+      "phase5c_versions": 1,
       "finalized_evaluation_epochs": 0,
       "finalized_status": [],
-      "latest_provisional": null
+      "latest_provisional": {
+        "status": "awaiting_future_mature_evidence",
+        "N": 0,
+        "as_known_at": "2026-11-20T23:22:02.351239+00:00"
+      }
     },
     "60": {
       "phase5c_versions": 0,
@@ -323,7 +347,6 @@
   },
   "blockers": [
     "20T_successor_without_future_evaluation_rows",
-    "40T_no_phase5c_version",
     "5T_successor_without_future_evaluation_rows",
     "60T_no_phase5c_version"
   ],
