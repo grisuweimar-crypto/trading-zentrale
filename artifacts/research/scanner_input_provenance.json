@@ -1,13 +1,13 @@
 {
   "as_of": "2026-11-24",
-  "bound_at": "2026-11-24T02:09:07.661509+00:00",
+  "bound_at": "2026-11-24T03:30:41.709707+00:00",
   "boundaries": {
     "decision_semantics_changed": false,
     "historical_provenance_inferred": false,
     "scanner_values_changed": false,
     "scanner_weights_changed": false
   },
-  "content_hash": "3c485a14d84dc053a90d323de5e8ff1ac37a5ec06e3c21161ceb7b9d549a9a8f",
+  "content_hash": "20d1286c23536c09580ff9df0672a6875db323150ccd79b0279debf87a92b824",
   "coverage": {
     "direct_scoring_input_bound": true,
     "historical_backfill": false,
@@ -19,8 +19,8 @@
     "snapshot_identity_bound": true
   },
   "pre_run": {
-    "captured_at": "2026-11-24T02:08:03.741403+00:00",
-    "code_revision": "ad2cde2d542c0cc207b18930547e744fc17a7864",
+    "captured_at": "2026-11-24T03:29:07.220784+00:00",
+    "code_revision": "3775ed9c65300a74efa79cb1949bef7b25038367",
     "historical_backfill": false,
     "inputs": [
       {
@@ -28,8 +28,8 @@
         "path": "artifacts/watchlist/watchlist.csv",
         "required": true,
         "role": "persistent_watchlist_state",
-        "sha256": "78084998bc30c02d643ea913e3bebfcb1b3b77a96a88ad64f69fd638fdfd7e3e",
-        "size_bytes": 258218
+        "sha256": "2560399b4f26ba5bc117314fb9c5d895a7ba3e68a74b33cc1ea91efff330c13a",
+        "size_bytes": 257728
       },
       {
         "exists": true,
@@ -56,7 +56,7 @@
         "size_bytes": null
       }
     ],
-    "run_id": "github-45309896084-1",
+    "run_id": "github-45319624767-1",
     "runtime_intent": {
       "scanner_fetch_yahoo": "1"
     },
@@ -65,24 +65,24 @@
     "schema_version": "scanner_pre_run_provenance_v1",
     "selected_watchlist_input": "artifacts/watchlist/watchlist.csv"
   },
-  "run_id": "github-45309896084-1",
+  "run_id": "github-45319624767-1",
   "runtime": {
-    "captured_at": "2026-11-24T02:08:07.882152+00:00",
-    "code_revision": "ad2cde2d542c0cc207b18930547e744fc17a7864",
+    "captured_at": "2026-11-24T03:29:13.421111+00:00",
+    "code_revision": "3775ed9c65300a74efa79cb1949bef7b25038367",
     "historical_backfill": false,
-    "run_id": "github-45309896084-1",
+    "run_id": "github-45319624767-1",
     "scanner_build": "2026-02-13",
     "scanner_version": "0.0.1-v7",
     "schema_version": "scanner_runtime_provenance_v1",
     "scoring_rows_input": {
       "path": "artifacts/watchlist/watchlist_full_raw.csv",
-      "sha256": "2560399b4f26ba5bc117314fb9c5d895a7ba3e68a74b33cc1ea91efff330c13a",
-      "size_bytes": 257728
+      "sha256": "9e0021a97910f654c7dcd699ef3e6bcfd3b71bb83ac97c45f22cede32db0b52a",
+      "size_bytes": 257729
     },
     "selected_scoring_universe": {
       "path": "artifacts/watchlist/watchlist.csv",
-      "sha256": "2560399b4f26ba5bc117314fb9c5d895a7ba3e68a74b33cc1ea91efff330c13a",
-      "size_bytes": 257728
+      "sha256": "9e0021a97910f654c7dcd699ef3e6bcfd3b71bb83ac97c45f22cede32db0b52a",
+      "size_bytes": 257729
     },
     "yahoo_enrichment": {
       "benchmark_crypto": "BTC-USD",
@@ -96,7 +96,7 @@
       "provider_fetch_completed_at_utc": null,
       "provider_fetch_started_at_utc": null,
       "provider_frame_rows": 429,
-      "provider_frame_sha256": "def39f72bf75d9583b4d60b3a38b7c7b83234ec2ffec67819a684870f0ea6d9f",
+      "provider_frame_sha256": "05f32ed85c82df146a3c91c9467113aa94c18fbf2662bf96034b28a7f74564bb",
       "tickers_failed": 0,
       "tickers_fetched": 228,
       "tickers_total": 220
@@ -104,14 +104,14 @@
   },
   "scanner_output": {
     "latest_scanner_path": "artifacts/research/latest_scanner.csv",
-    "latest_scanner_sha256": "890bfc750cbd3e262d516ce92c47419e551e9750cc998559d26da049e7ee274c",
+    "latest_scanner_sha256": "febe60a7ae3db3856852a636c50021321625fcc6170ba461cf0f719f5a98b90b",
     "source_file": "artifacts/watchlist/watchlist_full.csv",
-    "source_sha256": "2b20700c0382d8eea273d3c0a310c734cae94fef0392caceb318f5fa426ca6b9"
+    "source_sha256": "d664d24622d898d2f496c3907b98ad120c65828af1a833a1d18506a7fa4459f2"
   },
   "schema_version": "scanner_input_provenance_v1",
-  "snapshot_id": "a1c5f592-1d82-40cf-a8d2-54b66acd8cd4",
+  "snapshot_id": "5ad23359-c07d-4730-8702-5c4b889a81d7",
   "transform_identity": {
-    "code_revision": "ad2cde2d542c0cc207b18930547e744fc17a7864",
+    "code_revision": "3775ed9c65300a74efa79cb1949bef7b25038367",
     "scanner_build": "2026-02-13",
     "scanner_version": "0.0.1-v7"
   }
