@@ -181,8 +181,52 @@ def fetch_batch(tickers, request, *, retries=2, sleep=time.sleep, witness_attemp
     return frame, errors
 
 
+def capture_full_window_pilot(providers, end, *, witness_attempts, fetcher=None):
+    """Extra client evidence only; never merge these rows into the scanner cache.
+
+    Exact provider symbols are intentionally preselected. Capture an entire
+    year so all sixty session dates are available even across holidays.
+    """
+    providers = tuple(dict.fromkeys(providers))
+    if not providers:
+        return {}
+    if any(s not in {"UEC", "TTD"} for s in providers):
+        raise ValueError("unregistered_cycle_full_window_pilot_symbol")
+    fetcher = fetch_batch if fetcher is None else fetcher
+    request = {"period": "1y", "start": None, "end": end.isoformat()}
+    # An optional evidence request must not replace or invalidate the normal
+    # market-data acquisition. Keep any attempts recorded by fetch_batch.
+    before = len(witness_attempts)
+    try:
+        frame, errors = fetcher(list(providers), request, retries=0,
+                                witness_attempts=witness_attempts)
+    except Exception as exc:
+        return {"status": "PILOT_FAILED", "exception_type": type(exc).__name__,
+                "attempts_recorded": len(witness_attempts) - before}
+    counts = {}
+    for s in providers:
+        days = set()
+        for row in frame.to_dict("records"):
+            if row.get("symbol") != s:
+                continue
+            try:
+                day = date.fromisoformat(str(row["date"]))
+                p = number(row.get("adj_close"))
+            except (ValueError, TypeError, KeyError):
+                continue
+            if day < end and p is not None and p > 0:
+                days.add(day)
+        counts[s] = len(days)
+    return {"status": "CLIENT_WINDOW_CAPTURE_ONLY",
+            "provider_symbols": list(providers), "session_counts": counts,
+            "at_least_60_sessions": {s: n >= 60 for s,n in counts.items()},
+            "errors": {s: str(errors[s])[:160] for s in providers if s in errors},
+            "attempts_recorded": len(witness_attempts) - before,
+            "independent_pit_verified": False}
+
+
 def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None, *, now=None,
-                     batch_size=20, retries=2, sleep=time.sleep):
+                     batch_size=20, retries=2, sleep=time.sleep, full_window_pilot=()):
     root = Path(root)
     now = now or datetime.now(timezone.utc)
     if minimum_days < 1 or not 1 <= batch_size <= 50 or not 0 <= retries <= 5:
@@ -336,6 +380,9 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     # This is pre-scoring client evidence for the SAME canonical cache, not
     # provider-signed bar availability or independent currency verification.
     if target.resolve() == (root / CACHE).resolve():
+        pilot = capture_full_window_pilot(full_window_pilot, end, witness_attempts=witness_attempts)
+        if pilot:
+            print("CY-03 full-window evidence pilot:", json.dumps(pilot, sort_keys=True), flush=True)
         write_current_witness(root, witness_attempts, cache=target.read_bytes())
     required = {r["symbol"] for r in latest}
     frame = pd.DataFrame([r for r in merged if r["symbol"] in required], columns=MARKET_COLUMNS)
