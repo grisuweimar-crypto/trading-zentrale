@@ -29,8 +29,11 @@ Do not generalize partial-hybrid results to missing prices.
 Run: python -m scripts.audit_cycle_vintage_robustness --output /tmp/cycle-vintage-robustness.json
 CI publishes actual results. Existing research gate stays closed.
 
-## Next capture work (not enabled by this PR)
-Separate pilot capture of full adjusted-close windows before scoring for UEC
-and TTD, plus native quote unit/venue metadata and request/response timestamps.
-Store exact response and hash, bind to scan cutoff; no substitution or
-retrospective stamping. Source vintage proof still requires independent review.
+## Full-window capture pilot (implemented, disabled by default)
+Set SCANNER_CYCLE_FULL_WINDOW_PILOT=UEC,TTD on the pre-scoring input step
+only after review. The extra one-year normalized Yahoo adjusted-close response
+is appended to the existing timestamped witness attempts, NOT merged into the
+market cache, and is bound by the existing snapshot witness mechanism.
+A failed pilot does not replace normal inputs. No external quote unit, venue
+or raw HTTP proof is claimed. Independent publisher PIT and quote metadata
+remain separate work. The pilot has not been enabled or executed in production.
