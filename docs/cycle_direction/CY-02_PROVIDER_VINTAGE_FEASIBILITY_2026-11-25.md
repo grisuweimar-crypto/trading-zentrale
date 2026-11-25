@@ -45,3 +45,25 @@ a new series into a historical Yahoo snapshot. Any alternate independently
 reconstructed oscillator must have its own source and version, reviewed separately.
 No credentials, subscription, external request or independent signed review
 has been obtained here. No change to #269/#290 or CY-05 gates.
+
+## Observed cross-source checks and missing session diagnosis
+
+The actual normalized witness for snapshot a40e915d-71d6-4ba3-89f8-f2c8ae53cf21,
+request 2026-11-18 to exclusive 2026-11-25, finished 2026-11-25T01:36:05.507387Z,
+was decoded and checked against its frame row count and gzip CRC. For UEC and
+TTD the response supplied 18, 19, 20 and 23 November only. All eight closes
+agree to the displayed cent with the current S&P Global Market Intelligence
+historical tables at https://stockanalysis.com/stocks/uec/history/ and
+https://stockanalysis.com/stocks/ttd/history/ (last updated 24 Nov).
+The external source also reports 24 Nov close UEC USD 5.57, TTD USD 14.07;
+that date is absent from the actual prefetch response and both cycle_quality
+rows name 23 Nov as last_bar. The archived prices for 23 Nov are correct to
+displayed precision, not expired or retroactively overwritten. This is
+partial retrospective cross-source agreement only, not complete 60-bar
+coverage or proof of the historical provider publication time.
+
+The pilot now detects a missing expected completed US exchange session and
+uses a bounded targeted request through the existing validated acquisition
+path. A full-year capture stays evidence-only. Existing archive entries
+remain unchanged; failures remain explicitly missing. This repair requires
+the new calendar dependency and production merge.
