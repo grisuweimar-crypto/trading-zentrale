@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - "scripts/audit_cycle_client_vintage.py"
+      - "scripts/audit_cycle_vintage_robustness.py"
+      - "tests/test_cycle_vintage_robustness.py"
       - "tests/test_cycle_client_vintage.py"
       - ".github/workflows/cycle_client_vintage_audit.yml"
   workflow_dispatch:
@@ -20,10 +22,13 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install -e ".[test]"
-      - run: python -m pytest -q tests/test_cycle_client_vintage.py
+      - run: python -m pytest -q tests/test_cycle_client_vintage.py tests/test_cycle_vintage_robustness.py
       - run: python scripts/audit_cycle_client_vintage.py --output /tmp/client-vintage.json
+      - run: python -m scripts.audit_cycle_vintage_robustness --output /tmp/cycle-vintage-robustness.json
       - uses: actions/upload-artifact@v4
         with:
           name: client-vintage-evidence
-          path: /tmp/client-vintage.json
+          path: |
+            /tmp/client-vintage.json
+            /tmp/cycle-vintage-robustness.json
           retention-days: 30
