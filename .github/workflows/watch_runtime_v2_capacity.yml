@@ -1,0 +1,24 @@
+name: Watch runtime v2 lossless capacity preview
+on:
+  pull_request:
+    paths:
+      - "src/scanner/research/decision_layer/watch_runtime_v2_capacity.py"
+      - "tests/test_watch_runtime_v2_capacity.py"
+      - ".github/workflows/watch_runtime_v2_capacity.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - run: python -m pytest -q tests/test_watch_runtime_v2_capacity.py
+      - run: python -m scanner.research.decision_layer.watch_runtime_v2_capacity
