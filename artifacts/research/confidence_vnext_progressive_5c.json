@@ -3,18 +3,18 @@
   "schema_version": "phase5c_progressive_learning_v1",
   "status": "progressive_learning_active",
   "source_schema_version": "phase5b_shadow_v2",
-  "claims": 75792,
-  "mature_outcomes": 28778,
+  "claims": 76640,
+  "mature_outcomes": 29498,
   "horizons": {
     "5": {
       "stage": "robust_learning_base",
       "pilot_ready": true,
       "robust_learning_base": true,
-      "training_rows": 1678,
+      "training_rows": 1683,
       "symbols": 212,
-      "directional_rows": 803,
+      "directional_rows": 805,
       "directional_symbols": 185,
-      "observation_dates": 37,
+      "observation_dates": 38,
       "support_regions": 4,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -24,19 +24,19 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 10
       },
-      "latest_candidate_version": "phase5c-5T-7dae904ad1508d55",
-      "candidate_version_from_current_evidence": "phase5c-5T-7dae904ad1508d55",
-      "version_count": 40
+      "latest_candidate_version": "phase5c-5T-96ddf83a66d642b9",
+      "candidate_version_from_current_evidence": "phase5c-5T-96ddf83a66d642b9",
+      "version_count": 41
     },
     "20": {
       "stage": "pilot_learning",
       "pilot_ready": true,
       "robust_learning_base": false,
-      "training_rows": 1032,
+      "training_rows": 1037,
       "symbols": 210,
-      "directional_rows": 0,
-      "directional_symbols": 0,
-      "observation_dates": 22,
+      "directional_rows": 4,
+      "directional_symbols": 4,
+      "observation_dates": 23,
       "support_regions": 1,
       "requirements": {
         "minimum_pilot_observation_dates": 2,
@@ -46,16 +46,16 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 40
       },
-      "latest_candidate_version": "phase5c-20T-72c5289252f74362",
-      "candidate_version_from_current_evidence": "phase5c-20T-72c5289252f74362",
-      "version_count": 29
+      "latest_candidate_version": "phase5c-20T-f1882bd102e250d1",
+      "candidate_version_from_current_evidence": "phase5c-20T-f1882bd102e250d1",
+      "version_count": 30
     },
     "40": {
       "stage": "pilot_learning",
       "pilot_ready": true,
       "robust_learning_base": false,
-      "training_rows": 201,
-      "symbols": 201,
+      "training_rows": 203,
+      "symbols": 203,
       "directional_rows": 0,
       "directional_symbols": 0,
       "observation_dates": 3,
@@ -68,9 +68,9 @@
         "fixed_event_spacing_sessions": 5,
         "robust_block_length_observation_dates": 80
       },
-      "latest_candidate_version": "phase5c-40T-0fb9c8b73910d8a6",
-      "candidate_version_from_current_evidence": "phase5c-40T-0fb9c8b73910d8a6",
-      "version_count": 5
+      "latest_candidate_version": "phase5c-40T-6758d1f7b87ca05a",
+      "candidate_version_from_current_evidence": "phase5c-40T-6758d1f7b87ca05a",
+      "version_count": 6
     },
     "60": {
       "stage": "collecting",
@@ -95,10 +95,12 @@
       "version_count": 0
     }
   },
-  "model_versions": 74,
-  "version_chain_tip": "5b781df385d03056a6e33db12d978608a25bd7f7362906623bc48c7b96b3d979",
+  "model_versions": 77,
+  "version_chain_tip": "bff4a778980f5046fd3817670ac323930539beab9772051f1b89563297ce8006",
   "new_model_versions": [
-    "phase5c-20T-72c5289252f74362"
+    "phase5c-5T-96ddf83a66d642b9",
+    "phase5c-20T-f1882bd102e250d1",
+    "phase5c-40T-6758d1f7b87ca05a"
   ],
   "semantics": {
     "research_only": true,
