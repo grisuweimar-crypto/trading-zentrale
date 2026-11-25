@@ -181,6 +181,29 @@ def fetch_batch(tickers, request, *, retries=2, sleep=time.sleep, witness_attemp
     return frame, errors
 
 
+def expected_pilot_session(symbol, *, end, now):
+    """Latest actual exchange session strictly before the configured date cutoff."""
+    import pandas_market_calendars as mcal
+    calendar = mcal.get_calendar({"UEC": "NYSE", "TTD": "NASDAQ"}[symbol])
+    schedule = calendar.schedule(start_date=end-timedelta(days=14),
+                                 end_date=end-timedelta(days=1))
+    closed = schedule.loc[schedule["market_close"] <= pd.Timestamp(now)]
+    return None if closed.empty else closed.index[-1].date().isoformat()
+
+
+def missing_pilot_sessions(symbols, *, end, now, existing, incoming):
+    """Only request missing dates; an old archived close is never overwritten."""
+    available = {(str(r.get("symbol")), str(r.get("date"))[:10])
+                 for r in list(existing)+list(incoming)
+                 if number(r.get("adj_close")) is not None and number(r.get("adj_close")) > 0}
+    missing = {}
+    for symbol in symbols:
+        expected = expected_pilot_session(symbol, end=end, now=now)
+        if expected and (symbol, expected) not in available:
+            missing[symbol] = expected
+    return missing
+
+
 def capture_full_window_pilot(providers, end, *, witness_attempts, fetcher=None):
     """Extra client evidence only; never merge these rows into the scanner cache.
 
@@ -343,6 +366,25 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
             print(f"Price fetch {period or 'incremental from ' + start}: {', '.join(chunk)}", flush=True)
             acquire(chunk, period, start)
             sleep(0.5)
+    # The optional freshness repair uses the same validated acquisition/merge
+    # path as the normal prefetch, never the evidence-only full-window response.
+    active_pilot = tuple(s for s in full_window_pilot if s in modes
+                         and mappings[s][0] == s and s in {"UEC","TTD"})
+    freshness = {}
+    if active_pilot:
+        missing = missing_pilot_sessions(active_pilot, end=end, now=now,
+                                         existing=existing, incoming=incoming)
+        for symbol, session_date in missing.items():
+            acquire([symbol], None, session_date)
+        still_missing = missing_pilot_sessions(active_pilot, end=end, now=now,
+                                               existing=existing, incoming=incoming)
+        freshness = {s: {"expected_latest_session": expected_pilot_session(s,end=end,now=now),
+                         "targeted_retry_attempted": s in missing,
+                         "status": "MISSING_AFTER_RETRY" if s in still_missing else "SESSION_PRESENT"}
+                     for s in active_pilot}
+        for s, state_detail in freshness.items():
+            details[s]["cycle_pilot_freshness"] = state_detail
+        print("CY-03 pilot session freshness:", json.dumps(freshness, sort_keys=True), flush=True)
     merged, issues = merge_prices(original, incoming)
     counts = defaultdict(int)
     for row in merged:
