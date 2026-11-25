@@ -6,6 +6,8 @@ on:
       - "configs/cycle_direction/cy03_v2_review_authorities.json"
       - "configs/cycle_direction/reviewer_keys/**"
       - "tests/pattern_discovery/test_cy03_v2_review.py"
+      - "src/scanner/research/pattern_discovery/cycle_cy05_v2_release.py"
+      - "tests/pattern_discovery/test_cy05_v2_release.py"
       - ".github/workflows/cycle_dir_v2_review.yml"
   workflow_dispatch:
 permissions:
@@ -23,4 +25,4 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install -e ".[test]"
       - run: openssl version
-      - run: python -m pytest -q tests/pattern_discovery/test_cy03_v2_review.py tests/pattern_discovery/test_cy05_cycle_archive_adapter.py
+      - run: python -m pytest -q tests/pattern_discovery/test_cy03_v2_review.py tests/pattern_discovery/test_cy05_cycle_archive_adapter.py tests/pattern_discovery/test_cy05_v2_release.py
