@@ -67,14 +67,24 @@ def convert(manifest, shards, *, target=TARGET):
             raise ValueError("v2:current_packet_not_latest")
         routes[symbol]=[]
         chunk=[]
+        payload_bytes=0
+        # The encoded list contributes the exact sum of packet byte lengths
+        # plus commas; empty part envelope and count digits are bounded.
         for packet in packets:
             name=f"part_{len(parts):06d}.json"
-            if len(encode(part_document(name,symbol,chunk+[packet])))>target:
+            packet_bytes=len(encode(packet))-1
+            envelope=len(encode(part_document(name,symbol,[])))+12
+            if envelope+payload_bytes+packet_bytes+int(bool(chunk))>target:
                 if not chunk:
                     raise ValueError("v2:individual_packet_exceeds_target")
-                parts[name]=part_document(name,symbol,chunk)
+                doc=part_document(name,symbol,chunk)
+                if len(encode(doc))>target:
+                    raise ValueError("v2:part_exceeds_target")
+                parts[name]=doc
                 routes[symbol].append(name)
                 chunk=[]
+                payload_bytes=0
+            payload_bytes+=packet_bytes+int(bool(chunk))
             chunk.append(packet)
         if chunk:
             name=f"part_{len(parts):06d}.json"
