@@ -31,3 +31,20 @@ def test_failed_pilot_does_not_replace_market_cache():
     result=capture_full_window_pilot(["UEC"],date(2026,11,25),
                                      witness_attempts=[],fetcher=fail)
     assert result["status"]=="PILOT_FAILED"
+
+def test_expected_session_excludes_future_and_detects_provider_omission():
+    from datetime import datetime, timezone
+    from scripts.prefetch_market_history import expected_pilot_session, missing_pilot_sessions
+    end=date(2026,11,25)
+    now=datetime(2026,11,25,1,36,tzinfo=timezone.utc)
+    assert expected_pilot_session("UEC",end=end,now=now)=="2026-11-24"
+    assert expected_pilot_session("TTD",end=end,now=now)=="2026-11-24"
+    existing=[{"symbol":"UEC","date":"2026-11-23","adj_close":"5.84"},
+              {"symbol":"TTD","date":"2026-11-23","adj_close":"14.06"}]
+    assert missing_pilot_sessions(("UEC","TTD"),end=end,now=now,existing=existing,incoming=[])=={
+        "UEC":"2026-11-24","TTD":"2026-11-24"}
+    incoming=[{"symbol":"UEC","date":"2026-11-24","adj_close":"5.57"}]
+    assert missing_pilot_sessions(("UEC","TTD"),end=end,now=now,existing=existing,incoming=incoming)=={
+        "TTD":"2026-11-24"}
+    before_close=datetime(2026,11,24,18,tzinfo=timezone.utc)
+    assert expected_pilot_session("TTD",end=end,now=before_close)=="2026-11-23"
