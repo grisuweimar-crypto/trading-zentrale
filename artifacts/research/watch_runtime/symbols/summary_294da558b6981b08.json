@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-24T03:59:34.002507+00:00",
+  "decision_as_of": "2026-11-25T02:03:23.452971+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-24T03:44:08.855996+00:00",
+    "captured_at": "2026-11-25T01:47:03.987667+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-24T03:39:51+00:00",
+    "scanner_published_at": "2026-11-25T01:42:52+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-24",
-    "source_capture_id": "30d44b2fb0ca0a5f028554fdfb7223a3f3b5527abd1c061433c4d616291a86a3",
-    "source_publication_commit": "34bc20441a7520140d249fef4accc033ff205327",
-    "source_run_id": "github-45319624767-1",
-    "source_snapshot_id": "5ad23359-c07d-4730-8702-5c4b889a81d7",
+    "source_as_of": "2026-11-25",
+    "source_capture_id": "f700fca0d7eac36f199ebebe2a3bd6474e5cb8a103f7e289e04be7205c97f838",
+    "source_publication_commit": "5db6d4b0f85f3deb67f53a56973f15ad179ee23a",
+    "source_run_id": "github-45526705908-1",
+    "source_snapshot_id": "a40e915d-71d6-4ba3-89f8-f2c8ae53cf21",
     "status": "no_elliott_output_for_symbol",
     "symbol": "9888.HK",
     "validation_partition": "prospective_unspent",
@@ -27,22 +27,23 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "negative",
+    "direction": "positive",
     "known_directional_claim_ids": [
-      "timing:9888.HK:9a55520ffefb694c:60T",
-      "timing:9888.HK:6c608d2ad71a6396:60T"
+      "timing:9888.HK:15f457a0b3a6df9d:20T",
+      "timing:9888.HK:e64908cc5e4c18f0:60T",
+      "timing:9888.HK:ff63700b226f41b1:60T"
     ],
     "known_directional_family_counts": {
-      "timing": 2
+      "timing": 3
     },
     "relation_state": "correlated_same_family_support",
-    "state": "negative",
+    "state": "positive",
     "support_structure": "same_family_correlated_support"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "5ad23359-c07d-4730-8702-5c4b889a81d7",
+  "snapshot_id": "a40e915d-71d6-4ba3-89f8-f2c8ae53cf21",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -699,13 +700,29 @@
       "source_snapshot_id": "5ad23359-c07d-4730-8702-5c4b889a81d7",
       "state": "negative",
       "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-25T00:11:18.608348+00:00",
+      "direction": "positive",
+      "relation_state": "single_direction_or_unopposed",
+      "source_snapshot_id": "cb2b76bf-0469-40fa-bf7a-b2619577fec3",
+      "state": "positive",
+      "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-11-25T02:03:23.452971+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "a40e915d-71d6-4ba3-89f8-f2c8ae53cf21",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
     }
   ],
   "state_history_path_memory": {
     "deterioration": {
       "r_code_downgrade": false,
       "rank_worsening_5t": false,
-      "rs3m_falling_5t": false,
+      "rs3m_falling_5t": true,
       "score_falling_5t": true,
       "trend200_falling_5t": true
     },
@@ -720,11 +737,11 @@
   "state_history_state": "never_overextended",
   "symbol": "9888.HK",
   "transition_state": {
-    "pending_confirmation_count": 1,
-    "pending_direction": "negative",
+    "pending_confirmation_count": 0,
+    "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": false,
+    "stable_anchor_is_current_stance": true,
     "stable_directional_anchor": "positive",
-    "status": "transition_pending"
+    "status": "stable_confirmed"
   }
 }
