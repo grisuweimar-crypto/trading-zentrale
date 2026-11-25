@@ -140,7 +140,7 @@ def _verify_review(root, bundle, ledger, inspection, *, now=None):
     canonical = {}
     for row in ledger:
         day = row["as_of"]
-        key = (row["generated_at"], row["snapshot_id"])
+        key = (utc(row["generated_at"]).isoformat(), row["snapshot_id"])
         if day not in canonical or key > canonical[day]:
             canonical[day] = key
     days = sorted(canonical)
