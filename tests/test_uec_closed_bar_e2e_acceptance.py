@@ -49,7 +49,7 @@ def test_uec_real_snapshot_consistent_across_layers():
     assert len(rows) == 1
     row = rows[0]
     assert row["snapshot_id"] == snap
-    assert row["score_status"] == "OK"
+    assert row["score_status"] in {"OK", "AVOID"}  # risk state is not data availability
     assert row["cycle_quality"] == "VALID"
     assert row["cycle_quality_reason"] == "COMPLETED_DAILY_BARS"
     assert date.fromisoformat(row["cycle_last_bar"]) <= date.fromisoformat(daily["as_of"])
