@@ -81,6 +81,8 @@ jobs:
       - name: Kanonische abgeschlossene Tageskerzen vor dem Scoring aktualisieren
         # Laedt genau einmal in die bestehende OHLCV-Quelle; benoetigt keinen
         # erst spaeter erzeugten aktuellen Scanner-Snapshot.
+        env:
+          SCANNER_CYCLE_FULL_WINDOW_PILOT: "UEC,TTD"
         run: python scripts/prefetch_closed_bar_inputs.py
 
       - name: Daily-Lauf vorbereiten
