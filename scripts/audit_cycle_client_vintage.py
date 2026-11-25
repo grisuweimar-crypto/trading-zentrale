@@ -11,7 +11,6 @@ import argparse
 import base64
 from collections import Counter, defaultdict
 import csv
-from datetime import datetime
 import gzip
 import json
 import math
@@ -83,8 +82,9 @@ def audit(root):
     checked = inspect_cycle_archive(root)
     ledger = read_ledger(root / ROOT / "observations.csv")
     receipt_audit = inspect_archived_witnesses(root, ledger)
-    # A receipt must be archived with an observation at or before the target
-    # cutoff. Its own arrival time is not independently attested.
+    # Receipts are snapshot-bound by the existing verifier. Compare the actual
+    # client response end time (not the later archive write) to the cutoff;
+    # the client clock is not independently attested.
     events = []
     for path in sorted((root / ARCHIVE_DIR).glob("*.json")):
         doc = json.loads(path.read_text(encoding="utf-8"))
