@@ -1,13 +1,13 @@
 {
-  "as_of": "2026-11-25",
-  "bound_at": "2026-11-25T23:35:48.155858+00:00",
+  "as_of": "2026-11-26",
+  "bound_at": "2026-11-26T00:13:10.749277+00:00",
   "boundaries": {
     "decision_semantics_changed": false,
     "historical_provenance_inferred": false,
     "scanner_values_changed": false,
     "scanner_weights_changed": false
   },
-  "content_hash": "f07158a6f3d0ffb53aa3a89e6211f4fa051c4bb648909c85073acc90189cdaf3",
+  "content_hash": "de134ed831fb5c13cdede46c461c56a34990086e893739500a395737bef4dd2b",
   "coverage": {
     "direct_scoring_input_bound": true,
     "historical_backfill": false,
@@ -19,8 +19,8 @@
     "snapshot_identity_bound": true
   },
   "pre_run": {
-    "captured_at": "2026-11-25T23:34:46.971168+00:00",
-    "code_revision": "354c3a92d5193b4acde55686fa021007f21bf38a",
+    "captured_at": "2026-11-26T00:12:16.395643+00:00",
+    "code_revision": "d5f54307110527158a34ae8a87a22738ba090d54",
     "historical_backfill": false,
     "inputs": [
       {
@@ -28,8 +28,8 @@
         "path": "artifacts/watchlist/watchlist.csv",
         "required": true,
         "role": "persistent_watchlist_state",
-        "sha256": "5147347879bc2b847f9c3240c4907661e80e8b007412d5af3b2355f75453ab9f",
-        "size_bytes": 257966
+        "sha256": "97fdf5bc1661e2f8e9e42bcead95085c221df1349df0270adcb480f749356466",
+        "size_bytes": 258865
       },
       {
         "exists": true,
@@ -56,7 +56,7 @@
         "size_bytes": null
       }
     ],
-    "run_id": "github-45722192215-1",
+    "run_id": "github-45726810576-1",
     "runtime_intent": {
       "scanner_fetch_yahoo": "1"
     },
@@ -65,38 +65,38 @@
     "schema_version": "scanner_pre_run_provenance_v1",
     "selected_watchlist_input": "artifacts/watchlist/watchlist.csv"
   },
-  "run_id": "github-45722192215-1",
+  "run_id": "github-45726810576-1",
   "runtime": {
-    "captured_at": "2026-11-25T23:34:50.616908+00:00",
-    "code_revision": "354c3a92d5193b4acde55686fa021007f21bf38a",
+    "captured_at": "2026-11-26T00:12:19.712702+00:00",
+    "code_revision": "d5f54307110527158a34ae8a87a22738ba090d54",
     "historical_backfill": false,
-    "run_id": "github-45722192215-1",
+    "run_id": "github-45726810576-1",
     "scanner_build": "2026-02-13",
     "scanner_version": "0.0.1-v7",
     "schema_version": "scanner_runtime_provenance_v1",
     "scoring_rows_input": {
       "path": "artifacts/watchlist/watchlist_full_raw.csv",
-      "sha256": "97fdf5bc1661e2f8e9e42bcead95085c221df1349df0270adcb480f749356466",
-      "size_bytes": 258865
+      "sha256": "719667678782b78be03342f445f81d32ca661065df339ce12bb2a562de047d33",
+      "size_bytes": 258406
     },
     "selected_scoring_universe": {
       "path": "artifacts/watchlist/watchlist.csv",
-      "sha256": "97fdf5bc1661e2f8e9e42bcead95085c221df1349df0270adcb480f749356466",
-      "size_bytes": 258865
+      "sha256": "719667678782b78be03342f445f81d32ca661065df339ce12bb2a562de047d33",
+      "size_bytes": 258406
     },
     "yahoo_enrichment": {
       "benchmark_crypto": "BTC-USD",
       "benchmark_stock": "SPY",
       "enabled": true,
-      "market_date": "2026-11-25",
+      "market_date": "2026-11-26",
       "market_regime_crypto": "bear",
       "market_regime_stock": "bear",
       "market_trend200_crypto": -0.17166426031171922,
       "market_trend200_stock": -0.016208612972925196,
       "provider_fetch_completed_at_utc": null,
       "provider_fetch_started_at_utc": null,
-      "provider_frame_rows": 426,
-      "provider_frame_sha256": "9239ea81971c21834271c4388102a2d9a3a7acd77868b6f727ba8aef432051d9",
+      "provider_frame_rows": 427,
+      "provider_frame_sha256": "53799ed63b4f34f61edfa9a77b3803a054669b5c64f34ed334096e87d08ff383",
       "tickers_failed": 0,
       "tickers_fetched": 228,
       "tickers_total": 220
@@ -104,14 +104,14 @@
   },
   "scanner_output": {
     "latest_scanner_path": "artifacts/research/latest_scanner.csv",
-    "latest_scanner_sha256": "f38dcba9a50b9ee7229b0e30f6833607a20c0addb507b2ceb1f676a81033b6fc",
+    "latest_scanner_sha256": "118063d9ce42e2c2324650fe29e03effcae0ba33ee5db653cd85f545cfcdd9dd",
     "source_file": "artifacts/watchlist/watchlist_full.csv",
-    "source_sha256": "4eee10f354ca89824178b654f4cae17aefaf2207be4ad018642809981b133a37"
+    "source_sha256": "412aab16e5c4da7a7a53f8d7f214b1eda498e5cb3d6f9d61ef07f1811f445fa8"
   },
   "schema_version": "scanner_input_provenance_v1",
-  "snapshot_id": "b24baa71-e448-4c56-a057-146252097be5",
+  "snapshot_id": "d956c978-6303-4aca-9b23-8e243532d357",
   "transform_identity": {
-    "code_revision": "354c3a92d5193b4acde55686fa021007f21bf38a",
+    "code_revision": "d5f54307110527158a34ae8a87a22738ba090d54",
     "scanner_build": "2026-02-13",
     "scanner_version": "0.0.1-v7"
   }
