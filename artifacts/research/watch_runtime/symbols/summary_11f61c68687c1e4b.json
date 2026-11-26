@@ -1,8 +1,8 @@
 {
-  "decision_as_of": "2026-11-25T02:03:23.452971+00:00",
+  "decision_as_of": "2026-11-26T00:40:59.169067+00:00",
   "decision_logic_changed": false,
   "elliott_vnext_research": {
-    "captured_at": "2026-11-25T01:47:03.987667+00:00",
+    "captured_at": "2026-11-26T00:23:04.056183+00:00",
     "changes_portfolio_action": false,
     "changes_universal_stance": false,
     "decision_effect": "none",
@@ -13,13 +13,13 @@
     "reason": "current_capture_contains_no_6h_output_for_symbol",
     "research_only": true,
     "review_contexts_are_actions": false,
-    "scanner_published_at": "2026-11-25T01:42:52+00:00",
+    "scanner_published_at": "2026-11-26T00:18:44+00:00",
     "schema_version": "elliott_vnext_watch_display_v1",
-    "source_as_of": "2026-11-25",
-    "source_capture_id": "f700fca0d7eac36f199ebebe2a3bd6474e5cb8a103f7e289e04be7205c97f838",
-    "source_publication_commit": "5db6d4b0f85f3deb67f53a56973f15ad179ee23a",
-    "source_run_id": "github-45526705908-1",
-    "source_snapshot_id": "a40e915d-71d6-4ba3-89f8-f2c8ae53cf21",
+    "source_as_of": "2026-11-26",
+    "source_capture_id": "9909dea448aa488819dc0b768ac848145b0918a26040e5365b16fdbe9978de94",
+    "source_publication_commit": "51f13c2b073a1731b62f1d796534b090da2f3e5d",
+    "source_run_id": "github-45726810576-1",
+    "source_snapshot_id": "d956c978-6303-4aca-9b23-8e243532d357",
     "status": "no_elliott_output_for_symbol",
     "symbol": "6861.T",
     "validation_partition": "prospective_unspent",
@@ -27,21 +27,17 @@
   },
   "latest_universal_stance": {
     "conflicts": [],
-    "direction": "positive",
-    "known_directional_claim_ids": [
-      "timing:6861.T:5b62a0aabd2f08fc:60T"
-    ],
-    "known_directional_family_counts": {
-      "timing": 1
-    },
-    "relation_state": "single_direction_or_unopposed",
-    "state": "positive",
-    "support_structure": "single_direction_or_unopposed"
+    "direction": null,
+    "known_directional_claim_ids": [],
+    "known_directional_family_counts": {},
+    "relation_state": "insufficient_directional_relation",
+    "state": "insufficient_evidence",
+    "support_structure": "insufficient_directional_relation"
   },
   "portfolio_action_computed": false,
   "private_position_data_included": false,
   "schema_version": "decision_watch_symbol_state_summary_v1",
-  "snapshot_id": "a40e915d-71d6-4ba3-89f8-f2c8ae53cf21",
+  "snapshot_id": "d956c978-6303-4aca-9b23-8e243532d357",
   "stance_history": [
     {
       "as_of": "2026-09-30T09:51:58.582444+00:00",
@@ -714,6 +710,22 @@
       "source_snapshot_id": "a40e915d-71d6-4ba3-89f8-f2c8ae53cf21",
       "state": "positive",
       "support_structure": "single_direction_or_unopposed"
+    },
+    {
+      "as_of": "2026-11-25T23:54:51.242798+00:00",
+      "direction": "positive",
+      "relation_state": "correlated_same_family_support",
+      "source_snapshot_id": "b24baa71-e448-4c56-a057-146252097be5",
+      "state": "positive",
+      "support_structure": "same_family_correlated_support"
+    },
+    {
+      "as_of": "2026-11-26T00:40:59.169067+00:00",
+      "direction": null,
+      "relation_state": "insufficient_directional_relation",
+      "source_snapshot_id": "d956c978-6303-4aca-9b23-8e243532d357",
+      "state": "insufficient_evidence",
+      "support_structure": "insufficient_directional_relation"
     }
   ],
   "state_history_path_memory": {
@@ -728,7 +740,7 @@
     "last_overextension_rs3m": 0.2353813669227038,
     "overextension_active": false,
     "recent_overextension": false,
-    "sessions_since_last_overextension": 112,
+    "sessions_since_last_overextension": 113,
     "upstream_review_state": "none",
     "upstream_sequence_state": "no_recent_overextension_context"
   },
@@ -738,8 +750,8 @@
     "pending_confirmation_count": 0,
     "pending_direction": null,
     "required_confirmation_count": 2,
-    "stable_anchor_is_current_stance": true,
+    "stable_anchor_is_current_stance": false,
     "stable_directional_anchor": "positive",
-    "status": "stable_confirmed"
+    "status": "blocked_insufficient"
   }
 }
