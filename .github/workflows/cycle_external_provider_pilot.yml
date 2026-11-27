@@ -1,0 +1,44 @@
+name: CY-03 external price and full-window pilot
+on:
+  pull_request:
+    paths:
+      - "scripts/audit_cycle_external_provider.py"
+      - "tests/test_cycle_external_provider.py"
+      - ".github/workflows/cycle_external_provider_pilot.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[test]"
+      - run: python -m pytest -q tests/test_cycle_external_provider.py tests/test_cycle_full_window_pilot.py
+      - run: python -m scripts.audit_cycle_external_provider --output /tmp/external-provider.json
+      - name: Actual Yahoo full-window capture (isolated, no cache modification)
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          import json
+          from pathlib import Path
+          from scripts.prefetch_market_history import capture_full_window_pilot
+          attempts=[]
+          report=capture_full_window_pilot(("UEC","TTD"),datetime.now(timezone.utc).date(),witness_attempts=attempts)
+          print(json.dumps(report,indent=2))
+          Path("/tmp/full-window-pilot.json").write_text(json.dumps({"summary":report,"attempts":attempts}))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: external-price-pilot
+          path: |
+            /tmp/external-provider.json
+            /tmp/full-window-pilot.json
+          retention-days: 30

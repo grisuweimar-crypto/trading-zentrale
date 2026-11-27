@@ -181,8 +181,75 @@ def fetch_batch(tickers, request, *, retries=2, sleep=time.sleep, witness_attemp
     return frame, errors
 
 
+def expected_pilot_session(symbol, *, end, now):
+    """Latest actual exchange session strictly before the configured date cutoff."""
+    import pandas_market_calendars as mcal
+    calendar = mcal.get_calendar({"UEC": "NYSE", "TTD": "NASDAQ"}[symbol])
+    schedule = calendar.schedule(start_date=end-timedelta(days=14),
+                                 end_date=end-timedelta(days=1))
+    closed = schedule.loc[schedule["market_close"] <= pd.Timestamp(now)]
+    return None if closed.empty else closed.index[-1].date().isoformat()
+
+
+def missing_pilot_sessions(symbols, *, end, now, existing, incoming):
+    """Only request missing dates; an old archived close is never overwritten."""
+    available = {(str(r.get("symbol")), str(r.get("date"))[:10])
+                 for r in list(existing)+list(incoming)
+                 if number(r.get("adj_close")) is not None and number(r.get("adj_close")) > 0}
+    missing = {}
+    for symbol in symbols:
+        expected = expected_pilot_session(symbol, end=end, now=now)
+        if expected and (symbol, expected) not in available:
+            missing[symbol] = expected
+    return missing
+
+
+def capture_full_window_pilot(providers, end, *, witness_attempts, fetcher=None):
+    """Extra client evidence only; never merge these rows into the scanner cache.
+
+    Exact provider symbols are intentionally preselected. Capture an entire
+    year so all sixty session dates are available even across holidays.
+    """
+    providers = tuple(dict.fromkeys(providers))
+    if not providers:
+        return {}
+    if any(s not in {"UEC", "TTD"} for s in providers):
+        raise ValueError("unregistered_cycle_full_window_pilot_symbol")
+    fetcher = fetch_batch if fetcher is None else fetcher
+    request = {"period": "1y", "start": None, "end": end.isoformat()}
+    # An optional evidence request must not replace or invalidate the normal
+    # market-data acquisition. Keep any attempts recorded by fetch_batch.
+    before = len(witness_attempts)
+    try:
+        frame, errors = fetcher(list(providers), request, retries=0,
+                                witness_attempts=witness_attempts)
+    except Exception as exc:
+        return {"status": "PILOT_FAILED", "exception_type": type(exc).__name__,
+                "attempts_recorded": len(witness_attempts) - before}
+    counts = {}
+    for s in providers:
+        days = set()
+        for row in frame.to_dict("records"):
+            if row.get("symbol") != s:
+                continue
+            try:
+                day = date.fromisoformat(str(row["date"]))
+                p = number(row.get("adj_close"))
+            except (ValueError, TypeError, KeyError):
+                continue
+            if day < end and p is not None and p > 0:
+                days.add(day)
+        counts[s] = len(days)
+    return {"status": "CLIENT_WINDOW_CAPTURE_ONLY",
+            "provider_symbols": list(providers), "session_counts": counts,
+            "at_least_60_sessions": {s: n >= 60 for s,n in counts.items()},
+            "errors": {s: str(errors[s])[:160] for s in providers if s in errors},
+            "attempts_recorded": len(witness_attempts) - before,
+            "independent_pit_verified": False}
+
+
 def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None, *, now=None,
-                     batch_size=20, retries=2, sleep=time.sleep):
+                     batch_size=20, retries=2, sleep=time.sleep, full_window_pilot=()):
     root = Path(root)
     now = now or datetime.now(timezone.utc)
     if minimum_days < 1 or not 1 <= batch_size <= 50 or not 0 <= retries <= 5:
@@ -299,6 +366,25 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
             print(f"Price fetch {period or 'incremental from ' + start}: {', '.join(chunk)}", flush=True)
             acquire(chunk, period, start)
             sleep(0.5)
+    # The optional freshness repair uses the same validated acquisition/merge
+    # path as the normal prefetch, never the evidence-only full-window response.
+    active_pilot = tuple(s for s in full_window_pilot if s in modes
+                         and mappings[s][0] == s and s in {"UEC","TTD"})
+    freshness = {}
+    if active_pilot:
+        missing = missing_pilot_sessions(active_pilot, end=end, now=now,
+                                         existing=existing, incoming=incoming)
+        for symbol, session_date in missing.items():
+            acquire([symbol], None, session_date)
+        still_missing = missing_pilot_sessions(active_pilot, end=end, now=now,
+                                               existing=existing, incoming=incoming)
+        freshness = {s: {"expected_latest_session": expected_pilot_session(s,end=end,now=now),
+                         "targeted_retry_attempted": s in missing,
+                         "status": "MISSING_AFTER_RETRY" if s in still_missing else "SESSION_PRESENT"}
+                     for s in active_pilot}
+        for s, state_detail in freshness.items():
+            details[s]["cycle_pilot_freshness"] = state_detail
+        print("CY-03 pilot session freshness:", json.dumps(freshness, sort_keys=True), flush=True)
     merged, issues = merge_prices(original, incoming)
     counts = defaultdict(int)
     for row in merged:
@@ -336,6 +422,9 @@ def prefetch_history(root, tickers=None, minimum_days=DEFAULT_DAYS, output=None,
     # This is pre-scoring client evidence for the SAME canonical cache, not
     # provider-signed bar availability or independent currency verification.
     if target.resolve() == (root / CACHE).resolve():
+        pilot = capture_full_window_pilot(full_window_pilot, end, witness_attempts=witness_attempts)
+        if pilot:
+            print("CY-03 full-window evidence pilot:", json.dumps(pilot, sort_keys=True), flush=True)
         write_current_witness(root, witness_attempts, cache=target.read_bytes())
     required = {r["symbol"] for r in latest}
     frame = pd.DataFrame([r for r in merged if r["symbol"] in required], columns=MARKET_COLUMNS)

@@ -7,6 +7,7 @@ the not-yet-produced latest_scanner snapshot. No second price database.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -44,7 +45,8 @@ def symbols_before_scanner(root: Path) -> tuple[str, ...]:
 def main() -> int:
     root = Path(__file__).resolve().parents[1]
     symbols = symbols_before_scanner(root)
-    frame = prefetch_history(root, tickers=symbols, minimum_days=300)
+    pilot = tuple(s.strip() for s in os.getenv("SCANNER_CYCLE_FULL_WINDOW_PILOT", "").split(",") if s.strip())
+    frame = prefetch_history(root, tickers=symbols, minimum_days=300, full_window_pilot=pilot)
     coverage = frame.attrs["coverage"]
     if frame.empty:
         raise ValueError("canonical_market_cache_empty_after_prefetch")
